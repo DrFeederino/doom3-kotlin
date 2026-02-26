@@ -1,24 +1,16 @@
 package neo.Game.AI
 
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idVec3
 import java.nio.IntBuffer
 
-/**
- *
- */
 object AAS_routing {
     const val CACHETYPE_AREA = 1
     const val CACHETYPE_PORTAL = 2
-
-    //
     const val LEDGE_TRAVELTIME_PANALTY = 250
-
-    //
     const val MAX_ROUTING_CACHE_MEMORY = 2 * 1024 * 1024
 
-    //
     internal class idRoutingCache(size: Int) {
         var areaNum // area of the cache
                 = 0

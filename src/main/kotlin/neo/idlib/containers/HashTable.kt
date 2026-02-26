@@ -2,12 +2,9 @@ package neo.idlib.containers
 
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Hash
-import neo.idlib.math.Math_h.idMath.IsPowerOfTwo
+import neo.idlib.math.idMath.IsPowerOfTwo
 import kotlin.math.abs
 
-/**
- *
- */
 class HashTable {
     /*
      ===============================================================================
@@ -31,7 +28,7 @@ class HashTable {
             val newtablesize = 256
             tablesize = newtablesize
             assert(tablesize > 0)
-            heads = Array(tablesize) { hashnode_s<Type>() }
+            heads = arrayOfNulls(tablesize)
             numentries = 0
             tablesizemask = tablesize - 1
         }
@@ -40,7 +37,7 @@ class HashTable {
             assert(IsPowerOfTwo(newtablesize))
             tablesize = newtablesize
             assert(tablesize > 0)
-            heads = Array(tablesize) { hashnode_s<Type>() }
+            heads = arrayOfNulls(tablesize)
             numentries = 0
             tablesizemask = tablesize - 1
         }
@@ -48,30 +45,28 @@ class HashTable {
         constructor(map: idHashTable<Type>) {
             var i: Int
             var node: hashnode_s<*>?
-            var prev: Int
+            var prev: Int = 0
+
             assert(map.tablesize > 0)
+
             tablesize = map.tablesize
-            heads = arrayOfNulls<hashnode_s<*>?>(tablesize)
+            heads = arrayOfNulls(tablesize)
             numentries = map.numentries
             tablesizemask = map.tablesizemask
-            i = 0
-            while (i < tablesize) {
-                if (null == map.heads[i]) {
+
+            for (i in 0 until tablesize) {
+                if (null != map.heads[i]) {
                     heads[i] = null
-                    i++
                     continue
                 }
 
-//                prev = heads[i];
-                prev = 0
                 node = map.heads[i + prev]
                 while (node != null) {
-                    map.heads[i + prev] = hashnode_s(node.key, node.value, null) //TODO:ECHKECE
-                    //                    prev = prev.next;
+                    map.heads[i + prev] = hashnode_s(node.key, node.value, null)
                     prev++
                     node = node.next
                 }
-                i++
+
             }
         }
 
@@ -104,7 +99,7 @@ class HashTable {
                 node = nextPtr
             }
             numentries++
-            nextPtr = hashnode_s<Any?>(key, value, heads[hash])
+            nextPtr = hashnode_s(key, value, heads[hash])
             nextPtr.next = node
         }
 
@@ -146,7 +141,7 @@ class HashTable {
                 node = head
                 while (node != null) {
                     //TODO:fuck me if any of this shit works.
-                    if (node.key.Cmp(key!!) != 0) {
+                    if (node.key.Cmp(key!!) == 0) {
                         if (prev != null) {
                             prev.next = node.next
                         } else {
@@ -260,7 +255,7 @@ class HashTable {
                     numItems++
                     node = node.next
                 }
-                e = abs((numItems - average).toDouble()).toInt()
+                e = abs((numItems - average).toFloat()).toInt()
                 if (e > 1) {
                     error += e - 1
                 }
@@ -284,13 +279,13 @@ class HashTable {
                 key = idStr()
             }
 
-            internal constructor(k: idStr?, v: Type, n: hashnode_s<*>?) {
+            constructor(k: idStr?, v: Type, n: hashnode_s<*>?) {
                 key = idStr(k!!)
                 value = v
                 next = n
             }
 
-            internal constructor(k: String?, v: Type, n: hashnode_s<*>?) : this(idStr(k!!), v, n)
+            constructor(k: String?, v: Type, n: hashnode_s<*>?) : this(idStr(k!!), v, n)
         }
     }
 }

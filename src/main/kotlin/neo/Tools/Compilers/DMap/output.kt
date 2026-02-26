@@ -1,9 +1,7 @@
 package neo.Tools.Compilers.DMap
 
+import neo.Renderer.*
 import neo.Renderer.Model.srfTriangles_s
-import neo.Renderer.RenderWorld
-import neo.Renderer.tr_trisurf
-import neo.TempDump
 import neo.Tools.Compilers.DMap.dmap.mapLight_t
 import neo.Tools.Compilers.DMap.dmap.mapTri_s
 import neo.Tools.Compilers.DMap.dmap.node_s
@@ -17,13 +15,10 @@ import neo.framework.File_h.idFile
 import neo.idlib.MapFile.idMapEntity
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Vector
+import neo.idlib.math.DotProduct
+import neo.idlib.math.idMath
 import kotlin.math.abs
 
-/**
- *
- */
 object output {
     //
     const val AREANUM_DIFFERENT = -2
@@ -36,7 +31,7 @@ object output {
     //=================================================================================
     //#if 0
     //
-    //should we try and snap values very close to 0.5, 0.25, 0.125, etc?
+    //should we try and snap values very close to 0.5f, 0.25f, 0.125, etc?
     //
     //  do we write out normals, or just a "smooth shade" flag?
     //resolved: normals.  otherwise adjacent facet shaded surfaces get their
@@ -161,10 +156,10 @@ object output {
         }
 
         // if the normal is 0 (smoothed normals), consider it a match
-        return if (a.normal[0] == 0f && a.normal[1] == 0f && a.normal[2] == 0f && b.normal[0] == 0f && b.normal[1] == 0f && b.normal[2] == 0f
+        return if (a.normal[0] == 0.0f && a.normal[1] == 0.0f && a.normal[2] == 0.0f && b.normal[0] == 0.0f && b.normal[1] == 0.0f && b.normal[2] == 0.0f
         ) {
             true
-        } else Vector.DotProduct(a.normal, b.normal) >= COSINE_EPSILON
+        } else DotProduct(a.normal, b.normal) >= COSINE_EPSILON
 
         // otherwise do a dot-product cosine check
     }
@@ -187,9 +182,9 @@ object output {
 
         // unique the vertexes
         count = tritools.CountTriList(tris)
-        uTri = tr_trisurf.R_AllocStaticTriSurf()
-        tr_trisurf.R_AllocStaticTriSurfVerts(uTri, count * 3)
-        tr_trisurf.R_AllocStaticTriSurfIndexes(uTri, count * 3)
+        uTri = R_AllocStaticTriSurf()
+        R_AllocStaticTriSurfVerts(uTri, count * 3)
+        R_AllocStaticTriSurfIndexes(uTri, count * 3)
         numVerts = 0
         numIndexes = 0
         step = tris
@@ -231,12 +226,12 @@ object output {
      */
     fun CleanupUTriangles(tri: srfTriangles_s) {
         // perform cleanup operations
-        tr_trisurf.R_RangeCheckIndexes(tri)
-        tr_trisurf.R_CreateSilIndexes(tri)
+        R_RangeCheckIndexes(tri)
+        R_CreateSilIndexes(tri)
         //	R_RemoveDuplicatedTriangles( tri );	// this may remove valid overlapped transparent triangles
-        tr_trisurf.R_RemoveDegenerateTriangles(tri)
+        R_RemoveDegenerateTriangles(tri)
         //	R_RemoveUnusedVerts( tri );
-        tr_trisurf.R_FreeStaticTriSurfSilIndexes(tri)
+        R_FreeStaticTriSurfSilIndexes(tri)
     }
 
     /*
@@ -467,7 +462,7 @@ object output {
                 }
                 groupStep = groupStep.nextGroup
             }
-            if (TempDump.NOT(ambient)) {
+            if (ambient == null) {
                 group = group.nextGroup
                 continue
             }
@@ -481,7 +476,7 @@ object output {
             tritools.FreeTriList(ambient)
             CleanupUTriangles(uTri)
             WriteUTriangles(uTri)
-            tr_trisurf.R_FreeStaticTriSurf(uTri)
+            R_FreeStaticTriSurf(uTri)
             procFile!!.WriteFloatString("}\n\n")
             group = group.nextGroup
         }
@@ -645,7 +640,7 @@ object output {
         i = dmap.dmapGlobals.num_entities - 1
         while (i >= 0) {
             entity = dmap.dmapGlobals.uEntities[i]
-            if (TempDump.NOT(entity.primitives)) {
+            if (entity.primitives == null) {
                 i--
                 continue
             }
@@ -657,14 +652,14 @@ object output {
         i = 0
         while (i < dmap.dmapGlobals.mapLights.Num()) {
             val light = dmap.dmapGlobals.mapLights[i]
-            if (TempDump.NOT(light.shadowTris)) {
+            if (light.shadowTris == null) {
                 i++
                 continue
             }
             procFile!!.WriteFloatString("shadowModel { /* name = */ \"_prelight_%s\"\n\n", light.name)
             WriteShadowTriangles(light.shadowTris!!)
             procFile!!.WriteFloatString("}\n\n")
-            tr_trisurf.R_FreeStaticTriSurf(light.shadowTris)
+            R_FreeStaticTriSurf(light.shadowTris)
             light.shadowTris = null
             i++
         }

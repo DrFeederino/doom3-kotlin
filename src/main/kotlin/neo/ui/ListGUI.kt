@@ -4,9 +4,6 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.List.idList
 import neo.ui.UserInterface.idUserInterface
 
-/**
- *
- */
 class ListGUI {
     /*
      ===============================================================================

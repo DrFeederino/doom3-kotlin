@@ -1,25 +1,17 @@
 package neo.idlib.BV
 
-import neo.idlib.BV.Bounds.idBounds
 import neo.idlib.BV.Box.idBox
 import neo.idlib.BV.Sphere.idSphere
-import neo.idlib.Lib
+import neo.idlib.Max
+import neo.idlib.Min
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idSwap
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
 import kotlin.math.abs
 
-/**
- *
- */
 object Frustum {
     /*
      bit 0 = min x
@@ -76,21 +68,18 @@ object Frustum {
     class idFrustum {
         private val origin // frustum origin
                 : idVec3
-        private val axis // frustum orientation
+        private var axis // frustum orientation
                 : idMat3
         private var dFar // distance of far plane, dFar > dNear
                 : Float
         private var dLeft // half the width at the far plane
-                = 0f
+                = 0.0f
         private var dNear // distance of near plane, dNear >= 0.0f
                 : Float
         private var dUp // half the height at the far plane
-                = 0f
-
-        //
-        //
+                = 0.0f
         private var invFar // 1.0f / dFar
-                = 0f
+                = 0.0f
 
         constructor() {
             origin = idVec3()
@@ -114,7 +103,7 @@ object Frustum {
         }
 
         fun SetAxis(axis: idMat3) {
-            this.axis.set(axis)
+            this.axis = idMat3(axis)
         }
 
         fun SetSize(dNear: Float, dFar: Float, dLeft: Float, dUp: Float) {
@@ -231,7 +220,7 @@ object Frustum {
             val max = CFloat()
             AxisProjection(plane.Normal(), min, max)
             if (min._val + plane[3] > 0.0f) {
-                return min._val + plane[0]
+                return min._val + plane[3]
             }
             return if (max._val + plane[3] < 0.0f) {
                 max._val + plane[3]
@@ -240,16 +229,16 @@ object Frustum {
 
         //
 
-        fun PlaneSide(plane: idPlane, epsilon: Float = Plane.ON_EPSILON): Int {
+        fun PlaneSide(plane: idPlane, epsilon: Float = ON_EPSILON): Int {
             val min = CFloat()
             val max = CFloat()
             AxisProjection(plane.Normal(), min, max)
             if (min._val + plane[3] > epsilon) {
-                return Plane.PLANESIDE_FRONT
+                return PLANESIDE_FRONT
             }
             return if (max._val + plane[3] < epsilon) {
-                Plane.PLANESIDE_BACK
-            } else Plane.PLANESIDE_CROSS
+                PLANESIDE_BACK
+            } else PLANESIDE_CROSS
         }
 
         // fast culling but might not cull everything outside the frustum
@@ -385,7 +374,7 @@ object Frustum {
             val cornerVecs: Array<idVec3> = idVec3.generateArray(4)
 
             // transform the given frustum into the space of this frustum
-            localFrustum = frustum
+            localFrustum = idFrustum(frustum)
             localFrustum.origin.set((frustum.origin - origin) * axis.Transpose())
             localFrustum.axis.set(frustum.axis * axis.Transpose())
 
@@ -403,7 +392,7 @@ object Frustum {
             transpose = axis.Transpose()
 
             transpose.set(axis.Transpose())
-            for (i in 0..winding.GetNumPoints()) {
+            for (i in 0 until winding.GetNumPoints()) {
                 localPoints[i] = (winding[i].ToVec3() - origin) * transpose
             }
 
@@ -449,11 +438,7 @@ object Frustum {
 
             BoxToPoints(localOrigin, extents, localAxis, indexPoints)
 
-            if (LocalFrustumIntersectsFrustum(indexPoints, true)) {
-                return true
-            }
-
-            return false
+            return LocalFrustumIntersectsFrustum(indexPoints, true)
         }
 
         fun IntersectsBox(box: idBox): Boolean {
@@ -494,11 +479,7 @@ object Frustum {
 
             BoxToPoints(localOrigin, box.GetExtents(), localAxis, indexPoints)
 
-            if (LocalFrustumIntersectsFrustum(indexPoints, true)) {
-                return true
-            }
-
-            return false
+            return LocalFrustumIntersectsFrustum(indexPoints, true)
         }
 
         private fun VORONOI_INDEX(x: Int, y: Int, z: Int): Int {
@@ -539,10 +520,10 @@ object Frustum {
                 dir.z = abs(p.z) - dUp * scale
             }
             if (dir.y > 0.0f) {
-                y = 1 + Math_h.FLOATSIGNBITNOTSET(p.y)
+                y = 1 + FLOATSIGNBITNOTSET(p.y)
             }
             if (dir.z > 0.0f) {
-                z = 1 + Math_h.FLOATSIGNBITNOTSET(p.z)
+                z = 1 + FLOATSIGNBITNOTSET(p.z)
             }
             if (p.x < dNear) {
                 scale = dLeft * dNear * invFar
@@ -571,18 +552,22 @@ object Frustum {
                     d = dFar * p.y - dLeft * p.x
                     return d * d < r * r * (dFar * dFar + dLeft * dLeft)
                 }
+
                 VORONOI_INDEX_0_2_0 -> {
                     d = -dFar * p.z - dLeft * p.x
                     return d * d < r * r * (dFar * dFar + dLeft * dLeft)
                 }
+
                 VORONOI_INDEX_0_0_1 -> {
                     d = dFar * p.z - dUp * p.x
                     return d * d < r * r * (dFar * dFar + dUp * dUp)
                 }
+
                 VORONOI_INDEX_0_0_2 -> {
                     d = -dFar * p.z - dUp * p.x
                     return d * d < r * r * (dFar * dFar + dUp * dUp)
                 }
+
                 else -> {
                     ToIndexPoints(points)
                     when (index) {
@@ -647,11 +632,7 @@ object Frustum {
             idSwap(indexPoints1[2], indexPoints1[3])
             idSwap(indexPoints1[6], indexPoints1[7])
 
-            if (frustum.LocalFrustumIntersectsFrustum(indexPoints1, (localFrustum1.dNear > 0.0f))) {
-                return true
-            }
-
-            return false
+            return frustum.LocalFrustumIntersectsFrustum(indexPoints1, (localFrustum1.dNear > 0.0f))
         }
 
         fun IntersectsWinding(winding: idWinding): Boolean {
@@ -768,7 +749,7 @@ object Frustum {
         // returns true if the projection origin is far enough away from the bounding volume to create a valid frustum
         fun FromProjection(bounds: idBounds, projectionOrigin: idVec3, dFar: Float): Boolean {
             return FromProjection(
-                idBox(bounds, Vector.getVec3Origin(), idMat3.getMat3_identity()),
+                idBox(bounds, getVec3Origin(), idMat3.getMat3_identity()),
                 projectionOrigin,
                 dFar
             )
@@ -885,11 +866,11 @@ object Frustum {
             origin.set(projectionOrigin)
             dNear = points[minX].x
             this.dFar = dFar
-            dLeft = Lib.Max(
+            dLeft = Max(
                 abs(points[minY].y / points[minY].x),
                 abs(points[maxY].y / points[maxY].x)
             ) * dFar
-            dUp = Lib.Max(
+            dUp = Max(
                 abs(points[minZ].z / points[minZ].x),
                 abs(points[maxZ].z / points[maxZ].x)
             ) * dFar
@@ -1032,7 +1013,6 @@ object Frustum {
          ============
          */
         fun ToPlanes(planes: Array<idPlane>) {            // planes point outwards
-            var i: Int
             val scaled: Array<idVec3> = idVec3.generateArray(2)
             val points: Array<idVec3> = idVec3.generateArray(4)
             planes[0].Normal().set(-axis[0])
@@ -1047,7 +1027,7 @@ object Frustum {
             points[2] = -scaled[0] - scaled[1]
             points[3] = scaled[0] - scaled[1]
 
-            for (i in 0..4) {
+            for (i in 0 until 4) {
                 planes[i + 2].Normal().set(points[i].Cross(points[(i + 1) and 3] - points[i]))
                 planes[i + 2].Normalize()
                 planes[i + 2].FitThroughPoint(points[i])
@@ -1116,7 +1096,7 @@ object Frustum {
             val b11 = CFloat(bounds[1][1])
             val b12 = CFloat(bounds[1][2])
             ToIndexPointsAndCornerVecs(indexPoints, cornerVecs)
-            AxisProjection(indexPoints, cornerVecs, ax[0], b00, b11)
+            AxisProjection(indexPoints, cornerVecs, ax[0], b00, b10)
             AxisProjection(indexPoints, cornerVecs, ax[1], b01, b11)
             AxisProjection(indexPoints, cornerVecs, ax[2], b02, b12)
             // Un-wrap and write to bounds
@@ -1131,7 +1111,7 @@ object Frustum {
         // calculates the bounds for the projection in this frustum
         fun ProjectionBounds(bounds: idBounds, projectionBounds: idBounds): Boolean {
             return ProjectionBounds(
-                idBox(bounds, Vector.getVec3Origin(), idMat3.getMat3_identity()),
+                idBox(bounds, getVec3Origin(), idMat3.getMat3_identity()),
                 projectionBounds
             )
         }
@@ -1637,8 +1617,8 @@ object Frustum {
                 base._val = origin * axis[0]
                 clipBox.AxisProjection(axis[0], clipBoxMin, clipBoxMax)
                 frustum.AxisProjection(axis[0], frustumMin, frustumMax)
-                projectionBounds[0].x = Lib.Max(clipBoxMin._val, frustumMin._val) - base._val
-                projectionBounds[1].x = Lib.Min(clipBoxMax._val, frustumMax._val) - base._val
+                projectionBounds[0].x = Max(clipBoxMin._val, frustumMin._val) - base._val
+                projectionBounds[1].x = Min(clipBoxMax._val, frustumMax._val) - base._val
                 projectionBounds[0].z = -1.0f
                 projectionBounds[0].y = projectionBounds[0].z
                 projectionBounds[1].z = 1.0f
@@ -1748,10 +1728,10 @@ object Frustum {
                     } else {
                         boxPointCull[i]._val = (0)
                         if (abs(p.y) > p.x * leftScale) {
-                            boxPointCull[i]._val = (boxPointCull[i]._val or 1 shl Math_h.FLOATSIGNBITSET(p.y))
+                            boxPointCull[i]._val = (boxPointCull[i]._val or 1 shl FLOATSIGNBITSET(p.y))
                         }
                         if (abs(p.z) > p.x * upScale) {
-                            boxPointCull[i]._val = (boxPointCull[i]._val or 4 shl Math_h.FLOATSIGNBITSET(p.z))
+                            boxPointCull[i]._val = (boxPointCull[i]._val or 4 shl FLOATSIGNBITSET(p.z))
                         }
                     }
                     i++
@@ -1991,7 +1971,7 @@ object Frustum {
                 testOrigin.y = -testOrigin.y
                 testAxis[0][1] = -testAxis[0][1]
                 testAxis[1][1] = -testAxis[1][1]
-                testAxis[0][1] = -testAxis[2][1]
+                testAxis[2][1] = -testAxis[2][1]  // Should be testAxis[2][1]
             }
 
             // test left/right planes
@@ -2042,9 +2022,9 @@ object Frustum {
             // test near plane
             dy = -localFrustum.axis[1].x
             dz = -localFrustum.axis[2].x
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = -cornerVecs[index].x
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             if (indexPoints[index].x < dNear) {
                 return true
             }
@@ -2052,9 +2032,9 @@ object Frustum {
             // test far plane
             dy = localFrustum.axis[1].x
             dz = localFrustum.axis[2].x
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = cornerVecs[index].x
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             if (indexPoints[index].x > dFar) {
                 return true
             }
@@ -2063,9 +2043,9 @@ object Frustum {
             // test left plane
             dy = dFar * localFrustum.axis[1].y - dLeft * localFrustum.axis[1].x
             dz = dFar * localFrustum.axis[2].y - dLeft * localFrustum.axis[2].x
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = dFar * cornerVecs[index].y - dLeft * cornerVecs[index].x
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             if (indexPoints[index].y > indexPoints[index].x * leftScale) {
                 return true
             }
@@ -2073,9 +2053,9 @@ object Frustum {
             // test right plane
             dy = -dFar * localFrustum.axis[1].y - dLeft * localFrustum.axis[1].x
             dz = -dFar * localFrustum.axis[2].y - dLeft * localFrustum.axis[2].x
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = -dFar * cornerVecs[index].y - dLeft * cornerVecs[index].x
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             if (indexPoints[index].y < -indexPoints[index].x * leftScale) {
                 return true
             }
@@ -2084,9 +2064,9 @@ object Frustum {
             // test up plane
             dy = dFar * localFrustum.axis[1].z - dUp * localFrustum.axis[1].x
             dz = dFar * localFrustum.axis[2].z - dUp * localFrustum.axis[2].x
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = dFar * cornerVecs[index].z - dUp * cornerVecs[index].x
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             if (indexPoints[index].z > indexPoints[index].x * upScale) {
                 return true
             }
@@ -2094,9 +2074,9 @@ object Frustum {
             // test down plane
             dy = -dFar * localFrustum.axis[1].z - dUp * localFrustum.axis[1].x
             dz = -dFar * localFrustum.axis[2].z - dUp * localFrustum.axis[2].x
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = -dFar * cornerVecs[index].z - dUp * cornerVecs[index].x
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             return indexPoints[index].z < -indexPoints[index].x * upScale
         }
 
@@ -2119,10 +2099,10 @@ object Frustum {
                     pCull = 2
                 }
                 if (abs(p.y) > p.x * leftScale) {
-                    pCull = pCull or (4 shl Math_h.FLOATSIGNBITSET(p.y))
+                    pCull = pCull or (4 shl FLOATSIGNBITSET(p.y))
                 }
                 if (abs(p.z) > p.x * upScale) {
-                    pCull = pCull or (16 shl Math_h.FLOATSIGNBITSET(p.z))
+                    pCull = pCull or (16 shl FLOATSIGNBITSET(p.z))
                 }
                 culled = culled and pCull
                 pointCull[i] = pCull
@@ -2150,49 +2130,49 @@ object Frustum {
             var dz: Float
             dy = -localFrustum.axis[1].x
             dz = -localFrustum.axis[2].x
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = -cornerVecs[index].x
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             if (indexPoints[index].x < bounds[0].x) {
                 return true
             }
             dy = localFrustum.axis[1].x
             dz = localFrustum.axis[2].x
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = cornerVecs[index].x
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             if (indexPoints[index].x > bounds[1].x) {
                 return true
             }
             dy = -localFrustum.axis[1].y
             dz = -localFrustum.axis[2].y
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = -cornerVecs[index].y
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             if (indexPoints[index].y < bounds[0].y) {
                 return true
             }
             dy = localFrustum.axis[1].y
             dz = localFrustum.axis[2].y
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = cornerVecs[index].y
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             if (indexPoints[index].y > bounds[1].y) {
                 return true
             }
             dy = -localFrustum.axis[1].z
             dz = -localFrustum.axis[2].z
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = -cornerVecs[index].z
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             if (indexPoints[index].z < bounds[0].z) {
                 return true
             }
             dy = localFrustum.axis[1].z
             dz = localFrustum.axis[2].z
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = cornerVecs[index].z
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             return indexPoints[index].z > bounds[1].z
         }
 
@@ -2224,10 +2204,10 @@ object Frustum {
             // test near plane
             if (dNear > 0.0f) {
                 d1 = dNear - start.x
-                startInside = startInside and Math_h.FLOATSIGNBITSET(d1)
-                if (Math_h.FLOATNOTZERO(d1)) {
+                startInside = startInside and FLOATSIGNBITSET(d1)
+                if (FLOATNOTZERO(d1)) {
                     d2 = dNear - end.x
-                    if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+                    if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                         f = d1 / (d1 - d2)
                         if (abs(start.y + f * dir.y) <= dNear * leftScale) {
                             if (abs(start.z + f * dir.z) <= dNear * upScale) {
@@ -2240,10 +2220,10 @@ object Frustum {
 
             // test far plane
             d1 = start.x - dFar
-            startInside = startInside and Math_h.FLOATSIGNBITSET(d1)
-            if (Math_h.FLOATNOTZERO(d1)) {
+            startInside = startInside and FLOATSIGNBITSET(d1)
+            if (FLOATNOTZERO(d1)) {
                 d2 = end.x - dFar
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     if (abs(start.y + f * dir.y) <= dFar * leftScale) {
                         if (abs(start.z + f * dir.z) <= dFar * upScale) {
@@ -2259,10 +2239,10 @@ object Frustum {
 
             // test left plane
             d1 = fstart - lstart
-            startInside = startInside and Math_h.FLOATSIGNBITSET(d1)
-            if (Math_h.FLOATNOTZERO(d1)) {
+            startInside = startInside and FLOATSIGNBITSET(d1)
+            if (FLOATNOTZERO(d1)) {
                 d2 = fend - lend
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     x = start.x + f * dir.x
                     if (x >= dNear && x <= dFar) {
@@ -2275,10 +2255,10 @@ object Frustum {
 
             // test right plane
             d1 = -fstart - lstart
-            startInside = startInside and Math_h.FLOATSIGNBITSET(d1)
-            if (Math_h.FLOATNOTZERO(d1)) {
+            startInside = startInside and FLOATSIGNBITSET(d1)
+            if (FLOATNOTZERO(d1)) {
                 d2 = -fend - lend
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     x = start.x + f * dir.x
                     if (x in dNear..dFar) {
@@ -2295,10 +2275,10 @@ object Frustum {
 
             // test up plane
             d1 = fstart - lstart
-            startInside = startInside and Math_h.FLOATSIGNBITSET(d1)
-            if (Math_h.FLOATNOTZERO(d1)) {
+            startInside = startInside and FLOATSIGNBITSET(d1)
+            if (FLOATNOTZERO(d1)) {
                 d2 = fend - lend
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     x = start.x + f * dir.x
                     if (x in dNear..dFar) {
@@ -2311,10 +2291,10 @@ object Frustum {
 
             // test down plane
             d1 = -fstart - lstart
-            startInside = startInside and Math_h.FLOATSIGNBITSET(d1)
-            if (Math_h.FLOATNOTZERO(d1)) {
+            startInside = startInside and FLOATSIGNBITSET(d1)
+            if (FLOATNOTZERO(d1)) {
                 d2 = -fend - lend
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     x = start.x + f * dir.x
                     if (x in dNear..dFar) {
@@ -2358,7 +2338,7 @@ object Frustum {
             // test near plane
             if (dNear > 0.0f) {
                 d1 = dNear - start.x
-                startInside = startInside and Math_h.FLOATSIGNBITSET(d1)
+                startInside = startInside and FLOATSIGNBITSET(d1)
                 d2 = dNear - end.x
                 if (d1 != d2) {
                     f = d1 / (d1 - d2)
@@ -2377,7 +2357,7 @@ object Frustum {
 
             // test far plane
             d1 = start.x - dFar
-            startInside = startInside and Math_h.FLOATSIGNBITSET(d1)
+            startInside = startInside and FLOATSIGNBITSET(d1)
             d2 = end.x - dFar
             if (d1 != d2) {
                 f = d1 / (d1 - d2)
@@ -2399,7 +2379,7 @@ object Frustum {
 
             // test left plane
             d1 = fstart - lstart
-            startInside = startInside and Math_h.FLOATSIGNBITSET(d1)
+            startInside = startInside and FLOATSIGNBITSET(d1)
             d2 = fend - lend
             if (d1 != d2) {
                 f = d1 / (d1 - d2)
@@ -2418,7 +2398,7 @@ object Frustum {
 
             // test right plane
             d1 = -fstart - lstart
-            startInside = startInside and Math_h.FLOATSIGNBITSET(d1)
+            startInside = startInside and FLOATSIGNBITSET(d1)
             d2 = -fend - lend
             if (d1 != d2) {
                 f = d1 / (d1 - d2)
@@ -2441,7 +2421,7 @@ object Frustum {
 
             // test up plane
             d1 = fstart - lstart
-            startInside = startInside and Math_h.FLOATSIGNBITSET(d1)
+            startInside = startInside and FLOATSIGNBITSET(d1)
             d2 = fend - lend
             if (d1 != d2) {
                 f = d1 / (d1 - d2)
@@ -2460,7 +2440,7 @@ object Frustum {
 
             // test down plane
             d1 = -fstart - lstart
-            startInside = startInside and Math_h.FLOATSIGNBITSET(d1)
+            startInside = startInside and FLOATSIGNBITSET(d1)
             d2 = -fend - lend
             if (d1 != d2) {
                 f = d1 / (d1 - d2)
@@ -2654,13 +2634,13 @@ object Frustum {
             var index: Int
             dy = dir.x * axis[1].x + dir.y * axis[1].y + dir.z * axis[1].z
             dz = dir.x * axis[2].x + dir.y * axis[2].y + dir.z * axis[2].z
-            index = Math_h.FLOATSIGNBITSET(dy) shl 1 or Math_h.FLOATSIGNBITSET(dz)
+            index = FLOATSIGNBITSET(dy) shl 1 or FLOATSIGNBITSET(dz)
             dx = dir.x * cornerVecs[index].x + dir.y * cornerVecs[index].y + dir.z * cornerVecs[index].z
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             min._val = indexPoints[index] * dir
             index = index.inv() and 3
             dx = -dir.x * cornerVecs[index].x - dir.y * cornerVecs[index].y - dir.z * cornerVecs[index].z
-            index = index or (Math_h.FLOATSIGNBITSET(dx) shl 2)
+            index = index or (FLOATSIGNBITSET(dx) shl 2)
             max._val = indexPoints[index] * dir
         }
 
@@ -2713,10 +2693,10 @@ object Frustum {
             // test left plane
             d1 = -fstart + lstart
             d2 = -fend + lend
-            cull1 = Math_h.FLOATSIGNBITSET(d1)
-            cull2 = Math_h.FLOATSIGNBITSET(d2)
-            if (Math_h.FLOATNOTZERO(d1)) {
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+            cull1 = FLOATSIGNBITSET(d1)
+            cull2 = FLOATSIGNBITSET(d2)
+            if (FLOATNOTZERO(d1)) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     p.x = start.x + f * dir.x
                     if (p.x > 0.0f) {
@@ -2733,10 +2713,10 @@ object Frustum {
             // test right plane
             d1 = fstart + lstart
             d2 = fend + lend
-            cull1 = cull1 or (Math_h.FLOATSIGNBITSET(d1) shl 1)
-            cull2 = cull2 or (Math_h.FLOATSIGNBITSET(d2) shl 1)
-            if (Math_h.FLOATNOTZERO(d1)) {
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+            cull1 = cull1 or (FLOATSIGNBITSET(d1) shl 1)
+            cull2 = cull2 or (FLOATSIGNBITSET(d2) shl 1)
+            if (FLOATNOTZERO(d1)) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     p.x = start.x + f * dir.x
                     if (p.x > 0.0f) {
@@ -2757,10 +2737,10 @@ object Frustum {
             // test up plane
             d1 = -fstart + lstart
             d2 = -fend + lend
-            cull1 = cull1 or (Math_h.FLOATSIGNBITSET(d1) shl 2)
-            cull2 = cull2 or (Math_h.FLOATSIGNBITSET(d2) shl 2)
-            if (Math_h.FLOATNOTZERO(d1)) {
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+            cull1 = cull1 or (FLOATSIGNBITSET(d1) shl 2)
+            cull2 = cull2 or (FLOATSIGNBITSET(d2) shl 2)
+            if (FLOATNOTZERO(d1)) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     p.x = start.x + f * dir.x
                     if (p.x > 0.0f) {
@@ -2777,10 +2757,10 @@ object Frustum {
             // test down plane
             d1 = fstart + lstart
             d2 = fend + lend
-            cull1 = cull1 or (Math_h.FLOATSIGNBITSET(d1) shl 3)
-            cull2 = cull2 or (Math_h.FLOATSIGNBITSET(d2) shl 3)
-            if (Math_h.FLOATNOTZERO(d1)) {
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+            cull1 = cull1 or (FLOATSIGNBITSET(d1) shl 3)
+            cull2 = cull2 or (FLOATSIGNBITSET(d2) shl 3)
+            if (FLOATNOTZERO(d1)) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     p.x = start.x + f * dir.x
                     if (p.x > 0.0f) {
@@ -2859,8 +2839,8 @@ object Frustum {
                     // test left plane
                     d1 = -fstart + lstart
                     d2 = -fend + lend
-                    if (Math_h.FLOATNOTZERO(d1)) {
-                        if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+                    if (FLOATNOTZERO(d1)) {
+                        if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                             f = d1 / (d1 - d2)
                             p.x = start.x + f * dir.x
                             if (p.x > 0.0f) {
@@ -2878,8 +2858,8 @@ object Frustum {
                     // test right plane
                     d1 = fstart + lstart
                     d2 = fend + lend
-                    if (Math_h.FLOATNOTZERO(d1)) {
-                        if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+                    if (FLOATNOTZERO(d1)) {
+                        if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                             f = d1 / (d1 - d2)
                             p.x = start.x + f * dir.x
                             if (p.x > 0.0f) {
@@ -2903,8 +2883,8 @@ object Frustum {
                     // test up plane
                     d1 = -fstart + lstart
                     d2 = -fend + lend
-                    if (Math_h.FLOATNOTZERO(d1)) {
-                        if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+                    if (FLOATNOTZERO(d1)) {
+                        if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                             f = d1 / (d1 - d2)
                             p.x = start.x + f * dir.x
                             if (p.x > 0.0f) {
@@ -2922,8 +2902,8 @@ object Frustum {
                     // test down plane
                     d1 = fstart + lstart
                     d2 = fend + lend
-                    if (Math_h.FLOATNOTZERO(d1)) {
-                        if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+                    if (FLOATNOTZERO(d1)) {
+                        if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                             f = d1 / (d1 - d2)
                             p.x = start.x + f * dir.x
                             if (p.x > 0.0f) {
@@ -3022,7 +3002,7 @@ object Frustum {
             i = 0
             while (i < 2) {
                 d1 = start.x - bounds[i].x
-                startInside = startInside and (Math_h.FLOATSIGNBITSET(d1) xor i)
+                startInside = startInside and (FLOATSIGNBITSET(d1) xor i)
                 d2 = end.x - bounds[i].x
                 if (d1 != d2) {
                     f = d1 / (d1 - d2)
@@ -3040,7 +3020,7 @@ object Frustum {
                     }
                 }
                 d1 = start.y - bounds[i].y
-                startInside = startInside and (Math_h.FLOATSIGNBITSET(d1) xor i)
+                startInside = startInside and (FLOATSIGNBITSET(d1) xor i)
                 d2 = end.y - bounds[i].y
                 if (d1 != d2) {
                     f = d1 / (d1 - d2)
@@ -3058,7 +3038,7 @@ object Frustum {
                     }
                 }
                 d1 = start.z - bounds[i].z
-                startInside = startInside and (Math_h.FLOATSIGNBITSET(d1) xor i)
+                startInside = startInside and (FLOATSIGNBITSET(d1) xor i)
                 d2 = end.z - bounds[i].z
                 if (d1 != d2) {
                     f = d1 / (d1 - d2)
@@ -3120,17 +3100,17 @@ object Frustum {
             minf = (dNear + 1.0f) * invFar
             i = 0
             while (i < 4) {
-                index = Math_h.FLOATSIGNBITNOTSET(cornerVecs[i].x)
+                index = FLOATSIGNBITNOTSET(cornerVecs[i].x)
                 f = (bounds[index].x - localOrigin.x) / cornerVecs[i].x
                 clipFractions[i]._val = (f)
                 clipPlanes[i]._val = (1 shl index)
-                index = Math_h.FLOATSIGNBITNOTSET(cornerVecs[i].y)
+                index = FLOATSIGNBITNOTSET(cornerVecs[i].y)
                 f = (bounds[index].y - localOrigin.y) / cornerVecs[i].y
                 if (f < clipFractions[i]._val) {
                     clipFractions[i]._val = (f)
                     clipPlanes[i]._val = (4 shl index)
                 }
-                index = Math_h.FLOATSIGNBITNOTSET(cornerVecs[i].z)
+                index = FLOATSIGNBITNOTSET(cornerVecs[i].z)
                 f = (bounds[index].z - localOrigin.z) / cornerVecs[i].z
                 if (f < clipFractions[i]._val) {
                     clipFractions[i]._val = (f)
@@ -3196,10 +3176,10 @@ object Frustum {
             // test left plane
             d1 = -fstart + lstart
             d2 = -fend + lend
-            startCull = Math_h.FLOATSIGNBITSET(d1)
-            endCull = Math_h.FLOATSIGNBITSET(d2)
-            if (Math_h.FLOATNOTZERO(d1)) {
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+            startCull = FLOATSIGNBITSET(d1)
+            endCull = FLOATSIGNBITSET(d2)
+            if (FLOATNOTZERO(d1)) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     x = localStart.x + f * localDir.x
                     if (x >= 0.0f) {
@@ -3220,10 +3200,10 @@ object Frustum {
             // test right plane
             d1 = fstart + lstart
             d2 = fend + lend
-            startCull = startCull or (Math_h.FLOATSIGNBITSET(d1) shl 1)
-            endCull = endCull or (Math_h.FLOATSIGNBITSET(d2) shl 1)
-            if (Math_h.FLOATNOTZERO(d1)) {
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+            startCull = startCull or (FLOATSIGNBITSET(d1) shl 1)
+            endCull = endCull or (FLOATSIGNBITSET(d2) shl 1)
+            if (FLOATNOTZERO(d1)) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     x = localStart.x + f * localDir.x
                     if (x >= 0.0f) {
@@ -3248,10 +3228,10 @@ object Frustum {
             // test up plane
             d1 = -fstart + lstart
             d2 = -fend + lend
-            startCull = startCull or (Math_h.FLOATSIGNBITSET(d1) shl 2)
-            endCull = endCull or (Math_h.FLOATSIGNBITSET(d2) shl 2)
-            if (Math_h.FLOATNOTZERO(d1)) {
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+            startCull = startCull or (FLOATSIGNBITSET(d1) shl 2)
+            endCull = endCull or (FLOATSIGNBITSET(d2) shl 2)
+            if (FLOATNOTZERO(d1)) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     x = localStart.x + f * localDir.x
                     if (x >= 0.0f) {
@@ -3272,10 +3252,10 @@ object Frustum {
             // test down plane
             d1 = fstart + lstart
             d2 = fend + lend
-            startCull = startCull or (Math_h.FLOATSIGNBITSET(d1) shl 3)
-            endCull = endCull or (Math_h.FLOATSIGNBITSET(d2) shl 3)
-            if (Math_h.FLOATNOTZERO(d1)) {
-                if (Math_h.FLOATSIGNBITSET(d1) xor Math_h.FLOATSIGNBITSET(d2) != 0) {
+            startCull = startCull or (FLOATSIGNBITSET(d1) shl 3)
+            endCull = endCull or (FLOATSIGNBITSET(d2) shl 3)
+            if (FLOATNOTZERO(d1)) {
+                if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
                     x = localStart.x + f * localDir.x
                     if (x >= 0.0f) {
@@ -3311,7 +3291,7 @@ object Frustum {
                     end.set(points[endIndex])
                     endClip._val = (-1)
                 } else {
-                    end.set(points[startIndex] + (points[endIndex] - points[startIndex])) * scale2
+                    end.set(points[startIndex] + (points[endIndex] - points[startIndex]) * scale2)
                 }
                 return true
             }

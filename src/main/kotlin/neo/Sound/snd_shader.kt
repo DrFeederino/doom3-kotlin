@@ -8,19 +8,15 @@ import neo.framework.Common
 import neo.framework.DeclManager
 import neo.framework.DeclManager.idDecl
 import neo.framework.FileSystem_h
-import neo.idlib.Lib
+import neo.idlib.BIT
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
-import neo.idlib.containers.idStrList
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Simd.speakerLabel
+import neo.idlib.math.idMath
+import neo.idlib.math.speakerLabel
 
-/**
- *
- */
 object snd_shader {
     /*
      ===============================================================================
@@ -41,32 +37,32 @@ object snd_shader {
     //
     //
     const val SOUND_MAX_LIST_WAVS = 32
-    val SSF_ANTI_PRIVATE_SOUND: Int = Lib.BIT(1) // plays for everyone but the current listenerId
-    val SSF_GLOBAL: Int = Lib.BIT(3) // play full volume to all speakers and all listeners
-    val SSF_LOOPING: Int = Lib.BIT(5) // repeat the sound continuously
-    val SSF_NO_DUPS: Int = Lib.BIT(9) // try not to play the same sound twice in a row
-    val SSF_NO_FLICKER: Int = Lib.BIT(8) // always return 1.0 for volume queries
-    val SSF_NO_OCCLUSION: Int = Lib.BIT(2) // don't flow through portals, only use straight line
-    val SSF_OMNIDIRECTIONAL: Int = Lib.BIT(4) // fall off with distance, but play same volume in all speakers
-    val SSF_PLAY_ONCE: Int = Lib.BIT(6) // never restart if already playing on any channel of a given emitter
+    val SSF_ANTI_PRIVATE_SOUND: Int = BIT(1) // plays for everyone but the current listenerId
+    val SSF_GLOBAL: Int = BIT(3) // play full volume to all speakers and all listeners
+    val SSF_LOOPING: Int = BIT(5) // repeat the sound continuously
+    val SSF_NO_DUPS: Int = BIT(9) // try not to play the same sound twice in a row
+    val SSF_NO_FLICKER: Int = BIT(8) // always return 1.0f for volume queries
+    val SSF_NO_OCCLUSION: Int = BIT(2) // don't flow through portals, only use straight line
+    val SSF_OMNIDIRECTIONAL: Int = BIT(4) // fall off with distance, but play same volume in all speakers
+    val SSF_PLAY_ONCE: Int = BIT(6) // never restart if already playing on any channel of a given emitter
 
     //
     //
     // sound shader flags
-    val SSF_PRIVATE_SOUND: Int = Lib.BIT(0) // only plays for the current listenerId
-    val SSF_UNCLAMPED: Int = Lib.BIT(7) // don't clamp calculated volumes at 1.0
+    val SSF_PRIVATE_SOUND: Int = BIT(0) // only plays for the current listenerId
+    val SSF_UNCLAMPED: Int = BIT(7) // don't clamp calculated volumes at 1.0f
 
     // these options can be overriden from sound shader defaults on a per-emitter and per-channel basis
     class soundShaderParms_t {
-        var maxDistance = 0f
-        var minDistance = 0f
-        var shakes = 0f
+        var maxDistance = 0.0f
+        var minDistance = 0.0f
+        var shakes = 0.0f
         var soundClass // for global fading of sounds
                 = 0
         var soundShaderFlags // SSF_* bit flags
                 = 0
         var volume // in dB, unfortunately.  Negative values get quieter
-                = 0f
+                = 0.0f
     }
 
     // it is somewhat tempting to make this a virtual class to hide the private
@@ -74,7 +70,7 @@ object snd_shader {
     class idSoundShader : idDecl() {
         var entries: Array<idSoundSample?> = Array(SOUND_MAX_LIST_WAVS) { null }
         var leadinVolume // allows light breaking leadin sounds to be much louder than the broken loop
-                = 0f
+                = 0.0f
 
         //
         var leadins: Array<idSoundSample?> = Array(SOUND_MAX_LIST_WAVS) { null }
@@ -159,7 +155,6 @@ object snd_shader {
         }
 
         override fun List() {
-            var shaders: idStrList
             Common.common.Printf("%4d: %s\n", Index(), GetName())
             if (idStr.Icmp(GetDescription(), "<no description>") != 0) {
                 Common.common.Printf("      description: %s\n", GetDescription())
@@ -273,17 +268,17 @@ object snd_shader {
             onDemand = false
             numEntries = 0
             numLeadins = 0
-            leadinVolume = 0f
+            leadinVolume = 0.0f
             altSound = null
         }
 
         private fun ParseShader(src: idLexer): Boolean {
             var i: Int
             val token = idToken()
-            parms.minDistance = 1f
-            parms.maxDistance = 10f
-            parms.volume = 1f
-            parms.shakes = 0f
+            parms.minDistance = 1.0f
+            parms.maxDistance = 10.0f
+            parms.volume = 1.0f
+            parms.shakes = 0.0f
             parms.soundShaderFlags = 0
             parms.soundClass = 0
             speakerMask = 0
@@ -330,12 +325,12 @@ object snd_shader {
                     }
                 } // reverb
                 else if (0 == token.Icmp("reverb")) {
-                    val reg0 = src.ParseFloat()
+                    src.ParseFloat()
                     if (!src.ExpectTokenString(",")) {
                         src.FreeSource()
                         return false
                     }
-                    val reg1 = src.ParseFloat()
+                    src.ParseFloat()
                     // no longer supported
                 } // volume
                 else if (0 == token.Icmp("volume")) {

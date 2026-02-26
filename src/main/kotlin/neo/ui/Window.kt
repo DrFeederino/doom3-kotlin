@@ -2,8 +2,7 @@ package neo.ui
 
 import neo.Renderer.Material
 import neo.Renderer.Material.idMaterial
-import neo.Renderer.RenderSystem_init
-import neo.TempDump.NOT
+import neo.Renderer.r_skipGuiShaders
 import neo.TempDump.atof
 import neo.TempDump.atoi
 import neo.TempDump.btoi
@@ -30,7 +29,6 @@ import neo.framework.Session
 import neo.framework.UsercmdGen.USERCMD_MSEC
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
-import neo.idlib.Lib
 import neo.idlib.Text.Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT
 import neo.idlib.Text.Lexer.LEXFL_ALLOWMULTICHARLITERALS
 import neo.idlib.Text.Lexer.LEXFL_NOFATALERRORS
@@ -44,16 +42,13 @@ import neo.idlib.Text.Token.TT_INTEGER
 import neo.idlib.Text.Token.TT_NAME
 import neo.idlib.Text.Token.TT_NUMBER
 import neo.idlib.Text.Token.idToken
+import neo.idlib.colorBlack
 import neo.idlib.containers.CBool
 import neo.idlib.containers.List.idList
+import neo.idlib.math.*
 import neo.idlib.math.Interpolate.idInterpolateAccelDecelLinear
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Matrix.idMat3.Companion.getMat3_identity
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector.getVec3Origin
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
 import neo.idlib.precompiled.MAX_EXPRESSION_OPS
 import neo.idlib.precompiled.MAX_EXPRESSION_REGISTERS
 import neo.sys.sys_public.sysEventType_t
@@ -88,9 +83,6 @@ import neo.ui.Winvar.idWinStr
 import neo.ui.Winvar.idWinVar
 import neo.ui.Winvar.idWinVec4
 
-/**
- *
- */
 object Window {
     //
     const val CAPTION_HEIGHT = "16.0"
@@ -118,6 +110,13 @@ object Window {
 
     //
     const val WIN_DESKTOP = 0x10000000
+
+    // DG: for the "scaleto43" window flag (=> scale window to 4:3 with "empty" bars left/right or above/below)
+    const val WIN_SCALETO43 = 0x20000000
+
+    // DG: if a gui explicitly wants to be stretched despite r_scaleMenusTo43 1 it can set `scaleto43 0`
+    //     (useful when using anchors in fullscreen menus)
+    const val WIN_NO_SCALETO43 = 0x40000000
     const val WIN_FOCUS = 0x00000020
     const val WIN_HCENTER = 0x00000080
     const val WIN_HOLDCAPTURE = 0x00004000
@@ -167,6 +166,18 @@ object Window {
     internal enum class wexpRegister_t {
         WEXP_REG_TIME,
         WEXP_REG_NUM_PREDEFINED
+    }
+
+    // Looks like each offset is exactly 48 bytes long
+    internal enum class TransiotonalDataOffset(val offset: Int) {
+        RECT_OFFSET(368),
+        BACKCOLOR_OFFSET(416),
+        MATCOLOR_OFFSET(464),
+        FORECOLOR_OFFSET(512),
+        BORDERCOLOR_OFFSET(560),
+        TEXTSCALE_OFFSET(608),
+        ROTATE_OFFSET(656),
+        CSTANCHORFACTOR_OFFSET(704)
     }
 
     class wexpOp_t {
@@ -231,31 +242,27 @@ object Window {
 
     class idTransitionData {
         var data: idWinVar? = null
-        var interp = idInterpolateAccelDecelLinear<idVec4?>()
+        var interp = idInterpolateAccelDecelLinear<idVec4>()
         var offset = 0
     }
 
     open class idWindow {
         private val DBG_COUNT = DBG_COUNTER++
         var cmd = idStr()
-        protected var actualX = 0f // physical coords
-        protected var actualY = 0f // ''
+        protected var actualX = 0.0f // physical coords
+        protected var actualY = 0.0f // ''
         var backColor = idWinVec4()
         var backGroundName = idWinBackground()
         var background: idMaterial? = null // background asset
         var borderColor = idWinVec4()
-        var borderSize = 0f
+        var borderSize = 0.0f
         protected var captureChild: idWindow? = null // if a child window has mouse capture
         protected var childID = 0 // this childs id
         protected val children = idList<idWindow?>() // child windows
         val clientRect = idRectangle() // client area
         protected var comment = idStr()
         protected /*unsigned*/ var cursor = 0.toChar()
-
-        //
         var dc: idDeviceContext?
-
-        //
         protected val definedVars = idList<idWinVar?>()
         val drawRect = idRectangle() // overall rect
         protected val drawWindows = idList<drawWin_t?>()
@@ -265,8 +272,8 @@ object Window {
         //
         protected var focusedChild: idWindow? = null // if a child window has the focus
         /*unsigned*/ var fontNum = 0.toChar()
-        protected var forceAspectHeight = 0f
-        protected var forceAspectWidth = 0f
+        protected var forceAspectHeight = 0.0f
+        protected var forceAspectWidth = 0.0f
         var foreColor = idWinVec4()
 
         //
@@ -278,57 +285,39 @@ object Window {
         protected var hoverColor = idWinVec4()
         protected var lastTimeRun = 0 //
         var matColor = idWinVec4()
-        var matScalex = 0f
-        var matScaley = 0f
+        var matScalex = 0.0f
+        var matScaley = 0.0f
         var name: idStr? = null
         protected val namedEvents = idList<rvNamedEvent?>() //  added named events
         protected var noEvents = idWinBool()
-
-        //
         protected var noTime = idWinBool()
-
-        //
         protected val ops = idList<wexpOp_t>() // evaluate to make expressionRegisters
-        var origin = idVec2()
+        val origin = idVec2()
         protected var overChild: idWindow? = null // if a child window has mouse capture
-
-        //
         protected var parent: idWindow? = null // parent window
         var rect = idWinRectangle() // overall rect
-
-        //
         protected var regList = idRegisterList()
         var rotate = idWinFloat()
         protected var saveOps // evaluate to make expressionRegisters
                 : Array<idList<wexpOp_t>>? = null
         protected var saveRegs: Array<idList<Float>>? = null
         protected var saveTemps: BooleanArray? = null
-
-        //
         protected var scripts = arrayOfNulls<idGuiScriptList>(etoi(ON.SCRIPT_COUNT))
-        var shear = idVec2()
+        val shear = idVec2()
         var text = idWinStr()
         /*signed*/ var textAlign = 0.toChar()
-        var textAlignx = 0f
-        var textAligny = 0f
-
-        //
+        var textAlignx = 0.0f
+        var textAligny = 0.0f
         val textRect = idRectangle() // text extented rect
         var textScale = idWinFloat()
-
-        //
         /*signed*/ var textShadow = 0.toChar()
-
-        //
         protected var timeLine = 0 // time stamp used for various fx
-
-        //
         protected val timeLineEvents = idList<idTimeLineEvent?>()
         protected val transitions = idList<idTransitionData>()
         protected val updateVars = idList<idWinVar?>()
         var visible = idWinBool()
-        protected var xOffset = 0f
-        protected var yOffset = 0f
+        protected var xOffset = 0.0f
+        protected var yOffset = 0.0f
 
         constructor(gui: idUserInterfaceLocal?) {
             dc = null
@@ -465,20 +454,20 @@ object Window {
             rct.w = w
             rct.h = h
             rect.data.set(rct)
-            CalcClientRect(0f, 0f)
+            CalcClientRect(0.0f, 0.0f)
         }
 
         fun SetupFromState() {
 //	idStr str;
             background = null
             SetupBackground()
-            if (borderSize != 0f) {
+            if (borderSize != 0.0f) {
                 flags = flags or WIN_BORDER
             }
             if (regList.FindReg("rotate") != null || regList.FindReg("shear") != null) {
                 flags = flags or WIN_TRANSFORM
             }
-            CalcClientRect(0f, 0f)
+            CalcClientRect(0.0f, 0.0f)
             if (scripts[etoi(ON.ON_ACTION)] != null) {
                 cursor = etoi(CURSOR.CURSOR_HAND).toChar()
                 flags = flags or WIN_CANFOCUS
@@ -794,8 +783,8 @@ object Window {
                         drawRect.y,
                         drawRect.w,
                         drawRect.h,
-                        1f,
-                        idDeviceContext.Companion.colorRed
+                        1.0f,
+                        idDeviceContext.colorRed
                     )
                 } else if (gui_debug.GetInteger() == 2) {
 //			char out[1024];
@@ -857,18 +846,18 @@ object Window {
             drawRect.y += yofs
             clientRect.set(drawRect)
             //            System.out.println(drawRect);
-            if (rect.h() > 0.0 && rect.w() > 0.0) {
-                if (flags and WIN_BORDER != 0 && borderSize.toDouble() != 0.0) {
+            if (rect.h() > 0.0f && rect.w() > 0.0f) {
+                if (flags and WIN_BORDER != 0 && borderSize != 0.0f) {
                     clientRect.x += borderSize
                     clientRect.y += borderSize
                     clientRect.w -= borderSize
                     clientRect.h -= borderSize
                 }
                 textRect.set(clientRect)
-                textRect.x += 2.0.toFloat()
-                textRect.w -= 2.0.toFloat()
-                textRect.y += 2.0.toFloat()
-                textRect.h -= 2.0.toFloat()
+                textRect.x += 2.0f
+                textRect.w -= 2.0f
+                textRect.y += 2.0f
+                textRect.h -= 2.0f
                 textRect.x += textAlignx
                 textRect.y += textAligny
             }
@@ -885,18 +874,18 @@ object Window {
             yOffset = 0.0f
             xOffset = yOffset
             cursor = 0.toChar()
-            forceAspectWidth = 640f
-            forceAspectHeight = 480f
-            matScalex = 1f
-            matScaley = 1f
-            borderSize = 0f
+            forceAspectWidth = 640.0f
+            forceAspectHeight = 480.0f
+            matScalex = 1.0f
+            matScaley = 1.0f
+            borderSize = 0.0f
             noTime.data = false
             visible.data = true
             textAlign = 0.toChar()
-            textAlignx = 0f
-            textAligny = 0f
+            textAlignx = 0.0f
+            textAligny = 0.0f
             noEvents.data = false
-            rotate.data = 0f
+            rotate.data = 0.0f
             shear.Zero()
             textScale.data = 0.35f
             backColor.Zero()
@@ -938,6 +927,12 @@ object Window {
             // Cleanup the named events
             namedEvents.DeleteContents(true)
             drawWindows.Clear()
+
+            // Cleanup the operations and update vars
+            // (if it is not fixed, orphane register references are possible)
+            ops.Clear()
+            updateVars.Clear()
+
             children.DeleteContents(true)
             definedVars.DeleteContents(true)
             timeLineEvents.DeleteContents(true)
@@ -952,7 +947,7 @@ object Window {
         }
 
         fun DrawBorderAndCaption(drawRect: idRectangle) {
-            if (flags and WIN_BORDER != 0 && borderSize != 0f && borderColor.w() != 0f) {
+            if (flags and WIN_BORDER != 0 && borderSize != 0.0f && borderColor.w() != 0.0f) {
                 dc!!.DrawRect(drawRect.x, drawRect.y, drawRect.w, drawRect.h, borderSize, borderColor.data)
             }
         }
@@ -960,12 +955,12 @@ object Window {
         fun DrawCaption(time: Int, x: Float, y: Float) {}
         fun SetupTransforms(x: Float, y: Float) {
             trans.Identity()
-            org.set(origin.x + x, origin.y + y, 0f)
-            if (rotate.data != 0f) {
+            org.set(origin.x + x, origin.y + y, 0.0f)
+            if (rotate.data != 0.0f) {
                 rot.Set(org, vec, rotate.data)
-                trans = rot.ToMat3()
+                trans.set(rot.ToMat3())
             }
-            if (shear.x != 0f || shear.y != 0f) {
+            if (shear.x != 0.0f || shear.y != 0.0f) {
                 smat.Identity()
                 smat.set(0, 1, shear.x)
                 smat.set(1, 0, shear.y)
@@ -991,11 +986,6 @@ object Window {
         fun Parse(src: idParser, rebuild: Boolean = true /*= true*/): Boolean {
             val token = idToken()
             var token2: idToken
-            var token3: idToken
-            var token4: idToken
-            var token5: idToken
-            var token6: idToken
-            var token7: idToken
             var work: idStr
             var dwt: drawWin_t
             if (rebuild) {
@@ -1024,7 +1014,7 @@ object Window {
                 if (token.equals("windowDef") || token.equals("animationDef")) {
                     if (token.equals("animationDef")) {
                         visible.data = false
-                        rect.data.set(idRectangle(0f, 0f, 0f, 0f))
+                        rect.data.set(idRectangle(0.0f, 0.0f, 0.0f, 0.0f))
                     }
                     src.ExpectTokenType(TT_NAME, 0, token)
                     token2 = token
@@ -1400,11 +1390,11 @@ object Window {
                     EvalRegs()
                 }
                 RunTimeEvents(gui!!.GetTime())
-                CalcRects(0f, 0f)
+                CalcRects(0.0f, 0.0f)
                 dc!!.SetCursor(etoi(CURSOR.CURSOR_ARROW))
             }
             if (visible.data && !noEvents.data) {
-                if (event.evType === sysEventType_t.SE_KEY) {
+                if (event.evType == sysEventType_t.SE_KEY) {
                     EvalRegs(-1, true)
                     if (updateVisuals != null) {
                         updateVisuals._val = true
@@ -1480,7 +1470,7 @@ object Window {
                                         child.clientRect,
                                         gui!!.CursorX(),
                                         gui!!.CursorY()
-                                    ) || GetCaptureChild() === child
+                                    ) || GetCaptureChild() == child
                                 ) {
                                     if (gui_edit.GetBool() && child.flags and WIN_SELECTED != 0 || !gui_edit.GetBool() && child.flags and WIN_MOVABLE != 0) {
                                         SetCapture(child)
@@ -1537,7 +1527,7 @@ object Window {
                                 }
                                 while (index < parent!!.GetChildCount() && index >= 0) {
                                     val testWindow = parent.GetChild(index)
-                                    if (testWindow === currentFocus) {
+                                    if (testWindow == currentFocus) {
                                         // we managed to wrap around and get back to our starting window
                                         foundFocus = true
                                         break
@@ -1565,8 +1555,8 @@ object Window {
                                 } else {
                                     // We didn't find anything, so go back up to our parent
                                     child = parent
-                                    parent = child!!.GetParent()
-                                    if (parent === gui!!.GetDesktop()) {
+                                    parent = child.GetParent()
+                                    if (parent == gui!!.GetDesktop()) {
                                         // We got back to the desktop, so wrap around but don't actually go to the desktop
                                         parent = null
                                         child = null
@@ -1604,7 +1594,7 @@ object Window {
                             }
                         }
                     }
-                } else if (event.evType === sysEventType_t.SE_MOUSE) {
+                } else if (event.evType == sysEventType_t.SE_MOUSE) {
                     if (updateVisuals != null) {
                         updateVisuals._val = true
                     }
@@ -1612,8 +1602,8 @@ object Window {
                     if (mouseRet != null && !mouseRet.isEmpty()) {
                         return mouseRet
                     }
-                } else if (event.evType === sysEventType_t.SE_NONE) {
-                } else if (event.evType === sysEventType_t.SE_CHAR) {
+                } else if (event.evType == sysEventType_t.SE_NONE) {
+                } else if (event.evType == sysEventType_t.SE_CHAR) {
                     if (GetFocusedChild() != null) {
                         val childRet = GetFocusedChild()!!.HandleEvent(event, updateVisuals)
                         if (childRet != null && !childRet.isEmpty()) {
@@ -1633,7 +1623,7 @@ object Window {
         }
 
         fun CalcRects(x: Float, y: Float) {
-            CalcClientRect(0f, 0f)
+            CalcClientRect(0.0f, 0.0f)
             drawRect.Offset(x, y)
             clientRect.Offset(x, y)
             actualX = drawRect.x
@@ -1650,14 +1640,14 @@ object Window {
 
         fun Redraw(x: Float, y: Float) {
             var str: idStr
-            if (RenderSystem_init.r_skipGuiShaders!!.GetInteger() == 1 || dc == null) {
+            if (r_skipGuiShaders!!.GetInteger() == 1 || dc == null) {
                 return
             }
             val time = gui!!.GetTime()
-            if (flags and WIN_DESKTOP != 0 && RenderSystem_init.r_skipGuiShaders!!.GetInteger() != 3) {
+            if (flags and WIN_DESKTOP != 0 && r_skipGuiShaders.GetInteger() != 3) {
                 RunTimeEvents(time)
             }
-            if (RenderSystem_init.r_skipGuiShaders!!.GetInteger() == 2) {
+            if (r_skipGuiShaders.GetInteger() == 2) {
                 return
             }
             if (flags and WIN_SHOWTIME != 0) {
@@ -1666,7 +1656,7 @@ object Window {
                         " %0.1f seconds\n%s",
                         (time - timeLine).toFloat() / 1000,
                         gui!!.State().GetString("name")
-                    ), 0.35f, 0, idDeviceContext.Companion.colorWhite, idRectangle(100f, 0f, 80f, 80f), false
+                    ), 0.35f, 0, idDeviceContext.colorWhite, idRectangle(100.0f, 0.0f, 80.0f, 80.0f), false
                 )
             }
             if (flags and WIN_SHOWCOORDS != 0) {
@@ -1684,8 +1674,8 @@ object Window {
                     str.toString(),
                     0.25f,
                     0,
-                    idDeviceContext.Companion.colorWhite,
-                    idRectangle(0f, 0f, 100f, 20f),
+                    idDeviceContext.colorWhite,
+                    idRectangle(0.0f, 0.0f, 100.0f, 20.0f),
                     false
                 )
                 dc!!.EnableClipping(true)
@@ -1693,7 +1683,7 @@ object Window {
             if (!visible.data) {
                 return
             }
-            CalcClientRect(0f, 0f)
+            CalcClientRect(0.0f, 0.0f)
             SetFont()
             //if (flags & WIN_DESKTOP) {
             // see if this window forces a new aspect ratio
@@ -1715,7 +1705,7 @@ object Window {
             if (0 == flags and WIN_NOCLIP) {
                 dc!!.PushClipRect(clientRect)
             }
-            if (RenderSystem_init.r_skipGuiShaders!!.GetInteger() < 5) {
+            if (r_skipGuiShaders!!.GetInteger() < 5) {
 //                bla++;
                 Draw(time, x, y)
             }
@@ -1753,16 +1743,16 @@ object Window {
                     str.toString(),
                     0.25f,
                     0,
-                    idDeviceContext.Companion.colorWhite,
-                    idRectangle(0f, 0f, 100f, 20f),
+                    idDeviceContext.colorWhite,
+                    idRectangle(0.0f, 0.0f, 100.0f, 20.0f),
                     false
                 )
                 dc!!.DrawText(
                     gui!!.GetSourceFile(),
                     0.25f,
                     0,
-                    idDeviceContext.Companion.colorWhite,
-                    idRectangle(0f, 20f, 300f, 20f),
+                    idDeviceContext.colorWhite,
+                    idRectangle(0.0f, 20.0f, 300.0f, 20.0f),
                     false
                 )
                 dc!!.EnableClipping(true)
@@ -1839,7 +1829,7 @@ object Window {
                     shadowText.toString(),
                     textScale.data,
                     textAlign.code,
-                    Lib.colorBlack,
+                    colorBlack,
                     shadowRect,
                     !itob(flags and WIN_NOWRAP),
                     -1
@@ -1860,16 +1850,16 @@ object Window {
                     va("x: %d  y: %d", rect.x().toInt(), rect.y().toInt()),
                     0.25f,
                     0,
-                    idDeviceContext.Companion.colorWhite,
-                    idRectangle(rect.x(), rect.y() - 15, 100f, 20f),
+                    idDeviceContext.colorWhite,
+                    idRectangle(rect.x(), rect.y() - 15, 100.0f, 20.0f),
                     false
                 )
                 dc!!.DrawText(
                     va("w: %d  h: %d", rect.w().toInt(), rect.h().toInt()),
                     0.25f,
                     0,
-                    idDeviceContext.Companion.colorWhite,
-                    idRectangle(rect.x() + rect.w(), rect.w() + rect.h() + 5, 100f, 20f),
+                    idDeviceContext.colorWhite,
+                    idRectangle(rect.x() + rect.w(), rect.w() + rect.h() + 5, 100.0f, 20.0f),
                     false
                 )
                 dc!!.EnableClipping(true)
@@ -1891,10 +1881,10 @@ object Window {
         }
 
         open fun DrawBackground(drawRect: idRectangle) {
-            if (backColor.w() != 0f) {
+            if (backColor.w() != 0.0f) {
                 dc!!.DrawFilledRect(drawRect.x, drawRect.y, drawRect.w, drawRect.h, backColor.data)
             }
-            if (background != null && matColor.w() != 0f) {
+            if (background != null && matColor.w() != 0.0f) {
                 val scalex: Float
                 val scaley: Float
                 if (flags and WIN_NATURALMAT != 0) {
@@ -1923,7 +1913,7 @@ object Window {
                 //FIXME: unkludge this whole mechanism
                 return GetCaptureChild()!!.RouteMouseCoords(xd, yd)
             }
-            if (xd == -2000f || yd == -2000f) {
+            if (xd == -2000.0f || yd == -2000.0f) {
                 return ""
             }
             var c = children.Num()
@@ -2348,42 +2338,50 @@ object Window {
             i = 0
             while (i < c) {
                 val dw = gui!!.GetDesktop()!!.FindChildByName(transitions[i].data!!.c_str())
-                //		delete transitions[i].data;
                 transitions[i].data = null
-                if (dw != null && (dw.win != null || dw.simp != null)) { //TODO:
-//			if ( dw.win ) {
-//				if ( transitions.get(i).offset == (int)( ( idWindow  ) 0 ).rect ) {
-//					transitions.get(i).data = dw.win.rect;
-//				} else if ( transitions.get(i).offset == (int)( ( idWindow * ) 0 ).backColor ) {
-//					transitions[i].data = dw.win.backColor;
-//				} else if ( transitions[i].offset == (int)( ( idWindow * ) 0 ).matColor ) {
-//					transitions[i].data = dw.win.matColor;
-//				} else if ( transitions[i].offset == (int)( ( idWindow * ) 0 ).foreColor ) {
-//					transitions[i].data = dw.win.foreColor;
-//				} else if ( transitions[i].offset == (int)( ( idWindow * ) 0 ).borderColor ) {
-//					transitions[i].data = dw.win.borderColor;
-//				} else if ( transitions[i].offset == (int)( ( idWindow * ) 0 ).textScale ) {
-//					transitions[i].data = dw.win.textScale;
-//				} else if ( transitions[i].offset == (int)( ( idWindow * ) 0 ).rotate ) {
-//					transitions[i].data = dw.win.rotate;
-//				}
-//			} else {
-//				if ( transitions[i].offset == (int)( ( idSimpleWindow * ) 0 ).rect ) {
-//					transitions[i].data = dw.simp.rect;
-//				} else if ( transitions[i].offset == (int)( ( idSimpleWindow * ) 0 ).backColor ) {
-//					transitions[i].data = dw.simp.backColor;
-//				} else if ( transitions[i].offset == (int)( ( idSimpleWindow * ) 0 ).matColor ) {
-//					transitions[i].data = dw.simp.matColor;
-//				} else if ( transitions[i].offset == (int)( ( idSimpleWindow * ) 0 ).foreColor ) {
-//					transitions[i].data = dw.simp.foreColor;
-//				} else if ( transitions[i].offset == (int)( ( idSimpleWindow * ) 0 ).borderColor ) {
-//					transitions[i].data = dw.simp.borderColor;
-//				} else if ( transitions[i].offset == (int)( ( idSimpleWindow * ) 0 ).textScale ) {
-//					transitions[i].data = dw.simp.textScale;
-//				} else if ( transitions[i].offset == (int)( ( idSimpleWindow * ) 0 ).rotate ) {
-//					transitions[i].data = dw.simp.rotate;
-//				}
-//			}
+                if (dw != null && (dw.win != null || dw.simp != null)) {
+                    if (dw.win != null) {
+                        if (transitions[i].offset == TransiotonalDataOffset.RECT_OFFSET.offset) {
+                            transitions[i].data = dw.win?.rect
+                        } else if (transitions[i].offset == TransiotonalDataOffset.BACKCOLOR_OFFSET.offset) {
+                            transitions[i].data = dw.win?.backColor
+                        } else if (transitions[i].offset == TransiotonalDataOffset.MATCOLOR_OFFSET.offset) {
+                            transitions[i].data = dw.win?.matColor
+                        } else if (transitions[i].offset == TransiotonalDataOffset.FORECOLOR_OFFSET.offset) {
+                            transitions[i].data = dw.win?.foreColor
+                        } else if (transitions[i].offset == TransiotonalDataOffset.BORDERCOLOR_OFFSET.offset) {
+                            transitions[i].data = dw.win?.borderColor
+                        } else if (transitions[i].offset == TransiotonalDataOffset.TEXTSCALE_OFFSET.offset) {
+                            transitions[i].data = dw.win?.textScale
+                        } else if (transitions[i].offset == TransiotonalDataOffset.ROTATE_OFFSET.offset) {
+                            transitions[i].data = dw.win?.rotate
+                        } //#modified-fva; BEGIN
+//                        else if ( transitions[i].offset == TransiotonalDataOffset.CSTANCHORFACTOR_OFFSET.offset ) {
+//                            transitions[i].data = dw.win?.cstAnchorFactor
+//                        }
+                        //#modified-fva; END
+                    } else {
+                        if (transitions[i].offset == TransiotonalDataOffset.RECT_OFFSET.offset) {
+                            transitions[i].data = dw.simp?.rect
+                        } else if (transitions[i].offset == TransiotonalDataOffset.BACKCOLOR_OFFSET.offset) {
+                            transitions[i].data = dw.simp?.backColor
+                        } else if (transitions[i].offset == TransiotonalDataOffset.MATCOLOR_OFFSET.offset) {
+                            transitions[i].data = dw.simp?.matColor
+                        } else if (transitions[i].offset == TransiotonalDataOffset.FORECOLOR_OFFSET.offset) {
+                            transitions[i].data = dw.simp?.foreColor
+                        } else if (transitions[i].offset == TransiotonalDataOffset.BORDERCOLOR_OFFSET.offset) {
+                            transitions[i].data = dw.simp?.borderColor
+                        } else if (transitions[i].offset == TransiotonalDataOffset.TEXTSCALE_OFFSET.offset) {
+                            transitions[i].data = dw.simp?.textScale
+                        } else if (transitions[i].offset == TransiotonalDataOffset.ROTATE_OFFSET.offset) {
+                            transitions[i].data = dw.simp?.rotate
+                        }
+                        //#modified-fva; BEGIN
+//                        else if ( transitions[i].offset == (ptrdiff_t)&this->cstAnchorFactor - (ptrdiff_t)this ) {
+//                            transitions[i].data = dw.simp?.cstAnchorFactor
+//                        }
+                        //#modified-fva; END
+                    }
                 }
                 if (transitions[i].data == null) {
                     transitions.RemoveIndex(i)
@@ -2392,10 +2390,9 @@ object Window {
                 }
                 i++
             }
-            c = 0
-            while (c < children.Num()) {
+
+            for (c in 0 until children.Num()) {
                 children[c]!!.FixupTransitions()
-                c++
             }
         }
 
@@ -2443,7 +2440,7 @@ object Window {
                 i++
             }
             if (flags and WIN_DESKTOP != 0) {
-                CalcRects(0f, 0f)
+                CalcRects(0.0f, 0.0f)
             }
         }
 
@@ -2455,7 +2452,7 @@ object Window {
 
 
         fun EvalRegs(test: Int = -1 /*= -1*/, force: Boolean = false /*= false*/): Float {
-            if (!force && test >= 0 && test < MAX_EXPRESSION_REGISTERS && lastEval === this) {
+            if (!force && test >= 0 && test < MAX_EXPRESSION_REGISTERS && lastEval == this) {
                 return regs[test]
             }
             lastEval = this
@@ -2473,7 +2470,7 @@ object Window {
             flags = flags or WIN_INTRANSITION
         }
 
-        fun AddTransition(dest: idWinVar?, from: idVec4?, to: idVec4?, time: Int, accelTime: Float, decelTime: Float) {
+        fun AddTransition(dest: idWinVar?, from: idVec4, to: idVec4, time: Int, accelTime: Float, decelTime: Float) {
             val data = idTransitionData()
             data.data = dest
             data.interp.Init(gui!!.GetTime().toFloat(), accelTime * time, decelTime * time, time.toFloat(), from, to)
@@ -2643,7 +2640,7 @@ object Window {
             val c = expressionRegisters.Num()
             if (i > c) {
                 while (i > c) {
-                    expressionRegisters.Append(-9999999f)
+                    expressionRegisters.Append(-9999999.0f)
                     i--
                 }
             }
@@ -2741,10 +2738,8 @@ object Window {
 
             // Find and run the event
             c = namedEvents.Num()
-            i = 0
-            while (i < c) {
+            for (i in 0 until c) {
                 if (namedEvents[i]!!.mName.Icmp(eventName!!) != 0) {
-                    i++
                     continue
                 }
                 UpdateWinVars()
@@ -2755,7 +2750,6 @@ object Window {
                 }
                 RunScriptList(namedEvents[i]!!.mEvent)
                 break
-                i++
             }
 
             // Run the event in all the children as well
@@ -2779,7 +2773,7 @@ object Window {
             var find: Int
             find = 0
             while (find < drawWindows.Num()) {
-                if (drawWindows[find]!!.win === window) {
+                if (drawWindows[find]!!.win == window) {
                     return find
                 }
                 find++
@@ -2803,7 +2797,6 @@ object Window {
             val win_t = drawWindows[index]
             val win = win_t!!.win
             if (win_t != null && win_t.DBG_index == 10670) {
-                val a = 0
             }
             return win
         }
@@ -2823,7 +2816,7 @@ object Window {
             children.Remove(win)
             find = 0
             while (find < drawWindows.Num()) {
-                if (drawWindows[find]!!.win === win) {
+                if (drawWindows[find]!!.win == win) {
                     drawWindows.RemoveIndex(find)
                     break
                 }
@@ -2904,7 +2897,7 @@ object Window {
                 kv = dict.GetKeyVal(i)
 
                 // Special case name
-                if (NOT(kv!!.GetKey().Icmp("name"))) {
+                if (kv!!.GetKey().Icmp("name") == 0) {
                     name = kv.GetValue()
                     i++
                     continue
@@ -2941,7 +2934,7 @@ object Window {
 
             // If we are looking for a window below this one then
             // the next window should be good, but this one wasnt it
-            if (below[0] === this) {
+            if (below[0] == this) {
                 below[0] = null
                 return null
             }
@@ -2971,16 +2964,16 @@ object Window {
         protected fun SetDefaults() {
             forceAspectWidth = 640.0f
             forceAspectHeight = 480.0f
-            matScalex = 1f
-            matScaley = 1f
-            borderSize = 0f
+            matScalex = 1.0f
+            matScaley = 1.0f
+            borderSize = 0.0f
             noTime.data = false
             visible.data = true
             textAlign = 0.toChar()
-            textAlignx = 0f
-            textAligny = 0f
+            textAlignx = 0.0f
+            textAligny = 0.0f
             noEvents.data = false
-            rotate.data = 0f
+            rotate.data = 0.0f
             shear.Zero()
             textScale.data = 0.35f
             backColor.Zero()
@@ -3054,13 +3047,13 @@ object Window {
                 if (data.interp.IsDone(gui!!.GetTime().toFloat()) && data.data != null) {
                     if (v4 != null) {
                         v4.set(data.interp.GetEndValue())
-                    } else `val`?.set(data.interp.GetEndValue()!![0]) ?: r!!.set(data.interp.GetEndValue())
+                    } else `val`?.set(data.interp.GetEndValue()[0]) ?: r!!.set(data.interp.GetEndValue())
                 } else {
                     clear = false
                     if (data.data != null) {
                         if (v4 != null) {
                             v4.set(data.interp.GetCurrentValue(gui!!.GetTime().toFloat()))
-                        } else `val`?.set(data.interp.GetCurrentValue(gui!!.GetTime().toFloat())!![0])
+                        } else `val`?.set(data.interp.GetCurrentValue(gui!!.GetTime().toFloat())[0])
                             ?: r!!.set(data.interp.GetCurrentValue(gui!!.GetTime().toFloat()))
                     } else {
                         Common.common.Warning(
@@ -3137,27 +3130,27 @@ object Window {
             //            page_s pg;
 //
 //            for (pg = smallFirstUsedPage; pg; pg = pg.next) {
-//                idLib.common.Printf("%p  bytes %-8d  (in use by small heap)\n", pg.data, pg.dataSize);
+//                idcommon.Printf("%p  bytes %-8d  (in use by small heap)\n", pg.data, pg.dataSize);
 //            }
 //
 //            if (smallCurPage) {
 //                pg = smallCurPage;
-//                idLib.common.Printf("%p  bytes %-8d  (small heap active page)\n", pg.data, pg.dataSize);
+//                idcommon.Printf("%p  bytes %-8d  (small heap active page)\n", pg.data, pg.dataSize);
 //            }
 //
 //            for (pg = mediumFirstUsedPage; pg; pg = pg.next) {
-//                idLib.common.Printf("%p  bytes %-8d  (completely used by medium heap)\n", pg.data, pg.dataSize);
+//                idcommon.Printf("%p  bytes %-8d  (completely used by medium heap)\n", pg.data, pg.dataSize);
 //            }
 //
 //            for (pg = mediumFirstFreePage; pg; pg = pg.next) {
-//                idLib.common.Printf("%p  bytes %-8d  (partially used by medium heap)\n", pg.data, pg.dataSize);
+//                idcommon.Printf("%p  bytes %-8d  (partially used by medium heap)\n", pg.data, pg.dataSize);
 //            }
 //
 //            for (pg = largeFirstUsedPage; pg; pg = pg.next) {
-//                idLib.common.Printf("%p  bytes %-8d  (fully used by large heap)\n", pg.data, pg.dataSize);
+//                idcommon.Printf("%p  bytes %-8d  (fully used by large heap)\n", pg.data, pg.dataSize);
 //            }
 //
-//            idLib.common.Printf("pages allocated : %d\n", pagesAllocated);
+//            idcommon.Printf("pages allocated : %d\n", pagesAllocated);
         }
 
         protected fun ExpressionTemporary(): Int {
@@ -3167,7 +3160,7 @@ object Window {
             }
             var i = expressionRegisters.Num()
             registerIsTemporary[i] = true
-            i = expressionRegisters.Append(0f)
+            i = expressionRegisters.Append(0.0f)
             return i
         }
 
@@ -3413,7 +3406,6 @@ object Window {
             var i: Int
             var b: Int
             var op: wexpOp_t
-            var v: idVec4
             val erc = expressionRegisters.Num()
             val oc = ops.Num()
             // copy the constants
@@ -3474,16 +3466,16 @@ object Window {
                         (if (registers[op.getA()] != registers[op.b]) 1 else 0).toFloat()
 
                     wexpOpType_t.WOP_TYPE_COND -> registers[op.c] =
-                        if (registers[op.getA()] != 0f) registers[op.b] else registers[op.getD()]
+                        if (registers[op.getA()] != 0.0f) registers[op.b] else registers[op.getD()]
 
                     wexpOpType_t.WOP_TYPE_AND -> registers[op.c] =
-                        (if (registers[op.getA()] != 0f && registers[op.b] != 0f) 1 else 0).toFloat()
+                        (if (registers[op.getA()] != 0.0f && registers[op.b] != 0.0f) 1 else 0).toFloat()
 
                     wexpOpType_t.WOP_TYPE_OR -> registers[op.c] =
-                        (if (registers[op.getA()] != 0f || registers[op.b] != 0f) 1 else 0).toFloat()
+                        (if (registers[op.getA()] != 0.0f || registers[op.b] != 0.0f) 1 else 0).toFloat()
 
                     wexpOpType_t.WOP_TYPE_VAR -> {
-                        if (NOT(op.a)) {
+                        if (op.a == null) {
                             registers[op.c] = 0.0f
                             break
                         }
@@ -3500,28 +3492,28 @@ object Window {
                         val `var` = op.a as idWinStr?
                         registers[op.c] = atof(`var`!!.c_str()!!)
                     } else {
-                        registers[op.c] = 0f
+                        registers[op.c] = 0.0f
                     }
 
                     wexpOpType_t.WOP_TYPE_VARF -> if (op.a != null) {
                         val `var` = op.a as idWinFloat?
                         registers[op.c] = `var`!!.data
                     } else {
-                        registers[op.c] = 0f
+                        registers[op.c] = 0.0f
                     }
 
                     wexpOpType_t.WOP_TYPE_VARI -> if (op.a != null) {
                         val `var` = op.a as idWinInt?
                         registers[op.c] = `var`!!.data.toFloat()
                     } else {
-                        registers[op.c] = 0f
+                        registers[op.c] = 0.0f
                     }
 
                     wexpOpType_t.WOP_TYPE_VARB -> if (op.a != null) {
-                        val `var` = op.a as idWinBool?
+                        val `var` = op.a as idWinBool
                         registers[op.c] = btoi(`var`!!.data).toFloat()
                     } else {
-                        registers[op.c] = 0f
+                        registers[op.c] = 0.0f
                     }
 
                     else -> Common.common.FatalError("R_EvaluateExpression: bad opcode")
@@ -3577,7 +3569,6 @@ object Window {
 
             // not predefined so just read the next token and add it to the state
             val tok = idToken()
-            var v: idVec4
             val vari = idWinInt()
             val varf = idWinFloat()
             var vars = idWinStr()
@@ -3898,7 +3889,7 @@ object Window {
             private val smat = idMat3()
 
             //
-            private var trans = idMat3()
+            private val trans = idMat3()
         }
     }
 }

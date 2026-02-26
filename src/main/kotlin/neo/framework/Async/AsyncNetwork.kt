@@ -19,8 +19,8 @@ import neo.framework.UsercmdGen.inhibit_t
 import neo.framework.UsercmdGen.usercmd_t
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.CmdArgs.idCmdArgs
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Str.idStr
+import neo.idlib.idException
 import neo.sys.sys_public.netadr_t
 import neo.sys.win_input
 import neo.sys.win_net
@@ -141,7 +141,7 @@ class AsyncNetwork {
                     }
 
                     // don't let a server spawn with singleplayer game type - it will crash
-                    if (idStr.Icmp(cvarSystem.GetCVarString("si_gameType"), "singleplayer") === 0) {
+                    if (idStr.Icmp(cvarSystem.GetCVarString("si_gameType"), "singleplayer") == 0) {
                         cvarSystem.SetCVarString("si_gameType", "deathmatch")
                     }
                     com_asyncInput.SetBool(false)
@@ -152,6 +152,7 @@ class AsyncNetwork {
                                 cvarSystem.GetCVarInteger("net_serverDedicated")
                             )
                         }
+
                         1 -> {
                             if (renderSystem.IsOpenGLRunning()) {
                                 Sys_ShowConsole(1, false)
@@ -702,7 +703,7 @@ class AsyncNetwork {
                 "5",
                 CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_NOCHEAT,
                 "maximum number of usercmds from other clients the server relays to a client",
-                1f,
+                1.0f,
                 MAX_USERCMD_RELAY.toFloat(),
                 ArgCompletion_Integer(1, MAX_USERCMD_RELAY)
             )
@@ -735,8 +736,8 @@ class AsyncNetwork {
                 "0",
                 CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_NOCHEAT,
                 "1 = verbose output, 2 = even more verbose output",
-                0f,
-                2f,
+                0.0f,
+                2.0f,
                 ArgCompletion_Integer(0, 2)
             )
 
@@ -747,8 +748,8 @@ class AsyncNetwork {
                 "0",
                 CVarSystem.CVAR_SERVERINFO or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_NOCHEAT,
                 "1 = text console dedicated server, 2 = graphical dedicated server",
-                0f,
-                2f,
+                0.0f,
+                2.0f,
                 ArgCompletion_Integer(0, 2)
             )
 
@@ -768,8 +769,8 @@ class AsyncNetwork {
                     "0",
                     CVarSystem.CVAR_SERVERINFO or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_NOCHEAT,
                     "1 = text console dedicated server, 2 = graphical dedicated server",
-                    0f,
-                    2f,
+                    0.0f,
+                    2.0f,
                     ArgCompletion_Integer(0, 2)
                 )
             }

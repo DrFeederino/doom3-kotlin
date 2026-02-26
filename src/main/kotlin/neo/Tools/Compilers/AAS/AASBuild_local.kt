@@ -1,10 +1,7 @@
 package neo.Tools.Compilers.AAS
 
-import neo.idlib.math.Plane.idPlane
+import neo.idlib.math.idPlane
 
-/**
- *
- */
 class AASBuild_local {
     //===============================================================
     //

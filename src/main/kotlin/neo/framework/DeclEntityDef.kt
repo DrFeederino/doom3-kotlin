@@ -5,15 +5,12 @@ import neo.framework.DeclManager.declType_t
 import neo.framework.DeclManager.idDecl
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List.idList
+import neo.idlib.idException
 
-/**
- *
- */
 class DeclEntityDef {
     /*
      ===============================================================================

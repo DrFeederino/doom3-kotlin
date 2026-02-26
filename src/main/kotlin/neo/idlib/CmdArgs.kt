@@ -1,15 +1,10 @@
 package neo.idlib
 
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
 
-/**
- *
- */
 class CmdArgs {
     class idCmdArgs {
         private val argv: Array<String> =
@@ -87,13 +82,13 @@ class CmdArgs {
                 //		if ( escapeArgs && strchr( argv[i], '\\' ) ) {
                 if (escapeArgs && argv[i].contains("\\")) {
 //			char *p = argv[i];
-                    var p = i
+                    var p = 0
                     while (p < argv[i].length) {
                         if (argv[i][p] == '\\') {
 //					strcat( cmd_args, "\\\\" );
                             cmd_args += "\\\\"
                         } else {
-                            val l = cmd_args.length
+                            cmd_args.length
                             cmd_args += argv[i][p]
                             //					cmd_args[ l ] = *p;
 //					cmd_args[ l+1 ] = '\0';
@@ -211,7 +206,7 @@ class CmdArgs {
 
         companion object {
             private const val MAX_COMMAND_ARGS = 64
-            private val MAX_COMMAND_STRING: Int = 2 * Lib.MAX_STRING_CHARS
+            private val MAX_COMMAND_STRING: Int = 2 * MAX_STRING_CHARS
         }
     }
 }

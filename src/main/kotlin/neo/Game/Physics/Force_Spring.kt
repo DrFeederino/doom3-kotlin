@@ -3,14 +3,12 @@ package neo.Game.Physics
 import neo.Game.Physics.Force.idForce
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Physics.Physics.impactInfo_s
-import neo.idlib.math.Math_h.Square
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.Square
+import neo.idlib.math.getVec3Origin
+import neo.idlib.math.getVec3_zero
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 class Force_Spring {
     /*
      ===============================================================================
@@ -20,10 +18,7 @@ class Force_Spring {
      ===============================================================================
      */
     class idForce_Spring : idForce() {
-        //	CLASS_PROTOTYPE( idForce_Spring );
         private var Kcompress = 100.0f
-
-        // spring properties
         private var Kstretch = 100.0f
         private var damping = 0.0f
         private var id1 // clip model id of first physics object
@@ -31,11 +26,10 @@ class Force_Spring {
         private var id2 // clip model id of second physics object
                 : Int = 0
         private val p1 // position on clip model
-                : idVec3 = Vector.getVec3_zero()
+                : idVec3 = getVec3_zero()
         private val p2 // position on clip model
-                : idVec3 = Vector.getVec3_zero()
+                : idVec3 = getVec3_zero()
 
-        //
         // positioning
         private var physics1 // first physics object
                 : idPhysics? = null
@@ -65,20 +59,20 @@ class Force_Spring {
         // common force interface
         override fun Evaluate(time: Int) {
             val length: Float
-            var axis: idMat3
+            val axis = idMat3()
             val pos1 = idVec3()
             val pos2 = idVec3()
             val velocity1 = idVec3()
             val velocity2 = idVec3()
             val force = idVec3()
             val dampingForce = idVec3()
-            var info: impactInfo_s = impactInfo_s()
+            var info = impactInfo_s()
             pos1.set(p1)
             pos2.set(p2)
-            velocity2.set(Vector.getVec3Origin())
-            velocity1.set(Vector.getVec3Origin())
+            velocity2.set(getVec3Origin())
+            velocity1.set(getVec3Origin())
             if (physics1 != null) {
-                axis = physics1!!.GetAxis(id1)
+                axis.set(physics1!!.GetAxis(id1))
                 pos1.set(physics1!!.GetOrigin(id1))
                 pos1.plusAssign(p1.times(axis))
                 if (damping > 0.0f) {
@@ -87,7 +81,7 @@ class Force_Spring {
                 }
             }
             if (physics2 != null) {
-                axis = physics2!!.GetAxis(id2)
+                axis.set(physics2!!.GetAxis(id2))
                 pos2.set(physics2!!.GetOrigin(id2))
                 pos2.plusAssign(p2.times(axis))
                 if (damping > 0.0f) {
@@ -96,9 +90,9 @@ class Force_Spring {
                 }
             }
             force.set(pos2 - pos1)
-            dampingForce.set(
-                force.timesVec((((velocity2 - velocity1).timesVec(force)) / (force.times(force))) * damping)
-            ) // division is not overloaded in original code, how does it work?
+            val relVel: Float = (velocity2 - velocity1) * force   // dot → Float
+            val forceLen2: Float = force * force                   // dot → Float
+            dampingForce.set(force * (damping * (relVel / forceLen2)))
             length = force.Normalize()
 
             // if the spring is stretched

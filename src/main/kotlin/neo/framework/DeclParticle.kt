@@ -9,25 +9,23 @@ import neo.framework.DeclManager.idDecl
 import neo.framework.DeclTable.idDeclTable
 import neo.framework.File_h.idFile
 import neo.framework.File_h.idFile_Memory
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib.idException
+import neo.idlib.BV.idBounds
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.List.idList
 import neo.idlib.geometry.DrawVert.idDrawVert
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.idException
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Random.idRandom
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.getVec3Origin
+import neo.idlib.math.idMath
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import java.util.*
+import kotlin.math.sqrt
 
-/**
- *
- */
 object DeclParticle {
     val ParticleCustomDesc: Array<ParticleParmDesc> = arrayOf(
         ParticleParmDesc("standard", 0, "Standard"),
@@ -109,7 +107,7 @@ object DeclParticle {
         fun Integrate(frac: Float, rand: idRandom): Float {
             if (table != null) {
                 Common.common.Printf("idParticleParm::Integrate: can't integrate tables\n")
-                return 0f
+                return 0.0f
             }
             return (from + frac * (to - from) * 0.5f) * frac
         }
@@ -126,18 +124,18 @@ object DeclParticle {
         //
 
         var age // in seconds, calculated as fraction * stage->particleLife
-                = 0f
+                = 0.0f
 
 
         var animationFrameFrac // set by ParticleTexCoords, used to make the cross faded version
-                = 0f
+                = 0.0f
 
 
         val axis: idMat3 = idMat3()
 
 
-        var frac // 0.0 to 1.0
-                = 0f
+        var frac // 0.0f to 1.0f
+                = 0.0f
 
 
         var index // particle number in the system
@@ -227,15 +225,15 @@ object DeclParticle {
                 : Boolean
         val fadeColor // either 0 0 0 0 for additive, or 1 1 1 0 for blended materials
                 : idVec4 = idVec4()
-        var fadeInFraction // in 0.0 to 1.0 range
+        var fadeInFraction // in 0.0f to 1.0f range
                 : Float
 
 
-        var fadeIndexFraction // in 0.0 to 1.0 range, causes later index smokes to be more faded
+        var fadeIndexFraction // in 0.0f to 1.0f range, causes later index smokes to be more faded
                 : Float
 
 
-        var fadeOutFraction // in 0.0 to 1.0 range
+        var fadeOutFraction // in 0.0f to 1.0f range
                 : Float
 
 
@@ -279,7 +277,7 @@ object DeclParticle {
 
         //
 
-        var spawnBunching // 0.0 = all come out at first instant, 1.0 = evenly spaced over cycle time
+        var spawnBunching // 0.0f = all come out at first instant, 1.0f = evenly spaced over cycle time
                 = 0.0f
 
         //
@@ -469,6 +467,7 @@ object DeclParticle {
                         origin[1] = (if (randomDistribution) g.random.CRandomFloat() else 1.0f) * distributionParms[1]
                         origin[2] = (if (randomDistribution) g.random.CRandomFloat() else 1.0f) * distributionParms[2]
                     }
+
                     prtDistribution_t.PDIST_CYLINDER -> {
                         // ( sizeX sizeY sizeZ ringFraction )
                         angle1 = (if (randomDistribution) g.random.CRandomFloat() else 1.0f) * idMath.TWO_PI
@@ -484,7 +483,7 @@ object DeclParticle {
                             radiusSqr = origin[0] * origin[0] + origin[1] * origin[1]
                             if (radiusSqr < distributionParms[3] * distributionParms[3]) {
                                 // if we are inside the inner reject zone, rescale to put it out into the good zone
-                                val f = (Math.sqrt(radiusSqr.toDouble()) / distributionParms[3]).toFloat()
+                                val f = (sqrt(radiusSqr) / distributionParms[3]).toFloat()
                                 val invf = 1.0f / f
                                 val newRadius = distributionParms[3] + f * (1.0f - distributionParms[3])
                                 val rescale = invf * newRadius
@@ -496,6 +495,7 @@ object DeclParticle {
                         origin.timesAssign(1, distributionParms[1])
                         origin.timesAssign(2, distributionParms[2])
                     }
+
                     prtDistribution_t.PDIST_SPHERE -> {
                         // ( sizeX sizeY sizeZ ringFraction )
                         // iterating with rejection is the only way to get an even distribution over a sphere
@@ -516,7 +516,7 @@ object DeclParticle {
                             // but for narrow rings that could be a lot of work, so reproject inside points instead
                             if (radiusSqr < distributionParms[3] * distributionParms[3]) {
                                 // if we are inside the inner reject zone, rescale to put it out into the good zone
-                                val f = (Math.sqrt(radiusSqr.toDouble()) / distributionParms[3]).toFloat()
+                                val f = (sqrt(radiusSqr) / distributionParms[3]).toFloat()
                                 val invf = 1.0f / f
                                 val newRadius = distributionParms[3] + f * (1.0f - distributionParms[3])
                                 val rescale = invf * newRadius
@@ -553,6 +553,7 @@ object DeclParticle {
                         dir[1] = s1._val * s2._val
                         dir[2] = c1._val
                     }
+
                     prtDirection_t.PDIR_OUTWARD -> {
                         dir.set(origin)
                         dir.Normalize()
@@ -585,10 +586,11 @@ object DeclParticle {
                         origin[1] = s1._val * customPathParms[1]
                         origin[2] = g.random.RandomFloat() * customPathParms[2] + customPathParms[4] * speed2 * g.age
                     }
+
                     prtCustomPth_t.PPATH_FLIES -> {
                         // ( radialSpeed axialSpeed size )
                         speed1 = idMath.ClampFloat(0.4f, 1.0f, g.random.CRandomFloat())
-                        //				speed2 = idMath.ClampFloat( 0.4f, 1.0f, g.random.CRandomFloat() );
+                        //				speed2 = idMath.ClampFloat( 0.4, 1.0f, g.random.CRandomFloat() );
                         angle1 = g.random.RandomFloat() * idMath.PI * 2 + customPathParms[0] * speed1 * g.age
                         angle2 = g.random.RandomFloat() * idMath.PI * 2 + customPathParms[1] * speed1 * g.age
                         val s1 = CFloat()
@@ -602,6 +604,7 @@ object DeclParticle {
                         origin[2] = -s2._val
                         origin.times(customPathParms[2])
                     }
+
                     prtCustomPth_t.PPATH_ORBIT -> {
                         // ( radius speed axis )
                         angle1 = g.random.RandomFloat() * idMath.TWO_PI + customPathParms[1] * g.age
@@ -612,12 +615,14 @@ object DeclParticle {
                         origin[1] = s1._val * customPathParms[0]
                         origin.ProjectSelfOntoSphere(customPathParms[0])
                     }
+
                     prtCustomPth_t.PPATH_DRIP -> {
                         // ( speed )
                         origin[0] = 0.0f
                         origin[1] = 0.0f
                         origin[2] = -(g.age * customPathParms[0])
                     }
+
                     else -> {
                         Common.common.Error("idParticleStage.ParticleOrigin: bad customPathType")
                     }
@@ -631,7 +636,7 @@ object DeclParticle {
 
             // add gravity after adjusting for axis
             if (worldGravity) {
-                val gra = idVec3(0f, 0f, -gravity)
+                val gra = idVec3(0.0f, 0.0f, -gravity)
                 gra.timesAssign(g.renderEnt.axis.Transpose())
                 origin.plusAssign(gra.times(g.age * g.age))
             } else {
@@ -657,11 +662,11 @@ object DeclParticle {
                 val stepLeft = idVec3()
                 val numTrails = idMath.Ftoi(orientationParms[0])
                 var trailTime = orientationParms[1]
-                if (trailTime == 0f) {
+                if (trailTime == 0.0f) {
                     trailTime = 0.5f
                 }
                 height = 1.0f / (1 + numTrails)
-                var t = 0f
+                var t = 0.0f
                 for (i in 0..numTrails) {
                     g.random = idRandom(g.originalRandom)
                     g.age = currentAge - (i + 1) * trailTime / (numTrails + 1) // time to back up
@@ -713,7 +718,7 @@ object DeclParticle {
             // constant rotation 
             //
             var angle: Float
-            angle = if (initialAngle != 0f) initialAngle else 360 * g.random.RandomFloat()
+            angle = if (initialAngle != 0.0f) initialAngle else 360 * g.random.RandomFloat()
             val angleMove = rotationSpeed.Integrate(g.frac, g.random) * particleLife
             // have hald the particles rotate each way
             if (g.index and 1 != 0) {
@@ -728,25 +733,25 @@ object DeclParticle {
                 // oriented in entity space
                 left.x = s
                 left.y = c
-                left.z = 0f
+                left.z = 0.0f
                 up.x = c
                 up.y = -s
-                up.z = 0f
+                up.z = 0.0f
             } else if (orientation == prtOrientation_t.POR_X) {
                 // oriented in entity space
-                left.x = 0f
+                left.x = 0.0f
                 left.y = c
                 left.z = s
-                up.x = 0f
+                up.x = 0.0f
                 up.y = -s
                 up.z = c
             } else if (orientation == prtOrientation_t.POR_Y) {
                 // oriented in entity space
                 left.x = c
-                left.y = 0f
+                left.y = 0.0f
                 left.z = s
                 up.x = -s
-                up.y = 0f
+                up.y = 0.0f
                 up.z = c
             } else {
                 // oriented in viewer space
@@ -975,7 +980,7 @@ object DeclParticle {
         val bounds: idBounds = idBounds()
 
 
-        var depthHack = 0f
+        var depthHack = 0.0f
 
 
         val stages: idList<idParticleStage> = idList()
@@ -984,7 +989,7 @@ object DeclParticle {
 	{
 		material	_default
 		count	20
-		time		1.0
+		time		1.0f
 	}
 }"""
         }
@@ -1032,7 +1037,7 @@ object DeclParticle {
                 bounds.AddBounds(stages[i].bounds)
             }
             if (bounds.GetVolume() <= 0.1f) {
-                bounds.set(idBounds(Vector.getVec3Origin()).Expand(8.0f))
+                bounds.set(idBounds(getVec3Origin()).Expand(8.0f))
             }
             return true
         }
@@ -1093,7 +1098,7 @@ object DeclParticle {
             steppingRandom.SetSeed(0)
 
             // just step through a lot of possible particles as a representative sampling
-            for (i in 0..999) {
+            for (i in 0 until 1000) {
                 g.random = idRandom(idRandom(steppingRandom).also { g.originalRandom = it })
                 val maxMsec = (stage.particleLife * 1000).toInt()
                 var inCycleTime = 0
@@ -1117,8 +1122,8 @@ object DeclParticle {
             }
 
             // find the max size
-            var maxSize = 0f
-            var f = 0f
+            var maxSize = 0.0f
+            var f = 0.0f
             while (f <= 1.0f) {
                 var size = stage.size.Eval(f, steppingRandom)
                 val aspect = stage.aspect.Eval(f, steppingRandom)
@@ -1130,7 +1135,7 @@ object DeclParticle {
                 }
                 f += 1.0f / 64
             }
-            maxSize += 8f // just for good measure
+            maxSize += 8.0f // just for good measure
             // users can specify a per-stage bounds expansion to handle odd cases
             stage.bounds.ExpandSelf(maxSize + stage.boundsExpansion)
         }
@@ -1339,7 +1344,7 @@ object DeclParticle {
         @Throws(idException::class)
         private fun ParseParms(src: idLexer, parms: FloatArray, maxParms: Int) {
             val token = idToken()
-            Arrays.fill(parms, 0, maxParms, 0f) //memset( parms, 0, maxParms * sizeof( *parms ) );
+            Arrays.fill(parms, 0, maxParms, 0.0f) //memset( parms, 0, maxParms * sizeof( *parms ) );
             var count = 0
             while (true) {
                 if (!src.ReadTokenOnLine(token)) {
@@ -1395,15 +1400,15 @@ object DeclParticle {
             if (stage.animationFrames != 0) {
                 f.WriteFloatString("\t\tanimationFrames \t%d\n", stage.animationFrames)
             }
-            if (stage.animationRate != 0f) {
+            if (stage.animationRate != 0.0f) {
                 f.WriteFloatString("\t\tanimationRate \t\t%.3f\n", stage.animationRate)
             }
             f.WriteFloatString("\t\ttime\t\t\t\t%.3f\n", stage.particleLife)
             f.WriteFloatString("\t\tcycles\t\t\t\t%.3f\n", stage.cycles)
-            if (stage.timeOffset != 0f) {
+            if (stage.timeOffset != 0.0f) {
                 f.WriteFloatString("\t\ttimeOffset\t\t\t%.3f\n", stage.timeOffset)
             }
-            if (stage.deadTime != 0f) {
+            if (stage.deadTime != 0.0f) {
                 f.WriteFloatString("\t\tdeadTime\t\t\t%.3f\n", stage.deadTime)
             }
             f.WriteFloatString("\t\tbunching\t\t\t%.3f\n", stage.spawnBunching)
@@ -1455,10 +1460,10 @@ object DeclParticle {
             WriteParticleParm(f, stage.speed, "speed")
             WriteParticleParm(f, stage.size, "size")
             WriteParticleParm(f, stage.aspect, "aspect")
-            if (stage.rotationSpeed.from != 0f) {
+            if (stage.rotationSpeed.from != 0.0f) {
                 WriteParticleParm(f, stage.rotationSpeed, "rotation")
             }
-            if (stage.initialAngle != 0f) {
+            if (stage.initialAngle != 0.0f) {
                 f.WriteFloatString("\t\tangle\t\t\t\t%.3f\n", stage.initialAngle)
             }
             f.WriteFloatString("\t\trandomDistribution\t\t\t\t%d\n", if (stage.randomDistribution) 1 else 0)

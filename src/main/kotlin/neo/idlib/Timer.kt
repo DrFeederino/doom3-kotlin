@@ -1,14 +1,9 @@
 package neo.idlib
 
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idStrList
 
-/**
- *
- */
 class Timer {
     internal enum class State {
         TS_STARTED, TS_STOPPED
@@ -22,101 +17,61 @@ class Timer {
      ===============================================================================
      */
     class idTimer {
-        private var clockTicks: Double
-        private var start = 0.0
-        private var state: State?
+        private var ms: Long = 0L
+        private var start: Long = 0L
+        private var state: State = State.TS_STOPPED
 
-        //
-        //
         constructor() {
             state = State.TS_STOPPED
-            clockTicks = 0.0
+            ms = 0L
         }
 
-        constructor(_clockTicks: Double) {
+        constructor(_ms: Long) {
             state = State.TS_STOPPED
-            clockTicks = _clockTicks
+            ms = _ms
         }
 
-        //public					~idTimer( void );
-        //
         operator fun plus(t: idTimer): idTimer {
             assert(state == State.TS_STOPPED && t.state == State.TS_STOPPED)
-            return idTimer(clockTicks + t.clockTicks)
+            return idTimer(ms + t.ms)
         }
 
         operator fun minus(t: idTimer): idTimer {
             assert(state == State.TS_STOPPED && t.state == State.TS_STOPPED)
-            return idTimer(clockTicks - t.clockTicks)
+            return idTimer(ms - t.ms)
         }
 
         fun plusAssign(t: idTimer): idTimer {
             assert(state == State.TS_STOPPED && t.state == State.TS_STOPPED)
-            clockTicks += t.clockTicks
+            ms += t.ms
             return this
         }
 
         fun minusAssign(t: idTimer): idTimer {
             assert(state == State.TS_STOPPED && t.state == State.TS_STOPPED)
-            clockTicks -= t.clockTicks
+            ms -= t.ms
             return this
         }
 
         fun Start() {
             assert(state == State.TS_STOPPED)
             state = State.TS_STARTED
-            start = idLib.sys.GetClockTicks()
+            start = idLib.sys.GetMilliseconds()
         }
 
         fun Stop() {
             assert(state == State.TS_STARTED)
-            clockTicks += idLib.sys.GetClockTicks() - start
-            if (base < 0.0) {
-                InitBaseClockTicks()
-            }
-            if (clockTicks > base) {
-                clockTicks -= base
-            }
+            ms += idLib.sys.GetMilliseconds() - start
             state = State.TS_STOPPED
         }
 
         fun Clear() {
-            clockTicks = 0.0
+            ms = 0L
         }
 
-        fun ClockTicks(): Double {
+        fun Milliseconds(): Long {
             assert(state == State.TS_STOPPED)
-            return clockTicks
-        }
-
-        fun Milliseconds(): Double {
-            assert(state == State.TS_STOPPED)
-            return clockTicks / (idLib.sys.ClockTicksPerSecond() * 0.001)
-        }
-
-        private fun InitBaseClockTicks() {
-            val timer = idTimer()
-            var ct: Double
-            var b: Double
-            var i: Int
-            base = 0.0
-            b = -1.0
-            i = 0
-            while (i < 1000) {
-                timer.Clear()
-                timer.Start()
-                timer.Stop()
-                ct = timer.ClockTicks()
-                if (b < 0.0 || ct < b) {
-                    b = ct
-                }
-                i++
-            }
-            base = b
-        }
-
-        companion object {
-            private var base = -1.0
+            return ms
         }
     }
 
@@ -127,7 +82,7 @@ class Timer {
 
      ===============================================================================
      */
-    internal inner class idTimerReport  //
+    internal class idTimerReport  //
     //
     {
         private val names: idStrList = idStrList()
@@ -141,7 +96,7 @@ class Timer {
         }
 
         fun AddReport(name: String?): Int {
-            if (name != null) {
+            if (name != null && name.isNotEmpty()) {
                 names.add(idStr(name))
                 return timers.Append(idTimer())
             }

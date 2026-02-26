@@ -9,11 +9,8 @@ import neo.framework.DemoFile.idDemoFile
 import neo.framework.File_h.idFile
 import neo.idlib.Text.Str.idStr
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 object sound {
     /*
      ===============================================================================
@@ -65,7 +62,7 @@ object sound {
         // FIXME: network game: on a dedicated server, this will always be false
         abstract fun CurrentlyPlaying(): Boolean
 
-        // returns a 0.0 to 1.0 value based on the current sound amplitude, allowing
+        // returns a 0.0f to 1.0f value based on the current sound amplitude, allowing
         // graphic effects to be modified in time with the audio.
         // just samples the raw wav file, it doesn't account for volume overrides in the
         abstract fun CurrentAmplitude(): Float
@@ -160,7 +157,7 @@ object sound {
     class soundDecoderInfo_t {
         var current44kHzTime = 0
         val format: idStr = idStr()
-        var lastVolume = 0f
+        var lastVolume = 0.0f
         var looping = false
         val name: idStr = idStr()
         var num44kHzSamples = 0
@@ -208,7 +205,7 @@ object sound {
         abstract fun AllocSoundWorld(rw: idRenderWorld): idSoundWorld
 
         // specifying NULL will cause silence to be played
-        abstract fun SetPlayingSoundWorld(soundWorld: idSoundWorld)
+        abstract fun SetPlayingSoundWorld(soundWorld: idSoundWorld?)
 
         // some tools, like the sound dialog, may be used in both the game and the editor
         // This can return NULL, so check!

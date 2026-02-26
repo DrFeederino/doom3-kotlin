@@ -5,15 +5,12 @@ import neo.Sound.snd_decoder.idSampleDecoderLocal
 import neo.TempDump.SERiAL
 import neo.TempDump.TODO_Exception
 import neo.framework.UsercmdGen
-import neo.idlib.math.Simd
+import neo.idlib.math.MIXBUFFER_SAMPLES
 import neo.sys.win_snd.idAudioHardwareWIN32
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
-/**
- *
- */
 class snd_local {
 
     // demo sound commands
@@ -47,6 +44,7 @@ class snd_local {
         //byte offsets
         var wFormatTag // format type
                 = 0
+
         companion object {
             const val SIZE = (java.lang.Short.SIZE
                     + java.lang.Short.SIZE
@@ -285,7 +283,7 @@ class snd_local {
         abstract fun Write(flushing: Boolean)
         abstract fun GetNumberOfSpeakers(): Int
         abstract fun GetMixBufferSize(): Int
-        abstract fun GetMixBuffer(): IntArray
+        abstract fun GetMixBuffer(): ShortArray
 
         companion object {
             fun Alloc(): idAudioHardware {
@@ -311,7 +309,7 @@ class snd_local {
         //
         const val ROOM_SLICES_IN_BUFFER = 10
         const val SND_EPSILON = 1.0f / 32768.0f // if volume is below this, it will always multiply to zero
-        const val SOUND_DECODER_FREE_DELAY = 1000 * Simd.MIXBUFFER_SAMPLES / UsercmdGen.USERCMD_MSEC // four seconds
+        const val SOUND_DECODER_FREE_DELAY = 1000 * MIXBUFFER_SAMPLES / UsercmdGen.USERCMD_MSEC // four seconds
         const val SOUND_MAX_CHANNELS = 8
     }
 }

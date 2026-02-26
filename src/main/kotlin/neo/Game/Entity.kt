@@ -1,6 +1,5 @@
 package neo.Game
 
-import neo.CM.CollisionModel.trace_s
 import neo.Game.AFEntity.idAFEntity_Base
 import neo.Game.Actor.idActor
 import neo.Game.Animation.Anim.jointModTransform_t
@@ -9,6 +8,7 @@ import neo.Game.Animation.Anim_Blend.idAnimator
 import neo.Game.FX.idEntityFx
 import neo.Game.Game.refSound_t
 import neo.Game.GameSys.Class.*
+import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -23,9 +23,10 @@ import neo.Game.Physics.Physics_Parametric.idPhysics_Parametric
 import neo.Game.Physics.Physics_Static.idPhysics_Static
 import neo.Game.Player.idPlayer
 import neo.Game.Pvs.pvsHandle_t
+import neo.Game.Script.EV_Thread_Wait
+import neo.Game.Script.EV_Thread_WaitFrame
 import neo.Game.Script.Script_Program.function_t
 import neo.Game.Script.Script_Program.idScriptObject
-import neo.Game.Script.Script_Thread
 import neo.Game.Script.Script_Thread.idThread
 import neo.Renderer.Material
 import neo.Renderer.Material.surfTypes_t
@@ -41,6 +42,7 @@ import neo.Sound.sound.idSoundEmitter
 import neo.TempDump
 import neo.TempDump.NiLLABLE
 import neo.TempDump.SERiAL
+import neo.cm.trace_s
 import neo.framework.Async.NetworkSystem
 import neo.framework.Common
 import neo.framework.DeclEntityDef.idDeclEntityDef
@@ -48,13 +50,12 @@ import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
 import neo.framework.DeclSkin.idDeclSkin
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.*
+import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.BitMsg.idBitMsgDelta
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
-import neo.idlib.Lib
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.va
@@ -66,24 +67,87 @@ import neo.idlib.containers.LinkList.idLinkList
 import neo.idlib.containers.List.idList
 import neo.idlib.geometry.JointTransform.idJointMat
 import neo.idlib.geometry.TraceModel.idTraceModel
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Curve.*
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.getVec3Origin
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.math.max
 
-/**
- *
- */
+val EV_Activate: idEventDef = idEventDef("activate", "e")
+val EV_ActivateTargets: idEventDef = idEventDef("activateTargets", "e")
+val EV_Bind: idEventDef = idEventDef("bind", "e")
+val EV_BindPosition: idEventDef = idEventDef("bindPosition", "e")
+val EV_BindToJoint: idEventDef = idEventDef("bindToJoint", "esf")
+val EV_CacheSoundShader: idEventDef = idEventDef("cacheSoundShader", "s")
+val EV_CallFunction: idEventDef = idEventDef("callFunction", "s")
+val EV_ClearAllJoints: idEventDef = idEventDef("clearAllJoints")
+val EV_ClearJoint: idEventDef = idEventDef("clearJoint", "d")
+val EV_ClearSignal: idEventDef = idEventDef("clearSignal", "d")
+val EV_DistanceTo: idEventDef = idEventDef("distanceTo", "E", 'f')
+val EV_DistanceToPoint: idEventDef = idEventDef("distanceToPoint", "v", 'f')
+val EV_FadeSound: idEventDef = idEventDef("fadeSound", "dff")
+val EV_FindTargets: idEventDef = idEventDef("<findTargets>", null)
+val EV_GetAngles: idEventDef = idEventDef("getAngles", null, 'v')
+val EV_GetAngularVelocity: idEventDef = idEventDef("getAngularVelocity", null, 'v')
+val EV_GetColor: idEventDef = idEventDef("getColor", null, 'v')
+val EV_GetEntityKey: idEventDef = idEventDef("getEntityKey", "s", 'e')
+val EV_GetFloatKey: idEventDef = idEventDef("getFloatKey", "s", 'f')
+val EV_GetIntKey: idEventDef = idEventDef("getIntKey", "s", 'f')
+val EV_GetJointAngle: idEventDef = idEventDef("getJointAngle", "d", 'v')
+val EV_GetJointHandle: idEventDef = idEventDef("getJointHandle", "s", 'd')
+val EV_GetJointPos: idEventDef = idEventDef("getJointPos", "d", 'v')
+val EV_GetKey: idEventDef = idEventDef("getKey", "s", 's')
+val EV_GetLinearVelocity: idEventDef = idEventDef("getLinearVelocity", null, 'v')
+val EV_GetMaxs: idEventDef = idEventDef("getMaxs", null, 'v')
+val EV_GetMins: idEventDef = idEventDef("getMins", null, 'v')
+val EV_GetName: idEventDef = idEventDef("getName", null, 's')
+val EV_GetNextKey: idEventDef = idEventDef("getNextKey", "ss", 's')
+val EV_GetOrigin: idEventDef = idEventDef("getOrigin", null, 'v')
+val EV_GetShaderParm: idEventDef = idEventDef("getShaderParm", "d", 'f')
+val EV_GetSize: idEventDef = idEventDef("getSize", null, 'v')
+val EV_GetTarget: idEventDef = idEventDef("getTarget", "f", 'e')
+val EV_GetVectorKey: idEventDef = idEventDef("getVectorKey", "s", 'v')
+val EV_GetWorldOrigin: idEventDef = idEventDef("getWorldOrigin", null, 'v')
+val EV_HasFunction: idEventDef = idEventDef("hasFunction", "s", 'd')
+val EV_Hide: idEventDef = idEventDef("hide", null)
+val EV_IsHidden: idEventDef = idEventDef("isHidden", null, 'd')
+val EV_NumTargets: idEventDef = idEventDef("numTargets", null, 'f')
+val EV_PostSpawn: idEventDef = idEventDef("<postspawn>", null)
+val EV_RandomTarget: idEventDef = idEventDef("randomTarget", "s", 'e')
+val EV_RemoveBinds: idEventDef = idEventDef("removeBinds")
+val EV_RestorePosition: idEventDef = idEventDef("restorePosition")
+val EV_SetAngles: idEventDef = idEventDef("setAngles", "v")
+val EV_SetAngularVelocity: idEventDef = idEventDef("setAngularVelocity", "v")
+val EV_SetColor: idEventDef = idEventDef("setColor", "fff")
+val EV_SetGuiFloat: idEventDef = idEventDef("setGuiFloat", "sf")
+val EV_SetGuiParm: idEventDef = idEventDef("setGuiParm", "ss")
+val EV_SetJointAngle: idEventDef = idEventDef("setJointAngle", "ddv")
+val EV_SetJointPos: idEventDef = idEventDef("setJointPos", "ddv")
+val EV_SetKey: idEventDef = idEventDef("setKey", "ss")
+val EV_SetLinearVelocity: idEventDef = idEventDef("setLinearVelocity", "v")
+val EV_SetModel: idEventDef = idEventDef("setModel", "s")
+val EV_SetName: idEventDef = idEventDef("setName", "s")
+val EV_SetNeverDormant: idEventDef = idEventDef("setNeverDormant", "d")
+val EV_SetOrigin: idEventDef = idEventDef("setOrigin", "v")
+val EV_SetOwner: idEventDef = idEventDef("setOwner", "e")
+val EV_SetShaderParm: idEventDef = idEventDef("setShaderParm", "df")
+val EV_SetShaderParms: idEventDef = idEventDef("setShaderParms", "ffff")
+val EV_SetSize: idEventDef = idEventDef("setSize", "vv")
+val EV_SetSkin: idEventDef = idEventDef("setSkin", "s")
+val EV_SetWorldOrigin: idEventDef = idEventDef("setWorldOrigin", "v")
+val EV_Show: idEventDef = idEventDef("show", null)
+val EV_SpawnBind: idEventDef = idEventDef("<spawnbind>", null)
+val EV_StartFx: idEventDef = idEventDef("startFx", "s")
+val EV_StartSound: idEventDef = idEventDef("startSound", "sdd", 'f')
+val EV_StartSoundShader: idEventDef = idEventDef("startSoundShader", "sd", 'f')
+val EV_StopSound: idEventDef = idEventDef("stopSound", "dd")
+val EV_Touch: idEventDef = idEventDef("<touch>", "et")
+val EV_Touches: idEventDef = idEventDef("touches", "E", 'd')
+val EV_Unbind: idEventDef = idEventDef("unbind", null)
+val EV_UpdateCameraTarget: idEventDef = idEventDef("<updateCameraTarget>", null)
+
 object Entity {
     /*
      ===============================================================================
@@ -94,85 +158,6 @@ object Entity {
      */
     const val DELAY_DORMANT_TIME = 3000
 
-    //
-    val EV_Activate: idEventDef = idEventDef("activate", "e")
-    val EV_ActivateTargets: idEventDef = idEventDef("activateTargets", "e")
-    val EV_Bind: idEventDef = idEventDef("bind", "e")
-    val EV_BindPosition: idEventDef = idEventDef("bindPosition", "e")
-    val EV_BindToJoint: idEventDef = idEventDef("bindToJoint", "esf")
-    val EV_CacheSoundShader: idEventDef = idEventDef("cacheSoundShader", "s")
-    val EV_CallFunction: idEventDef = idEventDef("callFunction", "s")
-    val EV_ClearAllJoints: idEventDef = idEventDef("clearAllJoints")
-    val EV_ClearJoint: idEventDef = idEventDef("clearJoint", "d")
-    val EV_ClearSignal: idEventDef = idEventDef("clearSignal", "d")
-    val EV_DistanceTo: idEventDef = idEventDef("distanceTo", "E", 'f')
-    val EV_DistanceToPoint: idEventDef = idEventDef("distanceToPoint", "v", 'f')
-    val EV_FadeSound: idEventDef = idEventDef("fadeSound", "dff")
-    val EV_FindTargets: idEventDef = idEventDef("<findTargets>", null)
-    val EV_GetAngles: idEventDef = idEventDef("getAngles", null, 'v')
-    val EV_GetAngularVelocity: idEventDef = idEventDef("getAngularVelocity", null, 'v')
-    val EV_GetColor: idEventDef = idEventDef("getColor", null, 'v')
-    val EV_GetEntityKey: idEventDef = idEventDef("getEntityKey", "s", 'e')
-    val EV_GetFloatKey: idEventDef = idEventDef("getFloatKey", "s", 'f')
-    val EV_GetIntKey: idEventDef = idEventDef("getIntKey", "s", 'f')
-    val EV_GetJointAngle: idEventDef = idEventDef("getJointAngle", "d", 'v')
-
-    //
-    val EV_GetJointHandle: idEventDef = idEventDef("getJointHandle", "s", 'd')
-    val EV_GetJointPos: idEventDef = idEventDef("getJointPos", "d", 'v')
-    val EV_GetKey: idEventDef = idEventDef("getKey", "s", 's')
-    val EV_GetLinearVelocity: idEventDef = idEventDef("getLinearVelocity", null, 'v')
-    val EV_GetMaxs: idEventDef = idEventDef("getMaxs", null, 'v')
-    val EV_GetMins: idEventDef = idEventDef("getMins", null, 'v')
-    val EV_GetName: idEventDef = idEventDef("getName", null, 's')
-    val EV_GetNextKey: idEventDef = idEventDef("getNextKey", "ss", 's')
-    val EV_GetOrigin: idEventDef = idEventDef("getOrigin", null, 'v')
-    val EV_GetShaderParm: idEventDef = idEventDef("getShaderParm", "d", 'f')
-    val EV_GetSize: idEventDef = idEventDef("getSize", null, 'v')
-    val EV_GetTarget: idEventDef = idEventDef("getTarget", "f", 'e')
-    val EV_GetVectorKey: idEventDef = idEventDef("getVectorKey", "s", 'v')
-    val EV_GetWorldOrigin: idEventDef = idEventDef("getWorldOrigin", null, 'v')
-    val EV_HasFunction: idEventDef = idEventDef("hasFunction", "s", 'd')
-    val EV_Hide: idEventDef = idEventDef("hide", null)
-    val EV_IsHidden: idEventDef = idEventDef("isHidden", null, 'd')
-    val EV_NumTargets: idEventDef = idEventDef("numTargets", null, 'f')
-
-    // overridable events
-    val EV_PostSpawn: idEventDef = idEventDef("<postspawn>", null)
-    val EV_RandomTarget: idEventDef = idEventDef("randomTarget", "s", 'e')
-    val EV_RemoveBinds: idEventDef = idEventDef("removeBinds")
-    val EV_RestorePosition: idEventDef = idEventDef("restorePosition")
-    val EV_SetAngles: idEventDef = idEventDef("setAngles", "v")
-    val EV_SetAngularVelocity: idEventDef = idEventDef("setAngularVelocity", "v")
-    val EV_SetColor: idEventDef = idEventDef("setColor", "fff")
-    val EV_SetGuiFloat: idEventDef = idEventDef("setGuiFloat", "sf")
-    val EV_SetGuiParm: idEventDef = idEventDef("setGuiParm", "ss")
-    val EV_SetJointAngle: idEventDef = idEventDef("setJointAngle", "ddv")
-    val EV_SetJointPos: idEventDef = idEventDef("setJointPos", "ddv")
-    val EV_SetKey: idEventDef = idEventDef("setKey", "ss")
-    val EV_SetLinearVelocity: idEventDef = idEventDef("setLinearVelocity", "v")
-    val EV_SetModel: idEventDef = idEventDef("setModel", "s")
-    val EV_SetName: idEventDef = idEventDef("setName", "s")
-    val EV_SetNeverDormant: idEventDef = idEventDef("setNeverDormant", "d")
-    val EV_SetOrigin: idEventDef = idEventDef("setOrigin", "v")
-    val EV_SetOwner: idEventDef = idEventDef("setOwner", "e")
-    val EV_SetShaderParm: idEventDef = idEventDef("setShaderParm", "df")
-    val EV_SetShaderParms: idEventDef = idEventDef("setShaderParms", "ffff")
-    val EV_SetSize: idEventDef = idEventDef("setSize", "vv")
-    val EV_SetSkin: idEventDef = idEventDef("setSkin", "s")
-    val EV_SetWorldOrigin: idEventDef = idEventDef("setWorldOrigin", "v")
-    val EV_Show: idEventDef = idEventDef("show", null)
-    val EV_SpawnBind: idEventDef = idEventDef("<spawnbind>", null)
-    val EV_StartFx: idEventDef = idEventDef("startFx", "s")
-    val EV_StartSound: idEventDef = idEventDef("startSound", "sdd", 'f')
-    val EV_StartSoundShader: idEventDef = idEventDef("startSoundShader", "sd", 'f')
-    val EV_StopSound: idEventDef = idEventDef("stopSound", "dd")
-    val EV_Touch: idEventDef = idEventDef("<touch>", "et")
-    val EV_Touches: idEventDef = idEventDef("touches", "E", 'd')
-    val EV_Unbind: idEventDef = idEventDef("unbind", null)
-    val EV_UpdateCameraTarget: idEventDef = idEventDef("<updateCameraTarget>", null)
-
-    //
     // FIXME: At some point we may want to just limit it to one thread per signal, but
     // for now, I'm allowing multiple threads.  We should reevaluate this later in the project
     const val MAX_SIGNAL_THREADS = 16 // probably overkill, but idList uses a granularity of 16
@@ -206,7 +191,6 @@ object Entity {
         gui.StateChanged(Game_local.gameLocal.time)
     }
 
-    //
     /*
      ================
      AddRenderGui
@@ -251,7 +235,7 @@ object Entity {
         val signal: Array<idList<signal_t>> = Array(TempDump.etoi(signalNum_t.NUM_SIGNALS)) { idList() }
     }
 
-    open class idEntity() : idClass(), NiLLABLE<idEntity?>, SERiAL {
+    open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
 
         companion object {
             const val EVENT_MAXEVENTS = 2
@@ -275,10 +259,6 @@ object Entity {
             // initialize the default physics
             private const val DBG_InitDefaultPhysics = 0
             private var DBG_RunPhysics = 0
-
-            //
-            //
-            //
             private var DBG_counter = 0
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
                 return eventCallbacks
@@ -335,12 +315,12 @@ object Entity {
                     }
                 }
                 if (ignoreNum >= 0) {
-                    num = Game_local.gameLocal.random.RandomInt((e.targets.Num() - 1).toDouble())
+                    num = Game_local.gameLocal.random.RandomInt(e.targets.Num() - 1)
                     if (num >= ignoreNum) {
                         num++
                     }
                 } else {
-                    num = Game_local.gameLocal.random.RandomInt(e.targets.Num().toDouble())
+                    num = Game_local.gameLocal.random.RandomInt(e.targets.Num())
                 }
                 ent = e.targets[num].GetEntity()
                 idThread.ReturnEntity(ent)
@@ -360,7 +340,7 @@ object Entity {
                 jointname: idEventArg<String>,
                 orientated: idEventArg<Float>
             ) {
-                e.BindToJoint(master.value, jointname.value, orientated.value != 0f)
+                e.BindToJoint(master.value, jointname.value, orientated.value != 0.0f)
             }
 
             private fun Event_SetOwner(e: idEntity, owner: idEventArg<idEntity>) {
@@ -433,7 +413,7 @@ object Entity {
                     false,
                     length
                 )
-                idThread.ReturnFloat(Math_h.MS2SEC(length._val.toFloat()))
+                idThread.ReturnFloat(MS2SEC(length._val.toFloat()))
             }
 
             private fun Event_StopSound(e: idEntity, channel: idEventArg<Int>, netSync: idEventArg<Int>) {
@@ -448,7 +428,7 @@ object Entity {
             ) {
                 val time = CInt()
                 e.StartSound(soundName.value,  /*(s_channelType)*/channel.value, 0, netSync.value != 0, time)
-                idThread.ReturnFloat(Math_h.MS2SEC(time._val.toFloat()))
+                idThread.ReturnFloat(MS2SEC(time._val.toFloat()))
             }
 
             private fun Event_FadeSound(
@@ -487,13 +467,13 @@ object Entity {
                 e.GetPhysics().SetClipBox(idBounds(mins.value, maxs.value), 1.0f)
             }
 
-            private fun Event_Touches(e: idEntity, ent: idEventArg<idEntity>) {
-                if (TempDump.NOT(ent.value)) {
+            private fun Event_Touches(e: idEntity, ent: idEventArg<idEntity?>) {
+                if (ent.value == null) {
                     idThread.ReturnInt(false)
                     return
                 }
                 val myBounds = e.GetPhysics().GetAbsBounds()
-                val entBounds = ent.value.GetPhysics().GetAbsBounds()
+                val entBounds = ent.value!!.GetPhysics().GetAbsBounds()
                 idThread.ReturnInt(myBounds.IntersectsBounds(entBounds))
             }
 
@@ -588,7 +568,7 @@ object Entity {
             private fun Event_DistanceTo(e: idEntity, ent: idEventArg<idEntity?>) {
                 if (null == ent.value) {
                     // just say it's really far away
-                    idThread.ReturnFloat(Lib.MAX_WORLD_SIZE.toFloat())
+                    idThread.ReturnFloat(MAX_WORLD_SIZE.toFloat())
                 } else {
                     val dist = e.GetPhysics().GetOrigin().minus(ent.value!!.GetPhysics().GetOrigin()).LengthFast()
                     idThread.ReturnFloat(dist)
@@ -601,7 +581,7 @@ object Entity {
             }
 
             private fun Event_StartFx(e: idEntity, fx: idEventArg<String>) {
-                idEntityFx.StartFx(fx.value, getVec3Origin(), idMat3.getMat3_zero(), e, true)
+                idEntityFx.StartFx(fx.value, null, null, e, true)
             }
 
             init {
@@ -683,7 +663,12 @@ object Entity {
                 eventCallbacks[EV_SetColor] = eventCallback_t3<idEntity> { e: idEntity, red: idEventArg<*>?,
                                                                            green: idEventArg<*>?,
                                                                            blue: idEventArg<*>? ->
-                    Event_SetColor(e, red as idEventArg<Float>, green as idEventArg<Float>, blue as idEventArg<Float>)
+                    Event_SetColor(
+                        e,
+                        red as idEventArg<Float>,
+                        green as idEventArg<Float>,
+                        blue as idEventArg<Float>
+                    )
                 }
                 eventCallbacks[EV_GetColor] =
                     eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetColor() }
@@ -759,7 +744,7 @@ object Entity {
                 eventCallbacks[EV_GetMaxs] =
                     eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_GetMaxs() }
                 eventCallbacks[EV_Touches] = eventCallback_t1<idEntity> { e: idEntity, ent: idEventArg<*>? ->
-                    Event_Touches(e, ent as idEventArg<idEntity>)
+                    Event_Touches(e, ent as idEventArg<idEntity?>)
                 }
                 eventCallbacks[EV_SetGuiParm] =
                     eventCallback_t2<idEntity> { e: idEntity, k: idEventArg<*>?, v: idEventArg<*>? ->
@@ -806,9 +791,9 @@ object Entity {
                 eventCallbacks[EV_StartFx] = eventCallback_t1<idEntity> { e: idEntity, fx: idEventArg<*>? ->
                     Event_StartFx(e, fx as idEventArg<String>)
                 }
-                eventCallbacks[Script_Thread.EV_Thread_WaitFrame] =
+                eventCallbacks[EV_Thread_WaitFrame] =
                     eventCallback_t0<idEntity> { obj: idEntity -> obj.Event_WaitFrame() }
-                eventCallbacks[Script_Thread.EV_Thread_Wait] =
+                eventCallbacks[EV_Thread_Wait] =
                     eventCallback_t1<idEntity> { obj: idEntity, time: idEventArg<*>? -> obj.Event_Wait(time as idEventArg<Float>) }
                 eventCallbacks[EV_HasFunction] =
                     eventCallback_t1<idEntity> { obj: idEntity, name: idEventArg<*>? -> obj.Event_HasFunction(name as idEventArg<String>) }
@@ -1000,7 +985,7 @@ object Entity {
             var i: Int
             val temp = arrayOfNulls<String>(1)
             val origin = idVec3()
-            val axis: idMat3
+            val axis: idMat3 = idMat3()
             val networkSync: idKeyValue?
             val classname = arrayOfNulls<String>(1)
             val scriptObjectName = arrayOfNulls<String>(1)
@@ -1019,7 +1004,7 @@ object Entity {
             // go dormant within 5 frames so that when the map starts most monsters are dormant
             dormantStart = Game_local.gameLocal.time - DELAY_DORMANT_TIME + idGameLocal.msec * 5
             origin.set(renderEntity!!.origin)
-            axis = idMat3(renderEntity!!.axis)
+            axis.set(idMat3(renderEntity!!.axis))
 
             // do the audio parsing the same way dmap and the editor do
             GameEdit.gameEdit.ParseSpawnArgsToRefSound(spawnArgs, refSound)
@@ -1123,7 +1108,7 @@ object Entity {
             savefile.WriteInt(thinkFlags)
             savefile.WriteInt(dormantStart)
             savefile.WriteBool(cinematic)
-            savefile.WriteObject(cameraTarget!!)
+            savefile.WriteObject(cameraTarget)
             savefile.WriteInt(health)
             savefile.WriteInt(targets.Num())
             i = 0
@@ -1132,16 +1117,16 @@ object Entity {
                 i++
             }
             val flags = fl
-            Lib.LittleBitField(flags /*, sizeof(flags)*/)
+            LittleBitField(flags /*, sizeof(flags)*/)
             savefile.Write(flags /*, sizeof(flags)*/)
             savefile.WriteRenderEntity(renderEntity!!)
             savefile.WriteInt(modelDefHandle)
             savefile.WriteRefSound(refSound)
-            savefile.WriteObject(bindMaster!!)
+            savefile.WriteObject(bindMaster)
             savefile.WriteJoint(bindJoint)
             savefile.WriteInt(bindBody)
-            savefile.WriteObject(teamMaster!!)
-            savefile.WriteObject(teamChain!!)
+            savefile.WriteObject(teamMaster)
+            savefile.WriteObject(teamChain)
             savefile.WriteStaticObject(defaultPhysicsObj)
             savefile.WriteInt(numPVSAreas)
             i = 0
@@ -1197,7 +1182,7 @@ object Entity {
                 i++
             }
             savefile.Read(fl)
-            Lib.LittleBitField(fl)
+            LittleBitField(fl)
             savefile.ReadRenderEntity(renderEntity!!)
             modelDefHandle = savefile.ReadInt()
             savefile.ReadRefSound(refSound)
@@ -1313,26 +1298,27 @@ object Entity {
         // clients generate views based on all the player specific options,
         // cameras have custom code, and everything else just uses the axis orientation
         open fun GetRenderView(): renderView_s? {
-            val rv = renderView_s()
+            if (renderView == null) {
+                renderView = renderView_s()
+            }
+            renderView = renderView_s()
             //	memset( renderView, 0, sizeof( *renderView ) );
-            rv.vieworg.set(GetPhysics().GetOrigin())
-            rv.fov_x = 120f
-            rv.fov_y = 120f
-            rv.viewaxis.set(idMat3(GetPhysics().GetAxis()))
+            renderView!!.vieworg.set(GetPhysics().GetOrigin())
+            renderView!!.fov_x = 120.0f
+            renderView!!.fov_y = 120.0f
+            renderView!!.viewaxis.set((GetPhysics().GetAxis()))
 
             // copy global shader parms
             System.arraycopy(
                 Game_local.gameLocal.globalShaderParms,
                 0,
-                rv.shaderParms,
+                renderView!!.shaderParms,
                 0,
                 RenderWorld.MAX_GLOBAL_SHADER_PARMS
             )
-            rv.globalMaterial = Game_local.gameLocal.GetGlobalMaterial()
-            rv.time = Game_local.gameLocal.time
-            if (null == renderView) {
-                renderView = renderView_s()
-            }
+            renderView!!.globalMaterial = Game_local.gameLocal.GetGlobalMaterial()
+            renderView!!.time = Game_local.gameLocal.time
+
             return renderView!!
         }
 
@@ -1417,10 +1403,10 @@ object Entity {
             var flags = flags
             if (flags and TH_PHYSICS != 0) {
                 // may only disable physics on a team master if no team members are running physics or bound to a joints
-                if (teamMaster === this) {
+                if (teamMaster == this) {
                     var ent = teamMaster!!.teamChain
                     while (ent != null) {
-                        if (ent.thinkFlags and TH_PHYSICS != 0 || ent.bindMaster === this && ent.bindJoint != Model.INVALID_JOINT) {
+                        if (ent.thinkFlags and TH_PHYSICS != 0 || ent.bindMaster == this && ent.bindJoint != Model.INVALID_JOINT) {
                             flags = flags and TH_PHYSICS.inv()
                             break
                         }
@@ -1491,7 +1477,6 @@ object Entity {
             // add to refresh list
             if (modelDefHandle == -1) {
                 modelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(renderEntity!!)
-                val a = 0
             } else {
                 Game_local.gameRenderWorld!!.UpdateEntityDef(modelDefHandle, renderEntity!!)
             }
@@ -1627,8 +1612,8 @@ object Entity {
             val origin = idVec3()
             val axis = idMat3()
             if (GetPhysicsToVisualTransform(origin, axis)) {
-                renderEntity!!.axis.set(axis.times(GetPhysics().GetAxis()))
-                renderEntity!!.origin.set(GetPhysics().GetOrigin().plus(origin.times(renderEntity!!.axis)))
+                renderEntity!!.axis.set(axis * GetPhysics().GetAxis())
+                renderEntity!!.origin.set(GetPhysics().GetOrigin() + origin * renderEntity!!.axis)
             } else {
                 renderEntity!!.axis.set(GetPhysics().GetAxis())
                 renderEntity!!.origin.set(GetPhysics().GetOrigin())
@@ -1828,7 +1813,7 @@ object Entity {
             }
 
             // if we don't have a soundEmitter allocated yet, get one now
-            if (TempDump.NOT(refSound.referenceSound)) {
+            if (refSound.referenceSound == null) {
                 refSound.referenceSound = Game_local.gameSoundWorld!!.AllocSoundEmitter()
             }
             UpdateSound()
@@ -1852,7 +1837,7 @@ object Entity {
         }
 
         fun StopSound(   /*s_channelType*/channel: Int,
-                                          broadcast: Boolean
+                         broadcast: Boolean
         ) {    // pass SND_CHANNEL_ANY to stop all sounds
             if (!Game_local.gameLocal.isNewFrame) {
                 return
@@ -1930,7 +1915,7 @@ object Entity {
                 QuitTeam()
             }
             assert(teammember != null)
-            if (teammember === this) {
+            if (teammember == this) {
                 teamMaster = this
                 return
             }
@@ -1940,8 +1925,8 @@ object Entity {
             if (null == master) {
                 // he's not on a team, so he's the new teamMaster
                 master = teammember
-                teammember!!.teamMaster = teammember
-                teammember!!.teamChain = this
+                teammember.teamMaster = teammember
+                teammember.teamChain = this
 
                 // make anyone who's bound to me part of the new team
                 ent = teamChain
@@ -1952,7 +1937,7 @@ object Entity {
             } else {
                 // skip past the chain members bound to the entity we're teaming up with
                 prev = teammember
-                next = teammember!!.teamChain
+                next = teammember.teamChain
                 if (bindMaster != null) {
                     // if we have a bindMaster, join after any entities bound to the entity
                     // we're joining
@@ -1972,11 +1957,11 @@ object Entity {
                 // also find the last member of my team
                 ent = this
                 while (ent!!.teamChain != null) {
-                    ent!!.teamChain!!.teamMaster = master
-                    ent = ent!!.teamChain
+                    ent.teamChain!!.teamMaster = master
+                    ent = ent.teamChain
                 }
-                prev!!.teamChain = this
-                ent!!.teamChain = next
+                prev.teamChain = this
+                ent.teamChain = next
             }
             teamMaster = master
 
@@ -2118,7 +2103,7 @@ object Entity {
                 ent = ent.teamChain
             }
             assert(
-                ent === this // If ent is not pointing to this, then something is very wrong.
+                ent == this // If ent is not pointing to this, then something is very wrong.
             )
 
             // Find the last node in my team that is bound to me.
@@ -2137,13 +2122,13 @@ object Entity {
             }
 
             // disconnect the last member of our team from the old team
-            last!!.teamChain = null
+            last.teamChain = null
 
             // connect up the previous member of the old team to the node that
             // follow the last node bound to me (if one exists).
             if (teamMaster !== this) {
                 prev!!.teamChain = next
-                if (null == next && teamMaster === prev) {
+                if (null == next && teamMaster == prev) {
                     prev.teamMaster = null
                 }
             } else if (next != null) {
@@ -2182,7 +2167,7 @@ object Entity {
             }
             ent = bindMaster
             while (ent != null) {
-                if (ent === master) {
+                if (ent == master) {
                     return true
                 }
                 ent = ent.bindMaster
@@ -2304,8 +2289,8 @@ object Entity {
         }
 
         fun GetMasterPosition(masterOrigin: idVec3, masterAxis: idMat3): Boolean {
-            val localOrigin = idVec3()
-            val localAxis = idMat3()
+            idVec3()
+            idMat3()
             val masterAnimator: idAnimator?
             return if (bindMaster != null) {
                 // if bound to a joint of an animated model
@@ -2408,7 +2393,6 @@ object Entity {
             var part: idEntity?
             var blockedPart: idEntity?
             var blockingEntity: idEntity? = null
-            var results: trace_s
             var moved: Boolean
 
             // don't run physics if not enabled
@@ -2491,12 +2475,12 @@ object Entity {
                     if (part!!.physics != null) {
 
                         // restore the physics state
-                        part!!.physics.RestoreState()
+                        part.physics.RestoreState()
 
                         // move back the visual position and orientation
-                        part!!.UpdateFromPhysics(true)
+                        part.UpdateFromPhysics(true)
                     }
-                    part = part!!.teamChain
+                    part = part.teamChain
                 }
                 part = this
                 while (part != null) {
@@ -2515,9 +2499,9 @@ object Entity {
 
                 // if the master pusher has a "blocked" function, call it
                 Signal(signalNum_t.SIG_BLOCKED)
-                ProcessEvent(Mover.EV_TeamBlocked, blockedPart, blockingEntity)
+                ProcessEvent(EV_TeamBlocked, blockedPart, blockingEntity)
                 // call the blocked function on the blocked part
-                blockedPart.ProcessEvent(Mover.EV_PartBlocked, blockingEntity)
+                blockedPart.ProcessEvent(EV_PartBlocked, blockingEntity)
                 return false
             }
 
@@ -2538,11 +2522,11 @@ object Entity {
                 if (part.physics != null) {
                     reachedTime = part.physics.GetLinearEndTime()
                     if (startTime < reachedTime && endTime >= reachedTime) {
-                        part.ProcessEvent(Mover.EV_ReachedPos)
+                        part.ProcessEvent(EV_ReachedPos)
                     }
                     reachedTime = part.physics.GetAngularEndTime()
                     if (startTime < reachedTime && endTime >= reachedTime) {
-                        part.ProcessEvent(Mover.EV_ReachedAng)
+                        part.ProcessEvent(EV_ReachedAng)
                     }
                 }
                 part = part.teamChain
@@ -2684,7 +2668,7 @@ object Entity {
             )
             dest.set(midpoint)
             Game_local.gameLocal.clip.TracePoint(tr, origin, dest, Game_local.MASK_SOLID, null)
-            if (tr.fraction.toDouble() == 1.0 || Game_local.gameLocal.GetTraceEntity(tr) === this) {
+            if (tr.fraction == 1.0f || Game_local.gameLocal.GetTraceEntity(tr) == this) {
                 damagePoint.set(tr.endpos)
                 return true
             }
@@ -2694,7 +2678,7 @@ object Entity {
             dest.plusAssign(0, 15.0f)
             dest.plusAssign(1, 15.0f)
             Game_local.gameLocal.clip.TracePoint(tr, origin, dest, Game_local.MASK_SOLID, null)
-            if (tr.fraction.toDouble() == 1.0 || Game_local.gameLocal.GetTraceEntity(tr) === this) {
+            if (tr.fraction == 1.0f || Game_local.gameLocal.GetTraceEntity(tr) == this) {
                 damagePoint.set(tr.endpos)
                 return true
             }
@@ -2702,7 +2686,7 @@ object Entity {
             dest.plusAssign(0, 15.0f)
             dest.minusAssign(1, 15.0f)
             Game_local.gameLocal.clip.TracePoint(tr, origin, dest, Game_local.MASK_SOLID, null)
-            if (tr.fraction.toDouble() == 1.0 || Game_local.gameLocal.GetTraceEntity(tr) === this) {
+            if (tr.fraction == 1.0f || Game_local.gameLocal.GetTraceEntity(tr) == this) {
                 damagePoint.set(tr.endpos)
                 return true
             }
@@ -2710,7 +2694,7 @@ object Entity {
             dest.minusAssign(0, 15.0f)
             dest.plusAssign(1, 15.0f)
             Game_local.gameLocal.clip.TracePoint(tr, origin, dest, Game_local.MASK_SOLID, null)
-            if (tr.fraction.toDouble() == 1.0 || Game_local.gameLocal.GetTraceEntity(tr) === this) {
+            if (tr.fraction == 1.0f || Game_local.gameLocal.GetTraceEntity(tr) == this) {
                 damagePoint.set(tr.endpos)
                 return true
             }
@@ -2718,21 +2702,21 @@ object Entity {
             dest.minusAssign(0, 15.0f)
             dest.minusAssign(1, 15.0f)
             Game_local.gameLocal.clip.TracePoint(tr, origin, dest, Game_local.MASK_SOLID, null)
-            if (tr.fraction.toDouble() == 1.0 || Game_local.gameLocal.GetTraceEntity(tr) === this) {
+            if (tr.fraction == 1.0f || Game_local.gameLocal.GetTraceEntity(tr) == this) {
                 damagePoint.set(tr.endpos)
                 return true
             }
             dest.set(midpoint)
             dest.plusAssign(2, 15.0f)
             Game_local.gameLocal.clip.TracePoint(tr, origin, dest, Game_local.MASK_SOLID, null)
-            if (tr.fraction.toDouble() == 1.0 || Game_local.gameLocal.GetTraceEntity(tr) === this) {
+            if (tr.fraction == 1.0f || Game_local.gameLocal.GetTraceEntity(tr) == this) {
                 damagePoint.set(tr.endpos)
                 return true
             }
             dest.set(midpoint)
             dest.minusAssign(2, 15.0f)
             Game_local.gameLocal.clip.TracePoint(tr, origin, dest, Game_local.MASK_SOLID, null)
-            if (tr.fraction.toDouble() == 1.0 || Game_local.gameLocal.GetTraceEntity(tr) === this) {
+            if (tr.fraction == 1.0f || Game_local.gameLocal.GetTraceEntity(tr) == this) {
                 damagePoint.set(tr.endpos)
                 return true
             }
@@ -2785,7 +2769,7 @@ object Entity {
 
             // inform the attacker that they hit someone
             attacker!!.DamageFeedback(this, inflictor, damage)
-            if (0 == damage._val) {
+            if (0 != damage._val) {
                 // do the damage
                 health -= damage._val
                 if (health <= 0) {
@@ -3127,7 +3111,7 @@ object Entity {
                             val ent: idEntity? = Game_local.gameLocal.FindEntity(token2)
                             if (ent != null) {
                                 ent.Signal(signalNum_t.SIG_TRIGGER)
-                                ent.PostEventMS(EV_Activate, 0f, this)
+                                ent.PostEventMS(EV_Activate, 0.0f, this)
                             }
                         }
                         entityGui.renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] = 1.0f
@@ -3273,7 +3257,7 @@ object Entity {
             // ensure that we don't target ourselves since that could cause an infinite loop when activating entities
             i = 0
             while (i < targets.Num()) {
-                if (targets[i].GetEntity() === this) {
+                if (targets[i].GetEntity() == this) {
                     idGameLocal.Error("Entity '%s' is targeting itself", name)
                 }
                 i++
@@ -3284,7 +3268,7 @@ object Entity {
             var i: Int
             i = targets.Num() - 1
             while (i >= 0) {
-                if (TempDump.NOT(targets[i].GetEntity())) {
+                if (targets[i].GetEntity() == null) {
                     targets.RemoveIndex(i)
                 }
                 i--
@@ -3365,7 +3349,7 @@ object Entity {
                 cm = clipModels[i]!!
 
                 // don't touch it if we're the owner
-                if (cm.GetOwner() === this) {
+                if (cm.GetOwner() == this) {
                     i++
                     continue
                 }
@@ -3374,7 +3358,7 @@ object Entity {
                     i++
                     continue
                 }
-                if (TempDump.NOT(GetPhysics().ClipContents(cm).toDouble())) {
+                if (GetPhysics().ClipContents(cm) == 0) {
                     i++
                     continue
                 }
@@ -3384,7 +3368,7 @@ object Entity {
                 trace.c.id = cm.GetId()
                 ent.Signal(signalNum_t.SIG_TOUCH)
                 ent.ProcessEvent(EV_Touch, this, trace)
-                if (TempDump.NOT(Game_local.gameLocal.entities[entityNumber])) {
+                if (Game_local.gameLocal.entities[entityNumber] == null) {
                     Game_local.gameLocal.Printf("entity was removed while touching triggers\n")
                     return true
                 }
@@ -3478,12 +3462,14 @@ object Entity {
                     }
                     true
                 }
+
                 EVENT_STOPSOUNDSHADER -> {
                     assert(Game_local.gameLocal.isNewFrame)
                     channel =  /*(s_channelType)*/msg.ReadByte().toInt()
                     StopSound(channel, false)
                     true
                 }
+
                 else -> {
                     false
                 }
@@ -3525,9 +3511,11 @@ object Entity {
                     1 -> {
                         BindToJoint(master,  /*(jointHandle_t)*/bindPos, bindOrientated)
                     }
+
                     2 -> {
                         BindToBody(master, bindPos, bindOrientated)
                     }
+
                     else -> {
                         Bind(master, bindOrientated)
                     }
@@ -3544,12 +3532,12 @@ object Entity {
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_BLUE],
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_ALPHA]
             )
-            msg.WriteLong(Lib.PackColor(color).toInt())
+            msg.WriteLong(PackColor(color).toInt())
         }
 
         fun ReadColorFromSnapshot(msg: idBitMsgDelta) {
             val color = idVec4()
-            Lib.UnpackColor(msg.ReadLong().toLong(), color)
+            UnpackColor(msg.ReadLong().toLong(), color)
             renderEntity!!.shaderParms[RenderWorld.SHADERPARM_RED] = color[0]
             renderEntity!!.shaderParms[RenderWorld.SHADERPARM_GREEN] = color[1]
             renderEntity!!.shaderParms[RenderWorld.SHADERPARM_BLUE] = color[2]
@@ -3709,7 +3697,7 @@ object Entity {
             if (!spawnArgs.GetBool("noclipmodel", "0")) {
 
                 // check if mins/maxs or size key/value pairs are set
-                if (TempDump.NOT(clipModel)) {
+                if (clipModel == null) {
                     val size = idVec3()
                     val bounds = idBounds()
                     var setClipModel = false
@@ -3750,7 +3738,7 @@ object Entity {
                 }
 
                 // check if the visual model can be used as collision model
-                if (TempDump.NOT(clipModel)) {
+                if (clipModel == null) {
                     temp[0] = spawnArgs.GetString("model")
                     if (temp.isNotEmpty() && !temp[0].isNullOrEmpty()) {
                         if (idClipModel.CheckModel(temp[0]!!) != 0) {
@@ -3787,15 +3775,11 @@ object Entity {
 
         // entity binding
         private fun InitBind(master: idEntity?): Boolean {        // initialize an entity binding
-            if (null == master || master == Game_local.gameLocal.world) {
-                // this can happen in scripts, so safely exit out.
-                return false
-            }
             if (master == this) { //TODO:equals
                 idGameLocal.Error("Tried to bind an object to itself.")
                 return false
             }
-            if (this === Game_local.gameLocal.world) {
+            if (this == Game_local.gameLocal.world) {
                 idGameLocal.Error("Tried to bind world to another entity")
                 return false
             }
@@ -3835,9 +3819,9 @@ object Entity {
             ent = teamChain
             while (ent != null) {
                 next = ent.teamChain
-                if (ent.bindMaster === this) {
+                if (ent.bindMaster == this) {
                     ent.Unbind()
-                    ent.PostEventMS(neo.Game.GameSys.Class.EV_Remove, 0)
+                    ent.PostEventMS(EV_Remove, 0)
                     next = teamChain
                 }
                 ent = next
@@ -3851,7 +3835,7 @@ object Entity {
             }
 
             // check if I'm the teamMaster
-            if (teamMaster === this) {
+            if (teamMaster == this) {
                 // do we have more than one teammate?
                 if (null == teamChain!!.teamChain) {
                     // no, break up the team
@@ -3872,13 +3856,13 @@ object Entity {
                 ent = teamMaster
                 while (ent!!.teamChain !== this) {
                     assert(
-                        ent!!.teamChain != null // this should never happen
+                        ent.teamChain != null // this should never happen
                     )
-                    ent = ent!!.teamChain
+                    ent = ent.teamChain
                 }
 
                 // remove this from the teamChain
-                ent!!.teamChain = teamChain
+                ent.teamChain = teamChain
 
                 // if no one is left on the team, break it up
                 if (null == teamMaster!!.teamChain) {
@@ -4087,18 +4071,18 @@ object Entity {
 
         private fun Event_RestorePosition() {
             val org = idVec3()
-            var angles = idAngles()
+            val angles = idAngles()
             val axis = idMat3()
             var part: idEntity?
             spawnArgs.GetVector("origin", "0 0 0", org)
 
             // get the rotation matrix in either full form, or single angle form
             if (spawnArgs.GetMatrix("rotation", "1 0 0 0 1 0 0 0 1", axis)) {
-                angles = axis.ToAngles()
+                angles.set(axis.ToAngles())
             } else {
-                angles[0] = 0f
+                angles[0] = 0.0f
                 angles[1] = spawnArgs.GetFloat("angle")
-                angles[2] = 0f
+                angles[2] = 0.0f
             }
             Teleport(org, angles, null)
             part = teamChain
@@ -4192,7 +4176,7 @@ object Entity {
                     funcName
                 )
             }
-            if (!scriptObject.GetTypeDef()!!.Inherits(func.type!!.GetParmType(0))) {
+            if (!scriptObject.GetTypeDef().Inherits(func.type!!.GetParmType(0))) {
                 idGameLocal.Error("Function '%s' is the wrong type for 'callFunction'", funcName)
             }
 
@@ -4258,7 +4242,7 @@ object Entity {
                 if (null == ent) {
                     idGameLocal.Error("idEntity::ModelCallback: callback with NULL game entity")
                 }
-                return ent!!.UpdateRenderEntity(e!!, v)
+                return ent!!.UpdateRenderEntity(e, v)
             }
 
             override fun AllocBuffer(): ByteBuffer {
@@ -4412,7 +4396,7 @@ object Entity {
             ) {
                 val mat: idMat3
                 mat = angles.value.ToMat3()
-                e!!.animator.SetJointAxis(jointnum.value, jointModTransform_t.values().get(transform_type.value), mat)
+                e.animator.SetJointAxis(jointnum.value, jointModTransform_t.entries.get(transform_type.value), mat)
             }
 
             /*
@@ -4531,7 +4515,7 @@ object Entity {
             if (animator.ModelHandle() != null) {
                 // set the callback to update the joints
                 renderEntity!!.callback = ModelCallback.getInstance()
-                val joints = arrayOf<Array<idJointMat?>?>(null)
+                arrayOf<Array<idJointMat?>?>(null)
                 renderEntity!!.numJoints = animator.GetJoints(renderEntity!!)
                 animator.GetBounds(Game_local.gameLocal.time, renderEntity!!.bounds)
                 if (modelDefHandle != -1) {
@@ -4560,7 +4544,7 @@ object Entity {
             }
 
             // is the model an MD5?
-            if (TempDump.NOT(animator.ModelHandle())) {
+            if (animator.ModelHandle() == null) {
                 // no, so nothing to do
                 return
             }
@@ -4596,7 +4580,7 @@ object Entity {
         override fun SetModel(modelname: String) {
             FreeModelDef()
             renderEntity!!.hModel = animator.SetModel(modelname)
-            if (TempDump.NOT(renderEntity!!.hModel)) {
+            if (renderEntity!!.hModel == null) {
                 super.SetModel(modelname)
                 return
             }
@@ -4612,9 +4596,9 @@ object Entity {
         }
 
         fun GetJointWorldTransform(   /*jointHandle_t*/jointHandle: Int,
-                                                       currentTime: Int,
-                                                       offset: idVec3,
-                                                       axis: idMat3
+                                      currentTime: Int,
+                                      offset: idVec3,
+                                      axis: idMat3
         ): Boolean {
             if (!animator.GetJointTransform(jointHandle, currentTime, offset, axis)) {
                 return false
@@ -4624,10 +4608,10 @@ object Entity {
         }
 
         fun GetJointTransformForAnim(   /*jointHandle_t*/jointHandle: Int,
-                                                         animNum: Int,
-                                                         frameTime: Int,
-                                                         offset: idVec3,
-                                                         axis: idMat3
+                                        animNum: Int,
+                                        frameTime: Int,
+                                        offset: idVec3,
+                                        axis: idMat3
         ): Boolean {
             val anim: idAnim?
             val numJoints: Int
@@ -4698,11 +4682,11 @@ object Entity {
         }
 
         fun AddLocalDamageEffect(   /*jointHandle_t*/jointNum: Int,
-                                                     localOrigin: idVec3,
-                                                     localNormal: idVec3,
-                                                     localDir: idVec3,
-                                                     def: idDeclEntityDef,
-                                                     collisionMaterial: Material.idMaterial?
+                                    localOrigin: idVec3,
+                                    localNormal: idVec3,
+                                    localDir: idVec3,
+                                    def: idDeclEntityDef,
+                                    collisionMaterial: Material.idMaterial?
         ) {
             var sound: String?
             var splat: String?
@@ -4856,6 +4840,7 @@ object Entity {
                     AddLocalDamageEffect(jointNum, localOrigin, localNormal, localDir, damageDef, collisionMaterial)
                     true
                 }
+
                 else -> {
                     super.ClientReceiveEvent(event, time, msg)
                 }

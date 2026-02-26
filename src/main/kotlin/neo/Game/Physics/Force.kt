@@ -6,9 +6,6 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.Physics.Physics.idPhysics
 import neo.idlib.containers.List.idList
 
-/**
- *
- */
 class Force {
     /*
      ===============================================================================
@@ -65,8 +62,6 @@ class Force {
             }
         }
 
-        //
-        //
         init {
             forceList.Append(this)
         }

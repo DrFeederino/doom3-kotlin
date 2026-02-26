@@ -1,11 +1,8 @@
 package neo.Renderer
 
 import neo.framework.Common
-import neo.idlib.Lib.idException
+import neo.idlib.idException
 
-/**
- *
- */
 object tr_orderIndexes {
     /*
      ===============
@@ -15,7 +12,7 @@ object tr_orderIndexes {
     val CACHE_SIZE: Int = 24
     val STALL_SIZE: Int = 8
     fun R_MeshCost(numIndexes: Int, indexes: IntArray): Int {
-        val inCache: IntArray = IntArray(tr_orderIndexes.CACHE_SIZE)
+        val inCache: IntArray = IntArray(CACHE_SIZE)
         var i: Int
         var j: Int
         var v: Int
@@ -23,7 +20,7 @@ object tr_orderIndexes {
         var c_loads: Int
         var fifo: Int
         i = 0
-        while (i < tr_orderIndexes.CACHE_SIZE) {
+        while (i < CACHE_SIZE) {
             inCache[i] = -1
             i++
         }
@@ -34,17 +31,17 @@ object tr_orderIndexes {
         while (i < numIndexes) {
             v = indexes[i]
             j = 0
-            while (j < tr_orderIndexes.CACHE_SIZE) {
-                if (inCache[(fifo + j) % tr_orderIndexes.CACHE_SIZE] == v) {
+            while (j < CACHE_SIZE) {
+                if (inCache[(fifo + j) % CACHE_SIZE] == v) {
                     break
                 }
                 j++
             }
-            if (j == tr_orderIndexes.CACHE_SIZE) {
+            if (j == CACHE_SIZE) {
                 c_loads++
-                inCache[fifo % tr_orderIndexes.CACHE_SIZE] = v
+                inCache[fifo % CACHE_SIZE] = v
                 fifo++
-            } else if (j < tr_orderIndexes.STALL_SIZE) {
+            } else if (j < STALL_SIZE) {
                 c_stalls++
             }
             i++
@@ -79,7 +76,7 @@ object tr_orderIndexes {
         var v2: Int
         var c_starts: Int
         val c_cost: Int
-        if (!RenderSystem_init.r_orderIndexes!!.GetBool()) {
+        if (!r_orderIndexes!!.GetBool()) {
             return
         }
 
@@ -108,7 +105,7 @@ object tr_orderIndexes {
         // create a table of triangles used by each vertex
         vrefs = arrayOfNulls(numVerts)
         //	memset( vrefs, 0, numVerts * sizeof( *vrefs ) );
-        vrefTable = arrayOfNulls(numIndexes)
+        vrefTable = Array(numIndexes) { vertRef_s() }
         i = 0
         while (i < numIndexes) {
             tri = i / 3
@@ -178,10 +175,10 @@ object tr_orderIndexes {
                 }
             } while (true)
         }
-        c_cost = tr_orderIndexes.R_MeshCost(numIndexes, indexes)
+        c_cost = R_MeshCost(numIndexes, indexes)
     }
 
-    internal class vertRef_s() {
+    internal class vertRef_s {
         var next: vertRef_s? = null
         var tri: Int = 0
     } /*

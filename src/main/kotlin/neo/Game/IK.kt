@@ -1,6 +1,5 @@
 package neo.Game
 
-import neo.CM.CollisionModel.trace_s
 import neo.Game.Animation.Anim.jointModTransform_t
 import neo.Game.Animation.Anim_Blend.idAnimator
 import neo.Game.Entity.idEntity
@@ -13,21 +12,18 @@ import neo.Game.Physics.Clip.idClipModel
 import neo.Renderer.Material
 import neo.Renderer.Model
 import neo.Renderer.Model.idRenderModel
-import neo.idlib.Lib
+import neo.cm.trace_s
+import neo.idlib.*
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.geometry.JointTransform.idJointMat
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.geometry.Winding.idFixedWinding
-import neo.idlib.math.Math_h.idMath
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
-import kotlin.math.abs
+import neo.idlib.math.getVec3Origin
+import neo.idlib.math.idMath
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 object IK /*ea*/ {
     /*
      ===============================================================================
@@ -60,7 +56,7 @@ object IK /*ea*/ {
         open fun Save(savefile: idSaveGame) {
             savefile.WriteBool(initialized)
             savefile.WriteBool(ik_activate)
-            savefile.WriteObject(self!!)
+            savefile.WriteObject(self)
             savefile.WriteString(
                 if (animator != null && animator!!.GetAnim(modifiedAnim) != null) animator!!.GetAnim(
                     modifiedAnim
@@ -168,7 +164,7 @@ object IK /*ea*/ {
             length = lengthInv * lengthSqr
 
             // if the start and end position are too far out or too close to each other
-            if (length > len0 + len1 || length < abs(len0 - len1)) {
+            if (length > len0 + len1 || length < idMath.Fabs(len0 - len1)) {
                 jointPos.set(startPos.plus(vec0.times(0.5f)))
                 return false
             }
@@ -445,13 +441,13 @@ object IK /*ea*/ {
             val hipOrigin = idVec3()
             val dirOrigin = idVec3()
             val axis = idMat3()
-            var ankleAxis: idMat3
-            var kneeAxis: idMat3
-            var hipAxis: idMat3
+            val ankleAxis = idMat3()
+            val kneeAxis = idMat3()
+            val hipAxis = idMat3()
             if (null == self) {
                 return false
             }
-            numLegs = Lib.Min(self.spawnArgs.GetInt("ik_numLegs", "0"), MAX_LEGS)
+            numLegs = Min(self.spawnArgs.GetInt("ik_numLegs", "0"), MAX_LEGS)
             if (numLegs == 0) {
                 return true
             }
@@ -510,12 +506,12 @@ object IK /*ea*/ {
             // get the leg bone lengths and rotation matrices
             i = 0
             while (i < numLegs) {
-                oldAnkleHeights[i] = 0f
-                ankleAxis = joints[ankleJoints[i]].ToMat3()
+                oldAnkleHeights[i] = 0.0f
+                ankleAxis.set(joints[ankleJoints[i]].ToMat3())
                 ankleOrigin.set(joints[ankleJoints[i]].ToVec3())
-                kneeAxis = joints[kneeJoints[i]].ToMat3()
+                kneeAxis.set(joints[kneeJoints[i]].ToMat3())
                 kneeOrigin.set(joints[kneeJoints[i]].ToVec3())
-                hipAxis = joints[hipJoints[i]].ToMat3()
+                hipAxis.set(joints[hipJoints[i]].ToMat3())
                 hipOrigin.set(joints[hipJoints[i]].ToVec3())
 
                 // get the IK direction
@@ -523,7 +519,7 @@ object IK /*ea*/ {
                     dirOrigin.set(joints[dirJoints[i]].ToVec3())
                     dir.set(dirOrigin.minus(kneeOrigin))
                 } else {
-                    dir.set(1.0f, 0f, 0f)
+                    dir.set(1.0f, 0.0f, 0.0f)
                 }
                 hipForward[i].set(dir.times(hipAxis.Transpose()))
                 kneeForward[i].set(dir.times(kneeAxis.Transpose()))
@@ -630,7 +626,7 @@ object IK /*ea*/ {
                 newPivotYaw = modelAxis[0].ToYaw()
 
                 // change pivot foot
-                if (newPivotFoot != pivotFoot || abs(idMath.AngleNormalize180(newPivotYaw - pivotYaw)) > 30.0f) {
+                if (newPivotFoot != pivotFoot || idMath.Fabs(idMath.AngleNormalize180(newPivotYaw - pivotYaw)) > 30.0f) {
                     pivotFoot = newPivotFoot
                     pivotYaw = newPivotYaw
                     animator!!.GetJointTransform(footJoints[pivotFoot], Game_local.gameLocal.time, footOrigin, axis)
@@ -665,7 +661,7 @@ object IK /*ea*/ {
                     for (j in 0 until footModel!!.GetTraceModel()!!.numVerts) {
                         w.plusAssign(footModel!!.GetTraceModel()!!.verts[j])
                     }
-                    Game_local.gameRenderWorld!!.DebugWinding(Lib.colorRed, w, results.endpos, results.endAxis)
+                    Game_local.gameRenderWorld!!.DebugWinding(colorRed, w, results.endpos, results.endAxis)
                 }
                 i++
             }
@@ -694,7 +690,7 @@ object IK /*ea*/ {
                 shift = if (onGround && enabledLegs and (1 shl i) != 0) {
                     floorHeights[i] - modelHeight + footShift
                 } else {
-                    0f
+                    0.0f
                 }
                 if (shift < smallestShift) {
                     smallestShift = shift
@@ -785,15 +781,15 @@ object IK /*ea*/ {
                     kneeOrigin
                 )
                 if (SysCvar.ik_debug.GetBool()) {
-                    Game_local.gameRenderWorld!!.DebugLine(Lib.colorCyan, hipOrigin, kneeOrigin)
-                    Game_local.gameRenderWorld!!.DebugLine(Lib.colorRed, kneeOrigin, jointOrigins[i])
+                    Game_local.gameRenderWorld!!.DebugLine(colorCyan, hipOrigin, kneeOrigin)
+                    Game_local.gameRenderWorld!!.DebugLine(colorRed, kneeOrigin, jointOrigins[i])
                     Game_local.gameRenderWorld!!.DebugLine(
-                        Lib.colorYellow,
+                        colorYellow,
                         kneeOrigin,
                         kneeOrigin.plus(hipDir)
                     )
                     Game_local.gameRenderWorld!!.DebugLine(
-                        Lib.colorGreen,
+                        colorGreen,
                         kneeOrigin,
                         kneeOrigin.plus(kneeDir)
                     )
@@ -832,7 +828,7 @@ object IK /*ea*/ {
                 return
             }
             animator!!.SetJointAxis(waistJoint, jointModTransform_t.JOINTMOD_NONE, idMat3.getMat3_identity())
-            animator!!.SetJointPos(waistJoint, jointModTransform_t.JOINTMOD_NONE, Vector.getVec3Origin())
+            animator!!.SetJointPos(waistJoint, jointModTransform_t.JOINTMOD_NONE, getVec3Origin())
             i = 0
             while (i < numLegs) {
                 animator!!.SetJointAxis(
@@ -876,10 +872,10 @@ object IK /*ea*/ {
         companion object {
             private const val MAX_LEGS = 8
             private val footWinding /*[4]*/: Array<idVec3> = arrayOf(
-                idVec3(1.0f, 1.0f, 0f),
-                idVec3(-1.0f, 1.0f, 0f),
-                idVec3(-1.0f, -1.0f, 0f),
-                idVec3(1.0f, -1.0f, 0f)
+                idVec3(1.0f, 1.0f, 0.0f),
+                idVec3(-1.0f, 1.0f, 0.0f),
+                idVec3(-1.0f, -1.0f, 0.0f),
+                idVec3(1.0f, -1.0f, 0.0f)
             )
         }
 
@@ -897,29 +893,29 @@ object IK /*ea*/ {
                 kneeJoints[i] = Model.INVALID_JOINT
                 hipJoints[i] = Model.INVALID_JOINT
                 dirJoints[i] = Model.INVALID_JOINT
-                upperLegLength[i] = 0f
-                lowerLegLength[i] = 0f
+                upperLegLength[i] = 0.0f
+                lowerLegLength[i] = 0.0f
                 upperLegToHipJoint[i] = idMat3.getMat3_identity()
                 lowerLegToKneeJoint[i] = idMat3.getMat3_identity()
-                oldAnkleHeights[i] = 0f
+                oldAnkleHeights[i] = 0.0f
                 i++
             }
             waistJoint = Model.INVALID_JOINT
             smoothing = 0.75f
             waistSmoothing = 0.5f
-            footShift = 0f
-            waistShift = 0f
-            minWaistFloorDist = 0f
-            minWaistAnkleDist = 0f
+            footShift = 0.0f
+            waistShift = 0.0f
+            minWaistFloorDist = 0.0f
+            minWaistAnkleDist = 0.0f
             footUpTrace = 32.0f
             footDownTrace = 32.0f
             tiltWaist = false
             usePivot = false
             pivotFoot = -1
-            pivotYaw = 0f
+            pivotYaw = 0.0f
             pivotPos = idVec3()
             oldHeightsValid = false
-            oldWaistHeight = 0f
+            oldWaistHeight = 0.0f
             waistOffset = idVec3()
         }
     }
@@ -1078,20 +1074,20 @@ object IK /*ea*/ {
         override fun Init(self: idEntity?, anim: String, modelOffset: idVec3): Boolean {
             var i: Int
             var jointName: String
-            val trm = idTraceModel()
+            idTraceModel()
             val dir = idVec3()
             val handOrigin = idVec3()
             val elbowOrigin = idVec3()
             val shoulderOrigin = idVec3()
             val dirOrigin = idVec3()
             val axis = idMat3()
-            var handAxis = idMat3()
-            var elbowAxis: idMat3
-            var shoulderAxis: idMat3
+            val handAxis = idMat3()
+            val elbowAxis = idMat3()
+            val shoulderAxis = idMat3()
             if (null == self) {
                 return false
             }
-            numArms = Lib.Min(self.spawnArgs.GetInt("ik_numArms", "0"), MAX_ARMS)
+            numArms = Min(self.spawnArgs.GetInt("ik_numArms", "0"), MAX_ARMS)
             if (numArms == 0) {
                 return true
             }
@@ -1140,11 +1136,11 @@ object IK /*ea*/ {
             // get the arm bone lengths and rotation matrices
             i = 0
             while (i < numArms) {
-                handAxis = joints[handJoints[i]].ToMat3()
+                handAxis.set(joints[handJoints[i]].ToMat3())
                 handOrigin.set(joints[handJoints[i]].ToVec3())
-                elbowAxis = joints[elbowJoints[i]].ToMat3()
+                elbowAxis.set(joints[elbowJoints[i]].ToMat3())
                 elbowOrigin.set(joints[elbowJoints[i]].ToVec3())
-                shoulderAxis = joints[shoulderJoints[i]].ToMat3()
+                shoulderAxis.set(joints[shoulderJoints[i]].ToMat3())
                 shoulderOrigin.set(joints[shoulderJoints[i]].ToVec3())
 
                 // get the IK direction
@@ -1218,15 +1214,15 @@ object IK /*ea*/ {
                     elbowOrigin
                 )
                 if (SysCvar.ik_debug.GetBool()) {
-                    Game_local.gameRenderWorld!!.DebugLine(Lib.colorCyan, shoulderOrigin, elbowOrigin)
-                    Game_local.gameRenderWorld!!.DebugLine(Lib.colorRed, elbowOrigin, handOrigin)
+                    Game_local.gameRenderWorld!!.DebugLine(colorCyan, shoulderOrigin, elbowOrigin)
+                    Game_local.gameRenderWorld!!.DebugLine(colorRed, elbowOrigin, handOrigin)
                     Game_local.gameRenderWorld!!.DebugLine(
-                        Lib.colorYellow,
+                        colorYellow,
                         elbowOrigin,
                         elbowOrigin.plus(elbowDir)
                     )
                     Game_local.gameRenderWorld!!.DebugLine(
-                        Lib.colorGreen,
+                        colorGreen,
                         elbowOrigin,
                         elbowOrigin.plus(shoulderDir)
                     )
@@ -1300,8 +1296,8 @@ object IK /*ea*/ {
                 dirJoints[i] = Model.INVALID_JOINT
                 shoulderForward[i].Zero()
                 elbowForward[i].Zero()
-                upperArmLength[i] = 0f
-                lowerArmLength[i] = 0f
+                upperArmLength[i] = 0.0f
+                lowerArmLength[i] = 0.0f
                 upperArmToShoulderJoint[i].Identity()
                 lowerArmToElbowJoint[i].Identity()
                 i++

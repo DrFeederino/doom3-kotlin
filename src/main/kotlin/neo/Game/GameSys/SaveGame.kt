@@ -1,8 +1,5 @@
 package neo.Game.GameSys
 
-import neo.CM.CollisionModel.contactInfo_t
-import neo.CM.CollisionModel.contactType_t
-import neo.CM.CollisionModel.trace_s
 import neo.Game.Animation.Anim_Blend.idDeclModelDef
 import neo.Game.Entity.idEntity
 import neo.Game.Game.refSound_t
@@ -21,6 +18,9 @@ import neo.Renderer.RenderWorld.renderView_s
 import neo.Sound.snd_shader.idSoundShader
 import neo.TempDump.SERiAL
 import neo.TempDump.TODO_Exception
+import neo.cm.contactInfo_t
+import neo.cm.contactType_t
+import neo.cm.trace_s
 import neo.framework.BuildVersion
 import neo.framework.DeclFX.idDeclFX
 import neo.framework.DeclManager
@@ -29,10 +29,10 @@ import neo.framework.DeclParticle.idDeclParticle
 import neo.framework.DeclSkin.idDeclSkin
 import neo.framework.File_h.idFile
 import neo.framework.UsercmdGen.usercmd_t
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
-import neo.idlib.Lib
+import neo.idlib.LittleRevBytes
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CFloat
@@ -42,21 +42,13 @@ import neo.idlib.geometry.TraceModel
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.geometry.TraceModel.traceModel_t
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Angles.idAngles
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
-import neo.idlib.math.Vector.idVec5
-import neo.idlib.math.Vector.idVec6
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-/**
- *
- */
 object SaveGame {
     /*
      Save game related helper classes.
@@ -88,7 +80,7 @@ object SaveGame {
 
     class idSaveGame(private val file: idFile) {
         //
-        private val objects: idList<idClass>
+        private val objects: idList<idClass?>
 
         // ~idSaveGame();
         fun Close() {
@@ -99,7 +91,7 @@ object SaveGame {
             idClipModel.SaveTraceModels(this)
             i = 1
             while (i < objects.Num()) {
-                CallSave_r(objects[i].GetType(), objects[i])
+                CallSave_r(objects[i]!!.GetType(), objects[i])
                 i++
             }
             objects.Clear()
@@ -120,7 +112,7 @@ object SaveGame {
             WriteInt(objects.Num() - 1)
             i = 1
             while (i < objects.Num()) {
-                WriteString(objects[i].GetClassname())
+                WriteString(objects[i]!!.GetClassname())
                 i++
             }
         }
@@ -200,14 +192,14 @@ object SaveGame {
             i = 0
             while (i < num) {
                 val v = idVec5(w[i])
-                Lib.LittleRevBytes(v /*, sizeof(float), sizeof(v) / sizeof(float)*/)
+                LittleRevBytes(v /*, sizeof(float), sizeof(v) / sizeof(float)*/)
                 file.Write(v /*, sizeof(v)*/)
                 i++
             }
         }
 
         fun WriteBounds(bounds: idBounds) {
-            Lib.LittleRevBytes(bounds /*, sizeof(float), sizeof(b) / sizeof(float)*/)
+            LittleRevBytes(bounds /*, sizeof(float), sizeof(b) / sizeof(float)*/)
             file.Write(bounds /*, sizeof(b)*/)
         }
 
@@ -216,11 +208,11 @@ object SaveGame {
         }
 
         fun WriteAngles(angles: idAngles) {
-            Lib.LittleRevBytes(angles /*, sizeof(float), sizeof(v) / sizeof(float)*/)
+            LittleRevBytes(angles /*, sizeof(float), sizeof(v) / sizeof(float)*/)
             file.Write(angles /*, sizeof(v)*/)
         }
 
-        fun WriteObject(obj: idClass) {
+        fun WriteObject(obj: idClass?) {
             var index: Int
             index = objects.FindIndex(obj)
             if (index < 0) {
@@ -376,12 +368,12 @@ object SaveGame {
             var i: Int
             WriteMat3(renderLight.axis)
             WriteVec3(renderLight.origin)
-            WriteInt(renderLight.suppressLightInViewID)
-            WriteInt(renderLight.allowLightInViewID)
-            WriteBool(renderLight.noShadows)
-            WriteBool(renderLight.noSpecular)
-            WriteBool(renderLight.pointLight)
-            WriteBool(renderLight.parallel)
+            WriteInt(renderLight.suppressLightInViewID._val)
+            WriteInt(renderLight.allowLightInViewID._val)
+            WriteBool(renderLight.noShadows._val)
+            WriteBool(renderLight.noSpecular._val)
+            WriteBool(renderLight.pointLight._val)
+            WriteBool(renderLight.parallel._val)
             WriteVec3(renderLight.lightRadius)
             WriteVec3(renderLight.lightCenter)
             WriteVec3(renderLight.target)
@@ -392,7 +384,7 @@ object SaveGame {
 
             // only idLight has a prelightModel and it's always based on the entityname, so we'll restore it there
             // WriteModel( renderLight.prelightModel );
-            WriteInt(renderLight.lightId)
+            WriteInt(renderLight.lightId._val)
             WriteMaterial(renderLight.shader)
             i = 0
             while (i < Material.MAX_ENTITY_SHADER_PARMS) {
@@ -564,7 +556,7 @@ object SaveGame {
 
             // Put NULL at the start of the list so we can skip over it.
             objects = idList()
-            //objects.Append(null as idClass?)
+            objects.Append(null as idClass?)
         }
     }
 
@@ -593,7 +585,7 @@ object SaveGame {
         // if it's 0, this is from a GetBuildNumber() < 1305 savegame
         // otherwise, compare it to idGameLocal::INTERNAL_SAVEGAME_VERSION
         fun GetInternalSavegameVersion(): Int {
-            return internalSavegameVersion;
+            return internalSavegameVersion
         }
         // DG end
 
@@ -777,7 +769,7 @@ object SaveGame {
             i = 0
             while (i < num._val) {
                 file.Read(w.get(i) /*, sizeof(idVec5)*/)
-                Lib.LittleRevBytes(w.get(i) /*, sizeof(float), sizeof(idVec5) / sizeof(float)*/)
+                LittleRevBytes(w.get(i) /*, sizeof(float), sizeof(idVec5) / sizeof(float)*/)
                 i++
             }
         }
@@ -785,7 +777,7 @@ object SaveGame {
         fun ReadBounds(bounds: idBounds) {
             file.Read(bounds /*, sizeof(bounds)*/)
             //            LittleRevBytes(bounds, sizeof(float), sizeof(bounds) / sizeof(float));
-            Lib.LittleRevBytes(bounds /*, sizeof(float), sizeof(bounds) / sizeof(float)*/)
+            LittleRevBytes(bounds /*, sizeof(float), sizeof(bounds) / sizeof(float)*/)
         }
 
         fun ReadMat3(mat: idMat3) {
@@ -794,7 +786,7 @@ object SaveGame {
 
         fun ReadAngles(angles: idAngles) {
             file.Read(angles /*, sizeof(angles)*/)
-            Lib.LittleRevBytes(angles /*, sizeof(float), sizeof(idAngles) / sizeof(float)*/)
+            LittleRevBytes(angles /*, sizeof(float), sizeof(idAngles) / sizeof(float)*/)
         }
 
         fun ReadObject(obj: idClass?) {
@@ -849,7 +841,7 @@ object SaveGame {
                 //need to find out why setting null if = is overloaded
                 //skin.oSet(null)
             } else {
-                skin.oSet(DeclManager.declManager.FindSkin(name)!!)
+                DeclManager.declManager.FindSkin(name)
             }
         }
 
@@ -972,12 +964,12 @@ object SaveGame {
             var i: Int
             ReadMat3(renderLight.axis)
             ReadVec3(renderLight.origin)
-            renderLight.suppressLightInViewID = ReadInt()
-            renderLight.allowLightInViewID = ReadInt()
-            renderLight.noShadows = ReadBool()
-            renderLight.noSpecular = ReadBool()
-            renderLight.pointLight = ReadBool()
-            renderLight.parallel = ReadBool()
+            renderLight.suppressLightInViewID._val = ReadInt()
+            renderLight.allowLightInViewID._val = ReadInt()
+            renderLight.noShadows._val = ReadBool()
+            renderLight.noSpecular._val = ReadBool()
+            renderLight.pointLight._val = ReadBool()
+            renderLight.parallel._val = ReadBool()
             ReadVec3(renderLight.lightRadius)
             ReadVec3(renderLight.lightCenter)
             ReadVec3(renderLight.target)
@@ -989,7 +981,7 @@ object SaveGame {
             // only idLight has a prelightModel and it's always based on the entityname, so we'll restore it there
             // ReadModel( renderLight.prelightModel );
             renderLight.prelightModel = null
-            renderLight.lightId = ReadInt()
+            renderLight.lightId._val = ReadInt()
             ReadMaterial(renderLight.shader!!)
             i = 0
             while (i < Material.MAX_ENTITY_SHADER_PARMS) {
@@ -1056,7 +1048,7 @@ object SaveGame {
         }
 
         fun ReadContactInfo(contactInfo: contactInfo_t) {
-            contactInfo.type = contactType_t.values()[ReadInt()]
+            contactInfo.type = contactType_t.entries.toTypedArray()[ReadInt()]
             ReadVec3(contactInfo.point)
             ReadVec3(contactInfo.normal)
             contactInfo.dist = ReadFloat()
@@ -1078,7 +1070,7 @@ object SaveGame {
         fun ReadTraceModel(trace: idTraceModel) {
             var j: Int
             var k: Int
-            trace.type = traceModel_t.values()[ReadInt()]
+            trace.type = traceModel_t.entries.toTypedArray()[ReadInt()]
             trace.numVerts = ReadInt()
             j = 0
             while (j < TraceModel.MAX_TRACEMODEL_VERTS) {
@@ -1115,14 +1107,14 @@ object SaveGame {
             file.Read(tmp, 3)
         }
 
-        fun ReadClipModel(clipModel: idClipModel) {
+        fun ReadClipModel(clipModel: idClipModel?) {
             val restoreClipModel: Boolean
             restoreClipModel = ReadBool()
             if (restoreClipModel) {
 //                clipModel.oSet(new idClipModel());
-                clipModel.Restore(this)
+                clipModel?.Restore(this)
             } else {
-                clipModel.oSet(null) //TODO:
+                clipModel?.oSet(null) //TODO:
             }
         }
 

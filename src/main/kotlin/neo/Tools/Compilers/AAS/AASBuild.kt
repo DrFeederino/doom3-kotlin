@@ -3,9 +3,6 @@ package neo.Tools.Compilers.AAS
 import neo.Game.GameEdit
 import neo.Renderer.Material
 import neo.Renderer.RenderWorld
-import neo.TempDump
-import neo.Tools.Compilers.AAS.AASBuild_File.sizeEstimate_s
-import neo.Tools.Compilers.AAS.AASBuild_ledge.idLedge
 import neo.Tools.Compilers.AAS.AASBuild_local.aasProcNode_s
 import neo.Tools.Compilers.AAS.AASCluster.idAASCluster
 import neo.Tools.Compilers.AAS.AASFile.aasArea_s
@@ -14,23 +11,18 @@ import neo.Tools.Compilers.AAS.AASFile.aasFace_s
 import neo.Tools.Compilers.AAS.AASFile.aasNode_s
 import neo.Tools.Compilers.AAS.AASFile.idAASSettings
 import neo.Tools.Compilers.AAS.AASFile_local.idAASFileLocal
-import neo.Tools.Compilers.AAS.AASReach.idAASReach
 import neo.Tools.Compilers.AAS.Brush.idBrush
 import neo.Tools.Compilers.AAS.Brush.idBrushList
 import neo.Tools.Compilers.AAS.Brush.idBrushMap
 import neo.Tools.Compilers.AAS.Brush.idBrushSide
-import neo.Tools.Compilers.AAS.BrushBSP.idBrushBSP
-import neo.Tools.Compilers.AAS.BrushBSP.idBrushBSPNode
-import neo.Tools.Compilers.AAS.BrushBSP.idBrushBSPPortal
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
 import neo.framework.DeclManager
 import neo.framework.FileSystem_h
 import neo.framework.FileSystem_h.idFileList
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BIT
+import neo.idlib.BV.idBounds
 import neo.idlib.CmdArgs
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
 import neo.idlib.MapFile
 import neo.idlib.MapFile.idMapBrush
 import neo.idlib.MapFile.idMapBrushSide
@@ -42,27 +34,20 @@ import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
-import neo.idlib.containers.HashIndex.idHashIndex
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.PlaneSet.idPlaneSet
+import neo.idlib.containers.idHashIndex
 import neo.idlib.containers.idStrList
 import neo.idlib.geometry.Surface_Patch.idSurface_Patch
 import neo.idlib.geometry.Winding
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.idException
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
 import neo.sys.win_shared
 import kotlin.math.abs
 
-/**
- *
- */
 object AASBuild {
     const val BFL_PATCH = 0x1000
 
@@ -268,7 +253,7 @@ object AASBuild {
 
             // write the file
             name.SetFileExtension(aasSettings.fileExtension)
-            file.Write(name, mapFile.GetGeometryCRC().toLong())
+            file.Write(name, mapFile.GetGeometryCRC())
 
             // delete the map file
 //	delete mapFile;
@@ -308,7 +293,7 @@ object AASBuild {
             cluster.Build(file)
 
             // write the file
-            file.Write(name, mapFile.GetGeometryCRC().toLong())
+            file.Write(name, mapFile.GetGeometryCRC())
 
 //	// delete the map file
 //	delete mapFile;
@@ -437,20 +422,20 @@ object AASBuild {
             var node: aasProcNode_s
             var dist: Float
             do {
-                node = procNodes!!.get(nodeNum)
+                node = procNodes!![nodeNum]
                 dist = node.plane.Normal().times(origin) + node.plane[3]
                 res = if (dist > radius) {
-                    Plane.SIDE_FRONT
+                    SIDE_FRONT
                 } else if (dist < -radius) {
-                    Plane.SIDE_BACK
+                    SIDE_BACK
                 } else {
-                    w.Split(back, node.plane, Plane.ON_EPSILON)
+                    w.Split(back, node.plane, ON_EPSILON)
                 }
-                nodeNum = if (res == Plane.SIDE_FRONT) {
+                nodeNum = if (res == SIDE_FRONT) {
                     node.children[0]
-                } else if (res == Plane.SIDE_BACK) {
+                } else if (res == SIDE_BACK) {
                     node.children[1]
-                } else if (res == Plane.SIDE_ON) {
+                } else if (res == SIDE_ON) {
                     // continue with the side the winding faces
                     if (node.plane.Normal().times(normal) > 0.0f) {
                         node.children[0]
@@ -492,7 +477,7 @@ object AASBuild {
             while (brush != null) {
                 i = 0
                 while (i < brush.GetNumSides()) {
-                    if (TempDump.NOT(brush.GetSide(i).GetWinding())) {
+                    if (brush.GetSide(i).GetWinding() == null) {
                         i++
                         continue
                     }
@@ -501,7 +486,7 @@ object AASBuild {
                     neww = brush.GetSide(i).GetWinding() as idFixedWinding
                     neww.GetBounds(bounds)
                     origin.set(bounds[1].minus(bounds[0]).times(0.5f))
-                    radius = origin.Length() + Plane.ON_EPSILON
+                    radius = origin.Length() + ON_EPSILON
                     origin.set(bounds[0].plus(origin))
                     if (ChoppedAwayByProcBSP(0, neww, brush.GetSide(i).GetPlane().Normal(), origin, radius)) {
                         brush.GetSide(i).SetFlag(Brush.SFL_USED_SPLITTER)
@@ -554,7 +539,7 @@ object AASBuild {
                 mat = DeclManager.declManager.FindMaterial(mapSide.GetMaterial())!!
                 contents = contents or mat.GetContentFlags()
                 plane = mapSide.GetPlane()
-                plane.FixDegeneracies(Plane.DEGENERATE_DIST_EPSILON)
+                plane.FixDegeneracies(DEGENERATE_DIST_EPSILON)
                 sideList.Append(idBrushSide(plane, -1))
                 i++
             }
@@ -723,7 +708,7 @@ object AASBuild {
             var brushList = brushList
             var i: Int
             val origin = idVec3()
-            var axis = idMat3()
+            val axis = idMat3()
             if (mapEnt.GetNumPrimitives() < 1) {
                 return brushList
             }
@@ -731,7 +716,7 @@ object AASBuild {
             if (!mapEnt.epairs.GetMatrix("rotation", "1 0 0 0 1 0 0 0 1", axis)) {
                 val angle = mapEnt.epairs.GetFloat("angle")
                 if (angle != 0.0f) {
-                    axis = idAngles(0.0f, angle, 0.0f).ToMat3()
+                    axis.set(idAngles(0.0f, angle, 0.0f).ToMat3())
                 } else {
                     axis.Identity()
                 }
@@ -814,7 +799,7 @@ object AASBuild {
             if (node.GetContents() and AASFile.AREACONTENTS_SOLID != 0) {
                 return
             }
-            if (TempDump.NOT(node.GetChild(0)) && TempDump.NOT(node.GetChild(1))) {
+            if (node.GetChild(0) == null && node.GetChild(1) == null) {
                 p = node.GetPortals()
                 while (p != null) {
                     s = if (p.GetNode(1) == node) 1 else 0
@@ -935,7 +920,7 @@ object AASBuild {
 
                     // get the side of the plane the gap is on
                     side1 = w1.PlaneSide(plane, GRAVSUBDIV_EPSILON)
-                    if (side1 == Plane.SIDE_ON) {
+                    if (side1 == SIDE_ON) {
                         break
                     }
 
@@ -954,7 +939,7 @@ object AASBuild {
                         w2 = p2.GetWinding()
                         min = 2.0f * GRAVSUBDIV_EPSILON
                         max = GRAVSUBDIV_EPSILON
-                        if (side1 == Plane.SIDE_FRONT) {
+                        if (side1 == SIDE_FRONT) {
                             j = 0
                             while (j < w2.GetNumPoints()) {
                                 d = plane.Distance(w2[j].ToVec3())
@@ -1046,7 +1031,7 @@ object AASBuild {
                 p1 = node.GetPortals()
                 while (p1 != null) {
                     s1 = if (p1.GetNode(1) == node) 1 else 0
-                    if (p1.GetWinding().PlaneSide(planeList[i], 0.1f) == Plane.SIDE_CROSS) {
+                    if (p1.GetWinding().PlaneSide(planeList[i], 0.1f) == SIDE_CROSS) {
                         numSplits++
                     }
                     p1 = p1.Next(s1)
@@ -1101,7 +1086,7 @@ object AASBuild {
             if (node.GetContents() and AASFile.AREACONTENTS_SOLID != 0) {
                 return
             }
-            if (TempDump.NOT(node.GetChild(0)) && TempDump.NOT(node.GetChild(1))) {
+            if (node.GetChild(0) == null && node.GetChild(1) == null) {
                 GravSubdivLeafNode(node)
                 return
             }
@@ -1124,7 +1109,7 @@ object AASBuild {
             var p1: idBrushBSPPortal?
             var w: idWinding?
             val nodeList = idList<idBrushBSPNode?>()
-            if (node.GetFlags() and BrushBSP.NODE_VISITED != 0) {
+            if (node.GetFlags() and NODE_VISITED != 0) {
                 return
             }
 
@@ -1148,7 +1133,7 @@ object AASBuild {
 //                    w = null;
                     i = 0
                     while (i < ledge.numSplitPlanes) {
-                        if (node.PlaneSide(ledge.planes[i], 0.1f) != Plane.SIDE_CROSS) {
+                        if (node.PlaneSide(ledge.planes[i], 0.1f) != SIDE_CROSS) {
                             i++
                             continue
                         }
@@ -1158,7 +1143,7 @@ object AASBuild {
                         }
                         numLedgeSubdivisions++
                         Brush.DisplayRealTimeString("\r%6d", numLedgeSubdivisions)
-                        node.GetChild(0)!!.SetFlag(BrushBSP.NODE_VISITED)
+                        node.GetChild(0)!!.SetFlag(NODE_VISITED)
                         LedgeSubdivFlood_r(node.GetChild(1)!!, ledge)
                         return
                         i++
@@ -1168,7 +1153,7 @@ object AASBuild {
                     p1 = p1.Next(s1)
                 }
             }
-            node.SetFlag(BrushBSP.NODE_VISITED)
+            node.SetFlag(NODE_VISITED)
 
             // get all nodes we might need to flood into
             p1 = node.GetPortals()
@@ -1181,7 +1166,7 @@ object AASBuild {
 
                 // flood through this portal if the portal is partly inside the expanded ledge
                 w = ledge.ChopWinding(p1.GetWinding())
-                if (TempDump.NOT(w)) {
+                if (w == null) {
                     p1 = p1.Next(s1)
                     continue
                 }
@@ -1252,7 +1237,7 @@ object AASBuild {
                 LedgeSubdivLeafNodes_r(ledgeList[i].node, ledgeList[i])
 
                 // remove the node visited flags
-                ledgeList[i].node.RemoveFlagRecurseFlood(BrushBSP.NODE_VISITED)
+                ledgeList[i].node.RemoveFlagRecurseFlood(NODE_VISITED)
                 i++
             }
         }
@@ -1276,17 +1261,17 @@ object AASBuild {
             while (node!!.GetChild(0) != null && node.GetChild(1) != null) {
                 dist = node.GetPlane().Distance(origin)
                 res = if (dist > radius) {
-                    Plane.SIDE_FRONT
+                    SIDE_FRONT
                 } else if (dist < -radius) {
-                    Plane.SIDE_BACK
+                    SIDE_BACK
                 } else {
-                    w.Split(back, node.GetPlane(), AASBuild_ledge.LEDGE_EPSILON)
+                    w.Split(back, node.GetPlane(), LEDGE_EPSILON)
                 }
-                node = if (res == Plane.SIDE_FRONT) {
+                node = if (res == SIDE_FRONT) {
                     node.GetChild(0)
-                } else if (res == Plane.SIDE_BACK) {
+                } else if (res == SIDE_BACK) {
                     node.GetChild(1)
-                } else if (res == Plane.SIDE_ON) {
+                } else if (res == SIDE_ON) {
                     // continue with the side the winding faces
                     if (node.GetPlane().Normal().times(normal) > 0.0f) {
                         node.GetChild(0)
@@ -1324,10 +1309,10 @@ object AASBuild {
             while (i < ledgeList.Num()) {
                 j = 0
                 while (j < 2) {
-                    if (abs(ledgeList[i].planes[j].Distance(v1)) > AASBuild_ledge.LEDGE_EPSILON) {
+                    if (abs(ledgeList[i].planes[j].Distance(v1)) > LEDGE_EPSILON) {
                         break
                     }
-                    if (abs(ledgeList[i].planes[j].Distance(v2)) > AASBuild_ledge.LEDGE_EPSILON) {
+                    if (abs(ledgeList[i].planes[j].Distance(v2)) > LEDGE_EPSILON) {
                         break
                     }
                     j++
@@ -1398,8 +1383,8 @@ object AASBuild {
                         continue
                     }
                     winding.Clear()
-                    winding.plusAssign(v1.plus(normal.times(AASBuild_ledge.LEDGE_EPSILON * 0.5f)))
-                    winding.plusAssign(v2.plus(normal.times(AASBuild_ledge.LEDGE_EPSILON * 0.5f)))
+                    winding.plusAssign(v1.plus(normal.times(LEDGE_EPSILON * 0.5f)))
+                    winding.plusAssign(v2.plus(normal.times(LEDGE_EPSILON * 0.5f)))
                     winding.plusAssign(
                         winding[1].ToVec3()
                             .plus(aasSettings.gravityDir.times(aasSettings.maxStepHeight._val + 1.0f))
@@ -1410,7 +1395,7 @@ object AASBuild {
                     )
                     winding.GetBounds(bounds)
                     origin.set(bounds[1].minus(bounds[0]).times(0.5f))
-                    radius = origin.Length() + AASBuild_ledge.LEDGE_EPSILON
+                    radius = origin.Length() + LEDGE_EPSILON
                     origin.set(bounds[0].plus(origin))
                     plane.FitThroughPoint(v1.plus(aasSettings.gravityDir.times(aasSettings.maxStepHeight._val)))
                     if (!IsLedgeSide_r(root, winding, plane, normal, origin, radius)) {
@@ -1431,12 +1416,12 @@ object AASBuild {
             if (node.GetContents() and AASFile.AREACONTENTS_SOLID != 0) {
                 return
             }
-            if (TempDump.NOT(node.GetChild(0)) && TempDump.NOT(node.GetChild(1))) {
-                if (node.GetFlags() and BrushBSP.NODE_VISITED != 0) {
+            if (node.GetChild(0) == null && node.GetChild(1) == null) {
+                if (node.GetFlags() and NODE_VISITED != 0) {
                     return
                 }
                 FindLeafNodeLedges(root, node)
-                node.SetFlag(BrushBSP.NODE_VISITED)
+                node.SetFlag(NODE_VISITED)
                 return
             }
             FindLedges_r(root, node.GetChild(0))
@@ -1455,9 +1440,9 @@ object AASBuild {
             numLedgeSubdivisions = 0
             ledgeList.Clear()
             Common.common.Printf("[Ledge Subdivision]\n")
-            bsp.GetRootNode().RemoveFlagRecurse(BrushBSP.NODE_VISITED)
+            bsp.GetRootNode().RemoveFlagRecurse(NODE_VISITED)
             FindLedges_r(bsp.GetRootNode(), bsp.GetRootNode())
-            bsp.GetRootNode().RemoveFlagRecurse(BrushBSP.NODE_VISITED)
+            bsp.GetRootNode().RemoveFlagRecurse(NODE_VISITED)
             Common.common.Printf("\r%6d ledges\n", ledgeList.Num())
             LedgeSubdiv(bsp.GetRootNode())
             Common.common.Printf("\r%6d subdivisions\n", numLedgeSubdivisions)
@@ -1552,12 +1537,12 @@ object AASBuild {
             if (node.GetContents() and AASFile.AREACONTENTS_SOLID != 0) {
                 return
             }
-            if (node.GetFlags() and BrushBSP.NODE_DONE != 0) {
+            if (node.GetFlags() and NODE_DONE != 0) {
                 return
             }
-            if (TempDump.NOT(node.GetChild(0)) && TempDump.NOT(node.GetChild(1))) {
+            if (node.GetChild(0) == null && node.GetChild(1) == null) {
                 MergeWithAdjacentLeafNodes(bsp, node)
-                node.SetFlag(BrushBSP.NODE_DONE)
+                node.SetFlag(NODE_DONE)
                 return
             }
             MergeLeafNodes_r(bsp, node.GetChild(0))
@@ -1570,54 +1555,54 @@ object AASBuild {
             numMergedLeafNodes = 0
             Common.common.Printf("[Merge Leaf Nodes]\n")
             MergeLeafNodes_r(bsp, bsp.GetRootNode())
-            bsp.GetRootNode().RemoveFlagRecurse(BrushBSP.NODE_DONE)
+            bsp.GetRootNode().RemoveFlagRecurse(NODE_DONE)
             bsp.PruneMergedTree_r(bsp.GetRootNode())
             Common.common.Printf("\r%6d leaf nodes merged\n", numMergedLeafNodes)
         }
 
         // storing file
         private fun SetupHash() {
-            AASBuild_File.aas_vertexHash = idHashIndex(AASBuild_File.VERTEX_HASH_SIZE, 1024)
-            AASBuild_File.aas_edgeHash = idHashIndex(AASBuild_File.EDGE_HASH_SIZE, 1024)
+            aas_vertexHash = idHashIndex(VERTEX_HASH_SIZE, 1024)
+            aas_edgeHash = idHashIndex(EDGE_HASH_SIZE, 1024)
         }
 
         private fun ShutdownHash() {
 //	delete aas_vertexHash;
 //	delete aas_edgeHash;
-            AASBuild_File.aas_vertexHash = null
-            AASBuild_File.aas_edgeHash = null
+            aas_vertexHash = null
+            aas_edgeHash = null
         }
 
         private fun ClearHash(bounds: idBounds) {
             var i: Int
             val f: Float
             var max: Float
-            AASBuild_File.aas_vertexHash!!.Clear()
-            AASBuild_File.aas_edgeHash!!.Clear()
-            AASBuild_File.aas_vertexBounds.set(bounds)
+            aas_vertexHash!!.Clear()
+            aas_edgeHash!!.Clear()
+            aas_vertexBounds.set(bounds)
             max = bounds[1].x - bounds[0].x
             f = bounds[1].y - bounds[0].y
             if (f > max) {
                 max = f
             }
-            AASBuild_File.aas_vertexShift = (max / AASBuild_File.VERTEX_HASH_BOXSIZE).toInt()
+            aas_vertexShift = (max / VERTEX_HASH_BOXSIZE).toInt()
             i = 0
-            while (1 shl i < AASBuild_File.aas_vertexShift) {
+            while (1 shl i < aas_vertexShift) {
                 i++
             }
             if (i == 0) {
-                AASBuild_File.aas_vertexShift = 1
+                aas_vertexShift = 1
             } else {
-                AASBuild_File.aas_vertexShift = i
+                aas_vertexShift = i
             }
         }
 
         private fun HashVec(vec: idVec3): Int {
             val x: Int
             val y: Int
-            x = (vec[0] - AASBuild_File.aas_vertexBounds[0].x + 0.5).toInt() + 2 shr 2
-            y = (vec[1] - AASBuild_File.aas_vertexBounds[0].y + 0.5).toInt() + 2 shr 2
-            return x + y * AASBuild_File.VERTEX_HASH_BOXSIZE and AASBuild_File.VERTEX_HASH_SIZE - 1
+            x = (vec[0] - aas_vertexBounds[0].x + 0.5f).toInt() + 2 shr 2
+            y = (vec[1] - aas_vertexBounds[0].y + 0.5f).toInt() + 2 shr 2
+            return x + y * VERTEX_HASH_BOXSIZE and VERTEX_HASH_SIZE - 1
         }
 
         private fun GetVertex(v: idVec3, vertexNum: IntArray): Boolean {
@@ -1628,7 +1613,7 @@ object AASBuild {
             val p = idVec3()
             i = 0
             while (i < 3) {
-                if (abs(v[i] - idMath.Rint(v[i])) < AASBuild_File.INTEGRAL_EPSILON) {
+                if (abs(v[i] - idMath.Rint(v[i])) < INTEGRAL_EPSILON) {
                     vert[i] = idMath.Rint(v[i])
                 } else {
                     vert[i] = v[i]
@@ -1636,21 +1621,21 @@ object AASBuild {
                 i++
             }
             hashKey = HashVec(vert)
-            vn = AASBuild_File.aas_vertexHash!!.First(hashKey)
+            vn = aas_vertexHash!!.First(hashKey)
             while (vn >= 0) {
                 p.set(file.vertices[vn])
                 // first compare z-axis because hash is based on x-y plane
-                if (abs(vert.z - p.z) < AASBuild_File.VERTEX_EPSILON && abs(vert.x - p.x) < AASBuild_File.VERTEX_EPSILON && abs(
+                if (abs(vert.z - p.z) < VERTEX_EPSILON && abs(vert.x - p.x) < VERTEX_EPSILON && abs(
                         vert.y - p.y
-                    ) < AASBuild_File.VERTEX_EPSILON
+                    ) < VERTEX_EPSILON
                 ) {
                     vertexNum[0] = vn
                     return true
                 }
-                vn = AASBuild_File.aas_vertexHash!!.Next(vn)
+                vn = aas_vertexHash!!.Next(vn)
             }
             vertexNum[0] = file.vertices.Num()
-            AASBuild_File.aas_vertexHash!!.Add(hashKey, file.vertices.Num())
+            aas_vertexHash!!.Add(hashKey, file.vertices.Num())
             file.vertices.Append(vert)
             return false
         }
@@ -1677,10 +1662,10 @@ object AASBuild {
                 edgeNum[edgeOffset + 0] = 0
                 return true
             }
-            hashKey = AASBuild_File.aas_edgeHash!!.GenerateKey(v1num[0], v2num[0])
+            hashKey = aas_edgeHash!!.GenerateKey(v1num[0], v2num[0])
             // if both vertexes where already stored
             if (found) {
-                e = AASBuild_File.aas_edgeHash!!.First(hashKey)
+                e = aas_edgeHash!!.First(hashKey)
                 while (e >= 0) {
                     vertexNum = file.edges[e].vertexNum
                     if (vertexNum[0] == v2num[0]) {
@@ -1695,7 +1680,7 @@ object AASBuild {
                             break
                         }
                     }
-                    e = AASBuild_File.aas_edgeHash!!.Next(e)
+                    e = aas_edgeHash!!.Next(e)
                 }
                 // if edge found in hash
                 if (e >= 0) {
@@ -1703,7 +1688,7 @@ object AASBuild {
                 }
             }
             edgeNum[edgeOffset + 0] = file.edges.Num()
-            AASBuild_File.aas_edgeHash!!.Add(hashKey, file.edges.Num())
+            aas_edgeHash!!.Add(hashKey, file.edges.Num())
             edge.vertexNum[0] = v1num[0]
             edge.vertexNum[1] = v2num[0]
             file.edges.Append(edge)
@@ -1736,7 +1721,7 @@ object AASBuild {
                 if (faceEdges[numFaceEdges] != 0) {
                     // last vertex of this edge is the first vertex of the next edge
                     v1num[0] =
-                        file.edges[abs(faceEdges[numFaceEdges])].vertexNum[Math_h.INTSIGNBITNOTSET(faceEdges[numFaceEdges])]
+                        file.edges[abs(faceEdges[numFaceEdges])].vertexNum[INTSIGNBITNOTSET(faceEdges[numFaceEdges])]
 
                     // this edge is valid so keep it
                     numFaceEdges++
@@ -1764,8 +1749,8 @@ object AASBuild {
             portal.SetFaceNum(file.faces.Num())
             face.planeNum = file.planeList.FindPlane(
                 portal.GetPlane(),
-                AASBuild_File.AAS_PLANE_NORMAL_EPSILON,
-                AASBuild_File.AAS_PLANE_DIST_EPSILON
+                AAS_PLANE_NORMAL_EPSILON,
+                AAS_PLANE_DIST_EPSILON
             )
             face.flags = portal.GetFlags()
             face.areas[1] = 0
@@ -1842,15 +1827,15 @@ object AASBuild {
             if (node.GetContents() and AASFile.AREACONTENTS_SOLID != 0) {
                 return 0
             }
-            if (TempDump.NOT(node.GetChild(0)) && TempDump.NOT(node.GetChild(1))) {
+            if (node.GetChild(0) == null && node.GetChild(1) == null) {
                 return if (GetAreaForLeafNode(node, areaNum)) {
                     areaNum[0]
                 } else 0
             }
             aasNode.planeNum = file.planeList.FindPlane(
                 node.GetPlane(),
-                AASBuild_File.AAS_PLANE_NORMAL_EPSILON,
-                AASBuild_File.AAS_PLANE_DIST_EPSILON
+                AAS_PLANE_NORMAL_EPSILON,
+                AAS_PLANE_DIST_EPSILON
             )
             aasNode.children[1] = 0
             aasNode.children[0] = aasNode.children[1]
@@ -1957,7 +1942,7 @@ object AASBuild {
         }
 
         companion object {
-            private val FACE_CHECKED: Int = Lib.BIT(31)
+            private val FACE_CHECKED: Int = BIT(31)
             private const val GRAVSUBDIV_EPSILON = 0.1f
         }
     }
@@ -2148,7 +2133,7 @@ options:
      */
     internal class MergeAllowed private constructor() : Allowance() {
         override fun run(b1: idBrush, b2: idBrush): Boolean {
-            return b1.GetContents() == b2.GetContents() && TempDump.NOT((b1.GetFlags() or b2.GetFlags() and BFL_PATCH).toDouble())
+            return b1.GetContents() == b2.GetContents() && (b1.GetFlags() or b2.GetFlags() and BFL_PATCH) == 0
         }
 
         companion object {

@@ -1,31 +1,20 @@
 package neo.idlib.geometry
 
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib.idLib
+import neo.idlib.BV.idBounds
 import neo.idlib.containers.CFloat
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.INTSIGNBITNOTSET
-import neo.idlib.math.Math_h.INTSIGNBITSET
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.idLib
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.cos
-import kotlin.math.max
 import kotlin.math.sin
 
-/**
- *
- */
 object TraceModel {
     const val MAX_TRACEMODEL_EDGES = 32
     const val MAX_TRACEMODEL_POLYEDGES = 16
     const val MAX_TRACEMODEL_POLYS = 16
-
-    // these are bit cache limits
     const val MAX_TRACEMODEL_VERTS = 32
 
     /*
@@ -66,7 +55,7 @@ object TraceModel {
 
     class traceModelPoly_t {
         val bounds: idBounds = idBounds()
-        var dist = 0f
+        var dist = 0.0f
         val edges: IntArray = IntArray(MAX_TRACEMODEL_POLYEDGES)
         val normal: idVec3 = idVec3()
         var numEdges = 0
@@ -370,8 +359,8 @@ object TraceModel {
 
                 // verts
                 angle = idMath.TWO_PI * i / n
-                verts[i].x = (cos(angle.toDouble()) * halfSize.x + offset.x).toFloat()
-                verts[i].y = (sin(angle.toDouble()) * halfSize.y + offset.y).toFloat()
+                verts[i].x = cos(angle) * halfSize.x + offset.x
+                verts[i].y = sin(angle) * halfSize.y + offset.y
                 verts[i].z = -halfSize.z + offset.z
                 verts[n + i].x = verts[i].x
                 verts[n + i].y = verts[i].y
@@ -388,7 +377,7 @@ object TraceModel {
                 // vertical polygon edges
                 polys[i].numEdges = 4
                 polys[i].edges[0] = ii
-                polys[i].edges[1] = n2 + ii % n + 1
+                polys[i].edges[1] = n2 + (ii % n) + 1
                 polys[i].edges[2] = -(n + ii)
                 polys[i].edges[3] = -(n2 + ii)
                 // bottom and top polygon edges
@@ -482,11 +471,10 @@ object TraceModel {
             verts[n].set(0.0f, 0.0f, halfSize.z + offset.z)
             i = 0
             while (i < n) {
-
                 // verts
                 angle = idMath.TWO_PI * i / n
-                verts[i].x = (cos(angle.toDouble()) * halfSize.x + offset.x).toFloat()
-                verts[i].y = (sin(angle.toDouble()) * halfSize.y + offset.y).toFloat()
+                verts[i].x = cos(angle) * halfSize.x + offset.x
+                verts[i].y = sin(angle) * halfSize.y + offset.y
                 verts[i].z = -halfSize.z + offset.z
                 // edges
                 ii = i + 1
@@ -497,7 +485,7 @@ object TraceModel {
                 // vertical polygon edges
                 polys[i].numEdges = 3
                 polys[i].edges[0] = ii
-                polys[i].edges[1] = n + ii % n + 1
+                polys[i].edges[1] = n + (ii % n) + 1
                 polys[i].edges[2] = -(n + ii)
                 // bottom polygon edges
                 polys[n].edges[i] = -(n - i)
@@ -561,7 +549,7 @@ object TraceModel {
             var i: Int
             var j: Int
             var edgeNum: Int
-            val halfLength = (length * 0.5).toFloat()
+            val halfLength = length * 0.5f
             if (type != traceModel_t.TRM_BONE) {
                 InitBone()
             }
@@ -625,7 +613,7 @@ object TraceModel {
             polys[1].dist = -polys[0].dist
             // setup verts, edges and polygons
             polys[0].bounds.Clear()
-            mid.set(Vector.getVec3Origin())
+            mid.set(getVec3Origin())
             i = 0
             j = 1
             while (i < numVerts) {
@@ -655,18 +643,15 @@ object TraceModel {
 
         fun SetupPolygon(w: idWinding) {
             var i: Int
-            val verts: Array<idVec3> = idVec3.Companion.generateArray(
-                max(
-                    3,
-                    w.GetNumPoints()
-                )
-            ) //TODO: this is a temp hack, for some reason the math is fucked
+            val numPoints = w.GetNumPoints()
+
+            val verts: Array<idVec3> = Array(numPoints) { idVec3() }
             i = 0
-            while (i < w.GetNumPoints()) {
+            while (i < numPoints) {
                 verts[i].set(w[i].ToVec3())
                 i++
             }
-            SetupPolygon(verts, w.GetNumPoints())
+            SetupPolygon(verts, numPoints)
         }
 
         // generate edge normals
@@ -804,7 +789,6 @@ object TraceModel {
 
         // compare
         fun Compare(trm: idTraceModel): Boolean {
-            var i: Int
             if (type != trm.type || numVerts != trm.numVerts || numEdges != trm.numEdges || numPolys != trm.numPolys) {
                 return false
             }
@@ -814,12 +798,10 @@ object TraceModel {
             when (type) {
                 traceModel_t.TRM_INVALID, traceModel_t.TRM_BOX, traceModel_t.TRM_OCTAHEDRON, traceModel_t.TRM_DODECAHEDRON, traceModel_t.TRM_CYLINDER, traceModel_t.TRM_CONE -> {}
                 traceModel_t.TRM_BONE, traceModel_t.TRM_POLYGON, traceModel_t.TRM_POLYGONVOLUME, traceModel_t.TRM_CUSTOM -> {
-                    i = 0
-                    while (i < trm.numVerts) {
-                        if (verts[i] == trm.verts[i]) {
+                    for (i in 0 until trm.numVerts) {
+                        if (verts[i] != trm.verts[i]) {
                             return false
                         }
-                        i++
                     }
                 }
             }
@@ -1499,19 +1481,19 @@ object TraceModel {
             integrals.Faa = k1 * pi.Paa
             integrals.Fbb = k1 * pi.Pbb
             integrals.Fcc =
-                k3 * (Math_h.Square(n[a]) * pi.Paa + 2 * n[a] * n[b] * pi.Pab + Math_h.Square(n[b]) * pi.Pbb + w * (2 * (n[a] * pi.Pa + n[b] * pi.Pb) + w * pi.P1))
+                k3 * (Square(n[a]) * pi.Paa + 2 * n[a] * n[b] * pi.Pab + Square(n[b]) * pi.Pbb + w * (2 * (n[a] * pi.Pa + n[b] * pi.Pb) + w * pi.P1))
             integrals.Faaa = k1 * pi.Paaa
             integrals.Fbbb = k1 * pi.Pbbb
             integrals.Fccc =
-                -k4 * (Math_h.Cube(n[a]) * pi.Paaa + 3 * Math_h.Square(n[a]) * n[b] * pi.Paab + 3 * n[a] * Math_h.Square(
+                -k4 * (Cube(n[a]) * pi.Paaa + 3 * Square(n[a]) * n[b] * pi.Paab + 3 * n[a] * Square(
                     n[b]
-                ) * pi.Pabb + Math_h.Cube(n[b]) * pi.Pbbb + 3 * w * (Math_h.Square(
+                ) * pi.Pabb + Cube(n[b]) * pi.Pbbb + 3 * w * (Square(
                     n[a]
-                ) * pi.Paa + 2 * n[a] * n[b] * pi.Pab + Math_h.Square(n[b]) * pi.Pbb) + w * w * (3 * (n[a] * pi.Pa + n[b] * pi.Pb) + w * pi.P1))
+                ) * pi.Paa + 2 * n[a] * n[b] * pi.Pab + Square(n[b]) * pi.Pbb) + w * w * (3 * (n[a] * pi.Pa + n[b] * pi.Pb) + w * pi.P1))
             integrals.Faab = k1 * pi.Paab
             integrals.Fbbc = -k2 * (n[a] * pi.Pabb + n[b] * pi.Pbbb + w * pi.Pbb)
             integrals.Fcca =
-                k3 * (Math_h.Square(n[a]) * pi.Paaa + 2 * n[a] * n[b] * pi.Paab + Math_h.Square(n[b]) * pi.Pabb + w * (2 * (n[a] * pi.Paa + n[b] * pi.Pab) + w * pi.Pa))
+                k3 * (Square(n[a]) * pi.Paaa + 2 * n[a] * n[b] * pi.Paab + Square(n[b]) * pi.Pabb + w * (2 * (n[a] * pi.Paa + n[b] * pi.Pab) + w * pi.Pa))
         }
 
         private fun VolumeIntegrals(integrals: volumeIntegrals_t) {
@@ -1524,7 +1506,7 @@ object TraceModel {
             var nx: Float
             var ny: Float
             var nz: Float
-            var T0 = 0f
+            var T0 = 0.0f
             val T1 = FloatArray(3)
             val T2 = FloatArray(3)
             val TP = FloatArray(3)
@@ -1643,36 +1625,36 @@ object TraceModel {
             return numSilEdges
         }
 
-        internal inner class projectionIntegrals_t {
-            var P1 = 0f
-            var Pa = 0f
-            var Pb = 0f
-            var Paa = 0f
-            var Pab = 0f
-            var Pbb = 0f
-            var Paaa = 0f
-            var Paab = 0f
-            var Pabb = 0f
-            var Pbbb = 0f
+        internal class projectionIntegrals_t {
+            var P1 = 0.0f
+            var Pa = 0.0f
+            var Pb = 0.0f
+            var Paa = 0.0f
+            var Pab = 0.0f
+            var Pbb = 0.0f
+            var Paaa = 0.0f
+            var Paab = 0.0f
+            var Pabb = 0.0f
+            var Pbbb = 0.0f
         }
 
-        internal inner class polygonIntegrals_t {
-            var Fa = 0f
-            var Fb = 0f
-            var Fc = 0f
-            var Faa = 0f
-            var Fbb = 0f
-            var Fcc = 0f
-            var Faaa = 0f
-            var Fbbb = 0f
-            var Fccc = 0f
-            var Faab = 0f
-            var Fbbc = 0f
-            var Fcca = 0f
+        internal class polygonIntegrals_t {
+            var Fa = 0.0f
+            var Fb = 0.0f
+            var Fc = 0.0f
+            var Faa = 0.0f
+            var Fbb = 0.0f
+            var Fcc = 0.0f
+            var Faaa = 0.0f
+            var Fbbb = 0.0f
+            var Fccc = 0.0f
+            var Faab = 0.0f
+            var Fbbc = 0.0f
+            var Fcca = 0.0f
         }
 
-        internal inner class volumeIntegrals_t {
-            var T0 = 0f
+        internal class volumeIntegrals_t {
+            var T0 = 0.0f
             val T1: idVec3 = idVec3()
             val T2: idVec3 = idVec3()
             val TP: idVec3 = idVec3()

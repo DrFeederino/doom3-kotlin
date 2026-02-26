@@ -8,9 +8,6 @@ import neo.framework.FileSystem_h
 import neo.framework.File_h.idFile
 import neo.idlib.geometry.Winding.idWinding
 
-/**
- *
- */
 object glfile {
     var c_glfaces = 0
     private var level = 128

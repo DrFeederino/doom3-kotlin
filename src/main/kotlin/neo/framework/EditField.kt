@@ -6,15 +6,12 @@ import neo.TempDump
 import neo.TempDump.void_callback
 import neo.framework.KeyInput.idKeyInput
 import neo.idlib.CmdArgs
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
+import neo.idlib.colorWhite
+import neo.idlib.idException
 import neo.sys.win_main
 
-/**
- *
- */
 object EditField {
     /*
      ===============================================================================
@@ -121,7 +118,7 @@ object EditField {
                     CmdSystem.cmdSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), findMatches)
                     CVarSystem.cvarSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), findMatches)
                     autoComplete = globalAutoComplete
-                    idStr.Companion.snPrintf(buffer, buffer.size, "%s", autoComplete.currentMatch)
+                    idStr.snPrintf(buffer, buffer.size, "%s", autoComplete.currentMatch)
                     if (autoComplete.matchCount == 0) {
                         // no argument matches
                         idStr.Append(buffer, buffer.size, " ")
@@ -401,7 +398,7 @@ object EditField {
             str[drawLen] = Char(0)
 
             // draw it
-            RenderSystem.renderSystem.DrawSmallStringExt(x, y, str, Lib.colorWhite, false, shader)
+            RenderSystem.renderSystem.DrawSmallStringExt(x, y, str, colorWhite, false, shader)
 
             // draw the cursor
             if (!showCursor) {

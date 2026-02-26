@@ -1,21 +1,17 @@
 package neo.framework
 
 import neo.Renderer.Material
-import neo.TempDump
 import neo.TempDump.SERiAL
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclManager.idDecl
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idStrList
+import neo.idlib.idException
 import java.nio.ByteBuffer
 
-/**
- *
- */
 class DeclSkin {
     /*
      ===============================================================================
@@ -41,7 +37,7 @@ class DeclSkin {
             // if there exists a material with the same name
             return if (DeclManager.declManager.FindType(declType_t.DECL_MATERIAL, GetName(), false) != null) {
                 val generated = StringBuffer(2048)
-                idStr.Companion.snPrintf(
+                idStr.snPrintf(
                     generated, generated.capacity(),
                     """
                         skin %s // IMPLICITLY GENERATED
@@ -121,7 +117,7 @@ class DeclSkin {
                 val map = mappings[i]
 
                 // null = wildcard match
-                if (TempDump.NOT(map.from) || map.from == shader) {
+                if (map.from == null || map.from == shader) {
                     return map.to
                 }
                 i++
@@ -142,10 +138,10 @@ class DeclSkin {
             } else ""
         }
 
-        fun oSet(skin: idDeclSkin) {
-            mappings.set(skin.mappings)
-            associatedModels.set(skin.associatedModels)
-        }
+//        fun oSet(skin: idDeclSkin) {
+//            mappings.set(skin.mappings)
+//            associatedModels.set(skin.associatedModels)
+//        }
 
         override fun AllocBuffer(): ByteBuffer {
             throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.

@@ -5,9 +5,6 @@ import neo.framework.CVarSystem.idCVar
 import java.awt.event.KeyListener
 import java.awt.event.MouseListener
 
-/**
- *
- */
 abstract class win_local {
     /*
      ===========================================================================

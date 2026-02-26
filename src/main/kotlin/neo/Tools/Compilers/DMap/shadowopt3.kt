@@ -1,13 +1,9 @@
 package neo.Tools.Compilers.DMap
 
-import neo.Renderer.Interaction
+import neo.Renderer.*
 import neo.Renderer.Interaction.srfCullInfo_t
 import neo.Renderer.Model.srfTriangles_s
-import neo.Renderer.tr_local.idRenderEntityLocal
-import neo.Renderer.tr_local.optimizedShadow_t
-import neo.Renderer.tr_stencilshadow
 import neo.Renderer.tr_stencilshadow.shadowGen_t
-import neo.Renderer.tr_trisurf
 import neo.TempDump
 import neo.Tools.Compilers.DMap.dmap.mapLight_t
 import neo.Tools.Compilers.DMap.dmap.mapTri_s
@@ -17,16 +13,13 @@ import neo.Tools.Compilers.DMap.map.FindFloatPlane
 import neo.framework.Common
 import neo.idlib.containers.List.cmp_t
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.ON_EPSILON
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import java.util.*
 import kotlin.math.abs
 
-/**
- *
- */
 object shadowopt3 {
     //
     const val EDGE_EPSILON = 0.1f
@@ -96,11 +89,11 @@ object shadowopt3 {
 
     //
     const val MAX_SIL_EDGES = MAX_SHADOW_TRIS * 3
-    var silEdges: Array<shadowOptEdge_s?> = kotlin.arrayOfNulls(MAX_SIL_EDGES)
+    var silEdges: Array<shadowOptEdge_s?> = arrayOfNulls(MAX_SIL_EDGES)
 
     //
     const val MAX_SIL_QUADS = MAX_SHADOW_TRIS * 3
-    var silQuads: Array<silQuad_s?> = kotlin.arrayOfNulls(MAX_SIL_QUADS)
+    var silQuads: Array<silQuad_s?> = arrayOfNulls(MAX_SIL_QUADS)
 
     //
     var EDGE_PLANE_EPSILON = 0.1f
@@ -127,7 +120,7 @@ object shadowopt3 {
     var numUniquedBeforeProjection = 0
 
     //
-    var outputTris: Array<shadowTri_t?> = kotlin.arrayOfNulls(MAX_SHADOW_TRIS)
+    var outputTris: Array<shadowTri_t?> = arrayOfNulls(MAX_SHADOW_TRIS)
 
     //
     var ret: optimizedShadow_t? = null
@@ -231,9 +224,9 @@ object shadowopt3 {
 
                 // keep any portion in front of other's plane
                 if (j == 0) {
-                    w.Split(other.plane, Plane.ON_EPSILON, front, back)
+                    w.Split(other.plane, ON_EPSILON, front, back)
                 } else {
-                    w.Split(idPlane(other.edge[j - 1], 0.0f), Plane.ON_EPSILON, front, back)
+                    w.Split(idPlane(other.edge[j - 1], 0.0f), ON_EPSILON, front, back)
                 }
                 if (!back.isNULL()) {
                     // recursively clip these triangles to all subsequent triangles
@@ -321,7 +314,7 @@ object shadowopt3 {
                 // the entire triangle is visible
                 numComplete++
                 outputTris[oldOutput] = tris[i]
-                val out: shadowTri_t = outputTris[oldOutput]!!
+                outputTris[oldOutput]!!
                 numOutputTris = oldOutput + 1
             } else {
                 numFragmented++
@@ -331,7 +324,7 @@ object shadowopt3 {
                 // triangle if it produced any fragments
                 if (dmap.dmapGlobals.shadowOptLevel == shadowOptLevel_t.SO_CULL_OCCLUDED) {
                     outputTris[oldOutput] = tris[i]
-                    val out: shadowTri_t = outputTris[oldOutput]!! //TODO:useless
+                    outputTris[oldOutput]!! //TODO:useless
                     numOutputTris = oldOutput + 1
                 }
             }
@@ -367,7 +360,7 @@ object shadowopt3 {
                 }
                 checkGroup = checkGroup.nextGroup
             }
-            if (TempDump.NOT(checkGroup)) {
+            if (checkGroup == null) {
                 // create a new optGroup
                 checkGroup = optimizeGroup_s() // Mem_ClearedAlloc(sizeof(checkGroup));
                 checkGroup.planeNum = planeNum
@@ -752,7 +745,7 @@ object shadowopt3 {
             //		memset( &groups, 0, sizeof( groups ) );
             val planes: Array<idPlane> = idPlane.generateArray(2)
             planes[0].SetNormal(sil.normal) //TODO:reinterpret cast
-            planes[0][3] = 0f
+            planes[0][3] = 0.0f
             planes[1].set(planes[0].unaryMinus())
             groups[0].planeNum = FindFloatPlane(planes[0])
             groups[1].planeNum = FindFloatPlane(planes[1])
@@ -775,7 +768,7 @@ object shadowopt3 {
                     f2 = f2.nextQuad
                 }
                 // if we went through all the quads without finding a match, emit the quad
-                if (TempDump.NOT(f2)) {
+                if (f2 == null) {
                     var gr: optimizeGroup_s?
                     val v1 = idVec3()
                     val v2 = idVec3()
@@ -822,7 +815,7 @@ object shadowopt3 {
             // optimize
             j = 0
             while (j < 2) {
-                if (TempDump.NOT(groups[j].triList)) {
+                if (groups[j].triList == null) {
                     j++
                     continue
                 }
@@ -1138,7 +1131,7 @@ object shadowopt3 {
         i = 0
         while (i < tri.numVerts) {
             tri.shadowVertexes!![i].xyz.set(uniqued!![i])
-            tri.shadowVertexes!![i].xyz[3] = 1f
+            tri.shadowVertexes!![i].xyz[3] = 1.0f
             i++
         }
         i = 0
@@ -1227,14 +1220,14 @@ object shadowopt3 {
         tritools.FreeTriList(combined)
 
         // find silhouette information for the triSurf
-        tr_trisurf.R_CleanupTriangles(occluders, false, true, false)
+        R_CleanupTriangles(occluders, false, true, false)
 
         // let the renderer build the shadow volume normally
         val space = idRenderEntityLocal()
-        space.modelMatrix[0] = 1f
-        space.modelMatrix[5] = 1f
-        space.modelMatrix[10] = 1f
-        space.modelMatrix[15] = 1f
+        space.modelMatrix[0] = 1.0f
+        space.modelMatrix[5] = 1.0f
+        space.modelMatrix[10] = 1.0f
+        space.modelMatrix[15] = 1.0f
         val cullInfo = srfCullInfo_t()
         //	memset( &cullInfo, 0, sizeof( cullInfo ) );
 
@@ -1246,7 +1239,7 @@ object shadowopt3 {
         } else {
             tr_stencilshadow.R_CreateShadowVolume(space, occluders, light.def, shadowGen_t.SG_OFFLINE, cullInfo)
         }
-        tr_trisurf.R_FreeStaticTriSurf(occluders)
+        R_FreeStaticTriSurf(occluders)
         Interaction.R_FreeInteractionCullInfo(cullInfo)
         if (shadowTris != null) {
             dmap.dmapGlobals.totalShadowTriangles += shadowTris.numIndexes / 3

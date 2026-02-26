@@ -4,11 +4,8 @@ import neo.Game.Game_local.entityNetEvent_s
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_Integer
-import neo.idlib.Lib.idLib
+import neo.idlib.idLib
 
-/**
- *
- */
 class Game_network {
     class idEventQueue  //        private idBlockAlloc<entityNetEvent_s> eventAllocator = new idBlockAlloc<>(32);
     {
@@ -164,8 +161,8 @@ class Game_network {
             "0",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER,
             "",
-            0f,
-            3f,
+            0.0f,
+            3.0f,
             ArgCompletion_Integer(0, 3)
         )
         val net_clientShowSnapshotRadius: idCVar =

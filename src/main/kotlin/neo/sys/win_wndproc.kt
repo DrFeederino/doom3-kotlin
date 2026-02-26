@@ -2,9 +2,6 @@ package neo.sys
 
 import neo.framework.KeyInput
 
-/**
- *
- */
 object win_wndproc {
     //==========================================================================
     // Keep this in sync with the one in win_input.cpp

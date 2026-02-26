@@ -9,13 +9,10 @@ import neo.Game.Game_local
 import neo.Game.Moveable.idMoveable
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Script.Script_Thread.idThread
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.BV.idBounds
+import neo.idlib.MAX_WORLD_SIZE
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 class AI_Vagary {
     companion object {
         /* **********************************************************************
@@ -64,13 +61,13 @@ class AI_Vagary {
             speed: idEventArg<Float>, minDist: idEventArg<Float>, offset: idEventArg<Float>
         ) {
             var ent: idEntity
-            val entityList = kotlin.arrayOfNulls<idEntity?>(Game_local.MAX_GENTITIES)
+            val entityList = arrayOfNulls<idEntity?>(Game_local.MAX_GENTITIES)
             val numListedEntities: Int
             var i: Int
             var index: Int
             var dist: Float
             val vel = idVec3()
-            val offsetVec = idVec3(0f, 0f, offset.value)
+            val offsetVec = idVec3(0.0f, 0.0f, offset.value)
             val enemyEnt: idEntity? = enemy.GetEntity()
             if (null == enemyEnt) {
                 idThread.ReturnEntity(null)
@@ -81,7 +78,7 @@ class AI_Vagary {
             checkBounds.TranslateSelf(physicsObj.GetOrigin())
             numListedEntities =
                 Game_local.gameLocal.clip.EntitiesTouchingBounds(checkBounds, -1, entityList, Game_local.MAX_GENTITIES)
-            index = Game_local.gameLocal.random.RandomInt(numListedEntities.toDouble())
+            index = Game_local.gameLocal.random.RandomInt(numListedEntities)
             i = 0
             while (i < numListedEntities) {
                 if (index >= numListedEntities) {
@@ -121,7 +118,7 @@ class AI_Vagary {
                         entPhys.GetGravity(),
                         entPhys.GetClipModel()!!,
                         entPhys.GetClipMask(),
-                        Lib.MAX_WORLD_SIZE.toFloat(),
+                        MAX_WORLD_SIZE.toFloat(),
                         null,
                         enemyEnt!!,
                         if (SysCvar.ai_debugTrajectory.GetBool()) 4000 else 0,
@@ -155,7 +152,7 @@ class AI_Vagary {
                     entPhys.GetGravity(),
                     entPhys.GetClipModel()!!,
                     entPhys.GetClipMask(),
-                    Lib.MAX_WORLD_SIZE.toFloat(),
+                    MAX_WORLD_SIZE.toFloat(),
                     null,
                     enemyEnt,
                     if (SysCvar.ai_debugTrajectory.GetBool()) 4000 else 0,

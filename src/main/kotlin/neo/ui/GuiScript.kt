@@ -27,9 +27,6 @@ import neo.ui.Winvar.idWinBackground
 import neo.ui.Winvar.idWinStr
 import neo.ui.Winvar.idWinVar
 
-/**
- *
- */
 object GuiScript {
     val commandList = arrayOf(
         guiCommandDef_t("set", Script_Set.instance, 2, 999),
@@ -107,8 +104,8 @@ object GuiScript {
                 if (Icmp(token!!, ";") == 0) {
                     break
                 }
-                if (Icmp(token!!, "}") == 0) {
-                    src.UnreadToken(token!!)
+                if (Icmp(token, "}") == 0) {
+                    src.UnreadToken(token)
                     break
                 }
                 val str = idWinStr()
@@ -135,7 +132,7 @@ object GuiScript {
         }
 
         fun FixupParms(win: idWindow) {
-            if (handler === Script_Set.instance) {
+            if (handler == Script_Set.instance) {
                 var precacheBackground = false
                 var precacheSounds = false
                 var str = (parms[0].`var` as idWinStr)
@@ -162,8 +159,8 @@ object GuiScript {
                         defvar.Init(str.data.toString(), win)
                         win.AddDefinedVar(defvar)
                         //				delete parms[i].var;
-                        parms[0].`var` = defvar
-                        parms[0].own = false
+                        parms[i].`var` = defvar
+                        parms[i].own = false
 
                         //dest = win.GetWinVarByName(*str, true);
                         //if (dest) {
@@ -172,7 +169,7 @@ object GuiScript {
                         //	parms[i].own = false;
                         //}
                         // 
-                    } else if (str.data.toString() == '$'.toString()) {
+                    } else if (str.data!!.toString().isNotEmpty() && str.data!![0] == '$') {
                         // 
                         //  dont include the $ when asking for variable
                         dest = win.GetGui().GetDesktop()!!.GetWinVarByName(str.c_str()!!.substring(1), true)
@@ -202,7 +199,7 @@ object GuiScript {
                         }
                     }
                 }
-            } else if (handler === Script_Transition.instance) {
+            } else if (handler == Script_Transition.instance) {
                 if (parms.Num() < 4) {
                     Common.common.Warning(
                         "Window %s in gui %s has a bad transition definition",
@@ -254,7 +251,7 @@ object GuiScript {
                                 if (destOwner[0]!!.simp != null) destOwner[0]!!.simp!!.GetParent() else destOwner[0]!!.win!!.GetParent()
 
                             // If its the rectangle they are referencing then adjust it 
-                            if (ownerparent != null && destparent != null && dest === if (owner[0]!!.simp != null) owner[0]!!.simp!!.GetWinVarByName(
+                            if (ownerparent != null && destparent != null && dest == if (owner[0]!!.simp != null) owner[0]!!.simp!!.GetWinVarByName(
                                     "rect"
                                 ) else owner[0]!!.win!!.GetWinVarByName("rect")
                             ) {
@@ -344,7 +341,7 @@ object GuiScript {
                 if (gs.conditionReg >= 0) {
                     if (win.HasOps()) {
                         val f = win.EvalRegs(gs.conditionReg)
-                        if (f != 0f) {
+                        if (f != 0.0f) {
                             if (gs.ifList != null) {
                                 win.RunScriptList(gs.ifList)
                             }
@@ -416,7 +413,6 @@ object GuiScript {
     internal class Script_Set private constructor() : Handler() {
         override fun run(window: idWindow, src: idList<idGSWinVar>) {
             scriptSetTotal++
-            var key: String
             var `val`: String?
             var dest = dynamic_cast(idWinStr::class.java, src[0].`var`) as idWinStr?
             if (dest != null) {

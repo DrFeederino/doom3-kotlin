@@ -11,9 +11,6 @@ import neo.idlib.containers.idStrList
 import java.util.*
 import kotlin.math.abs
 
-/**
- *
- */
 object RoqParam {
     fun parseRange(
         rangeStr: String,

@@ -109,9 +109,8 @@ open class idStrList : Comparator<idStr> {
         stringsList = stringsList.stream().limit(targetSize.toLong()).collect(Collectors.toList())
     }
 
-    @Deprecated("") // TODO: see if it's meaningful to clear in Java
     open fun clear() {
-        //this.stringsList = null;
+        this.stringsList.clear()
     }
 
     fun insert(obj: idStr): Int {            // insert the element at the given index
@@ -177,7 +176,13 @@ open class idStrList : Comparator<idStr> {
         if (i >= stringsList.size) {
             i = if (stringsList.isEmpty()) 0 else stringsList.size - 1
         }
-        stringsList.add(i, idStr(value))
+
+        if (stringsList.getOrNull(i) == null) {
+            stringsList.add(i, idStr(value))
+
+        } else {
+            stringsList[i] = idStr(value)
+        }
     }
 
     operator fun set(i: Int, obj: idStr) {

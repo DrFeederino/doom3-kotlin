@@ -14,13 +14,11 @@ import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.EditField.idEditField
 import neo.framework.File_h.idFile
 import neo.framework.KeyInput.idKeyInput
-import neo.idlib.CmdArgs
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
+import neo.idlib.*
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idMath
+import neo.idlib.math.idVec4
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
 import neo.sys.win_input
@@ -110,35 +108,24 @@ class Console {
             }
         }
 
-        //
         private val historyEditLines: Array<idEditField> = Array(COMMAND_HISTORY) { idEditField() }
-
-        //
         private val text: ShortArray = ShortArray(CON_TEXTSIZE)
-
-        //
         private val times: IntArray =
             IntArray(NUM_CON_TIMES) // cls.realtime time the line was generated for transparent notify lines
 
         //============================
         var charSetShader: Material.idMaterial? = null
-
-        //
         private val color: idVec4 = idVec4()
-
-        //
         private var consoleField: idEditField = idEditField()
         private var consoleShader: Material.idMaterial? = null
         private var current // line where next message will be printed
                 = 0
         private var display // bottom of console displays this line
                 = 0
-
-        //
         private var displayFrac // approaches finalFrac at scr_conspeed
-                = 0f
-        private var finalFrac // 0.0 to 1.0 lines of console to display
-                = 0f
+                = 0.0f
+        private var finalFrac // 0.0f to 1.0f lines of console to display
+                = 0.0f
         private var fracTime // time of last displayFrac update
                 = 0
         private var historyLine // the line being displayed from history buffer will be <= nextHistoryLine
@@ -303,8 +290,8 @@ class Console {
 
         override fun Close() {
             keyCatching = false
-            SetDisplayFraction(0f)
-            displayFrac = 0f // don't scroll to that point, go immediately
+            SetDisplayFraction(0.0f)
+            displayFrac = 0.0f // don't scroll to that point, go immediately
             ClearNotifyLines()
         }
 
@@ -371,6 +358,7 @@ class Console {
                             x = 0
                         }
                     } while (x and 3 != 0)
+
                     '\r'.code -> x = 0
                     else -> {
                         text[y * LINE_WIDTH + x] = (color shl 8 or c).toShort()
@@ -398,7 +386,7 @@ class Console {
          */
         override fun Draw(forceFullScreen: Boolean) {
             var y = 0.0f
-            if (TempDump.NOT(charSetShader)) {
+            if (charSetShader == null) {
                 return
             }
             if (forceFullScreen) {
@@ -423,7 +411,7 @@ class Console {
             }
 
 //            if (com_showFPS.GetBool()) {
-            y = SCR_DrawFPS(0f)
+            y = SCR_DrawFPS(0.0f)
             //            }
             if (Common.com_showMemoryUsage.GetBool()) {
                 y = SCR_DrawMemoryUsage(y)
@@ -686,10 +674,10 @@ class Console {
                                 y + 2).toFloat(),
                         (autoCompleteLength * RenderSystem.SMALLCHAR_WIDTH).toFloat(),
                         (RenderSystem.SMALLCHAR_HEIGHT - 2).toFloat(),
-                        0f,
-                        0f,
-                        0f,
-                        0f,
+                        0.0f,
+                        0.0f,
+                        0.0f,
+                        0.0f,
                         whiteShader
                     )
                 }
@@ -763,7 +751,7 @@ class Console {
                 v += RenderSystem.SMALLCHAR_HEIGHT
                 i++
             }
-            RenderSystem.renderSystem.SetColor(Lib.colorCyan)
+            RenderSystem.renderSystem.SetColor(colorCyan)
         }
 
         /*
@@ -796,30 +784,30 @@ class Console {
                 y = 0.0f
             } else {
                 RenderSystem.renderSystem.DrawStretchPic(
-                    0f,
-                    0f,
+                    0.0f,
+                    0.0f,
                     RenderSystem.SCREEN_WIDTH.toFloat(),
                     y,
-                    0f,
+                    0.0f,
                     1.0f - displayFrac,
-                    1f,
-                    1f,
+                    1.0f,
+                    1.0f,
                     consoleShader
                 )
             }
-            RenderSystem.renderSystem.SetColor(Lib.colorCyan)
+            RenderSystem.renderSystem.SetColor(colorCyan)
             RenderSystem.renderSystem.DrawStretchPic(
-                0f,
+                0.0f,
                 y,
                 RenderSystem.SCREEN_WIDTH.toFloat(),
-                2f,
-                0f,
-                0f,
-                0f,
-                0f,
+                2.0f,
+                0.0f,
+                0.0f,
+                0.0f,
+                0.0f,
                 whiteShader
             )
-            RenderSystem.renderSystem.SetColor(Lib.colorWhite)
+            RenderSystem.renderSystem.SetColor(colorWhite)
 
             // draw the version number
             RenderSystem.renderSystem.SetColor(idStr.ColorForIndex(Str.C_COLOR_CYAN))
@@ -902,7 +890,7 @@ class Console {
 
             // draw the input prompt, user text, and cursor if desired
             DrawInput()
-            RenderSystem.renderSystem.SetColor(Lib.colorCyan)
+            RenderSystem.renderSystem.SetColor(colorCyan)
         }
 
         //
@@ -1064,13 +1052,13 @@ class Console {
             val string = arrayOf<String>("") //new char[MAX_STRING_CHARS];
             //	va_list argptr;
 //	va_start( argptr, text );
-            idStr.vsnPrintf(string, Lib.MAX_STRING_CHARS, fmt, *text)
+            idStr.vsnPrintf(string, MAX_STRING_CHARS, fmt, *text)
             //	va_end( argptr );
             RenderSystem.renderSystem.DrawSmallStringExt(
                 0,
                 (y[0] + 2).toInt(),
                 string[0].toCharArray(),
-                Lib.colorWhite,
+                colorWhite,
                 true,
                 localConsole.charSetShader
             )
@@ -1086,13 +1074,13 @@ class Console {
             val string = arrayOf<String>("") //new char[MAX_STRING_CHARS];
             //	va_list argptr;
 //	va_start( argptr, text );
-            val i: Int = idStr.vsnPrintf(string, Lib.MAX_STRING_CHARS, fmt, *text)
+            val i: Int = idStr.vsnPrintf(string, MAX_STRING_CHARS, fmt, *text)
             //	va_end( argptr );
             RenderSystem.renderSystem.DrawSmallStringExt(
                 635 - i * RenderSystem.SMALLCHAR_WIDTH,
                 (y[0] + 2).toInt(),
                 string[0].toCharArray(),
-                Lib.colorWhite,
+                colorWhite,
                 true,
                 localConsole.charSetShader
             )
@@ -1134,7 +1122,7 @@ class Console {
                     635 - w,
                     idMath.FtoiFast(y) + 2,
                     s,
-                    Lib.colorWhite,
+                    colorWhite,
                     true,
                     localConsole.charSetShader
                 )

@@ -3,9 +3,6 @@ package neo.Tools.Compilers.RoqVQ
 import neo.Renderer.Image_files
 import neo.framework.Common
 
-/**
- *
- */
 class NSBitmapImageRep {
     //    static class NSBitmapImageRep {
     private var bmap: ByteArray = ByteArray(0)

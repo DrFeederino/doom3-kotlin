@@ -6,15 +6,11 @@ import neo.Sound.snd_system.idSoundSystemLocal
 import neo.TempDump.TODO_Exception
 import neo.framework.BuildDefines
 import neo.framework.Common
-import neo.idlib.math.Simd
+import neo.idlib.math.MIXBUFFER_SAMPLES
 import org.lwjgl.openal.ALC
 import java.util.logging.Level
 import java.util.logging.Logger
-import javax.sound.sampled.SourceDataLine
 
-/**
- *
- */
 object win_snd {
     /*
      ===============
@@ -27,7 +23,7 @@ object win_snd {
                 ALC.create()
             } catch (ex: UnsatisfiedLinkError) {
                 Logger.getLogger(win_snd::class.java.name).log(Level.SEVERE, null, ex)
-                Common.common.Warning("LoadLibrary %s failed.", idSoundSystemLocal.Companion.s_libOpenAL.GetString()!!)
+                Common.common.Warning("LoadLibrary %s failed.", idSoundSystemLocal.s_libOpenAL.GetString()!!)
                 return false
             } catch (ex: IllegalStateException) {
                 return "ALC has already been created." == ex.message
@@ -169,7 +165,7 @@ object win_snd {
         }
 
         override fun GetMixBufferSize(): Int {
-            return Simd.MIXBUFFER_SAMPLES * blockAlign
+            return MIXBUFFER_SAMPLES * blockAlign
         }
 
         // WIN32 driver doesn't support write API
@@ -178,14 +174,12 @@ object win_snd {
         }
 
         override fun Write(value: Boolean) {}
-        override fun GetMixBuffer(): IntArray {
-            return IntArray(128)
+        override fun GetMixBuffer(): ShortArray {
+            return ShortArray(128)
         }
 
         override fun Initialize(): Boolean {
 //            throw new TODO_Exception();
-            var dataLine: SourceDataLine //for streaming
-            var hr: Int
             //            AudioInputStream  audioInputStream = AudioSystem.getAudioInputStream(null);
 //            dataLine.
 //
@@ -204,7 +198,7 @@ object win_snd {
             SetPrimaryBufferFormat(
                 snd_local.PRIMARYFREQ,
                 16,
-                idSoundSystemLocal.Companion.s_numberOfSpeakers.GetInteger()
+                idSoundSystemLocal.s_numberOfSpeakers.GetInteger()
             )
             return true
         }

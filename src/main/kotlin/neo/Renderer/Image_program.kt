@@ -7,20 +7,17 @@ import neo.idlib.Text.Lexer.LEXFL_NOSTRINGCONCAT
 import neo.idlib.Text.Lexer.LEXFL_NOSTRINGESCAPECHARS
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Token.idToken
-import neo.idlib.math.Math_h.idMath.Sqrt
-import neo.idlib.math.Vector.getVec3Origin
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.getVec3Origin
+import neo.idlib.math.idMath.Sqrt
+import neo.idlib.math.idVec3
 import org.lwjgl.BufferUtils
 import java.nio.ByteBuffer
 
-/**
- *
- */
 object Image_program {
     // we build a canonical token form of the image program here
     val parseBuffer: StringBuffer = StringBuffer(Image.MAX_IMAGE_NAME)
     private val factors: Array<FloatArray> =
-        arrayOf(floatArrayOf(1f, 1f, 1f), floatArrayOf(1f, 1f, 1f), floatArrayOf(1f, 1f, 1f))
+        arrayOf(floatArrayOf(1.0f, 1.0f, 1.0f), floatArrayOf(1.0f, 1.0f, 1.0f), floatArrayOf(1.0f, 1.0f, 1.0f))
 
     /*
      ===================
@@ -32,7 +29,7 @@ object Image_program {
         name: String, width: IntArray?, height: IntArray?,  /*ID_TIME_T */
         timestamps: LongArray?, depth: Array<textureDepth_t>? = null
     ): ByteBuffer? {
-        val src: idLexer = idLexer()
+        val src = idLexer()
         val pic: Array<ByteBuffer?> = arrayOf(null)
         src.LoadMemory(name, name.length, name)
         src.SetFlags(LEXFL_NOFATALERRORS or LEXFL_NOSTRINGCONCAT or LEXFL_NOSTRINGESCAPECHARS or LEXFL_ALLOWPATHNAMES)
@@ -42,7 +39,7 @@ object Image_program {
         }
         R_ParseImageProgram_r(src, pic, width, height, timestamps, depth)
         src.FreeSource()
-        return pic[-+-0]
+        return pic[0]
     }
 
     /*
@@ -62,7 +59,7 @@ object Image_program {
         timestamps: LongArray?,
         depth: Array<textureDepth_t>?
     ): Boolean {
-        val token: idToken = idToken()
+        val token = idToken()
         val scale: Float
         val timestamp: LongArray = longArrayOf(0)
         src.ReadToken(token)
@@ -169,7 +166,7 @@ object Image_program {
             return true
         }
         if (0 == token.Icmp("scale")) {
-            val scale2: FloatArray = FloatArray(4)
+            val scale2 = FloatArray(4)
             var i: Int
             MatchAndAppendToken(src, "(")
             R_ParseImageProgram_r(src, pic, width, height, timestamps, depth)
@@ -224,8 +221,9 @@ object Image_program {
                 i = 0
                 while (i < c) {
                     val r: Byte = pic[0]!!.get(i)
-                    val rgba: ByteArray = byteArrayOf(r, r, r, r)
-                    pic[0]!!.put(rgba)
+                    pic[0]!!.put(i + 1, r)
+                    pic[0]!!.put(i + 2, r)
+                    pic[0]!!.put(i + 3, r)
                     i += 4
                 }
             }
@@ -244,12 +242,10 @@ object Image_program {
                 c = width!![0] * height!![0] * 4
                 i = 0
                 while (i < c) {
-                    val rgb: ByteArray = byteArrayOf(255.toByte(), 255.toByte(), 255.toByte())
-                    pic[0]!!.put(
-                        i + 3,
-                        ((pic[0]!!.get(i + 0) + pic[0]!!.get(i + 1) + pic[0]!!.get(i + 2)) / 3).toByte()
-                    )
-                    pic[0]!!.put(rgb)
+                    pic[0]!!.put(i + 3, ((pic[0]!!.get(i) + pic[0]!!.get(i + 1) + pic[0]!!.get(i + 2)) / 3).toByte())
+                    pic[0]!!.put(i, 255.toByte())
+                    pic[0]!!.put(i + 1, 255.toByte())
+                    pic[0]!!.put(i + 2, 255.toByte())
                     i += 4
                 }
             }
@@ -331,8 +327,8 @@ object Image_program {
             depth[i] = ((data!!.get(i * 4) + data.get(i * 4 + 1) + data.get(i * 4 + 2)) / 3).toByte()
             i++
         }
-        val dir: idVec3 = idVec3()
-        val dir2: idVec3 = idVec3()
+        val dir = idVec3()
+        val dir2 = idVec3()
         i = 0
         while (i < height) {
             j = 0
@@ -360,13 +356,13 @@ object Image_program {
                 d3 -= d1
                 dir[0] = -d2 * scale
                 dir[1] = -d3 * scale
-                dir[2] = 1f
+                dir[2] = 1.0f
                 dir.NormalizeFast()
                 a1 -= a3
                 a4 -= a3
                 dir2[0] = -a4 * scale
                 dir2[1] = a1 * scale
-                dir2[2] = 1f
+                dir2[2] = 1.0f
                 dir2.NormalizeFast()
                 dir.plusAssign(dir2)
                 dir.NormalizeFast()
@@ -394,7 +390,7 @@ object Image_program {
         var j: Int
         var k: Int
         var l: Int
-        val normal: idVec3 = idVec3()
+        val normal = idVec3()
         var out: Int
         orig = ByteArray(width * height * 4) // R_StaticAlloc(width * height * 4);
         //	memcpy( orig, data, width * height * 4 );
@@ -563,7 +559,7 @@ object Image_program {
             while (j < width1) {
                 var d1: Int
                 var d2: Int
-                val n: idVec3 = idVec3()
+                val n = idVec3()
                 var len: Float
                 d1 =  /* data1 + */(i * width1 + j) * 4
                 d2 =  /*data2 + */(i * width1 + j) * 4

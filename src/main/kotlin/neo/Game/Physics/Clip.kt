@@ -1,10 +1,5 @@
 package neo.Game.Physics
 
-import neo.CM.CollisionModel
-import neo.CM.CollisionModel.contactInfo_t
-import neo.CM.CollisionModel.contactType_t
-import neo.CM.CollisionModel.trace_s
-import neo.CM.CollisionModel_local
 import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class
 import neo.Game.GameSys.SaveGame.idRestoreGame
@@ -14,33 +9,28 @@ import neo.Game.Game_local.idGameLocal
 import neo.Renderer.Material
 import neo.Renderer.Model
 import neo.Renderer.RenderWorld.modelTrace_s
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib
+import neo.cm.*
+import neo.idlib.BV.idBounds
+import neo.idlib.Max
 import neo.idlib.Text.Str.idStr
+import neo.idlib.colorCyan
+import neo.idlib.colorWhite
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
-import neo.idlib.containers.HashIndex.idHashIndex
 import neo.idlib.containers.List.idList
+import neo.idlib.containers.idHashIndex
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.geometry.Winding.idFixedWinding
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec6
 import java.util.*
 
-/**
- *
- */
 object Clip {
     const val MAX_SECTOR_DEPTH = 12
     const val MAX_SECTORS = (1 shl MAX_SECTOR_DEPTH + 1) - 1
     val vec3_boxEpsilon: idVec3 =
-        idVec3(CollisionModel.CM_BOX_EPSILON, CollisionModel.CM_BOX_EPSILON, CollisionModel.CM_BOX_EPSILON)
+        idVec3(CM_BOX_EPSILON, CM_BOX_EPSILON, CM_BOX_EPSILON)
 
     //    public static final idBlockAlloc<clipLink_s> clipLinkAllocator = new idBlockAlloc<>(1024);
     /*
@@ -80,7 +70,7 @@ object Clip {
         end: idVec3,
         trmAxis: idMat3
     ): Boolean {
-        if (mdl != null && end.minus(start).LengthSqr() > Math_h.Square(CollisionModel.CM_MAX_TRACE_DIST)) {
+        if (mdl != null && end.minus(start).LengthSqr() > Square(CM_MAX_TRACE_DIST)) {
             // assert (false);
             results.fraction = 0.0f
             results.endpos.set(start)
@@ -108,7 +98,7 @@ object Clip {
                 = 0
         var children: Array<clipSector_s?> = arrayOfNulls(2)
         var clipLinks: clipLink_s? = null
-        var dist = 0f //        private void oSet(clipSector_s clip) {
+        var dist = 0.0f //        private void oSet(clipSector_s clip) {
         //            this.axis = clip.axis;
         //            this.dist = clip.dist;
         //            this.children = clip.children;
@@ -126,10 +116,10 @@ object Clip {
 
     class trmCache_s {
         val centerOfMass: idVec3 = idVec3()
-        var inertiaTensor: idMat3 = idMat3()
+        val inertiaTensor: idMat3 = idMat3()
         var refCount = 0
         var trm: idTraceModel = idTraceModel()
-        var volume = 0f
+        var volume = 0.0f
     }
 
     class idClipModel {
@@ -208,12 +198,12 @@ object Clip {
                 FreeTraceModel(traceModelIndex)
                 traceModelIndex = -1
             }
-            collisionModelHandle = CollisionModel_local.collisionModelManager.LoadModel(name, false)
+            collisionModelHandle = collisionModelManager.LoadModel(name, false)
             return if (collisionModelHandle != 0) {
-                CollisionModel_local.collisionModelManager.GetModelBounds(collisionModelHandle, bounds)
+                collisionModelManager.GetModelBounds(collisionModelHandle, bounds)
                 run {
                     val contents = CInt()
-                    CollisionModel_local.collisionModelManager.GetModelContents(collisionModelHandle, contents)
+                    collisionModelManager.GetModelContents(collisionModelHandle, contents)
                     this.contents = contents._val
                 }
                 true
@@ -250,9 +240,9 @@ object Clip {
 
         fun Save(savefile: idSaveGame) {
             savefile.WriteBool(enabled)
-            savefile.WriteObject(entity as Class.idClass)
+            savefile.WriteObject(entity as Class.idClass?)
             savefile.WriteInt(id)
-            savefile.WriteObject(owner as Class.idClass)
+            savefile.WriteObject(owner as Class.idClass?)
             savefile.WriteVec3(origin)
             savefile.WriteMat3(axis)
             savefile.WriteBounds(bounds)
@@ -260,7 +250,7 @@ object Clip {
             savefile.WriteMaterial(material)
             savefile.WriteInt(contents)
             if (collisionModelHandle >= 0) {
-                savefile.WriteString(CollisionModel_local.collisionModelManager.GetModelName(collisionModelHandle))
+                savefile.WriteString(collisionModelManager.GetModelName(collisionModelHandle))
             } else {
                 savefile.WriteString("")
             }
@@ -285,7 +275,7 @@ object Clip {
             contents = savefile.ReadInt()
             savefile.ReadString(collisionModelName)
             collisionModelHandle = if (collisionModelName.Length() != 0) {
-                CollisionModel_local.collisionModelManager.LoadModel(collisionModelName.toString(), false)
+                collisionModelManager.LoadModel(collisionModelName.toString(), false)
             } else {
                 -1
             }
@@ -331,8 +321,8 @@ object Clip {
             // because movement is clipped an epsilon away from an actual edge,
             // we must fully check even when bounding boxes don't quite touch
             absBounds.minusAssign(0, vec3_boxEpsilon)
-            absBounds.timesAssign(1, vec3_boxEpsilon)
-            Link_r(clp.clipSectors[0]) //TODO:check if [0] is good enough. upd: seems it is
+            absBounds.plusAssign(1, vec3_boxEpsilon)
+            Link_r(clp.clipSectors!![0]) //TODO:check if [0] is good enough. upd: seems it is
         }
 
 
@@ -443,11 +433,11 @@ object Clip {
         }
 
         fun GetBounds(): idBounds {
-            return idBounds(bounds)
+            return bounds
         }
 
         fun GetAbsBounds(): idBounds {
-            return idBounds(absBounds)
+            return absBounds
         }
 
         fun GetOrigin(): idVec3 {
@@ -483,7 +473,7 @@ object Clip {
             return if (collisionModelHandle != 0) {
                 collisionModelHandle
             } else if (traceModelIndex != -1) {
-                CollisionModel_local.collisionModelManager.SetupTrmModel(
+                collisionModelManager.SetupTrmModel(
                     GetCachedTraceModel(traceModelIndex),
                     arrayOf(material)
                 )
@@ -514,7 +504,7 @@ object Clip {
                 )
             }
             val entry: trmCache_s = traceModelCache[traceModelIndex]
-            mass._val = Math.abs(entry.volume * density) // a hack-fix
+            mass._val = entry.volume * density
             centerOfMass.set(entry.centerOfMass)
             inertiaTensor.set(entry.inertiaTensor * density)
         }
@@ -578,7 +568,7 @@ object Clip {
 
         companion object {
             fun  /*cmHandle_t*/CheckModel(name: String): Int {
-                return CollisionModel_local.collisionModelManager.LoadModel(name, false)
+                return collisionModelManager.LoadModel(name, false)
             }
 
             fun  /*cmHandle_t*/CheckModel(name: idStr): Int {
@@ -670,8 +660,8 @@ object Clip {
                 )
             }
 
-            fun delete(clipModel: idClipModel) {
-                clipModel._deconstructor()
+            fun delete(clipModel: idClipModel?) {
+                clipModel?._deconstructor()
             }
         }
     }
@@ -686,7 +676,7 @@ object Clip {
         private val defaultClipModel: idClipModel = idClipModel()
         private val temporaryClipModel: idClipModel = idClipModel()
         private val worldBounds: idBounds = idBounds()
-        lateinit var clipSectors: Array<clipSector_s>
+        var clipSectors: Array<clipSector_s>?
         private var numClipSectors = 0
         private var numContacts: Int
         private var numContents: Int
@@ -700,7 +690,7 @@ object Clip {
         fun Init() {
             val   /*cmHandle_t*/h: Int
             val size = idVec3()
-            val maxSector = Vector.getVec3Origin()
+            val maxSector = getVec3Origin()
 
             // clear clip sectors
             clipSectors = Array(MAX_SECTORS) { clipSector_s() }
@@ -708,8 +698,8 @@ object Clip {
             numClipSectors = 0
             touchCount = -1
             // get world map bounds
-            h = CollisionModel_local.collisionModelManager.LoadModel("worldMap", false)
-            CollisionModel_local.collisionModelManager.GetModelBounds(h, worldBounds)
+            h = collisionModelManager.LoadModel("worldMap", false)
+            collisionModelManager.GetModelBounds(h, worldBounds)
             // create world sectors
             CreateClipSectors_r(0, worldBounds, maxSector)
             size.set(worldBounds[1].minus(worldBounds[0]))
@@ -727,7 +717,7 @@ object Clip {
             )
 
             // initialize a default clip model
-            defaultClipModel.LoadModel(idTraceModel(idBounds(idVec3(0f, 0f, 0f)).Expand(8f)))
+            defaultClipModel.LoadModel(idTraceModel(idBounds(idVec3(0.0f, 0.0f, 0.0f)).Expand(8.0f)))
 
             // set counters to zero
             numContacts = 0
@@ -777,7 +767,7 @@ object Clip {
             if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
                 // test world
                 numTranslations++
-                CollisionModel_local.collisionModelManager.Translation(
+                collisionModelManager.Translation(
                     results,
                     start,
                     end,
@@ -785,7 +775,7 @@ object Clip {
                     trmAxis,
                     contentMask,
                     0,
-                    Vector.getVec3Origin(),
+                    getVec3Origin(),
                     idMat3.getMat3_default()
                 )
                 results.c.entityNum =
@@ -818,7 +808,7 @@ object Clip {
                     TraceRenderModel(trace, start, end, radius, trmAxis, touch)
                 } else {
                     numTranslations++
-                    CollisionModel_local.collisionModelManager.Translation(
+                    collisionModelManager.Translation(
                         trace,
                         start,
                         end,
@@ -858,7 +848,7 @@ object Clip {
             if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
                 // test world
                 numRotations++
-                CollisionModel_local.collisionModelManager.Rotation(
+                collisionModelManager.Rotation(
                     results,
                     start,
                     rotation,
@@ -866,7 +856,7 @@ object Clip {
                     trmAxis,
                     contentMask,
                     0,
-                    Vector.getVec3Origin(),
+                    getVec3Origin(),
                     idMat3.getMat3_default()
                 )
                 results.c.entityNum =
@@ -900,7 +890,7 @@ object Clip {
                     continue
                 }
                 numRotations++
-                CollisionModel_local.collisionModelManager.Rotation(
+                collisionModelManager.Rotation(
                     trace,
                     start,
                     rotation,
@@ -936,7 +926,7 @@ object Clip {
             val endPosition = idVec3()
             val traceBounds = idBounds()
             val radius: Float
-            var translationalTrace: trace_s = trace_s()
+            var translationalTrace = trace_s()
             var rotationalTrace = trace_s()
             val trace = trace_s()
             val endRotation: idRotation
@@ -945,13 +935,13 @@ object Clip {
             if (TestHugeTranslation(results, mdl, start, end, trmAxis)) {
                 return true
             }
-            if (mdl != null && rotation.GetAngle() != 0.0f && rotation.GetVec() != Vector.getVec3Origin()) {
+            if (mdl != null && rotation.GetAngle() != 0.0f && rotation.GetVec() != getVec3Origin()) {
                 // if no translation
-                if (start === end) {
+                if (start == end) {
                     // pure rotation
                     return Rotation(results, start, rotation, mdl, trmAxis, contentMask, passEntity)
                 }
-            } else if (start !== end) {
+            } else if (start != end) {
                 // pure translation
                 return Translation(results, start, end, mdl, trmAxis, contentMask, passEntity)
             } else {
@@ -966,7 +956,7 @@ object Clip {
             if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
                 // translational collision with world
                 numTranslations++
-                CollisionModel_local.collisionModelManager.Translation(
+                collisionModelManager.Translation(
                     translationalTrace,
                     start,
                     end,
@@ -974,7 +964,7 @@ object Clip {
                     trmAxis,
                     contentMask,
                     0,
-                    Vector.getVec3Origin(),
+                    getVec3Origin(),
                     idMat3.getMat3_default()
                 )
                 translationalTrace.c.entityNum =
@@ -1011,7 +1001,7 @@ object Clip {
                         TraceRenderModel(trace, start, end, radius, trmAxis, touch)
                     } else {
                         numTranslations++
-                        CollisionModel_local.collisionModelManager.Translation(
+                        collisionModelManager.Translation(
                             trace,
                             start,
                             end,
@@ -1037,12 +1027,12 @@ object Clip {
                 num = -1
             }
             endPosition.set(translationalTrace.endpos)
-            endRotation = idRotation(rotation)
+            endRotation = rotation
             endRotation.SetOrigin(endPosition)
             if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
                 // rotational collision with world
                 numRotations++
-                CollisionModel_local.collisionModelManager.Rotation(
+                collisionModelManager.Rotation(
                     rotationalTrace,
                     endPosition,
                     endRotation,
@@ -1050,7 +1040,7 @@ object Clip {
                     trmAxis,
                     contentMask,
                     0,
-                    Vector.getVec3Origin(),
+                    getVec3Origin(),
                     idMat3.getMat3_default()
                 )
                 rotationalTrace.c.entityNum =
@@ -1081,7 +1071,7 @@ object Clip {
                         continue
                     }
                     numRotations++
-                    CollisionModel_local.collisionModelManager.Rotation(
+                    collisionModelManager.Rotation(
                         trace,
                         endPosition,
                         endRotation,
@@ -1109,7 +1099,7 @@ object Clip {
                 results.set(translationalTrace)
                 results.endAxis.set(rotationalTrace.endAxis)
             }
-            results.fraction = Lib.Max(translationalTrace.fraction, rotationalTrace.fraction)
+            results.fraction = Max(translationalTrace.fraction, rotationalTrace.fraction)
             return translationalTrace.fraction < 1.0f || rotationalTrace.fraction < 1.0f
         }
 
@@ -1124,13 +1114,13 @@ object Clip {
             var numContacts: Int
             var touch: idClipModel?
             val clipModelList = arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES)
-            var traceBounds: idBounds = idBounds()
+            val traceBounds = idBounds()
             val trm: idTraceModel
             trm = TraceModelForClipModel(mdl)!!
             numContacts = if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
                 // test world
                 this.numContacts++
-                CollisionModel_local.collisionModelManager.Contacts(
+                collisionModelManager.Contacts(
                     contacts,
                     maxContacts,
                     start,
@@ -1140,7 +1130,7 @@ object Clip {
                     trmAxis,
                     contentMask,
                     0,
-                    Vector.getVec3Origin(),
+                    getVec3Origin(),
                     idMat3.getMat3_default()
                 )
             } else {
@@ -1156,7 +1146,7 @@ object Clip {
                 return numContacts
             }
             if (null == trm) {
-                traceBounds = idBounds(start).Expand(depth)
+                traceBounds.set(idBounds(start).Expand(depth))
             } else {
                 traceBounds.FromTransformedBounds(trm.bounds, start, trmAxis)
                 traceBounds.ExpandSelf(depth)
@@ -1176,8 +1166,8 @@ object Clip {
                     continue
                 }
                 this.numContacts++
-                val contactz = Arrays.copyOfRange(contacts, numContacts, contacts.size)
-                n = CollisionModel_local.collisionModelManager.Contacts(
+                val contactz = contacts.copyOfRange(numContacts, contacts.size)
+                n = collisionModelManager.Contacts(
                     contactz, maxContacts - numContacts,
                     start, dir, depth, trm, trmAxis, contentMask,
                     touch.Handle(), touch.origin, touch.axis
@@ -1216,13 +1206,13 @@ object Clip {
             contents = if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
                 // test world
                 numContents++
-                CollisionModel_local.collisionModelManager.Contents(
+                collisionModelManager.Contents(
                     start,
                     trm,
                     trmAxis,
                     contentMask,
                     0,
-                    Vector.getVec3Origin(),
+                    getVec3Origin(),
                     idMat3.getMat3_default()
                 )
             } else {
@@ -1264,7 +1254,7 @@ object Clip {
                     continue
                 }
                 numContents++
-                if (CollisionModel_local.collisionModelManager.Contents(
+                if (collisionModelManager.Contents(
                         start,
                         trm,
                         trmAxis,
@@ -1328,7 +1318,7 @@ object Clip {
         ) {
             val trm = TraceModelForClipModel(mdl)
             numTranslations++
-            CollisionModel_local.collisionModelManager.Translation(
+            collisionModelManager.Translation(
                 results,
                 start,
                 end,
@@ -1354,7 +1344,7 @@ object Clip {
         ) {
             val trm = TraceModelForClipModel(mdl)!!
             numRotations++
-            CollisionModel_local.collisionModelManager.Rotation(
+            collisionModelManager.Rotation(
                 results,
                 start,
                 rotation,
@@ -1382,7 +1372,7 @@ object Clip {
         ): Int {
             val trm = TraceModelForClipModel(mdl)!!
             numContacts++
-            return CollisionModel_local.collisionModelManager.Contacts(
+            return collisionModelManager.Contacts(
                 contacts,
                 maxContacts,
                 start,
@@ -1403,7 +1393,7 @@ object Clip {
         ): Int {
             val trm = TraceModelForClipModel(mdl)!!
             numContents++
-            return CollisionModel_local.collisionModelManager.Contents(
+            return collisionModelManager.Contents(
                 start,
                 trm,
                 trmAxis,
@@ -1454,7 +1444,7 @@ object Clip {
                     TraceRenderModel(trace, start, end, radius, trmAxis, touch)
                 } else {
                     numTranslations++
-                    CollisionModel_local.collisionModelManager.Translation(
+                    collisionModelManager.Translation(
                         trace, start, end, trm, trmAxis, contentMask,
                         touch.Handle(), touch.origin, touch.axis
                     )
@@ -1490,7 +1480,7 @@ object Clip {
                     winding.plusAssign(contact.point)
                     return true
                 } else if (clipModel.traceModelIndex != -1) {
-                    CollisionModel_local.collisionModelManager.SetupTrmModel(
+                    collisionModelManager.SetupTrmModel(
                         idClipModel.GetCachedTraceModel(clipModel.traceModelIndex),
                         arrayOf(clipModel.material)
                     )
@@ -1505,7 +1495,7 @@ object Clip {
                     contactType_t.CONTACT_EDGE -> {
 
                         // the model contact feature is a collision model edge
-                        CollisionModel_local.collisionModelManager.GetModelEdge(
+                        collisionModelManager.GetModelEdge(
                             handle,
                             contact.modelFeature,
                             start,
@@ -1514,16 +1504,18 @@ object Clip {
                         winding.plusAssign(start)
                         winding.plusAssign(end)
                     }
+
                     contactType_t.CONTACT_MODELVERTEX -> {
 
                         // the model contact feature is a collision model vertex
-                        CollisionModel_local.collisionModelManager.GetModelVertex(handle, contact.modelFeature, start)
+                        collisionModelManager.GetModelVertex(handle, contact.modelFeature, start)
                         winding.plusAssign(start)
                     }
+
                     contactType_t.CONTACT_TRMVERTEX -> {
 
                         // the model contact feature is a collision model polygon
-                        CollisionModel_local.collisionModelManager.GetModelPolygon(
+                        collisionModelManager.GetModelPolygon(
                             handle,
                             contact.modelFeature,
                             winding
@@ -1604,7 +1596,7 @@ object Clip {
             parms.count = 0
             parms.maxCount = maxCount
             touchCount++
-            ClipModelsTouchingBounds_r(clipSectors[0], parms)
+            ClipModelsTouchingBounds_r(clipSectors!![0], parms)
             return parms.count
         }
 
@@ -1633,10 +1625,10 @@ object Clip {
         fun DrawClipModels(eye: idVec3, radius: Float, passEntity: idEntity?) {
             var i: Int
             val num: Int
-            val bounds: idBounds
+            val bounds = idBounds()
             val clipModelList = arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES)
             var clipModel: idClipModel
-            bounds = idBounds(eye).Expand(radius)
+            bounds.set(idBounds(eye).Expand(radius))
             num = ClipModelsTouchingBounds(bounds, -1, clipModelList, Game_local.MAX_GENTITIES)
             i = 0
             while (i < num) {
@@ -1646,9 +1638,9 @@ object Clip {
                     continue
                 }
                 if (clipModel.renderModelHandle != -1) {
-                    Game_local.gameRenderWorld!!.DebugBounds(Lib.colorCyan, clipModel.GetAbsBounds())
+                    Game_local.gameRenderWorld!!.DebugBounds(colorCyan, clipModel.GetAbsBounds())
                 } else {
-                    CollisionModel_local.collisionModelManager.DrawModel(
+                    collisionModelManager.DrawModel(
                         clipModel.Handle(),
                         clipModel.GetOrigin(),
                         clipModel.GetAxis(),
@@ -1670,19 +1662,19 @@ object Clip {
             axis = contact.normal.ToMat3()
             if (winding.GetNumPoints() == 1) {
                 Game_local.gameRenderWorld!!.DebugLine(
-                    Lib.colorCyan,
+                    colorCyan,
                     winding[0].ToVec3(),
                     winding[0].ToVec3() + axis[0] * 2.0f,
                     lifetime
                 )
                 Game_local.gameRenderWorld!!.DebugLine(
-                    Lib.colorWhite,
+                    colorWhite,
                     winding[0].ToVec3() -  /*- 1.0f * */axis[1],
                     winding[0].ToVec3() +  /*+ 1.0f */axis[1],
                     lifetime
                 )
                 Game_local.gameRenderWorld!!.DebugLine(
-                    Lib.colorWhite,
+                    colorWhite,
                     winding[0].ToVec3() -  /*- 1.0f * */axis[2],
                     winding[0].ToVec3() + /*+ 1.0f */axis[2],
                     lifetime
@@ -1691,7 +1683,7 @@ object Clip {
                 i = 0
                 while (i < winding.GetNumPoints()) {
                     Game_local.gameRenderWorld!!.DebugLine(
-                        Lib.colorCyan,
+                        colorCyan,
                         winding[i].ToVec3(),
                         winding[(i + 1) % winding.GetNumPoints()].ToVec3(),
                         lifetime
@@ -1705,7 +1697,7 @@ object Clip {
                 contact.material!!.GetName(),
                 winding.GetCenter().minus(axis[2].times(4.0f)),
                 0.1f,
-                Lib.colorWhite,
+                colorWhite,
                 axis,
                 1,
                 5000
@@ -1724,10 +1716,10 @@ object Clip {
             var i: Int
             val anode: clipSector_s
             val size = idVec3()
-            val front: idBounds
-            val back: idBounds
+            val front = idBounds()
+            val back = idBounds()
             //clipSectors[numClipSectors++] = clipSector_s()
-            anode = clipSectors[numClipSectors++]
+            anode = clipSectors!![numClipSectors++]
             if (depth == MAX_SECTOR_DEPTH) {
                 anode.axis = -1
                 anode.children[1] = null
@@ -1750,9 +1742,10 @@ object Clip {
                 anode.axis = 2
             }
             anode.dist = 0.5f * (bounds[1, anode.axis] + bounds[0, anode.axis])
-            front = idBounds(bounds)
-            back = idBounds(bounds)
-            front[0, anode.axis] = back.set(1, anode.axis, anode.dist)
+            front.set(bounds)
+            back.set(bounds)
+            back[1, anode.axis] = anode.dist
+            front[0, anode.axis] = anode.dist
             anode.children[0] = CreateClipSectors_r(depth + 1, front, maxSector)
             anode.children[1] = CreateClipSectors_r(depth + 1, back, maxSector)
             return anode
@@ -1921,7 +1914,7 @@ object Clip {
          ====================
          */
         private class listParms_s {
-            var bounds: idBounds = idBounds()
+            val bounds: idBounds = idBounds()
             var contentMask = 0
             var count = 0
             lateinit var list: Array<idClipModel?>
@@ -1931,7 +1924,9 @@ object Clip {
         //
         //
         init {
-            //worldBounds.Zero();
+            numClipSectors = 0
+            clipSectors = null
+            worldBounds.Zero()
             numContacts = 0
             numContents = numContacts
             numRenderModelTraces = numContents

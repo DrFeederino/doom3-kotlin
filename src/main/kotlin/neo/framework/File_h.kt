@@ -3,24 +3,21 @@ package neo.framework
 import neo.TempDump
 import neo.TempDump.SERiAL
 import neo.framework.FileSystem_h.fsMode_t
+import neo.idlib.*
 import neo.idlib.BitMsg.idBitMsg
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.containers.CLong
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
-import neo.idlib.math.Vector.idVec6
+import neo.idlib.math.idVec2
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
+import neo.idlib.math.idVec6
 import neo.sys.win_main
 import java.io.IOException
 import java.io.InputStream
-import java.lang.StringBuilder
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.FileChannel
@@ -29,9 +26,6 @@ import java.util.logging.Logger
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
-/**
- *
- */
 object File_h {
     const val MAX_PRINT_MSG = 4096
 
@@ -43,7 +37,7 @@ object File_h {
     fun FS_WriteFloatString(buf: CharArray, fmtString: String?, vararg argPtr: Any): Int {
         var i: Long
         var u: Long
-        var f: Double
+        var f: Float
         var str: String?
         var index: Int
         var tmp: idStr
@@ -67,7 +61,7 @@ object File_h {
                     format += fmt[fmt_ptr]
                     when (fmt[fmt_ptr]) {
                         'f', 'e', 'E', 'g', 'G' -> {
-                            f = argPtr[va_ptr++] as Double
+                            f = argPtr[va_ptr++] as Float
                             if (format.length <= 2) {
                                 // high precision floating point number without trailing zeros
 //                                sprintf(tmp, "%1.10f", f);
@@ -85,6 +79,7 @@ object File_h {
                                 index += temp.length
                             }
                         }
+
                         'd', 'i' -> {
                             i = argPtr[va_ptr++] as Long
                             //                            index += sprintf(buf + index, format, i);
@@ -92,6 +87,7 @@ object File_h {
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
+
                         'u' -> {
                             u = argPtr[va_ptr++] as Long
                             //                            index += sprintf(buf + index, format, u);
@@ -99,6 +95,7 @@ object File_h {
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
+
                         'o' -> {
                             u = argPtr[va_ptr++] as Long
                             //                            index += sprintf(buf + index, format, u);
@@ -106,6 +103,7 @@ object File_h {
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
+
                         'x' -> {
                             u = argPtr[va_ptr++] as Long
                             //                            index += sprintf(buf + index, format, u);
@@ -113,6 +111,7 @@ object File_h {
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
+
                         'X' -> {
                             u = argPtr[va_ptr++] as Long
                             //                            index += sprintf(buf + index, format, u);
@@ -120,6 +119,7 @@ object File_h {
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
+
                         'c' -> {
                             i = argPtr[va_ptr++] as Long
                             //                            index += sprintf(buf + index, format, (char) i);
@@ -127,6 +127,7 @@ object File_h {
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
+
                         's' -> {
                             str = argPtr[va_ptr++] as String?
                             //                            index += sprintf(buf + index, format, str);
@@ -134,31 +135,38 @@ object File_h {
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
+
                         '%' -> {
                             //                            index += sprintf(buf + index, format);
                             temp = String.format(format)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
+
                         else -> idLib.common.Error("FS_WriteFloatString: invalid format %s", format)
                     }
                     fmt_ptr++
                 }
+
                 '\\' -> {
                     fmt_ptr++
                     when (fmt[fmt_ptr]) {
                         't' -> //                            index += sprintf(buf + index, "\t");
                             buf[index++] = '\t'
+
                         'v' -> //                            index += sprintf(buf + index, "\v");
                             buf[index++] = '\u000b' //vertical tab
                         'n' -> //                            index += sprintf(buf + index, "\n");
                             buf[index++] = '\n'
+
                         '\\' -> //                            index += sprintf(buf + index, "\\");
                             buf[index++] = '\\'
+
                         else -> idLib.common.Error("FS_WriteFloatString: unknown escape character '%c'", fmt[fmt_ptr])
                     }
                     fmt_ptr++
                 }
+
                 else -> {
                     //                    index += sprintf(buf + index, "%c", fmt[fmt_ptr]);
                     buf[index++] = fmt[fmt_ptr]
@@ -216,13 +224,18 @@ object File_h {
         fun Read(`object`: SERiAL, len: Int): Int {
             val buffer = `object`.AllocBuffer()
             val reads = Read(buffer, len)
-            buffer.position(len).flip()
+            buffer.position(len).rewind()
             `object`.Read(buffer)
             return reads
         }
 
         @Deprecated("") // Read data from the file to the buffer.
         open fun Read(buffer: ByteBuffer, len: Int): Int {
+            idLib.common.FatalError("idFile::Read: cannot read from idFile")
+            return 0
+        }
+
+        open fun Read(buffer: UByteArray, len: Int): Int {
             idLib.common.FatalError("idFile::Read: cannot read from idFile")
             return 0
         }
@@ -300,7 +313,7 @@ object File_h {
             return Write(TempDump.atobb(buf[0])!!)
         }
 
-        // Write a string with high precision floating point numbers to the file.
+        // Write a string with high precision doubleing point numbers to the file.
         fun WriteFloatString(fmt: String, vararg args: Any): Int /* id_attribute((format(printf,2,3)))*/ {
             val buf = CharArray(MAX_PRINT_MSG)
             val len: Int
@@ -308,7 +321,7 @@ object File_h {
             System.arraycopy(args, 0, argPtr, 0, argPtr.size)
 
 //            va_start(argPtr, fmt);
-            len = File_h.FS_WriteFloatString(buf, fmt, argPtr)
+            len = FS_WriteFloatString(buf, fmt, argPtr)
             //            va_end(argPtr);
             return Write(TempDump.atobb(buf)!!, len)
         }
@@ -317,7 +330,7 @@ object File_h {
         fun ReadInt(value: CInt): Int {
             val intBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
             val result = Read(intBytes)
-            value._val = (Lib.LittleLong(intBytes.getInt(0)))
+            value._val = (LittleLong(intBytes.getInt(0)))
             return result
         }
 
@@ -325,7 +338,7 @@ object File_h {
         fun ReadInt(value: CLong): Int {
             val intBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
             val result = Read(intBytes)
-            value._val = (Lib.LittleLong(intBytes.getInt(0)).toLong())
+            value._val = (LittleLong(intBytes.getInt(0)).toLong())
             return result
         }
 
@@ -338,7 +351,7 @@ object File_h {
         // Endian portable alternatives to Write(...)
         fun WriteInt(value: Int): Int {
             val intBytes = ByteBuffer.allocate(4)
-            val v: Int = Lib.LittleLong(value)
+            val v: Int = LittleLong(value)
             intBytes.putInt(v)
             return Write(intBytes)
         }
@@ -350,13 +363,13 @@ object File_h {
         fun ReadUnsignedInt(value: CLong): Int {
             val uintBytes = ByteBuffer.allocate(4)
             val result = Read(uintBytes)
-            value._val = (Lib.LittleLong(uintBytes.int).toLong() and 0xFFFFFFFF).toLong()
+            value._val = (LittleLong(uintBytes.int).toLong() and 0xFFFFFFFF).toLong()
             return result
         }
 
         fun WriteUnsignedInt(value: Long): Int {
             val uintBytes = ByteBuffer.allocate(2)
-            val v: Long = Lib.LittleLong(value.toInt()).toLong()
+            val v: Long = LittleLong(value.toInt()).toLong()
             uintBytes.putInt(v.toInt())
             return Write(uintBytes)
         }
@@ -364,7 +377,7 @@ object File_h {
         fun ReadShort(value: ShortArray): Int {
             val shortBytes = ByteBuffer.allocate(1)
             val result = Read(shortBytes)
-            value[0] = Lib.LittleShort(shortBytes[0].toShort())
+            value[0] = LittleShort(shortBytes[0].toShort())
             return result
         }
 
@@ -376,7 +389,7 @@ object File_h {
 
         fun WriteShort(value: Short): Int {
             val shortBytes = ByteBuffer.allocate(2)
-            val v: Short = Lib.LittleShort(value)
+            val v: Short = LittleShort(value)
             shortBytes.putShort(v)
             return Write(shortBytes)
         }
@@ -384,7 +397,7 @@ object File_h {
         fun ReadUnsignedShort(value: IntArray): Int {
             val ushortBytes = ByteBuffer.allocate(2)
             val result = Read(ushortBytes)
-            value[0] = Lib.LittleShort(ushortBytes.short).toInt() and 0xFFFF
+            value[0] = LittleShort(ushortBytes.short).toInt() and 0xFFFF
             return result
         }
 
@@ -396,7 +409,7 @@ object File_h {
 
         fun WriteUnsignedShort(value: Int): Int {
             val ushortBytes = ByteBuffer.allocate(2)
-            val v: Short = Lib.LittleShort(value.toShort())
+            val v: Short = LittleShort(value.toShort())
             ushortBytes.putShort(v)
             return Write(ushortBytes)
         }
@@ -404,7 +417,7 @@ object File_h {
         fun ReadChar(value: ShortArray): Int {
             val charBytes = ByteBuffer.allocate(1)
             val result = Read(charBytes)
-            value[0] = Lib.LittleShort(charBytes[0].toShort())
+            value[0] = LittleShort(charBytes[0].toShort())
             return result
         }
 
@@ -440,7 +453,7 @@ object File_h {
         fun ReadFloat(value: CFloat): Int {
             val floatBytes = ByteBuffer.allocate(4)
             val result = Read(floatBytes)
-            value._val = (Lib.LittleFloat(floatBytes.float))
+            value._val = (LittleFloat(floatBytes.float))
             return result
         }
 
@@ -452,7 +465,7 @@ object File_h {
 
         fun WriteFloat(value: Float): Int {
             val floatBytes = ByteBuffer.allocate(4)
-            val v: Float = Lib.LittleFloat(value)
+            val v: Float = LittleFloat(value)
             floatBytes.putFloat(v)
             return Write(floatBytes)
         }
@@ -761,12 +774,15 @@ object File_h {
                 fsOrigin_t.FS_SEEK_CUR -> {
                     curPtr += offset.toInt()
                 }
+
                 fsOrigin_t.FS_SEEK_END -> {
                     curPtr = (fileSize - offset).toInt()
                 }
+
                 fsOrigin_t.FS_SEEK_SET -> {
                     curPtr = offset.toInt()
                 }
+
                 else -> {
                     idLib.common.FatalError("idFile_Memory::Seek: bad origin for %s\n", name)
                     return false //-1;
@@ -964,7 +980,6 @@ object File_h {
          =================
          */
         override fun Read(buffer: ByteBuffer, len: Int): Int {
-            var block: Int
             var remaining: Int
             var read: Int
             //            byte[] buf;
@@ -1017,6 +1032,7 @@ object File_h {
             }
             return str.toString()
         }
+
         /*
          =================
          idFile_Permanent::Write
@@ -1038,7 +1054,7 @@ object File_h {
                 idLib.common.FatalError("idFile_Permanent::Write: %s not opened in write mode", name)
                 return 0
             }
-            if (TempDump.NOT(o)) {
+            if (o == null) {
                 return 0
             }
 
@@ -1189,6 +1205,28 @@ object File_h {
             return this.Read(buffer, buffer.capacity())
         }
 
+        override fun Read(buffer: UByteArray, len: Int): Int {
+            var l = 0
+            var len = len
+            var read = 0
+            try {
+                if (inputStream == null) {
+                    inputStream = ZipFile(fullPath.toString()).getInputStream(z)
+                }
+                while (read > -1 && len != 0) {
+                    read = inputStream!!.read(buffer.asByteArray(), l, len)
+                    l += read
+                    len -= read
+                }
+            } catch (ex: IOException) {
+                idLib.common.FatalError("idFile_InZip::Read: error while reading from %s", name)
+            }
+            FileSystem_h.fileSystem.AddToReadCount(l)
+            byteCounter += l
+            return l
+        }
+
+
         override fun Read(buffer: ByteBuffer, len: Int): Int {
             var l = 0
             var len = len
@@ -1273,6 +1311,7 @@ object File_h {
                         return res.toLong() == offset //? 0 : -1;
                     }
                 }
+
                 fsOrigin_t.FS_SEEK_SET -> {
                     run {
                         unzOpenCurrentFile()
@@ -1294,6 +1333,7 @@ object File_h {
                         return res.toLong() == offset
                     }
                 }
+
                 fsOrigin_t.FS_SEEK_CUR -> {
                     buf = ByteBuffer.allocate(ZIP_SEEK_BUF_SIZE)
                     i = 0
@@ -1307,6 +1347,7 @@ object File_h {
                     res = i + Read(buf, offset.toInt() - i)
                     return res.toLong() == offset
                 }
+
                 else -> {
                     idLib.common.FatalError("idFile_InZip::Seek: bad origin for %s\n", name)
                 }

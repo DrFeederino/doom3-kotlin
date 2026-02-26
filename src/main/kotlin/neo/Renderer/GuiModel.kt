@@ -3,22 +3,17 @@ package neo.Renderer
 import neo.Renderer.Material.idMaterial
 import neo.Renderer.Model.srfTriangles_s
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.Renderer.tr_local.viewDef_s
-import neo.Renderer.tr_local.viewEntity_s
-import neo.TempDump.NOT
+import neo.Renderer.tr_main.myGlMultMatrix
 import neo.framework.DeclManager
 import neo.framework.DemoFile.idDemoFile
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.Winding.idFixedWinding
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec5
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec2
+import neo.idlib.math.idVec5
 
-/**
- *
- */
 class GuiModel {
     internal class guiModelSurface_t {
         val color = FloatArray(4)
@@ -166,10 +161,20 @@ class GuiModel {
 
         fun EmitToCurrentView(modelMatrix: FloatArray /*[16]*/, depthHack: Boolean) {
             val modelViewMatrix = FloatArray(16)
-            tr_main.myGlMultMatrix(
-                modelMatrix, tr_local.tr.viewDef!!.worldSpace.modelViewMatrix,
-                modelViewMatrix
-            )
+            var worldMVM = if (r_lockSurfaces.GetBool() && tr.viewDef == tr.primaryView) {
+                tr.lockSurfacesRealViewDef?.worldSpace?.modelViewMatrix
+            } else {
+                tr.viewDef!!.worldSpace.modelViewMatrix
+            }
+
+            // DG: for r_lockSurfaces use the real world modelViewMatrix
+            //     so GUIs don't float around
+            if (r_lockSurfaces.GetBool() && tr.viewDef == tr.primaryView) {
+                worldMVM = tr.lockSurfacesRealViewDef?.worldSpace?.modelViewMatrix
+            }
+
+            myGlMultMatrix(modelMatrix, worldMVM!!, modelViewMatrix)
+
             for (i in 0 until surfaces.Num()) {
                 EmitSurface(surfaces[i], modelMatrix, modelViewMatrix, depthHack)
             }
@@ -190,59 +195,59 @@ class GuiModel {
             viewDef = viewDef_s() //R_ClearedFrameAlloc(sizeof(viewDef));
 
             // for gui editor
-            if (null == tr_local.tr.viewDef || !tr_local.tr.viewDef!!.isEditor) {
-                viewDef!!.renderView.x = 0
-                viewDef!!.renderView.y = 0
-                viewDef!!.renderView.width = RenderSystem.SCREEN_WIDTH
-                viewDef!!.renderView.height = RenderSystem.SCREEN_HEIGHT
-                tr_local.tr.RenderViewToViewport(viewDef!!.renderView, viewDef!!.viewport)
-                viewDef!!.scissor.x1 = 0
-                viewDef!!.scissor.y1 = 0
-                viewDef!!.scissor.x2 = viewDef!!.viewport.x2 - viewDef!!.viewport.x1
-                viewDef!!.scissor.y2 = viewDef!!.viewport.y2 - viewDef!!.viewport.y1
+            if (null == tr.viewDef || !tr.viewDef!!.isEditor) {
+                viewDef.renderView.x = 0
+                viewDef.renderView.y = 0
+                viewDef.renderView.width = RenderSystem.SCREEN_WIDTH
+                viewDef.renderView.height = RenderSystem.SCREEN_HEIGHT
+                tr.RenderViewToViewport(viewDef.renderView, viewDef.viewport)
+                viewDef.scissor.x1 = 0
+                viewDef.scissor.y1 = 0
+                viewDef.scissor.x2 = viewDef.viewport.x2 - viewDef.viewport.x1
+                viewDef.scissor.y2 = viewDef.viewport.y2 - viewDef.viewport.y1
             } else {
-                viewDef!!.renderView.x = tr_local.tr.viewDef!!.renderView.x
-                viewDef!!.renderView.y = tr_local.tr.viewDef!!.renderView.y
-                viewDef!!.renderView.width = tr_local.tr.viewDef!!.renderView.width
-                viewDef!!.renderView.height = tr_local.tr.viewDef!!.renderView.height
-                viewDef!!.viewport.x1 = tr_local.tr.viewDef!!.renderView.x
-                viewDef!!.viewport.x2 = tr_local.tr.viewDef!!.renderView.x + tr_local.tr.viewDef!!.renderView.width
-                viewDef!!.viewport.y1 = tr_local.tr.viewDef!!.renderView.y
-                viewDef!!.viewport.y2 = tr_local.tr.viewDef!!.renderView.y + tr_local.tr.viewDef!!.renderView.height
-                viewDef!!.scissor.x1 = tr_local.tr.viewDef!!.scissor.x1
-                viewDef!!.scissor.y1 = tr_local.tr.viewDef!!.scissor.y1
-                viewDef!!.scissor.x2 = tr_local.tr.viewDef!!.scissor.x2
-                viewDef!!.scissor.y2 = tr_local.tr.viewDef!!.scissor.y2
+                viewDef.renderView.x = tr.viewDef!!.renderView.x
+                viewDef.renderView.y = tr.viewDef!!.renderView.y
+                viewDef.renderView.width = tr.viewDef!!.renderView.width
+                viewDef.renderView.height = tr.viewDef!!.renderView.height
+                viewDef.viewport.x1 = tr.viewDef!!.renderView.x
+                viewDef.viewport.x2 = tr.viewDef!!.renderView.x + tr.viewDef!!.renderView.width
+                viewDef.viewport.y1 = tr.viewDef!!.renderView.y
+                viewDef.viewport.y2 = tr.viewDef!!.renderView.y + tr.viewDef!!.renderView.height
+                viewDef.scissor.x1 = tr.viewDef!!.scissor.x1
+                viewDef.scissor.y1 = tr.viewDef!!.scissor.y1
+                viewDef.scissor.x2 = tr.viewDef!!.scissor.x2
+                viewDef.scissor.y2 = tr.viewDef!!.scissor.y2
             }
-            viewDef!!.floatTime = tr_local.tr.frameShaderTime
+            viewDef.floatTime = tr.frameShaderTime
 
             // qglOrtho( 0, 640, 480, 0, 0, 1 );		// always assume 640x480 virtual coordinates
-            viewDef!!.projectionMatrix[0] = +2.0f / 640.0f
-            viewDef!!.projectionMatrix[5] = -2.0f / 480.0f
-            viewDef!!.projectionMatrix[10] = -2.0f / 1.0f
-            viewDef!!.projectionMatrix[12] = -1.0f
-            viewDef!!.projectionMatrix[13] = +1.0f
-            viewDef!!.projectionMatrix[14] = -1.0f
-            viewDef!!.projectionMatrix[15] = +1.0f
-            viewDef!!.worldSpace.modelViewMatrix[0] = 1.0f
-            viewDef!!.worldSpace.modelViewMatrix[5] = 1.0f
-            viewDef!!.worldSpace.modelViewMatrix[10] = 1.0f
-            viewDef!!.worldSpace.modelViewMatrix[15] = 1.0f
-            viewDef!!.maxDrawSurfs = surfaces.Num()
-            viewDef!!.drawSurfs =
-                tr_local.drawSurf_s.Companion.generateArray(viewDef!!.maxDrawSurfs) ///*(drawSurf_t **)*/ R_FrameAlloc(viewDef!!.maxDrawSurfs * sizeof(viewDef!!.drawSurfs[0]));
-            viewDef!!.numDrawSurfs = 0
-            val oldViewDef = tr_local.tr.viewDef
-            tr_local.tr.viewDef = viewDef
+            viewDef.projectionMatrix[0] = +2.0f / 640.0f
+            viewDef.projectionMatrix[5] = -2.0f / 480.0f
+            viewDef.projectionMatrix[10] = -2.0f / 1.0f
+            viewDef.projectionMatrix[12] = -1.0f
+            viewDef.projectionMatrix[13] = +1.0f
+            viewDef.projectionMatrix[14] = -1.0f
+            viewDef.projectionMatrix[15] = +1.0f
+            viewDef.worldSpace.modelViewMatrix[0] = 1.0f
+            viewDef.worldSpace.modelViewMatrix[5] = 1.0f
+            viewDef.worldSpace.modelViewMatrix[10] = 1.0f
+            viewDef.worldSpace.modelViewMatrix[15] = 1.0f
+            viewDef.maxDrawSurfs = surfaces.Num()
+            viewDef.drawSurfs =
+                drawSurf_s.generateArray(viewDef.maxDrawSurfs) ///*(drawSurf_t **)*/ R_FrameAlloc(viewDef!!.maxDrawSurfs * sizeof(viewDef!!.drawSurfs[0]));
+            viewDef.numDrawSurfs = 0
+            val oldViewDef = tr.viewDef
+            tr.viewDef = viewDef
 
             // add the surfaces to this view
             for (i in 0 until surfaces.Num()) {
                 if (i == 33) {
                     surfaces[i].material!!.DBG_BALLS = i
                 }
-                EmitSurface(surfaces[i], viewDef!!.worldSpace.modelMatrix, viewDef!!.worldSpace.modelViewMatrix, false)
+                EmitSurface(surfaces[i], viewDef.worldSpace.modelMatrix, viewDef.worldSpace.modelViewMatrix, false)
             }
-            tr_local.tr.viewDef = oldViewDef
+            tr.viewDef = oldViewDef
 
             // add the command to draw this view
             RenderSystem.R_AddDrawViewCmd(viewDef)
@@ -251,7 +256,7 @@ class GuiModel {
         // these calls are forwarded from the renderer
         fun SetColor(r: Float, g: Float, b: Float, a: Float) {
             setColorTotal++
-            if (!tr_local.glConfig.isInitialized) {
+            if (!glConfig.isInitialized) {
                 return
             }
             if (r == surf!!.color[0] && g == surf!!.color[1] && b == surf!!.color[2] && a == surf!!.color[3]) {
@@ -287,7 +292,7 @@ class GuiModel {
         ) {
 //            TempDump.printCallStack(bla4+"");
             bla4++
-            if (!tr_local.glConfig.isInitialized) {
+            if (!glConfig.isInitialized) {
                 return
             }
             if (!(dVerts != null && dIndexes != null && vertCount != 0 && indexCount != 0 && hShader != null)) {
@@ -384,9 +389,9 @@ class GuiModel {
                         dv.xyz.z = w[j].z
                         dv.st.x = w[j].s
                         dv.st.y = w[j].t
-                        dv.normal.set(0f, 0f, 1f)
-                        dv.tangents[0].set(1f, 0f, 0f)
-                        dv.tangents[1].set(0f, 1f, 0f)
+                        dv.normal.set(0.0f, 0.0f, 1.0f)
+                        dv.tangents[0].set(1.0f, 0.0f, 0.0f)
+                        dv.tangents[1].set(0.0f, 1.0f, 0.0f)
                         j++
                     }
                     surf!!.numVerts += w.GetNumPoints()
@@ -455,7 +460,7 @@ class GuiModel {
             )
             /*glIndex_t*/
             val indexes = IntArray(6)
-            if (!tr_local.glConfig.isInitialized) {
+            if (!glConfig.isInitialized) {
                 return
             }
             if (null == hShader) {
@@ -467,12 +472,12 @@ class GuiModel {
             if (x < 0) {
                 s1 += (s2 - s1) * -x / w
                 w += x
-                x = 0f
+                x = 0.0f
             }
             if (y < 0) {
                 t1 += (t2 - t1) * -y / h
                 h += y
-                y = 0f
+                y = 0.0f
             }
             if (x + w > 640) {
                 s2 -= (s2 - s1) * (x + w - 640) / w
@@ -493,60 +498,60 @@ class GuiModel {
             indexes[5] = 1
             verts[0].xyz[0] = x
             verts[0].xyz[1] = y
-            verts[0].xyz[2] = 0f
+            verts[0].xyz[2] = 0.0f
             verts[0].st[0] = s1
             verts[0].st[1] = t1
-            verts[0].normal[0] = 0f
-            verts[0].normal[1] = 0f
-            verts[0].normal[2] = 1f
-            verts[0].tangents[0][0] = 1f
-            verts[0].tangents[0][1] = 0f
-            verts[0].tangents[0][2] = 0f
-            verts[0].tangents[1][0] = 0f
-            verts[0].tangents[1][1] = 1f
-            verts[0].tangents[1][2] = 0f
+            verts[0].normal[0] = 0.0f
+            verts[0].normal[1] = 0.0f
+            verts[0].normal[2] = 1.0f
+            verts[0].tangents[0][0] = 1.0f
+            verts[0].tangents[0][1] = 0.0f
+            verts[0].tangents[0][2] = 0.0f
+            verts[0].tangents[1][0] = 0.0f
+            verts[0].tangents[1][1] = 1.0f
+            verts[0].tangents[1][2] = 0.0f
             verts[1].xyz[0] = x + w
             verts[1].xyz[1] = y
-            verts[1].xyz[2] = 0f
+            verts[1].xyz[2] = 0.0f
             verts[1].st[0] = s2
             verts[1].st[1] = t1
-            verts[1].normal[0] = 0f
-            verts[1].normal[1] = 0f
-            verts[1].normal[2] = 1f
-            verts[1].tangents[0][0] = 1f
-            verts[1].tangents[0][1] = 0f
-            verts[1].tangents[0][2] = 0f
-            verts[1].tangents[1][0] = 0f
-            verts[1].tangents[1][1] = 1f
-            verts[1].tangents[1][2] = 0f
+            verts[1].normal[0] = 0.0f
+            verts[1].normal[1] = 0.0f
+            verts[1].normal[2] = 1.0f
+            verts[1].tangents[0][0] = 1.0f
+            verts[1].tangents[0][1] = 0.0f
+            verts[1].tangents[0][2] = 0.0f
+            verts[1].tangents[1][0] = 0.0f
+            verts[1].tangents[1][1] = 1.0f
+            verts[1].tangents[1][2] = 0.0f
             verts[2].xyz[0] = x + w
             verts[2].xyz[1] = y + h
-            verts[2].xyz[2] = 0f
+            verts[2].xyz[2] = 0.0f
             verts[2].st[0] = s2
             verts[2].st[1] = t2
-            verts[2].normal[0] = 0f
-            verts[2].normal[1] = 0f
-            verts[2].normal[2] = 1f
-            verts[2].tangents[0][0] = 1f
-            verts[2].tangents[0][1] = 0f
-            verts[2].tangents[0][2] = 0f
-            verts[2].tangents[1][0] = 0f
-            verts[2].tangents[1][1] = 1f
-            verts[2].tangents[1][2] = 0f
+            verts[2].normal[0] = 0.0f
+            verts[2].normal[1] = 0.0f
+            verts[2].normal[2] = 1.0f
+            verts[2].tangents[0][0] = 1.0f
+            verts[2].tangents[0][1] = 0.0f
+            verts[2].tangents[0][2] = 0.0f
+            verts[2].tangents[1][0] = 0.0f
+            verts[2].tangents[1][1] = 1.0f
+            verts[2].tangents[1][2] = 0.0f
             verts[3].xyz[0] = x
             verts[3].xyz[1] = y + h
-            verts[3].xyz[2] = 0f
+            verts[3].xyz[2] = 0.0f
             verts[3].st[0] = s1
             verts[3].st[1] = t2
-            verts[3].normal[0] = 0f
-            verts[3].normal[1] = 0f
-            verts[3].normal[2] = 1f
-            verts[3].tangents[0][0] = 1f
-            verts[3].tangents[0][1] = 0f
-            verts[3].tangents[0][2] = 0f
-            verts[3].tangents[1][0] = 0f
-            verts[3].tangents[1][1] = 1f
-            verts[3].tangents[1][2] = 0f
+            verts[3].normal[0] = 0.0f
+            verts[3].normal[1] = 0.0f
+            verts[3].normal[2] = 1.0f
+            verts[3].tangents[0][0] = 1.0f
+            verts[3].tangents[0][1] = 0.0f
+            verts[3].tangents[0][2] = 0.0f
+            verts[3].tangents[1][0] = 0.0f
+            verts[3].tangents[1][1] = 1.0f
+            verts[3].tangents[1][2] = 0.0f
             this.DrawStretchPic(verts /*[0]*/, indexes /*[0]*/, 4, 6, hShader, false, 0.0f, 0.0f, 640.0f, 480.0f)
             bla99++
         }
@@ -567,12 +572,12 @@ class GuiModel {
             t3: idVec2,
             material: idMaterial?
         ) {
-            val tempVerts = arrayOfNulls<idDrawVert>(3)
+            val tempVerts = Array(3) { idDrawVert() }
             /*glIndex_t*/
             val tempIndexes = IntArray(3)
             val vertCount = 3
             val indexCount = 3
-            if (!tr_local.glConfig.isInitialized) {
+            if (!glConfig.isInitialized) {
                 return
             }
             if (null == material) {
@@ -583,46 +588,46 @@ class GuiModel {
             tempIndexes[2] = 2
             tempVerts[0]!!.xyz[0] = p1.x
             tempVerts[0]!!.xyz[1] = p1.y
-            tempVerts[0]!!.xyz[2] = 0f
+            tempVerts[0]!!.xyz[2] = 0.0f
             tempVerts[0]!!.st[0] = t1.x
             tempVerts[0]!!.st[1] = t1.y
-            tempVerts[0]!!.normal[0] = 0f
-            tempVerts[0]!!.normal[1] = 0f
-            tempVerts[0]!!.normal[2] = 1f
-            tempVerts[0]!!.tangents[0][0] = 1f
-            tempVerts[0]!!.tangents[0][1] = 0f
-            tempVerts[0]!!.tangents[0][2] = 0f
-            tempVerts[0]!!.tangents[1][0] = 0f
-            tempVerts[0]!!.tangents[1][1] = 1f
-            tempVerts[0]!!.tangents[1][2] = 0f
+            tempVerts[0]!!.normal[0] = 0.0f
+            tempVerts[0]!!.normal[1] = 0.0f
+            tempVerts[0]!!.normal[2] = 1.0f
+            tempVerts[0]!!.tangents[0][0] = 1.0f
+            tempVerts[0]!!.tangents[0][1] = 0.0f
+            tempVerts[0]!!.tangents[0][2] = 0.0f
+            tempVerts[0]!!.tangents[1][0] = 0.0f
+            tempVerts[0]!!.tangents[1][1] = 1.0f
+            tempVerts[0]!!.tangents[1][2] = 0.0f
             tempVerts[1]!!.xyz[0] = p2.x
             tempVerts[1]!!.xyz[1] = p2.y
-            tempVerts[1]!!.xyz[2] = 0f
+            tempVerts[1]!!.xyz[2] = 0.0f
             tempVerts[1]!!.st[0] = t2.x
             tempVerts[1]!!.st[1] = t2.y
-            tempVerts[1]!!.normal[0] = 0f
-            tempVerts[1]!!.normal[1] = 0f
-            tempVerts[1]!!.normal[2] = 1f
-            tempVerts[1]!!.tangents[0][0] = 1f
-            tempVerts[1]!!.tangents[0][1] = 0f
-            tempVerts[1]!!.tangents[0][2] = 0f
-            tempVerts[1]!!.tangents[1][0] = 0f
-            tempVerts[1]!!.tangents[1][1] = 1f
-            tempVerts[1]!!.tangents[1][2] = 0f
+            tempVerts[1]!!.normal[0] = 0.0f
+            tempVerts[1]!!.normal[1] = 0.0f
+            tempVerts[1]!!.normal[2] = 1.0f
+            tempVerts[1]!!.tangents[0][0] = 1.0f
+            tempVerts[1]!!.tangents[0][1] = 0.0f
+            tempVerts[1]!!.tangents[0][2] = 0.0f
+            tempVerts[1]!!.tangents[1][0] = 0.0f
+            tempVerts[1]!!.tangents[1][1] = 1.0f
+            tempVerts[1]!!.tangents[1][2] = 0.0f
             tempVerts[2]!!.xyz[0] = p3.x
             tempVerts[2]!!.xyz[1] = p3.y
-            tempVerts[2]!!.xyz[2] = 0f
+            tempVerts[2]!!.xyz[2] = 0.0f
             tempVerts[2]!!.st[0] = t3.x
             tempVerts[2]!!.st[1] = t3.y
-            tempVerts[2]!!.normal[0] = 0f
-            tempVerts[2]!!.normal[1] = 0f
-            tempVerts[2]!!.normal[2] = 1f
-            tempVerts[2]!!.tangents[0][0] = 1f
-            tempVerts[2]!!.tangents[0][1] = 0f
-            tempVerts[2]!!.tangents[0][2] = 0f
-            tempVerts[2]!!.tangents[1][0] = 0f
-            tempVerts[2]!!.tangents[1][1] = 1f
-            tempVerts[2]!!.tangents[1][2] = 0f
+            tempVerts[2]!!.normal[0] = 0.0f
+            tempVerts[2]!!.normal[1] = 0.0f
+            tempVerts[2]!!.normal[2] = 1.0f
+            tempVerts[2]!!.tangents[0][0] = 1.0f
+            tempVerts[2]!!.tangents[0][1] = 0.0f
+            tempVerts[2]!!.tangents[0][2] = 0.0f
+            tempVerts[2]!!.tangents[1][0] = 0.0f
+            tempVerts[2]!!.tangents[1][1] = 1.0f
+            tempVerts[2]!!.tangents[1][2] = 0.0f
 
             // break the current surface if we are changing to a new material
             if (material !== surf!!.material) {
@@ -647,7 +652,7 @@ class GuiModel {
 
 //            memcpy(verts[numVerts], tempVerts, vertCount * sizeof(verts[0]));
             for (i in 0 until vertCount) {
-                verts[i] = idDrawVert(tempVerts[i]!!)
+                verts[numVerts + i] = idDrawVert(tempVerts[i]!!)
             }
         }
 
@@ -661,11 +666,11 @@ class GuiModel {
                 s.color[3] = surf!!.color[3]
                 s.material = surf!!.material
             } else {
-                s.color[0] = 1f
-                s.color[1] = 1f
-                s.color[2] = 1f
-                s.color[3] = 1f
-                s.material = tr_local.tr.defaultMaterial
+                s.color[0] = 1.0f
+                s.color[1] = 1.0f
+                s.color[2] = 1.0f
+                s.color[3] = 1.0f
+                s.material = tr.defaultMaterial
             }
             s.numIndexes = 0
             s.firstIndex = indexes.Num()
@@ -674,10 +679,10 @@ class GuiModel {
             surfaces.Append(s)
             surf = surfaces[surfaces.Num() - 1]
             //            TempDump.printCallStack(bla555 + "");
-            val bla0 = setColorTotal
-            val bla1 = setColor
-            val bla2 = clear
-            val bla3 = drawStretchPic
+            setColorTotal
+            setColor
+            clear
+            drawStretchPic
             bla555++
         }
 
@@ -711,12 +716,11 @@ class GuiModel {
             // but some things, like deforms and recursive
             // guis, need to access the verts in cpu space, not just through the vertex range
             tri.verts =
-                arrayOfNulls(tri.numVerts) ///*(idDrawVert *)*/ R_FrameAlloc(tri.numVerts * sizeof(tri.verts[0]));
+                Array(tri.numVerts) { idDrawVert() } ///*(idDrawVert *)*/ R_FrameAlloc(tri.numVerts * sizeof(tri.verts[0]));
             //            memcpy(tri.verts,  & verts[surf.firstVert], tri.numVerts * sizeof(tri.verts[0]));
-            System.arraycopy(verts.getList(), surf.firstVert, tri.verts, 0, tri.numVerts)
-            //            for (int s = surf.firstVert, d = 0; d < tri.numVerts; s++, d++) {
-//                tri.verts[d] = new idDrawVert(verts.get(s));
-//            }
+            for (i in 0 until tri.numVerts) {
+                tri.verts!![i] = idDrawVert(verts[surf.firstVert + i])
+            }
 
             // move the verts to the vertex cache
             tri.ambientCache = VertexCache.vertexCache.AllocFrameTemp(tri.verts!!, tri.numVerts * idDrawVert.BYTES)
@@ -740,7 +744,7 @@ class GuiModel {
             guiSpace.weaponDepthHack = depthHack
 
             // add the surface, which might recursively create another gui
-            tr_light.R_AddDrawSurf(tri, guiSpace, renderEntity, surf.material!!, tr_local.tr.viewDef!!.scissor)
+            tr_light.R_AddDrawSurf(tri, guiSpace, renderEntity, surf.material!!, tr.viewDef!!.scissor)
         }
 
         companion object {

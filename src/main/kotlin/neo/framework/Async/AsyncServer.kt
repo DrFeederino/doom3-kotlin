@@ -13,13 +13,15 @@ import neo.framework.Session.msgBoxType_t
 import neo.framework.UsercmdGen.usercmd_t
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.Dict_h.idDict
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
+import neo.idlib.MAX_STRING_CHARS
+import neo.idlib.Max
+import neo.idlib.Min
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CInt
 import neo.idlib.containers.idStrList
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.idException
+import neo.idlib.math.idMath
 import neo.sys.sys_public.idPort
 import neo.sys.sys_public.netadr_t
 import neo.sys.sys_public.netadrtype_t
@@ -30,9 +32,6 @@ import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.util.*
 
-/**
- *
- */
 object AsyncServer {
     //
     // if we don't hear from authorize server, assume it is down
@@ -286,8 +285,8 @@ object AsyncServer {
 
 //	memset( challenges, 0, sizeof( challenges ) );
 //	memset( userCmds, 0, sizeof( userCmds ) );
-            Arrays.fill(challenges, 0)
-            Arrays.fill(userCmds, 0)
+            Arrays.fill(challenges, null)
+            Arrays.fill(userCmds, null)
             i = 0
             while (i < AsyncNetwork.MAX_ASYNC_CLIENTS) {
                 ClearClient(i)
@@ -299,7 +298,7 @@ object AsyncServer {
             serverDataChecksum = DeclManager.declManager.GetChecksum()
 
             // get a pseudo random server id, but don't use the id which is reserved for connectionless packets
-            serverId = win_shared.Sys_Milliseconds().toInt() and MsgChannel.CONNECTIONLESS_MESSAGE_ID_MASK
+            serverId = win_shared.Sys_Milliseconds() and MsgChannel.CONNECTIONLESS_MESSAGE_ID_MASK
             active = true
             nextHeartbeatTime = 0
             nextAsyncStatsTime = 0
@@ -354,7 +353,7 @@ object AsyncServer {
             val mapName: idStr
             val ff: findFile_t
             var addonReload = false
-            val bestGameType = CharArray(Lib.MAX_STRING_CHARS)
+            val bestGameType = CharArray(MAX_STRING_CHARS)
             assert(active)
 
             // reset any pureness
@@ -380,12 +379,14 @@ object AsyncServer {
                     CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "disconnect\n")
                     return
                 }
+
                 findFile_t.FIND_ADDON -> {
                     // NOTE: we have no problem with addon dependencies here because if the map is in
                     // an addon pack that's already on search list, then all it's deps are assumed to be on search as well
                     Common.common.Printf("map %s is in an addon pak - reloading\n", mapName.toString())
                     addonReload = true
                 }
+
                 else -> {}
             }
 
@@ -424,8 +425,7 @@ object AsyncServer {
 
             // initialize game id and time
             gameInitId =
-                gameInitId xor win_shared.Sys_Milliseconds()
-                    .toInt() // NOTE: make sure the gameInitId is always a positive number because negative numbers have special meaning
+                gameInitId xor win_shared.Sys_Milliseconds() // NOTE: make sure the gameInitId is always a positive number because negative numbers have special meaning
             gameFrame = 0
             gameTime = 0
             gameTimeResidual = 0
@@ -771,7 +771,7 @@ object AsyncServer {
                 // modify maximum rate if necesary
                 if (idAsyncNetwork.serverMaxClientRate.IsModified()) {
                     client.channel.SetMaxOutgoingRate(
-                        Lib.Min(
+                        Min(
                             client.clientRate,
                             idAsyncNetwork.serverMaxClientRate.GetInteger()
                         )
@@ -1170,7 +1170,7 @@ object AsyncServer {
             client.channel.ResetRate()
             client.clientRate = if (clientRate != 0) clientRate else idAsyncNetwork.serverMaxClientRate.GetInteger()
             client.channel.SetMaxOutgoingRate(
-                Lib.Min(
+                Min(
                     idAsyncNetwork.serverMaxClientRate.GetInteger(),
                     client.clientRate
                 )
@@ -1559,7 +1559,7 @@ object AsyncServer {
 
                 // Max( 1, to always send at least one cmd, which we know we have because we call DuplicateUsercmds in RunFrame
                 numUsercmds =
-                    Lib.Max(1, Lib.Min(client.gameFrame, gameFrame + maxRelay) - gameFrame)
+                    Max(1, Min(client.gameFrame, gameFrame + maxRelay) - gameFrame)
                 msg.WriteByte(i.toByte())
                 msg.WriteByte(numUsercmds.toByte())
                 j = 0
@@ -1666,9 +1666,11 @@ object AsyncServer {
                         Common.common.Printf("received empty message for client %d\n", clientNum)
                     }
                 }
+
                 CLIENT_UNRELIABLE.CLIENT_UNRELIABLE_MESSAGE_PINGRESPONSE -> {
                     client.clientPing = realTime - msg.ReadLong()
                 }
+
                 CLIENT_UNRELIABLE.CLIENT_UNRELIABLE_MESSAGE_USERCMD -> {
                     client.clientPrediction = msg.ReadShort().toInt()
 
@@ -1706,6 +1708,7 @@ object AsyncServer {
                         )
                     }
                 }
+
                 else -> {
                     Common.common.Printf("unknown unreliable message %d from client %d\n", id, clientNum)
                 }
@@ -1726,19 +1729,23 @@ object AsyncServer {
                         msg.ReadDeltaDict(info, Session.sessLocal.mapSpawnData.userInfo[clientNum])
                         SendUserInfoBroadcast(clientNum, info)
                     }
+
                     CLIENT_RELIABLE.CLIENT_RELIABLE_MESSAGE_PRINT -> {
-                        val string = CharArray(Lib.MAX_STRING_CHARS)
+                        val string = CharArray(MAX_STRING_CHARS)
                         msg.ReadString(string, string.size)
                         Common.common.Printf("%s\n", TempDump.ctos(string))
                     }
+
                     CLIENT_RELIABLE.CLIENT_RELIABLE_MESSAGE_DISCONNECT -> {
                         DropClient(clientNum, "#str_07138")
                     }
+
                     CLIENT_RELIABLE.CLIENT_RELIABLE_MESSAGE_PURE -> {
 
                         // we get this message once the client has successfully updated it's pure list
                         ProcessReliablePure(clientNum, msg)
                     }
+
                     else -> {
 
                         // pass reliable message on to game code
@@ -1886,13 +1893,15 @@ object AsyncServer {
                     SendPureServerMessage(from, OS)
                     return
                 }
+
                 authState_t.CDK_ONLYLAN -> {
                     Common.common.DPrintf("%s: not a lan client\n", win_net.Sys_NetAdrToString(from))
                     PrintOOB(from, SERVER_PRINT.SERVER_PRINT_MISC.ordinal, "#str_04843")
                     return
                 }
+
                 authState_t.CDK_WAIT -> {
-                    if (challenges[ichallenge].authReply == authReply_t.AUTH_NONE && Lib.Min(
+                    if (challenges[ichallenge].authReply == authReply_t.AUTH_NONE && Min(
                             serverTime - lastAuthTime,
                             serverTime - challenges[ichallenge].time
                         ) > AUTHORIZE_TIMEOUT
@@ -1945,6 +1954,7 @@ object AsyncServer {
                     }
                     return
                 }
+
                 else -> assert(challenges[ichallenge].authState == authState_t.CDK_OK || challenges[ichallenge].authState == authState_t.CDK_PUREOK)
             }
             numClients = 0
@@ -1961,7 +1971,7 @@ object AsyncServer {
             // if authState == CDK_PUREOK, the check was already performed once before entering pure checks
             // but meanwhile, the max players may have been reached
             msg.ReadString(password, password.size)
-            val reason = CharArray(Lib.MAX_STRING_CHARS)
+            val reason = CharArray(MAX_STRING_CHARS)
             val reply = Game_local.game.ServerAllowClient(
                 numClients,
                 win_net.Sys_NetAdrToString(from),
@@ -2068,7 +2078,7 @@ object AsyncServer {
 
         private fun ProcessRemoteConsoleMessage(from: netadr_t, msg: idBitMsg) {
             val msgBuf = StringBuilder(952)
-            val string = CharArray(Lib.MAX_STRING_CHARS)
+            val string = CharArray(MAX_STRING_CHARS)
             if (idAsyncNetwork.serverRemoteConsolePassword.GetString()!!.isEmpty()) {
                 PrintOOB(from, SERVER_PRINT.SERVER_PRINT_MISC.ordinal, "#str_04846")
                 return
@@ -2132,7 +2142,7 @@ object AsyncServer {
 
         private fun ConnectionlessMessage(from: netadr_t, msg: idBitMsg): Boolean {
             val chrs =
-                CharArray(Lib.MAX_STRING_CHARS * 2) // M. Quinn - Even Balance - PB Packets need more than 1024
+                CharArray(MAX_STRING_CHARS * 2) // M. Quinn - Even Balance - PB Packets need more than 1024
             val string: String
             msg.ReadString(chrs, chrs.size)
             string = TempDump.ctos(chrs)
@@ -2254,7 +2264,7 @@ object AsyncServer {
         private fun ProcessAuthMessage(msg: idBitMsg) {
             val client_from = netadr_t()
             val client_guid = CharArray(12)
-            val string = CharArray(Lib.MAX_STRING_CHARS)
+            val string = CharArray(MAX_STRING_CHARS)
             var i: Int
             val clientId: Int
             val reply: authReply_t
@@ -2275,7 +2285,7 @@ object AsyncServer {
                     return
                 }
                 if (replyMsg == authReplyMsg_t.AUTH_REPLY_PRINT) {
-                    msg.ReadString(string, Lib.MAX_STRING_CHARS)
+                    msg.ReadString(string, MAX_STRING_CHARS)
                     replyPrintMsg.set(TempDump.ctos(string))
                 }
             }
@@ -2638,7 +2648,7 @@ object AsyncServer {
             val dlSize = IntArray(FileSystem_h.MAX_PURE_PAKS) // sizes
             val pakNames = idStrList() // relative path
             val pakURLs = idStrList() // game URLs
-            val pakbuf = CharArray(Lib.MAX_STRING_CHARS)
+            val pakbuf = CharArray(MAX_STRING_CHARS)
             val paklist = idStr()
             val msgBuf = ByteBuffer.allocate(MsgChannel.MAX_MESSAGE_SIZE)
             val tmpBuf = ByteBuffer.allocate(MsgChannel.MAX_MESSAGE_SIZE)

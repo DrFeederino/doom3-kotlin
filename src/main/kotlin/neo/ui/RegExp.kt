@@ -9,11 +9,11 @@ import neo.idlib.Text.Parser.idParser
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.CInt
-import neo.idlib.containers.HashIndex.idHashIndex
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.containers.idHashIndex
+import neo.idlib.math.idVec2
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import neo.ui.Rectangle.idRectangle
 import neo.ui.RegExp.idRegister.REGTYPE
 import neo.ui.Window.idWindow
@@ -26,9 +26,6 @@ import neo.ui.Winvar.idWinVec2
 import neo.ui.Winvar.idWinVec3
 import neo.ui.Winvar.idWinVec4
 
-/**
- *
- */
 class RegExp {
     class idRegister {
         /*unsigned*/ val regs = ShortArray(4)
@@ -54,9 +51,8 @@ class RegExp {
         }
 
         fun SetToRegs(registers: FloatArray) {
-            var i: Int
-            var v: idVec4? = idVec4()
-            val v2: idVec2?
+            val v = idVec4()
+            val v2 = idVec2()
             val v3 = idVec3()
             val rect = idRectangle()
             if (!enabled || `var` == null || `var` != null && (`var`!!.GetDict() != null || !`var`!!.GetEval())) {
@@ -64,49 +60,45 @@ class RegExp {
             }
             when (REGTYPE.values()[type.toInt()]) {
                 REGTYPE.VEC4 -> {
-                    v = (`var` as idWinVec4).data
+                    v.set((`var` as idWinVec4).data)
                 }
 
                 REGTYPE.RECTANGLE -> {
                     rect.set((`var` as idWinRectangle).data)
-                    v = rect.ToVec4()
+                    v.set(rect.ToVec4())
                 }
 
                 REGTYPE.VEC2 -> {
-                    v2 = (`var` as idWinVec2).data
-                    v!![0] = v2!![0]
+                    v2.set((`var` as idWinVec2).data)
+                    v[0] = v2[0]
                     v[1] = v2[1]
                 }
 
                 REGTYPE.VEC3 -> {
                     v3.set((`var` as idWinVec3).data)
-                    v!![0] = v3[0]
+                    v[0] = v3[0]
                     v[1] = v3[1]
                     v[2] = v3[2]
                 }
 
                 REGTYPE.FLOAT -> {
-                    v!![0] = (`var` as idWinFloat).data
+                    v[0] = (`var` as idWinFloat).data
                 }
 
                 REGTYPE.INT -> {
-                    v!![0] = (`var` as idWinInt).data.toFloat()
+                    v[0] = (`var` as idWinInt).data.toFloat()
                 }
 
                 REGTYPE.BOOL -> {
-                    v!![0] = btoi((`var` as idWinBool).data).toFloat()
+                    v[0] = btoi((`var` as idWinBool).data).toFloat()
                 }
 
                 else -> {
                     Common.common.FatalError("idRegister::SetToRegs: bad reg type")
                 }
             }
-            i = 0
-            while (i < regCount) {
-                if (java.lang.Float.isInfinite(v!![i].also { registers[regs[i].toInt()] = it })) {
-                    val bla = 111
-                }
-                i++
+            for (i in 0 until regCount) {
+                registers[regs[i].toInt()] = v[i]
             }
         }
 

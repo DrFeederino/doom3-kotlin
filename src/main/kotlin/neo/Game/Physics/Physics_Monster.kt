@@ -1,6 +1,5 @@
 package neo.Game.Physics
 
-import neo.CM.CollisionModel.trace_s
 import neo.Game.Actor.idActor
 import neo.Game.Entity
 import neo.Game.Entity.idEntity
@@ -11,24 +10,16 @@ import neo.Game.Game_local
 import neo.Game.Physics.Physics.impactInfo_s
 import neo.Game.Physics.Physics_Actor.idPhysics_Actor
 import neo.TempDump
-import neo.framework.Common
+import neo.cm.trace_s
 import neo.idlib.BitMsg.idBitMsgDelta
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CInt
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.getVec3_zero
-import neo.idlib.math.Vector.idVec3
 
-/**
- *
- */
 object Physics_Monster {
     //
-    const val MONSTER_VELOCITY_MAX = 4000f
+    const val MONSTER_VELOCITY_MAX = 4000.0f
     val MONSTER_VELOCITY_EXPONENT_BITS =
         idMath.BitsForInteger(idMath.BitsForFloat(MONSTER_VELOCITY_MAX)) + 1
     const val MONSTER_VELOCITY_TOTAL_BITS = 16
@@ -100,7 +91,6 @@ object Physics_Monster {
     }
 
     class idPhysics_Monster : idPhysics_Actor() {
-        // CLASS_PROTOTYPE( idPhysics_Monster );
         private var blockingEntity: idEntity?
 
         // monster physics state
@@ -108,27 +98,21 @@ object Physics_Monster {
         private val delta // delta for next move
                 : idVec3
         private var fly: Boolean
-
-        //
         private var forceDeltaMove: Boolean
 
-        //
         // properties
         private var maxStepHeight // maximum step height
                 : Float
         private var minFloorCosine // minimum cosine of floor angle
                 : Float
 
-        //
         // results of last evaluate
         private var moveResult: monsterMoveResult_t = monsterMoveResult_t.MM_OK
         private var noImpact // if true do not activate when another object collides
                 : Boolean
         private var saved: monsterPState_s
-
-        //
-        //
         private var useVelocityMove: Boolean
+
         override fun Save(savefile: idSaveGame) {
             idPhysics_Monster_SavePState(savefile, current)
             idPhysics_Monster_SavePState(savefile, saved)
@@ -140,7 +124,7 @@ object Physics_Monster {
             savefile.WriteBool(useVelocityMove)
             savefile.WriteBool(noImpact)
             savefile.WriteInt(TempDump.etoi(moveResult))
-            savefile.WriteObject(blockingEntity as Class.idClass)
+            savefile.WriteObject(blockingEntity as Class.idClass?)
         }
 
         override fun Restore(savefile: idRestoreGame) {
@@ -173,7 +157,7 @@ object Physics_Monster {
         // set delta for next move
         fun SetDelta(d: idVec3) {
             delta.set(d)
-            if (delta != Vector.getVec3Origin()) {
+            if (delta != getVec3Origin()) {
                 Activate()
             }
         }
@@ -223,7 +207,7 @@ object Physics_Monster {
             val oldOrigin = idVec3()
             val masterAxis = idMat3()
             val timeStep: Float
-            timeStep = Math_h.MS2SEC(timeStepMSec.toFloat())
+            timeStep = MS2SEC(timeStepMSec.toFloat())
             moveResult = monsterMoveResult_t.MM_OK
             blockingEntity = null
             oldOrigin.set(current.origin)
@@ -260,12 +244,6 @@ object Physics_Monster {
             } else {
                 current.velocity.z
             }
-            // TODO: a hack to make sure things at least somewhat work
-            Common.common.Printf("Current upspeed is %f\n", upspeed)
-            if (upspeed < -10.0f) {
-                current.velocity.set(getVec3_zero())
-                gravityNormal.set(getVec3_zero())
-            }
             if (fly || !forceDeltaMove && (!current.onGround || upspeed > 1.0f)) {
                 if (upspeed < 0.0f) {
                     moveResult = monsterMoveResult_t.MM_FALLING
@@ -274,7 +252,7 @@ object Physics_Monster {
                     moveResult = monsterMoveResult_t.MM_OK
                 }
                 delta.set(current.velocity.times(timeStep))
-                if (delta != Vector.getVec3Origin()) {
+                if (delta != getVec3Origin()) {
                     moveResult = SlideMove(current.origin, current.velocity, delta)
                     delta.Zero()
                 }
@@ -288,7 +266,7 @@ object Physics_Monster {
                     current.velocity.set(delta.div(timeStep))
                 }
                 current.velocity.minusAssign(gravityNormal.times(current.velocity.times(gravityNormal)))
-                if (delta == Vector.getVec3Origin()) {
+                if (delta == getVec3Origin()) {
                     Rest()
                 } else {
                     // try moving into the desired direction
@@ -446,7 +424,7 @@ object Physics_Monster {
                     self!!.GetMasterPosition(masterOrigin, masterAxis)
                     current.localOrigin.set(current.origin.minus(masterOrigin).times(masterAxis.Transpose()))
                     masterEntity = master
-                    masterYaw = masterAxis.get(0).ToYaw()
+                    masterYaw = masterAxis[0].ToYaw()
                 }
                 ClearContacts()
             } else {
@@ -458,42 +436,42 @@ object Physics_Monster {
         }
 
         override fun WriteToSnapshot(msg: idBitMsgDelta) {
-            msg.WriteFloat(current.origin.get(0))
-            msg.WriteFloat(current.origin.get(1))
-            msg.WriteFloat(current.origin.get(2))
+            msg.WriteFloat(current.origin[0])
+            msg.WriteFloat(current.origin[1])
+            msg.WriteFloat(current.origin[2])
             msg.WriteFloat(
-                current.velocity.get(0),
+                current.velocity[0],
                 MONSTER_VELOCITY_EXPONENT_BITS,
                 MONSTER_VELOCITY_MANTISSA_BITS
             )
             msg.WriteFloat(
-                current.velocity.get(1),
+                current.velocity[1],
                 MONSTER_VELOCITY_EXPONENT_BITS,
                 MONSTER_VELOCITY_MANTISSA_BITS
             )
             msg.WriteFloat(
-                current.velocity.get(2),
+                current.velocity[2],
                 MONSTER_VELOCITY_EXPONENT_BITS,
                 MONSTER_VELOCITY_MANTISSA_BITS
             )
-            msg.WriteDeltaFloat(current.origin.get(0), current.localOrigin.get(0))
-            msg.WriteDeltaFloat(current.origin.get(1), current.localOrigin.get(1))
-            msg.WriteDeltaFloat(current.origin.get(2), current.localOrigin.get(2))
+            msg.WriteDeltaFloat(current.origin[0], current.localOrigin[0])
+            msg.WriteDeltaFloat(current.origin[1], current.localOrigin[1])
+            msg.WriteDeltaFloat(current.origin[2], current.localOrigin[2])
             msg.WriteDeltaFloat(
                 0.0f,
-                current.pushVelocity.get(0),
-                MONSTER_VELOCITY_EXPONENT_BITS,
-                MONSTER_VELOCITY_MANTISSA_BITS
-            )
-            msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity.get(1),
+                current.pushVelocity[0],
                 MONSTER_VELOCITY_EXPONENT_BITS,
                 MONSTER_VELOCITY_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
                 0.0f,
-                current.pushVelocity.get(2),
+                current.pushVelocity[1],
+                MONSTER_VELOCITY_EXPONENT_BITS,
+                MONSTER_VELOCITY_MANTISSA_BITS
+            )
+            msg.WriteDeltaFloat(
+                0.0f,
+                current.pushVelocity[2],
                 MONSTER_VELOCITY_EXPONENT_BITS,
                 MONSTER_VELOCITY_MANTISSA_BITS
             )
@@ -502,56 +480,38 @@ object Physics_Monster {
         }
 
         override fun ReadFromSnapshot(msg: idBitMsgDelta) {
-            current.origin.set(0, msg.ReadFloat())
-            current.origin.set(1, msg.ReadFloat())
-            current.origin.set(2, msg.ReadFloat())
-            current.velocity.set(
-                0,
-                msg.ReadFloat(
-                    MONSTER_VELOCITY_EXPONENT_BITS,
-                    MONSTER_VELOCITY_MANTISSA_BITS
-                )
+            current.origin[0] = msg.ReadFloat()
+            current.origin[1] = msg.ReadFloat()
+            current.origin[2] = msg.ReadFloat()
+            current.velocity[0] = msg.ReadFloat(
+                MONSTER_VELOCITY_EXPONENT_BITS,
+                MONSTER_VELOCITY_MANTISSA_BITS
             )
-            current.velocity.set(
-                1,
-                msg.ReadFloat(
-                    MONSTER_VELOCITY_EXPONENT_BITS,
-                    MONSTER_VELOCITY_MANTISSA_BITS
-                )
+            current.velocity[1] = msg.ReadFloat(
+                MONSTER_VELOCITY_EXPONENT_BITS,
+                MONSTER_VELOCITY_MANTISSA_BITS
             )
-            current.velocity.set(
-                2,
-                msg.ReadFloat(
-                    MONSTER_VELOCITY_EXPONENT_BITS,
-                    MONSTER_VELOCITY_MANTISSA_BITS
-                )
+            current.velocity[2] = msg.ReadFloat(
+                MONSTER_VELOCITY_EXPONENT_BITS,
+                MONSTER_VELOCITY_MANTISSA_BITS
             )
-            current.localOrigin.set(0, msg.ReadDeltaFloat(current.origin.get(0)))
-            current.localOrigin.set(1, msg.ReadDeltaFloat(current.origin.get(1)))
-            current.localOrigin.set(2, msg.ReadDeltaFloat(current.origin.get(2)))
-            current.pushVelocity.set(
-                0,
-                msg.ReadDeltaFloat(
-                    0.0f,
-                    MONSTER_VELOCITY_EXPONENT_BITS,
-                    MONSTER_VELOCITY_MANTISSA_BITS
-                )
+            current.localOrigin[0] = msg.ReadDeltaFloat(current.origin[0])
+            current.localOrigin[1] = msg.ReadDeltaFloat(current.origin[1])
+            current.localOrigin[2] = msg.ReadDeltaFloat(current.origin[2])
+            current.pushVelocity[0] = msg.ReadDeltaFloat(
+                0.0f,
+                MONSTER_VELOCITY_EXPONENT_BITS,
+                MONSTER_VELOCITY_MANTISSA_BITS
             )
-            current.pushVelocity.set(
-                1,
-                msg.ReadDeltaFloat(
-                    0.0f,
-                    MONSTER_VELOCITY_EXPONENT_BITS,
-                    MONSTER_VELOCITY_MANTISSA_BITS
-                )
+            current.pushVelocity[1] = msg.ReadDeltaFloat(
+                0.0f,
+                MONSTER_VELOCITY_EXPONENT_BITS,
+                MONSTER_VELOCITY_MANTISSA_BITS
             )
-            current.pushVelocity.set(
-                2,
-                msg.ReadDeltaFloat(
-                    0.0f,
-                    MONSTER_VELOCITY_EXPONENT_BITS,
-                    MONSTER_VELOCITY_MANTISSA_BITS
-                )
+            current.pushVelocity[2] = msg.ReadDeltaFloat(
+                0.0f,
+                MONSTER_VELOCITY_EXPONENT_BITS,
+                MONSTER_VELOCITY_MANTISSA_BITS
             )
             current.atRest = msg.ReadLong()
             current.onGround = msg.ReadBits(1) != 0
@@ -655,7 +615,7 @@ object Physics_Monster {
             val result2: monsterMoveResult_t
             val stepdist: Float
             val nostepdist: Float
-            if (delta == Vector.getVec3Origin()) {
+            if (delta == getVec3Origin()) {
                 return monsterMoveResult_t.MM_OK
             }
 

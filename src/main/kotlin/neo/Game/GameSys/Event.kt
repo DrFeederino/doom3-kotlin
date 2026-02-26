@@ -1,30 +1,107 @@
 package neo.Game.GameSys
 
-import neo.CM.CollisionModel.contactType_t
-import neo.CM.CollisionModel.trace_s
 import neo.Game.*
+import neo.Game.AFEntity.idAFEntity_ClawFourFingers
+import neo.Game.AFEntity.idAFEntity_Generic
+import neo.Game.AFEntity.idAFEntity_Gibbable
+import neo.Game.AFEntity.idAFEntity_WithAttachedHead
 import neo.Game.AI.AI
-import neo.Game.AI.AI_Events
 import neo.Game.AI.AI_Vagary
+import neo.Game.AI.AI_Vagary.idAI_Vagary
+import neo.Game.Animation.Anim_Testmodel.idTestModel
+import neo.Game.FX.idTeleporter
 import neo.Game.GameSys.Class.idClass
 import neo.Game.GameSys.Class.idEventArg
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local.idGameLocal
+import neo.Game.Item.idItem
+import neo.Game.Item.idItemRemover
+import neo.Game.Item.idMoveableItem
+import neo.Game.Item.idObjective
+import neo.Game.Item.idObjectiveComplete
+import neo.Game.Light.idLight
+import neo.Game.Misc.idActivator
+import neo.Game.Misc.idAnimated
+import neo.Game.Misc.idDamagable
+import neo.Game.Misc.idEarthQuake
+import neo.Game.Misc.idForceField
+import neo.Game.Misc.idFuncAASObstacle
+import neo.Game.Misc.idFuncAASPortal
+import neo.Game.Misc.idFuncEmitter
+import neo.Game.Misc.idFuncPortal
+import neo.Game.Misc.idFuncRadioChatter
+import neo.Game.Misc.idFuncSmoke
+import neo.Game.Misc.idFuncSplat
+import neo.Game.Misc.idLiquid
+import neo.Game.Misc.idPathCorner
+import neo.Game.Misc.idPhantomObjects
+import neo.Game.Misc.idPlayerStart
+import neo.Game.Misc.idShaking
+import neo.Game.Misc.idSpring
+import neo.Game.Misc.idStaticEntity
+import neo.Game.Misc.idVacuumSeparatorEntity
+import neo.Game.Moveable.idExplodingBarrel
+import neo.Game.Moveable.idMoveable
+import neo.Game.Mover.idDoor
+import neo.Game.Mover.idElevator
+import neo.Game.Mover.idMover_Periodic
+import neo.Game.Mover.idPlat
+import neo.Game.Mover.idRiser
+import neo.Game.Mover.idRotater
+import neo.Game.Projectile.idBFGProjectile
+import neo.Game.Projectile.idDebris
 import neo.Game.Script.Script_Program
 import neo.Game.Script.Script_Thread
-import neo.Game.Target
+import neo.Game.SecurityCamera.idSecurityCamera
+import neo.Game.Sound.idSound
+import neo.Game.Target.idTarget_CallObjectFunction
+import neo.Game.Target.idTarget_Damage
+import neo.Game.Target.idTarget_EnableLevelWeapons
+import neo.Game.Target.idTarget_EnableStamina
+import neo.Game.Target.idTarget_EndLevel
+import neo.Game.Target.idTarget_FadeEntity
+import neo.Game.Target.idTarget_FadeSoundClass
+import neo.Game.Target.idTarget_Give
+import neo.Game.Target.idTarget_GiveEmail
+import neo.Game.Target.idTarget_GiveSecurity
+import neo.Game.Target.idTarget_LevelTrigger
+import neo.Game.Target.idTarget_LightFadeIn
+import neo.Game.Target.idTarget_LightFadeOut
+import neo.Game.Target.idTarget_LockDoor
+import neo.Game.Target.idTarget_Remove
+import neo.Game.Target.idTarget_RemoveWeapons
+import neo.Game.Target.idTarget_SessionCommand
+import neo.Game.Target.idTarget_SetFov
+import neo.Game.Target.idTarget_SetGlobalShaderTime
+import neo.Game.Target.idTarget_SetInfluence
+import neo.Game.Target.idTarget_SetKeyVal
+import neo.Game.Target.idTarget_SetModel
+import neo.Game.Target.idTarget_SetPrimaryObjective
+import neo.Game.Target.idTarget_SetShaderParm
+import neo.Game.Target.idTarget_SetShaderTime
+import neo.Game.Target.idTarget_Show
+import neo.Game.Target.idTarget_Tip
+import neo.Game.Target.idTarget_WaitForButton
+import neo.Game.Trigger.idTrigger
+import neo.Game.Trigger.idTrigger_Count
+import neo.Game.Trigger.idTrigger_EntityName
+import neo.Game.Trigger.idTrigger_Fade
+import neo.Game.Trigger.idTrigger_Hurt
+import neo.Game.Trigger.idTrigger_Multi
+import neo.Game.Trigger.idTrigger_Timer
+import neo.Game.Trigger.idTrigger_Touch
+import neo.Game.WorldSpawn.idWorldspawn
 import neo.TempDump
 import neo.TempDump.SERiAL
+import neo.cm.contactType_t
+import neo.cm.trace_s
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CInt
 import neo.idlib.containers.LinkList.idLinkList
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idVec3
 import java.nio.ByteBuffer
 
-/**
- *
- */
 object Event {
 
     val D_EVENT_ENTITY: Char = 'e'
@@ -54,13 +131,14 @@ object Event {
     //
     var eventError = false
     var eventErrorMsg: String? = null
+    var initialized = false
 
     /* **********************************************************************
 
      idEventDef
 
      ***********************************************************************/
-    class idEventDef(command: String, formatSpec: String? = null /*= NULL*/, returnType: Char /*= 0*/) {
+    class idEventDef {
         private var argOffset: IntArray = IntArray(D_EVENT_MAXARGS)
         private var   /*size_t*/argsize: Int
         private var eventnum: Int
@@ -74,6 +152,98 @@ object Event {
 
 
         constructor(command: String, formatspec: String? = null /*= NULL*/) : this(command, formatspec, 0.toChar())
+
+        constructor(command: String, formatSpec: String? = null /*= NULL*/, returnType: Char /*= 0*/) {
+            var formatSpec = formatSpec
+            var ev: idEventDef
+            var i: Int
+            var   /*unsigned int*/bits: Long
+            assert(command != null)
+            assert(!initialized)
+
+            // Allow NULL to indicate no args, but always store it as ""
+            // so we don't have to check for it.
+            if (null == formatSpec) {
+                formatSpec = ""
+            }
+            name = command
+            formatspec = formatSpec
+            this.returnType = returnType.code
+            numargs = formatSpec.length
+            assert(numargs <= D_EVENT_MAXARGS)
+            if (numargs > D_EVENT_MAXARGS) {
+                eventError = true
+                eventErrorMsg = String.format("idEventDef::idEventDef : Too many args for '%s' event.", name)
+            }
+
+            // make sure the format for the args is valid, calculate the formatspecindex, and the offsets for each arg
+            bits = 0
+            argsize = 0
+            argOffset = IntArray(D_EVENT_MAXARGS) //memset( argOffset, 0, sizeof( argOffset ) );
+            i = 0
+            while (i < numargs) {
+                argOffset[i] = argsize
+                when (formatSpec[i]) {
+                    D_EVENT_FLOAT -> {
+                        bits = bits or ((1 shl i).toLong())
+                        argsize += java.lang.Float.SIZE / java.lang.Byte.SIZE
+                    }
+
+                    D_EVENT_INTEGER -> argsize += Integer.SIZE / java.lang.Byte.SIZE
+                    D_EVENT_VECTOR -> argsize += idVec3.BYTES
+                    D_EVENT_STRING -> argsize += Script_Program.MAX_STRING_LEN
+                    D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> argsize += TempDump.CPP_class.Pointer.SIZE / java.lang.Byte.SIZE
+                    D_EVENT_TRACE -> {}
+                    else -> {
+                        eventError = true
+                        eventErrorMsg = String.format(
+                            "idEventDef::idEventDef : Invalid arg format '%s' string for '%s' event.",
+                            formatSpec,
+                            name
+                        )
+                    }
+                }
+                i++
+            }
+
+            // calculate the formatspecindex
+            formatspecIndex = (1 shl numargs + D_EVENT_MAXARGS or bits.toInt()).toLong()
+
+            // go through the list of defined events and check for duplicates
+            // and mismatched format strings
+            eventnum = numEventDefs
+            i = 0
+            while (i < eventnum) {
+                ev = eventDefList[i]!!
+                if (command == ev.name) {
+                    if (formatSpec != ev.formatspec) {
+                        eventError = true
+                        eventErrorMsg = String.format(
+                            "idEvent '%s' defined twice with same name but differing format strings ('%s'!='%s').",
+                            command, formatSpec, ev.formatspec
+                        )
+                    }
+                    if (ev.returnType != returnType.code) {
+                        eventError = true
+                        eventErrorMsg = String.format(
+                            "idEvent '%s' defined twice with same name but differing return types ('%c'!='%c').",
+                            command, returnType, ev.returnType
+                        )
+                    }
+                    // Don't bother putting the duplicate event in list.
+                    eventnum = ev.eventnum
+                    return
+                }
+                i++
+            }
+            ev = this
+            if (numEventDefs >= MAX_EVENTS) {
+                eventError = true
+                eventErrorMsg = String.format("numEventDefs >= MAX_EVENTS")
+            }
+            eventDefList[numEventDefs] = ev
+            numEventDefs++
+        }
 
         fun GetName(): String {
             return name
@@ -147,96 +317,6 @@ object Event {
                 return null
             }
         }
-
-        init {
-            var formatSpec = formatSpec
-            var ev: idEventDef
-            var i: Int
-            var   /*unsigned int*/bits: Long
-            assert(command != null)
-            assert(!idEvent.initialized)
-
-            // Allow NULL to indicate no args, but always store it as ""
-            // so we don't have to check for it.
-            if (null == formatSpec) {
-                formatSpec = ""
-            }
-            name = command
-            formatspec = formatSpec
-            this.returnType = returnType.code
-            numargs = formatSpec.length
-            assert(numargs <= D_EVENT_MAXARGS)
-            if (numargs > D_EVENT_MAXARGS) {
-                eventError = true
-                eventErrorMsg = String.format("idEventDef::idEventDef : Too many args for '%s' event.", name)
-            }
-
-            // make sure the format for the args is valid, calculate the formatspecindex, and the offsets for each arg
-            bits = 0
-            argsize = 0
-            argOffset = IntArray(D_EVENT_MAXARGS) //memset( argOffset, 0, sizeof( argOffset ) );
-            i = 0
-            while (i < numargs) {
-                argOffset[i] = argsize
-                when (formatSpec[i]) {
-                    D_EVENT_FLOAT -> {
-                        bits = bits or ((1 shl i).toLong())
-                        argsize += java.lang.Float.SIZE / java.lang.Byte.SIZE
-                    }
-                    D_EVENT_INTEGER -> argsize += Integer.SIZE / java.lang.Byte.SIZE
-                    D_EVENT_VECTOR -> argsize += idVec3.BYTES
-                    D_EVENT_STRING -> argsize += Script_Program.MAX_STRING_LEN
-                    D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> argsize += TempDump.CPP_class.Pointer.SIZE / java.lang.Byte.SIZE
-                    D_EVENT_TRACE -> {}
-                    else -> {
-                        eventError = true
-                        eventErrorMsg = String.format(
-                            "idEventDef::idEventDef : Invalid arg format '%s' string for '%s' event.",
-                            formatSpec,
-                            name
-                        )
-                    }
-                }
-                i++
-            }
-
-            // calculate the formatspecindex
-            formatspecIndex = (1 shl numargs + D_EVENT_MAXARGS or bits.toInt()).toLong()
-
-            // go through the list of defined events and check for duplicates
-            // and mismatched format strings
-            eventnum = numEventDefs
-            i = 0
-            while (i < eventnum) {
-                ev = eventDefList[i]!!
-                if (command == ev.name) {
-                    if (formatSpec != ev.formatspec) {
-                        eventError = true
-                        eventErrorMsg = String.format(
-                            "idEvent '%s' defined twice with same name but differing format strings ('%s'!='%s').",
-                            command, formatSpec, ev.formatspec
-                        )
-                    }
-                    if (ev.returnType != returnType.code) {
-                        eventError = true
-                        eventErrorMsg = String.format(
-                            "idEvent '%s' defined twice with same name but differing return types ('%c'!='%c').",
-                            command, returnType, ev.returnType
-                        )
-                    }
-                    // Don't bother putting the duplicate event in list.
-                    eventnum = ev.eventnum
-                }
-                i++
-            }
-            ev = this
-            if (numEventDefs >= MAX_EVENTS) {
-                eventError = true
-                eventErrorMsg = String.format("numEventDefs >= MAX_EVENTS")
-            }
-            eventDefList[numEventDefs] = ev
-            numEventDefs++
-        }
     }
 
     /* **********************************************************************
@@ -296,7 +376,6 @@ object Event {
             //
             //        private static idDynamicBlockAlloc<Byte> eventDataAllocator = new idDynamicBlockAlloc(16 * 1024, 256);
             //
-            var initialized = false
 
             //
             //
@@ -306,8 +385,6 @@ object Event {
                 val   /*size_t*/size: Int
                 val format: String?
                 //            idEventArg arg;
-                var i: Int
-                var materialName: String
                 if (FreeEvents.IsListEmpty()) {
                     idGameLocal.Error("idEvent::Alloc : No more free events")
                 }
@@ -460,14 +537,10 @@ object Event {
                 var event: idEvent?
                 var num: Int
                 val args: Array<idEventArg<*>?> = arrayOfNulls(D_EVENT_MAXARGS)
-                var offset: Int
                 var i: Int
                 var numargs: Int
                 var formatspec: String
-                var tracePtr: Array<trace_s?>
                 var ev: idEventDef
-                var data: Array<Any?>
-                var materialName: String
                 num = 0
                 while (!EventQueue.IsListEmpty()) {
                     event = EventQueue.Next()
@@ -485,6 +558,7 @@ object Event {
                         when (formatspec[i]) {
                             D_EVENT_INTEGER, D_EVENT_FLOAT, D_EVENT_VECTOR, D_EVENT_STRING, D_EVENT_ENTITY, D_EVENT_ENTITY_NULL, D_EVENT_TRACE -> args[i] =
                                 event.data!![i]
+
                             else -> idGameLocal.Error(
                                 "idEvent::ServiceEvents : Invalid arg format '%s' string for '%s' event.",
                                 formatspec,
@@ -538,8 +612,8 @@ object Event {
                 }
                 ClearEventList()
                 //
-//            eventDataAllocator.Init();
-//
+                initCallbacks()
+
                 Game_local.gameLocal.Printf("...%d event definitions\n", idEventDef.NumEventCommands())
 
                 // the event system has started
@@ -557,14 +631,120 @@ object Event {
                 initialized = false
             }
 
+            /**
+             * This is to get all callbacks so that classes that declare events are properly initialized first
+             */
+            fun initCallbacks() {
+                idClass.getEventCallBacks()
+                Entity.idEntity.getEventCallBacks()
+                Actor.idActor.getEventCallBacks()
+                AFEntity.idAFEntity_Base.getEventCallBacks()
+                AI.idAI.getEventCallBacks()
+                Moveable.idMoveable.getEventCallBacks()
+                idAFEntity_ClawFourFingers.getEventCallBacks()
+                idAFEntity_WithAttachedHead.getEventCallBacks()
+                idAFEntity_Generic.getEventCallBacks()
+                idAFEntity_Gibbable.getEventCallBacks()
+                BrittleFracture.idBrittleFracture.getEventCallBacks()
+                Camera.idCameraView.getEventCallBacks()
+                Camera.idCameraAnim.getEventCallBacks()
+                Entity.idAnimatedEntity.getEventCallBacks()
+                FX.idEntityFx.getEventCallBacks()
+                idTeleporter.getEventCallBacks()
+                idItem.getEventCallBacks()
+                idObjective.getEventCallBacks()
+                idMoveableItem.getEventCallBacks()
+                idItemRemover.getEventCallBacks()
+                idObjectiveComplete.getEventCallBacks()
+                idLight.getEventCallBacks()
+                idPlayerStart.getEventCallBacks()
+                idActivator.getEventCallBacks()
+                idPathCorner.getEventCallBacks()
+                idTestModel.getEventCallBacks()
+                AI.idCombatNode.getEventCallBacks()
+                idAI_Vagary.getEventCallBacks()
+                idWorldspawn.getEventCallBacks()
+                Weapon.idWeapon.getEventCallBacks()
+                idTrigger_Touch.getEventCallBacks()
+                idTrigger_Fade.getEventCallBacks()
+                idTrigger_Hurt.getEventCallBacks()
+                idTrigger_Count.getEventCallBacks()
+                idTrigger_Timer.getEventCallBacks()
+                idTrigger_EntityName.getEventCallBacks()
+                idTrigger_Multi.getEventCallBacks()
+                idTrigger.getEventCallBacks()
+                idTarget_FadeSoundClass.getEventCallBacks()
+                idTarget_EnableStamina.getEventCallBacks()
+                idTarget_LevelTrigger.getEventCallBacks()
+                idTarget_RemoveWeapons.getEventCallBacks()
+                idTarget_GiveSecurity.getEventCallBacks()
+                idTarget_Tip.getEventCallBacks()
+                idTarget_EnableLevelWeapons.getEventCallBacks()
+                idTarget_CallObjectFunction.getEventCallBacks()
+                idTarget_LockDoor.getEventCallBacks()
+                idTarget_SetPrimaryObjective.getEventCallBacks()
+                idTarget_SetFov.getEventCallBacks()
+                idTarget_SetKeyVal.getEventCallBacks()
+                idTarget_SetInfluence.getEventCallBacks()
+                idTarget_SetModel.getEventCallBacks()
+                idTarget_GiveEmail.getEventCallBacks()
+                idTarget_Give.getEventCallBacks()
+                idTarget_LightFadeOut.getEventCallBacks()
+                idTarget_LightFadeIn.getEventCallBacks()
+                idTarget_FadeEntity.getEventCallBacks()
+                idTarget_SetShaderTime.getEventCallBacks()
+                idTarget_SetShaderParm.getEventCallBacks()
+                idTarget_SetGlobalShaderTime.getEventCallBacks()
+                idTarget_WaitForButton.getEventCallBacks()
+                idTarget_EndLevel.getEventCallBacks()
+                idTarget_SessionCommand.getEventCallBacks()
+                idTarget_Damage.getEventCallBacks()
+                idTarget_Show.getEventCallBacks()
+                idTarget_Remove.getEventCallBacks()
+                idSound.getEventCallBacks()
+                idSecurityCamera.getEventCallBacks()
+                idDebris.getEventCallBacks()
+                idBFGProjectile.getEventCallBacks()
+                Projectile.idProjectile.getEventCallBacks()
+                Player.idPlayer.getEventCallBacks()
+                idRiser.getEventCallBacks()
+                idRotater.getEventCallBacks()
+                idMover_Periodic.getEventCallBacks()
+                idPlat.getEventCallBacks()
+                idDoor.getEventCallBacks()
+                Mover.idMover_Binary.getEventCallBacks()
+                idElevator.getEventCallBacks()
+                Mover.idMover.getEventCallBacks()
+                idExplodingBarrel.getEventCallBacks()
+                idMoveable.getEventCallBacks()
+                idPhantomObjects.getEventCallBacks()
+                idFuncRadioChatter.getEventCallBacks()
+                idFuncAASObstacle.getEventCallBacks()
+                idFuncAASPortal.getEventCallBacks()
+                idFuncPortal.getEventCallBacks()
+                idEarthQuake.getEventCallBacks()
+                idShaking.getEventCallBacks()
+                idLiquid.getEventCallBacks()
+                idVacuumSeparatorEntity.getEventCallBacks()
+                idFuncSplat.getEventCallBacks()
+                idFuncSmoke.getEventCallBacks()
+                idFuncEmitter.getEventCallBacks()
+                idStaticEntity.getEventCallBacks()
+                idAnimated.getEventCallBacks()
+                idForceField.getEventCallBacks()
+                idSpring.getEventCallBacks()
+                Misc.idExplodable.getEventCallBacks()
+                idDamagable.getEventCallBacks()
+                idPathCorner.getEventCallBacks()
+                idActivator.getEventCallBacks()
+                idPlayerStart.getEventCallBacks()
+            }
+
             // save games
             fun Save(savefile: idSaveGame) {                    // archives object for save game file
-                var str: String
                 var i: Int
                 var size: Int
                 var event: idEvent?
-                var dataPtr: ByteArray
-                var validTrace: Boolean
                 var format: String?
                 savefile.WriteInt(EventQueue.Num())
                 event = EventQueue.Next()
@@ -572,7 +752,7 @@ object Event {
                     savefile.WriteInt(event.time)
                     savefile.WriteString(event.eventdef!!.GetName())
                     savefile.WriteString(event.typeinfo!!.getSimpleName())
-                    savefile.WriteObject(event.`object`!!)
+                    savefile.WriteObject(event.`object`)
                     savefile.WriteInt(event.eventdef!!.GetArgSize())
                     format = event.eventdef!!.GetArgFormat()
                     i = 0
@@ -659,6 +839,7 @@ object Event {
                                     event.data!![j] = idEventArg<Any?>(D_EVENT_ENTITY_NULL.code, savefile.ReadInt())
                                     size += Integer.BYTES
                                 }
+
                                 D_EVENT_VECTOR -> {
                                     val buffer = idVec3()
                                     savefile.ReadVec3(buffer)
@@ -666,6 +847,7 @@ object Event {
                                     event.data!![j] = idEventArg<Any?>(D_EVENT_VECTOR.code, buffer)
                                     size += idVec3.BYTES
                                 }
+
                                 D_EVENT_TRACE -> {
                                     val readBool = savefile.ReadBool()
                                     event.data!![j] = idEventArg<Any?>(D_EVENT_TRACE.code, if (readBool) 1 else 0)
@@ -682,6 +864,7 @@ object Event {
                                         }
                                     }
                                 }
+
                                 else -> {}
                             }
                             ++j
@@ -752,7 +935,6 @@ object Event {
         val actor = Actor
         val entity = AFEntity
         val ai = AI
-        val events = AI_Events
         val vagary = AI_Vagary
         val camera = Camera
         val entity1 = Entity

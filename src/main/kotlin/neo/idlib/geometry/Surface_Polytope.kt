@@ -1,19 +1,13 @@
 package neo.idlib.geometry
 
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.containers.List.idSwap
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.Surface.idSurface
 import neo.idlib.geometry.Winding.idFixedWinding
-import neo.idlib.math.Math_h
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.*
 import kotlin.math.abs
 
-/**
- *
- */
 object Surface_Polytope {
     const val POLYTOPE_VERTEX_EPSILON = 0.1f
 
@@ -45,7 +39,7 @@ object Surface_Polytope {
                         j++
                         continue
                     }
-                    if (!w.ClipInPlace(planes[j].unaryMinus(), Plane.ON_EPSILON, true)) {
+                    if (!w.ClipInPlace(planes[j].unaryMinus(), ON_EPSILON, true)) {
                         break
                     }
                     j++
@@ -61,7 +55,7 @@ object Surface_Polytope {
                         if (verts[k].xyz.Compare(w[j].ToVec3(), POLYTOPE_VERTEX_EPSILON)) {
                             break
                         }
-                        j++
+                        k++
                     }
                     if (k >= verts.Num()) {
                         newVert.xyz.set(w[j].ToVec3())
@@ -208,21 +202,17 @@ object Surface_Polytope {
             indexes[4 * 3 + 2] = 0
             indexes[5 * 3 + 0] = 5
             indexes[5 * 3 + 1] = 1
-            indexes[5 * 3 + 2] = 0
+            indexes[5 * 3 + 2] = 2
             indexes[6 * 3 + 0] = 5
             indexes[6 * 3 + 1] = 3
             indexes[6 * 3 + 2] = 1
             indexes[7 * 3 + 0] = 5
             indexes[7 * 3 + 1] = 0
             indexes[7 * 3 + 2] = 3
+
             GenerateEdgeIndexes()
         }
 
-        //public	void				SetupDodecahedron( const idBounds &bounds );
-        //public	void				SetupIcosahedron( const idBounds &bounds );
-        //public	void				SetupCylinder( const idBounds &bounds, const int numSides );
-        //public	void				SetupCone( const idBounds &bounds, const int numSides );
-        //
         fun SplitPolytope(
             plane: idPlane,
             epsilon: Float,
@@ -257,7 +247,7 @@ object Surface_Polytope {
             }
             front[0] = polytopeSurfaces[0]
             back[0] = polytopeSurfaces[1]
-            if (side != Plane.SIDE_CROSS) {
+            if (side != SIDE_CROSS) {
                 return side
             }
 
@@ -266,15 +256,15 @@ object Surface_Polytope {
             while (s < 2) {
                 surf = polytopeSurfaces[s]
                 edgeNum = surf.edgeIndexes[onPlaneEdges[s][0]]
-                v0 = surf.edges[abs(edgeNum)].verts[Math_h.INTSIGNBITSET(edgeNum)]
-                v1 = surf.edges[abs(edgeNum)].verts[Math_h.INTSIGNBITNOTSET(edgeNum)]
+                v0 = surf.edges[abs(edgeNum)].verts[INTSIGNBITSET(edgeNum)]
+                v1 = surf.edges[abs(edgeNum)].verts[INTSIGNBITNOTSET(edgeNum)]
                 i = 1
                 while (onPlaneEdges[s][i] >= 0) {
                     j = i + 1
                     while (onPlaneEdges[s][j] >= 0) {
                         edgeNum = surf.edgeIndexes[onPlaneEdges[s][j]]
-                        if (v1 == surf.edges[abs(edgeNum)].verts[Math_h.INTSIGNBITSET(edgeNum)]) {
-                            v1 = surf.edges[abs(edgeNum)].verts[Math_h.INTSIGNBITNOTSET(edgeNum)]
+                        if (v1 == surf.edges[abs(edgeNum)].verts[INTSIGNBITSET(edgeNum)]) {
+                            v1 = surf.edges[abs(edgeNum)].verts[INTSIGNBITNOTSET(edgeNum)]
                             idSwap(onPlaneEdges, s, i, onPlaneEdges, s, j)
                             break
                         }
@@ -285,8 +275,8 @@ object Surface_Polytope {
                 i = 2
                 while (onPlaneEdges[s][i] >= 0) {
                     edgeNum = surf.edgeIndexes[onPlaneEdges[s][i]]
-                    v1 = surf.edges[abs(edgeNum)].verts[Math_h.INTSIGNBITNOTSET(edgeNum)]
-                    v2 = surf.edges[abs(edgeNum)].verts[Math_h.INTSIGNBITSET(edgeNum)]
+                    v1 = surf.edges[abs(edgeNum)].verts[INTSIGNBITNOTSET(edgeNum)]
+                    v2 = surf.edges[abs(edgeNum)].verts[INTSIGNBITSET(edgeNum)]
                     surf.indexes.Append(v0)
                     surf.indexes.Append(v1)
                     surf.indexes.Append(v2)

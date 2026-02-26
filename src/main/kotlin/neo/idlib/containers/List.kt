@@ -8,14 +8,11 @@ import neo.framework.CmdSystem
 import neo.framework.CmdSystem.commandDef_s
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.StrPool.idPoolStr
-import neo.idlib.math.Vector
+import neo.idlib.math.idVec3
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
-/**
- *
- */
 object List {
 
     fun <T> idSwap(a1: Array<T>, a2: Array<T>, p1: Int, p2: Int) {
@@ -43,12 +40,12 @@ object List {
 
     fun idSwap(a1: Array<IntArray>, p11: Int, p12: Int, a2: Array<IntArray>, p21: Int, p22: Int) {
         val c = a1[p11][p12]
-        a1[p11][12] = a2[p21][p22]
+        a1[p11][p12] = a2[p21][p22]
         a2[p21][p22] = c
     }
 
-    fun idSwap(a: Vector.idVec3, b: Vector.idVec3) {
-        val c: Vector.idVec3 = Vector.idVec3(a)
+    fun idSwap(a: idVec3, b: idVec3) {
+        val c = idVec3(a)
         a.set(b)
         b.set(c)
     }
@@ -495,9 +492,16 @@ object List {
         }
 
         fun <T> getList(type: Class<out Array<T>>): Array<T>? {
-            return if (num == 0) null else Arrays.copyOf(list, num, type)
+            if (num == 0) {
+                return null
+            }
+            return Arrays.copyOf(list, num, type)
 
             // returns a pointer to the list
+        }
+
+        fun Ptr(): Array<T> {
+            return list as Array<T>
         }
 
         //public	const T *	Ptr( ) const;									// returns a pointer to the list
@@ -509,7 +513,7 @@ object List {
          ================
          */
         fun Alloc(): T? {                                    // returns reference to a new data element at the end of the list
-            if (TempDump.NOT(list)) {
+            if (list == null) {
                 Resize(granularity)
             }
             if (num == size) {
@@ -534,7 +538,7 @@ object List {
          ================
          */
         fun Append(obj: T): Int { // append element
-            if (TempDump.NOT(list)) {
+            if (list == null) {
                 Resize(granularity)
             }
             if (num == size) {
@@ -560,7 +564,7 @@ object List {
          ================
          */
         fun Append(other: idList<T>): Int {                // append list
-            if (TempDump.NOT(list)) {
+            if (list == null) {
                 if (granularity == 0) {    // this is a hack to fix our memset classes
                     granularity = 16
                 }
@@ -602,7 +606,7 @@ object List {
 
         fun Insert(obj: T, index: Int = 0): Int {            // insert the element at the given index
             var index = index
-            if (TempDump.NOT(list)) {
+            if (list == null) {
                 Resize(granularity)
             }
             if (num == size) {
@@ -676,7 +680,7 @@ object List {
             var i: Int
             i = 0
             while (i < num) {
-                if (TempDump.NOT(list?.get(i))) {
+                if (list?.get(i) == null) {
                     return i
                 }
                 i++
@@ -758,7 +762,7 @@ object List {
          ================
          */
         fun Sort() {
-            if (TempDump.NOT(list)) {
+            if (list == null) {
                 return
             }
             if (list!![0] is idPoolStr) {
@@ -802,7 +806,7 @@ object List {
         ) {
             var startIndex = startIndex
             var endIndex = endIndex
-            if (TempDump.NOT(list)) {
+            if (list == null) {
                 return
             }
             if (startIndex < 0) {
@@ -815,10 +819,7 @@ object List {
                 return
             }
             //	typedef int cmp_c(const void *, const void *);
-//
-//	cmp_c *vCompare = (cmp_c *)compare;
-//	qsort( ( void * )( &list[startIndex] ), ( size_t )( endIndex - startIndex + 1 ), sizeof( T ), vCompare );
-            Arrays.sort(list, startIndex, endIndex, compare)
+            Arrays.sort(list, startIndex, endIndex + 1, compare)
         }
 
         /*

@@ -6,7 +6,7 @@ import neo.Tools.Compilers.DMap.dmap.tree_s
 import neo.Tools.Compilers.DMap.dmap.uPortal_s
 import neo.framework.Common
 import neo.framework.FileSystem_h
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idVec3
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
@@ -14,9 +14,6 @@ import java.nio.file.Paths
 import java.util.logging.Level
 import java.util.logging.Logger
 
-/**
- *
- */
 object leakfile {
     /*
      ==============================================================================
@@ -56,7 +53,7 @@ object leakfile {
         try {
             FileChannel.open(Paths.get(ospath), TempDump.fopenOptions("w")).use { linefile ->
 //             linefile = fopen(ospath, "w");
-                if (TempDump.NOT(linefile)) {
+                if (linefile == null) {
                     Common.common.Error("Couldn't open %s\n", filename)
                 }
                 count = 0

@@ -7,23 +7,19 @@ import neo.Renderer.Model.modelSurface_s
 import neo.Renderer.Model.srfTriangles_s
 import neo.Renderer.Model_local.idRenderModelStatic
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.Renderer.tr_local.viewDef_s
 import neo.TempDump.SERiAL
 import neo.framework.Common
 import neo.framework.DeclManager
 import neo.framework.FileSystem_h.fileSystem
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib.Companion.LittleFloat
-import neo.idlib.Lib.Companion.LittleLong
-import neo.idlib.Lib.Companion.LittleShort
+import neo.idlib.BV.idBounds
+import neo.idlib.LittleFloat
+import neo.idlib.LittleLong
+import neo.idlib.LittleShort
 import neo.idlib.geometry.DrawVert.idDrawVert
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idVec3
 import java.nio.ByteBuffer
 import java.util.*
 
-/**
- *
- */
 object Model_md3 {
     val MAX_MD3PATH: Int = 64 // from quake3
 
@@ -51,7 +47,7 @@ object Model_md3 {
 
     //
     // vertex scales
-    val MD3_XYZ_SCALE: Double = (1.0 / 64)
+    val MD3_XYZ_SCALE: Float = (1.0f / 64)
 
     //
     // surface geometry should not exceed these limits
@@ -61,16 +57,16 @@ object Model_md3 {
         return LittleLong(x)
     }
 
-    internal class md3Frame_s() {
+    internal class md3Frame_s {
         val bounds: Array<idVec3> = idVec3.generateArray(2)
         val localOrigin: idVec3 = idVec3()
 
         //	char		name[16];
         var name: String? = null
-        var radius: Float = 0f
+        var radius: Float = 0.0f
     }
 
-    internal class md3Tag_s() {
+    internal class md3Tag_s {
         //	char		name[MAX_MD3PATH];	// tag name
         val axis: Array<idVec3> = idVec3.generateArray(3)
         var name: String? = null // tag name
@@ -87,7 +83,7 @@ object Model_md3 {
      ** st				sizeof( md3St_t ) * numVerts
      ** XyzNormals		sizeof( md3XyzNormal_t ) * numVerts * numFrames
      */
-    internal class md3Surface_s() {
+    internal class md3Surface_s {
         //
         var flags: Int = 0
         var ident: Int = 0 //
@@ -123,26 +119,26 @@ object Model_md3 {
         var verts: Array<md3St_t?>? = null
     }
 
-    internal class md3Shader_t() {
+    internal class md3Shader_t {
         //	char				name[MAX_MD3PATH];
         var name: String? = null
         var shader: idMaterial? = null // for in-game use
     }
 
-    internal class md3Triangle_t() {
+    internal class md3Triangle_t {
         var indexes: IntArray = IntArray(3)
     }
 
-    internal class md3St_t() {
+    internal class md3St_t {
         var st: FloatArray = FloatArray(2)
     }
 
-    internal class md3XyzNormal_t() {
+    internal class md3XyzNormal_t {
         var normal: Short = 0
         var xyz: ShortArray = ShortArray(3)
     }
 
-    internal class md3Header_s() : SERiAL {
+    internal class md3Header_s : SERiAL {
         //
         var flags: Int = 0
 
@@ -173,15 +169,15 @@ object Model_md3 {
         var surfaces: Array<md3Surface_s?>? = null
         var tags: Array<md3Tag_s?>? = null
         var version: Int = 0
-        public override fun AllocBuffer(): ByteBuffer {
+        override fun AllocBuffer(): ByteBuffer {
             throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
         }
 
-        public override fun Read(buffer: ByteBuffer) {
+        override fun Read(buffer: ByteBuffer) {
             throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
         }
 
-        public override fun Write(): ByteBuffer {
+        override fun Write(): ByteBuffer {
             throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
         }
     }
@@ -193,7 +189,7 @@ object Model_md3 {
 
      ===============================================================================
      */
-    internal class idRenderModelMD3() : idRenderModelStatic() {
+    internal class idRenderModelMD3 : idRenderModelStatic() {
         private var dataSize: Int = 0 // just for listing purposes
         private val index: Int = 0 // model = tr.models[model->index]
         private var md3: md3Header_s? = null // only if type == MOD_MESH
@@ -201,7 +197,7 @@ object Model_md3 {
 
         //
         //
-        public override fun InitFromFile(fileName: String?) {
+        override fun InitFromFile(fileName: String?) {
             var i: Int
             var j: Int
             val pinmodel: md3Header_s
@@ -227,7 +223,7 @@ object Model_md3 {
                 fileSystem.FreeFile(buffer)
                 Common.common.Warning(
                     "InitFromFile: %s has wrong version (%d should be %d)",
-                    (fileName)!!, version, MD3_VERSION
+                    (fileName), version, MD3_VERSION
                 )
                 return
             }
@@ -249,7 +245,7 @@ object Model_md3 {
             md3!!.ofsSurfaces = LL(md3!!.ofsSurfaces)
             md3!!.ofsEnd = LL(md3!!.ofsEnd)
             if (md3!!.numFrames < 1) {
-                Common.common.Warning("InitFromFile: %s has no frames", (fileName)!!)
+                Common.common.Warning("InitFromFile: %s has no frames", (fileName))
                 fileSystem.FreeFile(buffer)
                 return
             }
@@ -310,13 +306,13 @@ object Model_md3 {
                 if (surf.numVerts > SHADER_MAX_VERTEXES) {
                     Common.common.Error(
                         "InitFromFile: %s has more than %d verts on a surface (%d)",
-                        (fileName)!!, SHADER_MAX_VERTEXES, surf.numVerts
+                        (fileName), SHADER_MAX_VERTEXES, surf.numVerts
                     )
                 }
                 if (surf.numTriangles * 3 > SHADER_MAX_INDEXES) {
                     Common.common.Error(
                         "InitFromFile: %s has more than %d triangles on a surface (%d)",
-                        (fileName)!!, SHADER_MAX_INDEXES / 3, surf.numTriangles
+                        (fileName), SHADER_MAX_INDEXES / 3, surf.numTriangles
                     )
                 }
 
@@ -399,15 +395,15 @@ object Model_md3 {
             fileSystem.FreeFile(buffer)
         }
 
-        public override fun IsDynamicModel(): dynamicModel_t {
+        override fun IsDynamicModel(): dynamicModel_t {
             return dynamicModel_t.DM_CACHED
         }
 
-        public override fun InstantiateDynamicModel(
+        override fun InstantiateDynamicModel(
             ent: renderEntity_s?,
             view: viewDef_s?,
             cachedModel: idRenderModel?
-        ): idRenderModel? {
+        ): idRenderModel {
             var cachedModel: idRenderModel? = cachedModel
             var i: Int
             var j: Int
@@ -425,7 +421,7 @@ object Model_md3 {
                 cachedModel = null
             }
             staticModel = idRenderModelStatic()
-            staticModel.bounds!!.Clear()
+            staticModel.bounds.Clear()
 
 //            surface = (md3Surface_t) ((byte[]) md3[ md3.ofsSurfaces]);
             surface = md3!!.surfaces!![0]
@@ -437,11 +433,11 @@ object Model_md3 {
             backlerp = ent.shaderParms[RenderWorld.SHADERPARM_MD3_BACKLERP]
             i = 0
             while (i < md3!!.numSurfaces /*i++*/) {
-                val tri: srfTriangles_s = tr_trisurf.R_AllocStaticTriSurf()
-                tr_trisurf.R_AllocStaticTriSurfVerts(tri, surface!!.numVerts)
-                tr_trisurf.R_AllocStaticTriSurfIndexes(tri, surface.numTriangles * 3)
+                val tri: srfTriangles_s = R_AllocStaticTriSurf()
+                R_AllocStaticTriSurfVerts(tri, surface!!.numVerts)
+                R_AllocStaticTriSurfIndexes(tri, surface.numTriangles * 3)
                 tri.bounds.Clear()
-                val surf: modelSurface_s = modelSurface_s()
+                val surf = modelSurface_s()
                 surf.geometry = tri
 
 //                md3Shader_t shaders = (md3Shader_t) ((byte[]) surface[surface.ofsShaders]);
@@ -450,29 +446,24 @@ object Model_md3 {
                 LerpMeshVertexes(tri, surface, backlerp, frame, oldframe)
                 indexes = surface.numTriangles * 3
                 j = 0
-                for (triangle: md3Triangle_t? in surface.triangles!!) {
-//                triangles = (int[]) ((byte[]) surface + surface.ofsTriangles);
-                    while ( /*j = 0*/j < indexes) {
-                        tri.indexes!![j] = triangle!!.indexes[j]
-                        j++
-                    }
-                    tri.numIndexes += indexes
+                for (triangle in surface.triangles!!) {
+                    tri.indexes!![j + 0] = triangle!!.indexes[0]
+                    tri.indexes!![j + 1] = triangle!!.indexes[1]
+                    tri.indexes!![j + 2] = triangle!!.indexes[2]
+                    j += 3
                 }
+                tri.numIndexes += indexes
                 numVerts = surface.numVerts
                 j = 0
-                for (texCoords: md3St_t? in surface.verts!!) {
-//                texCoords = (float[]) ((byte[]) surface + surface.ofsSt);
-                    while ( /*j = 0*/j < numVerts) {
-                        val stri: idDrawVert? = tri.verts!![j]
-                        stri!!.st[0] = texCoords!!.st[j * 2 + 0]
-                        stri.st[1] = texCoords.st[j * 2 + 1]
-                        j++
-                    }
+                for (j in 0 until surface.numVerts) {
+                    val stri = tri.verts!![j]!!
+                    stri.st[0] = surface.verts!![j]!!.st[0]
+                    stri.st[1] = surface.verts!![j]!!.st[1]
                 }
-                tr_trisurf.R_BoundTriSurf(tri)
+                R_BoundTriSurf(tri)
                 staticModel.AddSurface(surf)
-                staticModel.bounds!!.AddPoint(surf.geometry!!.bounds[0])
-                staticModel.bounds!!.AddPoint(surf.geometry!!.bounds[1])
+                staticModel.bounds.AddPoint(surf.geometry!!.bounds[0])
+                staticModel.bounds.AddPoint(surf.geometry!!.bounds[1])
 
                 // find the next surface
                 surface = md3!!.surfaces!![++i]
@@ -480,8 +471,8 @@ object Model_md3 {
             return staticModel
         }
 
-        public override fun Bounds(ent: renderEntity_s?): idBounds {
-            val ret: idBounds = idBounds()
+        override fun Bounds(ent: renderEntity_s?): idBounds {
+            val ret = idBounds()
             ret.Clear()
             if (null == ent || null == md3) {
                 // just give it the editor bounds
@@ -491,7 +482,8 @@ object Model_md3 {
             }
 
 //            md3Frame_s frame = (md3Frame_t) ((byte[]) md3 + md3.ofsFrames);
-            val frame: md3Frame_s? = md3!!.frames!![0]
+            val frameIdx = ent!!.shaderParms[RenderWorld.SHADERPARM_MD3_FRAME].toInt()
+            val frame: md3Frame_s? = md3!!.frames!![frameIdx]
             ret.AddPoint(frame!!.bounds[0])
             ret.AddPoint(frame.bounds[1])
             return ret
@@ -513,15 +505,15 @@ object Model_md3 {
 
 //            newXyz = (short[]) ((byte[]) surf + surf.ofsXyzNormals) + (frame * surf.numVerts * 4);
             newXyz = surf!!.normals!![frame]
-            newXyzScale = (MD3_XYZ_SCALE * (1.0 - backlerp)).toFloat()
+            newXyzScale = (MD3_XYZ_SCALE * (1.0f - backlerp))
             numVerts = surf.numVerts
-            if (backlerp == 0f) {
+            if (backlerp == 0.0f) {
                 //
                 // just copy the vertexes
                 //
                 vertNum = 0
                 while (vertNum < numVerts) {
-                    val outvert: idDrawVert? = tri.verts!![tri.numVerts]
+                    val outvert: idDrawVert = tri.verts!![tri.numVerts]
                     outvert!!.xyz.x = newXyz!!.xyz[0] * newXyzScale
                     outvert.xyz.y = newXyz.xyz[1] * newXyzScale
                     outvert.xyz.z = newXyz.xyz[2] * newXyzScale
@@ -535,10 +527,10 @@ object Model_md3 {
                 //
 //                oldXyz = (short[]) ((byte[]) surf + surf.ofsXyzNormals) + (oldframe * surf.numVerts * 4);
                 oldXyz = surf.normals!![oldframe]
-                oldXyzScale = (MD3_XYZ_SCALE * backlerp).toFloat()
+                oldXyzScale = (MD3_XYZ_SCALE * backlerp)
                 vertNum = 0
                 while (vertNum < numVerts) {
-                    val outvert: idDrawVert? = tri.verts!![tri.numVerts]
+                    val outvert: idDrawVert = tri.verts!![tri.numVerts]
 
                     // interpolate the xyz
                     outvert!!.xyz.x = oldXyz!!.xyz[0] * oldXyzScale + newXyz!!.xyz[0] * newXyzScale

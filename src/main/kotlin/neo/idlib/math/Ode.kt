@@ -16,7 +16,7 @@ class Ode {
             userData: Any,
             state: FloatArray,
             derivatives: FloatArray
-        ) //TODO:quadruple check the pointers
+        )
     }
 
     //===============================================================
@@ -52,7 +52,7 @@ class Ode {
             newState: FloatArray,
             t0: Float,
             t1: Float
-        ): Float { //TODO:replace float[] input with rigidBodyIState_s.
+        ): Float {
             val delta: Float
             var i: Int
             derive.run(t0, userData, state, derivatives)
@@ -78,7 +78,7 @@ class Ode {
     //	idODE_Midpoint
     //
     //===============================================================
-    internal inner class idODE_Midpoint(dim: Int, dr: deriveFunction_t, ud: Any) : idODE() {
+    class idODE_Midpoint(dim: Int, dr: deriveFunction_t, ud: Any) : idODE() {
         protected var derivatives // space to store derivatives
                 : FloatArray
         protected var tmpState: FloatArray
@@ -94,7 +94,7 @@ class Ode {
             derive.run(t0, userData, state, derivatives)
             i = 0
             while (i < dimension) {
-                tmpState[i] = state[i] + halfDelta * derivatives[i]
+                tmpState[i] = (state[i] + halfDelta * derivatives[i])
                 i++
             }
             // second step
@@ -123,7 +123,7 @@ class Ode {
     //	idODE_RK4
     //
     //===============================================================
-    internal inner class idODE_RK4(dim: Int, dr: deriveFunction_t, ud: Any) : idODE() {
+    class idODE_RK4(dim: Int, dr: deriveFunction_t, ud: Any) : idODE() {
         protected var d1 // derivatives
                 : FloatArray
         protected var d2: FloatArray
@@ -131,7 +131,7 @@ class Ode {
         protected var d4: FloatArray
         protected var tmpState: FloatArray
 
-        //	virtual				~idODE_RK4( void );//TODO:experiment with overriding finalize
+        //	virtual				~idODE_RK4( void );
         override fun Evaluate(state: FloatArray, newState: FloatArray, t0: Float, t1: Float): Float {
             val delta: Float
             val halfDelta: Float
@@ -190,7 +190,7 @@ class Ode {
     //	idODE_RK4Adaptive
     //
     //===============================================================
-    internal inner class idODE_RK4Adaptive(dim: Int, dr: deriveFunction_t, ud: Any) : idODE() {
+    class idODE_RK4Adaptive(dim: Int, dr: deriveFunction_t, ud: Any) : idODE() {
         protected var d1 // derivatives
                 : FloatArray
         protected var d1half: FloatArray
@@ -326,7 +326,7 @@ class Ode {
                 if (delta <= 1e-7) {
                     return delta
                 }
-                delta *= 0.25.toFloat()
+                delta *= 0.25f
                 n++
             }
             return delta

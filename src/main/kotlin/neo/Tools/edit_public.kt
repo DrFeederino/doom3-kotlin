@@ -4,12 +4,9 @@ import neo.Game.Script.Script_Interpreter.idInterpreter
 import neo.Game.Script.idProgram
 import neo.framework.Common
 import neo.idlib.Dict_h.idDict
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idAngles
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 object edit_public {
     /*
      ===============================================================================

@@ -1,16 +1,17 @@
 package neo.Game.Animation
 
-import neo.Game.Actor
 import neo.Game.Actor.copyJoints_t
 import neo.Game.Animation.Anim.jointModTransform_t
 import neo.Game.Animation.Anim_Blend.idAnim
 import neo.Game.Animation.Anim_Blend.idAnimator
 import neo.Game.Animation.Anim_Import.idModelExport
+import neo.Game.EV_FootstepLeft
+import neo.Game.EV_FootstepRight
 import neo.Game.Entity
 import neo.Game.Entity.idAnimatedEntity
 import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.*
-import neo.Game.GameSys.Class.Companion.EV_Remove
+import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -30,20 +31,16 @@ import neo.framework.CmdSystem
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.CmdArgs
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.List
-import neo.idlib.math.Angles
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Extrapolate
-import neo.idlib.math.Math_h
+import neo.idlib.idLib
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector.idVec3
 
 /*
  =============================================================================
@@ -89,9 +86,9 @@ class Anim_Testmodel {
 
             init {
                 eventCallbacks.putAll(idAnimatedEntity.getEventCallBacks())
-                eventCallbacks[Actor.EV_FootstepLeft] =
+                eventCallbacks[EV_FootstepLeft] =
                     eventCallback_t0 { obj: idTestModel -> obj.Event_Footstep() }
-                eventCallbacks[Actor.EV_FootstepRight] =
+                eventCallbacks[EV_FootstepRight] =
                     eventCallback_t0 { obj: idTestModel -> obj.Event_Footstep() }
             }
         }
@@ -104,7 +101,7 @@ class Anim_Testmodel {
         private val copyJoints: List.idList<copyJoints_t> = List.idList()
         private val customAnim: idAnim? = null
         private var frame = 0
-        private val head: idEntityPtr<idEntity?> = idEntityPtr(null)
+        private val head: idEntityPtr<idEntity?> = idEntityPtr()
         private var headAnim = 0
         private var headAnimator: idAnimator? = null
         private var mode = 0
@@ -127,8 +124,7 @@ class Anim_Testmodel {
             val modelOffset = idVec3()
             val axis = idMat3()
             var kv: idKeyValue?
-            val copyJoint = copyJoints_t()
-            if (renderEntity!!.hModel != null && renderEntity!!.hModel!!.IsDefaultModel() && TempDump.NOT(animator.ModelDef())) {
+            if (renderEntity!!.hModel != null && renderEntity!!.hModel!!.IsDefaultModel() && animator.ModelDef() == null) {
                 Game_local.gameLocal.Warning(
                     "Unable to create testmodel for '%s' : model defaulted",
                     spawnArgs.GetString("model")
@@ -168,10 +164,10 @@ class Anim_Testmodel {
                         args.Set(sndKV.GetKey(), sndKV.GetValue())
                         sndKV = spawnArgs.MatchPrefix("snd_", sndKV)
                     }
-                    head!!.oSet(Game_local.gameLocal.SpawnEntityType(idAnimatedEntity::class.java, args))
+                    head.oSet(Game_local.gameLocal.SpawnEntityType(idAnimatedEntity::class.java, args))
                     animator.GetJointTransform(joint, Game_local.gameLocal.time, origin, axis)
                     origin.set(
-                        GetPhysics().GetOrigin() + origin + modelOffset * GetPhysics().GetAxis()
+                        GetPhysics().GetOrigin() + (origin + modelOffset) * GetPhysics().GetAxis()
                     )
                     head.GetEntity()!!.SetModel(headModel)
                     head.GetEntity()!!.SetOrigin(origin)
@@ -182,7 +178,8 @@ class Anim_Testmodel {
                     // set up the list of joints to copy to the head
                     kv = spawnArgs.MatchPrefix("copy_joint", null)
                     while (kv != null) {
-                        jointName = kv.GetKey()
+                        val copyJoint = copyJoints_t()
+                        jointName.set(kv.GetKey())
                         if (jointName.StripLeadingOnce("copy_joint_world ")) {
                             copyJoint.mod = jointModTransform_t.JOINTMOD_WORLD_OVERRIDE
                         } else {
@@ -209,7 +206,7 @@ class Anim_Testmodel {
 
             // start any shader effects based off of the spawn time
             renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                -Math_h.MS2SEC(Game_local.gameLocal.time.toFloat())
+                -MS2SEC(Game_local.gameLocal.time.toFloat())
             SetPhysics(physicsObj)
             Game_local.gameLocal.Printf(
                 "Added testmodel at origin = '%s',  angles = '%s'\n",
@@ -227,12 +224,12 @@ class Anim_Testmodel {
          Overridden by subclasses that need to spawn the script object themselves.
          ================
          */
-        fun ShouldfinalructScriptObjectAtSpawn(): Boolean {
+        override fun ShouldConstructScriptObjectAtSpawn(): Boolean {
             return false
         }
 
         fun NextAnim(args: CmdArgs.idCmdArgs?) {
-            if (TempDump.NOT(animator.NumAnims().toDouble())) {
+            if (animator.NumAnims() == 0) {
                 return
             }
             anim++
@@ -277,7 +274,7 @@ class Anim_Testmodel {
         }
 
         fun PrevAnim(args: CmdArgs.idCmdArgs?) {
-            if (TempDump.NOT(animator.NumAnims().toDouble())) {
+            if (animator.NumAnims() == 0) {
                 return
             }
             headAnim = 0
@@ -460,7 +457,7 @@ class Anim_Testmodel {
             if (thinkFlags and Entity.TH_THINK != 0) {
                 if (anim != 0 && Game_local.gameLocal.testmodel == this && mode != SysCvar.g_testModelAnimate.GetInteger()) {
                     StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
-                    if (head!!.GetEntity() != null) {
+                    if (head.GetEntity() != null) {
                         head.GetEntity()!!.StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
                     }
                     when (SysCvar.g_testModelAnimate.GetInteger()) {
@@ -504,6 +501,7 @@ class Anim_Testmodel {
                             }
                             animator.RemoveOriginOffset(false)
                         }
+
                         1 -> {
                             // cycle anim with fixed origin
                             animator.CycleAnim(
@@ -522,6 +520,7 @@ class Anim_Testmodel {
                                 )
                             }
                         }
+
                         2 -> {
                             // cycle anim with continuous origin
                             animator.CycleAnim(
@@ -540,6 +539,7 @@ class Anim_Testmodel {
                                 )
                             }
                         }
+
                         3 -> {
                             // frame by frame with continuous origin
                             animator.SetFrame(
@@ -560,6 +560,7 @@ class Anim_Testmodel {
                                 )
                             }
                         }
+
                         4 -> {
                             // play anim once
                             animator.PlayAnim(
@@ -578,6 +579,7 @@ class Anim_Testmodel {
                                 )
                             }
                         }
+
                         5 -> {
                             // frame by frame with fixed origin
                             animator.SetFrame(
@@ -598,6 +600,7 @@ class Anim_Testmodel {
                                 )
                             }
                         }
+
                         else -> {
                             if (animator.NumFrames(anim) <= 1) {
                                 animator.CycleAnim(
@@ -665,7 +668,7 @@ class Anim_Testmodel {
                     i = 0
                     while (i < copyJoints.Num()) {
                         if (copyJoints[i].mod == jointModTransform_t.JOINTMOD_WORLD_OVERRIDE) {
-                            val mat = head!!.GetEntity()!!.GetPhysics().GetAxis().Transpose()
+                            val mat = head.GetEntity()!!.GetPhysics().GetAxis().Transpose()
                             GetJointWorldTransform(
                                 copyJoints[i].from._val,
                                 Game_local.gameLocal.time,
@@ -705,8 +708,8 @@ class Anim_Testmodel {
                     Game_local.gameLocal.time,
                     0,
                     ang,
-                    idAngles(0f, SysCvar.g_testModelRotate.GetFloat() * 360.0f / 60.0f, 0f),
-                    Angles.getAng_zero()
+                    idAngles(0.0f, SysCvar.g_testModelRotate.GetFloat() * 360.0f / 60.0f, 0.0f),
+                    ang_zero
                 )
                 val clip = physicsObj.GetClipModel()
                 if (clip != null && animator.ModelDef() != null) {
@@ -716,8 +719,8 @@ class Anim_Testmodel {
                     joint = animator.GetJointHandle("origin")
                     animator.GetJointTransform(joint, Game_local.gameLocal.time, neworigin, axis)
                     neworigin.set(
-                        neworigin - animator.ModelDef()!!
-                            .GetVisualOffset() * physicsObj.GetAxis() + GetPhysics().GetOrigin()
+                        ((neworigin - animator.ModelDef()!!
+                            .GetVisualOffset()) * physicsObj.GetAxis()) + GetPhysics().GetOrigin()
                     )
                     clip.Link(Game_local.gameLocal.clip, this, 0, neworigin, clip.GetAxis())
                 }
@@ -732,7 +735,7 @@ class Anim_Testmodel {
                     animator.AnimFullName(anim),
                     animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).GetFrameNumber(Game_local.gameLocal.time),
                     animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).NumFrames(),
-                    Math_h.MS2SEC(
+                    MS2SEC(
                         (Game_local.gameLocal.time - animator.CurrentAnim(Anim.ANIMCHANNEL_ALL)
                             .GetStartTime()).toFloat()
                     )
@@ -743,7 +746,7 @@ class Anim_Testmodel {
                         headAnimator!!.AnimFullName(headAnim),
                         headAnimator!!.CurrentAnim(Anim.ANIMCHANNEL_ALL).GetFrameNumber(Game_local.gameLocal.time),
                         headAnimator!!.CurrentAnim(Anim.ANIMCHANNEL_ALL).NumFrames(),
-                        Math_h.MS2SEC(
+                        MS2SEC(
                             (Game_local.gameLocal.time - headAnimator!!.CurrentAnim(Anim.ANIMCHANNEL_ALL)
                                 .GetStartTime()).toFloat()
                         )
@@ -755,7 +758,7 @@ class Anim_Testmodel {
         }
 
         private fun Event_Footstep() {
-            StartSound("snd_footstep", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
+            StartSound("snd_footstep", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false, null)
         }
 
         override fun oSet(oGet: idClass?) {
@@ -776,7 +779,7 @@ class Anim_Testmodel {
          */
         class KeepTestModel_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
-                if (TempDump.NOT(Game_local.gameLocal.testmodel)) {
+                if (Game_local.gameLocal.testmodel == null) {
                     Game_local.gameLocal.Printf("No active testModel.\n")
                     return
                 }
@@ -804,17 +807,16 @@ class Anim_Testmodel {
          */
         class TestSkin_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
-                val offset = idVec3()
+                idVec3()
                 val name = idStr()
                 val player: idPlayer?
-                var dict: idDict
                 player = Game_local.gameLocal.GetLocalPlayer()
                 if (null == player || !Game_local.gameLocal.CheatsOk()) {
                     return
                 }
 
                 // delete the testModel if active
-                if (TempDump.NOT(Game_local.gameLocal.testmodel)) {
+                if (Game_local.gameLocal.testmodel == null) {
                     idLib.common.Printf("No active testModel\n")
                     return
                 }
@@ -844,17 +846,15 @@ class Anim_Testmodel {
          */
         class TestShaderParm_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
-                val offset = idVec3()
-                var name: idStr
+                idVec3()
                 val player: idPlayer?
-                var dict: idDict
                 player = Game_local.gameLocal.GetLocalPlayer()
                 if (null == player || !Game_local.gameLocal.CheatsOk()) {
                     return
                 }
 
                 // delete the testModel if active
-                if (TempDump.NOT(Game_local.gameLocal.testmodel)) {
+                if (Game_local.gameLocal.testmodel == null) {
                     idLib.common.Printf("No active testModel\n")
                     return
                 }
@@ -868,7 +868,7 @@ class Anim_Testmodel {
                     return
                 }
                 val value: Float
-                value = if (TempDump.NOT(idStr.Icmp(args.Argv(2), "time").toDouble())) {
+                value = if (idStr.Icmp(args.Argv(2), "time") == 0) {
                     Game_local.gameLocal.time * -0.001f
                 } else {
                     args.Argv(2).toFloat()
@@ -898,7 +898,7 @@ class Anim_Testmodel {
                 val name = idStr()
                 val player: idPlayer?
                 val entityDef: idDict?
-                var dict: idDict = idDict()
+                var dict = idDict()
                 player = Game_local.gameLocal.GetLocalPlayer()
                 if (null == player || !Game_local.gameLocal.CheatsOk()) {
                     return
@@ -915,7 +915,7 @@ class Anim_Testmodel {
                 name.set(args.Argv(1))
                 entityDef = Game_local.gameLocal.FindEntityDefDict(name.toString(), false)
                 if (entityDef != null) {
-                    dict = entityDef
+                    dict = idDict(entityDef)
                 } else {
                     if (DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, name, false) != null) {
                         dict.Set("model", name)
@@ -930,7 +930,7 @@ class Anim_Testmodel {
                             exporter.ExportModel(name.toString())
                             name.SetFileExtension(Model.MD5_MESH_EXT)
                         }
-                        if (TempDump.NOT(ModelManager.renderModelManager.CheckModel(name.toString()))) {
+                        if (ModelManager.renderModelManager.CheckModel(name.toString()) == null) {
                             Game_local.gameLocal.Printf("Can't register model\n")
                             return
                         }
@@ -943,7 +943,7 @@ class Anim_Testmodel {
                 Game_local.gameLocal.testmodel =
                     Game_local.gameLocal.SpawnEntityType(idTestModel::class.java, dict) as idTestModel
                 Game_local.gameLocal.testmodel!!.renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                    -Math_h.MS2SEC(Game_local.gameLocal.time.toFloat())
+                    -MS2SEC(Game_local.gameLocal.time.toFloat())
             }
 
             companion object {
@@ -1016,12 +1016,12 @@ class Anim_Testmodel {
          */
         class TestParticleStopTime_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
-                if (TempDump.NOT(Game_local.gameLocal.testmodel)) {
+                if (Game_local.gameLocal.testmodel == null) {
                     Game_local.gameLocal.Printf("No testModel active.\n")
                     return
                 }
                 Game_local.gameLocal.testmodel!!.renderEntity!!.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] =
-                    Math_h.MS2SEC(Game_local.gameLocal.time.toFloat())
+                    MS2SEC(Game_local.gameLocal.time.toFloat())
                 Game_local.gameLocal.testmodel!!.UpdateVisuals()
             }
 
@@ -1040,7 +1040,7 @@ class Anim_Testmodel {
          */
         class TestAnim_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
-                if (TempDump.NOT(Game_local.gameLocal.testmodel)) {
+                if (Game_local.gameLocal.testmodel == null) {
                     Game_local.gameLocal.Printf("No testModel active.\n")
                     return
                 }
@@ -1065,7 +1065,7 @@ class Anim_Testmodel {
                 if (Game_local.gameLocal.testmodel != null) {
                     val animator = Game_local.gameLocal.testmodel!!.GetAnimator()
                     for (i in 0 until animator.NumAnims()) {
-                        callback.run(Str.va("%s %s", args!!.Argv(0), animator.AnimFullName(i)!!))
+                        callback.run(Str.va("%s %s", args!!.Argv(0), animator.AnimFullName(i)))
                     }
                 }
             }
@@ -1085,7 +1085,7 @@ class Anim_Testmodel {
          */
         class TestBlend_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
-                if (TempDump.NOT(Game_local.gameLocal.testmodel)) {
+                if (Game_local.gameLocal.testmodel == null) {
                     Game_local.gameLocal.Printf("No testModel active.\n")
                     return
                 }
@@ -1107,7 +1107,7 @@ class Anim_Testmodel {
          */
         class TestModelNextAnim_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
-                if (TempDump.NOT(Game_local.gameLocal.testmodel)) {
+                if (Game_local.gameLocal.testmodel == null) {
                     Game_local.gameLocal.Printf("No testModel active.\n")
                     return
                 }
@@ -1129,7 +1129,7 @@ class Anim_Testmodel {
          */
         class TestModelPrevAnim_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
-                if (TempDump.NOT(Game_local.gameLocal.testmodel)) {
+                if (Game_local.gameLocal.testmodel == null) {
                     Game_local.gameLocal.Printf("No testModel active.\n")
                     return
                 }
@@ -1151,7 +1151,7 @@ class Anim_Testmodel {
          */
         class TestModelNextFrame_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
-                if (TempDump.NOT(Game_local.gameLocal.testmodel)) {
+                if (Game_local.gameLocal.testmodel == null) {
                     Game_local.gameLocal.Printf("No testModel active.\n")
                     return
                 }
@@ -1173,7 +1173,7 @@ class Anim_Testmodel {
          */
         class TestModelPrevFrame_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
-                if (TempDump.NOT(Game_local.gameLocal.testmodel)) {
+                if (Game_local.gameLocal.testmodel == null) {
                     Game_local.gameLocal.Printf("No testModel active.\n")
                     return
                 }

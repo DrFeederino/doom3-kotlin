@@ -2,16 +2,13 @@ package neo.ui
 
 import neo.TempDump.SERiAL
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Math_h.DEG2RAD
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.DEG2RAD
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import java.nio.ByteBuffer
 import kotlin.math.cos
 import kotlin.math.sin
 
-/**
- *
- */
 object Rectangle {
     /*
      ================
@@ -21,7 +18,7 @@ object Rectangle {
     fun RotateVector(v: idVec3, origin: idVec3, a: Float, c: Float, s: Float) {
         var x = v[0]
         var y = v[1]
-        if (a != 0f) {
+        if (a != 0.0f) {
             val x2 = (x - origin[0]) * c - (y - origin[1]) * s + origin[0]
             val y2 = (x - origin[0]) * s + (y - origin[1]) * c + origin[1]
             x = x2
@@ -78,7 +75,7 @@ object Rectangle {
         }
 
         fun Contains(xt: Float, yt: Float): Boolean {
-            return if (w.toDouble() == 0.0 && h.toDouble() == 0.0) {
+            return if (w == 0.0f && h == 0.0f) {
                 false
             } else xt >= x && xt <= Right() && yt >= y && yt <= Bottom()
         }
@@ -110,20 +107,20 @@ object Rectangle {
         fun Rotate(a: Float, out: idRectangle) {
             val p1 = idVec3()
             val p2 = idVec3()
-            val p3 = idVec3()
+            idVec3()
             val p4 = idVec3()
-            val p5 = idVec3()
+            idVec3()
             val c: Float
             val s: Float
-            val center = idVec3((x + w) / 2.0f, (y + h) / 2.0f, 0f)
-            p1.set(x, y, 0f)
-            p2.set(Right(), y, 0f)
-            p4.set(x, Bottom(), 0f)
-            if (a != 0f) {
-                s = sin(DEG2RAD(a).toDouble()).toFloat()
-                c = cos(DEG2RAD(a).toDouble()).toFloat()
+            val center = idVec3((x + w) / 2.0f, (y + h) / 2.0f, 0.0f)
+            p1.set(x, y, 0.0f)
+            p2.set(Right(), y, 0.0f)
+            p4.set(x, Bottom(), 0.0f)
+            if (a != 0.0f) {
+                s = sin(DEG2RAD(a))
+                c = cos(DEG2RAD(a))
             } else {
-                c = 0f
+                c = 0.0f
                 s = c
             }
             RotateVector(p1, center, a, c, s)

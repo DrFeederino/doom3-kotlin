@@ -1,9 +1,7 @@
 package neo.sys
 
 import neo.TempDump
-import neo.TempDump.NOT
 import neo.TempDump.SERiAL
-import neo.TempDump.TODO_Exception
 import neo.framework.Common.Companion.common
 import neo.idlib.containers.CInt
 import neo.idlib.containers.idStrList
@@ -15,15 +13,11 @@ import neo.sys.win_net.Companion.net_forceDrop
 import neo.sys.win_net.Companion.net_forceLatency
 import neo.sys.win_net.idUDPLag
 import neo.sys.win_shared.Sys_Milliseconds
-import org.lwjgl.system.libc.LibCString.memcpy
 import java.net.DatagramSocket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.*
 
-/**
- *
- */
 object sys_public {
     const val BUILD_OS_ID = 0 //BUILD_OS_ID = 1 for linux
     const val WIN32 = true
@@ -126,6 +120,7 @@ object sys_public {
         SE_KEY,  // evValue is a key code, evValue2 is the down flag
         SE_CHAR,  // evValue is an ascii char
         SE_MOUSE,  // evValue and evValue2 are reletive signed x / y moves
+        SE_MOUSE_ABS,            // evValue and evValue2 are absolute x / y coordinates in the window
         SE_JOYSTICK_AXIS,  // evValue is an axis number and evValue2 is the current state (-127 to 127)
         SE_CONSOLE // evPtr is a char*, from typing something at a non-game console
     }
@@ -143,7 +138,7 @@ object sys_public {
                 : ByteBuffer? = null
         var evPtrLength // bytes of data pointed to by evPtr, for journaling
                 = 0
-        var evType: sysEventType_t = sysEventType_t.values()[0]
+        var evType: sysEventType_t = sysEventType_t.entries[0]
         var evValue = 0
         var evValue2 = 0
 
@@ -264,7 +259,7 @@ object sys_public {
                 if (udpPorts[bound_to.port] != null) {
                     //udpPorts[bound_to.port] = null // delete udpPorts[bound_to.port ];
                 }
-                closesocket(netSocket); //TODO:
+                closesocket(netSocket) //TODO:
                 netSocket = null
                 bound_to = netadr_t() // memset(bound_to, 0, sizeof(bound_to));
             }
@@ -280,34 +275,34 @@ object sys_public {
 
             while (true) {
 
-                ret = Net_GetUDPPacket(netSocket!!, from, data.array(), size, maxSize);
+                ret = Net_GetUDPPacket(netSocket!!, from, data.array(), size, maxSize)
                 if (!ret) {
-                    break;
+                    break
                 }
 
                 if (net_forceDrop.GetInteger() > 0) {
                     if (Random().nextInt() < net_forceDrop.GetInteger() * RAND_MAX / 100) {
-                        continue;
+                        continue
                     }
                 }
 
-                packetsRead++;
-                bytesRead += size._val;
+                packetsRead++
+                bytesRead += size._val
 
                 if (net_forceLatency.GetInteger() > 0) {
                     val msg: win_net.udpMsg_s = udpPorts[bound_to.port].Alloc()
                     msg.size = size._val
                     msg.address = from
-                    msg.time = Sys_Milliseconds();
-                    msg.next = null;
+                    msg.time = Sys_Milliseconds()
+                    msg.next = null
                     if (udpPorts[bound_to.port].recieveLast != null) {
-                        udpPorts[bound_to.port].recieveLast?.next = msg;
+                        udpPorts[bound_to.port].recieveLast?.next = msg
                     } else {
-                        udpPorts[bound_to.port].recieveFirst = msg;
+                        udpPorts[bound_to.port].recieveFirst = msg
                     }
-                    udpPorts[bound_to.port].recieveLast = msg;
+                    udpPorts[bound_to.port].recieveLast = msg
                 } else {
-                    break;
+                    break
                 }
             }
 
@@ -325,10 +320,10 @@ object sys_public {
 //                    udpPorts[ bound_to.port].udpMsgAllocator.Free(msg);
 //                    return true;
 //                }
-                return false;
+                return false
 
             } else {
-                return ret;
+                return ret
             }
         }
 
@@ -339,17 +334,17 @@ object sys_public {
 
         fun SendPacket(to: netadr_t, data: ByteBuffer, size: Int) {
             if (to.type == netadrtype_t.NA_BAD) {
-                common.Warning("idPort::SendPacket: bad address type NA_BAD - ignored");
+                common.Warning("idPort::SendPacket: bad address type NA_BAD - ignored")
                 return
             }
 
 
-            packetsWritten++;
-            bytesWritten += size;
+            packetsWritten++
+            bytesWritten += size
 
             if (net_forceDrop.GetInteger() > 0) {
                 if (Random().nextInt() < net_forceDrop.GetInteger() * RAND_MAX / 100) {
-                    return;
+                    return
                 }
             }
 
@@ -362,44 +357,26 @@ object sys_public {
                 msg.time = Sys_Milliseconds()
                 msg.next = null
                 if (udpPorts[bound_to.port].sendLast != null) {
-                    udpPorts[bound_to.port].sendLast?.next = msg;
+                    udpPorts[bound_to.port].sendLast?.next = msg
                 } else {
-                    udpPorts[bound_to.port].sendFirst = msg;
+                    udpPorts[bound_to.port].sendFirst = msg
                 }
-                udpPorts[bound_to.port].sendLast = msg;
+                udpPorts[bound_to.port].sendLast = msg
 
                 msg = udpPorts[bound_to.port].sendFirst
                 while (msg != null && msg.time <= Sys_Milliseconds() - net_forceLatency.GetInteger()) {
-                    Net_SendUDPPacket(netSocket, msg.size, ByteBuffer.wrap(msg.data), msg.address!!);
-                    udpPorts[bound_to.port].sendFirst = udpPorts[bound_to.port].sendFirst!!.next;
+                    Net_SendUDPPacket(netSocket, msg.size, ByteBuffer.wrap(msg.data), msg.address!!)
+                    udpPorts[bound_to.port].sendFirst = udpPorts[bound_to.port].sendFirst!!.next
                     if (udpPorts[bound_to.port].sendFirst == null) {
-                        udpPorts[bound_to.port].sendLast = null;
+                        udpPorts[bound_to.port].sendLast = null
                     }
                     msg = udpPorts[bound_to.port].sendFirst
                 }
             } else {
-                Net_SendUDPPacket(netSocket, size, data, to);
+                Net_SendUDPPacket(netSocket, size, data, to)
             }
         }
     }
-
-    /*
-     ==============================================================
-
-     Multi-threading
-
-     ==============================================================
-     */
-//    abstract class xthread_t : TimerTask() {
-//        override fun run() {} //        public abstract int run(Object... parms);
-//    }
-//
-//    // };
-//    class xthreadInfo {
-//        var name: String? = null
-//        var   /*int*/threadHandle: Thread? = null
-//        /*unsigned*/  var threadId: Long = 0
-//    }
 
     /*
      ==============================================================
@@ -411,8 +388,7 @@ object sys_public {
     abstract class idSys {
         abstract fun DebugPrintf(fmt: String, vararg arg: Any)
         abstract fun DebugVPrintf(fmt: String, vararg arg: Any)
-        abstract fun GetClockTicks(): Double
-        abstract fun ClockTicksPerSecond(): Double
+        abstract fun GetMilliseconds(): Long
         abstract /*cpuid_t*/  fun GetProcessorId(): Int
         abstract fun GetProcessorString(): String
         abstract fun FPU_GetState(): String
@@ -421,23 +397,21 @@ object sys_public {
         abstract fun FPU_SetDAZ(enable: Boolean)
         abstract fun FPU_EnableExceptions(exceptions: Int)
         abstract fun LockMemory( /*void **/
-            ptr: Any, bytes: Int
+                                 ptr: Any, bytes: Int
         ): Boolean
 
         abstract fun UnlockMemory( /*void **/
-            ptr: Any, bytes: Int
+                                   ptr: Any, bytes: Int
         ): Boolean
 
-        abstract fun GetCallStack(callStack: Long, callStackSize: Int)
-        abstract fun GetCallStackStr(callStack: Long, callStackSize: Int): String
-        abstract fun GetCallStackCurStr(depth: Int): String
-        abstract fun ShutdownSymbols()
         abstract fun DLL_Load(dllName: String): Int
         abstract fun DLL_GetProcAddress(dllHandle: Int, procName: String): Any
         abstract fun DLL_Unload(dllHandle: Int)
         abstract fun DLL_GetFileName(baseName: String, dllName: Array<String>, maxLength: Int)
+
         abstract fun GenerateMouseButtonEvent(button: Int, down: Boolean): sysEvent_s
         abstract fun GenerateMouseMoveEvent(deltax: Int, deltay: Int): sysEvent_s
+
         abstract fun OpenURL(url: String, quit: Boolean)
         abstract fun StartProcess(exePath: String, quit: Boolean)
     }

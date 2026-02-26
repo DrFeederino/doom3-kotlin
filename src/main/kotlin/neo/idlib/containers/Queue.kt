@@ -2,9 +2,6 @@ package neo.idlib.containers
 
 import java.util.*
 
-/**
- *
- */
 class Queue {
     //TODO:test this
     /*

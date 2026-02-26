@@ -8,16 +8,16 @@ import neo.framework.DeclManager
 import neo.framework.File_h.idFile
 import neo.framework.KeyInput.K_MOUSE1
 import neo.framework.Session
-import neo.idlib.Lib
 import neo.idlib.Text.Parser.idParser
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.va
+import neo.idlib.colorWhite
 import neo.idlib.containers.CBool
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Math_h.DEG2RAD
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.DEG2RAD
+import neo.idlib.math.idVec2
+import neo.idlib.math.idVec4
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
 import neo.ui.DeviceContext.idDeviceContext
@@ -28,13 +28,10 @@ import neo.ui.Winvar.idWinBool
 import neo.ui.Winvar.idWinVar
 import kotlin.math.abs
 
-/**
- *
- */
 object GameBustOutWindow {
-    const val BALL_MAXSPEED = 450f
-    const val BALL_RADIUS = 12f
-    const val BALL_SPEED = 250f
+    const val BALL_MAXSPEED = 450.0f
+    const val BALL_RADIUS = 12.0f
+    const val BALL_SPEED = 250.0f
 
     //
     const val BOARD_ROWS = 12
@@ -64,34 +61,27 @@ object GameBustOutWindow {
     class BOEntity(//
         var game: idGameBustOutWindow
     ) {
-        var color: idVec4
+        val color: idVec4 = idVec4()
         var fadeOut: Boolean
         var material: idMaterial?
-
-        //
         var materialName: idStr
-        var position: idVec2? = null
-
-        //
+        val position: idVec2 = idVec2()
         var powerup: powerupType_t
-
-        //
         var removed: Boolean
-        var velocity: idVec2? = null
+        val velocity: idVec2 = idVec2()
         var visible = true
         var width: Float
         var height: Float
 
-        //
         init {
             materialName = idStr("")
             material = null
-            height = 8f
+            height = 8.0f
             width = height
-            color = Lib.colorWhite
+            color.set(colorWhite)
             powerup = powerupType_t.POWERUP_NONE
-            position!!.Zero()
-            velocity!!.Zero()
+            position.Zero()
+            velocity.Zero()
             removed = false
             fadeOut = false //0;
         }
@@ -103,8 +93,8 @@ object GameBustOutWindow {
             savefile.WriteFloat(width)
             savefile.WriteFloat(height)
             savefile.Write(color)
-            savefile.Write(position!!)
-            savefile.Write(velocity!!)
+            savefile.Write(position)
+            savefile.Write(velocity)
             savefile.WriteInt(powerup)
             savefile.WriteBool(removed)
             savefile.WriteBool(fadeOut)
@@ -118,8 +108,8 @@ object GameBustOutWindow {
             width = savefile.ReadFloat()
             height = savefile.ReadFloat()
             savefile.Read(color)
-            savefile.Read(position!!)
-            savefile.Read(velocity!!)
+            savefile.Read(position)
+            savefile.Read(velocity)
             powerup = powerupType_t.values()[savefile.ReadInt()]
             removed = savefile.ReadBool()
             fadeOut = savefile.ReadBool()
@@ -153,13 +143,13 @@ object GameBustOutWindow {
             }
 
             // Move the entity
-            position!!.plusAssign(velocity!!.times(timeslice))
+            position.plusAssign(velocity.times(timeslice))
 
             // Fade out the ent
             if (fadeOut) {
-                color.w -= (timeslice * 2.5).toFloat()
-                if (color.w <= 0f) {
-                    color.w = 0f
+                color.w -= (timeslice * 2.5f)
+                if (color.w <= 0.0f) {
+                    color.w = 0.0f
                     removed = true
                 }
             }
@@ -168,15 +158,15 @@ object GameBustOutWindow {
         fun Draw(dc: idDeviceContext) {
             if (visible) {
                 dc.DrawMaterialRotated(
-                    position!!.x,
-                    position!!.y,
+                    position.x,
+                    position.y,
                     width,
                     height,
                     material,
                     color,
                     1.0f,
                     1.0f,
-                    DEG2RAD(0f)
+                    DEG2RAD(0.0f)
                 )
             }
         }
@@ -202,7 +192,7 @@ object GameBustOutWindow {
         //
         constructor() {
             ent = null
-            height = 0f
+            height = 0.0f
             width = height
             y = width
             x = y
@@ -218,8 +208,8 @@ object GameBustOutWindow {
             height = _height
             powerup = powerupType_t.POWERUP_NONE
             isBroken = false
-            ent!!.position!!.x = x
-            ent!!.position!!.y = y
+            ent!!.position.x = x
+            ent!!.position.y = y
             ent!!.SetSize(width, height)
             ent!!.SetMaterial("game/bustout/brick")
             ent!!.game.entities.Append(ent)
@@ -253,7 +243,7 @@ object GameBustOutWindow {
             ent!!.SetColor(bcolor.x, bcolor.y, bcolor.z, bcolor.w)
         }
 
-        fun checkCollision(pos: idVec2, vel: idVec2?): collideDir_t {
+        fun checkCollision(pos: idVec2, vel: idVec2): collideDir_t {
             val ptA = idVec2()
             val ptB = idVec2()
             var dist: Float
@@ -263,26 +253,28 @@ object GameBustOutWindow {
             }
 
             // Check for collision with each edge
-            var vec: idVec2
+            val vec: idVec2 = idVec2()
 
             // Bottom
             ptA.x = x
             ptA.y = y + height
             ptB.x = x + width
             ptB.y = y + height
-            if (vel!!.y < 0 && pos.y > ptA.y) {
+            if (vel.y < 0 && pos.y > ptA.y) {
                 if (pos.x > ptA.x && pos.x < ptB.x) {
                     dist = pos.y - ptA.y
                     if (dist < BALL_RADIUS) {
                         result = collideDir_t.COLLIDE_DOWN
                     }
                 } else {
-                    vec = if (pos.x <= ptA.x) {
-                        pos.minus(ptA)
-                    } else {
-                        pos.minus(ptB)
-                    }
-                    if (abs(vec.y.toDouble()) > abs(vec.x.toDouble()) && vec.LengthFast() < BALL_RADIUS) {
+                    vec.set(
+                        if (pos.x <= ptA.x) {
+                            pos.minus(ptA)
+                        } else {
+                            pos.minus(ptB)
+                        }
+                    )
+                    if (abs(vec.y) > abs(vec.x) && vec.LengthFast() < BALL_RADIUS) {
                         result = collideDir_t.COLLIDE_DOWN
                     }
                 }
@@ -298,12 +290,14 @@ object GameBustOutWindow {
                             result = collideDir_t.COLLIDE_UP
                         }
                     } else {
-                        vec = if (pos.x <= ptA.x) {
-                            pos.minus(ptA)
-                        } else {
-                            pos.minus(ptB)
-                        }
-                        if (abs(vec.y.toDouble()) > abs(vec.x.toDouble()) && vec.LengthFast() < BALL_RADIUS) {
+                        vec.set(
+                            if (pos.x <= ptA.x) {
+                                pos.minus(ptA)
+                            } else {
+                                pos.minus(ptB)
+                            }
+                        )
+                        if (abs(vec.y) > abs(vec.x) && vec.LengthFast() < BALL_RADIUS) {
                             result = collideDir_t.COLLIDE_UP
                         }
                     }
@@ -321,12 +315,14 @@ object GameBustOutWindow {
                                 result = collideDir_t.COLLIDE_LEFT
                             }
                         } else {
-                            vec = if (pos.y <= ptA.y) {
-                                pos.minus(ptA)
-                            } else {
-                                pos.minus(ptB)
-                            }
-                            if (abs(vec.x.toDouble()) >= abs(vec.y.toDouble()) && vec.LengthFast() < BALL_RADIUS) {
+                            vec.set(
+                                if (pos.y <= ptA.y) {
+                                    pos.minus(ptA)
+                                } else {
+                                    pos.minus(ptB)
+                                }
+                            )
+                            if (abs(vec.x) >= abs(vec.y) && vec.LengthFast() < BALL_RADIUS) {
                                 result = collideDir_t.COLLIDE_LEFT
                             }
                         }
@@ -342,12 +338,14 @@ object GameBustOutWindow {
                                     result = collideDir_t.COLLIDE_LEFT
                                 }
                             } else {
-                                vec = if (pos.y <= ptA.y) {
-                                    pos.minus(ptA)
-                                } else {
-                                    pos.minus(ptB)
-                                }
-                                if (abs(vec.x.toDouble()) >= abs(vec.y.toDouble()) && vec.LengthFast() < BALL_RADIUS) {
+                                vec.set(
+                                    if (pos.y <= ptA.y) {
+                                        pos.minus(ptA)
+                                    } else {
+                                        pos.minus(ptB)
+                                    }
+                                )
+                                if (abs(vec.x) >= abs(vec.y) && vec.LengthFast() < BALL_RADIUS) {
                                     result = collideDir_t.COLLIDE_LEFT
                                 }
                             }
@@ -371,7 +369,7 @@ object GameBustOutWindow {
         private var ballHitCeiling = false
 
         //
-        private var ballSpeed = 0f
+        private var ballSpeed = 0.0f
 
         //
         private val balls = idList<BOEntity?>()
@@ -385,7 +383,7 @@ object GameBustOutWindow {
         private var currentLevel = 0
         private var gameOver = false
         private var gameScore = 0
-        private val gamerunning: idWinBool? = null
+        private val gamerunning: idWinBool = idWinBool()
         private var levelBoardData: ByteArray? = null
         private var nextBallScore = 0
 
@@ -394,20 +392,20 @@ object GameBustOutWindow {
 
         //
         private var numLevels = 0
-        private val onContinue: idWinBool? = null
-        private val onFire: idWinBool? = null
-        private val onNewGame: idWinBool? = null
-        private val onNewLevel: idWinBool? = null
+        private val onContinue: idWinBool = idWinBool()
+        private val onFire: idWinBool = idWinBool()
+        private val onNewGame: idWinBool = idWinBool()
+        private val onNewLevel: idWinBool = idWinBool()
 
         //
         private var paddle: BOBrick? = null
-        private var paddleVelocity = 0f
+        private var paddleVelocity = 0.0f
         private val powerUps = idList<BOEntity>()
 
         //
         //
         //
-        private var timeSlice = 0f
+        private var timeSlice = 0.0f
 
         //
         private var updateScore = false
@@ -426,11 +424,11 @@ object GameBustOutWindow {
 
         override fun WriteToSaveGame(savefile: idFile) {
             super.WriteToSaveGame(savefile)
-            gamerunning!!.WriteToSaveGame(savefile)
-            onFire!!.WriteToSaveGame(savefile)
-            onContinue!!.WriteToSaveGame(savefile)
-            onNewGame!!.WriteToSaveGame(savefile)
-            onNewLevel!!.WriteToSaveGame(savefile)
+            gamerunning.WriteToSaveGame(savefile)
+            onFire.WriteToSaveGame(savefile)
+            onContinue.WriteToSaveGame(savefile)
+            onNewGame.WriteToSaveGame(savefile)
+            onNewLevel.WriteToSaveGame(savefile)
             savefile.WriteFloat(timeSlice)
             savefile.WriteBool(gameOver)
             savefile.WriteInt(numLevels)
@@ -489,7 +487,7 @@ object GameBustOutWindow {
                 savefile.WriteInt(numberOfEnts)
                 i = 0
                 while (i < numberOfEnts) {
-                    board[row]!![i]!!.WriteToSaveGame(savefile)
+                    board[row]!![i].WriteToSaveGame(savefile)
                     i++
                 }
                 row++
@@ -502,11 +500,11 @@ object GameBustOutWindow {
             // Clear out existing paddle and entities from GUI load
 //	delete paddle;
             entities.DeleteContents(true)
-            gamerunning!!.ReadFromSaveGame(savefile)
-            onFire!!.ReadFromSaveGame(savefile)
-            onContinue!!.ReadFromSaveGame(savefile)
-            onNewGame!!.ReadFromSaveGame(savefile)
-            onNewLevel!!.ReadFromSaveGame(savefile)
+            gamerunning.ReadFromSaveGame(savefile)
+            onFire.ReadFromSaveGame(savefile)
+            onContinue.ReadFromSaveGame(savefile)
+            onNewGame.ReadFromSaveGame(savefile)
+            onNewLevel.ReadFromSaveGame(savefile)
             timeSlice = savefile.ReadFloat()
             gameOver = savefile.ReadBool()
             numLevels = savefile.ReadInt()
@@ -582,7 +580,7 @@ object GameBustOutWindow {
 
             // need to call this to allow proper focus and capturing on embedded children
             val ret = super.HandleEvent(event, updateVisuals)
-            if (event.evType === sysEventType_t.SE_KEY) {
+            if (event.evType == sysEventType_t.SE_KEY) {
                 if (0 == event.evValue2) {
                     return ret
                 }
@@ -591,22 +589,18 @@ object GameBustOutWindow {
                     if (ballsInPlay == 0) {
                         val ball = CreateNewBall()
                         ball.SetVisible(true)
-                        ball.position!!.x = paddle!!.ent!!.position!!.x + 48f
-                        ball.position!!.y = 430f
-                        ball.velocity!!.x = ballSpeed
-                        ball.velocity!!.y = -ballSpeed * 2f
-                        ball.velocity!!.NormalizeFast()
-                        ball.velocity!!.timesAssign(ballSpeed)
+                        ball.position.x = paddle!!.ent!!.position.x + 48.0f
+                        ball.position.y = 430.0f
+                        ball.velocity.x = ballSpeed
+                        ball.velocity.y = -ballSpeed * 2.0f
+                        ball.velocity.NormalizeFast()
+                        ball.velocity.timesAssign(ballSpeed)
                     }
                 } else {
                     return ret
                 }
             }
             return ret
-        }
-
-        override fun PostParse() {
-            super.PostParse()
         }
 
         override fun Draw(time: Int, x: Float, y: Float) {
@@ -670,17 +664,17 @@ object GameBustOutWindow {
 
             // Create Paddle
             ent = BOEntity(this)
-            paddle = BOBrick(ent, 260f, 440f, 96f, 24f)
+            paddle = BOBrick(ent, 260.0f, 440.0f, 96.0f, 24.0f)
             paddle!!.ent!!.SetMaterial("game/bustout/paddle")
         }
 
         private fun ResetGameState() {
-            gamerunning!!.data = false
+            gamerunning.data = false
             gameOver = false
-            onFire!!.data = false
-            onContinue!!.data = false
-            onNewGame!!.data = false
-            onNewLevel!!.data = false
+            onFire.data = false
+            onContinue.data = false
+            onNewGame.data = false
+            onNewLevel.data = false
 
             // Game moves forward 16 milliseconds every frame
             timeSlice = 0.016f
@@ -770,30 +764,30 @@ object GameBustOutWindow {
             val realLevel = (currentLevel - 1) % numLevels
             val boardSize: Int
             val currentBoard: Int
-            var bx = 11f
-            var by = 24f
-            val stepx = 619f / 9f
-            val stepy = 256 / 12f
+            var bx = 11.0f
+            var by = 24.0f
+            val stepx = 619.0f / 9.0f
+            val stepy = 256 / 12.0f
             boardSize = 9 * 12 * 4
             currentBoard = realLevel * boardSize
             j = 0
             while (j < BOARD_ROWS) {
-                bx = 11f
+                bx = 11.0f
                 i = 0
                 while (i < 9) {
                     val pixelindex = j * 9 * 4 + i * 4
                     if (levelBoardData!![currentBoard + pixelindex + 3].toInt() != 0) {
                         val bcolor = idVec4()
-                        var pType: Float //= 0f;
+                        var pType: Float //= 0.0f;
                         val bent = BOEntity(this)
                         val brick = BOBrick(bent, bx, by, stepx, stepy)
-                        bcolor.x = levelBoardData!![currentBoard + pixelindex + 0] / 255f
-                        bcolor.y = levelBoardData!![currentBoard + pixelindex + 1] / 255f
-                        bcolor.z = levelBoardData!![currentBoard + pixelindex + 2] / 255f
-                        bcolor.w = 1f
+                        bcolor.x = levelBoardData!![currentBoard + pixelindex + 0] / 255.0f
+                        bcolor.y = levelBoardData!![currentBoard + pixelindex + 1] / 255.0f
+                        bcolor.z = levelBoardData!![currentBoard + pixelindex + 2] / 255.0f
+                        bcolor.w = 1.0f
                         brick.SetColor(bcolor)
-                        pType = levelBoardData!![pixelindex + 3] / 255f
-                        if (pType > 0f && pType < 1f) {
+                        pType = levelBoardData!![pixelindex + 3] / 255.0f
+                        if (pType > 0.0f && pType < 1.0f) {
                             if (pType < 0.5f) {
                                 brick.powerup = powerupType_t.POWERUP_BIGPADDLE
                             } else {
@@ -813,30 +807,30 @@ object GameBustOutWindow {
 
         private fun UpdateGame() {
             var i: Int
-            if (onNewGame!!.oCastBoolean()) {
+            if (onNewGame.data) {
                 ResetGameState()
 
                 // Create Board
                 SetCurrentBoard()
-                gamerunning!!.set(true)
+                gamerunning.set(true)
             }
-            if (onContinue!!.oCastBoolean()) {
+            if (onContinue.data) {
                 gameOver = false
                 ballsRemaining = 3
                 onContinue.set(false)
             }
-            if (onNewLevel!!.oCastBoolean()) {
+            if (onNewLevel.data) {
                 currentLevel++
                 ClearBoard()
                 SetCurrentBoard()
-                ballSpeed = BALL_SPEED * (1f + currentLevel.toFloat() / 5f)
+                ballSpeed = BALL_SPEED * (1.0f + currentLevel.toFloat() / 5.0f)
                 if (ballSpeed > BALL_MAXSPEED) {
                     ballSpeed = BALL_MAXSPEED
                 }
                 updateScore = true
                 onNewLevel.set(false)
             }
-            if (gamerunning!!.oCastBoolean() == true) {
+            if (gamerunning.data) {
                 UpdatePaddle()
                 UpdateBall()
                 UpdatePowerups()
@@ -850,7 +844,7 @@ object GameBustOutWindow {
                 i = entities.Num() - 1
                 while (i >= 0) {
                     if (entities[i]!!.removed) {
-                        val ent = entities[i]
+                        entities[i]
                         //				delete ent;
                         entities.RemoveIndex(i)
                     }
@@ -869,15 +863,15 @@ object GameBustOutWindow {
                 val pUp = powerUps[i]
 
                 // Check for powerup falling below screen
-                if (pUp.position!!.y > 480) {
+                if (pUp.position.y > 480) {
                     powerUps.RemoveIndex(i)
                     pUp.removed = true
                     continue
                 }
 
                 // Check for the paddle catching a powerup
-                pos.x = pUp.position!!.x + pUp.width / 2
-                pos.y = pUp.position!!.y + pUp.height / 2
+                pos.x = pUp.position.x + pUp.width / 2
+                pos.y = pUp.position.y + pUp.height / 2
                 val collision = paddle!!.checkCollision(pos, pUp.velocity)
                 if (collision != collideDir_t.COLLIDE_NONE) {
                     var ball: BOEntity
@@ -888,15 +882,15 @@ object GameBustOutWindow {
                             var b = 0
                             while (b < 2) {
                                 ball = CreateNewBall()
-                                ball.position = balls[0]!!.position
-                                ball.velocity = balls[0]!!.velocity
+                                ball.position.set(balls[0]!!.position)
+                                ball.velocity.set(balls[0]!!.velocity)
                                 if (b == 0) {
-                                    ball.velocity!!.x -= 35f
+                                    ball.velocity.x -= 35.0f
                                 } else {
-                                    ball.velocity!!.x += 35f
+                                    ball.velocity.x += 35.0f
                                 }
-                                ball.velocity!!.NormalizeFast()
-                                ball.velocity!!.timesAssign(ballSpeed)
+                                ball.velocity.NormalizeFast()
+                                ball.velocity.timesAssign(ballSpeed)
                                 ball.SetVisible(true)
                                 b++
                             }
@@ -921,17 +915,17 @@ object GameBustOutWindow {
             cursorPos.x = gui!!.CursorX()
             cursorPos.y = gui!!.CursorY()
             if (bigPaddleTime > gui!!.GetTime()) {
-                paddle!!.x = cursorPos.x - 80f
-                paddle!!.width = 160f
-                paddle!!.ent!!.width = 160f
+                paddle!!.x = cursorPos.x - 80.0f
+                paddle!!.width = 160.0f
+                paddle!!.ent!!.width = 160.0f
                 paddle!!.ent!!.SetMaterial("game/bustout/doublepaddle")
             } else {
-                paddle!!.x = cursorPos.x - 48f
-                paddle!!.width = 96f
-                paddle!!.ent!!.width = 96f
+                paddle!!.x = cursorPos.x - 48.0f
+                paddle!!.width = 96.0f
+                paddle!!.ent!!.width = 96.0f
                 paddle!!.ent!!.SetMaterial("game/bustout/paddle")
             }
-            paddle!!.ent!!.position!!.x = paddle!!.x
+            paddle!!.ent!!.position.x = paddle!!.x
             paddleVelocity = paddle!!.x - oldPos
         }
 
@@ -949,15 +943,15 @@ object GameBustOutWindow {
                 val ball = balls[ballnum]
 
                 // Check for ball going below screen, lost ball
-                if (ball!!.position!!.y > 480f) {
+                if (ball!!.position.y > 480.0f) {
                     ball.removed = true
                     ballnum++
                     continue
                 }
 
                 // Check world collision
-                if (ball.position!!.y < 20 && ball.velocity!!.y < 0) {
-                    ball.velocity!!.y = -ball.velocity!!.y
+                if (ball.position.y < 20 && ball.velocity.y < 0) {
+                    ball.velocity.y = -ball.velocity.y
 
                     // Increase ball speed when it hits ceiling
                     if (!ballHitCeiling) {
@@ -966,36 +960,36 @@ object GameBustOutWindow {
                     }
                     playSoundBounce = true
                 }
-                if (ball.position!!.x > 608 && ball.velocity!!.x > 0) {
-                    ball.velocity!!.x = -ball.velocity!!.x
+                if (ball.position.x > 608 && ball.velocity.x > 0) {
+                    ball.velocity.x = -ball.velocity.x
                     playSoundBounce = true
-                } else if (ball.position!!.x < 8 && ball.velocity!!.x < 0) {
-                    ball.velocity!!.x = -ball.velocity!!.x
+                } else if (ball.position.x < 8 && ball.velocity.x < 0) {
+                    ball.velocity.x = -ball.velocity.x
                     playSoundBounce = true
                 }
 
                 // Check for Paddle collision
-                val ballCenter = ball.position!!.plus(idVec2(BALL_RADIUS, BALL_RADIUS))
+                val ballCenter = ball.position.plus(idVec2(BALL_RADIUS, BALL_RADIUS))
                 var collision = paddle!!.checkCollision(ballCenter, ball.velocity)
                 if (collision == collideDir_t.COLLIDE_UP) {
-                    if (ball.velocity!!.y > 0) {
-                        val paddleVec = idVec2(paddleVelocity * 2, 0f)
+                    if (ball.velocity.y > 0) {
+                        val paddleVec = idVec2(paddleVelocity * 2, 0.0f)
                         var centerX: Float
                         centerX = if (bigPaddleTime > gui!!.GetTime()) {
-                            paddle!!.x + 80f
+                            paddle!!.x + 80.0f
                         } else {
-                            paddle!!.x + 48f
+                            paddle!!.x + 48.0f
                         }
-                        ball.velocity!!.y = -ball.velocity!!.y
-                        paddleVec.x += (ball.position!!.x - centerX) * 2
-                        ball.velocity!!.plusAssign(paddleVec)
-                        ball.velocity!!.NormalizeFast()
-                        ball.velocity!!.timesAssign(ballSpeed)
+                        ball.velocity.y = -ball.velocity.y
+                        paddleVec.x += (ball.position.x - centerX) * 2
+                        ball.velocity.plusAssign(paddleVec)
+                        ball.velocity.NormalizeFast()
+                        ball.velocity.timesAssign(ballSpeed)
                         playSoundBounce = true
                     }
                 } else if (collision == collideDir_t.COLLIDE_LEFT || collision == collideDir_t.COLLIDE_RIGHT) {
-                    if (ball.velocity!!.y > 0) {
-                        ball.velocity!!.x = -ball.velocity!!.x
+                    if (ball.velocity.y > 0) {
+                        ball.velocity.x = -ball.velocity.x
                         playSoundBounce = true
                     }
                 }
@@ -1014,7 +1008,7 @@ object GameBustOutWindow {
                             brick.isBroken = true
                             brick.ent!!.fadeOut = true
                             if (brick.powerup.ordinal > powerupType_t.POWERUP_NONE.ordinal) {
-                                val pUp = CreatePowerup(brick)
+                                CreatePowerup(brick)
                             }
                             numBricks--
                             gameScore += 100
@@ -1036,9 +1030,9 @@ object GameBustOutWindow {
                     i++
                 }
                 if (collision == collideDir_t.COLLIDE_DOWN || collision == collideDir_t.COLLIDE_UP) {
-                    ball.velocity!!.y *= -1f
+                    ball.velocity.y *= -1.0f
                 } else if (collision == collideDir_t.COLLIDE_LEFT || collision == collideDir_t.COLLIDE_RIGHT) {
-                    ball.velocity!!.x *= -1f
+                    ball.velocity.x *= -1.0f
                 }
                 if (playSoundBounce) {
                     Session.session.sw.PlayShaderDirectly("arcade_ballbounce", bounceChannel)
@@ -1112,10 +1106,10 @@ object GameBustOutWindow {
         private fun CreateNewBall(): BOEntity {
             val ball: BOEntity
             ball = BOEntity(this)
-            ball.position!!.x = 300f
-            ball.position!!.y = 416f
+            ball.position.x = 300.0f
+            ball.position.y = 416.0f
             ball.SetMaterial("game/bustout/ball")
-            ball.SetSize(BALL_RADIUS * 2f, BALL_RADIUS * 2f)
+            ball.SetSize(BALL_RADIUS * 2.0f, BALL_RADIUS * 2.0f)
             ball.SetVisible(false)
             ballsInPlay++
             balls.Append(ball)
@@ -1125,10 +1119,10 @@ object GameBustOutWindow {
 
         private fun CreatePowerup(brick: BOBrick): BOEntity {
             val powerEnt = BOEntity(this)
-            powerEnt.position!!.x = brick.x
-            powerEnt.position!!.y = brick.y
-            powerEnt.velocity!!.x = 0f
-            powerEnt.velocity!!.y = 64f
+            powerEnt.position.x = brick.x
+            powerEnt.position.y = brick.y
+            powerEnt.velocity.x = 0.0f
+            powerEnt.velocity.y = 64.0f
             powerEnt.powerup = brick.powerup
             when (powerEnt.powerup) {
                 powerupType_t.POWERUP_BIGPADDLE -> powerEnt.SetMaterial("game/bustout/powerup_bigpaddle")
@@ -1144,23 +1138,23 @@ object GameBustOutWindow {
 
         override fun ParseInternalVar(_name: String?, src: idParser): Boolean {
             if (Icmp(_name!!, "gamerunning") == 0) {
-                gamerunning!!.set(src.ParseBool())
+                gamerunning.set(src.ParseBool())
                 return true
             }
             if (Icmp(_name, "onFire") == 0) {
-                onFire!!.set(src.ParseBool())
+                onFire.set(src.ParseBool())
                 return true
             }
             if (Icmp(_name, "onContinue") == 0) {
-                onContinue!!.set(src.ParseBool())
+                onContinue.set(src.ParseBool())
                 return true
             }
             if (Icmp(_name, "onNewGame") == 0) {
-                onNewGame!!.set(src.ParseBool())
+                onNewGame.set(src.ParseBool())
                 return true
             }
             if (Icmp(_name, "onNewLevel") == 0) {
-                onNewLevel!!.set(src.ParseBool())
+                onNewLevel.set(src.ParseBool())
                 return true
             }
             if (Icmp(_name, "numLevels") == 0) {

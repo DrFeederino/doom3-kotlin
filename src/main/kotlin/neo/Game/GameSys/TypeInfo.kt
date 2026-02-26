@@ -10,7 +10,6 @@ import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
 import neo.framework.File_h.idFile
 import neo.idlib.CmdArgs
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
@@ -19,12 +18,10 @@ import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List.cmp_t
 import neo.idlib.containers.List.idList
+import neo.idlib.idException
 import java.nio.ByteBuffer
 import java.util.*
 
-/**
- *
- */
 object TypeInfo {
     const val DUMP_GAMELOCAL = false
 
@@ -369,26 +366,32 @@ object TypeInfo {
                         out[i] = '\u0000'
                         return TempDump.ctos(out)
                     }
+
                     '\\' -> {
                         out[i++] = '\\'
                         out[i] = '\\'
                     }
+
                     '\n' -> {
                         out[i++] = '\\'
                         out[i] = 'n'
                     }
+
                     '\r' -> {
                         out[i++] = '\\'
                         out[i] = 'r'
                     }
+
                     '\t' -> {
                         out[i++] = '\\'
                         out[i] = 't'
                     }
+
                     '\u000B' -> {
                         out[i++] = '\\'
                         out[i] = 'v'
                     }
+
                     else -> out[i] = string[c]
                 }
                 i++
@@ -1218,10 +1221,10 @@ object TypeInfo {
                     }
                     i = FindChar(value, '#', i + 1)
                 }
-                if (TypeInfo.IsRenderHandleVariable(varName, varType, scope, prefix, postfix, value)) {
+                if (IsRenderHandleVariable(varName, varType, scope, prefix, postfix, value)) {
                     return
                 }
-                if (TypeInfo.IsAllowedToChangedFromSaveGames(varName, varType, scope, prefix, postfix, value)) {
+                if (IsAllowedToChangedFromSaveGames(varName, varType, scope, prefix, postfix, value)) {
                     return
                 }
                 fp!!.WriteFloatString("%s%s::%s%s = \"%s\"\n", prefix, scope, varName, postfix, value)
@@ -1245,7 +1248,7 @@ object TypeInfo {
             ) {
                 if (varPtr != null && varSize > 0) {
                     // NOTE: skip renderer handles
-                    if (TypeInfo.IsRenderHandleVariable(varName, varType, scope, prefix, postfix, value)) {
+                    if (IsRenderHandleVariable(varName, varType, scope, prefix, postfix, value)) {
                         return
                     }
                     //                    memset(const_cast < void * > (varPtr), initValue, varSize);
@@ -1278,10 +1281,10 @@ object TypeInfo {
                 if (token.Cmp(value) != 0) {
 
                     // NOTE: skip several things
-                    if (TypeInfo.IsRenderHandleVariable(varName, varType, scope, prefix, postfix, value)) {
+                    if (IsRenderHandleVariable(varName, varType, scope, prefix, postfix, value)) {
                         return
                     }
-                    if (TypeInfo.IsAllowedToChangedFromSaveGames(varName, varType, scope, prefix, postfix, value)) {
+                    if (IsAllowedToChangedFromSaveGames(varName, varType, scope, prefix, postfix, value)) {
                         return
                     }
                     src.Warning("state diff for %s%s::%s%s\n%s\n%s", prefix, scope, varName, postfix, token, value)
@@ -1304,7 +1307,7 @@ object TypeInfo {
         override fun run(args: CmdArgs.idCmdArgs?) {
             val fileName: idStr
             fileName = if (args!!.Argc() > 1) {
-                idStr(args!!.Argv(1))
+                idStr(args.Argv(1))
             } else {
                 idStr("GameState.txt")
             }
@@ -1329,7 +1332,7 @@ object TypeInfo {
         override fun run(args: CmdArgs.idCmdArgs?) {
             val fileName: idStr
             fileName = if (args!!.Argc() > 1) {
-                idStr(args!!.Argv(1))
+                idStr(args.Argv(1))
             } else {
                 idStr("GameState.txt")
             }
@@ -1357,7 +1360,7 @@ object TypeInfo {
                 Game_local.gameLocal.Printf("testSaveGame <mapName>\n")
                 return
             }
-            name = idStr(args!!.Argv(1))
+            name = idStr(args.Argv(1))
             try {
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, Str.va("map %s", name))
                 name.Replace("\\", "_")
@@ -1394,7 +1397,7 @@ object TypeInfo {
                 index.Append(i)
                 i++
             }
-            if (args!!.Argc() > 1 && idStr.Icmp(args!!.Argv(1), "size") == 0) {
+            if (args!!.Argc() > 1 && idStr.Icmp(args.Argv(1), "size") == 0) {
                 index.Sort(SortTypeInfoBySize())
             } else {
                 index.Sort(SortTypeInfoByName())

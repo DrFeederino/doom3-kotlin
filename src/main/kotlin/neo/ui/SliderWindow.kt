@@ -2,7 +2,6 @@ package neo.ui
 
 import neo.Renderer.Material
 import neo.Renderer.Material.idMaterial
-import neo.TempDump.NOT
 import neo.framework.CVarSystem.cvarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.Common
@@ -18,7 +17,7 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Cmpn
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.containers.CBool
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idVec4
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
 import neo.ui.DeviceContext.idDeviceContext
@@ -31,29 +30,24 @@ import neo.ui.Winvar.idWinFloat
 import neo.ui.Winvar.idWinStr
 import neo.ui.Winvar.idWinVar
 
-/**
- *
- */
 class SliderWindow {
     class idSliderWindow : idWindow {
         private var buddyWin: idWindow? = null
         private var cvar: idCVar? = null
-        private val cvarGroup: idWinStr? = null
-
-        //
+        private val cvarGroup: idWinStr = idWinStr()
         private val cvarStr = idWinStr()
         private var cvar_init = false
-        private var high = 0f
-        private val lastValue = 0f
+        private var high = 0.0f
+        private val lastValue = 0.0f
         private val liveUpdate = idWinBool()
-        private var low = 0f
+        private var low = 0.0f
         private var scrollbar = false
-        private var stepSize = 0f
-        private var thumbHeight = 0f
+        private var stepSize = 0.0f
+        private var thumbHeight = 0.0f
         private var thumbMat: idMaterial? = null
         private val thumbRect = idRectangle()
         private val thumbShader = idStr()
-        private var thumbWidth = 0f
+        private var thumbWidth = 0.0f
         private val value = idWinFloat()
         private var vertical = false
         private var verticalFlip = false
@@ -119,10 +113,6 @@ class SliderWindow {
             return value.data
         }
 
-        override fun  /*size_t*/Allocated(): Int {
-            return super.Allocated()
-        }
-
         override fun GetWinVarByName(
             _name: String?,
             winLookup: Boolean /*= false*/,
@@ -146,8 +136,8 @@ class SliderWindow {
             )
         }
 
-        override fun HandleEvent(event: sysEvent_s, updateVisuals: CBool?): String? {
-            if (!(event.evType === sysEventType_t.SE_KEY && event.evValue2 != 0)) {
+        override fun HandleEvent(event: sysEvent_s, updateVisuals: CBool?): String {
+            if (!(event.evType == sysEventType_t.SE_KEY && event.evValue2 != 0)) {
                 return ""
             }
             val key = event.evValue
@@ -173,7 +163,7 @@ class SliderWindow {
 
         override fun PostParse() {
             super.PostParse()
-            value.data = 0f
+            value.data = 0.0f
             thumbMat = DeclManager.declManager.FindMaterial(thumbShader)
             thumbMat!!.SetSort(Material.SS_GUI.toFloat())
             thumbWidth = thumbMat!!.GetImageWidth().toFloat()
@@ -189,7 +179,7 @@ class SliderWindow {
             if (null == cvar && null == buddyWin) {
                 return
             }
-            if (0f == thumbWidth || 0f == thumbHeight) {
+            if (0.0f == thumbWidth || 0.0f == thumbHeight) {
                 thumbWidth = thumbMat!!.GetImageWidth().toFloat()
                 thumbHeight = thumbMat!!.GetImageHeight().toFloat()
             }
@@ -203,10 +193,10 @@ class SliderWindow {
             if (range <= 0.0f) {
                 return
             }
-            var thumbPos: Float = if (range != 0f) (value.data - low) / range else 0f
+            var thumbPos: Float = if (range != 0.0f) (value.data - low) / range else 0.0f
             if (vertical) {
                 if (verticalFlip) {
-                    thumbPos = 1f - thumbPos
+                    thumbPos = 1.0f - thumbPos
                 }
                 thumbPos *= drawRect.h - thumbHeight
                 thumbPos += drawRect.y
@@ -220,13 +210,13 @@ class SliderWindow {
             }
             thumbRect.w = thumbWidth
             thumbRect.h = thumbHeight
-            if (hover && !noEvents.oCastBoolean() && Contains(gui!!.CursorX(), gui!!.CursorY())) {
-                color!!.set(hoverColor.data)
+            if (hover && !noEvents.data && Contains(gui!!.CursorX(), gui!!.CursorY())) {
+                color.set(hoverColor.data)
             } else {
                 hover = false
             }
             if (flags and Window.WIN_CAPTURE != 0) {
-                color!!.set(hoverColor.data)
+                color.set(hoverColor.data)
                 hover = true
             }
             dc!!.DrawMaterial(thumbRect.x, thumbRect.y, thumbRect.w, thumbRect.h, thumbMat, color)
@@ -252,25 +242,25 @@ class SliderWindow {
             val r = idRectangle(_drawRect)
             if (!scrollbar) {
                 if (vertical) {
-                    r.y += thumbHeight / 2f
+                    r.y += thumbHeight / 2.0f
                     r.h -= thumbHeight
                 } else {
-                    r.x += (thumbWidth / 2.0).toFloat()
+                    r.x += (thumbWidth / 2.0f)
                     r.w -= thumbWidth
                 }
             }
             super.DrawBackground(r)
         }
 
-        override fun RouteMouseCoords(xd: Float, yd: Float): String? {
+        override fun RouteMouseCoords(xd: Float, yd: Float): String {
             var pct: Float
-            if (NOT(flags and Window.WIN_CAPTURE)) {
+            if (flags and Window.WIN_CAPTURE == 0) {
                 return ""
             }
             val r = idRectangle(drawRect)
             r.x = actualX
             r.y = actualY
-            r.x += (thumbWidth / 2.0).toFloat()
+            r.x += (thumbWidth / 2.0f)
             r.w -= thumbWidth
             if (vertical) {
                 r.y += thumbHeight / 2
@@ -278,7 +268,7 @@ class SliderWindow {
                 if (gui!!.CursorY() >= r.y && gui!!.CursorY() <= r.Bottom()) {
                     pct = (gui!!.CursorY() - r.y) / r.h
                     if (verticalFlip) {
-                        pct = 1f - pct
+                        pct = 1.0f - pct
                     }
                     value.data = low + (high - low) * pct
                 } else if (gui!!.CursorY() < r.y) {
@@ -332,13 +322,13 @@ class SliderWindow {
             if (0 == Cmpn(eventName!!, "cvar read ", 10)) {
                 event = idStr(eventName)
                 group = idStr(event.Mid(10, event.Length() - 10))
-                if (NOT(group.Cmp(cvarGroup!!.data!!))) {
+                if (group.Cmp(cvarGroup!!.data!!) == 0) {
                     UpdateCvar(true, true)
                 }
             } else if (0 == Cmpn(eventName, "cvar write ", 11)) {
                 event = idStr(eventName)
                 group = idStr(event.Mid(11, event.Length() - 11))
-                if (NOT(group.Cmp(cvarGroup!!.data!!))) {
+                if (group.Cmp(cvarGroup!!.data!!) == 0) {
                     UpdateCvar(false, true)
                 }
             }
@@ -378,8 +368,8 @@ class SliderWindow {
         }
 
         private fun CommonInit() {
-            value.data = 0f
-            low = 0f
+            value.data = 0.0f
+            low = 0.0f
             high = 100.0f
             stepSize = 1.0f
             thumbMat = DeclManager.declManager.FindMaterial("_default")
@@ -425,7 +415,7 @@ class SliderWindow {
             if (buddyWin != null || null == cvar) {
                 return
             }
-            if (force || liveUpdate.oCastBoolean()) {
+            if (force || liveUpdate.data) {
                 value.data = cvar!!.GetFloat()
                 if (value.data != gui!!.State().GetFloat(cvarStr.data.toString())) {
                     if (read) {

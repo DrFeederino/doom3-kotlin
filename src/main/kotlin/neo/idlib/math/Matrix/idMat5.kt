@@ -1,8 +1,8 @@
 package neo.idlib.math.Matrix
 
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec5
-import java.util.*
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec5
+import kotlin.math.abs
 
 //===============================================================
 //
@@ -12,8 +12,7 @@ import java.util.*
 class idMat5 {
     private val mat: Array<idVec5> = Array(5) { idVec5() }
 
-    constructor() { //TODO:remove empty default constructs
-    }
+    constructor()
 
     constructor(v0: idVec5, v1: idVec5, v2: idVec5, v3: idVec5, v4: idVec5) {
         mat[0].set(v0)
@@ -24,26 +23,17 @@ class idMat5 {
     }
 
     constructor(src: Array<FloatArray>) {
-        mat[0]
-            .set(idVec5(src[0][0], src[0][1], src[0][2], src[0][3], src[0][4]))
-        mat[1]
-            .set(idVec5(src[1][0], src[1][1], src[1][2], src[1][3], src[1][4]))
-        mat[2]
-            .set(idVec5(src[2][0], src[2][1], src[2][2], src[2][3], src[2][4]))
-        mat[3]
-            .set(idVec5(src[3][0], src[3][1], src[3][2], src[3][3], src[3][4]))
-        mat[4]
-            .set(idVec5(src[4][0], src[4][1], src[4][2], src[4][3], src[4][4]))
+        mat[0].set(idVec5(src[0][0], src[0][1], src[0][2], src[0][3], src[0][4]))
+        mat[1].set(idVec5(src[1][0], src[1][1], src[1][2], src[1][3], src[1][4]))
+        mat[2].set(idVec5(src[2][0], src[2][1], src[2][2], src[2][3], src[2][4]))
+        mat[3].set(idVec5(src[3][0], src[3][1], src[3][2], src[3][3], src[3][4]))
+        mat[4].set(idVec5(src[4][0], src[4][1], src[4][2], src[4][3], src[4][4]))
     }
 
     constructor(m: idMat5) {
         set(m)
     }
 
-    //public	idMat5			operator+( const idMat5 &a ) const;
-    //	public const idVec5 &	operator[]( int index ) const;
-    //public	idVec5 &		operator[]( int index );
-    //public	idMat5			operator*( const float a ) const;
     operator fun times(a: Float): idMat5 {
         return idMat5(
             idVec5(mat[0].x * a, mat[0].y * a, mat[0].z * a, mat[0].s * a, mat[0].t * a),
@@ -54,7 +44,6 @@ class idMat5 {
         )
     }
 
-    //public	idMat5			operator-( const idMat5 &a ) const;
     operator fun times(vec: idVec5): idVec5 {
         return idVec5(
             mat[0].x * vec.x + mat[0].y * vec.y + mat[0].z * vec.z + mat[0].s * vec.s + mat[0].t * vec.t,
@@ -65,17 +54,11 @@ class idMat5 {
         )
     }
 
-    //public	idMat5 &		operator*=( const float a );
     operator fun times(a: idMat5): idMat5 {
         var j: Int
         val m1Ptr = reinterpret_cast()
         val m2Ptr = a.reinterpret_cast()
-        //	float *dstPtr;
-        val dst = Array<FloatArray>(5) { FloatArray(5) }
-
-//	m1Ptr = reinterpret_cast<const float *>(this);
-//	m2Ptr = reinterpret_cast<const float *>(&a);
-//	dstPtr = reinterpret_cast<float *>(&dst);
+        val dst = Array(5) { FloatArray(5) }
         var i = 0
         while (i < 5) {
             j = 0
@@ -89,7 +72,6 @@ class idMat5 {
         return idMat5(dst)
     }
 
-    //public	idMat5 &		operator*=( const idMat5 &a );
     operator fun plus(a: idMat5): idMat5 {
         return idMat5(
             idVec5(
@@ -98,29 +80,25 @@ class idMat5 {
                 mat[0].z + a.mat[0].z,
                 mat[0].s + a.mat[0].s,
                 mat[0].t + a.mat[0].t
-            ),
-            idVec5(
+            ), idVec5(
                 mat[1].x + a.mat[1].x,
                 mat[1].y + a.mat[1].y,
                 mat[1].z + a.mat[1].z,
                 mat[1].s + a.mat[1].s,
                 mat[1].t + a.mat[1].t
-            ),
-            idVec5(
+            ), idVec5(
                 mat[2].x + a.mat[2].x,
                 mat[2].y + a.mat[2].y,
                 mat[2].z + a.mat[2].z,
                 mat[2].s + a.mat[2].s,
                 mat[2].t + a.mat[2].t
-            ),
-            idVec5(
+            ), idVec5(
                 mat[3].x + a.mat[3].x,
                 mat[3].y + a.mat[3].y,
                 mat[3].z + a.mat[3].z,
                 mat[3].s + a.mat[3].s,
                 mat[3].t + a.mat[3].t
-            ),
-            idVec5(
+            ), idVec5(
                 mat[4].x + a.mat[4].x,
                 mat[4].y + a.mat[4].y,
                 mat[4].z + a.mat[4].z,
@@ -130,7 +108,6 @@ class idMat5 {
         )
     }
 
-    //public	idMat5 &		operator+=( const idMat5 &a );
     operator fun minus(a: idMat5): idMat5 {
         return idMat5(
             idVec5(
@@ -139,29 +116,25 @@ class idMat5 {
                 mat[0].z - a.mat[0].z,
                 mat[0].s - a.mat[0].s,
                 mat[0].t - a.mat[0].t
-            ),
-            idVec5(
+            ), idVec5(
                 mat[1].x - a.mat[1].x,
                 mat[1].y - a.mat[1].y,
                 mat[1].z - a.mat[1].z,
                 mat[1].s - a.mat[1].s,
                 mat[1].t - a.mat[1].t
-            ),
-            idVec5(
+            ), idVec5(
                 mat[2].x - a.mat[2].x,
                 mat[2].y - a.mat[2].y,
                 mat[2].z - a.mat[2].z,
                 mat[2].s - a.mat[2].s,
                 mat[2].t - a.mat[2].t
-            ),
-            idVec5(
+            ), idVec5(
                 mat[3].x - a.mat[3].x,
                 mat[3].y - a.mat[3].y,
                 mat[3].z - a.mat[3].z,
                 mat[3].s - a.mat[3].s,
                 mat[3].t - a.mat[3].t
-            ),
-            idVec5(
+            ), idVec5(
                 mat[4].x - a.mat[4].x,
                 mat[4].y - a.mat[4].y,
                 mat[4].z - a.mat[4].z,
@@ -171,7 +144,6 @@ class idMat5 {
         )
     }
 
-    //public	idMat5 &		operator-=( const idMat5 &a );
     fun timesAssign(a: Float): idMat5 {
         mat[0].x *= a
         mat[0].y *= a
@@ -206,7 +178,6 @@ class idMat5 {
         return this
     }
 
-    //public	friend idVec5	operator*( const idVec5 &vec, const idMat5 &mat );
     fun plusAssign(a: idMat5): idMat5 {
         mat[0].x += a.mat[0].x
         mat[0].y += a.mat[0].y
@@ -292,7 +263,7 @@ class idMat5 {
         val ptr2: FloatArray = a.reinterpret_cast()
         var i = 0
         while (i < 5 * 5) {
-            if (Math.abs(ptr1[i] - ptr2[i]) > epsilon) {
+            if (abs(ptr1[i] - ptr2[i]) > epsilon) {
                 return false
             }
             i++
@@ -300,11 +271,9 @@ class idMat5 {
         return true
     }
 
-    //public	bool			operator==( const idMat5 &a ) const;					// exact compare, no epsilon
-    //public	bool			operator!=( const idMat5 &a ) const;					// exact compare, no epsilon
     override fun hashCode(): Int {
         var hash = 7
-        hash = 29 * hash + Arrays.deepHashCode(mat)
+        hash = 29 * hash + mat.contentDeepHashCode()
         return hash
     }
 
@@ -316,7 +285,15 @@ class idMat5 {
             return false
         }
         val other = obj as idMat5
-        return Arrays.deepEquals(mat, other.mat)
+        return Compare(other)
+    }
+
+    fun equals(a: idMat5): Boolean { // exact compare, no epsilon
+        return Compare(a)
+    }
+
+    fun notEquals(a: idMat5): Boolean { // exact compare, no epsilon
+        return !Compare(a)
     }
 
     fun Zero() {
@@ -328,15 +305,15 @@ class idMat5 {
     }
 
 
-    fun IsIdentity(epsilon: Float = idMat0.MATRIX_EPSILON.toFloat()): Boolean {
+    fun IsIdentity(epsilon: Float): Boolean {
         return Compare(getMat5_identity(), epsilon)
     }
 
 
-    fun IsSymmetric(epsilon: Float = idMat0.MATRIX_EPSILON.toFloat()): Boolean {
+    fun IsSymmetric(epsilon: Float): Boolean {
         for (i in 1..4) {
             for (j in 0 until i) {
-                if (Math.abs(mat[i].get(j) - mat[j].get(i)) > epsilon) {
+                if (abs(mat[i][j] - mat[j][i]) > epsilon) {
                     return false
                 }
             }
@@ -345,10 +322,10 @@ class idMat5 {
     }
 
 
-    fun IsDiagonal(epsilon: Float = idMat0.MATRIX_EPSILON.toFloat()): Boolean {
+    fun IsDiagonal(epsilon: Float): Boolean {
         for (i in 0..4) {
             for (j in 0..4) {
-                if (i != j && Math.abs(mat[i].get(j)) > epsilon) {
+                if (i != j && abs(mat[i][j]) > epsilon) {
                     return false
                 }
             }
@@ -409,7 +386,7 @@ class idMat5 {
         while (i < 5) {
             j = 0
             while (j < 5) {
-                transpose.mat[i].set(j, mat[j].get(i))
+                transpose.mat[i][j] = mat[j][i]
                 j++
             }
             i++
@@ -424,9 +401,9 @@ class idMat5 {
         while (i < 5) {
             j = i + 1
             while (j < 5) {
-                temp = mat[i].get(j)
-                mat[i].set(j, mat[j].get(i))
-                mat[j].set(i, temp)
+                temp = mat[i][j]
+                mat[i][j] = mat[j][i]
+                mat[j][i] = temp
                 j++
             }
             i++
@@ -435,7 +412,7 @@ class idMat5 {
     }
 
     fun Inverse(): idMat5 { // returns the inverse ( m * m.Inverse() = identity )
-        val invMat: idMat5 = this
+        val invMat = idMat5(this)
         val r = invMat.InverseSelf()
         assert(r)
         return invMat
@@ -444,7 +421,7 @@ class idMat5 {
     fun InverseSelf(): Boolean { // returns false if determinant is zero
         // 280+5+25 = 310 multiplications
         //				1 division
-        val det: Double
+        val det: Float
 
         // 2x2 sub-determinants required to calculate 5x5 determinant
         val det2_34_01 = mat[3].x * mat[4].y - mat[3].y * mat[4].x
@@ -484,11 +461,11 @@ class idMat5 {
 
         // determinant of 5x5 matrix
         det =
-            (mat[0].x * det4_1234_1234 - mat[0].y * det4_1234_0234 + mat[0].z * det4_1234_0134 - mat[0].s * det4_1234_0124 + mat[0].t * det4_1234_0123).toDouble()
-        if (Math.abs(det.toFloat()) < idMat0.MATRIX_INVERSE_EPSILON) {
+            (mat[0].x * det4_1234_1234 - mat[0].y * det4_1234_0234 + mat[0].z * det4_1234_0134 - mat[0].s * det4_1234_0124 + mat[0].t * det4_1234_0123)
+        if (abs(det) < MATRIX_INVERSE_EPSILON) {
             return false
         }
-        val invDet: Double = 1.0f / det
+        val invDet: Float = 1.0f / det
 
         // remaining 2x2 sub-determinants
         val det2_23_01 = mat[2].x * mat[3].y - mat[2].y * mat[3].x
@@ -585,49 +562,46 @@ class idMat5 {
             mat[0].x * det3_234_234 - mat[0].z * det3_234_034 + mat[0].s * det3_234_024 - mat[0].t * det3_234_023
         val det4_0234_1234 =
             mat[0].y * det3_234_234 - mat[0].z * det3_234_134 + mat[0].s * det3_234_124 - mat[0].t * det3_234_123
-        mat[0].x = (det4_1234_1234 * invDet).toFloat()
-        mat[0].y = (-det4_0234_1234 * invDet).toFloat()
-        mat[0].z = (det4_0134_1234 * invDet).toFloat()
-        mat[0].s = (-det4_0124_1234 * invDet).toFloat()
-        mat[0].t = (det4_0123_1234 * invDet).toFloat()
-        mat[1].x = (-det4_1234_0234 * invDet).toFloat()
-        mat[1].y = (det4_0234_0234 * invDet).toFloat()
-        mat[1].z = (-det4_0134_0234 * invDet).toFloat()
-        mat[1].s = (det4_0124_0234 * invDet).toFloat()
-        mat[1].t = (-det4_0123_0234 * invDet).toFloat()
-        mat[2].x = (det4_1234_0134 * invDet).toFloat()
-        mat[2].y = (-det4_0234_0134 * invDet).toFloat()
-        mat[2].z = (det4_0134_0134 * invDet).toFloat()
-        mat[2].s = (-det4_0124_0134 * invDet).toFloat()
-        mat[2].t = (det4_0123_0134 * invDet).toFloat()
-        mat[3].x = (-det4_1234_0124 * invDet).toFloat()
-        mat[3].y = (det4_0234_0124 * invDet).toFloat()
-        mat[3].z = (-det4_0134_0124 * invDet).toFloat()
-        mat[3].s = (det4_0124_0124 * invDet).toFloat()
-        mat[3].t = (-det4_0123_0124 * invDet).toFloat()
-        mat[4].x = (det4_1234_0123 * invDet).toFloat()
-        mat[4].y = (-det4_0234_0123 * invDet).toFloat()
-        mat[4].z = (det4_0134_0123 * invDet).toFloat()
-        mat[4].s = (-det4_0124_0123 * invDet).toFloat()
-        mat[4].t = (det4_0123_0123 * invDet).toFloat()
+        mat[0].x = (det4_1234_1234 * invDet)
+        mat[0].y = (-det4_0234_1234 * invDet)
+        mat[0].z = (det4_0134_1234 * invDet)
+        mat[0].s = (-det4_0124_1234 * invDet)
+        mat[0].t = (det4_0123_1234 * invDet)
+        mat[1].x = (-det4_1234_0234 * invDet)
+        mat[1].y = (det4_0234_0234 * invDet)
+        mat[1].z = (-det4_0134_0234 * invDet)
+        mat[1].s = (det4_0124_0234 * invDet)
+        mat[1].t = (-det4_0123_0234 * invDet)
+        mat[2].x = (det4_1234_0134 * invDet)
+        mat[2].y = (-det4_0234_0134 * invDet)
+        mat[2].z = (det4_0134_0134 * invDet)
+        mat[2].s = (-det4_0124_0134 * invDet)
+        mat[2].t = (det4_0123_0134 * invDet)
+        mat[3].x = (-det4_1234_0124 * invDet)
+        mat[3].y = (det4_0234_0124 * invDet)
+        mat[3].z = (-det4_0134_0124 * invDet)
+        mat[3].s = (det4_0124_0124 * invDet)
+        mat[3].t = (-det4_0123_0124 * invDet)
+        mat[4].x = (det4_1234_0123 * invDet)
+        mat[4].y = (-det4_0234_0123 * invDet)
+        mat[4].z = (det4_0134_0123 * invDet)
+        mat[4].s = (-det4_0124_0123 * invDet)
+        mat[4].t = (det4_0123_0123 * invDet)
         return true
     }
 
     fun InverseFast(): idMat5 { // returns the inverse ( m * m.Inverse() = identity )
-        val invMat: idMat5 = this
+        val invMat = idMat5(this)
         val r = invMat.InverseFastSelf()
         assert(r)
         return invMat
     }
 
     fun InverseFastSelf(): Boolean { // returns false if determinant is zero
-//    #else
-        // 86+30+6 = 122 multiplications
-        //	  2*1  =   2 divisions
-        val r0: Array<idVec3> = idVec3.Companion.generateArray(3)
-        val r1: Array<idVec3> = idVec3.Companion.generateArray(3)
-        val r2: Array<idVec3> = idVec3.Companion.generateArray(3)
-        val r3: Array<idVec3> = idVec3.Companion.generateArray(3)
+        val r0: Array<idVec3> = idVec3.generateArray(3)
+        val r1: Array<idVec3> = idVec3.generateArray(3)
+        val r2: Array<idVec3> = idVec3.generateArray(3)
+        val r3: Array<idVec3> = idVec3.generateArray(3)
         var c0: Float
         val c1: Float
         val c2: Float
@@ -639,7 +613,7 @@ class idMat5 {
         c1 = matt[1 * 5 + 2] * matt[2 * 5 + 0] - matt[1 * 5 + 0] * matt[2 * 5 + 2]
         c2 = matt[1 * 5 + 0] * matt[2 * 5 + 1] - matt[1 * 5 + 1] * matt[2 * 5 + 0]
         det = matt[0 * 5 + 0] * c0 + matt[0 * 5 + 1] * c1 + matt[0 * 5 + 2] * c2
-        if (Math.abs(det) < idMat0.MATRIX_INVERSE_EPSILON) {
+        if (abs(det) < MATRIX_INVERSE_EPSILON) {
             return false
         }
         var invDet: Float = 1.0f / det
@@ -675,7 +649,7 @@ class idMat5 {
 
         // r3.InverseSelf();	// 2x2
         det = r3[0].x * r3[1].y - r3[0].y * r3[1].x
-        if (Math.abs(det) < idMat0.MATRIX_INVERSE_EPSILON) {
+        if (abs(det) < MATRIX_INVERSE_EPSILON) {
             return false
         }
         invDet = 1.0f / det
@@ -694,48 +668,44 @@ class idMat5 {
         r2[1].z = matt[4 * 5 + 0] * r0[0].z + matt[4 * 5 + 1] * r0[1].z + matt[4 * 5 + 2] * r0[2].z
 
         // m2 = r3 * r2;		// 2x3 = 2x2 * 2x3
-        mat[3].set(0, r3[0].x * r2[0].x + r3[0].y * r2[1].x)
-        mat[3].set(1, r3[0].x * r2[0].y + r3[0].y * r2[1].y)
-        mat[3].set(2, r3[0].x * r2[0].z + r3[0].y * r2[1].z)
-        mat[4].set(0, r3[1].x * r2[0].x + r3[1].y * r2[1].x)
-        mat[4].set(1, r3[1].x * r2[0].y + r3[1].y * r2[1].y)
-        mat[4].set(2, r3[1].x * r2[0].z + r3[1].y * r2[1].z)
+        mat[3][0] = r3[0].x * r2[0].x + r3[0].y * r2[1].x
+        mat[3][1] = r3[0].x * r2[0].y + r3[0].y * r2[1].y
+        mat[3][2] = r3[0].x * r2[0].z + r3[0].y * r2[1].z
+        mat[4][0] = r3[1].x * r2[0].x + r3[1].y * r2[1].x
+        mat[4][1] = r3[1].x * r2[0].y + r3[1].y * r2[1].y
+        mat[4][2] = r3[1].x * r2[0].z + r3[1].y * r2[1].z
 
         // m0 = r0 - r1 * m2;	// 3x3 = 3x3 - 3x2 * 2x3
-        mat[0].set(0, r0[0].x - r1[0].x * mat[3].get(0) - r1[0].y * mat[4].get(0))
-        mat[0].set(1, r0[0].y - r1[0].x * mat[3].get(1) - r1[0].y * mat[4].get(1))
-        mat[0].set(2, r0[0].z - r1[0].x * mat[3].get(2) - r1[0].y * mat[4].get(2))
-        mat[1].set(0, r0[1].x - r1[1].x * mat[3].get(0) - r1[1].y * mat[4].get(0))
-        mat[1].set(1, r0[1].y - r1[1].x * mat[3].get(1) - r1[1].y * mat[4].get(1))
-        mat[1].set(2, r0[1].z - r1[1].x * mat[3].get(2) - r1[1].y * mat[4].get(2))
-        mat[2].set(0, r0[2].x - r1[2].x * mat[3].get(0) - r1[2].y * mat[4].get(0))
-        mat[2].set(1, r0[2].y - r1[2].x * mat[3].get(1) - r1[2].y * mat[4].get(1))
-        mat[2].set(2, r0[2].z - r1[2].x * mat[3].get(2) - r1[2].y * mat[4].get(2))
+        mat[0][0] = r0[0].x - r1[0].x * mat[3][0] - r1[0].y * mat[4][0]
+        mat[0][1] = r0[0].y - r1[0].x * mat[3][1] - r1[0].y * mat[4][1]
+        mat[0][2] = r0[0].z - r1[0].x * mat[3][2] - r1[0].y * mat[4][2]
+        mat[1][0] = r0[1].x - r1[1].x * mat[3][0] - r1[1].y * mat[4][0]
+        mat[1][1] = r0[1].y - r1[1].x * mat[3][1] - r1[1].y * mat[4][1]
+        mat[1][2] = r0[1].z - r1[1].x * mat[3][2] - r1[1].y * mat[4][2]
+        mat[2][0] = r0[2].x - r1[2].x * mat[3][0] - r1[2].y * mat[4][0]
+        mat[2][1] = r0[2].y - r1[2].x * mat[3][1] - r1[2].y * mat[4][1]
+        mat[2][2] = r0[2].z - r1[2].x * mat[3][2] - r1[2].y * mat[4][2]
 
         // m1 = r1 * r3;		// 3x2 = 3x2 * 2x2
-        mat[0].set(3, r1[0].x * r3[0].x + r1[0].y * r3[1].x)
-        mat[0].set(4, r1[0].x * r3[0].y + r1[0].y * r3[1].y)
-        mat[1].set(3, r1[1].x * r3[0].x + r1[1].y * r3[1].x)
-        mat[1].set(4, r1[1].x * r3[0].y + r1[1].y * r3[1].y)
-        mat[2].set(3, r1[2].x * r3[0].x + r1[2].y * r3[1].x)
-        mat[2].set(4, r1[2].x * r3[0].y + r1[2].y * r3[1].y)
+        mat[0][3] = r1[0].x * r3[0].x + r1[0].y * r3[1].x
+        mat[0][4] = r1[0].x * r3[0].y + r1[0].y * r3[1].y
+        mat[1][3] = r1[1].x * r3[0].x + r1[1].y * r3[1].x
+        mat[1][4] = r1[1].x * r3[0].y + r1[1].y * r3[1].y
+        mat[2][3] = r1[2].x * r3[0].x + r1[2].y * r3[1].x
+        mat[2][4] = r1[2].x * r3[0].y + r1[2].y * r3[1].y
 
         // m3 = -r3;			// 2x2 = - 2x2
-        mat[3].set(3, -r3[0].x)
-        mat[3].set(4, -r3[0].y)
-        mat[4].set(3, -r3[1].x)
-        mat[4].set(4, -r3[1].y)
+        mat[3][3] = -r3[0].x
+        mat[3][4] = -r3[0].y
+        mat[4][3] = -r3[1].x
+        mat[4][4] = -r3[1].y
         return true
-        //#endif
     }
 
     fun GetDimension(): Int {
         return 25
     }
 
-    //public	const float *	ToFloatPtr( void ) const;
-    //public	float *			ToFloatPtr( void );
-    //public	const char *	ToString( int precision = 2 ) const;
     private fun set(mat5: idMat5) {
         mat[0].set(mat5.mat[0])
         mat[1].set(mat5.mat[1])
@@ -749,7 +719,7 @@ class idMat5 {
         val temp = FloatArray(size * size)
         for (x in 0 until size) {
             for (y in 0 until size) {
-                temp[x * size + y] = mat[x].get(y)
+                temp[x * size + y] = mat[x][y]
             }
         }
         return temp
@@ -757,18 +727,18 @@ class idMat5 {
 
     companion object {
         private val mat5_identity: idMat5 = idMat5(
-            idVec5(1f, 0f, 0f, 0f, 0f),
-            idVec5(0f, 1f, 0f, 0f, 0f),
-            idVec5(0f, 0f, 1f, 0f, 0f),
-            idVec5(0f, 0f, 0f, 1f, 0f),
-            idVec5(0f, 0f, 0f, 0f, 1f)
+            idVec5(1.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+            idVec5(0.0f, 1.0f, 0.0f, 0.0f, 0.0f),
+            idVec5(0.0f, 0.0f, 1.0f, 0.0f, 0.0f),
+            idVec5(0.0f, 0.0f, 0.0f, 1.0f, 0.0f),
+            idVec5(0.0f, 0.0f, 0.0f, 0.0f, 1.0f)
         )
         private val mat5_zero: idMat5 = idMat5(
-            idVec5(0f, 0f, 0f, 0f, 0f),
-            idVec5(0f, 0f, 0f, 0f, 0f),
-            idVec5(0f, 0f, 0f, 0f, 0f),
-            idVec5(0f, 0f, 0f, 0f, 0f),
-            idVec5(0f, 0f, 0f, 0f, 0f)
+            idVec5(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+            idVec5(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+            idVec5(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+            idVec5(0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+            idVec5(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
         )
 
         fun getMat5_zero(): idMat5 {
@@ -779,17 +749,14 @@ class idMat5 {
             return idMat5(mat5_identity)
         }
 
-        //public	friend idMat5	operator*( const float a, const idMat5 &mat );
         fun times(a: Float, mat: idMat5): idMat5 {
             return mat * a
         }
 
-        //public	idVec5			operator*( const idVec5 &vec ) const;
         fun times(vec: idVec5, mat: idMat5): idVec5 {
             return mat * vec
         }
 
-        //public	idMat5			operator*( const idMat5 &a ) const;
         fun timesAssign(vec: idVec5, mat: idMat5): idVec5 {
             return vec.set(mat * vec)
         }

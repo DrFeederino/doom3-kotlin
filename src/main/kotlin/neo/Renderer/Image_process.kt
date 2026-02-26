@@ -4,9 +4,6 @@ import neo.framework.Common.Companion.common
 import org.lwjgl.BufferUtils
 import java.nio.ByteBuffer
 
-/**
- *
- */
 object Image_process {
     private val MAX_DIMENSION: Int = 4096
 
@@ -34,8 +31,8 @@ object Image_process {
         var frac: Int
         val fracstep: Int
         /*unsigned*/
-        val p1: IntArray = IntArray(MAX_DIMENSION)
-        val p2: IntArray = IntArray(MAX_DIMENSION)
+        val p1 = IntArray(MAX_DIMENSION)
+        val p2 = IntArray(MAX_DIMENSION)
         var pix1: ByteBuffer
         var pix2: ByteBuffer
         var pix3: ByteBuffer
@@ -279,7 +276,7 @@ object Image_process {
         val out: ByteBuffer
         var out_p: Int
         val row: Int
-        val border: ByteArray = ByteArray(4)
+        val border = ByteArray(4)
         var newWidth: Int
         var newHeight: Int
         if ((width < 1) || (height < 1) || (width + height == 2)) {
@@ -385,7 +382,7 @@ object Image_process {
     }
 
     fun addUnsignedBytes(vararg bytes: Byte): Int {
-        var result: Int = 0
+        var result = 0
         for (b: Byte in bytes) {
             result += b.toInt() and 0xFF
         }
@@ -417,7 +414,7 @@ object Image_process {
         var out_p: Int
         val row: Int
         val plane: Int
-        val border: ByteArray = ByteArray(4)
+        val border = ByteArray(4)
         val newWidth: Int
         val newHeight: Int
         val newDepth: Int
@@ -525,28 +522,27 @@ object Image_process {
      ==================
      */
     fun R_BlendOverTexture(data: ByteBuffer?, pixelCount: Int, blend: IntArray /*[4]*/) {
-        var i: Int
         val inverseAlpha: Int
-        val premult: IntArray = IntArray(3)
+        val premult = IntArray(3)
         inverseAlpha = 255 - blend[3]
+
         premult[0] = blend[0] * blend[3]
         premult[1] = blend[1] * blend[3]
         premult[2] = blend[2] * blend[3]
-        i = 0
-        while (i < pixelCount) {
-            data!!.put(
-                i * 4 + 0,
-                ((data.get(i * 4 + 0).toInt() and (0xFF * inverseAlpha + premult[0])) shr 9).toByte()
-            ) //TODO:signed byte arithmetic(overflow)
-            data.put(
-                i * 4 + 1,
-                ((data.get(i * 4 + 1).toInt() and (0xFF * inverseAlpha + premult[1])) shr 9).toByte()
+
+        for (i in 0 until pixelCount step 4) {
+            data?.put(
+                i + 0,
+                ((data.get(i + 0) * inverseAlpha + premult[0]) shr 9).toByte()
             )
-            data.put(
-                i * 4 + 2,
-                ((data.get(i * 4 + 2).toInt() and (0xFF * inverseAlpha + premult[2])) shr 9).toByte()
+            data?.put(
+                i + 1,
+                ((data.get(i + 0) * inverseAlpha + premult[1]) shr 9).toByte()
             )
-            i++
+            data?.put(
+                i + 2,
+                ((data.get(i + 0) * inverseAlpha + premult[2]) shr 9).toByte()
+            )
         }
     }
 
@@ -601,16 +597,14 @@ object Image_process {
         while (i < width) {
             j = 0
             while (j < width) {
-                temp.putInt(i * width + j, data!!.getInt(j * width + i))
+                temp.putInt((i * width + j), data!!.getInt((j * width + i)))
                 j++
             }
             i++
         }
-
 //	memcpy( data, temp, width * width * 4 );
 //        System.arraycopy(temp, 0, data, 0, width * width * 4);
         data!!.put(temp)
-
 //        R_StaticFree(temp);
     }
 }

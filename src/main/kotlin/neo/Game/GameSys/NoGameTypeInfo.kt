@@ -1,8 +1,5 @@
 package neo.Game.GameSys
 
-/**
- *
- */
 object NoGameTypeInfo {
     var classTypeInfo: Array<classTypeInfo_t> = arrayOf(
         classTypeInfo_t(null, null, 0, null)
@@ -17,7 +14,7 @@ object NoGameTypeInfo {
     /*
      ===================================================================================
 
-     This file has been generated with the Type Info Generator v1.0 (c) 2004 id Software
+     This file has been generated with the Type Info Generator v1.0f (c) 2004 id Software
 
      ===================================================================================
      */

@@ -1,9 +1,8 @@
 package neo.Game
 
-import neo.CM.CollisionModel_local
 import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.*
-import neo.Game.GameSys.Class.Companion.EV_Remove
+import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -24,6 +23,7 @@ import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld
 import neo.Sound.snd_shader.idSoundShader
 import neo.TempDump
+import neo.cm.collisionModelManager
 import neo.framework.*
 import neo.framework.DeclManager.declType_t
 import neo.idlib.Dict_h.idDict
@@ -33,26 +33,20 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Angles.idAngles
+import neo.idlib.math.*
 import neo.idlib.math.Interpolate.idInterpolate
-import neo.idlib.math.Math_h
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
 import neo.ui.UserInterface
 import kotlin.experimental.and
 
-/**
- *
- */
+val EV_ClearFlash: idEventDef = idEventDef("<ClearFlash>", "f")
+val EV_Flash: idEventDef = idEventDef("<Flash>", "fd")
+val EV_GatherEntities: idEventDef = idEventDef("<GatherEntities>")
+val EV_RestoreInfluence: idEventDef = idEventDef("<RestoreInfluece>")
+val EV_RestoreVolume: idEventDef = idEventDef("<RestoreVolume>")
+val EV_TipOff: idEventDef = idEventDef("<TipOff>")
+
+
 object Target {
-    val EV_ClearFlash: idEventDef = idEventDef("<ClearFlash>", "f")
-    val EV_Flash: idEventDef = idEventDef("<Flash>", "fd")
-    val EV_GatherEntities: idEventDef = idEventDef("<GatherEntities>")
-    val EV_GetPlayerPos: idEventDef = idEventDef("<getplayerpos>")
-    val EV_RestoreInfluence: idEventDef = idEventDef("<RestoreInfluece>")
-    val EV_RestoreVolume: idEventDef = idEventDef("<RestoreVolume>")
-    val EV_TipOff: idEventDef = idEventDef("<TipOff>")
 
     /*
      ===============================================================================
@@ -62,7 +56,6 @@ object Target {
      ===============================================================================
      */
     open class idTarget : idEntity() {
-        //	CLASS_PROTOTYPE( idTarget );
         override fun CreateInstance(): idClass {
             throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
         }
@@ -77,7 +70,6 @@ object Target {
      */
     class idTarget_Remove : idTarget() {
         companion object {
-            // CLASS_PROTOTYPE( idTarget_Remove );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
                 return eventCallbacks
@@ -85,7 +77,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_Remove> { obj: idTarget_Remove, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -128,7 +120,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_Show> { obj: idTarget_Show, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -171,7 +163,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_Damage> { obj: idTarget_Damage, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -186,7 +178,7 @@ object Target {
             i = 0
             while (i < targets.Num()) {
                 ent = targets[i].GetEntity()
-                ent?.Damage(this, this, Vector.getVec3Origin(), damage, 1.0f, Model.INVALID_JOINT)
+                ent?.Damage(this, this, getVec3Origin(), damage, 1.0f, Model.INVALID_JOINT)
                 i++
             }
         }
@@ -213,7 +205,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_SessionCommand> { obj: idTarget_SessionCommand, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -247,7 +239,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_EndLevel> { obj: idTarget_EndLevel, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -256,18 +248,10 @@ object Target {
 
         private fun Event_Activate(activator: idEventArg<idEntity>) {
             val nextMap = arrayOfNulls<String>(1)
-            if (BuildDefines.ID_DEMO_BUILD) {
-                if (spawnArgs.GetBool("endOfGame")) {
-                    CVarSystem.cvarSystem.SetCVarBool("g_nightmare", true)
-                    Game_local.gameLocal.sessionCommand.set("endofDemo")
-                    return
-                }
-            } else {
-                if (spawnArgs.GetBool("endOfGame")) {
-                    CVarSystem.cvarSystem.SetCVarBool("g_nightmare", true)
-                    Game_local.gameLocal.sessionCommand.set("disconnect")
-                    return
-                }
+            if (spawnArgs.GetBool("endOfGame")) {
+                CVarSystem.cvarSystem.SetCVarBool("g_nightmare", true)
+                Game_local.gameLocal.sessionCommand.set("disconnect")
+                return
             }
             if (!spawnArgs.GetString("nextMap", "", nextMap)) {
                 Game_local.gameLocal.Printf("idTarget_SessionCommand::Event_Activate: no nextMap key\n")
@@ -303,7 +287,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_WaitForButton> { obj: idTarget_WaitForButton, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -356,7 +340,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_SetGlobalShaderTime> { obj: idTarget_SetGlobalShaderTime, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity?>)
                     }
@@ -365,7 +349,7 @@ object Target {
 
         private fun Event_Activate(activator: idEventArg<idEntity?>?) {
             val parm = spawnArgs.GetInt("globalParm")
-            val time = -Math_h.MS2SEC(Game_local.gameLocal.time.toFloat())
+            val time = -MS2SEC(Game_local.gameLocal.time.toFloat())
             if (parm >= 0 && parm < RenderWorld.MAX_GLOBAL_SHADER_PARMS) {
                 Game_local.gameLocal.globalShaderParms[parm] = time
             }
@@ -393,7 +377,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_SetShaderParm> { obj: idTarget_SetShaderParm, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -427,7 +411,7 @@ object Target {
                         ent?.SetShaderParm(parmnum, value._val)
                         i++
                     }
-                    if (spawnArgs.GetBool("toggle") && (value._val == 0f || value._val == 1f)) {
+                    if (spawnArgs.GetBool("toggle") && (value._val == 0.0f || value._val == 1.0f)) {
                         var `val` = value._val.toInt()
                         `val` = `val` xor 1
                         value._val = `val`.toFloat()
@@ -460,7 +444,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_SetShaderTime> { obj: idTarget_SetShaderTime, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -471,7 +455,7 @@ object Target {
             var i: Int
             var ent: idEntity?
             val time: Float
-            time = -Math_h.MS2SEC(Game_local.gameLocal.time.toFloat())
+            time = -MS2SEC(Game_local.gameLocal.time.toFloat())
             i = 0
             while (i < targets.Num()) {
                 ent = targets[i].GetEntity()
@@ -507,7 +491,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_FadeEntity> { obj: idTarget_FadeEntity, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -532,16 +516,16 @@ object Target {
         override fun Think() {
             var i: Int
             var ent: idEntity?
-            var color: idVec4 = idVec4()
+            val color: idVec4 = idVec4()
             val fadeTo = idVec4()
             val frac: Float
             if (thinkFlags and Entity.TH_THINK != 0) {
                 GetColor(fadeTo)
                 if (Game_local.gameLocal.time >= fadeEnd) {
-                    color = fadeTo
+                    color.set(fadeTo)
                     BecomeInactive(Entity.TH_THINK)
                 } else {
-                    frac = (Game_local.gameLocal.time - fadeStart).toFloat() / (fadeEnd - fadeStart).toFloat()
+                    frac = ((Game_local.gameLocal.time - fadeStart) / (fadeEnd - fadeStart)).toFloat()
                     color.Lerp(fadeFrom, fadeTo, frac)
                 }
 
@@ -579,7 +563,7 @@ object Target {
                 i++
             }
             fadeStart = Game_local.gameLocal.time
-            fadeEnd = (Game_local.gameLocal.time + Math_h.SEC2MS(spawnArgs.GetFloat("fadetime"))).toInt()
+            fadeEnd = (Game_local.gameLocal.time + SEC2MS(spawnArgs.GetFloat("fadetime")))
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
@@ -612,7 +596,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_LightFadeIn> { obj: idTarget_LightFadeIn, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -668,7 +652,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_LightFadeOut> { obj: idTarget_LightFadeOut, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -725,7 +709,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_Give> { obj: idTarget_Give, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity?>)
                     }
@@ -735,7 +719,7 @@ object Target {
         override fun Spawn() {
             super.Spawn()
             if (spawnArgs.GetBool("onSpawn")) {
-                PostEventMS(Entity.EV_Activate, 50)
+                PostEventMS(EV_Activate, 50)
             }
         }
 
@@ -785,7 +769,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_GiveEmail> { obj: idTarget_GiveEmail, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -824,7 +808,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_SetModel> { obj: idTarget_SetModel, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -839,7 +823,7 @@ object Target {
                 // precache the render model
                 ModelManager.renderModelManager.FindModel(model)
                 // precache .cm files only
-                CollisionModel_local.collisionModelManager.LoadModel(model, true)
+                collisionModelManager.LoadModel(model, true)
             }
         }
 
@@ -872,7 +856,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_SetInfluence> { obj: idTarget_SetInfluence, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -935,7 +919,7 @@ object Target {
             savefile.WriteFloat(delay)
             savefile.WriteString(flashInSound)
             savefile.WriteString(flashOutSound)
-            savefile.WriteObject(switchToCamera!!)
+            savefile.WriteObject(switchToCamera)
             savefile.WriteFloat(fovSetting.GetStartTime())
             savefile.WriteFloat(fovSetting.GetDuration())
             savefile.WriteFloat(fovSetting.GetStartValue())
@@ -1034,36 +1018,36 @@ object Target {
             }
             val fadeTime = spawnArgs.GetFloat("fadeWorldSounds")
             if (delay > 0.0f) {
-                PostEventSec(Entity.EV_Activate, delay, activator.value)
+                PostEventSec(EV_Activate, delay, activator.value)
                 delay = 0.0f
                 // start any sound fading now
-                if (fadeTime != 0f) {
+                if (fadeTime != 0.0f) {
                     Game_local.gameSoundWorld!!.FadeSoundClasses(0, -40.0f, fadeTime)
                     soundFaded = true
                 }
                 return
-            } else if (fadeTime != 0f && !soundFaded) {
+            } else if (fadeTime != 0.0f && !soundFaded) {
                 Game_local.gameSoundWorld!!.FadeSoundClasses(0, -40.0f, fadeTime)
                 soundFaded = true
             }
             if (spawnArgs.GetBool("triggerTargets")) {
                 ActivateTargets(activator.value)
             }
-            if (flashIn != 0f) {
+            if (flashIn != 0.0f) {
                 PostEventSec(EV_Flash, 0.0f, flashIn, 0)
             }
             parm = spawnArgs.GetString("snd_influence")
             if (parm.isNotEmpty()) {
-                PostEventSec(Entity.EV_StartSoundShader, flashIn, parm, gameSoundChannel_t.SND_CHANNEL_ANY)
+                PostEventSec(EV_StartSoundShader, flashIn, parm, gameSoundChannel_t.SND_CHANNEL_ANY)
             }
             if (switchToCamera != null) {
-                switchToCamera!!.PostEventSec(Entity.EV_Activate, flashIn + 0.05f, this)
+                switchToCamera!!.PostEventSec(EV_Activate, flashIn + 0.05f, this)
             }
             val fov = spawnArgs.GetInt("fov").toFloat()
-            if (fov != 0f) {
+            if (fov != 0.0f) {
                 fovSetting.Init(
                     Game_local.gameLocal.time.toFloat(),
-                    Math_h.SEC2MS(spawnArgs.GetFloat("fovTime")),
+                    SEC2MS(spawnArgs.GetFloat("fovTime")).toFloat(),
                     player.DefaultFov(),
                     fov
                 )
@@ -1079,7 +1063,7 @@ object Target {
                 generic = ent as idStaticEntity
                 color.set(generic.spawnArgs.GetVector("color_demonic"))
                 colorTo.set(color.x, color.y, color.z, 1.0f)
-                generic.Fade(colorTo, spawnArgs.GetFloat("fade_time", "0.25"))
+                generic.Fade(colorTo, spawnArgs.GetFloat("fade_time", "0.25f"))
                 i++
             }
             i = 0
@@ -1097,7 +1081,7 @@ object Target {
                 color.set(light.spawnArgs.GetVector("_color"))
                 color.set(light.spawnArgs.GetVector("color_demonic", color.ToString()))
                 colorTo.set(color.x, color.y, color.z, 1.0f)
-                light.Fade(colorTo, spawnArgs.GetFloat("fade_time", "0.25"))
+                light.Fade(colorTo, spawnArgs.GetFloat("fade_time", "0.25f"))
                 i++
             }
             i = 0
@@ -1153,7 +1137,7 @@ object Target {
             player.SetInfluenceLevel(spawnArgs.GetInt("influenceLevel"))
             val snapAngle = spawnArgs.GetInt("snapAngle")
             if (snapAngle != 0) {
-                val ang = idAngles(0f, snapAngle.toFloat(), 0f)
+                val ang = idAngles(0.0f, snapAngle.toFloat(), 0.0f)
                 player.SetViewAngles(ang)
                 player.SetAngles(ang)
             }
@@ -1167,7 +1151,7 @@ object Target {
                 Game_local.gameLocal.SetGlobalMaterial(DeclManager.declManager.FindMaterial(parm))
             }
             if (!restoreOnTrigger) {
-                PostEventMS(EV_RestoreInfluence, Math_h.SEC2MS(spawnArgs.GetFloat("time")).toInt())
+                PostEventMS(EV_RestoreInfluence, SEC2MS(spawnArgs.GetFloat("time")))
             }
         }
 
@@ -1181,11 +1165,11 @@ object Target {
             var update: Boolean
             val color = idVec3()
             val colorTo = idVec4()
-            if (flashOut != 0f) {
+            if (flashOut != 0.0f) {
                 PostEventSec(EV_Flash, 0.0f, flashOut, 1)
             }
             if (switchToCamera != null) {
-                switchToCamera!!.PostEventMS(Entity.EV_Activate, 0.0f, this)
+                switchToCamera!!.PostEventMS(EV_Activate, 0.0f, this)
             }
             i = 0
             while (i < genericList.Num()) {
@@ -1196,7 +1180,7 @@ object Target {
                 }
                 generic = ent as idStaticEntity
                 colorTo.set(1.0f, 1.0f, 1.0f, 1.0f)
-                generic.Fade(colorTo, spawnArgs.GetFloat("fade_time", "0.25"))
+                generic.Fade(colorTo, spawnArgs.GetFloat("fade_time", "0.25f"))
                 i++
             }
             i = 0
@@ -1213,7 +1197,7 @@ object Target {
                 }
                 color.set(light.spawnArgs.GetVector("_color"))
                 colorTo.set(color.x, color.y, color.z, 1.0f)
-                light.Fade(colorTo, spawnArgs.GetFloat("fade_time", "0.25"))
+                light.Fade(colorTo, spawnArgs.GetFloat("fade_time", "0.25f"))
                 i++
             }
             i = 0
@@ -1260,10 +1244,10 @@ object Target {
             val player = Game_local.gameLocal.GetLocalPlayer()!!
             player.SetInfluenceLevel(0)
             player.SetInfluenceView(null, null, 0.0f, null)
-            player.SetInfluenceFov(0f)
+            player.SetInfluenceFov(0.0f)
             Game_local.gameLocal.SetGlobalMaterial(null)
             val fadeTime = spawnArgs.GetFloat("fadeWorldSounds")
-            if (fadeTime != 0f) {
+            if (fadeTime != 0.0f) {
                 Game_local.gameSoundWorld!!.FadeSoundClasses(0, 0.0f, fadeTime / 2.0f)
             }
         }
@@ -1273,7 +1257,7 @@ object Target {
             val listedEntities: Int
             val entityList = arrayOfNulls<idEntity>(Game_local.MAX_GENTITIES)
 
-            val demonicOnly = spawnArgs.GetBool("effect_demonic")
+            spawnArgs.GetBool("effect_demonic")
             var lights = spawnArgs.GetBool("effect_lights")
             var sounds = spawnArgs.GetBool("effect_sounds")
             var guis = spawnArgs.GetBool("effect_guis")
@@ -1346,7 +1330,7 @@ object Target {
             val flash: Float = _flash.value
             val out: Int = _out.value
             val player = Game_local.gameLocal.GetLocalPlayer()!!
-            player.playerView.Fade(idVec4(1f, 1f, 1f, 1f), flash.toInt())
+            player.playerView.Fade(idVec4(1.0f, 1.0f, 1.0f, 1.0f), flash.toInt())
             val shader: idSoundShader?
             if (0 == out && flashInSound.Length() != 0) {
                 shader = DeclManager.declManager.FindSound(flashInSound)
@@ -1361,7 +1345,7 @@ object Target {
 
         private fun Event_ClearFlash(flash: idEventArg<Float>) {
             val player = Game_local.gameLocal.GetLocalPlayer()!!
-            player.playerView.Fade(Vector.getVec4_zero(), flash.value.toInt())
+            player.playerView.Fade(getVec4_zero(), flash.value.toInt())
         }
 
         override fun Think() {
@@ -1370,7 +1354,7 @@ object Target {
                 player.SetInfluenceFov(fovSetting.GetCurrentValue(Game_local.gameLocal.time.toFloat()))
                 if (fovSetting.IsDone(Game_local.gameLocal.time.toFloat())) {
                     if (!spawnArgs.GetBool("leaveFOV")) {
-                        player.SetInfluenceFov(0f)
+                        player.SetInfluenceFov(0.0f)
                     }
                     BecomeInactive(Entity.TH_THINK)
                 }
@@ -1416,7 +1400,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_SetKeyVal> { obj: idTarget_SetKeyVal, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -1485,7 +1469,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_SetFov> { obj: idTarget_SetFov, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -1531,7 +1515,7 @@ object Target {
             cinematic = true
             val player = Game_local.gameLocal.GetLocalPlayer()
             fovSetting.Init(
-                Game_local.gameLocal.time.toFloat(), Math_h.SEC2MS(spawnArgs.GetFloat("time")), (player?.DefaultFov()
+                Game_local.gameLocal.time.toFloat(), SEC2MS(spawnArgs.GetFloat("time")).toFloat(), (player?.DefaultFov()
                     ?: SysCvar.g_fov.GetFloat()).toInt(), spawnArgs.GetFloat("fov").toInt()
             )
             BecomeActive(Entity.TH_THINK)
@@ -1559,7 +1543,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_SetPrimaryObjective> { obj: idTarget_SetPrimaryObjective, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity?>)
                     }
@@ -1598,7 +1582,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_LockDoor> { obj: idTarget_LockDoor, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -1646,7 +1630,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_CallObjectFunction> { obj: idTarget_CallObjectFunction, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -1720,7 +1704,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_EnableLevelWeapons> { obj: idTarget_EnableLevelWeapons, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -1735,7 +1719,7 @@ object Target {
                 i = 0
                 while (i < Game_local.gameLocal.numClients) {
                     if (Game_local.gameLocal.entities[i] != null) {
-                        Game_local.gameLocal.entities[i]!!.ProcessEvent(Player.EV_Player_DisableWeapon)
+                        Game_local.gameLocal.entities[i]!!.ProcessEvent(EV_Player_DisableWeapon)
                     }
                     i++
                 }
@@ -1744,9 +1728,9 @@ object Target {
                 i = 0
                 while (i < Game_local.gameLocal.numClients) {
                     if (Game_local.gameLocal.entities[i] != null) {
-                        Game_local.gameLocal.entities[i]!!.ProcessEvent(Player.EV_Player_EnableWeapon)
+                        Game_local.gameLocal.entities[i]!!.ProcessEvent(EV_Player_EnableWeapon)
                         if (weap.isNotEmpty()) {
-                            Game_local.gameLocal.entities[i]!!.PostEventSec(Player.EV_Player_SelectWeapon, 0.5f, weap)
+                            Game_local.gameLocal.entities[i]!!.PostEventSec(EV_Player_SelectWeapon, 0.5f, weap)
                         }
                     }
                     i++
@@ -1776,7 +1760,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_Tip> { obj: idTarget_Tip, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -1800,7 +1784,7 @@ object Target {
             val player = Game_local.gameLocal.GetLocalPlayer()
             if (player != null) {
                 if (player.IsTipVisible()) {
-                    PostEventSec(Entity.EV_Activate, 5.1f, activator.value)
+                    PostEventSec(EV_Activate, 5.1f, activator.value)
                     return
                 }
                 player.ShowTip(spawnArgs.GetString("text_title"), spawnArgs.GetString("text_tip"), false)
@@ -1850,7 +1834,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_GiveSecurity> { obj: idTarget_GiveSecurity, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity?>)
                     }
@@ -1884,7 +1868,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_RemoveWeapons> { obj: idTarget_RemoveWeapons, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity?>)
                     }
@@ -1927,7 +1911,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_LevelTrigger> { obj: idTarget_LevelTrigger, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity?>)
                     }
@@ -1965,7 +1949,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_EnableStamina> { obj: idTarget_EnableStamina, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -2007,7 +1991,7 @@ object Target {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTarget_FadeSoundClass> { obj: idTarget_FadeSoundClass, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -2022,13 +2006,13 @@ object Target {
             val fadeDuration = spawnArgs.GetFloat("fadeDuration")
             val fadeClass = spawnArgs.GetInt("fadeClass")
             // start any sound fading now
-            if (fadeTime != 0f) {
+            if (fadeTime != 0.0f) {
                 Game_local.gameSoundWorld!!.FadeSoundClasses(
                     fadeClass,
                     if (spawnArgs.GetBool("fadeIn")) fadeDB else  /*0.0f */ -fadeDB,
                     fadeTime
                 )
-                if (fadeDuration != 0f) {
+                if (fadeDuration != 0.0f) {
                     PostEventSec(EV_RestoreVolume, fadeDuration)
                 }
             }
@@ -2037,7 +2021,7 @@ object Target {
         private fun Event_RestoreVolume() {
             val fadeTime = spawnArgs.GetFloat("fadeTime")
             val fadeDB = spawnArgs.GetFloat("fadeDB")
-            val fadeClass = spawnArgs.GetInt("fadeClass")
+            spawnArgs.GetInt("fadeClass")
             // restore volume
             Game_local.gameSoundWorld!!.FadeSoundClasses(0, fadeDB, fadeTime)
         }

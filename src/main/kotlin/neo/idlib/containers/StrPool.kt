@@ -1,12 +1,8 @@
 package neo.idlib.containers
 
 import neo.idlib.Text.Str.idStr
-import neo.idlib.containers.HashIndex.idHashIndex
 import neo.idlib.containers.List.idList
 
-/**
- *
- */
 class StrPool {
     /*
      ===============================================================================

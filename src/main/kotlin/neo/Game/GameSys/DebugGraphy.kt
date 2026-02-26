@@ -4,12 +4,9 @@ import neo.Game.Game_local
 import neo.Game.Game_local.Companion.gameLocal
 import neo.Game.Game_local.idGameLocal
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 
-/**
- *
- */
 class DebugGraphy {
     class idDebugGraph     //
     //

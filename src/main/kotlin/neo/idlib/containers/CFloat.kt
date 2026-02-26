@@ -8,6 +8,4 @@ class CFloat {
     constructor(out: Float) {
         this._val = out
     }
-
-
 }

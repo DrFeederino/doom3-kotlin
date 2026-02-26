@@ -7,7 +7,6 @@ import neo.Renderer.Image.textureDepth_t
 import neo.Renderer.Image_files.R_WriteTGA
 import neo.Renderer.Material.textureFilter_t
 import neo.Renderer.Material.textureRepeat_t
-import neo.TempDump.NOT
 import neo.TempDump.flatten
 import neo.TempDump.wrapToNativeBuffer
 import neo.framework.CmdSystem.cmdFunction_t
@@ -17,8 +16,8 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.containers.List.cmp_t
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Math_h.idMath.InvSqrt
-import neo.idlib.math.Math_h.idMath.Sqrt
+import neo.idlib.math.idMath.InvSqrt
+import neo.idlib.math.idMath.Sqrt
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.EXTTextureCompressionS3TC
 import org.lwjgl.opengl.GL11
@@ -28,13 +27,10 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.math.pow
 
-/**
- *
- */
 object Image_init {
     // the size determines how far away from the edge the blocks start fading
     val BORDER_CLAMP_SIZE: Int = 32
-    val DEEP_RANGE: Float = -30f
+    val DEEP_RANGE: Float = -30.0f
 
     /*
      ================
@@ -74,7 +70,7 @@ object Image_init {
      Height values below zero are inside the fog volume
      ================
      */
-    val RAMP_RANGE: Float = 8f
+    val RAMP_RANGE: Float = 8.0f
     val imageFilter: Array<String?> = arrayOf(
         "GL_LINEAR_MIPMAP_NEAREST",
         "GL_LINEAR_MIPMAP_LINEAR",
@@ -157,9 +153,9 @@ object Image_init {
     }
 
     fun FogFraction(viewHeight: Float, targetHeight: Float): Float {
-        val total: Float = abs((targetHeight - viewHeight).toDouble()).toFloat()
+        val total: Float = abs((targetHeight - viewHeight))
 
-//	return targetHeight >= 0 ? 0 : 1.0;
+//	return targetHeight >= 0 ? 0 : 1.0f;
         // only ranges that cross the ramp range are special
         if (targetHeight > 0 && viewHeight > 0) {
             return 0.0f
@@ -173,7 +169,7 @@ object Image_init {
         } else if (viewHeight > 0) {
             above = viewHeight
         } else {
-            above = 0f
+            above = 0.0f
         }
         var rampTop: Float
         var rampBottom: Float
@@ -185,7 +181,7 @@ object Image_init {
             rampBottom = viewHeight
         }
         if (rampTop > 0) {
-            rampTop = 0f
+            rampTop = 0.0f
         }
         if (rampBottom < -RAMP_RANGE) {
             rampBottom = -RAMP_RANGE
@@ -200,7 +196,7 @@ object Image_init {
         // after it gets moderately deep, always use full value
         val deepest: Float = if (viewHeight < targetHeight) viewHeight else targetHeight
         val deepFrac: Float = deepest / DEEP_RANGE
-        if (deepFrac >= 1.0) {
+        if (deepFrac >= 1.0f) {
             return 1.0f
         }
         frac = frac * (1.0f - deepFrac) + deepFrac
@@ -228,7 +224,7 @@ object Image_init {
         var maxHeight: Int
     )
 
-    internal class intList() : idList<Int?>()
+    internal class intList : idList<Int?>()
 
     /*
      ===============
@@ -236,25 +232,25 @@ object Image_init {
      ===============
      */
     internal class R_ListImages_f private constructor() : cmdFunction_t() {
-        public override fun run(args: CmdArgs.idCmdArgs?) {
+        override fun run(args: CmdArgs.idCmdArgs?) {
             var i: Int
             var j: Int
             var partialSize: Int
             var image: idImage?
             var totalSize: Int
-            var count: Int = 0
-            var matchTag: Int = 0
-            var uncompressedOnly: Boolean = false
-            var unloaded: Boolean = false
-            var partial: Boolean = false
-            var cached: Boolean = false
-            var uncached: Boolean = false
-            var failed: Boolean = false
-            var touched: Boolean = false
-            var sorted: Boolean = false
-            var duplicated: Boolean = false
-            var byClassification: Boolean = false
-            var overSized: Boolean = false
+            var count = 0
+            var matchTag = 0
+            var uncompressedOnly = false
+            var unloaded = false
+            var partial = false
+            var cached = false
+            var uncached = false
+            var failed = false
+            var touched = false
+            var sorted = false
+            var duplicated = false
+            var byClassification = false
+            var overSized = false
             if (args!!.Argc() == 1) {
             } else if (args.Argc() == 2) {
                 if (Icmp(args.Argv(1), "uncompressed") == 0) {
@@ -292,7 +288,7 @@ object Image_init {
                 common.Printf("usage: listImages [ sorted | partial | unloaded | cached | uncached | tagged | duplicated | touched | classify | showOverSized ]\n")
                 return
             }
-            val header: String = "       -w-- -h-- filt -fmt-- wrap  size --name-------\n"
+            val header = "       -w-- -h-- filt -fmt-- wrap  size --name-------\n"
             common.Printf("\n%s", header)
             totalSize = 0
 
@@ -313,7 +309,7 @@ object Image_init {
                     i++
                     continue
                 }
-                if (unloaded && image!!.texNum != idImage.Companion.TEXTURE_NOT_LOADED) {
+                if (unloaded && image!!.texNum != idImage.TEXTURE_NOT_LOADED) {
                     i++
                     continue
                 }
@@ -321,11 +317,11 @@ object Image_init {
                     i++
                     continue
                 }
-                if (cached && (null == image!!.partialImage || image.texNum == idImage.Companion.TEXTURE_NOT_LOADED)) {
+                if (cached && (null == image!!.partialImage || image.texNum == idImage.TEXTURE_NOT_LOADED)) {
                     i++
                     continue
                 }
-                if (uncached && (null == image!!.partialImage || image.texNum != idImage.Companion.TEXTURE_NOT_LOADED)) {
+                if (uncached && (null == image!!.partialImage || image.texNum != idImage.TEXTURE_NOT_LOADED)) {
                     i++
                     continue
                 }
@@ -381,7 +377,7 @@ object Image_init {
                     if (((i + 1) % 10) == 0) {
                         common.Printf(
                             "-------- %5.1f of %5.1f megs --------\n",
-                            partialSize / (1024 * 1024.0), totalSize / (1024 * 1024.0)
+                            partialSize / (1024 * 1024.0f), totalSize / (1024 * 1024.0f)
                         )
                     }
                     i++
@@ -389,7 +385,7 @@ object Image_init {
             }
             common.Printf("%s", header)
             common.Printf(" %d images (%d total)\n", count, Image.globalImages.images.Num())
-            common.Printf(" %5.1f total megabytes of images\n\n\n", totalSize / (1024 * 1024.0))
+            common.Printf(" %5.1f total megabytes of images\n\n\n", totalSize / (1024 * 1024.0f))
             if (byClassification) {
                 val classifications: Array<idList<Int>> = Array<idList<Int>>(IMAGE_CLASSIFICATION.IC_COUNT) { idList() }
                 i = 0
@@ -417,7 +413,7 @@ object Image_init {
                         " Classification %s contains %d images using %5.1f megabytes\n",
                         IC_Info[i].desc,
                         classifications[i].Num(),
-                        partialSize / (1024 * 1024.0)
+                        partialSize / (1024 * 1024.0f)
                     )
                     if (overSized && overSizedList.Num() != 0) {
                         common.Printf("  The following images may be oversized\n")
@@ -448,14 +444,14 @@ object Image_init {
      ===============
      */
     internal class R_CombineCubeImages_f private constructor() : cmdFunction_t() {
-        public override fun run(args: CmdArgs.idCmdArgs?) {
+        override fun run(args: CmdArgs.idCmdArgs?) {
             if (args!!.Argc() != 2) {
                 common.Printf("usage: combineCubeImages <baseName>\n")
                 common.Printf(" combines basename[1-6][0001-9999].tga to basenameCM[0001-9999].tga\n")
                 common.Printf(" 1: forward 2:right 3:back 4:left 5:up 6:down\n")
                 return
             }
-            val baseName: idStr = idStr(args.Argv(1))
+            val baseName = idStr(args.Argv(1))
             common.SetRefreshOnPrint(true)
             for (frameNum in 1..9999) {
 //		final char	[]filename=new char[MAX_IMAGE_NAME];
@@ -470,7 +466,7 @@ object Image_init {
                     filename = String.format("%s%d%04i.tga", baseName, orderRemap[side], frameNum)
                     common.Printf("reading %s\n", filename)
                     pics[side] = Image_files.R_LoadImage(filename, width, height, null, true)
-                    if (NOT(pics[side])) {
+                    if (pics[side] == null) {
                         common.Printf("not found.\n")
                         break
                     }
@@ -490,7 +486,7 @@ object Image_init {
                     side++
                 }
                 if (side != 6) {
-                    val i: Int = 0
+                    val i = 0
                     while (i < side) {
                         pics[side] = null //Mem_Free(pics[side]);
                         side++
@@ -535,7 +531,7 @@ object Image_init {
      ===============
      */
     internal class R_ReloadImages_f private constructor() : cmdFunction_t() {
-        public override fun run(args: CmdArgs.idCmdArgs?) {
+        override fun run(args: CmdArgs.idCmdArgs?) {
             var i: Int
             var image: idImage?
             var all: Boolean
@@ -569,7 +565,7 @@ object Image_init {
         }
     }
 
-    internal class sortedImage_t() {
+    internal class sortedImage_t {
         var image: idImage? = null
         var size: Int = 0
     }
@@ -583,7 +579,7 @@ object Image_init {
      ================
      */
     internal class R_RampImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             var x: Int
             val data: ByteBuffer = ByteBuffer.allocate(256 * 4)
             x = 0
@@ -615,12 +611,12 @@ object Image_init {
      ================
      */
     internal class R_SpecularTableImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             var x: Int
             val data: ByteBuffer = ByteBuffer.allocate(256 * 4)
             x = 0
             while (x < 256) {
-                var f: Float = x / 255f
+                var f: Float = x / 255.0f
                 if (false) {
                     f = f.pow(16.0f) as Float
                 } else {
@@ -628,7 +624,7 @@ object Image_init {
                     // can't really do a power function
                     f = (f - 0.75f) * 4
                     if (f < 0) {
-                        f = 0f
+                        f = 0.0f
                     }
                     f = f * f
                 }
@@ -663,7 +659,7 @@ object Image_init {
      ================
      */
     internal class R_Specular2DTableImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             var x: Int
             var y: Int
             val data: ByteBuffer = ByteBuffer.allocate(256 * 256 * 4)
@@ -709,7 +705,7 @@ object Image_init {
      ================
      */
     internal class R_AlphaRampImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             var x: Int
             val data: ByteBuffer = ByteBuffer.allocate(256 * 4)
             x = 0
@@ -734,7 +730,7 @@ object Image_init {
     }
 
     internal class R_DefaultImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             image.MakeDefault()
         }
 
@@ -744,17 +740,17 @@ object Image_init {
     }
 
     internal class R_WhiteImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             val data: ByteBuffer =
-                ByteBuffer.allocate(idImage.Companion.DEFAULT_SIZE * idImage.Companion.DEFAULT_SIZE * 4)
+                ByteBuffer.allocate(idImage.DEFAULT_SIZE * idImage.DEFAULT_SIZE * 4)
 
             // solid white texture
 //	memset( data, 255, sizeof( data ) );
             Arrays.fill(data.array(), 255.toByte())
             image.GenerateImage(
                 data,
-                idImage.Companion.DEFAULT_SIZE,
-                idImage.Companion.DEFAULT_SIZE,
+                idImage.DEFAULT_SIZE,
+                idImage.DEFAULT_SIZE,
                 textureFilter_t.TF_DEFAULT,
                 false,
                 textureRepeat_t.TR_REPEAT,
@@ -768,16 +764,16 @@ object Image_init {
     }
 
     internal class R_BlackImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             val data: ByteBuffer =
-                ByteBuffer.allocate(idImage.Companion.DEFAULT_SIZE * idImage.Companion.DEFAULT_SIZE * 4)
+                ByteBuffer.allocate(idImage.DEFAULT_SIZE * idImage.DEFAULT_SIZE * 4)
 
             // solid black texture
 //	memset( data, 0, sizeof( data ) );
             image.GenerateImage(
                 data,
-                idImage.Companion.DEFAULT_SIZE,
-                idImage.Companion.DEFAULT_SIZE,
+                idImage.DEFAULT_SIZE,
+                idImage.DEFAULT_SIZE,
                 textureFilter_t.TF_DEFAULT,
                 false,
                 textureRepeat_t.TR_REPEAT,
@@ -791,7 +787,7 @@ object Image_init {
     }
 
     internal class R_BorderClampImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             val data: Array<Array<ByteArray>> = Array(BORDER_CLAMP_SIZE, { Array(BORDER_CLAMP_SIZE, { ByteArray(4) }) })
 
             // solid white texture with a single pixel black border
@@ -828,7 +824,7 @@ object Image_init {
                 textureRepeat_t.TR_CLAMP_TO_BORDER,
                 textureDepth_t.TD_DEFAULT
             )
-            if (!tr_local.glConfig.isInitialized) {
+            if (!glConfig.isInitialized) {
                 // can't call qglTexParameterfv yet
                 return
             }
@@ -845,9 +841,9 @@ object Image_init {
     }
 
     internal class R_RGBA8Image private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             val data: ByteBuffer =
-                ByteBuffer.allocate(idImage.Companion.DEFAULT_SIZE * idImage.Companion.DEFAULT_SIZE * 4)
+                ByteBuffer.allocate(idImage.DEFAULT_SIZE * idImage.DEFAULT_SIZE * 4)
 
 //	memset( data, 0, sizeof( data ) );
             data.put(0, 16.toByte())
@@ -856,8 +852,8 @@ object Image_init {
             data.put(3, 96.toByte())
             image.GenerateImage(
                 data,
-                idImage.Companion.DEFAULT_SIZE,
-                idImage.Companion.DEFAULT_SIZE,
+                idImage.DEFAULT_SIZE,
+                idImage.DEFAULT_SIZE,
                 textureFilter_t.TF_DEFAULT,
                 false,
                 textureRepeat_t.TR_REPEAT,
@@ -871,9 +867,9 @@ object Image_init {
     }
 
     internal class R_RGB8Image private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             val data: ByteBuffer =
-                ByteBuffer.allocate(idImage.Companion.DEFAULT_SIZE * idImage.Companion.DEFAULT_SIZE * 4)
+                ByteBuffer.allocate(idImage.DEFAULT_SIZE * idImage.DEFAULT_SIZE * 4)
 
 //	memset( data, 0, sizeof( data ) );
             data.put(0, 16.toByte())
@@ -882,8 +878,8 @@ object Image_init {
             data.put(3, 255.toByte())
             image.GenerateImage(
                 data,
-                idImage.Companion.DEFAULT_SIZE,
-                idImage.Companion.DEFAULT_SIZE,
+                idImage.DEFAULT_SIZE,
+                idImage.DEFAULT_SIZE,
                 textureFilter_t.TF_DEFAULT,
                 false,
                 textureRepeat_t.TR_REPEAT,
@@ -897,7 +893,7 @@ object Image_init {
     }
 
     internal class R_AlphaNotchImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             val data: ByteBuffer = ByteBuffer.allocate(2 * 4)
 
             // this is used for alpha test clip planes
@@ -926,12 +922,12 @@ object Image_init {
     }
 
     internal class R_FlatNormalImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             val data: Array<Array<ByteArray>> = Array<Array<ByteArray>>(
-                idImage.Companion.DEFAULT_SIZE,
-                { Array<ByteArray>(idImage.Companion.DEFAULT_SIZE, { ByteArray(4) }) })
+                idImage.DEFAULT_SIZE,
+                { Array<ByteArray>(idImage.DEFAULT_SIZE, { ByteArray(4) }) })
             var i: Int
-            val red: Int = if ((idImageManager.Companion.image_useNormalCompression.GetInteger() == 1)) 0 else 3
+            val red: Int = if ((idImageManager.image_useNormalCompression.GetInteger() == 1)) 0 else 3
             val alpha: Int = if ((red == 0)) 3 else 0
             // flat normal map for default bunp mapping
             i = 0
@@ -959,18 +955,18 @@ object Image_init {
     }
 
     internal class R_AmbientNormalImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
 //            final byte[][][] data = new byte[DEFAULT_SIZE][DEFAULT_SIZE][4];
-            val data: ByteArray = ByteArray(idImage.Companion.DEFAULT_SIZE)
+            val data = ByteArray(idImage.DEFAULT_SIZE)
             var i: Int
-            val red: Int = if ((idImageManager.Companion.image_useNormalCompression.GetInteger() == 1)) 0 else 3
+            val red: Int = if ((idImageManager.image_useNormalCompression.GetInteger() == 1)) 0 else 3
             val alpha: Int = if ((red == 0)) 3 else 0
             // flat normal map for default bunp mapping
             i = 0
-            while (i < idImage.Companion.DEFAULT_SIZE) {
-                data[i + red] = (255 * tr_local.tr.ambientLightVector.get(0)).toInt().toByte()
-                data[i + 1] = (255 * tr_local.tr.ambientLightVector.get(1)).toInt().toByte()
-                data[i + 2] = (255 * tr_local.tr.ambientLightVector.get(2)).toInt().toByte()
+            while (i < idImage.DEFAULT_SIZE) {
+                data[i + red] = (255 * tr.ambientLightVector.get(0)).toInt().toByte()
+                data[i + 1] = (255 * tr.ambientLightVector.get(1)).toInt().toByte()
+                data[i + 2] = (255 * tr.ambientLightVector.get(2)).toInt().toByte()
                 data[i + alpha] = 255.toByte()
                 i += 4
             }
@@ -995,8 +991,8 @@ object Image_init {
      * access the cube map.
      */
     internal class makeNormalizeVectorCubeMap private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
-            val vector: FloatArray = FloatArray(3)
+        override fun run(image: idImage) {
+            val vector = FloatArray(3)
             var i: Int
             var x: Int
             var y: Int
@@ -1041,14 +1037,14 @@ object Image_init {
      ================
      */
     internal class R_CreateNoFalloffImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             var x: Int
             var y: Int
-            val data: Array<Array<ByteArray>> = Array(16, { Array(tr_local.FALLOFF_TEXTURE_SIZE, { ByteArray(4) }) })
+            val data: Array<Array<ByteArray>> = Array(16, { Array(FALLOFF_TEXTURE_SIZE, { ByteArray(4) }) })
 
 //	memset( data, 0, sizeof( data ) );
             x = 1
-            while (x < tr_local.FALLOFF_TEXTURE_SIZE - 1) {
+            while (x < FALLOFF_TEXTURE_SIZE - 1) {
                 y = 1
                 while (y < 15) {
                     data[y][x][0] = 255.toByte()
@@ -1061,7 +1057,7 @@ object Image_init {
             }
             image.GenerateImage(
                 ByteBuffer.wrap(flatten(data)),
-                tr_local.FALLOFF_TEXTURE_SIZE,
+                FALLOFF_TEXTURE_SIZE,
                 16,
                 textureFilter_t.TF_DEFAULT,
                 false,
@@ -1076,14 +1072,14 @@ object Image_init {
     }
 
     internal class R_FogImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             var x: Int
             var y: Int
             val data: Array<Array<ByteArray>> = Array(FOG_SIZE, { Array(FOG_SIZE, { ByteArray(4) }) })
             var b: Int
-            val step: FloatArray = FloatArray(256)
+            val step = FloatArray(256)
             var i: Int
-            var remaining: Float = 1.0f
+            var remaining = 1.0f
             i = 0
             while (i < 256) {
                 step[i] = remaining
@@ -1106,7 +1102,7 @@ object Image_init {
                     } else if (b > 255) {
                         b = 255
                     }
-                    b = ((255 * (1.0 - step[b])).toInt().toByte()).toInt()
+                    b = ((255 * (1.0f - step[b])).toInt().toByte()).toInt()
                     if ((x == 0) || (x == FOG_SIZE - 1) || (y == 0) || (y == FOG_SIZE - 1)) {
                         b = 255 // avoid clamping issues
                     }
@@ -1143,20 +1139,20 @@ object Image_init {
      ================
      */
     internal class R_FogEnterImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             var x: Int
             var y: Int
             val data: Array<Array<ByteArray>> =
-                Array(tr_local.FOG_ENTER_SIZE, { Array(tr_local.FOG_ENTER_SIZE, { ByteArray(4) }) })
+                Array(FOG_ENTER_SIZE, { Array(FOG_ENTER_SIZE, { ByteArray(4) }) })
             var b: Int
             x = 0
-            while (x < tr_local.FOG_ENTER_SIZE) {
+            while (x < FOG_ENTER_SIZE) {
                 y = 0
-                while (y < tr_local.FOG_ENTER_SIZE) {
+                while (y < FOG_ENTER_SIZE) {
                     var d: Float
                     d = FogFraction(
-                        (x - (tr_local.FOG_ENTER_SIZE / 2)).toFloat(),
-                        (y - (tr_local.FOG_ENTER_SIZE / 2)).toFloat()
+                        (x - (FOG_ENTER_SIZE / 2)).toFloat(),
+                        (y - (FOG_ENTER_SIZE / 2)).toFloat()
                     )
                     b = ((d * 255).toInt().toByte()).toInt()
                     if (b <= 0) {
@@ -1176,8 +1172,8 @@ object Image_init {
             // if mipmapped, acutely viewed surfaces fade wrong
             image.GenerateImage(
                 ByteBuffer.wrap(flatten(data)),
-                tr_local.FOG_ENTER_SIZE,
-                tr_local.FOG_ENTER_SIZE,
+                FOG_ENTER_SIZE,
+                FOG_ENTER_SIZE,
                 textureFilter_t.TF_LINEAR,
                 false,
                 textureRepeat_t.TR_CLAMP,
@@ -1191,7 +1187,7 @@ object Image_init {
     }
 
     class R_QuadraticImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             var x: Int
             var y: Int
             val data: Array<Array<ByteArray>> = Array(QUADRATIC_HEIGHT, { Array(QUADRATIC_WIDTH, { ByteArray(4) }) })
@@ -1202,11 +1198,11 @@ object Image_init {
                 while (y < QUADRATIC_HEIGHT) {
                     var d: Float
                     d = x - (QUADRATIC_WIDTH / 2 - 0.5f)
-                    d = abs(d.toDouble()).toFloat()
+                    d = abs(d)
                     d -= 0.5f
                     d /= (QUADRATIC_WIDTH / 2).toFloat()
-                    d = (1.0f - d).toFloat()
-                    d = (d * d).toFloat()
+                    d = (1.0f - d)
+                    d = (d * d)
                     b = ((d * 255).toInt().toByte()).toInt()
                     if (b <= 0) {
                         b = 0
@@ -1243,8 +1239,8 @@ object Image_init {
 
      =======================
      */
-    internal class R_QsortImageSizes() : cmp_t<sortedImage_t?> {
-        public override fun compare(ea: sortedImage_t?, eb: sortedImage_t?): Int {
+    internal class R_QsortImageSizes : cmp_t<sortedImage_t?> {
+        override fun compare(ea: sortedImage_t?, eb: sortedImage_t?): Int {
             if (ea!!.size > eb!!.size) {
                 return -1
             }

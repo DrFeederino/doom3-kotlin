@@ -4,15 +4,12 @@ import neo.Game.AI.AAS_local.idAASLocal
 import neo.Tools.Compilers.AAS.AASFile.aasTrace_s
 import neo.Tools.Compilers.AAS.AASFile.idAASSettings
 import neo.Tools.Compilers.AAS.AASFile.idReachability
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CInt
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 object AAS {
     const val PATHTYPE_BARRIERJUMP = 2
     const val PATHTYPE_JUMP = 3

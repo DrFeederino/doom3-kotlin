@@ -7,29 +7,25 @@ import neo.Renderer.Model
 import neo.Renderer.Model.MD5_ANIM_EXT
 import neo.Renderer.Model.idRenderModel
 import neo.Sound.snd_shader.idSoundShader
-import neo.TempDump
 import neo.framework.DeclSkin.idDeclSkin
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib.idException
+import neo.idlib.BV.idBounds
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
-import neo.idlib.containers.HashIndex.idHashIndex
-import neo.idlib.containers.HashTable
 import neo.idlib.containers.HashTable.idHashTable
 import neo.idlib.containers.List
+import neo.idlib.containers.idHashIndex
 import neo.idlib.containers.idStrList
 import neo.idlib.geometry.JointTransform.idJointQuat
+import neo.idlib.idException
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Quat.idCQuat
-import neo.idlib.math.Quat.idQuat
-import neo.idlib.math.Simd
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.Matrix.idMat3.Companion.getMat3_identity
+import neo.idlib.math.SIMDProcessor
+import neo.idlib.math.idCQuat
+import neo.idlib.math.idQuat
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 object Anim {
     // animation channels.  make sure to change script/doom_defs.script if you add any channels, or change their order
     const val ANIMCHANNEL_ALL = 0
@@ -52,7 +48,7 @@ object Anim {
 
     // for converting from 24 frames per second to milliseconds
     fun FRAME2MS(framenum: Int): Int {
-        return framenum * 1000 / 24
+        return (framenum * 1000) / 24
     }
 
     /*
@@ -82,12 +78,12 @@ object Anim {
     }
 
     class frameBlend_t {
-        var backlerp = 0f
+        var backlerp = 0.0f
         var cycleCount // how many times the anim has wrapped to the begining (0 for clamped anims)
                 = 0
         var frame1 = 0
         var frame2 = 0
-        var frontlerp = 0f
+        var frontlerp = 0.0f
     }
 
     class jointAnimInfo_t {
@@ -347,11 +343,12 @@ object Anim {
                         componentFrames[index] = componentFrames[index] - baseFrame[0].t.x
                         i++
                     }
-                    totaldelta.x = componentFrames[numAnimatedComponents * (numFrames - 1)]
+                    totaldelta.x = componentFrames[c_ptr + numAnimatedComponents * (numFrames - 1)]
                     c_ptr++
                 } else {
                     totaldelta.x = 0.0f
                 }
+
                 if (jointInfo[0].animBits and ANIM_TY !== 0) {
                     i = 0
                     while (i < numFrames) {
@@ -364,6 +361,7 @@ object Anim {
                 } else {
                     totaldelta.y = 0.0f
                 }
+
                 if (jointInfo[0].animBits and ANIM_TZ !== 0) {
                     i = 0
                     while (i < numFrames) {
@@ -452,7 +450,7 @@ object Anim {
             // copy the baseframe
 
             // copy the baseframe
-            Simd.SIMDProcessor.Memcpy(
+            SIMDProcessor!!.Memcpy(
                 joints,
                 baseFrame.getList(Array<idJointQuat>::class.java)!!,
                 baseFrame.Num() /* sizeof( baseFrame[ 0 ] )*/
@@ -472,7 +470,7 @@ object Anim {
             val f2_ptr: Int = frame.frame2 * numAnimatedComponents
             val jointframe2: Array<Float> = componentFrames.getList(Array<Float>::class.java)!!
             jointframe1 = jointframe2
-            var i: Int = 0
+            var i = 0
             while (i < numIndexes) {
                 val j = index[i]
                 jointPtr = joints[j]
@@ -629,7 +627,7 @@ object Anim {
                 }
                 i++
             }
-            Simd.SIMDProcessor.BlendJoints(joints, blendJoints, frame.backlerp, lerpIndex, numLerpJoints)
+            SIMDProcessor!!.BlendJoints(joints, blendJoints, frame.backlerp, lerpIndex, numLerpJoints)
             if (frame.cycleCount != 0) {
                 joints[0].t.plusAssign(totaldelta.times(frame.cycleCount.toFloat()))
             }
@@ -644,11 +642,11 @@ object Anim {
             var infoPtr: jointAnimInfo_t
 
             // copy the baseframe
-            Simd.SIMDProcessor.Memcpy(
+            SIMDProcessor!!.Memcpy(
                 joints,
                 baseFrame.getList(Array<idJointQuat>::class.java)!!,
                 baseFrame.Num() /* sizeof( baseFrame[ 0 ] )*/
-            );
+            )
             if (framenum == 0 || 0 == numAnimatedComponents) {
                 // just use the base frame
                 return
@@ -656,14 +654,14 @@ object Anim {
 
 //	frame = &componentFrames[ framenum * numAnimatedComponents ];
             val f_ptr: Int = framenum * numAnimatedComponents
-            var i: Int = 0
+            var i = 0
             while (i < numIndexes) {
                 val j = index[i]
                 jointPtr = joints[j]
                 infoPtr = jointInfo[j]
                 animBits = infoPtr.animBits
                 if (animBits != 0) {
-                    jointframe = componentFrames.getList(Array<Float>::class.java)!!
+                    jointframe = componentFrames.Ptr()
                     jf_ptr = f_ptr + infoPtr.firstComponent
                     if (animBits and (ANIM_TX or ANIM_TY or ANIM_TZ) != 0) {
                         if (animBits and ANIM_TX != 0) {
@@ -770,28 +768,35 @@ object Anim {
         fun GetOrigin(offset: idVec3, time: Int, cyclecount: Int) {
             val frame = frameBlend_t()
             offset.set(baseFrame[0].t)
-            if (0 == jointInfo[0].animBits and (ANIM_TX or ANIM_TY or ANIM_TZ)) {
-                // just use the baseframe
-                return
+
+            if (jointInfo[0].animBits and (ANIM_TX or ANIM_TY or ANIM_TZ) == 0) {
+                return  // just use baseframe
             }
+
             ConvertTimeToFrame(time, cyclecount, frame)
+
+            var c1_ptr = numAnimatedComponents * frame.frame1 + jointInfo[0].firstComponent
+            var c2_ptr = numAnimatedComponents * frame.frame2 + jointInfo[0].firstComponent
+
             val componentPtr1 = componentFrames.getList(Array<Float>::class.java)!!
-            var c1_ptr: Int = numAnimatedComponents * frame.frame1 + jointInfo[0].firstComponent
             val componentPtr2 = componentFrames.getList(Array<Float>::class.java)!!
-            var c2_ptr: Int = numAnimatedComponents * frame.frame2 + jointInfo[0].firstComponent
+
             if (jointInfo[0].animBits and ANIM_TX != 0) {
                 offset.x = componentPtr1[c1_ptr] * frame.frontlerp + componentPtr2[c2_ptr] * frame.backlerp
                 c1_ptr++
                 c2_ptr++
             }
+
             if (jointInfo[0].animBits and ANIM_TY != 0) {
                 offset.y = componentPtr1[c1_ptr] * frame.frontlerp + componentPtr2[c2_ptr] * frame.backlerp
                 c1_ptr++
                 c2_ptr++
             }
+
             if (jointInfo[0].animBits and ANIM_TZ != 0) {
                 offset.z = componentPtr1[c1_ptr] * frame.frontlerp + componentPtr2[c2_ptr] * frame.backlerp
             }
+
             if (frame.cycleCount != 0) {
                 offset.plusAssign(totaldelta.times(frame.cycleCount.toFloat()))
             }
@@ -800,7 +805,7 @@ object Anim {
         fun GetOriginRotation(rotation: idQuat, time: Int, cyclecount: Int) {
             val frame = frameBlend_t()
             val animBits: Int = jointInfo[0].animBits
-            if (TempDump.NOT((animBits and (ANIM_QX or ANIM_QY or ANIM_QZ)).toDouble())) {
+            if (animBits and (ANIM_QX or ANIM_QY or ANIM_QZ) == 0) {
                 // just use the baseframe
                 rotation.set(baseFrame[0].q)
                 return
@@ -935,7 +940,8 @@ object Anim {
                     offset.z = componentPtr1[c1_ptr] * frame.frontlerp + componentPtr2[c2_ptr] * frame.backlerp
                 }
             }
-            bnds.minusAssign(offset)
+            bnds[0].minusAssign(offset)
+            bnds[1].minusAssign(offset)
         }
 
         //
@@ -948,15 +954,9 @@ object Anim {
     }
 
     class idAFPoseJointMod {
-        val origin: idVec3
-        var axis: idMat3 = idMat3.getMat3_identity()
+        val origin: idVec3 = idVec3()
+        val axis: idMat3 = getMat3_identity()
         var mod: AFJointModType_t = AFJointModType_t.AF_JOINTMOD_AXIS
-
-        //
-        //
-        init {
-            origin = idVec3()
-        }
     }
 
     /*
@@ -967,7 +967,7 @@ object Anim {
      ==============================================================================================
      */
     class idAnimManager {
-        private val animations: HashTable.idHashTable<idMD5Anim> = idHashTable()
+        private val animations: idHashTable<idMD5Anim> = idHashTable()
         private val jointnames: idStrList
         private val jointnamesHash: idHashIndex
 
@@ -1008,7 +1008,7 @@ object Anim {
 
         fun ReloadAnims() {
             var animptr: idMD5Anim?
-            var i: Int = 0
+            var i = 0
 
             i = 0
             while (i < animations.Num()) {
@@ -1024,9 +1024,9 @@ object Anim {
             var animptr: idMD5Anim?
             var anim: idMD5Anim
             var   /*size_t*/s: Int
-            var num: Int = 0
-            var   /*size_t*/size: Int = 0
-            var i: Int = 0
+            var num = 0
+            var   /*size_t*/size = 0
+            var i = 0
             num = 0
             size = 0
             i = 0
@@ -1078,7 +1078,7 @@ object Anim {
         fun FlushUnusedAnims() {
             var animptr: idMD5Anim?
             val removeAnims = List.idList<idMD5Anim>()
-            var i: Int = 0
+            var i = 0
             i = 0
             while (i < animations.Num()) {
                 animptr = animations.GetIndex(i)

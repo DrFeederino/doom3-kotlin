@@ -1,8 +1,8 @@
 package neo.idlib.math.Matrix
 
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Simd.idSIMD
-import neo.idlib.math.Vector.idVecX
+import neo.idlib.math.idMath
+import neo.idlib.math.idSIMD
+import neo.idlib.math.idVecX
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test

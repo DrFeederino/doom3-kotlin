@@ -1,14 +1,11 @@
 package neo.framework
 
-/**
- *
- */
 @Deprecated("")
 class Unzip {
     internal class unzFile
 
     /* tm_unz contain date/time info */
-    internal inner class tm_unz {
+    internal class tm_unz {
         var tm_hour /* hours since midnight - [0,23] */ = 0
         var tm_mday /* day of the month - [1,31] */ = 0
         var tm_min /* minutes after the hour - [0,59] */ = 0
@@ -19,13 +16,13 @@ class Unzip {
 
     /* unz_global_info structure contain global data about the ZIPfile
      These data comes from the end of central dir */
-    internal inner class unz_global_info {
+    internal class unz_global_info {
         var number_entry /* total number of entries in the central dir on this disk */: Long = 0
         var size_comment /* size of the global comment of the zipfile */: Long = 0
     } /*unz_global_info_s*/
 
     /* unz_file_info contain information about a file in the zipfile */
-    internal inner class unz_file_info {
+    internal class unz_file_info {
         var compressed_size /* compressed size                 4 unsigned chars */: Long = 0
         var compression_method /* compression method              2 unsigned chars */: Long = 0
         var crc /* crc-32                          4 unsigned chars */: Long = 0
@@ -45,7 +42,7 @@ class Unzip {
         var version_needed /* version needed to extract       2 unsigned chars */: Long = 0
     } /*unz_file_info_s*/
 
-    internal inner class unz_file_info_internal {
+    internal class unz_file_info_internal {
         var offset_curfile /* relative offset of static header 4 unsigned chars */: Long = 0
     } /*unz_file_info_internal_s*/
 }

@@ -6,8 +6,6 @@ import neo.Renderer.Image.textureDepth_t
 import neo.Renderer.Material.textureFilter_t
 import neo.Renderer.Material.textureRepeat_t
 import neo.Renderer.Model.srfTriangles_s
-import neo.Renderer.qgl
-import neo.Renderer.tr_backend
 import neo.TempDump.CPP_class
 import neo.framework.CVarSystem.CVAR_BOOL
 import neo.framework.CVarSystem.CVAR_INTEGER
@@ -22,7 +20,7 @@ import neo.framework.Session
 import neo.idlib.CmdArgs
 import neo.idlib.Text.Str.idStr
 import neo.idlib.geometry.DrawVert.idDrawVert
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idVec3
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.ARBVertexProgram
 import org.lwjgl.opengl.GL11
@@ -30,9 +28,6 @@ import java.io.Serializable
 import java.nio.*
 import java.util.*
 
-/**
- *
- */
 object MegaTexture {
     val MAX_LEVELS: Int = 12
     val MAX_LEVEL_WIDTH: Int = 512
@@ -40,7 +35,7 @@ object MegaTexture {
     val TILE_PER_LEVEL: Int = 4
     val TILE_SIZE: Int = MAX_LEVEL_WIDTH / TILE_PER_LEVEL
     val colors /*[8][4]*/: Array<ShortArray> = arrayOf(
-        shortArrayOf(0, 0, 0, 55),
+        shortArrayOf(0, 0, 0, 255),
         shortArrayOf(255, 0, 0, 255),
         shortArrayOf(0, 255, 0, 255),
         shortArrayOf(255, 255, 0, 255),
@@ -72,14 +67,14 @@ object MegaTexture {
     }
 
     fun ReadShort(f: idFile): Short {
-        val b: ByteBuffer = ByteBuffer.allocate(2)
+        val b: ByteBuffer = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
         f.Read(b, 2)
 
 //        return (short) (b[0] + (b[1] << 8));
         return b.getShort()
     }
 
-    internal class idTextureTile() {
+    internal class idTextureTile {
         var x: Int = 0
         var y: Int = 0
 
@@ -90,7 +85,7 @@ object MegaTexture {
         }
     }
 
-    internal class idTextureLevel() {
+    internal class idTextureLevel {
         //
         var image: idImage? = null
         var mega: idMegaTexture? = null
@@ -109,12 +104,12 @@ object MegaTexture {
          ====================
          UpdateForCenter
 
-         Center is in the 0.0 to 1.0 range
+         Center is in the 0.0f to 1.0f range
          ====================
          */
         fun UpdateForCenter(center: FloatArray /*[2]*/) {
-            val globalTileCorner: IntArray = IntArray(2)
-            val localTileOffset: IntArray = IntArray(2)
+            val globalTileCorner = IntArray(2)
+            val localTileOffset = IntArray(2)
             if (tilesWide <= TILE_PER_LEVEL && tilesHigh <= TILE_PER_LEVEL) {
                 globalTileCorner[0] = 0
                 globalTileCorner[1] = 0
@@ -126,12 +121,12 @@ object MegaTexture {
                 parms.put(3, 0.25f)
             } else {
                 for (i in 0..1) {
-                    val global: FloatArray = FloatArray(2)
+                    val global = FloatArray(2)
 
-                    // this value will be outside the 0.0 to 1.0 range unless
+                    // this value will be outside the 0.0f to 1.0f range unless
                     // we are in the corner of the megaTexture
                     global[i] = (center[i] * parms.get(3) - 0.5f) * TILE_PER_LEVEL
-                    globalTileCorner[i] = (global[i] + 0.5).toInt()
+                    globalTileCorner[i] = (global[i] + 0.5f).toInt()
                     localTileOffset[i] = globalTileCorner[i] and (TILE_PER_LEVEL - 1)
 
                     // scaling for the mask texture to only allow the proper window
@@ -142,7 +137,7 @@ object MegaTexture {
             image!!.Bind()
             for (x in 0 until TILE_PER_LEVEL) {
                 for (y in 0 until TILE_PER_LEVEL) {
-                    val globalTile: IntArray = IntArray(2)
+                    val globalTile = IntArray(2)
                     globalTile[0] =
                         globalTileCorner[0] + ((x - localTileOffset[0]) and (TILE_PER_LEVEL - 1))
                     globalTile[1] =
@@ -205,7 +200,7 @@ object MegaTexture {
             }
 
             // upload all the mip-map levels
-            var level: Int = 0
+            var level = 0
             var size: Int = TILE_SIZE
             while (true) {
                 qgl.qglTexSubImage2D(
@@ -224,12 +219,12 @@ object MegaTexture {
                 if (size == 0) {
                     break
                 }
-                val byteSize: Int = size * 4
+                size * 4
                 // mip-map in place
                 for (y in 0 until size) {
-                    val `in`: ByteArray = ByteArray(data.capacity() - y * size * 16)
-                    val in2: ByteArray = ByteArray(`in`.size - size * 8)
-                    val out: ByteArray = ByteArray(data.capacity() - y * size * 4)
+                    val `in` = ByteArray(data.capacity() - y * size * 16)
+                    val in2 = ByteArray(`in`.size - size * 8)
+                    val out = ByteArray(data.capacity() - y * size * 4)
                     //			in = data + y * size * 16;
 //			in2 = in + size * 8;
 //			out = data + y * size * 4;
@@ -246,6 +241,7 @@ object MegaTexture {
                         out[x * 4 + 3] =
                             ((`in`[x * 8 + 3] + `in`[(x * 8) + 4 + 3] + in2[x * 8 + 3] + in2[(x * 8) + 4 + 3]) shr 2).toByte()
                     }
+                    System.arraycopy(out, 0, data.array(), y * size * 4, size * 4)
                 }
             }
         }
@@ -277,7 +273,7 @@ object MegaTexture {
         }
     }
 
-    internal class megaTextureHeader_t() : Serializable {
+    internal class megaTextureHeader_t : Serializable {
         var tileSize: Int = 0
         var tilesHigh: Int = 0
         var tilesWide: Int = 0
@@ -290,7 +286,7 @@ object MegaTexture {
             }
 
             fun ReadDdsFileHeader_t(buffer: ByteBuffer): megaTextureHeader_t {
-                val t: megaTextureHeader_t = megaTextureHeader_t()
+                val t = megaTextureHeader_t()
                 t.tileSize = buffer.getInt()
                 t.tilesWide = buffer.getInt()
                 t.tilesHigh = buffer.getInt()
@@ -305,7 +301,7 @@ object MegaTexture {
         }
     }
 
-    class idMegaTexture() {
+    class idMegaTexture {
         private val levels: Array<idTextureLevel?> = arrayOfNulls(MAX_LEVELS) // 0 is the highest resolution
 
         //
@@ -325,7 +321,7 @@ object MegaTexture {
         //
         private var numLevels: Int = 0
         fun InitFromMegaFile(fileBase: String): Boolean {
-            val name: idStr = idStr("megaTextures/" + fileBase)
+            val name = idStr("megaTextures/" + fileBase)
             name.StripFileExtension()
             name.Append(".mega")
             var width: Int
@@ -346,19 +342,19 @@ object MegaTexture {
             numLevels = 0
             width = header!!.tilesWide
             height = header!!.tilesHigh
-            var tileOffset: Int = 1 // just past the header
+            var tileOffset = 1 // just past the header
 
 //	memset( levels, 0, sizeof( levels ) );
-            Arrays.fill(levels, 0)
+            Arrays.fill(levels, null)
             while (true) {
                 val level: idTextureLevel? = levels[numLevels]
                 level!!.mega = this
                 level.tileOffset = tileOffset
                 level.tilesWide = width
                 level.tilesHigh = height
-                level.parms.put(0, -1f) // initially mask everything
-                level.parms.put(1, 0f)
-                level.parms.put(2, 0f)
+                level.parms.put(0, -1.0f) // initially mask everything
+                level.parms.put(1, 0.0f)
+                level.parms.put(2, 0.0f)
                 level.parms.put(3, width.toFloat() / TILE_PER_LEVEL)
                 level.Invalidate()
                 tileOffset += level.tilesWide * level.tilesHigh
@@ -404,12 +400,12 @@ object MegaTexture {
             val axis: Array<idDrawVert?> = arrayOfNulls(2)
             origin!!.st[0] = 1.0f
             origin.st[1] = 1.0f
-            axis[0]!!.st[0] = 0f
-            axis[0]!!.st[1] = 1f
-            axis[1]!!.st[0] = 1f
-            axis[1]!!.st[1] = 0f
+            axis[0]!!.st[0] = 0.0f
+            axis[0]!!.st[1] = 1.0f
+            axis[1]!!.st[0] = 1.0f
+            axis[1]!!.st[1] = 0.0f
             for (i in 0 until tri.numVerts) {
-                val v: idDrawVert? = tri.verts!![i]
+                val v: idDrawVert = tri.verts!![i]
                 if (v!!.st[0] <= origin!!.st[0] && v.st[1] <= origin.st[1]) {
                     origin = v
                 }
@@ -421,7 +417,7 @@ object MegaTexture {
                 }
             }
             for (i in 0..1) {
-                val dir: idVec3 = idVec3(axis[i]!!.xyz.minus(origin!!.xyz))
+                val dir = idVec3(axis[i]!!.xyz.minus(origin.xyz))
                 val texLen: Float = axis[i]!!.st[i] - origin.st[i]
                 val spaceLen: Float = (axis[i]!!.xyz.minus(origin.xyz)).Length()
                 val scale: Float = texLen / (spaceLen * spaceLen)
@@ -462,15 +458,15 @@ object MegaTexture {
                 }
             }
             val parms: FloatBuffer = BufferUtils.createFloatBuffer(4)
-            parms.put(0, 0f)
-            parms.put(1, 0f)
-            parms.put(2, 0f)
-            parms.put(3, 1f)
+            parms.put(0, 0.0f)
+            parms.put(1, 0.0f)
+            parms.put(2, 0.0f)
+            parms.put(3, 1.0f)
             qgl.qglProgramLocalParameter4fvARB(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, 7, parms)
-            parms.put(0, 1f)
-            parms.put(1, 1f)
+            parms.put(0, 1.0f)
+            parms.put(1, 1.0f)
             parms.put(2, r_terrainScale.GetFloat())
-            parms.put(3, 1f)
+            parms.put(3, 1.0f)
             qgl.qglProgramLocalParameter4fvARB(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, 8, parms)
         }
 
@@ -506,7 +502,7 @@ object MegaTexture {
                 return
             }
             currentViewOrigin.set(viewOrigin)
-            val texCenter: FloatArray = FloatArray(2)
+            val texCenter = FloatArray(2)
 
             // convert the viewOrigin to a texture center, which will
             // be a different conversion for each megaTexture
@@ -529,7 +525,7 @@ object MegaTexture {
          ====================
          */
         class MakeMegaTexture_f private constructor() : cmdFunction_t() {
-            public override fun run(args: CmdArgs.idCmdArgs?) {
+            override fun run(args: CmdArgs.idCmdArgs?) {
                 val columns: Int
                 val rows: Int
                 val fileSize: Int
@@ -537,12 +533,12 @@ object MegaTexture {
                 var pixbuf: Int
                 var row: Int
                 var column: Int
-                val targa_header: _TargaHeader = _TargaHeader()
+                val targa_header = _TargaHeader()
                 if (args!!.Argc() != 2) {
                     Common.common.Printf("USAGE: makeMegaTexture <filebase>\n")
                     return
                 }
-                val name_s: idStr = idStr("megaTextures/" + args.Argv(1))
+                val name_s = idStr("megaTextures/" + args.Argv(1))
                 name_s.StripFileExtension()
                 name_s.Append(".tga")
                 val name: String = name_s.toString()
@@ -594,11 +590,11 @@ object MegaTexture {
                 if (targa_header.id_length.code != 0) {
                     file.Seek(targa_header.id_length.code.toLong(), fsOrigin_t.FS_SEEK_CUR)
                 }
-                val mtHeader: megaTextureHeader_t = megaTextureHeader_t()
+                val mtHeader = megaTextureHeader_t()
                 mtHeader.tileSize = TILE_SIZE
                 mtHeader.tilesWide = RoundDownToPowerOfTwo(targa_header.width.toInt()) / TILE_SIZE
                 mtHeader.tilesHigh = RoundDownToPowerOfTwo(targa_header.height.toInt()) / TILE_SIZE
-                val outName: idStr = idStr(name)
+                val outName = idStr(name)
                 outName.StripFileExtension()
                 outName.Append(".mega")
                 Common.common.Printf(
@@ -609,11 +605,11 @@ object MegaTexture {
                 // open the output megatexture file
                 val out: idFile? = fileSystem.OpenFileWrite(outName.toString())
                 out!!.Write(megaTextureHeader_t.WriteDdsFileHeader_t(mtHeader))
-                out!!.Seek((TILE_SIZE * TILE_SIZE * 4).toLong(), fsOrigin_t.FS_SEEK_SET)
+                out.Seek((TILE_SIZE * TILE_SIZE * 4).toLong(), fsOrigin_t.FS_SEEK_SET)
 
                 // we will process this one row of tiles at a time, since the entire thing
                 // won't fit in memory
-                val targa_rgba: ByteArray =
+                val targa_rgba =
                     ByteArray(TILE_SIZE * targa_header.width * 4) // R_StaticAlloc(TILE_SIZE * targa_header.width * 4);
                 var blockRowsRemaining: Int = mtHeader.tilesHigh
                 while (blockRowsRemaining-- != 0) {
@@ -841,7 +837,7 @@ object MegaTexture {
                 idCVar("r_terrainScale", "3", CVAR_RENDERER or CVAR_INTEGER, "vertically scale USGS data")
 
             init {
-                parms.put(floatArrayOf(-2f, -2f, 0f, 1f)).rewind()
+                parms.put(floatArrayOf(-2.0f, -2.0f, 0.0f, 1.0f)).rewind()
             }
 
             private fun GenerateMegaMipMaps(header: megaTextureHeader_t, outFile: idFile) {
@@ -849,12 +845,12 @@ object MegaTexture {
 
                 // out fileSystem doesn't allow read / write access...
                 val inFile: idFile = fileSystem.OpenFileRead(outFile.GetName())!!
-                var tileOffset: Int = 1
+                var tileOffset = 1
                 var width: Int = header.tilesWide
                 var height: Int = header.tilesHigh
                 val tileSize: Int = header.tileSize * header.tileSize * 4
-                val oldBlock: ByteArray = ByteArray(tileSize)
-                val newBlock: ByteArray = ByteArray(tileSize)
+                val oldBlock = ByteArray(tileSize)
+                val newBlock = ByteArray(tileSize)
                 while (width > 1 || height > 1) {
                     var newHeight: Int = (height + 1) shr 1
                     if (newHeight < 1) {
@@ -878,6 +874,7 @@ object MegaTexture {
                                     if (tx > width || ty > height) {
                                         // off edge, zero fill
 //							memset( newBlock, 0, sizeof( newBlock ) );
+                                        newBlock.fill(0)
                                     } else {
                                         tileNum = tileOffset + (ty * width) + tx
                                         inFile.Seek((tileNum * tileSize).toLong(), fsOrigin_t.FS_SEEK_SET)
@@ -929,7 +926,7 @@ object MegaTexture {
                     Common.common.Printf("idMegaTexture: failed to open %s\n", fileName)
                     return
                 }
-                val outName: idStr = idStr(fileName)
+                val outName = idStr(fileName)
                 outName.StripFileExtension()
                 outName.plusAssign("_preview.tga")
                 Common.common.Printf("Creating %s.\n", outName.toString())
@@ -944,7 +941,7 @@ object MegaTexture {
                 val tileSize: Int = header.tileSize
                 var width: Int = header.tilesWide
                 var height: Int = header.tilesHigh
-                var tileOffset: Int = 1
+                var tileOffset = 1
                 val tileBytes: Int = tileSize * tileSize * 4
                 // find the level that fits
                 while (width * tileSize > 2048 || height * tileSize > 2048) {
@@ -982,21 +979,21 @@ object MegaTexture {
         }
     }
 
-    class fillColors() {
+    class fillColors {
         var intVal: Int = 0
         fun getColor(index: Int): Byte {
             return ((intVal shr index) and 0xFF).toByte()
         }
 
         fun setColor(index: Int, color: Short) {
-            val down: Int = 0xFF shl index
+            val down: Int = 0xFF shl (index * 8)
             intVal = intVal and down.inv()
             intVal = intVal or ((color.toInt() and 0xFF) shl index)
         }
     }
 
     internal class R_EmptyLevelImage private constructor() : GeneratorFunction() {
-        public override fun run(image: idImage) {
+        override fun run(image: idImage) {
             val c: Int = MAX_LEVEL_WIDTH * MAX_LEVEL_WIDTH
             val data: ByteBuffer = ByteBuffer.allocate(c * 4)
             for (i in 0 until c) {
@@ -1021,7 +1018,7 @@ object MegaTexture {
     }
 
     //===================================================================================================
-    internal class _TargaHeader() {
+    internal class _TargaHeader {
         var colormap_index: Short = 0
         var colormap_length: Short = 0
         var colormap_size: Char = 0.toChar()

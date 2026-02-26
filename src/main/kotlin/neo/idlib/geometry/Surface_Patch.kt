@@ -1,19 +1,16 @@
 package neo.idlib.geometry
 
 import neo.idlib.Dict_h.idDict
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
 import neo.idlib.MapFile.idMapPrimitive
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.Surface.idSurface
-import neo.idlib.math.Math_h
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.idException
+import neo.idlib.idLib
+import neo.idlib.math.Square
+import neo.idlib.math.getVec3Origin
+import neo.idlib.math.idVec3
 import kotlin.math.abs
 
-/**
- *
- */
 class Surface_Patch {
     /*
      ===============================================================================
@@ -123,9 +120,9 @@ class Surface_Patch {
             if (genNormals) {
                 GenerateNormals()
             }
-            maxHorizontalErrorSqr = Math_h.Square(maxHorizontalError)
-            maxVerticalErrorSqr = Math_h.Square(maxVerticalError)
-            maxLengthSqr = Math_h.Square(maxLength)
+            maxHorizontalErrorSqr = Square(maxHorizontalError)
+            maxVerticalErrorSqr = Square(maxVerticalError)
+            maxLengthSqr = Square(maxLength)
             Expand()
 
             // horizontal subdivisions
@@ -137,9 +134,9 @@ class Surface_Patch {
                 while (i < height) {
                     l = 0
                     while (l < 3) {
-                        prevxyz[1] = verts[i * maxWidth + j + 1].xyz[l] - verts[i * maxWidth + j].xyz[l]
-                        nextxyz[1] = verts[i * maxWidth + j + 2].xyz[l] - verts[i * maxWidth + j + 1].xyz[l]
-                        midxyz[1] =
+                        prevxyz[l] = verts[i * maxWidth + j + 1].xyz[l] - verts[i * maxWidth + j].xyz[l]
+                        nextxyz[l] = verts[i * maxWidth + j + 2].xyz[l] - verts[i * maxWidth + j + 1].xyz[l]
+                        midxyz[l] =
                             (verts[i * maxWidth + j].xyz[l] + verts[i * maxWidth + j + 1].xyz[l] * 2.0f + verts[i * maxWidth + j + 2].xyz[l]) * 0.25f
                         l++
                     }
@@ -150,7 +147,7 @@ class Surface_Patch {
                         }
                     }
                     // see if this midpoint is off far enough to subdivide
-                    delta.plusAssign(verts[i * maxWidth + j + 1].xyz - midxyz)
+                    delta.set(verts[i * maxWidth + j + 1].xyz - midxyz)
                     if (delta.LengthSqr() > maxHorizontalErrorSqr) {
                         break
                     }
@@ -196,9 +193,9 @@ class Surface_Patch {
                 while (i < width) {
                     l = 0
                     while (l < 3) {
-                        prevxyz[1] = verts[(j + 1) * maxWidth + i].xyz[l] - verts[j * maxWidth + i].xyz[l]
-                        nextxyz[1] = verts[(j + 2) * maxWidth + i].xyz[l] - verts[(j + 1) * maxWidth + i].xyz[l]
-                        midxyz[1] =
+                        prevxyz[l] = verts[(j + 1) * maxWidth + i].xyz[l] - verts[j * maxWidth + i].xyz[l]
+                        nextxyz[l] = verts[(j + 2) * maxWidth + i].xyz[l] - verts[(j + 1) * maxWidth + i].xyz[l]
+                        midxyz[l] =
                             (verts[j * maxWidth + i].xyz[l] + verts[(j + 1) * maxWidth + i].xyz[l] * 2.0f + verts[(j + 2) * maxWidth + i].xyz[l]) * 0.25f
                         l++
                     }
@@ -392,7 +389,7 @@ class Surface_Patch {
             assert(expanded == true)
             j = 1
             while (j < width - 1) {
-                maxLength = 0f
+                maxLength = 0.0f
                 i = 0
                 while (i < height) {
                     ProjectPointOntoVector(
@@ -406,7 +403,7 @@ class Surface_Patch {
                     }
                     i++
                 }
-                if (maxLength < Math_h.Square(0.2f)) {
+                if (maxLength < Square(0.2f)) {
                     width--
                     i = 0
                     while (i < height) {
@@ -423,7 +420,7 @@ class Surface_Patch {
             }
             j = 1
             while (j < height - 1) {
-                maxLength = 0f
+                maxLength = 0.0f
                 i = 0
                 while (i < width) {
                     ProjectPointOntoVector(
@@ -437,7 +434,7 @@ class Surface_Patch {
                     }
                     i++
                 }
-                if (maxLength < Math_h.Square(0.2f)) {
+                if (maxLength < Square(0.2f)) {
                     height--
                     i = 0
                     while (i < width) {
@@ -616,7 +613,7 @@ class Surface_Patch {
             i = 0
             while (i < height) {
                 delta.set(verts[i * width].xyz - verts[i * width + width - 1].xyz)
-                if (delta.LengthSqr() > Math_h.Square(1.0f)) {
+                if (delta.LengthSqr() > Square(1.0f)) {
                     break
                 }
                 i++
@@ -628,7 +625,7 @@ class Surface_Patch {
             i = 0
             while (i < width) {
                 delta.set(verts[i].xyz - verts[(height - 1) * width + i].xyz)
-                if (delta.LengthSqr() > Math_h.Square(1.0f)) {
+                if (delta.LengthSqr() > Square(1.0f)) {
                     break
                 }
                 i++
@@ -644,7 +641,7 @@ class Surface_Patch {
                     base.set(verts[j * width + i].xyz)
                     k = 0
                     while (k < 8) {
-                        around[k].set(Vector.getVec3Origin())
+                        around[k].set(getVec3Origin())
                         good[k] = false
                         dist = 1
                         while (dist <= 3) {
@@ -680,7 +677,7 @@ class Surface_Patch {
                         }
                         k++
                     }
-                    sum.set(Vector.getVec3Origin())
+                    sum.set(getVec3Origin())
                     k = 0
                     while (k < 8) {
                         if (!good[k] || !good[k + 1 and 7]) {

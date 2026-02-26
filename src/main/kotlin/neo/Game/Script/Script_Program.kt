@@ -11,20 +11,17 @@ import neo.TempDump.btoi
 import neo.TempDump.btos
 import neo.TempDump.itob
 import neo.framework.File_h.idFile
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.CharIsPrintable
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idStrList
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.idException
+import neo.idlib.math.idVec3
 import java.nio.BufferUnderflowException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/**
- *
- */
 object Script_Program {
     const val MAX_STRING_LEN = 128
     const val MAX_FUNCS = 3072
@@ -196,59 +193,13 @@ object Script_Program {
         }
     }
 
-    class  /*union*/ eval_s {
-        //TODO:unionize?
-        val _float: Float
-        val _int: Int
-        val entity: Int
-        val function: Array<function_t>?
-        val stringPtr: Array<String>?
-        val vector: FloatArray?
-
-        constructor(string: String) {
-            stringPtr = arrayOf(string)
-            _float = Float.NaN
-            vector = null
-            function = null
-            entity = Int.MIN_VALUE
-            _int = entity
-        }
-
-        constructor(_float: Float) {
-            stringPtr = null
-            this._float = _float
-            vector = null
-            function = null
-            entity = Int.MIN_VALUE
-            _int = entity
-        }
-
-        constructor(vector: FloatArray?) {
-            stringPtr = null
-            _float = Float.NaN
-            this.vector = vector
-            function = null
-            entity = Int.MIN_VALUE
-            _int = entity
-        }
-
-        constructor(func: function_t) {
-            stringPtr = null
-            _float = Float.NaN
-            vector = null
-            function = arrayOf(func)
-            entity = Int.MIN_VALUE
-            _int = entity
-        }
-
-        constructor(`val`: Int) {
-            stringPtr = null
-            _float = Float.NaN
-            vector = null
-            function = null
-            entity = `val`
-            _int = entity
-        }
+    class eval_s {
+        var _float: Float = 0.0f
+        var _int: Int = 0
+        var entity: Int = 0
+        var function: Array<function_t>? = null
+        var stringPtr: Array<String>? = null
+        var vector: FloatArray = FloatArray(3)
     }
 
     /* **********************************************************************
@@ -991,19 +942,18 @@ object Script_Program {
             return vectorPtr
         }
 
-        fun setVectorPtr(vector: idVec3?) {
-            setVectorPtr(vector!!.ToFloatPtr())
+        fun setVectorPtr(vector: idVec3) {
+            setVectorPtr(vector.ToFloatPtr())
         }
 
-        fun setVectorPtr(vector: FloatArray?) {
-            vectorPtr.set(idVec3(vector!!))
+        fun setVectorPtr(vector: FloatArray) {
+            vectorPtr.set(idVec3(vector))
             primitive.putFloat(0, vector[0])
             primitive.putFloat(4, vector[1])
             primitive.putFloat(8, vector[2])
         }
 
         var intPtr: Int
-            //        void bytePtr(ByteBuffer data, int ptrOffset) {
             get() = primitive.getInt(0)
             set(value) {
                 setPrimitive(value)
@@ -1046,7 +996,7 @@ object Script_Program {
         }
     }
 
-    class idVarDef constructor( //
+    class idVarDef( //
         private var typeDef: idTypeDef? = null /*= NULL*/
     ) {
         //
@@ -1125,7 +1075,6 @@ object Script_Program {
 
         fun SetObject(`object`: idScriptObject?) {
             assert(typeDef != null)
-            initialized = initialized
             assert(typeDef!!.Inherits(type_object))
             value = varEval_s()
             value!!.objectPtrPtr = `object`

@@ -1,7 +1,5 @@
 package neo.Game.Physics
 
-import neo.CM.CollisionModel.contactInfo_t
-import neo.CM.CollisionModel.trace_s
 import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.eventCallback_t
 import neo.Game.GameSys.Class.idClass
@@ -9,17 +7,16 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Physics.Clip.idClipModel
+import neo.cm.contactInfo_t
+import neo.cm.trace_s
 import neo.framework.UsercmdGen
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsgDelta
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idRotation
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 object Physics {
     /*
      ===============================================================================
@@ -55,10 +52,10 @@ object Physics {
     const val CONTACT_EPSILON = 0.25f // maximum contact seperation distance
 
     class impactInfo_s {
-        var invInertiaTensor // inverse inertia tensor
+        val invInertiaTensor // inverse inertia tensor
                 : idMat3 = idMat3()
         var invMass // inverse mass
-                = 0f
+                = 0.0f
         val position // impact position relative to center of mass
                 : idVec3 = idVec3()
         val velocity // velocity at the impact position
@@ -67,9 +64,6 @@ object Physics {
 
     abstract class idPhysics : idClass() {
         protected val DBG_count = DBG_counter++
-        override fun _deconstructor() {
-            super._deconstructor()
-        }
 
 
         // Must not be virtual

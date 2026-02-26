@@ -8,17 +8,14 @@ import neo.framework.CVarSystem
 import neo.framework.FileSystem_h
 import neo.framework.FileSystem_h.idFileList
 import neo.framework.Licensee
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Parser.idParser
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
+import neo.idlib.idException
 
-/**
- *
- */
 object Anim_Import {
     /**
      * *********************************************************************
@@ -80,13 +77,13 @@ object Anim_Import {
                             lex.Error("Missing pathname after -sourcedir")
                             return false
                         }
-                        sourcedir = token
+                        sourcedir.set(token)
                     } else if (token.toString() == "destdir") {
                         if (!lex.ReadToken(token)) {
                             lex.Error("Missing pathname after -destdir")
                             return false
                         }
-                        destdir = token
+                        destdir.set(token)
                     } else if (token.toString() == "dest") {
                         if (!lex.ReadToken(token)) {
                             lex.Error("Missing filename after -dest")
@@ -159,7 +156,7 @@ object Anim_Import {
                     if (!parser.ReadToken(token)) {
                         parser.Error("Expected filename")
                     }
-                    temp = token
+                    temp.set(token)
                     parser.ParseRestOfLine(parms)
                     if (defaultCommands.Length() != 0) {
                         temp.set(String.format("%s %s", temp, defaultCommands))
@@ -183,7 +180,7 @@ object Anim_Import {
                         } else {
                             dest.SetFileExtension(command.toString())
                         }
-                        //				idStr back = commandLine;
+                        val back = commandLine.toString()
                         commandLine.set(
                             String.format(
                                 "%s %s -dest %s -game %s%s",
@@ -191,13 +188,13 @@ object Anim_Import {
                                 src.toString(),
                                 dest.toString(),
                                 game,
-                                commandLine.toString()
+                                back
                             )
                         )
                         if (ConvertMayaToMD5()) {
                             count++
                         } else {
-                            parser.Warning("Failed to export '%s' : %s", src, Anim_Import.Maya_Error)
+                            parser.Warning("Failed to export '%s' : %s", src, Maya_Error)
                         }
                     }
                     lex.FreeSource()
@@ -330,7 +327,7 @@ object Anim_Import {
 
         fun ExportModel(model: String): Boolean {
             var game = CVarSystem.cvarSystem.GetCVarString("fs_game")
-            if (game.isNotEmpty()) {
+            if (game.isEmpty()) {
                 game = Licensee.BASE_GAMEDIR
             }
             Reset()
@@ -339,7 +336,7 @@ object Anim_Import {
             dest.SetFileExtension(Model.MD5_MESH_EXT)
             commandLine.set(String.format("mesh %s -dest %s -game %s", src.toString(), dest.toString(), game))
             if (!ConvertMayaToMD5()) {
-                Game_local.gameLocal.Printf("Failed to export '%s' : %s", src, Anim_Import.Maya_Error)
+                Game_local.gameLocal.Printf("Failed to export '%s' : %s", src, Maya_Error)
                 return false
             }
             return true
@@ -347,7 +344,7 @@ object Anim_Import {
 
         fun ExportAnim(anim: String): Boolean {
             var game = CVarSystem.cvarSystem.GetCVarString("fs_game")
-            if (game.isNotEmpty()) {
+            if (game.isEmpty()) {
                 game = Licensee.BASE_GAMEDIR
             }
             Reset()
@@ -356,7 +353,7 @@ object Anim_Import {
             dest.SetFileExtension(Model.MD5_ANIM_EXT)
             commandLine.set(String.format("anim %s -dest %s -game %s", src, dest, game))
             if (!ConvertMayaToMD5()) {
-                Game_local.gameLocal.Printf("Failed to export '%s' : %s", src, Anim_Import.Maya_Error)
+                Game_local.gameLocal.Printf("Failed to export '%s' : %s", src, Maya_Error)
                 return false
             }
             return true
@@ -374,7 +371,7 @@ object Anim_Import {
             }
             Game_local.gameLocal.Printf("--------- Exporting models --------\n")
             if (!SysCvar.g_exportMask.GetString().isNullOrEmpty()) {
-                Game_local.gameLocal.Printf("  Export mask: '%s'\n", SysCvar.g_exportMask.GetString())
+                Game_local.gameLocal.Printf(" Export mask: '%s'\n", SysCvar.g_exportMask.GetString())
             }
             count = 0
             files = FileSystem_h.fileSystem.ListFiles(pathname, extension)

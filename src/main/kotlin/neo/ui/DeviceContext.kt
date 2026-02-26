@@ -25,19 +25,16 @@ import neo.idlib.Text.Str.idStr.Companion.IsColor
 import neo.idlib.Text.Str.va
 import neo.idlib.containers.List.idList
 import neo.idlib.geometry.DrawVert.idDrawVert
-import neo.idlib.math.Math_h.idMath.Cos
-import neo.idlib.math.Math_h.idMath.FtoiFast
-import neo.idlib.math.Math_h.idMath.Sin
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Matrix.idMat4
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idMath.Cos
+import neo.idlib.math.idMath.FtoiFast
+import neo.idlib.math.idMath.Sin
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import neo.ui.Rectangle.idRectangle
 import neo.ui.Rectangle.idRegion
 
-/**
- *
- */
 object DeviceContext {
     const val BLINK_DIVISOR = 200
     const val VIRTUAL_HEIGHT = 480
@@ -70,7 +67,7 @@ object DeviceContext {
         //        public void EnableLocalization();
         //
         //
-        private var mat: idMat3
+        private val mat: idMat3
 
         //
         private var mbcs = false
@@ -81,11 +78,11 @@ object DeviceContext {
         private var useFont: fontInfo_t? = null
 
         //
-        private var vidHeight = 0f
-        private var vidWidth = 0f
+        private var vidHeight = 0.0f
+        private var vidWidth = 0.0f
         private var whiteImage: idMaterial? = null
-        private var xScale = 0f
-        private var yScale = 0f
+        private var xScale = 0.0f
+        private var yScale = 0.0f
 
         init {
             fontLang = idStr()
@@ -95,22 +92,22 @@ object DeviceContext {
         }
 
         fun Init() {
-            xScale = 0f
+            xScale = 0.0f
             SetSize(VIRTUAL_WIDTH.toFloat(), VIRTUAL_HEIGHT.toFloat())
             whiteImage = DeclManager.declManager.FindMaterial("guis/assets/white.tga")
             whiteImage!!.SetSort(Material.SS_GUI.toFloat())
             mbcs = false
             SetupFonts()
             activeFont = fonts[0]
-            colorPurple = idVec4(1, 0, 1, 1)
-            colorOrange = idVec4(1, 1, 0, 1)
-            colorYellow = idVec4(0, 1, 1, 1)
-            colorGreen = idVec4(0, 1, 0, 1)
-            colorBlue = idVec4(0, 0, 1, 1)
-            colorRed = idVec4(1, 0, 0, 1)
-            colorWhite = idVec4(1, 1, 1, 1)
-            colorBlack = idVec4(0, 0, 0, 1)
-            colorNone = idVec4(0, 0, 0, 0)
+            colorPurple.set(idVec4(1, 0, 1, 1))
+            colorOrange.set(idVec4(1, 1, 0, 1))
+            colorYellow.set(idVec4(0, 1, 1, 1))
+            colorGreen.set(idVec4(0, 1, 0, 1))
+            colorBlue.set(idVec4(0, 0, 1, 1))
+            colorRed.set(idVec4(1, 0, 0, 1))
+            colorWhite.set(idVec4(1, 1, 1, 1))
+            colorBlack.set(idVec4(0, 0, 0, 1))
+            colorNone.set(idVec4(0, 0, 0, 0))
             cursorImages[CURSOR.CURSOR_ARROW.ordinal] =
                 DeclManager.declManager.FindMaterial("ui/assets/guicursor_arrow.tga")
             cursorImages[CURSOR.CURSOR_HAND.ordinal] =
@@ -164,7 +161,7 @@ object DeviceContext {
 
         fun SetTransformInfo(origin: idVec3?, mat: idMat3) {
             this.origin.set(origin!!)
-            this.mat = mat
+            this.mat.set(mat)
         }
 
 
@@ -175,7 +172,7 @@ object DeviceContext {
             h: Float,
             mat: idMaterial?,
             color: idVec4?,
-            scalex: Float = 1.0f /*= 1.0f*/
+            scalex: Float = 1.0f
         ) {
             DrawMaterial(x, y, w, h, mat, color, scalex, 1.0f)
         }
@@ -193,10 +190,10 @@ object DeviceContext {
             var scaleX = scaleX
             var scaleY = scaleY
             RenderSystem.renderSystem.SetColor(color!!)
-            val s0 = floatArrayOf(0f)
-            val s1 = floatArrayOf(0f)
-            val t0 = floatArrayOf(0f)
-            val t1 = floatArrayOf(0f)
+            val s0 = floatArrayOf(0.0f)
+            val s1 = floatArrayOf(0.0f)
+            val t0 = floatArrayOf(0.0f)
+            val t1 = floatArrayOf(0.0f)
             val x1 = floatArrayOf(x)
             val y1 = floatArrayOf(y)
             val w1 = floatArrayOf(w)
@@ -204,28 +201,28 @@ object DeviceContext {
             //
 //  handle negative scales as well
             if (scaleX < 0) {
-                w1[0] *= -1f
-                scaleX *= -1f
+                w1[0] *= -1.0f
+                scaleX *= -1.0f
             }
             if (scaleY < 0) {
-                h1[0] *= -1f
-                scaleY *= -1f
+                h1[0] *= -1.0f
+                scaleY *= -1.0f
             }
             //
             if (w1[0] < 0) {    // flip about vertical
                 w1[0] = -w1[0]
                 s0[0] = 1 * scaleX
-                s1[0] = 0f
+                s1[0] = 0.0f
             } else {
-                s0[0] = 0f
+                s0[0] = 0.0f
                 s1[0] = 1 * scaleX
             }
             if (h1[0] < 0) {    // flip about horizontal
                 h1[0] = -h1[0]
                 t0[0] = 1 * scaleY
-                t1[0] = 0f
+                t1[0] = 0.0f
             } else {
-                t0[0] = 0f
+                t0[0] = 0.0f
                 t1[0] = 1 * scaleY
             }
             if (ClippedCoords(x1, y1, w1, h1, s0, t0, s1, t1)) {
@@ -241,7 +238,7 @@ object DeviceContext {
             val y1 = floatArrayOf(y)
             val w1 = floatArrayOf(width)
             val h1 = floatArrayOf(height)
-            if (color!!.w == 0f) {
+            if (color!!.w == 0.0f) {
                 return
             }
             RenderSystem.renderSystem.SetColor(color)
@@ -249,10 +246,10 @@ object DeviceContext {
                 return
             }
             AdjustCoords(x1, y1, w1, h1)
-            DrawStretchPic(x1[0], y1[0], size, h1[0], 0f, 0f, 0f, 0f, whiteImage)
-            DrawStretchPic(x1[0] + w1[0] - size, y1[0], size, h1[0], 0f, 0f, 0f, 0f, whiteImage)
-            DrawStretchPic(x1[0], y1[0], w1[0], size, 0f, 0f, 0f, 0f, whiteImage)
-            DrawStretchPic(x1[0], y1[0] + h1[0] - size, w1[0], size, 0f, 0f, 0f, 0f, whiteImage)
+            DrawStretchPic(x1[0], y1[0], size, h1[0], 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
+            DrawStretchPic(x1[0] + w1[0] - size, y1[0], size, h1[0], 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
+            DrawStretchPic(x1[0], y1[0], w1[0], size, 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
+            DrawStretchPic(x1[0], y1[0] + h1[0] - size, w1[0], size, 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
         }
 
         fun DrawFilledRect(x: Float, y: Float, width: Float, height: Float, color: idVec4?) {
@@ -260,7 +257,7 @@ object DeviceContext {
             val y1 = floatArrayOf(y)
             val w1 = floatArrayOf(width)
             val h1 = floatArrayOf(height)
-            if (color!!.w == 0f) {
+            if (color!!.w == 0.0f) {
                 return
             }
             RenderSystem.renderSystem.SetColor(color)
@@ -268,13 +265,13 @@ object DeviceContext {
                 return
             }
             AdjustCoords(x1, y1, w1, h1)
-            DrawStretchPic(x1[0], y1[0], w1[0], h1[0], 0f, 0f, 0f, 0f, whiteImage)
+            DrawStretchPic(x1[0], y1[0], w1[0], h1[0], 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
             aaaa++
         }
 
 
         fun DrawText(
-            text: String?,
+            text: String,
             textScale: Float,
             textAlign: Int,
             color: idVec4?,
@@ -287,11 +284,7 @@ object DeviceContext {
         ): Int {
             var text = text
             var cursor = cursor
-            if (text == null || text.isEmpty()) {
-                return -1 // why call DrawText if text is garbage?
-            }
             var p: Char
-            var textPtr: Char
             var p_i: Int
             var newLinePtr = 0
             val buff = CharArray(1024)
@@ -303,11 +296,11 @@ object DeviceContext {
             var textWidth: Float
             val charSkip = (MaxCharWidth(textScale) + 1).toFloat()
             val lineSkip = MaxCharHeight(textScale).toFloat()
-            val cursorSkip: Float = if (cursor >= 0) charSkip else 0f
+            val cursorSkip: Float = if (cursor >= 0) charSkip else 0.0f
             var lineBreak: Boolean
             var wordBreak: Boolean
             SetFontByScale(textScale)
-            if (!calcOnly && !(text != null && !text.isEmpty())) {
+            if (!calcOnly && text.isEmpty()) {
                 if (cursor == 0) {
                     RenderSystem.renderSystem.SetColor(color!!)
                     DrawEditCursor(rectDraw.x, lineSkip + rectDraw.y, textScale)
@@ -325,7 +318,7 @@ object DeviceContext {
             p_i = 0
             breaks?.Append(0)
             count = 0
-            textWidth = 0f
+            textWidth = 0.0f
             lineBreak = false
             wordBreak = false
             while (p_i < text.length) {
@@ -374,7 +367,7 @@ object DeviceContext {
                         }
                     }
                     if (!calcOnly) {
-                        count += DrawText(x, y, textScale, color, ctos(buff), 0f, 0, 0, cursor)
+                        count += DrawText(x, y, textScale, color, ctos(buff), 0.0f, 0, 0, cursor)
                     }
                     if (cursor < newLine) {
                         cursor = -1
@@ -396,7 +389,7 @@ object DeviceContext {
                     len = 0
                     newLine = 0
                     newLineWidth = 0
-                    textWidth = 0f
+                    textWidth = 0.0f
                     lineBreak = false
                     wordBreak = false
                     continue
@@ -440,8 +433,16 @@ object DeviceContext {
             return DrawText(text.toString(), textScale, textAlign, color, rectDraw, wrap, cursor)
         }
 
-        fun DrawMaterialRect(x: Float, y: Float, w: Float, h: Float, size: Float, mat: idMaterial?, color: idVec4) {
-            if (color.w == 0f) {
+        fun DrawMaterialRect(
+            x: Float,
+            y: Float,
+            w: Float,
+            h: Float,
+            size: Float,
+            mat: idMaterial?,
+            color: idVec4
+        ) {
+            if (color.w == 0.0f) {
                 return
             }
             RenderSystem.renderSystem.SetColor(color)
@@ -472,60 +473,60 @@ object DeviceContext {
             indexes[5] = 1
             verts[0].xyz[0] = x
             verts[0].xyz[1] = y
-            verts[0].xyz[2] = 0f
+            verts[0].xyz[2] = 0.0f
             verts[0].st[0] = s0
             verts[0].st[1] = t0
-            verts[0].normal[0] = 0f
-            verts[0].normal[1] = 0f
-            verts[0].normal[2] = 1f
-            verts[0].tangents[0][0] = 1f
-            verts[0].tangents[0][1] = 0f
-            verts[0].tangents[0][2] = 0f
-            verts[0].tangents[1][0] = 0f
-            verts[0].tangents[1][1] = 1f
-            verts[0].tangents[1][2] = 0f
+            verts[0].normal[0] = 0.0f
+            verts[0].normal[1] = 0.0f
+            verts[0].normal[2] = 1.0f
+            verts[0].tangents[0][0] = 1.0f
+            verts[0].tangents[0][1] = 0.0f
+            verts[0].tangents[0][2] = 0.0f
+            verts[0].tangents[1][0] = 0.0f
+            verts[0].tangents[1][1] = 1.0f
+            verts[0].tangents[1][2] = 0.0f
             verts[1].xyz[0] = x + w
             verts[1].xyz[1] = y
-            verts[1].xyz[2] = 0f
+            verts[1].xyz[2] = 0.0f
             verts[1].st[0] = s1
             verts[1].st[1] = t0
-            verts[1].normal[0] = 0f
-            verts[1].normal[1] = 0f
-            verts[1].normal[2] = 1f
-            verts[1].tangents[0][0] = 1f
-            verts[1].tangents[0][1] = 0f
-            verts[1].tangents[0][2] = 0f
-            verts[1].tangents[1][0] = 0f
-            verts[1].tangents[1][1] = 1f
-            verts[1].tangents[1][2] = 0f
+            verts[1].normal[0] = 0.0f
+            verts[1].normal[1] = 0.0f
+            verts[1].normal[2] = 1.0f
+            verts[1].tangents[0][0] = 1.0f
+            verts[1].tangents[0][1] = 0.0f
+            verts[1].tangents[0][2] = 0.0f
+            verts[1].tangents[1][0] = 0.0f
+            verts[1].tangents[1][1] = 1.0f
+            verts[1].tangents[1][2] = 0.0f
             verts[2].xyz[0] = x + w
             verts[2].xyz[1] = y + h
-            verts[2].xyz[2] = 0f
+            verts[2].xyz[2] = 0.0f
             verts[2].st[0] = s1
             verts[2].st[1] = t1
-            verts[2].normal[0] = 0f
-            verts[2].normal[1] = 0f
-            verts[2].normal[2] = 1f
-            verts[2].tangents[0][0] = 1f
-            verts[2].tangents[0][1] = 0f
-            verts[2].tangents[0][2] = 0f
-            verts[2].tangents[1][0] = 0f
-            verts[2].tangents[1][1] = 1f
-            verts[2].tangents[1][2] = 0f
+            verts[2].normal[0] = 0.0f
+            verts[2].normal[1] = 0.0f
+            verts[2].normal[2] = 1.0f
+            verts[2].tangents[0][0] = 1.0f
+            verts[2].tangents[0][1] = 0.0f
+            verts[2].tangents[0][2] = 0.0f
+            verts[2].tangents[1][0] = 0.0f
+            verts[2].tangents[1][1] = 1.0f
+            verts[2].tangents[1][2] = 0.0f
             verts[3].xyz[0] = x
             verts[3].xyz[1] = y + h
-            verts[3].xyz[2] = 0f
+            verts[3].xyz[2] = 0.0f
             verts[3].st[0] = s0
             verts[3].st[1] = t1
-            verts[3].normal[0] = 0f
-            verts[3].normal[1] = 0f
-            verts[3].normal[2] = 1f
-            verts[3].tangents[0][0] = 1f
-            verts[3].tangents[0][1] = 0f
-            verts[3].tangents[0][2] = 0f
-            verts[3].tangents[1][0] = 0f
-            verts[3].tangents[1][1] = 1f
-            verts[3].tangents[1][2] = 0f
+            verts[3].normal[0] = 0.0f
+            verts[3].normal[1] = 0.0f
+            verts[3].normal[2] = 1.0f
+            verts[3].tangents[0][0] = 1.0f
+            verts[3].tangents[0][1] = 0.0f
+            verts[3].tangents[0][2] = 0.0f
+            verts[3].tangents[1][0] = 0.0f
+            verts[3].tangents[1][1] = 1.0f
+            verts[3].tangents[1][2] = 0.0f
             val identity = !mat.IsIdentity()
             if (identity) {
                 verts[0].xyz.minusAssign(origin)
@@ -551,8 +552,8 @@ object DeviceContext {
             h: Float,
             mat: idMaterial?,
             color: idVec4?,
-            scalex: Float /*= 1.0*/,
-            scaley: Float /*= 1.0*/,
+            scalex: Float /*= 1.0f*/,
+            scaley: Float /*= 1.0f*/,
             angle: Float /*= 0.0f*/
         ) {
             var scalex = scalex
@@ -569,31 +570,31 @@ object DeviceContext {
             //
             //  handle negative scales as well
             if (scalex < 0) {
-                w1[0] *= -1f
-                scalex *= -1f
+                w1[0] *= -1.0f
+                scalex *= -1.0f
             }
             if (scaley < 0) {
-                h1[0] *= -1f
-                scaley *= -1f
+                h1[0] *= -1.0f
+                scaley *= -1.0f
             }
             //
             if (w1[0] < 0) {    // flip about vertical
                 w1[0] = -w1[0]
                 s0[0] = 1 * scalex
-                s1[0] = 0f
+                s1[0] = 0.0f
             } else {
-                s0[0] = 0f
+                s0[0] = 0.0f
                 s1[0] = 1 * scalex
             }
             if (h1[0] < 0) {    // flip about horizontal
                 h1[0] = -h1[0]
                 t0[0] = 1 * scaley
-                t1[0] = 0f
+                t1[0] = 0.0f
             } else {
-                t0[0] = 0f
+                t0[0] = 0.0f
                 t1[0] = 1 * scaley
             }
-            if (angle == 0f && ClippedCoords(x1, y1, w1, h1, s0, t0, s1, t1)) {
+            if (angle == 0.0f && ClippedCoords(x1, y1, w1, h1, s0, t0, s1, t1)) {
                 return
             }
             AdjustCoords(x1, y1, w1, h1)
@@ -612,7 +613,7 @@ object DeviceContext {
             shader: idMaterial?,
             angle: Float /*= 0.0f*/
         ) {
-            val verts = arrayOfNulls<idDrawVert>(4)
+            val verts = arrayOf(idDrawVert(), idDrawVert(), idDrawVert(), idDrawVert())
             val indexes = IntArray(6)
             indexes[0] = 3
             indexes[1] = 0
@@ -620,62 +621,62 @@ object DeviceContext {
             indexes[3] = 2
             indexes[4] = 0
             indexes[5] = 1
-            verts[0]!!.xyz[0] = x
+            verts[0].xyz[0] = x
             verts[0]!!.xyz[1] = y
-            verts[0]!!.xyz[2] = 0f
+            verts[0]!!.xyz[2] = 0.0f
             verts[0]!!.st[0] = s0
             verts[0]!!.st[1] = t0
-            verts[0]!!.normal[0] = 0f
-            verts[0]!!.normal[1] = 0f
-            verts[0]!!.normal[2] = 1f
-            verts[0]!!.tangents[0][0] = 1f
-            verts[0]!!.tangents[0][1] = 0f
-            verts[0]!!.tangents[0][2] = 0f
-            verts[0]!!.tangents[1][0] = 0f
-            verts[0]!!.tangents[1][1] = 1f
-            verts[0]!!.tangents[1][2] = 0f
+            verts[0]!!.normal[0] = 0.0f
+            verts[0]!!.normal[1] = 0.0f
+            verts[0]!!.normal[2] = 1.0f
+            verts[0]!!.tangents[0][0] = 1.0f
+            verts[0]!!.tangents[0][1] = 0.0f
+            verts[0]!!.tangents[0][2] = 0.0f
+            verts[0]!!.tangents[1][0] = 0.0f
+            verts[0]!!.tangents[1][1] = 1.0f
+            verts[0]!!.tangents[1][2] = 0.0f
             verts[1]!!.xyz[0] = x + w
             verts[1]!!.xyz[1] = y
-            verts[1]!!.xyz[2] = 0f
+            verts[1]!!.xyz[2] = 0.0f
             verts[1]!!.st[0] = s1
             verts[1]!!.st[1] = t0
-            verts[1]!!.normal[0] = 0f
-            verts[1]!!.normal[1] = 0f
-            verts[1]!!.normal[2] = 1f
-            verts[1]!!.tangents[0][0] = 1f
-            verts[1]!!.tangents[0][1] = 0f
-            verts[1]!!.tangents[0][2] = 0f
-            verts[1]!!.tangents[1][0] = 0f
-            verts[1]!!.tangents[1][1] = 1f
-            verts[1]!!.tangents[1][2] = 0f
+            verts[1]!!.normal[0] = 0.0f
+            verts[1]!!.normal[1] = 0.0f
+            verts[1]!!.normal[2] = 1.0f
+            verts[1]!!.tangents[0][0] = 1.0f
+            verts[1]!!.tangents[0][1] = 0.0f
+            verts[1]!!.tangents[0][2] = 0.0f
+            verts[1]!!.tangents[1][0] = 0.0f
+            verts[1]!!.tangents[1][1] = 1.0f
+            verts[1]!!.tangents[1][2] = 0.0f
             verts[2]!!.xyz[0] = x + w
             verts[2]!!.xyz[1] = y + h
-            verts[2]!!.xyz[2] = 0f
+            verts[2]!!.xyz[2] = 0.0f
             verts[2]!!.st[0] = s1
             verts[2]!!.st[1] = t1
-            verts[2]!!.normal[0] = 0f
-            verts[2]!!.normal[1] = 0f
-            verts[2]!!.normal[2] = 1f
-            verts[2]!!.tangents[0][0] = 1f
-            verts[2]!!.tangents[0][1] = 0f
-            verts[2]!!.tangents[0][2] = 0f
-            verts[2]!!.tangents[1][0] = 0f
-            verts[2]!!.tangents[1][1] = 1f
-            verts[2]!!.tangents[1][2] = 0f
+            verts[2]!!.normal[0] = 0.0f
+            verts[2]!!.normal[1] = 0.0f
+            verts[2]!!.normal[2] = 1.0f
+            verts[2]!!.tangents[0][0] = 1.0f
+            verts[2]!!.tangents[0][1] = 0.0f
+            verts[2]!!.tangents[0][2] = 0.0f
+            verts[2]!!.tangents[1][0] = 0.0f
+            verts[2]!!.tangents[1][1] = 1.0f
+            verts[2]!!.tangents[1][2] = 0.0f
             verts[3]!!.xyz[0] = x
             verts[3]!!.xyz[1] = y + h
-            verts[3]!!.xyz[2] = 0f
+            verts[3]!!.xyz[2] = 0.0f
             verts[3]!!.st[0] = s0
             verts[3]!!.st[1] = t1
-            verts[3]!!.normal[0] = 0f
-            verts[3]!!.normal[1] = 0f
-            verts[3]!!.normal[2] = 1f
-            verts[3]!!.tangents[0][0] = 1f
-            verts[3]!!.tangents[0][1] = 0f
-            verts[3]!!.tangents[0][2] = 0f
-            verts[3]!!.tangents[1][0] = 0f
-            verts[3]!!.tangents[1][1] = 1f
-            verts[3]!!.tangents[1][2] = 0f
+            verts[3]!!.normal[0] = 0.0f
+            verts[3]!!.normal[1] = 0.0f
+            verts[3]!!.normal[2] = 1.0f
+            verts[3]!!.tangents[0][0] = 1.0f
+            verts[3]!!.tangents[0][1] = 0.0f
+            verts[3]!!.tangents[0][2] = 0.0f
+            verts[3]!!.tangents[1][0] = 0.0f
+            verts[3]!!.tangents[1][1] = 1.0f
+            verts[3]!!.tangents[1][2] = 0.0f
             val ident = !mat.IsIdentity()
             if (ident) {
                 verts[0]!!.xyz.minusAssign(origin)
@@ -696,7 +697,7 @@ object DeviceContext {
             val origTrans = idVec3()
             origTrans.x = x + w / 2
             origTrans.y = y + h / 2
-            origTrans.z = 0f
+            origTrans.z = 0.0f
 
             //Rotate the verts about the z axis before drawing them
             val rotz = idMat4()
@@ -707,7 +708,7 @@ object DeviceContext {
             rotz[0, 1] = sinAng
             rotz[1, 0] = -sinAng
             rotz[1, 1] = cosAng
-            for (i in 0..3) {
+            for (i in 0 until 4) {
                 //Translate to origin
                 verts[i]!!.xyz.minusAssign(origTrans)
 
@@ -717,7 +718,7 @@ object DeviceContext {
                 //Translate back
                 verts[i]!!.xyz.plusAssign(origTrans)
             }
-            RenderSystem.renderSystem.DrawStretchPic(verts as Array<idDrawVert>, indexes, 4, 6, shader, angle != 0f)
+            RenderSystem.renderSystem.DrawStretchPic(verts as Array<idDrawVert>, indexes, 4, 6, shader, angle != 0.0f)
         }
 
         fun CharWidth(c: Char, scale: Float): Int {
@@ -777,7 +778,7 @@ object DeviceContext {
             SetFontByScale(scale)
             val font = useFont
             useScale = scale * font!!.glyphScale
-            max = 0f
+            max = 0.0f
             if (text != null) {
                 len = text.length
                 if (limit > 0 && len > limit) {
@@ -816,7 +817,7 @@ object DeviceContext {
         fun FindFont(name: String?): Int {
             val c = fonts.Num()
             for (i in 0 until c) {
-                if (Icmp(name!!, fonts[i].name!!) == 0) {
+                if (Icmp(name, fonts[i].name) == 0) {
                     return i
                 }
             }
@@ -928,101 +929,38 @@ object DeviceContext {
         fun SetSize(width: Float, height: Float) {
             vidWidth = VIRTUAL_WIDTH.toFloat()
             vidHeight = VIRTUAL_HEIGHT.toFloat()
-            yScale = 0f
+            yScale = 0.0f
             xScale = yScale
-            if (width != 0f && height != 0f) {
+            if (width != 0.0f && height != 0.0f) {
                 xScale = vidWidth * (1.0f / width)
                 yScale = vidHeight * (1.0f / height)
             }
         }
 
         fun GetScrollBarImage(index: Int): idMaterial? {
-//if (false){
-//	const char	*p, *textPtr, *newLinePtr;
-//	char		buff[1024];
-//	int			len, textWidth, newLine, newLineWidth;
-//	float		y;
-//
-//	float charSkip = MaxCharWidth(textScale) + 1;
-//	float lineSkip = MaxCharHeight(textScale);
-//
-//	textWidth = 0;
-//	newLinePtr = NULL;
-//}
-            return null
-            /*
-             if (text == NULL) {
-             return;
-             }
-
-             textPtr = text;
-             if (*textPtr == '\0') {
-             return;
-             }
-
-             y = lineSkip + rectDraw.y + yStart;
-             len = 0;
-             buff[0] = '\0';
-             newLine = 0;
-             newLineWidth = 0;
-             p = textPtr;
-
-             textWidth = 0;
-             while (p) {
-             if (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\0') {
-             newLine = len;
-             newLinePtr = p + 1;
-             newLineWidth = textWidth;
-             }
-
-             if ((newLine && textWidth > rectDraw.w) || *p == '\n' || *p == '\0') {
-             if (len) {
-
-             float x = rectDraw.x ;
-
-             buff[newLine] = '\0';
-             DrawText(x, y, textScale, color, buff, 0, 0, 0);
-             if (!wrap) {
-             return;
-             }
-             }
-
-             if (*p == '\0') {
-             break;
-             }
-
-             y += lineSkip + 5;
-             p = newLinePtr;
-             len = 0;
-             newLine = 0;
-             newLineWidth = 0;
-             continue;
-             }
-
-             buff[len++] = *p++;
-             buff[len] = '\0';
-             textWidth = TextWidth( buff, textScale, -1 );
-             }
-             */
+            if (index >= SCROLLBAR.SCROLLBAR_HBACK.ordinal && index < SCROLLBAR.SCROLLBAR_COUNT.ordinal) {
+                return scrollBarImages[index]
+            }
+            return scrollBarImages[SCROLLBAR.SCROLLBAR_HBACK.ordinal]
         }
 
         fun DrawCursor(x: FloatArray, y: FloatArray, size: Float) {
             val s = floatArrayOf(size)
             if (x[0] < 0) {
-                x[0] = 0f
+                x[0] = 0.0f
             }
             if (x[0] >= vidWidth) {
                 x[0] = vidWidth
             }
             if (y[0] < 0) {
-                y[0] = 0f
+                y[0] = 0.0f
             }
             if (y[0] >= vidHeight) {
                 y[0] = vidHeight
             }
-            RenderSystem.renderSystem.SetColor(colorWhite!!)
+            RenderSystem.renderSystem.SetColor(colorWhite)
             AdjustCoords(x, y, s, s)
-            DrawStretchPic(x[0], y[0], s[0], s[0], 0f, 0f, 1f, 1f, cursorImages[cursor!!.ordinal])
+            DrawStretchPic(x[0], y[0], s[0], s[0], 0.0f, 0.0f, 1.0f, 1.0f, cursorImages[cursor!!.ordinal])
         }
 
         fun SetCursor(n: Int) {
@@ -1073,7 +1011,7 @@ object DeviceContext {
                     w[0] -= clipRect.x - x[0]
                     x[0] = clipRect.x
                 } else if (x[0] > clipRect.x + clipRect.w) {
-                    h[0] = 0f
+                    h[0] = 0.0f
                     y[0] = h[0]
                     w[0] = y[0]
                     x[0] = w[0]
@@ -1082,7 +1020,7 @@ object DeviceContext {
                     h[0] -= clipRect.y - y[0]
                     y[0] = clipRect.y
                 } else if (y[0] > clipRect.y + clipRect.h) {
-                    h[0] = 0f
+                    h[0] = 0.0f
                     y[0] = h[0]
                     w[0] = y[0]
                     x[0] = w[0]
@@ -1125,7 +1063,7 @@ object DeviceContext {
                     t2[0] = nt2
                 }
             }
-            return w[0] == 0f || h[0] == 0f
+            return w[0] == 0.0f || h[0] == 0.0f
         }
 
         fun PushClipRect(x: Float, y: Float, w: Float, h: Float) {
@@ -1189,7 +1127,7 @@ object DeviceContext {
             y: Float,
             scale: Float,
             color: idVec4?,
-            text: String?,
+            text: String,
             adjust: Float,
             limit: Int,
             style: Int,
@@ -1198,18 +1136,18 @@ object DeviceContext {
             var x = x
             var len: Int
             var count: Int
-            var newColor: idVec4?
+            val newColor = idVec4()
             var glyph: glyphInfo_t
             val useScale: Float
             SetFontByScale(scale)
             useScale = scale * useFont!!.glyphScale
             count = 0
-            if (text != null && !text.isEmpty() && color!!.w != 0.0f) {
+            if (text.isNotEmpty() && color!!.w != 0.0f) {
                 var s = text[0] //(const unsigned char*)text;
                 var s_i = 0
                 RenderSystem.renderSystem.SetColor(color)
                 //		memcpy(newColor[0], color[0], sizeof(idVec4));
-                newColor = idVec4(color)
+                newColor.set(color)
                 len = text.length
                 if (limit > 0 && len > limit) {
                     len = limit
@@ -1230,9 +1168,9 @@ object DeviceContext {
                     if (IsColor(ctos(s))) {
                         d1++
                         if (text[s_i + 1].code == C_COLOR_DEFAULT) {
-                            newColor = color
+                            newColor.set(color)
                         } else {
-                            newColor = ColorForIndex(text[s_i + 1].code)
+                            newColor.set(ColorForIndex(text[s_i + 1].code))
                             newColor[3] = color[3]
                         }
                         if (cursor == count || cursor == count + 1) {
@@ -1353,21 +1291,15 @@ object DeviceContext {
         }
 
         companion object {
-            var colorBlack: idVec4? = null
-
-
-            var colorBlue: idVec4? = null
-            var colorGreen: idVec4? = null
-            var colorNone: idVec4? = null
-            var colorOrange: idVec4? = null
-            var colorPurple: idVec4? = null
-
-
-            var colorRed: idVec4? = null
-
-
-            var colorWhite: idVec4? = null
-            var colorYellow: idVec4? = null
+            val colorBlack: idVec4 = idVec4()
+            val colorBlue: idVec4 = idVec4()
+            val colorGreen: idVec4 = idVec4()
+            val colorNone: idVec4 = idVec4()
+            val colorOrange: idVec4 = idVec4()
+            val colorPurple: idVec4 = idVec4()
+            val colorRed: idVec4 = idVec4()
+            val colorWhite: idVec4 = idVec4()
+            val colorYellow: idVec4 = idVec4()
             var aaaa = 0
             var asdasdasd = 0
             var bla = 0

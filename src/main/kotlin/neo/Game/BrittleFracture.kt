@@ -1,11 +1,9 @@
 package neo.Game
 
-import neo.CM.CollisionModel
-import neo.CM.CollisionModel.trace_s
 import neo.Game.Entity.idEntity
 import neo.Game.FX.idEntityFx
 import neo.Game.GameSys.Class.*
-import neo.Game.GameSys.Class.Companion.EV_Remove
+import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -23,11 +21,14 @@ import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.deferredEntityCallback_t
 import neo.Sound.snd_shader.idSoundShader
 import neo.TempDump
+import neo.cm.CM_CLIP_EPSILON
+import neo.cm.trace_s
 import neo.framework.DeclEntityDef.idDeclEntityDef
 import neo.framework.DeclManager
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
-import neo.idlib.Lib
+import neo.idlib.LittleBitField
+import neo.idlib.PackColor
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
@@ -37,22 +38,12 @@ import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.geometry.Winding
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Simd
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
 import java.nio.ByteBuffer
 import kotlin.math.cos
 import kotlin.math.sin
 
-/**
- *
- */
 object BrittleFracture {
     /*
      ===============================================================================
@@ -70,10 +61,10 @@ object BrittleFracture {
     val brittleFracture_SnapshotName: String = "_BrittleFracture_Snapshot_"
 
     class shard_s {
-        var atEdge = false
+        var atEdge = true
         var clipModel: idClipModel? = null
         val decals: idList<idFixedWinding> = idList()
-        var droppedTime = 0
+        var droppedTime = -1
         val edgeHasNeighbour: idList<Boolean> = idList()
         var islandNum = 0
         val neighbours: idList<shard_s?> = idList()
@@ -98,11 +89,11 @@ object BrittleFracture {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idBrittleFracture> { obj: idBrittleFracture, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
-                eventCallbacks[Entity.EV_Touch] =
+                eventCallbacks[EV_Touch] =
                     eventCallback_t2<idBrittleFracture> { obj: idBrittleFracture, _other: idEventArg<*>?, _trace: idEventArg<*>? ->
                         obj.Event_Touch(_other as idEventArg<idEntity>, _trace as idEventArg<trace_s>)
                     }
@@ -144,7 +135,7 @@ object BrittleFracture {
             var j: Int
             savefile.WriteInt(health)
             val flags = fl
-            Lib.LittleBitField(flags)
+            LittleBitField(flags)
             savefile.Write(flags)
 
             // setttings
@@ -167,7 +158,7 @@ object BrittleFracture {
             savefile.WriteBool(disableFracture)
             savefile.WriteInt(lastRenderEntityUpdate)
             savefile.WriteBool(changed)
-            savefile.WriteStaticObject(physicsObj!!)
+            savefile.WriteStaticObject(physicsObj)
             savefile.WriteInt(shards.Num())
             i = 0
             while (i < shards.Num()) {
@@ -212,7 +203,7 @@ object BrittleFracture {
             renderEntity!!.noDynamicInteractions = false
             health = savefile.ReadInt()
             savefile.Read(fl)
-            Lib.LittleBitField(fl)
+            LittleBitField(fl)
 
             // setttings
             savefile.ReadMaterial(material!!)
@@ -235,7 +226,7 @@ object BrittleFracture {
             lastRenderEntityUpdate = savefile.ReadInt()
             changed = savefile.ReadBool()
             savefile.ReadStaticObject(physicsObj)
-            RestorePhysics(physicsObj!!)
+            RestorePhysics(physicsObj)
             savefile.ReadInt(num)
             shards.SetNum(num._val)
             i = 0
@@ -276,7 +267,7 @@ object BrittleFracture {
                 shards[i]!!.atEdge = savefile.ReadBool()
                 savefile.ReadStaticObject(shards[i]!!.physicsObj)
                 if (shards[i]!!.droppedTime < 0) {
-                    shards[i]!!.clipModel = physicsObj!!.GetClipModel(i)!!
+                    shards[i]!!.clipModel = physicsObj.GetClipModel(i)!!
                 } else {
                     shards[i]!!.clipModel = shards[i]!!.physicsObj!!.GetClipModel()!!
                 }
@@ -294,17 +285,17 @@ object BrittleFracture {
             decalMaterial = DeclManager.declManager.FindMaterial(spawnArgs.GetString("mtr_decal"))
             decalSize = spawnArgs.GetFloat("decalSize", "40")
             maxShardArea = spawnArgs.GetFloat("maxShardArea", "200")
-            maxShardArea = idMath.ClampFloat(100f, 10000f, maxShardArea)
+            maxShardArea = idMath.ClampFloat(100.0f, 10000.0f, maxShardArea)
             maxShatterRadius = spawnArgs.GetFloat("maxShatterRadius", "40")
             minShatterRadius = spawnArgs.GetFloat("minShatterRadius", "10")
-            linearVelocityScale = spawnArgs.GetFloat("linearVelocityScale", "0.1")
+            linearVelocityScale = spawnArgs.GetFloat("linearVelocityScale", "0.1f")
             angularVelocityScale = spawnArgs.GetFloat("angularVelocityScale", "40")
             fxFracture.set(spawnArgs.GetString("fx"))
 
             // get rigid body properties
             shardMass = spawnArgs.GetFloat("shardMass", "20")
             shardMass = idMath.ClampFloat(0.001f, 1000.0f, shardMass)
-            spawnArgs.GetFloat("density", "0.1", d)
+            spawnArgs.GetFloat("density", "0.1f", d)
             density = idMath.ClampFloat(0.001f, 1000.0f, d._val)
             spawnArgs.GetFloat("friction", "0.4", f)
             friction = idMath.ClampFloat(0.0f, 1.0f, f._val)
@@ -463,7 +454,7 @@ object BrittleFracture {
             val s: Float
             val st: Array<idVec2> = idVec2.generateArray(Winding.MAX_POINTS_ON_WINDING)
             val origin = idVec3()
-            var axis: idMat3 = idMat3()
+            val axis: idMat3 = idMat3()
             val axisTemp = idMat3()
             val textureAxis: Array<idPlane> = idPlane.generateArray(2)
             if (Game_local.gameLocal.isServer) {
@@ -496,8 +487,8 @@ object BrittleFracture {
                 }
             }
             a = Game_local.gameLocal.random.RandomFloat() * idMath.TWO_PI
-            c = cos(a.toDouble()).toFloat()
-            s = -sin(a.toDouble()).toFloat()
+            c = cos(a)
+            s = -sin(a)
             axis[2] = dir.unaryMinus()
             axis[2].Normalize()
             axis[2].NormalVectors(axisTemp[0], axisTemp[1])
@@ -511,7 +502,7 @@ object BrittleFracture {
             while (i < shards.Num()) {
                 val winding = shards[i]!!.winding!!
                 origin.set(shards[i]!!.clipModel!!.GetOrigin())
-                axis = shards[i]!!.clipModel!!.GetAxis()
+                axis.set(shards[i]!!.clipModel!!.GetAxis())
                 var d0: Float
                 var d1: Float
                 clipBits = -1
@@ -522,12 +513,12 @@ object BrittleFracture {
                     st[j].x = d0
                     d1 = textureAxis[1].Distance(p)
                     st[j].y = d1
-                    bits = Math_h.FLOATSIGNBITSET(d0)
+                    bits = FLOATSIGNBITSET(d0)
                     d0 = 1.0f - d0
-                    bits = bits or (Math_h.FLOATSIGNBITSET(d1) shl 2)
+                    bits = bits or (FLOATSIGNBITSET(d1) shl 2)
                     d1 = 1.0f - d1
-                    bits = bits or (Math_h.FLOATSIGNBITSET(d0) shl 1)
-                    bits = bits or (Math_h.FLOATSIGNBITSET(d1) shl 3)
+                    bits = bits or (FLOATSIGNBITSET(d0) shl 1)
+                    bits = bits or (FLOATSIGNBITSET(d1) shl 3)
                     clipBits = clipBits and bits
                     j++
                 }
@@ -576,6 +567,7 @@ object BrittleFracture {
                     ProjectDecal(point, dir, time, null)
                     true
                 }
+
                 EVENT_SHATTER -> {
                     point[0] = msg.ReadFloat()
                     point[1] = msg.ReadFloat()
@@ -586,6 +578,7 @@ object BrittleFracture {
                     Shatter(point, dir, time)
                     true
                 }
+
                 else -> {
                     super.ClientReceiveEvent(event, time, msg)
                 }
@@ -611,7 +604,7 @@ object BrittleFracture {
             var surface: modelSurface_s
             var v: idDrawVert?
             val plane = idPlane()
-            var tangents: idMat3
+            val tangents: idMat3 = idMat3()
 
             // this may be triggered by a model trace or other non-view related source,
             // to which we should look like an empty model
@@ -645,14 +638,14 @@ object BrittleFracture {
             }
 
             // FIXME: re-use model surfaces
-            renderEntity!!.hModel!!.InitEmpty(brittleFracture_SnapshotName)
+            renderEntity.hModel!!.InitEmpty(brittleFracture_SnapshotName)
 
             // allocate triangle surfaces for the fractures and decals
-            tris = renderEntity!!.hModel!!.AllocSurfaceTriangles(
+            tris = renderEntity.hModel!!.AllocSurfaceTriangles(
                 numTris * 3,
                 if (material!!.ShouldCreateBackSides()) numTris * 6 else numTris * 3
             )
-            decalTris = renderEntity!!.hModel!!.AllocSurfaceTriangles(
+            decalTris = renderEntity.hModel!!.AllocSurfaceTriangles(
                 numDecalTris * 3,
                 if (decalMaterial!!.ShouldCreateBackSides()) numDecalTris * 6 else numDecalTris * 3
             )
@@ -668,17 +661,17 @@ object BrittleFracture {
                             1.0f - msec.toFloat() / (SHARD_ALIVE_TIME - SHARD_FADE_START)
                     }
                 }
-                packedColor = Lib.PackColor(
+                packedColor = PackColor(
                     idVec4(
-                        renderEntity!!.shaderParms[RenderWorld.SHADERPARM_RED] * fade,
-                        renderEntity!!.shaderParms[RenderWorld.SHADERPARM_GREEN] * fade,
-                        renderEntity!!.shaderParms[RenderWorld.SHADERPARM_BLUE] * fade,
+                        renderEntity.shaderParms[RenderWorld.SHADERPARM_RED] * fade,
+                        renderEntity.shaderParms[RenderWorld.SHADERPARM_GREEN] * fade,
+                        renderEntity.shaderParms[RenderWorld.SHADERPARM_BLUE] * fade,
                         fade
                     )
                 ).toInt()
                 val winding: idWinding = shards[i]!!.winding!!
                 winding.GetPlane(plane)
-                tangents = plane.Normal().times(axis).ToMat3()
+                tangents.set(plane.Normal().times(axis).ToMat3())
                 j = 2
                 while (j < winding.GetNumPoints()) {
                     v = tris.verts!![tris.numVerts++]!!
@@ -723,7 +716,7 @@ object BrittleFracture {
                     val decalWinding: idWinding = shards[i]!!.decals[k]
                     j = 2
                     while (j < decalWinding.GetNumPoints()) {
-                        v = decalTris!!.verts!![decalTris.numVerts++]!!
+                        v = decalTris.verts!![decalTris.numVerts++]!!
                         v.Clear()
                         v.xyz.set(origin.plus(decalWinding[0].ToVec3().times(axis)))
                         v.st[0] = decalWinding[0].s
@@ -765,9 +758,9 @@ object BrittleFracture {
                 i++
             }
             tris.tangentsCalculated = true
-            decalTris!!.tangentsCalculated = true
-            Simd.SIMDProcessor.MinMax(tris.bounds[0], tris.bounds[1], tris.verts!! as Array<idDrawVert>, tris.numVerts)
-            Simd.SIMDProcessor.MinMax(
+            decalTris.tangentsCalculated = true
+            SIMDProcessor!!.MinMax(tris.bounds[0], tris.bounds[1], tris.verts!! as Array<idDrawVert>, tris.numVerts)
+            SIMDProcessor!!.MinMax(
                 decalTris.bounds[0],
                 decalTris.bounds[1],
                 decalTris.verts!! as Array<idDrawVert>,
@@ -779,14 +772,14 @@ object BrittleFracture {
             surface.shader = material
             surface.id = 0
             surface.geometry = tris
-            renderEntity!!.hModel!!.AddSurface(surface)
+            renderEntity.hModel!!.AddSurface(surface)
 
 //	memset( &surface, 0, sizeof( surface ) );
             surface = modelSurface_s()
             surface.shader = decalMaterial
             surface.id = 1
             surface.geometry = decalTris
-            renderEntity!!.hModel!!.AddSurface(surface)
+            renderEntity.hModel!!.AddSurface(surface)
             return true
         }
 
@@ -807,10 +800,9 @@ object BrittleFracture {
 
 //	delete shards[index];
 
-//	delete shards[index];
-            shards.set(index, null)
+            shards[index] = null
             shards.RemoveIndex(index)
-            physicsObj!!.RemoveIndex(index)
+            physicsObj.RemoveIndex(index)
             i = index
             while (i < shards.Num()) {
                 shards[i]!!.clipModel!!.SetId(i)
@@ -852,7 +844,7 @@ object BrittleFracture {
 
             // remove the clip model from the static physics object
             clipModelId = shard.clipModel!!.GetId()
-            physicsObj!!.SetClipModel(null, 1.0f, clipModelId, false)
+            physicsObj.SetClipModel(null, 1.0f, clipModelId, false)
             origin.set(shard.clipModel!!.GetOrigin())
             axis = shard.clipModel!!.GetAxis()
 
@@ -917,7 +909,7 @@ object BrittleFracture {
                     i++
                     continue
                 }
-                if (shard.clipModel!!.GetOrigin().minus(point).LengthSqr() > Math_h.Square(maxShatterRadius)) {
+                if (shard.clipModel!!.GetOrigin().minus(point).LengthSqr() > Square(maxShatterRadius)) {
                     i++
                     continue
                 }
@@ -962,14 +954,13 @@ object BrittleFracture {
                 queue[0] = shards[i]!!
                 shards[i]!!.islandNum = numIslands + 1
                 touchesEdge = shards[i]!!.atEdge
-                curShard = queue[queueStart]!!
                 while (queueStart < queueEnd) {
+                    curShard = queue[queueStart]!!
                     j = 0
                     while (j < curShard.neighbours.Num()) {
                         nextShard = curShard.neighbours[j]!!
                         if (nextShard.droppedTime != -1) {
-                            j++
-                            continue
+                            j++; continue
                         }
                         if (nextShard.islandNum != 0) {
                             j++
@@ -982,7 +973,7 @@ object BrittleFracture {
                         }
                         j++
                     }
-                    curShard = queue[++queueStart]!!
+                    queueStart++
                 }
                 numIslands++
 
@@ -1000,7 +991,7 @@ object BrittleFracture {
 
         private fun Break() {
             fl.takedamage = false
-            physicsObj!!.SetContents(Material.CONTENTS_RENDERMODEL or Material.CONTENTS_TRIGGER)
+            physicsObj.SetContents(Material.CONTENTS_RENDERMODEL or Material.CONTENTS_TRIGGER)
         }
 
         private fun Fracture_r(w: idFixedWinding) {
@@ -1029,8 +1020,8 @@ object BrittleFracture {
 
                 // randomly create a split plane
                 a = Game_local.gameLocal.random.RandomFloat() * idMath.TWO_PI
-                c = cos(a.toDouble()).toFloat()
-                s = -sin(a.toDouble()).toFloat()
+                c = cos(a)
+                s = -sin(a)
                 axis[2] = windingPlane.Normal()
                 axis[2].NormalVectors(axistemp[0], axistemp[1])
                 axis[0] = axistemp[0].times(c).plus(axistemp[1].times(s))
@@ -1073,11 +1064,11 @@ object BrittleFracture {
             }
             w.RemoveEqualPoints()
             trm.SetupPolygon(w)
-            trm.Shrink(CollisionModel.CM_CLIP_EPSILON)
+            trm.Shrink(CM_CLIP_EPSILON)
             clipModel = idClipModel(trm)
-            physicsObj!!.SetClipModel(clipModel, 1.0f, shards.Num())
-            physicsObj!!.SetOrigin(GetPhysics().GetOrigin().plus(origin), shards.Num())
-            physicsObj!!.SetAxis(GetPhysics().GetAxis(), shards.Num())
+            physicsObj.SetClipModel(clipModel, 1.0f, shards.Num())
+            physicsObj.SetOrigin(GetPhysics().GetOrigin().plus(origin), shards.Num())
+            physicsObj.SetAxis(GetPhysics().GetAxis(), shards.Num())
             AddShard(clipModel, w)
         }
 
@@ -1091,9 +1082,9 @@ object BrittleFracture {
             if (null == renderModel) {
                 return
             }
-            physicsObj!!.SetSelf(this)
-            physicsObj!!.SetOrigin(GetPhysics().GetOrigin(), 0)
-            physicsObj!!.SetAxis(GetPhysics().GetAxis(), 0)
+            physicsObj.SetSelf(this)
+            physicsObj.SetOrigin(GetPhysics().GetOrigin(), 0)
+            physicsObj.SetAxis(GetPhysics().GetAxis(), 0)
             i = 0
             while (i < 1 /*renderModel.NumSurfaces()*/) {
                 surf = renderModel.Surface(i)
@@ -1114,7 +1105,7 @@ object BrittleFracture {
                 }
                 i++
             }
-            physicsObj!!.SetContents(material!!.GetContentFlags())
+            physicsObj.SetContents(material!!.GetContentFlags())
             SetPhysics(physicsObj)
         }
 
@@ -1126,7 +1117,7 @@ object BrittleFracture {
             val p1 = idVec3()
             val p2 = idVec3()
             val dir = idVec3()
-            var axis: idMat3
+            val axis: idMat3 = idMat3()
             val plane: Array<idPlane> = idPlane.generateArray(4)
             i = 0
             while (i < shards.Num()) {
@@ -1140,7 +1131,7 @@ object BrittleFracture {
                     p2.set(origin1.plus(w1[(k + 1) % w1.GetNumPoints()].ToVec3().times(axis1)))
                     dir.set(p2.minus(p1))
                     dir.Normalize()
-                    axis = dir.ToMat3()
+                    axis.set(dir.ToMat3())
                     plane[0].SetNormal(dir)
                     plane[0].FitThroughPoint(p1)
                     plane[1].SetNormal(dir.unaryMinus())
@@ -1178,20 +1169,20 @@ object BrittleFracture {
                                     w2[(l - 1 + w2.GetNumPoints()) % w2.GetNumPoints()].ToVec3().times(axis2)
                                 )
                             )
-                            if (plane[0].Side(p2, 0.1f) == Plane.SIDE_FRONT && plane[1].Side(
+                            if (plane[0].Side(p2, 0.1f) == SIDE_FRONT && plane[1].Side(
                                     p1,
                                     0.1f
-                                ) == Plane.SIDE_FRONT
+                                ) == SIDE_FRONT
                             ) {
-                                if (plane[2].Side(p1, 0.1f) == Plane.SIDE_ON && plane[3].Side(
+                                if (plane[2].Side(p1, 0.1f) == SIDE_ON && plane[3].Side(
                                         p1,
                                         0.1f
-                                    ) == Plane.SIDE_ON
+                                    ) == SIDE_ON
                                 ) {
-                                    if (plane[2].Side(p2, 0.1f) == Plane.SIDE_ON && plane[3].Side(
+                                    if (plane[2].Side(p2, 0.1f) == SIDE_ON && plane[3].Side(
                                             p2,
                                             0.1f
-                                        ) == Plane.SIDE_ON
+                                        ) == SIDE_ON
                                     ) {
                                         shard1.neighbours.Append(shard2)
                                         shard1.edgeHasNeighbour[k] = true
@@ -1227,7 +1218,7 @@ object BrittleFracture {
         }
 
         private fun Event_Touch(_other: idEventArg<idEntity>, _trace: idEventArg<trace_s>) {
-            val other = _other.value!!
+            val other = _other.value
             val trace = _trace.value
             val point = idVec3()
             val impulse = idVec3()
@@ -1252,6 +1243,8 @@ object BrittleFracture {
             i = 0
             while (i < shards.Num()) {
                 shards[i]!!.decals.DeleteContents(true)
+                //shards[i]!!.physicsObj = null
+                shards[i] = null
                 i++
             }
 
@@ -1268,7 +1261,7 @@ object BrittleFracture {
                 if (null == ent) {
                     idGameLocal.Error("idBrittleFracture::ModelCallback: callback with NULL game entity")
                 }
-                return ent!!.UpdateRenderEntity(e!!, v)
+                return ent!!.UpdateRenderEntity(e, v)
             }
 
             override fun AllocBuffer(): ByteBuffer {
@@ -1296,16 +1289,16 @@ object BrittleFracture {
         init {
             material = null
             decalMaterial = null
-            decalSize = 0f
-            maxShardArea = 0f
-            maxShatterRadius = 0f
-            minShatterRadius = 0f
-            linearVelocityScale = 0f
-            angularVelocityScale = 0f
-            shardMass = 0f
-            density = 0f
-            friction = 0f
-            bouncyness = 0f
+            decalSize = 0.0f
+            maxShardArea = 0.0f
+            maxShatterRadius = 0.0f
+            minShatterRadius = 0.0f
+            linearVelocityScale = 0.0f
+            angularVelocityScale = 0.0f
+            shardMass = 0.0f
+            density = 0.0f
+            friction = 0.0f
+            bouncyness = 0.0f
             fxFracture = idStr()
             shards = idList()
             bounds = idBounds.ClearBounds()

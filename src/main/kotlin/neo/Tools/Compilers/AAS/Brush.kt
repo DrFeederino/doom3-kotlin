@@ -5,32 +5,22 @@ import neo.Tools.Compilers.AAS.AASBuild.Allowance
 import neo.framework.Common
 import neo.framework.FileSystem_h
 import neo.framework.File_h.idFile
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib
+import neo.idlib.BV.idBounds
+import neo.idlib.MAX_WORLD_COORD
+import neo.idlib.MIN_WORLD_COORD
 import neo.idlib.MapFile
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.PlaneSet.idPlaneSet
 import neo.idlib.geometry.Winding.idWinding
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
 import neo.sys.win_shared
 import kotlin.math.abs
 
-/**
- *
- */
 object Brush {
-    //
     const val BFL_NO_VALID_SPLITTERS = 0x0001
-
-    //
     const val BRUSH_BEVEL_EPSILON = 0.1f
-
-    //
     const val BRUSH_EPSILON = 0.1f
     const val BRUSH_PLANESIDE_BACK = 2
     const val BRUSH_PLANESIDE_FACING = 4
@@ -164,11 +154,11 @@ object Brush {
                 back[0]!!.flags = flags
             }
             return if (!frontWinding.isNULL() && !backWinding.isNULL()) {
-                Plane.PLANESIDE_CROSS
+                PLANESIDE_CROSS
             } else if (!frontWinding.isNULL()) {
-                Plane.PLANESIDE_FRONT
+                PLANESIDE_FRONT
             } else {
-                Plane.PLANESIDE_BACK
+                PLANESIDE_BACK
             }
         }
     }
@@ -196,7 +186,7 @@ object Brush {
                 = 0
         var savedPlaneSide // saved plane side
                 = 0
-        val sides: idList<idBrushSide> = idList() // list with sides
+        val sides: idList<idBrushSide?> = idList() // list with sides
         private var windingsValid // set when side windings are valid
                 : Boolean
 
@@ -245,13 +235,13 @@ object Brush {
             w = null
             i = 0
             while (i < sides.Num()) {
-                w = sides[i].winding
+                w = sides[i]?.winding
                 if (w != null) {
                     break
                 }
                 i++
             }
-            if (TempDump.NOT(w)) {
+            if (w == null) {
                 return 0.0f
             }
             corner.set(w!![0].ToVec3())
@@ -259,12 +249,12 @@ object Brush {
             // create tetrahedrons to all other sides
             volume = 0.0f
             while (i < sides.Num()) {
-                w = sides[i].winding
-                if (TempDump.NOT(w)) {
+                w = sides[i]?.winding
+                if (w == null) {
                     i++
                     continue
                 }
-                d = -(corner.times(sides[i].plane.Normal()) - sides[i].plane.Dist())
+                d = -(corner.times(sides[i]!!.plane.Normal()) - sides[i]!!.plane.Dist())
                 area = w!!.GetArea()
                 volume += d * area
                 i++
@@ -277,7 +267,7 @@ object Brush {
         }
 
         fun GetSide(i: Int): idBrushSide {
-            return sides[i]
+            return sides[i]!!
         }
 
         fun SetPlaneSide(s: Int) {
@@ -320,7 +310,7 @@ object Brush {
                 }
                 i++
             }
-            axialNormal.set(Vector.getVec3Origin())
+            axialNormal.set(getVec3Origin())
             if (windingPlane.Normal()[bestAxis] > 0.0f) {
                 axialNormal[bestAxis] = 1.0f
             } else {
@@ -340,17 +330,14 @@ object Brush {
                 i++
             }
             if (sides.Num() < 4) {
-                i = 0
-//                while (i < sides.Num()) {
-//
-////			delete sides[i];
-//                    sides.set(i, null)
-//                    i++
-//                }
+                for (i in 0 until sides.Num()) {
+                    sides.set(i, null)
+
+                }
                 sides.Clear() // this should be enough?
                 return false
             }
-            sides[0].winding = w.Copy()
+            sides[0]?.winding = w.Copy()
             windingsValid = true
             BoundBrush(null)
             return true
@@ -365,7 +352,7 @@ object Brush {
             while (axis < 3) {
                 dir = -1
                 while (dir <= 1) {
-                    normal.set(Vector.getVec3Origin())
+                    normal.set(getVec3Origin())
                     normal[axis] = dir.toFloat()
                     plane.SetNormal(normal)
                     plane.SetDist(dir * bounds[if (dir == 1) 1 else 0, axis])
@@ -383,15 +370,15 @@ object Brush {
             if (axis.IsRotated()) {
                 i = 0
                 while (i < sides.Num()) {
-                    sides[i].plane.RotateSelf(Vector.getVec3Origin(), axis)
+                    sides[i]!!.plane.RotateSelf(getVec3Origin(), axis)
                     i++
                 }
                 transformed = true
             }
-            if (origin != Vector.getVec3Origin()) {
+            if (origin != getVec3Origin()) {
                 i = 0
                 while (i < sides.Num()) {
-                    sides[i].plane.TranslateSelf(origin)
+                    sides[i]!!.plane.TranslateSelf(origin)
                     i++
                 }
                 transformed = true
@@ -412,7 +399,7 @@ object Brush {
             b.bounds.set(bounds)
             i = 0
             while (i < sides.Num()) {
-                b.sides.Append(sides[i].Copy())
+                b.sides.Append(sides[i]!!.Copy())
                 i++
             }
             return b
@@ -515,7 +502,7 @@ object Brush {
                     j++
                 }
                 if (j < GetNumSides()) {
-                    sides[j].flags = sides[j].flags and brush.GetSide(i).GetFlags()
+                    sides[j]!!.flags = sides[j]!!.flags and brush.GetSide(i).GetFlags()
                     i++
                     continue
                 }
@@ -557,7 +544,7 @@ object Brush {
             `in` = this
             i = 0
             while (i < b.sides.Num() && `in` != null) {
-                `in`.Split(b.sides[i].plane, b.sides[i].planeNum, front, back)
+                `in`.Split(b.sides[i]!!.plane, b.sides[i]!!.planeNum, front, back)
 
 //                if (!in.equals(this)) {
 //			delete in;
@@ -570,7 +557,7 @@ object Brush {
                 i++
             }
             // if didn't really intersect
-            if (!TempDump.NOT(`in`)) {
+            if (`in` != null) {
                 list.Free()
                 return false
             }
@@ -609,11 +596,11 @@ object Brush {
 //            }
 //
             res = bounds.PlaneSide(plane, -BRUSH_EPSILON)
-            if (res == Plane.PLANESIDE_FRONT) {
+            if (res == PLANESIDE_FRONT) {
                 front?.set(Copy())
                 return res
             }
-            if (res == Plane.PLANESIDE_BACK) {
+            if (res == PLANESIDE_BACK) {
                 back?.set(Copy())
                 return res
             }
@@ -624,7 +611,7 @@ object Brush {
             i = 0
             while (i < sides.Num()) {
                 side = sides[i]
-                w = side.winding
+                w = side!!.winding
                 if (w == null) {
                     i++
                     continue
@@ -652,16 +639,16 @@ object Brush {
             }
             if (maxFront < BRUSH_EPSILON) {
                 back?.set(Copy())
-                return Plane.PLANESIDE_BACK
+                return PLANESIDE_BACK
             }
             if (maxBack > -BRUSH_EPSILON) {
                 front?.set(Copy())
-                return Plane.PLANESIDE_FRONT
+                return PLANESIDE_FRONT
             }
             mid = idWinding(plane.Normal(), plane.Dist())
             i = 0
             while (i < sides.Num() && mid != null) {
-                mid = mid.Clip(sides[i].plane.unaryMinus(), BRUSH_EPSILON, false)
+                mid = mid.Clip(sides[i]!!.plane.unaryMinus(), BRUSH_EPSILON, false)
                 i++
             }
             if (mid != null) {
@@ -689,18 +676,18 @@ object Brush {
                     mid = null
                 }
             }
-            if (TempDump.NOT(mid)) {
+            if (mid == null) {
                 return if (maxFront > -maxBack) {
                     front?.set(Copy())
-                    Plane.PLANESIDE_FRONT
+                    PLANESIDE_FRONT
                 } else {
                     back?.set(Copy())
-                    Plane.PLANESIDE_BACK
+                    PLANESIDE_BACK
                 }
             }
             if (front == null && back == null) {
 //		delete mid;
-                return Plane.PLANESIDE_CROSS
+                return PLANESIDE_CROSS
             }
             front!!.set(idBrush())
             front.SetContents(contents)
@@ -713,7 +700,7 @@ object Brush {
             i = 0
             while (i < sides.Num()) {
                 side = sides[i]
-                if (side.winding == null) {
+                if (side!!.winding == null) {
                     i++
                     continue
                 }
@@ -769,7 +756,7 @@ object Brush {
             back.sides.Append(side)
             back.windingsValid = true
             back.BoundBrush(this)
-            return Plane.PLANESIDE_CROSS
+            return PLANESIDE_CROSS
         }
 
         // expand the brush for an axial bounding box
@@ -781,7 +768,7 @@ object Brush {
             AddBevelsForAxialBox()
             i = 0
             while (i < sides.Num()) {
-                side = sides[i]
+                side = sides[i]!!
                 j = 0
                 while (j < 3) {
                     if (side.plane.Normal()[j] > 0.0f) {
@@ -832,7 +819,7 @@ object Brush {
 //		if ( side.winding!=null ) {
 //			delete side.winding;
 //		}
-                side.winding = idWinding(side.plane.Normal(), side.plane.Dist())
+                side!!.winding = idWinding(side.plane.Normal(), side.plane.Dist())
                 j = 0
                 while (j < sides.Num() && side.winding != null) {
                     if (i == j) {
@@ -840,7 +827,7 @@ object Brush {
                         continue
                     }
                     // keep the winding if on the clip plane
-                    side.winding = side.winding!!.Clip(sides[j].plane.unaryMinus(), BRUSH_EPSILON, true)
+                    side.winding = side.winding!!.Clip(sides[j]!!.plane.unaryMinus(), BRUSH_EPSILON, true)
                     j++
                 }
                 if (side.winding != null) {
@@ -857,7 +844,7 @@ object Brush {
             }
             i = 0
             while (i < 3) {
-                if (bounds[0, i] < Lib.Companion.MIN_WORLD_COORD || bounds[1, i] > Lib.Companion.MAX_WORLD_COORD
+                if (bounds[0, i] < MIN_WORLD_COORD || bounds[1, i] > MAX_WORLD_COORD
                 ) {
                     return false
                 }
@@ -877,7 +864,7 @@ object Brush {
             i = 0
             while (i < sides.Num()) {
                 side = sides[i]
-                w = side.winding
+                w = side!!.winding
                 if (w == null) {
                     i++
                     continue
@@ -903,7 +890,7 @@ object Brush {
             }
             i = 0
             while (i < 3) {
-                if (bounds[0, i] < Lib.Companion.MIN_WORLD_COORD || bounds[1, i] > Lib.Companion.MAX_WORLD_COORD
+                if (bounds[0, i] < MIN_WORLD_COORD || bounds[1, i] > MAX_WORLD_COORD
                 ) {
                     if (original != null) {
                         val bm = idBrushMap("error_brush", "_original")
@@ -951,18 +938,18 @@ object Brush {
                     i = 0
                     while (i < sides.Num()) {
                         if (dir > 0) {
-                            if (sides[i].plane.Normal()[axis] >= 0.9999f) {
+                            if (sides[i]!!.plane.Normal()[axis] >= 0.9999f) {
                                 break
                             }
                         } else {
-                            if (sides[i].plane.Normal()[axis] <= -0.9999f) {
+                            if (sides[i]!!.plane.Normal()[axis] <= -0.9999f) {
                                 break
                             }
                         }
                         i++
                     }
                     if (i >= sides.Num()) {
-                        normal.set(Vector.getVec3Origin())
+                        normal.set(getVec3Origin())
                         normal[axis] = dir.toFloat()
                         plane.SetNormal(normal)
                         plane.SetDist(dir * bounds[if (dir == 1) 1 else 0, axis])
@@ -985,7 +972,7 @@ object Brush {
             i = 0
             while (i < sides.Num()) {
                 side = sides[i]
-                w = side.winding
+                w = side!!.winding
                 if (w == null) {
                     i++
                     continue
@@ -1016,7 +1003,7 @@ object Brush {
                         dir = -1
                         while (dir <= 1) {
                             // construct a plane
-                            normal.set(Vector.getVec3Origin())
+                            normal.set(getVec3Origin())
                             normal[axis] = dir.toFloat()
                             normal.set(vec.Cross(normal))
                             if (normal.Normalize() < 0.5f) {
@@ -1030,13 +1017,11 @@ object Brush {
                             // behind this plane, it is a proper edge bevel
                             k = 0
                             while (k < sides.Num()) {
-
-
                                 // if this plane has allready been used, skip it
-                                if (plane.Compare(sides[k].plane, 0.001f, 0.1f)) {
+                                if (plane.Compare(sides[k]!!.plane, 0.001f, 0.1f)) {
                                     break
                                 }
-                                w2 = sides[k].winding
+                                w2 = sides[k]!!.winding
                                 if (w2 == null) {
                                     k++
                                     continue
@@ -1086,7 +1071,7 @@ object Brush {
             var i: Int
             i = 0
             while (i < sides.Num()) {
-                if (sides[i].winding != null) {
+                if (sides[i]!!.winding != null) {
                     i++
                     continue
                 }
@@ -1211,7 +1196,7 @@ object Brush {
         fun AddToFront(brush: idBrush) {
             brush.next = head
             head = brush
-            if (TempDump.NOT(tail)) {
+            if (tail == null) {
                 tail = brush
             }
             numBrushes++
@@ -1227,7 +1212,7 @@ object Brush {
                 next = brush.next
                 brush.next = head
                 head = brush
-                if (TempDump.NOT(tail)) {
+                if (tail == null) {
                     tail = brush
                 }
                 numBrushes++
@@ -1483,7 +1468,7 @@ object Brush {
                     }
                     b2 = next
                 }
-                if (TempDump.NOT(2.0)) {
+                if (b2 == null) {
                     // b1 is no longer intersecting anything, so keep it
                     Remove(b1)
                     keep.AddToTail(b1)
@@ -1558,7 +1543,7 @@ object Brush {
                         i++
                         continue
                     }
-                    if (w.PlaneSide(plane) == Plane.SIDE_ON) {
+                    if (w.PlaneSide(plane) == SIDE_ON) {
                         b.GetSide(i).SetFlag(flag)
                     }
                     i++
@@ -1634,7 +1619,7 @@ object Brush {
         fun WriteBrush(brush: idBrush) {
             var i: Int
             var side: idBrushSide?
-            if (TempDump.NOT(fp)) {
+            if (fp == null) {
                 return
             }
             fp.WriteFloatString("// primitive %d\n{\nbrushDef3\n{\n", brushCount++)
@@ -1656,7 +1641,7 @@ object Brush {
 
         fun WriteBrushList(brushList: idBrushList) {
             var b: idBrush?
-            if (TempDump.NOT(fp)) {
+            if (fp == null) {
                 return
             }
             b = brushList.Head()
@@ -1674,7 +1659,7 @@ object Brush {
             qpath.SetFileExtension("map")
             Common.common.Printf("writing %s...\n", qpath)
             fp = FileSystem_h.fileSystem.OpenFileWrite(qpath.toString(), "fs_devpath")!!
-            if (TempDump.NOT(fp)) {
+            if (fp == null) {
                 Common.common.Error("Couldn't open %s\n", qpath)
             }
             texture.set("textures/washroom/btile01")

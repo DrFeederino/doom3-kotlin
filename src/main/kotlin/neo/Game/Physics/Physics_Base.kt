@@ -1,34 +1,29 @@
 package neo.Game.Physics
 
-import neo.CM.CollisionModel.contactInfo_t
-import neo.CM.CollisionModel.trace_s
 import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.idClass
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local
+import neo.Game.Game_local.Companion.gameLocal
 import neo.Game.Game_local.idEntityPtr
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Force.idForce
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Physics.Physics.impactInfo_s
-import neo.idlib.BV.Bounds
-import neo.idlib.BV.Bounds.idBounds
+import neo.cm.contactInfo_t
+import neo.cm.trace_s
+import neo.idlib.BV.bounds_zero
+import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsgDelta
-import neo.idlib.Lib
+import neo.idlib.colorBlue
+import neo.idlib.colorRed
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Math_h
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec6
 import kotlin.math.abs
 
-/**
- *
- */
 class Physics_Base {
     /*
      ===============================================================================
@@ -47,9 +42,9 @@ class Physics_Base {
         protected val contacts // contacts with other physics objects
                 : idList<contactInfo_t> = idList(contactInfo_t::class.java)
         protected val gravityNormal // normalized direction of gravity
-                : idVec3 = idVec3(Game_local.gameLocal.GetGravity())
+                : idVec3 = idVec3(gameLocal.GetGravity())
         protected val gravityVector // direction and magnitude of gravity
-                : idVec3 = idVec3(Game_local.gameLocal.GetGravity())
+                : idVec3 = idVec3(gameLocal.GetGravity())
         protected var self // entity using this physics object
                 : idEntity? = null
 
@@ -65,7 +60,7 @@ class Physics_Base {
 
         override fun Save(savefile: idSaveGame) {
             var i: Int
-            savefile.WriteObject(self as idClass)
+            savefile.WriteObject(self as idClass?)
             savefile.WriteInt(clipMask)
             savefile.WriteVec3(gravityVector)
             savefile.WriteVec3(gravityNormal)
@@ -127,7 +122,7 @@ class Physics_Base {
 
         override fun SetMass(mass: Float, id: Int /*= -1*/) {}
         override fun GetMass(id: Int /*= -1*/): Float {
-            return 0f
+            return 0.0f
         }
 
         override fun SetContents(contents: Int, id: Int /*= -1*/) {}
@@ -144,11 +139,11 @@ class Physics_Base {
         }
 
         override fun GetBounds(id: Int /*= -1*/): idBounds {
-            return Bounds.bounds_zero
+            return bounds_zero
         }
 
         override fun GetAbsBounds(id: Int /*= -1*/): idBounds {
-            return Bounds.bounds_zero
+            return bounds_zero
         }
 
         override fun Evaluate(timeStepMSec: Int, endTimeMSec: Int): Boolean {
@@ -195,7 +190,7 @@ class Physics_Base {
         }
 
         override fun GetOrigin(id: Int /*= 0*/): idVec3 {
-            return Vector.getVec3Origin()
+            return getVec3Origin()
         }
 
         override fun GetAxis(id: Int /*= 0*/): idMat3 {
@@ -205,11 +200,11 @@ class Physics_Base {
         override fun SetLinearVelocity(newLinearVelocity: idVec3, id: Int /*= 0*/) {}
         override fun SetAngularVelocity(newAngularVelocity: idVec3, id: Int /*= 0*/) {}
         override fun GetLinearVelocity(id: Int /*= 0*/): idVec3 {
-            return Vector.getVec3Origin()
+            return getVec3Origin()
         }
 
         override fun GetAngularVelocity(id: Int /*= 0*/): idVec3 {
-            return Vector.getVec3Origin()
+            return getVec3Origin()
         }
 
         override fun SetGravity(newGravity: idVec3) {
@@ -227,16 +222,17 @@ class Physics_Base {
         }
 
         override fun ClipTranslation(results: trace_s, translation: idVec3, model: idClipModel?) {
-//	memset( &results, 0, sizeof( trace_t ) );
             results.fraction = 0.0f
-            results.endAxis = idMat3()
+            results.endAxis.set(idMat3())
+            results.endpos.set(getVec3Origin())
             results.c = contactInfo_t()
         }
 
         override fun ClipRotation(results: trace_s, rotation: idRotation, model: idClipModel?) {
-//	memset( &results, 0, sizeof( trace_t ) );
-            //results = new trace_s();
-            // wtf??
+            results.fraction = 0.0f
+            results.endAxis.set(idMat3())
+            results.endpos.set(getVec3Origin())
+            results.c = contactInfo_t()
         }
 
         override fun ClipContents(model: idClipModel?): Int {
@@ -264,7 +260,7 @@ class Physics_Base {
             var ent: idEntity?
             i = 0
             while (i < contacts.Num()) {
-                ent = Game_local.gameLocal.entities[contacts[i].entityNum]
+                ent = gameLocal.entities[contacts[i].entityNum]
                 ent?.RemoveContactEntity(self!!)
                 i++
             }
@@ -353,11 +349,11 @@ class Physics_Base {
 
         override fun SetPushed(deltaTime: Int) {}
         override fun GetPushedLinearVelocity(id: Int /*= 0*/): idVec3 {
-            return Vector.getVec3Origin()
+            return getVec3Origin()
         }
 
         override fun GetPushedAngularVelocity(id: Int /*= 0*/): idVec3 {
-            return Vector.getVec3Origin()
+            return getVec3Origin()
         }
 
         override fun SetMaster(master: idEntity?, orientated: Boolean /*= true*/) {}
@@ -389,8 +385,8 @@ class Physics_Base {
             contacts.SetNum(index + 10, false)
             val contactz = Array(10) { contactInfo_t() }
             dir.SubVec3_oSet(0, gravityNormal)
-            dir.SubVec3_oSet(1, Vector.getVec3Origin())
-            num = Game_local.gameLocal.clip.Contacts(
+            dir.SubVec3_oSet(1, getVec3Origin())
+            num = gameLocal.clip.Contacts(
                 contactz,
                 10,
                 clipModel.GetOrigin(),
@@ -413,7 +409,7 @@ class Physics_Base {
             var ent: idEntity?
             i = 0
             while (i < contacts.Num()) {
-                ent = Game_local.gameLocal.entities[contacts[i].entityNum]
+                ent = gameLocal.entities[contacts[i].entityNum]
                 if (ent != null && ent != self) {
                     ent.AddContactEntity(self!!)
                 }
@@ -435,7 +431,7 @@ class Physics_Base {
 
         // returns true if the whole physics object is outside the world bounds
         protected fun IsOutsideWorld(): Boolean {
-            return !Game_local.gameLocal.clip.GetWorldBounds().Expand(128.0f).IntersectsBounds(GetAbsBounds())
+            return !gameLocal.clip.GetWorldBounds().Expand(128.0f).IntersectsBounds(GetAbsBounds())
         }
 
         // draw linear and angular velocity
@@ -450,10 +446,10 @@ class Physics_Base {
             var a: Float
             dir.set(GetLinearVelocity(id))
             dir.timesAssign(linearScale)
-            if (dir.LengthSqr() > Math_h.Square(0.1f)) {
+            if (dir.LengthSqr() > Square(0.1f)) {
                 dir.Truncate(10.0f)
                 org.set(GetOrigin(id))
-                Game_local.gameRenderWorld!!.DebugArrow(Lib.colorRed, org, org + dir, 1)
+                Game_local.gameRenderWorld!!.DebugArrow(colorRed, org, org + dir, 1)
             }
             dir.set(GetAngularVelocity(id))
             length = dir.Normalize()
@@ -466,7 +462,7 @@ class Physics_Base {
                 }
                 axis = GetAxis(id)
                 vec.set(axis[2])
-                if (abs(dir * vec) > 0.99f) {
+                if (abs(dir * vec) > 0.99) {
                     vec.set(axis[0])
                 }
                 vec.minusAssign(vec.timesVec(dir).timesVec(vec))
@@ -475,13 +471,13 @@ class Physics_Base {
                 start.set(org + vec)
                 a = 20.0f
                 while (a < length) {
-                    end.set(org + idRotation(Vector.getVec3Origin(), dir, -a).ToMat3() * vec)
-                    Game_local.gameRenderWorld!!.DebugLine(Lib.colorBlue, start, end, 1)
+                    end.set(org + idRotation(getVec3Origin(), dir, -a).ToMat3() * vec)
+                    Game_local.gameRenderWorld!!.DebugLine(colorBlue, start, end, 1)
                     start.set(end)
                     a += 20.0f
                 }
-                end.set(org + (idRotation(Vector.getVec3Origin(), dir, -length).ToMat3() * vec))
-                Game_local.gameRenderWorld!!.DebugArrow(Lib.colorBlue, start, end, 1)
+                end.set(org + (idRotation(getVec3Origin(), dir, -length).ToMat3() * vec))
+                Game_local.gameRenderWorld!!.DebugArrow(colorBlue, start, end, 1)
             }
         }
 

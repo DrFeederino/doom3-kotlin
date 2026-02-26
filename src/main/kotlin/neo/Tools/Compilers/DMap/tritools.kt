@@ -3,16 +3,13 @@ package neo.Tools.Compilers.DMap
 import neo.Tools.Compilers.DMap.dmap.mapTri_s
 import neo.Tools.Compilers.DMap.optimize.optVertex_s
 import neo.Tools.Compilers.DMap.tritjunction.hashVert_s
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.VectorCopy
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 object tritools {
     /*
 
@@ -95,7 +92,7 @@ object tritools {
      =============
      */
     fun CountTriList( /*final*/
-        tri: mapTri_s
+                      tri: mapTri_s
     ): Int {
         var tris = tri as mapTri_s?
         var c: Int
@@ -159,7 +156,7 @@ object tritools {
      ================
      */
     fun BoundTriList( /*final*/
-        list: mapTri_s?, b: idBounds
+                      list: mapTri_s?, b: idBounds
     ) {
         var list = list
         b.Clear()
@@ -179,9 +176,9 @@ object tritools {
     fun DrawTri(tri: mapTri_s) {
         val w = idWinding()
         w.SetNumPoints(3)
-        Vector.VectorCopy(tri.v[0].xyz, w[0])
-        Vector.VectorCopy(tri.v[1].xyz, w[1])
-        Vector.VectorCopy(tri.v[2].xyz, w[2])
+        VectorCopy(tri.v[0].xyz, w[0])
+        VectorCopy(tri.v[1].xyz, w[1])
+        VectorCopy(tri.v[2].xyz, w[2])
         gldraw.DrawWinding(w)
     }
 
@@ -221,9 +218,9 @@ object tritools {
         val w: idWinding
         w = idWinding(3)
         w.SetNumPoints(3)
-        Vector.VectorCopy(tri.v[0].xyz, w[0])
-        Vector.VectorCopy(tri.v[1].xyz, w[1])
-        Vector.VectorCopy(tri.v[2].xyz, w[2])
+        VectorCopy(tri.v[0].xyz, w[0])
+        VectorCopy(tri.v[1].xyz, w[1])
+        VectorCopy(tri.v[2].xyz, w[2])
         return w
     }
 
@@ -239,7 +236,7 @@ object tritools {
         var j: Int
         val denom: Float
         denom = idWinding.TriangleArea(original.v[0].xyz, original.v[1].xyz, original.v[2].xyz)
-        if (denom == 0f) {
+        if (denom == 0.0f) {
             return  // original was degenerate, so it doesn't matter
         }
         i = 0
@@ -307,7 +304,7 @@ object tritools {
                 } else {
                     vec.set(w[i].ToVec3())
                 }
-                Vector.VectorCopy(vec, tri.v[j].xyz)
+                VectorCopy(vec, tri.v[j].xyz)
                 j++
             }
             if (originalTri != null) {

@@ -15,7 +15,6 @@ import neo.Sound.snd_world.s_stats
 import neo.Sound.sound.idSoundSystem
 import neo.Sound.sound.idSoundWorld
 import neo.Sound.sound.soundDecoderInfo_t
-import neo.TempDump
 import neo.framework.BuildDefines
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
@@ -28,8 +27,9 @@ import neo.framework.Common.MemInfo_t
 import neo.idlib.CmdArgs
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Simd
+import neo.idlib.math.MIXBUFFER_SAMPLES
+import neo.idlib.math.SIMDProcessor
+import neo.idlib.math.idMath
 import neo.sys.win_main
 import neo.sys.win_main.Sys_EnterCriticalSection
 import neo.sys.win_main.Sys_LeaveCriticalSection
@@ -45,9 +45,6 @@ import java.util.*
 import kotlin.math.abs
 import kotlin.math.pow
 
-/**
- *
- */
 class snd_system {
 
     /*
@@ -106,8 +103,8 @@ class snd_system {
                 "0",
                 CVarSystem.CVAR_SOUND or CVarSystem.CVAR_INTEGER,
                 "",
-                0f,
-                2f,
+                0.0f,
+                2.0f,
                 ArgCompletion_Integer(0, 2)
             )
             val s_enviroSuitCutoffFreq: idCVar =
@@ -136,8 +133,8 @@ class snd_system {
                 "0",
                 CVarSystem.CVAR_SOUND or CVarSystem.CVAR_ARCHIVE,
                 "",
-                0f,
-                10f,
+                0.0f,
+                10.0f,
                 ArgCompletion_Integer(0, 10)
             )
             val s_meterTopTime: idCVar = idCVar(
@@ -147,7 +144,7 @@ class snd_system {
                 ""
             )
             val s_minVolume2: idCVar =
-                idCVar("s_minVolume2", "0.25", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_FLOAT, "")
+                idCVar("s_minVolume2", "0.25f", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_FLOAT, "")
             val s_minVolume6: idCVar = idCVar("s_minVolume6", "0", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_FLOAT, "")
             val s_muteEAXReverb: idCVar =
                 idCVar("s_muteEAXReverb", "0", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL, "mute eax reverb")
@@ -276,7 +273,7 @@ class snd_system {
                 : idSoundWorldLocal? = null
         var efxloaded = false
         var finalMixBuffer // points inside realAccum at a 16 byte aligned boundary
-                : FloatArray = FloatArray(6 * Simd.MIXBUFFER_SAMPLES + 16)
+                : FloatArray = FloatArray(6 * MIXBUFFER_SAMPLES + 16)
 
         //
         val fxList: idList<SoundFX> = idList()
@@ -306,7 +303,7 @@ class snd_system {
         var openalSources: Array<openalSource_t> = Array(256) { openalSource_t() }
 
         //
-        var realAccum: FloatArray = FloatArray(6 * Simd.MIXBUFFER_SAMPLES + 16)
+        var realAccum: FloatArray = FloatArray(6 * MIXBUFFER_SAMPLES + 16)
         var shutdown = false
         var snd_audio_hw: idAudioHardware? = null
         var soundCache: idSoundCache? = null
@@ -340,7 +337,7 @@ class snd_system {
             meterTopsTime = IntArray(meterTopsTime.size)
             for (i in -600..599) {
                 val pt = i * 0.1f
-                volumesDB[i + 600] = 2.0.pow((pt * (1.0f / 6.0f)).toDouble()).toFloat()
+                volumesDB[i + 600] = 2.0f.pow((pt * (1.0f / 6.0f)))
             }
 
             // make a 16 byte aligned finalMixBuffer
@@ -363,17 +360,17 @@ class snd_system {
                     openalContext = ALC10.alcCreateContext(openalDevice, null as IntArray?)
                     ALC10.alcMakeContextCurrent(openalContext)
                     val alcCapabilities = ALC.createCapabilities(openalDevice)
-                    val alCapabilities = AL.createCapabilities(alcCapabilities)
+                    AL.createCapabilities(alcCapabilities)
                     Common.common.Printf("Done.\n")
 
                     // try to obtain EAX extensions
-                    if (s_useEAXReverb.GetBool() && AL10.alIsExtensionPresent( /*ID_ALCHAR*/"EAX4.0")) {
+                    if (s_useEAXReverb.GetBool() && AL10.alIsExtensionPresent( /*ID_ALCHAR*/"EAX4.0f")) {
                         s_useOpenAL.SetBool(true) // EAX presence causes AL enable
                         //                        alEAXSet = true;//(EAXSet) alGetProcAddress(/*ID_ALCHAR*/"EAXSet");
 //                        alEAXGet = true;//(EAXGet) alGetProcAddress(/*ID_ALCHAR*/"EAXGet");
-                        Common.common.Printf("OpenAL: found EAX 4.0 extension\n")
+                        Common.common.Printf("OpenAL: found EAX 4.0f extension\n")
                     } else {
-                        Common.common.Printf("OpenAL: EAX 4.0 extension not found\n")
+                        Common.common.Printf("OpenAL: EAX 4.0f extension not found\n")
                         s_useEAXReverb.SetBool(false)
                         //                        alEAXSet = false;//(EAXSet) null;
 //                        alEAXGet = false;//(EAXGet) null;
@@ -518,7 +515,7 @@ class snd_system {
         override fun ClearBuffer() {
 
             // check to make sure hardware actually exists
-            if (TempDump.NOT(snd_audio_hw)) {
+            if (snd_audio_hw == null) {
                 return
             }
             val fBlock = intArrayOf(0)
@@ -587,7 +584,7 @@ class snd_system {
          */
         // async loop, called at 60Hz
         override fun AsyncUpdate(time: Int): Int {
-            if (!isInitialized || shutdown || TempDump.NOT(snd_audio_hw)) {
+            if (!isInitialized || shutdown || snd_audio_hw == null) {
                 return 0
             }
             var   /*ulong*/dwCurrentWritePos: Long = 0
@@ -597,8 +594,8 @@ class snd_system {
             if (useOpenAL) {
                 // here we do it in samples ( overflows in 27 hours or so )
                 dwCurrentWritePos =
-                    idMath.Ftol(win_shared.Sys_Milliseconds() * 44.1f) % (Simd.MIXBUFFER_SAMPLES * snd_local.ROOM_SLICES_IN_BUFFER)
-                dwCurrentBlock = (dwCurrentWritePos / Simd.MIXBUFFER_SAMPLES).toInt()
+                    idMath.Ftol(win_shared.Sys_Milliseconds() * 44.1f) % (MIXBUFFER_SAMPLES * snd_local.ROOM_SLICES_IN_BUFFER)
+                dwCurrentBlock = (dwCurrentWritePos / MIXBUFFER_SAMPLES).toInt()
             } else {
                 // and here in bytes
                 // get the current byte position in the buffer where the sound hardware is currently reading
@@ -616,11 +613,11 @@ class snd_system {
             }
 
             // lock the buffer so we can actually write to it
-            val fBlock: IntArray = IntArray(1)
+            val fBlock: ShortArray = ShortArray(1)
             val   /*ulong*/fBlockLen: Long = 0
             if (!useOpenAL) {
                 snd_audio_hw!!.Lock( /*(void **)*/fBlock, fBlockLen)
-                if (null == fBlock) {
+                if (null == fBlock || fBlock[0] == 0.toShort()) {
                     return 0
                 }
             }
@@ -630,24 +627,24 @@ class snd_system {
             val numSpeakers = snd_audio_hw!!.GetNumberOfSpeakers()
             nextWriteBlock++
             nextWriteBlock %= snd_local.ROOM_SLICES_IN_BUFFER
-            val newPosition = nextWriteBlock * Simd.MIXBUFFER_SAMPLES
+            val newPosition = nextWriteBlock * MIXBUFFER_SAMPLES
             if (newPosition < olddwCurrentWritePos) {
                 buffers++ // buffer wrapped
             }
 
             // nextWriteSample is in multi-channel samples inside the buffer
-            val nextWriteSamples = nextWriteBlock * Simd.MIXBUFFER_SAMPLES
+            val nextWriteSamples = nextWriteBlock * MIXBUFFER_SAMPLES
             olddwCurrentWritePos = newPosition
 
             // newSoundTime is in multi-channel samples since the sound system was started
-            val newSoundTime = buffers * Simd.MIXBUFFER_SAMPLES * snd_local.ROOM_SLICES_IN_BUFFER + nextWriteSamples
+            val newSoundTime = buffers * MIXBUFFER_SAMPLES * snd_local.ROOM_SLICES_IN_BUFFER + nextWriteSamples
 
             // check for impending overflow
             // FIXME: we don't handle sound wrap-around correctly yet
             if (newSoundTime > 0x6fffffff) {
                 buffers = 0
             }
-            if (newSoundTime - CurrentSoundTime > Simd.MIXBUFFER_SAMPLES) {
+            if (newSoundTime - CurrentSoundTime > MIXBUFFER_SAMPLES) {
                 soundStats.missedWindow++
             }
             if (useOpenAL) {
@@ -656,7 +653,7 @@ class snd_system {
             } else {
                 // clear the buffer for all the mixing output
 //                SIMDProcessor.Memset(finalMixBuffer, 0, MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
-                Arrays.fill(finalMixBuffer, 0, 0, (Simd.MIXBUFFER_SAMPLES * numSpeakers).toFloat())
+                Arrays.fill(finalMixBuffer, 0, 0, (MIXBUFFER_SAMPLES * numSpeakers).toFloat())
             }
 
             // let the active sound world mix all the channels in unless muted or avi demo recording
@@ -669,17 +666,17 @@ class snd_system {
             } else {
 //                short[] dest = fBlock + nextWriteSamples * numSpeakers;
                 val dest = nextWriteSamples * numSpeakers
-                Simd.SIMDProcessor.MixedSoundToSamples(
+                SIMDProcessor!!.MixedSoundToSamples(
                     fBlock,
                     dest,
                     finalMixBuffer,
-                    Simd.MIXBUFFER_SAMPLES * numSpeakers
+                    MIXBUFFER_SAMPLES * numSpeakers
                 )
 
                 // allow swapping the left / right speaker channels for people with miswired systems
                 if (numSpeakers == 2 && s_reverse.GetBool()) {
                     j = 0
-                    while (j < Simd.MIXBUFFER_SAMPLES) {
+                    while (j < MIXBUFFER_SAMPLES) {
                         val temp = fBlock[dest + j * 2]
                         fBlock[dest + j * 2] = fBlock[dest + j * 2 + 1]
                         fBlock[dest + j * 2 + 1] = temp
@@ -703,13 +700,13 @@ class snd_system {
          */
         // async loop, when the sound driver uses a write strategy
         override fun AsyncUpdateWrite(inTime: Int): Int {
-            if (!isInitialized || shutdown || TempDump.NOT(snd_audio_hw)) {
+            if (!isInitialized || shutdown || snd_audio_hw == null) {
                 return 0
             }
             if (!useOpenAL) {
                 snd_audio_hw!!.Flush()
             }
-            val   /*unsigned int*/dwCurrentBlock = (inTime * 44.1f / Simd.MIXBUFFER_SAMPLES).toLong()
+            val   /*unsigned int*/dwCurrentBlock = (inTime * 44.1 / MIXBUFFER_SAMPLES).toLong()
             if (nextWriteBlock == -0x1) {
                 nextWriteBlock = dwCurrentBlock.toInt()
             }
@@ -719,7 +716,7 @@ class snd_system {
             if (nextWriteBlock.toLong() != dwCurrentBlock) {
                 win_main.Sys_Printf("missed %d sound updates\n", dwCurrentBlock - nextWriteBlock)
             }
-            val sampleTime = (dwCurrentBlock * Simd.MIXBUFFER_SAMPLES).toInt()
+            val sampleTime = (dwCurrentBlock * MIXBUFFER_SAMPLES).toInt()
             val numSpeakers = snd_audio_hw!!.GetNumberOfSpeakers()
             if (useOpenAL) {
                 // enable audio hardware caching
@@ -727,7 +724,7 @@ class snd_system {
             } else {
                 // clear the buffer for all the mixing output
 //                SIMDProcessor.Memset(finalMixBuffer, 0, MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
-                Arrays.fill(finalMixBuffer, 0f)
+                Arrays.fill(finalMixBuffer, 0.0f)
             }
 
             // let the active sound world mix all the channels in unless muted or avi demo recording
@@ -739,13 +736,13 @@ class snd_system {
                 ALC10.alcProcessContext(openalContext)
             } else {
                 val dest = snd_audio_hw!!.GetMixBuffer()
-                Simd.SIMDProcessor.MixedSoundToSamples(dest, finalMixBuffer, Simd.MIXBUFFER_SAMPLES * numSpeakers)
+                SIMDProcessor!!.MixedSoundToSamples(dest, finalMixBuffer, MIXBUFFER_SAMPLES * numSpeakers)
 
                 // allow swapping the left / right speaker channels for people with miswired systems
                 if (numSpeakers == 2 && s_reverse.GetBool()) {
                     var j: Int
                     j = 0
-                    while (j < Simd.MIXBUFFER_SAMPLES) {
+                    while (j < MIXBUFFER_SAMPLES) {
                         val temp = dest[j * 2]
                         dest[j * 2] = dest[j * 2 + 1]
                         dest[j * 2 + 1] = temp
@@ -771,7 +768,7 @@ class snd_system {
         override fun AsyncMix(soundTime: Int, mixBuffer: FloatArray): Int {
             val inTime: Int
             val numSpeakers: Int
-            if (!isInitialized || shutdown || TempDump.NOT(snd_audio_hw)) {
+            if (!isInitialized || shutdown || snd_audio_hw == null) {
                 return 0
             }
             inTime = win_shared.Sys_Milliseconds()
@@ -793,7 +790,7 @@ class snd_system {
             val ret = cinData_t()
             var i: Int
             var j: Int
-            if (!isInitialized || TempDump.NOT(snd_audio_hw)) {
+            if (!isInitialized || snd_audio_hw == null) {
 //		memset( &ret, 0, sizeof( ret ) );
                 return ret
             }
@@ -810,7 +807,7 @@ class snd_system {
                 while (j < numSpeakers) {
                     var meter = 0
                     i = 0
-                    while (i < Simd.MIXBUFFER_SAMPLES) {
+                    while (i < MIXBUFFER_SAMPLES) {
                         val result = abs(accum[i * numSpeakers + j])
                         if (result > meter) {
                             meter = result.toInt()
@@ -854,7 +851,7 @@ class snd_system {
                     }
                     if (meter > meterTops[j]) {
                         meterTops[j] = meter
-                        meterTopsTime[j] = (time + s_meterTopTime.GetInteger()).toInt()
+                        meterTopsTime[j] = (time + s_meterTopTime.GetInteger())
                     } else if (time > meterTopsTime[j] && meterTops[j] > 0) {
                         meterTops[j]--
                         if (meterTops[j] != 0) {
@@ -902,9 +899,9 @@ class snd_system {
                 while (j < numSpeakers) {
                     var xx = 0
                     var fmeter: Float
-                    val step = Simd.MIXBUFFER_SAMPLES / 256
+                    val step = MIXBUFFER_SAMPLES / 256
                     i = 0
-                    while (i < Simd.MIXBUFFER_SAMPLES) {
+                    while (i < MIXBUFFER_SAMPLES) {
                         fmeter = 0.0f
                         for (x in 0 until step) {
                             var result = accum[(i + x) * numSpeakers + j]
@@ -924,7 +921,7 @@ class snd_system {
                         }
                         if (meter > meterTops[xx]) {
                             meterTops[xx] = meter
-                            meterTopsTime[xx] = (time + 100).toInt()
+                            meterTopsTime[xx] = (time + 100)
                         } else if (time > meterTopsTime[xx] && meterTops[xx] > 0) {
                             meterTops[xx]--
                             if (meterTops[xx] != 0) {
@@ -1022,8 +1019,8 @@ class snd_system {
          ===================
          */
         // specifying NULL will cause silence to be played
-        override fun SetPlayingSoundWorld(soundWorld: idSoundWorld) {
-            currentSoundWorld = soundWorld as idSoundWorldLocal
+        override fun SetPlayingSoundWorld(soundWorld: idSoundWorld?) {
+            currentSoundWorld = soundWorld as idSoundWorldLocal?
         }
 
         // some tools, like the sound dialog, may be used in both the game and the editor
@@ -1084,7 +1081,7 @@ class snd_system {
 //	device = alcOpenDevice( NULL );
 //	context = alcCreateContext( device, NULL );
 //	alcMakeContextCurrent( context );
-//	if ( alIsExtensionPresent( ID_ALCHAR "EAX4.0" ) ) {
+//	if ( alIsExtensionPresent( ID_ALCHAR "EAX4.0f" ) ) {
 //		alcMakeContextCurrent( NULL );
 //		alcDestroyContext( context );
 //		alcCloseDevice( device );
@@ -1116,7 +1113,7 @@ class snd_system {
             } else if (`val` <= -60.0f) {
                 return 0.0f
             } else if (`val` >= 60.0f) {
-                return 2.0.pow((`val` * (1.0f / 6.0f)).toDouble()).toFloat()
+                return 2.0f.pow((`val` * (1.0f / 6.0f)))
             }
             val ival = ((`val` + 60.0f) * 10.0f).toInt()
             return volumesDB[ival]
@@ -1178,10 +1175,10 @@ class snd_system {
 
                     // get samples and continuity
                     run {
-                        val in1 = floatArrayOf(0f)
-                        val in2 = floatArrayOf(0f)
-                        val out1 = floatArrayOf(0f)
-                        val out2 = floatArrayOf(0f)
+                        val in1 = floatArrayOf(0.0f)
+                        val in2 = floatArrayOf(0.0f)
+                        val out1 = floatArrayOf(0.0f)
+                        val out2 = floatArrayOf(0.0f)
                         fx.GetContinuitySamples(in1, in2, out1, out2)
                         `in`[in_p - 1] = in1[0]
                         `in`[in_p - 2] = in2[0]
@@ -1331,7 +1328,7 @@ class snd_system {
      */
     internal class SoundReloadSounds_f private constructor() : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            if (TempDump.NOT(soundSystemLocal.soundCache)) {
+            if (soundSystemLocal.soundCache == null) {
                 return
             }
             val force = args!!.Argc() == 2
@@ -1357,7 +1354,7 @@ class snd_system {
         override fun run(args: CmdArgs.idCmdArgs?) {
             var i: Int
             val snd = args!!.Argv(1)
-            if (TempDump.NOT(soundSystemLocal.soundCache)) {
+            if (soundSystemLocal.soundCache == null) {
                 Common.common.Printf("No sound.\n")
                 return
             }
@@ -1368,7 +1365,7 @@ class snd_system {
             i = 0
             while (i < soundSystemLocal.soundCache!!.GetNumObjects()) {
                 val sample = soundSystemLocal.soundCache!!.GetObject(i)
-                if (TempDump.NOT(sample)) {
+                if (sample == null) {
                     i++
                     continue
                 }
@@ -1427,7 +1424,7 @@ class snd_system {
             i = 0
             while (i < sw!!.emitters.Num()) {
                 val sound = sw.emitters[i]
-                if (TempDump.NOT(sound)) {
+                if (sound == null) {
                     i++
                     continue
                 }
@@ -1456,7 +1453,7 @@ class snd_system {
             i = 0
             while (i < sw.emitters.Num()) {
                 val sound = sw.emitters[i]
-                if (TempDump.NOT(sound)) {
+                if (sound == null) {
                     i++
                     continue
                 }

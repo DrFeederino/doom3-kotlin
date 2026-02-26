@@ -5,20 +5,12 @@ import neo.Renderer.Model.idRenderModel
 import neo.Renderer.Model.modelSurface_s
 import neo.Renderer.Model.srfTriangles_s
 import neo.Renderer.Model_local.idRenderModelStatic
-import neo.Renderer.RenderSystem_init
-import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.Renderer.tr_local
-import neo.Renderer.tr_local.viewDef_s
-import neo.Renderer.tr_trisurf
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib.Companion.Max
-import neo.idlib.math.Math_h.idMath.FtoiFast
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.BV.idBounds
+import neo.idlib.Max
+import neo.idlib.math.idMath.FtoiFast
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 object Model_sprite {
     /*
 
@@ -34,16 +26,16 @@ object Model_sprite {
 
      ================================================================================
      */
-    class idRenderModelSprite() : idRenderModelStatic() {
-        public override fun IsDynamicModel(): dynamicModel_t {
+    class idRenderModelSprite : idRenderModelStatic() {
+        override fun IsDynamicModel(): dynamicModel_t {
             return dynamicModel_t.DM_CONTINUOUS
         }
 
-        public override fun IsLoaded(): Boolean {
+        override fun IsLoaded(): Boolean {
             return true
         }
 
-        public override fun InstantiateDynamicModel(
+        override fun InstantiateDynamicModel(
             renderEntity: renderEntity_s?,
             viewDef: viewDef_s?,
             cachedModel: idRenderModel?
@@ -52,7 +44,7 @@ object Model_sprite {
             val staticModel: idRenderModelStatic
             val tri: srfTriangles_s?
             var surf: modelSurface_s? = modelSurface_s()
-            if (cachedModel != null && !RenderSystem_init.r_useCachedDynamicModels!!.GetBool()) {
+            if (cachedModel != null && !r_useCachedDynamicModels!!.GetBool()) {
 //		delete cachedModel;
                 cachedModel = null
             }
@@ -70,9 +62,9 @@ object Model_sprite {
             } else {
                 staticModel = idRenderModelStatic()
                 staticModel.InitEmpty(sprite_SnapshotName)
-                tri = tr_trisurf.R_AllocStaticTriSurf()
-                tr_trisurf.R_AllocStaticTriSurfVerts(tri, 4)
-                tr_trisurf.R_AllocStaticTriSurfIndexes(tri, 6)
+                tri = R_AllocStaticTriSurf()
+                R_AllocStaticTriSurfVerts(tri, 4)
+                R_AllocStaticTriSurfIndexes(tri, 6)
                 tri.verts!![0]!!.Clear()
                 tri.verts!![0]!!.normal.set(1.0f, 0.0f, 0.0f)
                 tri.verts!![0]!!.tangents[0].set(0.0f, 1.0f, 0.0f)
@@ -107,7 +99,7 @@ object Model_sprite {
                 tri.numIndexes = 6
                 surf!!.geometry = tri
                 surf.id = 0
-                surf.shader = tr_local.tr.defaultMaterial
+                surf.shader = tr.defaultMaterial
                 staticModel.AddSurface(surf)
             }
             val red: Byte = FtoiFast(renderEntity.shaderParms[RenderWorld.SHADERPARM_RED] * 255.0f).toByte()
@@ -128,7 +120,7 @@ object Model_sprite {
             tri.verts!![1]!!.color[1] = green
             tri.verts!![1]!!.color[2] = blue
             tri.verts!![1]!!.color[3] = alpha
-            tri.verts!![2]!!.xyz.set(right.minus(up).unaryMinus())
+            tri.verts!![2]!!.xyz.set(right.unaryMinus().minus(up))
             tri.verts!![2]!!.color[0] = red
             tri.verts!![2]!!.color[1] = green
             tri.verts!![2]!!.color[2] = blue
@@ -138,12 +130,12 @@ object Model_sprite {
             tri.verts!![3]!!.color[1] = green
             tri.verts!![3]!!.color[2] = blue
             tri.verts!![3]!!.color[3] = alpha
-            tr_trisurf.R_BoundTriSurf(tri)
-            staticModel.bounds = idBounds(tri.bounds)
+            R_BoundTriSurf(tri)
+            staticModel.bounds.set(tri.bounds)
             return staticModel
         }
 
-        public override fun Bounds(renderEntity: renderEntity_s?): idBounds {
+        override fun Bounds(renderEntity: renderEntity_s?): idBounds {
             val b: idBounds = idBounds()
             b.Zero()
             if (renderEntity == null) {

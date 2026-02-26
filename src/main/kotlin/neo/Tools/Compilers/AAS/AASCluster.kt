@@ -9,9 +9,6 @@ import neo.Tools.Compilers.AAS.AASFile_local.idAASFileLocal
 import neo.framework.Common
 import kotlin.math.abs
 
-/**
- *
- */
 class AASCluster {
     /*
      ===============================================================================

@@ -1,9 +1,7 @@
 package neo.Tools.Compilers.RoqVQ
 
-import neo.TempDump
 import neo.TempDump.TODO_Exception
 import neo.Tools.Compilers.RoqVQ.Codec.codec
-import neo.Tools.Compilers.RoqVQ.QuadDefs.quadcel
 import neo.Tools.Compilers.RoqVQ.RoqParam.roqParam
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
@@ -11,14 +9,11 @@ import neo.framework.FileSystem_h
 import neo.framework.File_h.idFile
 import neo.framework.Session
 import neo.idlib.CmdArgs
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Str.idStr
+import neo.idlib.idException
 import neo.sys.win_shared
 import java.nio.ByteBuffer
 
-/**
- *
- */
 object Roq {
     var theRoQ // current roq
             : roq = roq()
@@ -26,25 +21,20 @@ object Roq {
     class roq     //0;
     //0;
     {
-        //
         private var RoQFile: idFile? = null
         private val codes: ByteArray = ByteArray(4096)
         private val currentFile: idStr = idStr()
         private var dataStuff = false
-        private var encoder: codec = codec()
-        private var image: NSBitmapImageRep = NSBitmapImageRep()
+        private var encoder: codec? = null
+        private var image: NSBitmapImageRep? = null
         private val lastFrame = false
         private var numQuadCels = 0
         private var numberOfFrames = 0
         private var paramFile: roqParam = roqParam()
         private var previousSize = 0
-
-        //
-        //
         private var quietMode = false
-
-        // ~roq();
         private val roqOutfile: idStr = idStr()
+
         fun WriteLossless() {
             throw TODO_Exception()
             //
@@ -183,7 +173,7 @@ object Roq {
             currentFile.set(filename)
             image = NSBitmapImageRep(filename)
             numQuadCels =
-                (image.pixelsWide() and 0xfff0) * (image.pixelsHigh() and 0xfff0) / (QuadDefs.MINSIZE * QuadDefs.MINSIZE)
+                (image!!.pixelsWide() and 0xfff0) * (image!!.pixelsHigh() and 0xfff0) / (MINSIZE * MINSIZE)
             numQuadCels += numQuadCels / 4 + numQuadCels / 16
 
 //	if (paramFile->deltaFrames] == true && cleared == false && [image isPlanar] == false) {
@@ -192,7 +182,7 @@ object Roq {
 //		memset( imageData, 0, image->pixelsWide()*image->pixelsHigh()*[image samplesPerPixel]);
 //	}
             if (!quietMode) {
-                Common.common.Printf("loadAndDisplayImage: %dx%d\n", image.pixelsWide(), image.pixelsHigh())
+                Common.common.Printf("loadAndDisplayImage: %dx%d\n", image!!.pixelsWide(), image!!.pixelsHigh())
             }
         }
 
@@ -212,7 +202,7 @@ object Roq {
                     Common.common.Error("Unable to open output file %s.\n", RoQFilename)
                     return
                 }
-                i = QuadDefs.RoQ_ID
+                i = RoQ_ID
                 Write16Word(i, RoQFile!!)
                 i = 0xffff
                 Write16Word(i, RoQFile!!)
@@ -231,19 +221,19 @@ object Roq {
         fun InitRoQPatterns() {
             val   /*uint*/j: Int
             var   /*word*/direct: Int
-            direct = QuadDefs.RoQ_QUAD_INFO
+            direct = RoQ_QUAD_INFO
             Write16Word(direct, RoQFile!!)
             j = 8
             Write32Word(j, RoQFile!!)
             Common.common.Printf("initRoQPatterns: outputting %d bytes to RoQ_INFO\n", j)
-            direct = if (image.hasAlpha()) 1 else 0
+            direct = if (image!!.hasAlpha()) 1 else 0
             if (ParamNoAlpha() == true) {
                 direct = 0
             }
             Write16Word(direct, RoQFile!!)
-            direct = image.pixelsWide()
+            direct = image!!.pixelsWide()
             Write16Word(direct, RoQFile!!)
-            direct = image.pixelsHigh()
+            direct = image!!.pixelsHigh()
             Write16Word(direct, RoQFile!!)
             direct = 8
             Write16Word(direct, RoQFile!!)
@@ -262,7 +252,7 @@ object Roq {
             paramFile = roqParam()
             paramFile.numInputFiles = 0
             paramFile.InitFromFile(paramInputFile)
-            if (TempDump.NOT(paramFile.NumberOfFrames().toDouble())) {
+            if (paramFile.NumberOfFrames() == 0) {
                 return
             }
             InitRoQFile(paramFile.outputFilename.toString())
@@ -279,13 +269,13 @@ object Roq {
             while (morestuff != 0) {
                 LoadAndDisplayImage(f1)
                 if (onFrame == 1) {
-                    encoder.SparseEncode()
+                    encoder!!.SparseEncode()
                     //			WriteLossless();
                 } else {
                     if (f0 == f1 && f1 != f2) {
                         WriteHangFrame()
                     } else {
-                        encoder.SparseEncode()
+                        encoder!!.SparseEncode()
                     }
                 }
                 onFrame++
@@ -324,7 +314,7 @@ object Roq {
             return lastFrame
         }
 
-        fun CurrentImage(): NSBitmapImageRep {
+        fun CurrentImage(): NSBitmapImageRep? {
             return image
         }
 
@@ -360,9 +350,9 @@ object Roq {
             onAction = 0
             j = onAction
             onCCC = 2 // onAction going to go at zero
-            dxMean = encoder.MotMeanX()
-            dyMean = encoder.MotMeanY()
-            dimension = if (image.hasAlpha()) {
+            dxMean = encoder!!.MotMeanX()
+            dyMean = encoder!!.MotMeanY()
+            dimension = if (image!!.hasAlpha()) {
                 10
             } else {
                 6
@@ -371,21 +361,23 @@ object Roq {
             while (i < numQuadCels) {
                 if (pquad[i].size.toInt() != 0 && pquad[i].size < 16) {
                     when (pquad[i].status) {
-                        QuadDefs.SLD -> {
+                        SLD -> {
                             use4[pquad[i].patten[0]] = true
                             use2[codes[dimension * 256 + pquad[i].patten[0] * 4 + 0].toInt()] = true
                             use2[codes[dimension * 256 + pquad[i].patten[0] * 4 + 1].toInt()] = true
                             use2[codes[dimension * 256 + pquad[i].patten[0] * 4 + 2].toInt()] = true
                             use2[codes[dimension * 256 + pquad[i].patten[0] * 4 + 3].toInt()] = true
                         }
-                        QuadDefs.PAT -> {
+
+                        PAT -> {
                             use4[pquad[i].patten[0]] = true
                             use2[codes[dimension * 256 + pquad[i].patten[0] * 4 + 0].toInt()] = true
                             use2[codes[dimension * 256 + pquad[i].patten[0] * 4 + 1].toInt()] = true
                             use2[codes[dimension * 256 + pquad[i].patten[0] * 4 + 2].toInt()] = true
                             use2[codes[dimension * 256 + pquad[i].patten[0] * 4 + 3].toInt()] = true
                         }
-                        QuadDefs.CCC -> {
+
+                        CCC -> {
                             use2[pquad[i].patten[1]] = true
                             use2[pquad[i].patten[2]] = true
                             use2[pquad[i].patten[3]] = true
@@ -398,7 +390,7 @@ object Roq {
             if (!dataStuff) {
                 dataStuff = true
                 InitRoQPatterns()
-                i = if (image.hasAlpha()) {
+                i = if (image!!.hasAlpha()) {
                     3584
                 } else {
                     2560
@@ -435,7 +427,7 @@ object Roq {
                         index4[i] = j
                         dx = 0
                         while (dx < 4) {
-                            cccList[j * 4 + code + dx] = index2[codes[i * 4 + dimension * 256 + dx].toInt()] as Byte
+                            cccList[j * 4 + code + dx] = index2[codes[i * 4 + dimension * 256 + dx].toInt()].toByte()
                             dx++
                         }
                         j++
@@ -445,7 +437,7 @@ object Roq {
                 code += j * 4
                 direct = (direct shl 8) + j
                 Common.common.Printf("writeFrame: really used %d 4x4 cels\n", j)
-                i = if (image.hasAlpha()) {
+                i = if (image!!.hasAlpha()) {
                     3584
                 } else {
                     2560
@@ -464,13 +456,14 @@ object Roq {
                 if (pquad[i].size.toInt() != 0 && pquad[i].size < 16) {
                     code = -1
                     when (pquad[i].status) {
-                        QuadDefs.DEP -> code = 3
-                        QuadDefs.SLD -> {
+                        DEP -> code = 3
+                        SLD -> {
                             code = 2
-                            cccList[onCCC++] = index4[pquad[i].patten[0]] as Byte
+                            cccList[onCCC++] = index4[pquad[i].patten[0]].toByte()
                         }
-                        QuadDefs.MOT -> code = 0
-                        QuadDefs.FCC -> {
+
+                        MOT -> code = 0
+                        FCC -> {
                             code = 1
                             dx = (pquad[i].domain shr 8) - 128 - dxMean + 8
                             dy = (pquad[i].domain and 0xff) - 128 - dyMean + 8
@@ -484,23 +477,26 @@ object Roq {
                                     pquad[i].xat,
                                     pquad[i].yat,
                                     pquad[i].size,
-                                    pquad[i].snr[QuadDefs.FCC]
+                                    pquad[i].snr[FCC]
                                 )
                             }
                             cccList[onCCC++] = ((dx shl 4) + dy).toByte()
                         }
-                        QuadDefs.PAT -> {
+
+                        PAT -> {
                             code = 2
-                            cccList[onCCC++] = index4[pquad[i].patten[0]] as Byte
+                            cccList[onCCC++] = index4[pquad[i].patten[0]].toByte()
                         }
-                        QuadDefs.CCC -> {
+
+                        CCC -> {
                             code = 3
-                            cccList[onCCC++] = index2[pquad[i].patten[1]] as Byte
-                            cccList[onCCC++] = index2[pquad[i].patten[2]] as Byte
-                            cccList[onCCC++] = index2[pquad[i].patten[3]] as Byte
-                            cccList[onCCC++] = index2[pquad[i].patten[4]] as Byte
+                            cccList[onCCC++] = index2[pquad[i].patten[1]].toByte()
+                            cccList[onCCC++] = index2[pquad[i].patten[2]].toByte()
+                            cccList[onCCC++] = index2[pquad[i].patten[3]].toByte()
+                            cccList[onCCC++] = index2[pquad[i].patten[4]].toByte()
                         }
-                        QuadDefs.DEAD -> Common.common.Error("dead cels in picture\n")
+
+                        DEAD -> Common.common.Error("dead cels in picture\n")
                     }
                     if (code == -1) {
                         Common.common.Error("writeFrame: an error occurred writing the frame\n")
@@ -522,7 +518,7 @@ object Roq {
                 cccList[onAction + 0] = (action and 0xff).toByte()
                 cccList[onAction + 1] = (action shr 8 and 0xff).toByte()
             }
-            direct = QuadDefs.RoQ_QUAD_VQ
+            direct = RoQ_QUAD_VQ
             Write16Word(direct, RoQFile!!)
             j = onCCC
             Write32Word(j, RoQFile!!)
@@ -547,7 +543,7 @@ object Roq {
                 Common.common.Printf("writeCodeBook: false VQ DATA!!!!\n")
                 return
             }
-            direct = QuadDefs.RoQ_QUAD_CODEBOOK
+            direct = RoQ_QUAD_CODEBOOK
             Write16Word(direct, RoQFile!!)
             j = csize
             Write32Word(j, RoQFile!!)
@@ -597,7 +593,7 @@ object Roq {
             val   /*uint*/j: Int
             var   /*word*/direct: Int
             Common.common.Printf("*******************************************************************\n")
-            direct = QuadDefs.RoQ_QUAD_HANG
+            direct = RoQ_QUAD_HANG
             Write16Word(direct, RoQFile!!)
             j = 0
             Write32Word(j, RoQFile!!)
@@ -835,9 +831,9 @@ object Roq {
                 Common.common.Printf("Usage: roq <paramfile>\n")
                 return
             }
-            Roq.theRoQ = roq()
+            theRoQ = roq()
             val startMsec = win_shared.Sys_Milliseconds()
-            Roq.theRoQ.EncodeStream(args!!.Argv(1))
+            theRoQ.EncodeStream(args.Argv(1))
             val stopMsec = win_shared.Sys_Milliseconds()
             Common.common.Printf("total encoding time: %d second\n", (stopMsec - startMsec) / 1000)
         }

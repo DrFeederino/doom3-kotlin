@@ -19,7 +19,7 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.va
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idVec4
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
 import neo.ui.DeviceContext.idDeviceContext
@@ -29,9 +29,6 @@ import neo.ui.Window.idWindow
 import java.util.*
 import kotlin.math.abs
 
-/**
- *
- */
 class MarkerWindow {
     class markerData_t {
         var mat: idMaterial? = null
@@ -44,24 +41,12 @@ class MarkerWindow {
         private var currentMarker = 0
         private var currentTime = 0
         private var imageBuff: IntArray? = null
-        private val markerColor: idVec4? = null
+        private val markerColor: idVec4 = idVec4()
         private var markerMat: idMaterial? = null
         private var markerStop: idMaterial? = null
-
-        //
-        //
         private val markerTimes = idList<markerData_t>()
         private var numStats = 0
-
-        //virtual ~idMarkerWindow();
-        private val statData: idStr? = null
-
-        //
-        //        @Override
-        //        public idWinVar GetWinVarByName(final String _name, boolean winLookup /*= false*/) {
-        //            return super.GetWinVarByName(_name, winLookup);
-        //        }
-        //
+        private val statData: idStr = idStr()
         private var stopTime = 0
 
         constructor(gui: idUserInterfaceLocal) : super(gui) {
@@ -75,12 +60,8 @@ class MarkerWindow {
             CommonInit()
         }
 
-        override fun  /*size_t*/Allocated(): Int {
-            return super.Allocated()
-        }
-
         fun HandleEvent(event: sysEvent_s, updateVisuals: Boolean): String {
-            if (!(event.evType === sysEventType_t.SE_KEY && event.evValue2 != 0)) {
+            if (!(event.evType == sysEventType_t.SE_KEY && event.evValue2 != 0)) {
                 return ""
             }
             val key = event.evValue
@@ -140,10 +121,6 @@ class MarkerWindow {
             return ""
         }
 
-        override fun PostParse() {
-            super.PostParse()
-        }
-
         override fun Draw(time: Int, x: Float, y: Float) {
             var pct: Float
             var r = idRectangle(clientRect)
@@ -156,29 +133,29 @@ class MarkerWindow {
                 if (c > 0) {
                     for (i in 0 until c) {
                         val md = markerTimes[i]
-                        if (md.rect.w == 0f) {
-                            md.rect.x = r.x + r.w * (md.time.toFloat() / len) - 8
+                        if (md.rect.w == 0.0f) {
+                            md.rect.x = r.x + r.w * (md.time / len) - 8
                             md.rect.y = r.y + r.h - 20
-                            md.rect.w = 16f
-                            md.rect.h = 16f
+                            md.rect.w = 16.0f
+                            md.rect.h = 16.0f
                         }
                         dc!!.DrawMaterial(md.rect.x, md.rect.y, md.rect.w, md.rect.h, markerMat, markerColor)
                     }
                 }
             }
-            r.y += 10f
+            r.y += 10.0f
             if (r.w > 0 && r.Contains(gui!!.CursorX(), gui!!.CursorY())) {
                 pct = (gui!!.CursorX() - r.x) / r.w
                 currentTime = (len * pct).toInt()
                 r.x = if (gui!!.CursorX() > r.x + r.w - 40) gui!!.CursorX() - 40 else gui!!.CursorX()
                 r.y = gui!!.CursorY() - 15
-                r.w = 40f
-                r.h = 20f
+                r.w = 40.0f
+                r.h = 20.0f
                 dc!!.DrawText(
                     va("%.2i:%.2i", currentTime / 60 / 60, currentTime / 60 % 60),
                     0.25f,
                     0,
-                    idDeviceContext.Companion.colorWhite,
+                    idDeviceContext.colorWhite,
                     r,
                     false
                 )
@@ -188,14 +165,14 @@ class MarkerWindow {
                 r.y += (r.h - 32) / 2
                 pct = stopTime.toFloat() / len
                 r.x += r.w * pct - 16
-                val color = idVec4(1f, 1f, 1f, 0.65f)
-                dc!!.DrawMaterial(r.x, r.y, 32f, 32f, markerStop, color)
+                val color = idVec4(1.0f, 1.0f, 1.0f, 0.65f)
+                dc!!.DrawMaterial(r.x, r.y, 32.0f, 32.0f, markerStop, color)
             }
         }
 
         override fun RouteMouseCoords(xd: Float, yd: Float): String? {
             val ret = super.RouteMouseCoords(xd, yd)
-            val r = idRectangle()
+            idRectangle()
             var i: Int
             val c = markerTimes.Num()
             var len = gui!!.State().GetInt("loadLength")
@@ -254,7 +231,7 @@ class MarkerWindow {
                                 loggedStats[i]!!.stamina = 0
                             }
                             if (loggedStats[i]!!.heartRate < 0) {
-                                loggedStats[i]!!.heartRate = 0f
+                                loggedStats[i]!!.heartRate = 0.0f
                             }
                             if (loggedStats[i]!!.combat < 0) {
                                 loggedStats[i]!!.combat = 0
@@ -286,7 +263,6 @@ class MarkerWindow {
                     //                    memset(imageBuff, 0, 512 * 64 * 4);
                     Arrays.fill(imageBuff, 0, 512 * 64 * 4, 0)
                     val step = 511.0f / (numStats - 1)
-                    val startX = 0f
                     var x1: Float
                     var y1: Float
                     var x2: Float
@@ -296,18 +272,18 @@ class MarkerWindow {
                     while (i < numStats - 1) {
                         x1 += step
                         x2 = x1 + step
-                        y1 = 63 * (loggedStats[i]!!.health.toFloat() / HEALTH_MAX)
-                        y2 = 63 * (loggedStats[i + 1]!!.health.toFloat() / HEALTH_MAX)
+                        y1 = 63.0f * (loggedStats[i]!!.health / HEALTH_MAX)
+                        y2 = 63.0f * (loggedStats[i + 1]!!.health / HEALTH_MAX)
                         Line(x1, y1, x2, y2, imageBuff!!, -0xffff01)
-                        y1 = 63 * (loggedStats[i]!!.heartRate / RATE_MAX)
+                        y1 = 63.0f * (loggedStats[i]!!.heartRate / RATE_MAX)
                         y2 = 63 * (loggedStats[i + 1]!!.heartRate / RATE_MAX)
                         Line(x1, y1, x2, y2, imageBuff!!, -0xff0100)
                         // stamina not quite as high on graph so health does not get obscured with both at 100%
-                        y1 = 62 * (loggedStats[i]!!.stamina.toFloat() / STAMINA_MAX)
-                        y2 = 62 * (loggedStats[i + 1]!!.stamina.toFloat() / STAMINA_MAX)
+                        y1 = 62.0f * (loggedStats[i]!!.stamina / STAMINA_MAX)
+                        y2 = 62.0f * (loggedStats[i + 1]!!.stamina / STAMINA_MAX)
                         Line(x1, y1, x2, y2, imageBuff!!, -0x10000)
-                        y1 = 63 * (loggedStats[i]!!.combat.toFloat() / COMBAT_MAX)
-                        y2 = 63 * (loggedStats[i + 1]!!.combat.toFloat() / COMBAT_MAX)
+                        y1 = 63.0f * (loggedStats[i]!!.combat / COMBAT_MAX)
+                        y2 = 63.0f * (loggedStats[i + 1]!!.combat / COMBAT_MAX)
                         Line(x1, y1, x2, y2, imageBuff!!, -0xff0001)
                         i++
                     }
@@ -317,14 +293,6 @@ class MarkerWindow {
                     imageBuff = null
                 }
             }
-        }
-
-        override fun MouseExit() {
-            super.MouseExit()
-        }
-
-        override fun MouseEnter() {
-            super.MouseEnter()
         }
 
         override fun ParseInternalVar(_name: String?, src: idParser): Boolean {
@@ -362,8 +330,8 @@ class MarkerWindow {
         private fun Line(x1: Int, y1: Int, x2: Int, y2: Int, out: IntArray, color: Int) {
             var x1 = x1
             var y1 = y1
-            var deltax = abs((x2 - x1).toDouble()).toInt()
-            var deltay = abs((y2 - y1).toDouble()).toInt()
+            var deltax = abs((x2 - x1).toFloat()).toInt()
+            var deltay = abs((y2 - y1).toFloat()).toInt()
             val incx = if (x1 > x2) -1 else 1
             val incy = if (y1 > y2) -1 else 1
             val right: Int

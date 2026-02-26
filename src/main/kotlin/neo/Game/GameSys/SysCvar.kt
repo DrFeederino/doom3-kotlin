@@ -10,9 +10,6 @@ import neo.framework.Licensee
 import neo.sys.sys_public
 import java.util.*
 
-/**
- *
- */
 class SysCvar {
 
     class gameVersion_s {
@@ -239,8 +236,8 @@ class SysCvar {
             "0",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER,
             "draws obstacle avoidance information for monsters.  if 2, draws obstacles for player, as well",
-            0f,
-            2f,
+            0.0f,
+            2.0f,
             ArgCompletion_Integer(0, 2)
         )
         val ai_showPaths: idCVar =
@@ -291,8 +288,8 @@ class SysCvar {
             "600",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT,
             "# of seconds to allow game to run when skipping cinematic.  prevents lock-up when cinematic doesn't end.",
-            0f,
-            3600f
+            0.0f,
+            3600.0f
         )
 
         //
@@ -301,8 +298,8 @@ class SysCvar {
             "10",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE,
             "pregame countdown in seconds",
-            4f,
-            3600f
+            4.0f,
+            3600.0f
         )
         val g_damageScale: idCVar = idCVar(
             "g_damageScale",
@@ -322,7 +319,7 @@ class SysCvar {
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
             "checks for models with bounds > 2048"
         )
-        val g_debugCinematic: idCVar = idCVar("g_debugCinematic", "1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
+        val g_debugCinematic: idCVar = idCVar("g_debugCinematic", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
         val g_debugDamage: idCVar = idCVar("g_debugDamage", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
         val g_debugMove: idCVar = idCVar("g_debugMove", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
         val g_debugMover: idCVar = idCVar("g_debugMover", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
@@ -349,7 +346,7 @@ class SysCvar {
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_BOOL,
             "show double vision when taking damage"
         )
-        val g_dragDamping: idCVar = idCVar("g_dragDamping", "0.5", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
+        val g_dragDamping: idCVar = idCVar("g_dragDamping", "0.5f", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
         val g_dragEntity: idCVar = idCVar(
             "g_dragEntity",
             "0",
@@ -360,7 +357,7 @@ class SysCvar {
             idCVar("g_dragShowSelection", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
         val g_dropItemRotation: idCVar = idCVar("g_dropItemRotation", "", CVarSystem.CVAR_GAME, "")
         val g_dvAmplitude: idCVar = idCVar("g_dvAmplitude", "0.001", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
-        val g_dvFrequency: idCVar = idCVar("g_dvFrequency", "0.5", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
+        val g_dvFrequency: idCVar = idCVar("g_dvFrequency", "0.5f", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
 
         //
         val g_dvTime: idCVar = idCVar("g_dvTime", "1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
@@ -374,7 +371,7 @@ class SysCvar {
      5 = monsters
      6 = entity names
      7 = entity models
-     """.trimIndent(), 0f, 7f, ArgCompletion_Integer(0, 7)
+     """.trimIndent(), 0.0f, 7.0f, ArgCompletion_Integer(0, 7)
         )
         val g_exportMask: idCVar = idCVar("g_exportMask", "", CVarSystem.CVAR_GAME, "")
         val g_flushSave: idCVar = idCVar(
@@ -398,14 +395,21 @@ class SysCvar {
             "10",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE,
             "scores review time in seconds (at end game)",
-            2f,
-            3600f
+            2.0f,
+            3600.0f
         )
         val g_gravity: idCVar =
             idCVar("g_gravity", Game_local.DEFAULT_GRAVITY_STRING, CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
         val g_gun_x: idCVar = idCVar("g_gunX", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
         val g_gun_y: idCVar = idCVar("g_gunY", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
         val g_gun_z: idCVar = idCVar("g_gunZ", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
+        val g_hitEffect: idCVar = idCVar(
+            "g_hitEffect",
+            "1",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_BOOL,
+            "mess up player camera when taking damage"
+        )
+
         val g_healthTakeAmt: idCVar = idCVar(
             "g_healthTakeAmt",
             "5",
@@ -486,7 +490,7 @@ class SysCvar {
         val g_showCollisionTraces: idCVar =
             idCVar("g_showCollisionTraces", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
         val g_showCollisionWorld: idCVar =
-            idCVar("g_showCollisionWorld", "1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
+            idCVar("g_showCollisionWorld", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
         val g_showEnemies: idCVar = idCVar(
             "g_showEnemies",
             "0",
@@ -500,7 +504,8 @@ class SysCvar {
         //
         //
         //
-        val g_showPVS: idCVar = idCVar("g_showPVS", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER, "", 0f, 2f)
+        val g_showPVS: idCVar =
+            idCVar("g_showPVS", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER, "", 0.0f, 2.0f)
 
         //
         val g_showPlayerShadow: idCVar = idCVar(
@@ -563,7 +568,7 @@ class SysCvar {
      2 = cycle anim with continuous origin
      3 = frame by frame with continuous origin
      4 = play anim once
-     """.trimIndent(), 0f, 4f, ArgCompletion_Integer(0, 4)
+     """.trimIndent(), 0.0f, 4.0f, ArgCompletion_Integer(0, 4)
         )
         val g_testModelBlend: idCVar =
             idCVar(
@@ -731,7 +736,7 @@ class SysCvar {
             )
         val pm_crouchbob: idCVar = idCVar(
             "pm_crouchbob",
-            "0.5",
+            "0.5f",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT,
             "bob much faster when crouched"
         )
@@ -797,8 +802,8 @@ class SysCvar {
             "0",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_INTEGER,
             "draws camera from POV of player model (1 = always, 2 = when dead)",
-            0f,
-            2f,
+            0.0f,
+            2.0f,
             ArgCompletion_Integer(0, 2)
         )
         val pm_noclipspeed: idCVar = idCVar(
@@ -939,11 +944,11 @@ class SysCvar {
         //
         val r_aspectRatio: idCVar = idCVar(
             "r_aspectRatio",
-            "0",
+            "-1",
             CVarSystem.CVAR_RENDERER or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE,
             "aspect ratio of view:\n0 = 4:3\n1 = 16:9\n2 = 16:10",
-            0f,
-            2f
+            -1.0f,
+            2.0f
         )
         val rb_showActive: idCVar = idCVar(
             "rb_showActive",
@@ -976,7 +981,7 @@ class SysCvar {
             "10",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_SERVERINFO or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_INTEGER,
             "frag limit",
-            1f,
+            1.0f,
             MultiplayerGame.MP_PLAYER_MAXFRAGS.toFloat()
         )
 
@@ -1000,15 +1005,15 @@ class SysCvar {
             "game/mp/d3dm1",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_SERVERINFO or CVarSystem.CVAR_ARCHIVE,
             "map to be played next on server",
-            ArgCompletion_MapName.Companion.getInstance()
+            ArgCompletion_MapName.getInstance()
         )
         val si_maxPlayers: idCVar = idCVar(
             "si_maxPlayers",
             "4",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_SERVERINFO or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_INTEGER,
             "max number of players allowed on the server",
-            1f,
-            4f
+            1.0f,
+            4.0f
         )
 
         //
@@ -1048,8 +1053,8 @@ class SysCvar {
             "10",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_SERVERINFO or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_INTEGER,
             "time limit in minutes",
-            0f,
-            60f
+            0.0f,
+            60.0f
         )
         val si_usePass: idCVar = idCVar(
             "si_usePass",

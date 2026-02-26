@@ -1,23 +1,22 @@
 package neo.Tools.Compilers.DMap
 
-import neo.CM.CollisionModel_local
 import neo.Renderer.Material
 import neo.Renderer.Model.srfTriangles_s
-import neo.Renderer.tr_local.idRenderLightLocal
+import neo.Renderer.idRenderLightLocal
 import neo.TempDump
 import neo.TempDump.TODO_Exception
 import neo.Tools.Compilers.AAS.AASBuild.RunAAS_f
 import neo.Tools.Compilers.DMap.optimize.optVertex_s
 import neo.Tools.Compilers.DMap.tritjunction.hashVert_s
+import neo.cm.collisionModelManager
 import neo.framework.BuildDefines
 import neo.framework.CmdSystem
 import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
 import neo.framework.FileSystem_h
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.CmdArgs
-import neo.idlib.Lib.idLib
 import neo.idlib.MapFile.idMapEntity
 import neo.idlib.MapFile.idMapFile
 import neo.idlib.Text.Str.idStr
@@ -25,14 +24,12 @@ import neo.idlib.containers.List.idList
 import neo.idlib.containers.PlaneSet.idPlaneSet
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.idLib
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import neo.sys.win_shared
 
-/**
- *
- */
 object dmap {
     //
     const val MAX_GROUP_LIGHTS = 16
@@ -128,7 +125,7 @@ object dmap {
         dmapGlobals.entityNum = 0
         while (dmapGlobals.entityNum < dmapGlobals.num_entities) {
             entity = dmapGlobals.uEntities[dmapGlobals.entityNum]
-            if (TempDump.NOT(entity.primitives)) {
+            if (entity.primitives == null) {
                 dmapGlobals.entityNum++
                 continue
             }
@@ -239,58 +236,58 @@ object dmap {
                     continue
                 }
             }
-            if (TempDump.NOT(idStr.Icmp(s, "glview").toDouble())) {
+            if (idStr.Icmp(s, "glview") == 0) {
                 dmapGlobals.glview = true
-            } else if (TempDump.NOT(idStr.Icmp(s, "v").toDouble())) {
+            } else if (idStr.Icmp(s, "v") == 0) {
                 idLib.common.Printf("verbose = true\n")
                 dmapGlobals.verbose = true
-            } else if (TempDump.NOT(idStr.Icmp(s, "draw").toDouble())) {
+            } else if (idStr.Icmp(s, "draw") == 0) {
                 idLib.common.Printf("drawflag = true\n")
                 dmapGlobals.drawflag = true
-            } else if (TempDump.NOT(idStr.Icmp(s, "noFlood").toDouble())) {
+            } else if (idStr.Icmp(s, "noFlood") == 0) {
                 idLib.common.Printf("noFlood = true\n")
                 dmapGlobals.noFlood = true
-            } else if (TempDump.NOT(idStr.Icmp(s, "noLightCarve").toDouble())) {
+            } else if (idStr.Icmp(s, "noLightCarve") == 0) {
                 idLib.common.Printf("noLightCarve = true\n")
                 dmapGlobals.noLightCarve = true
-            } else if (TempDump.NOT(idStr.Icmp(s, "lightCarve").toDouble())) {
+            } else if (idStr.Icmp(s, "lightCarve") == 0) {
                 idLib.common.Printf("noLightCarve = false\n")
                 dmapGlobals.noLightCarve = false
-            } else if (TempDump.NOT(idStr.Icmp(s, "noOpt").toDouble())) {
+            } else if (idStr.Icmp(s, "noOpt") == 0) {
                 idLib.common.Printf("noOptimize = true\n")
                 dmapGlobals.noOptimize = true
-            } else if (TempDump.NOT(idStr.Icmp(s, "verboseentities").toDouble())) {
+            } else if (idStr.Icmp(s, "verboseentities") == 0) {
                 idLib.common.Printf("verboseentities = true\n")
                 dmapGlobals.verboseentities = true
-            } else if (TempDump.NOT(idStr.Icmp(s, "noCurves").toDouble())) {
+            } else if (idStr.Icmp(s, "noCurves") == 0) {
                 idLib.common.Printf("noCurves = true\n")
                 dmapGlobals.noCurves = true
-            } else if (TempDump.NOT(idStr.Icmp(s, "noModels").toDouble())) {
+            } else if (idStr.Icmp(s, "noModels") == 0) {
                 idLib.common.Printf("noModels = true\n")
                 dmapGlobals.noModelBrushes = true
-            } else if (TempDump.NOT(idStr.Icmp(s, "noClipSides").toDouble())) {
+            } else if (idStr.Icmp(s, "noClipSides") == 0) {
                 idLib.common.Printf("noClipSides = true\n")
                 dmapGlobals.noClipSides = true
-            } else if (TempDump.NOT(idStr.Icmp(s, "noCarve").toDouble())) {
+            } else if (idStr.Icmp(s, "noCarve") == 0) {
                 idLib.common.Printf("noCarve = true\n")
                 dmapGlobals.fullCarve = false
-            } else if (TempDump.NOT(idStr.Icmp(s, "shadowOpt").toDouble())) {
+            } else if (idStr.Icmp(s, "shadowOpt") == 0) {
                 dmapGlobals.shadowOptLevel = shadowOptLevel_t.values()[TempDump.atoi(args.Argv(i + 1))]
                 idLib.common.Printf("shadowOpt = %d\n", dmapGlobals.shadowOptLevel)
                 i += 1
-            } else if (TempDump.NOT(idStr.Icmp(s, "noTjunc").toDouble())) {
+            } else if (idStr.Icmp(s, "noTjunc") == 0) {
                 // triangle optimization won't work properly without tjunction fixing
                 idLib.common.Printf("noTJunc = true\n")
                 dmapGlobals.noTJunc = true
                 dmapGlobals.noOptimize = true
                 idLib.common.Printf("forcing noOptimize = true\n")
-            } else if (TempDump.NOT(idStr.Icmp(s, "noCM").toDouble())) {
+            } else if (idStr.Icmp(s, "noCM") == 0) {
                 noCM = true
                 idLib.common.Printf("noCM = true\n")
-            } else if (TempDump.NOT(idStr.Icmp(s, "noAAS").toDouble())) {
+            } else if (idStr.Icmp(s, "noAAS") == 0) {
                 noAAS = true
                 idLib.common.Printf("noAAS = true\n")
-            } else if (TempDump.NOT(idStr.Icmp(s, "editorOutput").toDouble())) {
+            } else if (idStr.Icmp(s, "editorOutput") == 0) {
                 if (BuildDefines._WIN32) {
                     Common.com_outputMsg = true
                 }
@@ -350,8 +347,8 @@ object dmap {
 
                 // create the collision map
                 start = win_shared.Sys_Milliseconds()
-                CollisionModel_local.collisionModelManager.LoadMap(dmapGlobals.dmapFile)
-                CollisionModel_local.collisionModelManager.FreeMap()
+                collisionModelManager.LoadMap(dmapGlobals.dmapFile)
+                collisionModelManager.FreeMap()
                 end = win_shared.Sys_Milliseconds()
                 idLib.common.Printf("-------------------------------------\n")
                 idLib.common.Printf("%5.0f seconds to create collision map\n", (end - start) * 0.001f)
@@ -471,7 +468,7 @@ object dmap {
 
     class textureVectors_t {
         var v: Array<idVec4> =
-            idVec4.generateArray(2) // the offset value will always be in the 0.0 to 1.0 range
+            idVec4.generateArray(2) // the offset value will always be in the 0.0f to 1.0f range
     }
 
     class side_s {

@@ -20,7 +20,7 @@ class CInt {
         _val = _val shr power
     }
 
-    fun leftShit(power: Int) {
+    fun leftShift(power: Int) {
         _val = _val shl power
     }
 }

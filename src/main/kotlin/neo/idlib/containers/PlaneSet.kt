@@ -1,14 +1,11 @@
 package neo.idlib.containers
 
-import neo.idlib.containers.HashIndex.idHashIndex
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
+import neo.idlib.math.PLANETYPE_NEGX
+import neo.idlib.math.PLANETYPE_TRUEAXIAL
+import neo.idlib.math.idPlane
 import kotlin.math.abs
 
-/**
- *
- */
 class PlaneSet {
     /*
      ===============================================================================
@@ -42,7 +39,7 @@ class PlaneSet {
                 }
                 border++
             }
-            return if (plane.Type() >= Plane.PLANETYPE_NEGX && plane.Type() < Plane.PLANETYPE_TRUEAXIAL) {
+            return if (plane.Type() >= PLANETYPE_NEGX && plane.Type() < PLANETYPE_TRUEAXIAL) {
                 Append(plane.unaryMinus())
                 hash.Add(hashKey, Num() - 1)
                 Append(plane)

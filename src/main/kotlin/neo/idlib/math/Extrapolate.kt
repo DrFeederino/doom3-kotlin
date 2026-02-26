@@ -1,22 +1,14 @@
 package neo.idlib.math
 
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
-
-/**
- *
- */
 object Extrapolate {
     const val EXTRAPOLATION_ACCELLINEAR =
-        0x04 // linear acceleration, covered distance = duration * 0.001 * ( baseSpeed + 0.5 * speed )
+        0x04 // linear acceleration, covered distance = duration * 0.001 * ( baseSpeed + 0.5f * speed )
     const val EXTRAPOLATION_ACCELSINE =
-        0x10 // sinusoidal acceleration, covered distance = duration * 0.001 * ( baseSpeed + sqrt( 0.5 ) * speed )
+        0x10 // sinusoidal acceleration, covered distance = duration * 0.001 * ( baseSpeed + sqrt( 0.5f ) * speed )
     const val EXTRAPOLATION_DECELLINEAR =
-        0x08 // linear deceleration, covered distance = duration * 0.001 * ( baseSpeed + 0.5 * speed )
+        0x08 // linear deceleration, covered distance = duration * 0.001 * ( baseSpeed + 0.5f * speed )
     const val EXTRAPOLATION_DECELSINE =
-        0x20 // sinusoidal deceleration, covered distance = duration * 0.001 * ( baseSpeed + sqrt( 0.5 ) * speed )
+        0x20 // sinusoidal deceleration, covered distance = duration * 0.001 * ( baseSpeed + sqrt( 0.5f ) * speed )
     const val EXTRAPOLATION_LINEAR =
         0x02 // linear extrapolation, covered distance = duration * 0.001 * ( baseSpeed + speed )
     const val EXTRAPOLATION_NONE = 0x01 // no extrapolation, covered distance = duration * 0.001 * ( baseSpeed )
@@ -29,16 +21,17 @@ object Extrapolate {
 
      ==============================================================================================
      */
+    //where T: TempDump.Settable<T>
     class idExtrapolate<T> {
-        private val DBG_count = DBG_counter++
         private var baseSpeed: T? = null
-        private var currentTime: Float
+        private var currentTime: Float = 0.0f
         private var currentValue: T? = null
-        private var duration: Float
-        private /*extrapolation_t*/  var extrapolationType: Int
+        private var duration: Float = 0.0f
+        private var extrapolationType: Int
         private var speed: T? = null
-        private var startTime: Float
+        private var startTime: Float = 0.0f
         private var startValue: T? = null
+
         fun Init(
             startTime: Float,
             duration: Float,
@@ -53,7 +46,7 @@ object Extrapolate {
             this.startValue = startValue
             this.baseSpeed = baseSpeed
             this.speed = speed
-            currentTime = -1f
+            currentTime = -1.0f
             currentValue = startValue
         }
 
@@ -61,14 +54,18 @@ object Extrapolate {
             var time = time
             val deltaTime: Float
             val s: Float
+
             if (time == currentTime) {
                 return currentValue!!
             }
+
             currentTime = time
+
             if (time < startTime) {
                 return startValue!!
             }
-            if (0 == extrapolationType and EXTRAPOLATION_NOSTOP && time > startTime + duration) {
+
+            if (0 == (extrapolationType and EXTRAPOLATION_NOSTOP) && (time > startTime + duration)) {
                 time = startTime + duration
             }
             when (extrapolationType and EXTRAPOLATION_NOSTOP.inv()) {
@@ -76,32 +73,36 @@ object Extrapolate {
                     deltaTime = (time - startTime) * 0.001f
                     currentValue = _Plus(startValue!!, _Multiply(deltaTime, baseSpeed!!))
                 }
+
                 EXTRAPOLATION_LINEAR -> {
                     deltaTime = (time - startTime) * 0.001f
                     currentValue = _Plus(startValue!!, _Multiply(deltaTime, _Plus(baseSpeed!!, speed!!)))
                 }
+
                 EXTRAPOLATION_ACCELLINEAR -> {
-                    if (0f == duration) {
+                    if (0.0f == duration) {
                         currentValue = startValue
                     } else {
                         deltaTime = (time - startTime) / duration
-                        s = 0.5f * deltaTime * deltaTime * (duration * 0.001f)
+                        s = (0.5f * deltaTime * deltaTime) * (duration * 0.001f)
                         currentValue =
                             _Plus(startValue!!, _Plus(_Multiply(deltaTime, baseSpeed!!), _Multiply(s, speed!!)))
                     }
                 }
+
                 EXTRAPOLATION_DECELLINEAR -> {
-                    if (0f == duration) {
+                    if (0.0f == duration) {
                         currentValue = startValue
                     } else {
                         deltaTime = (time - startTime) / duration
-                        s = (deltaTime - 0.5f * deltaTime * deltaTime) * (duration * 0.001f)
+                        s = (deltaTime - (0.5f * deltaTime * deltaTime)) * (duration * 0.001f)
                         currentValue =
                             _Plus(startValue!!, _Plus(_Multiply(deltaTime, baseSpeed!!), _Multiply(s, speed!!)))
                     }
                 }
+
                 EXTRAPOLATION_ACCELSINE -> {
-                    if (0f == duration) {
+                    if (0.0f == duration) {
                         currentValue = startValue
                     } else {
                         deltaTime = (time - startTime) / duration
@@ -110,8 +111,9 @@ object Extrapolate {
                             _Plus(startValue!!, _Plus(_Multiply(deltaTime, baseSpeed!!), _Multiply(s, speed!!)))
                     }
                 }
+
                 EXTRAPOLATION_DECELSINE -> {
-                    if (0f == duration) {
+                    if (0.0f == duration) {
                         currentValue = startValue
                     } else {
                         deltaTime = (time - startTime) / duration
@@ -120,6 +122,10 @@ object Extrapolate {
                             _Plus(startValue!!, _Plus(_Multiply(deltaTime, baseSpeed!!), _Multiply(s, speed!!)))
                     }
                 }
+
+                else -> {
+                    currentValue = startValue
+                }
             }
             return currentValue!!
         }
@@ -127,51 +133,60 @@ object Extrapolate {
         fun GetCurrentSpeed(time: Float): T {
             val deltaTime: Float
             val s: Float
-            if (time < startTime || 0f == duration) {
+            if (time < startTime || 0.0f == duration) {
                 return _Minus(startValue!!, startValue!!)
             }
-            return if (0 == extrapolationType and EXTRAPOLATION_NOSTOP && time > startTime + duration) {
-                _Minus(startValue!!, startValue!!)
-            } else when (extrapolationType and EXTRAPOLATION_NOSTOP.inv()) {
+
+            if ((extrapolationType and EXTRAPOLATION_NOSTOP) == 0 && (time > startTime + duration)) {
+                return _Minus(startValue!!, startValue!!)
+            }
+
+            return when (extrapolationType and EXTRAPOLATION_NOSTOP.inv()) {
                 EXTRAPOLATION_NONE -> {
-                    baseSpeed!!
+                    return baseSpeed!!
                 }
+
                 EXTRAPOLATION_LINEAR -> {
                     _Plus(baseSpeed!!, speed!!)
                 }
+
                 EXTRAPOLATION_ACCELLINEAR -> {
                     deltaTime = (time - startTime) / duration
                     s = deltaTime
-                    _Plus(baseSpeed!!, _Multiply(s, speed!!))
+                    return _Plus(baseSpeed!!, _Multiply(s, speed!!))
                 }
+
                 EXTRAPOLATION_DECELLINEAR -> {
                     deltaTime = (time - startTime) / duration
                     s = 1.0f - deltaTime
-                    _Plus(baseSpeed!!, _Multiply(s, speed!!))
+                    return _Plus(baseSpeed!!, _Multiply(s, speed!!))
                 }
+
                 EXTRAPOLATION_ACCELSINE -> {
                     deltaTime = (time - startTime) / duration
                     s = idMath.Sin(deltaTime * idMath.HALF_PI)
-                    _Plus(baseSpeed!!, _Multiply(s, speed!!))
+                    return _Plus(baseSpeed!!, _Multiply(s, speed!!))
                 }
+
                 EXTRAPOLATION_DECELSINE -> {
                     deltaTime = (time - startTime) / duration
                     s = idMath.Cos(deltaTime * idMath.HALF_PI)
-                    _Plus(baseSpeed!!, _Multiply(s, speed!!))
+                    return _Plus(baseSpeed!!, _Multiply(s, speed!!))
                 }
+
                 else -> {
-                    baseSpeed!!
+                    return baseSpeed!!
                 }
-            }
+            } as T
         }
 
         fun IsDone(time: Float): Boolean {
-            return 0 == extrapolationType and EXTRAPOLATION_NOSTOP && time >= startTime + duration
+            return 0 == (extrapolationType and EXTRAPOLATION_NOSTOP) && time >= startTime + duration
         }
 
         fun SetStartTime(time: Float) {
             startTime = time
-            currentTime = -1f
+            currentTime = -1.0f
         }
 
         fun GetStartTime(): Float {
@@ -179,7 +194,7 @@ object Extrapolate {
         }
 
         fun GetEndTime(): Float {
-            return if (0 == extrapolationType and EXTRAPOLATION_NOSTOP && duration > 0) startTime + duration else 0f
+            return if (0 == (extrapolationType and EXTRAPOLATION_NOSTOP) && duration > 0) startTime + duration else 0.0f
         }
 
         fun GetDuration(): Float {
@@ -188,7 +203,7 @@ object Extrapolate {
 
         fun SetStartValue(value: T?) {
             startValue = value
-            currentTime = -1f
+            currentTime = -1.0f
         }
 
         fun GetStartValue(): T? {
@@ -203,62 +218,52 @@ object Extrapolate {
             return speed
         }
 
-        /*extrapolation_t*/   fun GetExtrapolationType(): Int {
+        fun GetExtrapolationType(): Int {
             return extrapolationType
         }
 
         private fun _Multiply(f: Float, t: T): T {
-            if (t is idVec3) {
-                return (t as idVec3 * f) as T
-            } else if (t is idVec4) {
-                return (t as idVec4 * f) as T
-            } else if (t is idAngles) {
-                return (t as idAngles * f) as T
-            } else if (t is Double) {
-                return java.lang.Double.valueOf(f * t as Double) as T
+            return when (t) {
+                is idVec3 -> (t * f) as T
+                is idVec4 -> (t * f) as T
+                is idAngles -> (t * f) as T
+                is Float -> (f * t) as T
+                is Int -> (f * t).toInt() as T
+                else -> t
             }
-            return java.lang.Float.valueOf(f * t as Float) as T
         }
 
         private fun _Plus(t1: T, t2: T): T {
-            if (t1 is idVec3) {
-                return (t1 as idVec3 + t2 as idVec3) as T
-            } else if (t1 is idVec4) {
-                return (t1 as idVec4 + t2 as idVec4) as T
-            } else if (t1 is idAngles) {
-                return (t1 as idAngles + t2 as idAngles) as T
-            } else if (t1 is Double) {
-                return java.lang.Double.valueOf(t1 as Double + t2 as Double) as T
+            return when {
+                t1 is idVec3 && t2 is idVec3 -> (t1 + t2) as T
+                t1 is idVec4 && t2 is idVec4 -> (t1 + t2) as T
+                t1 is idAngles && t2 is idAngles -> (t1 + t2) as T
+                t1 is Float && t2 is Float -> (t1 + t2) as T
+                t1 is Int && t2 is Int -> (t1 + t2) as T
+                else -> t1
             }
-            return java.lang.Float.valueOf(t1 as Float + t2 as Float) as T
         }
 
         private fun _Minus(t1: T, t2: T): T {
-            if (t1 is idVec3) {
-                return (t1 as idVec3 - t2 as idVec3) as T
-            } else if (t1 is idVec4) {
-                return (t1 as idVec4 - t2 as idVec4) as T
-            } else if (t1 is idAngles) {
-                return (t1 as idAngles - t2 as idAngles) as T
+            return when {
+                t1 is idVec3 && t2 is idVec3 -> (t1 - t2) as T
+                t1 is idVec4 && t2 is idVec4 -> (t1 - t2) as T
+                t1 is idAngles && t2 is idAngles -> (t1 - t2) as T
+                t1 is Float && t2 is Float -> (t1 - t2) as T
+                t1 is Int && t2 is Int -> (t1 - t2) as T
+                else -> t1
             }
-            return java.lang.Float.valueOf(t1 as Float - t2 as Float) as T
-        }
-
-        companion object {
-            //
-            //
-            private var DBG_counter = 0
         }
 
         init {
             extrapolationType = EXTRAPOLATION_NONE
             duration = 0.0f
-            startTime = duration
-            //	memset( &startValue, 0, sizeof( startValue ) );
-//	memset( &baseSpeed, 0, sizeof( baseSpeed ) );
-//	memset( &speed, 0, sizeof( speed ) );
-            currentTime = -1f
-            //            currentValue = startValue;
+            startTime = 0.0f
+            currentTime = -1.0f
+            startValue = null
+            baseSpeed = null
+            speed = null
+            currentValue = null
         }
     }
 }

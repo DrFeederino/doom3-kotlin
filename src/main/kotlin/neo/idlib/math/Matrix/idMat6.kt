@@ -1,8 +1,8 @@
 package neo.idlib.math.Matrix
 
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec6
-import java.util.*
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec6
+import kotlin.math.abs
 
 //===============================================================
 //
@@ -32,65 +32,34 @@ class idMat6 {
     }
 
     constructor(src: Array<FloatArray>) {
-//	memcpy( mat, src, 6 * 6 * sizeof( float ) );
         mat[0].set(
             idVec6(
-                src[0][0],
-                src[0][1],
-                src[0][2],
-                src[0][3],
-                src[0][4],
-                src[0][5]
+                src[0][0], src[0][1], src[0][2], src[0][3], src[0][4], src[0][5]
             )
         )
         mat[1].set(
             idVec6(
-                src[1][0],
-                src[1][1],
-                src[1][2],
-                src[1][3],
-                src[1][4],
-                src[1][5]
+                src[1][0], src[1][1], src[1][2], src[1][3], src[1][4], src[1][5]
             )
         )
         mat[2].set(
             idVec6(
-                src[2][0],
-                src[2][1],
-                src[2][2],
-                src[2][3],
-                src[2][4],
-                src[2][5]
+                src[2][0], src[2][1], src[2][2], src[2][3], src[2][4], src[2][5]
             )
         )
         mat[3].set(
             idVec6(
-                src[3][0],
-                src[3][1],
-                src[3][2],
-                src[3][3],
-                src[3][4],
-                src[3][5]
+                src[3][0], src[3][1], src[3][2], src[3][3], src[3][4], src[3][5]
             )
         )
         mat[4].set(
             idVec6(
-                src[4][0],
-                src[4][1],
-                src[4][2],
-                src[4][3],
-                src[4][4],
-                src[4][5]
+                src[4][0], src[4][1], src[4][2], src[4][3], src[4][4], src[4][5]
             )
         )
         mat[5].set(
             idVec6(
-                src[5][0],
-                src[5][1],
-                src[5][2],
-                src[5][3],
-                src[5][4],
-                src[5][5]
+                src[5][0], src[5][1], src[5][2], src[5][3], src[5][4], src[5][5]
             )
         )
     }
@@ -99,59 +68,20 @@ class idMat6 {
         set(m)
     }
 
-    //public	idMat6			operator+( const idMat6 &a ) const;
-    //public	const idVec6 &	operator[]( int index ) const;
-    //public	idVec6 &		operator[]( int index );
-    //public	idMat6			operator*( const float a ) const;
     operator fun times(a: Float): idMat6 {
         return idMat6(
             idVec6(
-                mat[0].p[0] * a,
-                mat[0].p[1] * a,
-                mat[0].p[2] * a,
-                mat[0].p[3] * a,
-                mat[0].p[4] * a,
-                mat[0].p[5] * a
-            ),
-            idVec6(
-                mat[1].p[0] * a,
-                mat[1].p[1] * a,
-                mat[1].p[2] * a,
-                mat[1].p[3] * a,
-                mat[1].p[4] * a,
-                mat[1].p[5] * a
-            ),
-            idVec6(
-                mat[2].p[0] * a,
-                mat[2].p[1] * a,
-                mat[2].p[2] * a,
-                mat[2].p[3] * a,
-                mat[2].p[4] * a,
-                mat[2].p[5] * a
-            ),
-            idVec6(
-                mat[3].p[0] * a,
-                mat[3].p[1] * a,
-                mat[3].p[2] * a,
-                mat[3].p[3] * a,
-                mat[3].p[4] * a,
-                mat[3].p[5] * a
-            ),
-            idVec6(
-                mat[4].p[0] * a,
-                mat[4].p[1] * a,
-                mat[4].p[2] * a,
-                mat[4].p[3] * a,
-                mat[4].p[4] * a,
-                mat[4].p[5] * a
-            ),
-            idVec6(
-                mat[5].p[0] * a,
-                mat[5].p[1] * a,
-                mat[5].p[2] * a,
-                mat[5].p[3] * a,
-                mat[5].p[4] * a,
-                mat[5].p[5] * a
+                mat[0].p[0] * a, mat[0].p[1] * a, mat[0].p[2] * a, mat[0].p[3] * a, mat[0].p[4] * a, mat[0].p[5] * a
+            ), idVec6(
+                mat[1].p[0] * a, mat[1].p[1] * a, mat[1].p[2] * a, mat[1].p[3] * a, mat[1].p[4] * a, mat[1].p[5] * a
+            ), idVec6(
+                mat[2].p[0] * a, mat[2].p[1] * a, mat[2].p[2] * a, mat[2].p[3] * a, mat[2].p[4] * a, mat[2].p[5] * a
+            ), idVec6(
+                mat[3].p[0] * a, mat[3].p[1] * a, mat[3].p[2] * a, mat[3].p[3] * a, mat[3].p[4] * a, mat[3].p[5] * a
+            ), idVec6(
+                mat[4].p[0] * a, mat[4].p[1] * a, mat[4].p[2] * a, mat[4].p[3] * a, mat[4].p[4] * a, mat[4].p[5] * a
+            ), idVec6(
+                mat[5].p[0] * a, mat[5].p[1] * a, mat[5].p[2] * a, mat[5].p[3] * a, mat[5].p[4] * a, mat[5].p[5] * a
             )
         )
     }
@@ -167,17 +97,14 @@ class idMat6 {
         )
     }
 
-    //public	idMat6 &		operator*=( const float a );
     fun times(a: idMat6): idMat6 {
         var i: Int
         var j: Int
         val m1Ptr: FloatArray
         val m2Ptr: FloatArray
-        //	float *dstPtr;
         val dst = idMat6()
         m1Ptr = reinterpret_cast()
         m2Ptr = a.reinterpret_cast()
-        //	dstPtr = reinterpret_cast<float *>(&dst);
         i = 0
         while (i < 6) {
             j = 0
@@ -191,7 +118,6 @@ class idMat6 {
         return dst
     }
 
-    //public	idMat6 &		operator*=( const idMat6 &a );
     operator fun plus(a: idMat6): idMat6 {
         return idMat6(
             idVec6(
@@ -201,40 +127,35 @@ class idMat6 {
                 mat[0].p[3] + a.mat[0].p[3],
                 mat[0].p[4] + a.mat[0].p[4],
                 mat[0].p[5] + a.mat[0].p[5]
-            ),
-            idVec6(
+            ), idVec6(
                 mat[1].p[0] + a.mat[1].p[0],
                 mat[1].p[1] + a.mat[1].p[1],
                 mat[1].p[2] + a.mat[1].p[2],
                 mat[1].p[3] + a.mat[1].p[3],
                 mat[1].p[4] + a.mat[1].p[4],
                 mat[1].p[5] + a.mat[1].p[5]
-            ),
-            idVec6(
+            ), idVec6(
                 mat[2].p[0] + a.mat[2].p[0],
                 mat[2].p[1] + a.mat[2].p[1],
                 mat[2].p[2] + a.mat[2].p[2],
                 mat[2].p[3] + a.mat[2].p[3],
                 mat[2].p[4] + a.mat[2].p[4],
                 mat[2].p[5] + a.mat[2].p[5]
-            ),
-            idVec6(
+            ), idVec6(
                 mat[3].p[0] + a.mat[3].p[0],
                 mat[3].p[1] + a.mat[3].p[1],
                 mat[3].p[2] + a.mat[3].p[2],
                 mat[3].p[3] + a.mat[3].p[3],
                 mat[3].p[4] + a.mat[3].p[4],
                 mat[3].p[5] + a.mat[3].p[5]
-            ),
-            idVec6(
+            ), idVec6(
                 mat[4].p[0] + a.mat[4].p[0],
                 mat[4].p[1] + a.mat[4].p[1],
                 mat[4].p[2] + a.mat[4].p[2],
                 mat[4].p[3] + a.mat[4].p[3],
                 mat[4].p[4] + a.mat[4].p[4],
                 mat[4].p[5] + a.mat[4].p[5]
-            ),
-            idVec6(
+            ), idVec6(
                 mat[5].p[0] + a.mat[5].p[0],
                 mat[5].p[1] + a.mat[5].p[1],
                 mat[5].p[2] + a.mat[5].p[2],
@@ -245,8 +166,6 @@ class idMat6 {
         )
     }
 
-    //public	idMat6 &		operator+=( const idMat6 &a );
-    //public	idMat6			operator-( const idMat6 &a ) const;
     operator fun minus(a: idMat6): idMat6 {
         return idMat6(
             idVec6(
@@ -256,40 +175,35 @@ class idMat6 {
                 mat[0].p[3] - a.mat[0].p[3],
                 mat[0].p[4] - a.mat[0].p[4],
                 mat[0].p[5] - a.mat[0].p[5]
-            ),
-            idVec6(
+            ), idVec6(
                 mat[1].p[0] - a.mat[1].p[0],
                 mat[1].p[1] - a.mat[1].p[1],
                 mat[1].p[2] - a.mat[1].p[2],
                 mat[1].p[3] - a.mat[1].p[3],
                 mat[1].p[4] - a.mat[1].p[4],
                 mat[1].p[5] - a.mat[1].p[5]
-            ),
-            idVec6(
+            ), idVec6(
                 mat[2].p[0] - a.mat[2].p[0],
                 mat[2].p[1] - a.mat[2].p[1],
                 mat[2].p[2] - a.mat[2].p[2],
                 mat[2].p[3] - a.mat[2].p[3],
                 mat[2].p[4] - a.mat[2].p[4],
                 mat[2].p[5] - a.mat[2].p[5]
-            ),
-            idVec6(
+            ), idVec6(
                 mat[3].p[0] - a.mat[3].p[0],
                 mat[3].p[1] - a.mat[3].p[1],
                 mat[3].p[2] - a.mat[3].p[2],
                 mat[3].p[3] - a.mat[3].p[3],
                 mat[3].p[4] - a.mat[3].p[4],
                 mat[3].p[5] - a.mat[3].p[5]
-            ),
-            idVec6(
+            ), idVec6(
                 mat[4].p[0] - a.mat[4].p[0],
                 mat[4].p[1] - a.mat[4].p[1],
                 mat[4].p[2] - a.mat[4].p[2],
                 mat[4].p[3] - a.mat[4].p[3],
                 mat[4].p[4] - a.mat[4].p[4],
                 mat[4].p[5] - a.mat[4].p[5]
-            ),
-            idVec6(
+            ), idVec6(
                 mat[5].p[0] - a.mat[5].p[0],
                 mat[5].p[1] - a.mat[5].p[1],
                 mat[5].p[2] - a.mat[5].p[2],
@@ -300,7 +214,6 @@ class idMat6 {
         )
     }
 
-    //public	idMat6 &		operator-=( const idMat6 &a );
     fun timesAssign(a: Float): idMat6 {
         mat[0].p[0] *= a
         mat[0].p[1] *= a
@@ -346,7 +259,6 @@ class idMat6 {
         return this
     }
 
-    //public	friend idVec6	operator*( const idVec6 &vec, const idMat6 &mat );
     fun plusAssign(a: idMat6): idMat6 {
         mat[0].p[0] += a.mat[0].p[0]
         mat[0].p[1] += a.mat[0].p[1]
@@ -387,7 +299,6 @@ class idMat6 {
         return this
     }
 
-    //public	friend idVec6 &	operator*=( idVec6 &vec, const idMat6 &mat );
     fun minusAssign(a: idMat6): idMat6 {
         mat[0].p[0] -= a.mat[0].p[0]
         mat[0].p[1] -= a.mat[0].p[1]
@@ -452,7 +363,7 @@ class idMat6 {
         ptr2 = a.reinterpret_cast()
         i = 0
         while (i < 6 * 6) {
-            if (Math.abs(ptr1[i] - ptr2[i]) > epsilon) {
+            if (abs(ptr1[i] - ptr2[i]) > epsilon) {
                 return false
             }
             i++
@@ -460,11 +371,9 @@ class idMat6 {
         return true
     }
 
-    //public	bool			operator==( const idMat6 &a ) const;					// exact compare, no epsilon
-    //public	bool			operator!=( const idMat6 &a ) const;					// exact compare, no epsilon
     override fun hashCode(): Int {
         var hash = 3
-        hash = 13 * hash + Arrays.deepHashCode(mat)
+        hash = 13 * hash + mat.contentDeepHashCode()
         return hash
     }
 
@@ -476,7 +385,15 @@ class idMat6 {
             return false
         }
         val other = obj as idMat6
-        return Arrays.deepEquals(mat, other.mat)
+        return Compare(other)
+    }
+
+    fun equals(a: idMat6): Boolean { // exact compare, no epsilon
+        return Compare(a)
+    }
+
+    fun notEquals(a: idMat6): Boolean { // exact compare, no epsilon
+        return !Compare(a)
     }
 
     fun Zero() {
@@ -484,19 +401,19 @@ class idMat6 {
     }
 
     fun Identity() {
-        set(getMat6_zero())
+        set(getMat6_identity())
     }
 
 
-    fun IsIdentity(epsilon: Float = idMat0.MATRIX_EPSILON.toFloat()): Boolean {
+    fun IsIdentity(epsilon: Float): Boolean {
         return Compare(getMat6_identity(), epsilon)
     }
 
 
-    fun IsSymmetric(epsilon: Float = idMat0.MATRIX_EPSILON.toFloat()): Boolean {
+    fun IsSymmetric(epsilon: Float): Boolean {
         for (i in 1..5) {
             for (j in 0 until i) {
-                if (Math.abs(mat[i].p[j] - mat[j].p[i]) > epsilon) {
+                if (abs(mat[i].p[j] - mat[j].p[i]) > epsilon) {
                     return false
                 }
             }
@@ -504,11 +421,10 @@ class idMat6 {
         return true
     }
 
-
-    fun IsDiagonal(epsilon: Float = idMat0.MATRIX_EPSILON.toFloat()): Boolean {
+    fun IsDiagonal(epsilon: Float): Boolean {
         for (i in 0..5) {
             for (j in 0..5) {
-                if (i != j && Math.abs(mat[i].p[j]) > epsilon) {
+                if (i != j && abs(mat[i].p[j]) > epsilon) {
                     return false
                 }
             }
@@ -521,9 +437,15 @@ class idMat6 {
         val b0 = (n and 2 shr 1) * 3
         val b1 = (n and 1) * 3
         return idMat3(
-            mat[b0 + 0].p[b1 + 0], mat[b0 + 0].p[b1 + 1], mat[b0 + 0].p[b1 + 2],
-            mat[b0 + 1].p[b1 + 0], mat[b0 + 1].p[b1 + 1], mat[b0 + 1].p[b1 + 2],
-            mat[b0 + 2].p[b1 + 0], mat[b0 + 2].p[b1 + 1], mat[b0 + 2].p[b1 + 2]
+            mat[b0 + 0].p[b1 + 0],
+            mat[b0 + 0].p[b1 + 1],
+            mat[b0 + 0].p[b1 + 2],
+            mat[b0 + 1].p[b1 + 0],
+            mat[b0 + 1].p[b1 + 1],
+            mat[b0 + 1].p[b1 + 2],
+            mat[b0 + 2].p[b1 + 0],
+            mat[b0 + 2].p[b1 + 1],
+            mat[b0 + 2].p[b1 + 2]
         )
     }
 
@@ -618,8 +540,7 @@ class idMat6 {
             mat[1].p[1] * det4_2345_2345 - mat[1].p[2] * det4_2345_1345 + mat[1].p[3] * det4_2345_1245 - mat[1].p[4] * det4_2345_1235 + mat[1].p[5] * det4_2345_1234
 
         // determinant of 6x6 matrix
-        return mat[0].p[0] * det5_12345_12345 - mat[0].p[1] * det5_12345_02345 + mat[0].p[2] * det5_12345_01345 -
-                mat[0].p[3] * det5_12345_01245 + mat[0].p[4] * det5_12345_01235 - mat[0].p[5] * det5_12345_01234
+        return mat[0].p[0] * det5_12345_12345 - mat[0].p[1] * det5_12345_02345 + mat[0].p[2] * det5_12345_01345 - mat[0].p[3] * det5_12345_01245 + mat[0].p[4] * det5_12345_01235 - mat[0].p[5] * det5_12345_01234
     }
 
     fun Transpose(): idMat6 { // returns transpose
@@ -657,8 +578,7 @@ class idMat6 {
     }
 
     fun Inverse(): idMat6 { // returns the inverse ( m * m.Inverse() = identity )
-        val invMat: idMat6
-        invMat = this
+        val invMat = idMat6(this)
         val r = invMat.InverseSelf()
         assert(r)
         return invMat
@@ -667,8 +587,8 @@ class idMat6 {
     fun InverseSelf(): Boolean { // returns false if determinant is zero
         // 810+6+36 = 852 multiplications
         //				1 division
-        val det: Double
-        val invDet: Double
+        val det: Float
+        val invDet: Float
 
         // 2x2 sub-determinants required to calculate 6x6 determinant
         val det2_45_01 = mat[4].p[0] * mat[5].p[1] - mat[4].p[1] * mat[5].p[0]
@@ -757,9 +677,8 @@ class idMat6 {
 
         // determinant of 6x6 matrix
         det =
-            (mat[0].p[0] * det5_12345_12345 - mat[0].p[1] * det5_12345_02345 + mat[0].p[2] * det5_12345_01345
-                    - mat[0].p[3] * det5_12345_01245 + mat[0].p[4] * det5_12345_01235 - mat[0].p[5] * det5_12345_01234).toDouble()
-        if (Math.abs(det.toFloat()) < idMat0.MATRIX_INVERSE_EPSILON) {
+            (mat[0].p[0] * det5_12345_12345 - mat[0].p[1] * det5_12345_02345 + mat[0].p[2] * det5_12345_01345 - mat[0].p[3] * det5_12345_01245 + mat[0].p[4] * det5_12345_01235 - mat[0].p[5] * det5_12345_01234)
+        if (abs(det) < MATRIX_INVERSE_EPSILON) {
             return false
         }
         invDet = 1.0f / det
@@ -1041,61 +960,57 @@ class idMat6 {
             mat[0].p[0] * det4_2345_2345 - mat[0].p[2] * det4_2345_0345 + mat[0].p[3] * det4_2345_0245 - mat[0].p[4] * det4_2345_0235 + mat[0].p[5] * det4_2345_0234
         val det5_02345_12345 =
             mat[0].p[1] * det4_2345_2345 - mat[0].p[2] * det4_2345_1345 + mat[0].p[3] * det4_2345_1245 - mat[0].p[4] * det4_2345_1235 + mat[0].p[5] * det4_2345_1234
-        mat[0].p[0] = (det5_12345_12345 * invDet).toFloat()
-        mat[0].p[1] = (-det5_02345_12345 * invDet).toFloat()
-        mat[0].p[2] = (det5_01345_12345 * invDet).toFloat()
-        mat[0].p[3] = (-det5_01245_12345 * invDet).toFloat()
-        mat[0].p[4] = (det5_01235_12345 * invDet).toFloat()
-        mat[0].p[5] = (-det5_01234_12345 * invDet).toFloat()
-        mat[1].p[0] = (-det5_12345_02345 * invDet).toFloat()
-        mat[1].p[1] = (det5_02345_02345 * invDet).toFloat()
-        mat[1].p[2] = (-det5_01345_02345 * invDet).toFloat()
-        mat[1].p[3] = (det5_01245_02345 * invDet).toFloat()
-        mat[1].p[4] = (-det5_01235_02345 * invDet).toFloat()
-        mat[1].p[5] = (det5_01234_02345 * invDet).toFloat()
-        mat[2].p[0] = (det5_12345_01345 * invDet).toFloat()
-        mat[2].p[1] = (-det5_02345_01345 * invDet).toFloat()
-        mat[2].p[2] = (det5_01345_01345 * invDet).toFloat()
-        mat[2].p[3] = (-det5_01245_01345 * invDet).toFloat()
-        mat[2].p[4] = (det5_01235_01345 * invDet).toFloat()
-        mat[2].p[5] = (-det5_01234_01345 * invDet).toFloat()
-        mat[3].p[0] = (-det5_12345_01245 * invDet).toFloat()
-        mat[3].p[1] = (det5_02345_01245 * invDet).toFloat()
-        mat[3].p[2] = (-det5_01345_01245 * invDet).toFloat()
-        mat[3].p[3] = (det5_01245_01245 * invDet).toFloat()
-        mat[3].p[4] = (-det5_01235_01245 * invDet).toFloat()
-        mat[3].p[5] = (det5_01234_01245 * invDet).toFloat()
-        mat[4].p[0] = (det5_12345_01235 * invDet).toFloat()
-        mat[4].p[1] = (-det5_02345_01235 * invDet).toFloat()
-        mat[4].p[2] = (det5_01345_01235 * invDet).toFloat()
-        mat[4].p[3] = (-det5_01245_01235 * invDet).toFloat()
-        mat[4].p[4] = (det5_01235_01235 * invDet).toFloat()
-        mat[4].p[5] = (-det5_01234_01235 * invDet).toFloat()
-        mat[5].p[0] = (-det5_12345_01234 * invDet).toFloat()
-        mat[5].p[1] = (det5_02345_01234 * invDet).toFloat()
-        mat[5].p[2] = (-det5_01345_01234 * invDet).toFloat()
-        mat[5].p[3] = (det5_01245_01234 * invDet).toFloat()
-        mat[5].p[4] = (-det5_01235_01234 * invDet).toFloat()
-        mat[5].p[5] = (det5_01234_01234 * invDet).toFloat()
+        mat[0].p[0] = (det5_12345_12345 * invDet)
+        mat[0].p[1] = (-det5_02345_12345 * invDet)
+        mat[0].p[2] = (det5_01345_12345 * invDet)
+        mat[0].p[3] = (-det5_01245_12345 * invDet)
+        mat[0].p[4] = (det5_01235_12345 * invDet)
+        mat[0].p[5] = (-det5_01234_12345 * invDet)
+        mat[1].p[0] = (-det5_12345_02345 * invDet)
+        mat[1].p[1] = (det5_02345_02345 * invDet)
+        mat[1].p[2] = (-det5_01345_02345 * invDet)
+        mat[1].p[3] = (det5_01245_02345 * invDet)
+        mat[1].p[4] = (-det5_01235_02345 * invDet)
+        mat[1].p[5] = (det5_01234_02345 * invDet)
+        mat[2].p[0] = (det5_12345_01345 * invDet)
+        mat[2].p[1] = (-det5_02345_01345 * invDet)
+        mat[2].p[2] = (det5_01345_01345 * invDet)
+        mat[2].p[3] = (-det5_01245_01345 * invDet)
+        mat[2].p[4] = (det5_01235_01345 * invDet)
+        mat[2].p[5] = (-det5_01234_01345 * invDet)
+        mat[3].p[0] = (-det5_12345_01245 * invDet)
+        mat[3].p[1] = (det5_02345_01245 * invDet)
+        mat[3].p[2] = (-det5_01345_01245 * invDet)
+        mat[3].p[3] = (det5_01245_01245 * invDet)
+        mat[3].p[4] = (-det5_01235_01245 * invDet)
+        mat[3].p[5] = (det5_01234_01245 * invDet)
+        mat[4].p[0] = (det5_12345_01235 * invDet)
+        mat[4].p[1] = (-det5_02345_01235 * invDet)
+        mat[4].p[2] = (det5_01345_01235 * invDet)
+        mat[4].p[3] = (-det5_01245_01235 * invDet)
+        mat[4].p[4] = (det5_01235_01235 * invDet)
+        mat[4].p[5] = (-det5_01234_01235 * invDet)
+        mat[5].p[0] = (-det5_12345_01234 * invDet)
+        mat[5].p[1] = (det5_02345_01234 * invDet)
+        mat[5].p[2] = (-det5_01345_01234 * invDet)
+        mat[5].p[3] = (det5_01245_01234 * invDet)
+        mat[5].p[4] = (-det5_01235_01234 * invDet)
+        mat[5].p[5] = (det5_01234_01234 * invDet)
         return true
     }
 
     fun InverseFast(): idMat6 { // returns the inverse ( m * m.Inverse() = identity )
-        val invMat: idMat6
-        invMat = this
+        val invMat = idMat6(this)
         val r = invMat.InverseFastSelf()
         assert(r)
         return invMat
     }
 
     fun InverseFastSelf(): Boolean { // returns false if determinant is zero
-//    #else
-        // 6*27+2*30 = 222 multiplications
-        //		2*1  =	 2 divisions
-        val r0: Array<idVec3> = idVec3.Companion.generateArray(3)
-        val r1: Array<idVec3> = idVec3.Companion.generateArray(3)
-        val r2: Array<idVec3> = idVec3.Companion.generateArray(3)
-        val r3: Array<idVec3> = idVec3.Companion.generateArray(3)
+        val r0: Array<idVec3> = idVec3.generateArray(3)
+        val r1: Array<idVec3> = idVec3.generateArray(3)
+        val r2: Array<idVec3> = idVec3.generateArray(3)
+        val r3: Array<idVec3> = idVec3.generateArray(3)
         val c0: Float
         val c1: Float
         val c2: Float
@@ -1108,7 +1023,7 @@ class idMat6 {
         c1 = mat[1 * 6 + 2] * mat[2 * 6 + 0] - mat[1 * 6 + 0] * mat[2 * 6 + 2]
         c2 = mat[1 * 6 + 0] * mat[2 * 6 + 1] - mat[1 * 6 + 1] * mat[2 * 6 + 0]
         det = mat[0 * 6 + 0] * c0 + mat[0 * 6 + 1] * c1 + mat[0 * 6 + 2] * c2
-        if (Math.abs(det) < idMat0.MATRIX_INVERSE_EPSILON) {
+        if (abs(det) < MATRIX_INVERSE_EPSILON) {
             return false
         }
         invDet = 1.0f / det
@@ -1160,7 +1075,7 @@ class idMat6 {
         r2[1].x = r3[1].z * r3[2].x - r3[1].x * r3[2].z
         r2[2].x = r3[1].x * r3[2].y - r3[1].y * r3[2].x
         det = r3[0].x * r2[0].x + r3[0].y * r2[1].x + r3[0].z * r2[2].x
-        if (Math.abs(det) < idMat0.MATRIX_INVERSE_EPSILON) {
+        if (abs(det) < MATRIX_INVERSE_EPSILON) {
             return false
         }
         invDet = 1.0f / det
@@ -1251,9 +1166,6 @@ class idMat6 {
         return 36
     }
 
-    //public	const float *	ToFloatPtr( void ) const;
-    //public	float *			ToFloatPtr( void );
-    //public	const char *	ToString( int precision = 2 ) const;
     private fun set(mat6: idMat6) {
         mat[0].set(mat6.mat[0])
         mat[1].set(mat6.mat[1])
@@ -1274,20 +1186,20 @@ class idMat6 {
 
     companion object {
         private val mat6_identity: idMat6 = idMat6(
-            idVec6(1f, 0f, 0f, 0f, 0f, 0f),
-            idVec6(0f, 1f, 0f, 0f, 0f, 0f),
-            idVec6(0f, 0f, 1f, 0f, 0f, 0f),
-            idVec6(0f, 0f, 0f, 1f, 0f, 0f),
-            idVec6(0f, 0f, 0f, 0f, 1f, 0f),
-            idVec6(0f, 0f, 0f, 0f, 0f, 1f)
+            idVec6(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+            idVec6(0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+            idVec6(0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f),
+            idVec6(0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f),
+            idVec6(0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f),
+            idVec6(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f)
         )
         private val mat6_zero: idMat6 = idMat6(
-            idVec6(0f, 0f, 0f, 0f, 0f, 0f),
-            idVec6(0f, 0f, 0f, 0f, 0f, 0f),
-            idVec6(0f, 0f, 0f, 0f, 0f, 0f),
-            idVec6(0f, 0f, 0f, 0f, 0f, 0f),
-            idVec6(0f, 0f, 0f, 0f, 0f, 0f),
-            idVec6(0f, 0f, 0f, 0f, 0f, 0f)
+            idVec6(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+            idVec6(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+            idVec6(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+            idVec6(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+            idVec6(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f),
+            idVec6(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
         )
 
         fun getMat6_zero(): idMat6 {
@@ -1298,17 +1210,14 @@ class idMat6 {
             return idMat6(mat6_identity)
         }
 
-        //public	friend idMat6	operator*( const float a, const idMat6 &mat );
         fun times(a: Float, mat: idMat6): idMat6 {
             return mat * a
         }
 
-        //public	idVec6			operator*( const idVec6 &vec ) const;
         fun times(vec: idVec6, mat: idMat6): idVec6 {
             return mat * vec
         }
 
-        //public	idMat6			operator*( const idMat6 &a ) const;
         fun timesAssign(vec: idVec6, mat: idMat6): idVec6 {
             return mat * vec
         }

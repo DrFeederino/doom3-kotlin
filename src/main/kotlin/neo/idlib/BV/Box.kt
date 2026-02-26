@@ -1,23 +1,13 @@
 package neo.idlib.BV
 
-import neo.idlib.BV.Bounds.idBounds
 import neo.idlib.BV.Sphere.idSphere
 import neo.idlib.containers.CFloat
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.Min3Index
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Matrix.idMatX
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVecX
 import java.util.*
 import kotlin.math.abs
 
-/**
- *
- */
 object Box {
     //                4---{4}---5
     //     +         /|        /|
@@ -241,7 +231,6 @@ object Box {
             axis.set(box.axis)
         }
 
-        //
         operator fun plus(t: idVec3): idBox {                // returns translated box
             return idBox(center + t, extents, axis)
         }
@@ -282,7 +271,6 @@ object Box {
             return this
         }
 
-        //
         fun Compare(a: idBox): Boolean {                        // exact compare, no epsilon
             return center.Compare(a.center) && extents.Compare(a.extents) && axis.Compare(a.axis)
         }
@@ -304,26 +292,19 @@ object Box {
             return hash
         }
 
-        override fun equals(other: Any?): Boolean {
-            if (other == null) {
+        override fun equals(obj: Any?): Boolean {
+            if (obj == null) {
                 return false
             }
-            if (javaClass != other.javaClass) {
+            if (javaClass != obj.javaClass) {
                 return false
             }
-            val idBox = other as idBox
-            if (center != idBox.center) {
-                return false
-            }
-            return if (extents != idBox.extents) {
-                false
-            } else axis == idBox.axis
+            val other = obj as idBox
+            return Compare(other)
         }
 
-        //
         fun Clear() {                                    // inside out box
             center.Zero()
-            //            extents[0] = extents[1] = extents[2] = -idMath::INFINITY;
             extents[0] = extents.set(1, extents.set(2, -idMath.INFINITY))
             axis.Identity()
         }
@@ -357,7 +338,6 @@ object Box {
             return extents[0] < 0.0f
         }
 
-        //
         fun AddPoint(v: idVec3): Boolean {                    // add the point, returns true if the box expanded
             val axis2 = idMat3()
             val bounds1 = idBounds()
@@ -438,11 +418,11 @@ object Box {
 
             // test axis of other box
             ax[1].set(a.axis)
-            bounds[0][0, 0] = bounds[0].set(1, 0, center * ax[0][0])
-            bounds[0][0, 1] = bounds[0].set(1, 1, center * ax[0][1])
-            bounds[0][0, 2] = bounds[0].set(1, 2, center * ax[0][2])
-            bounds[0][0].minusAssign(a.extents)
-            bounds[0][1].plusAssign(a.extents)
+            bounds[1][0, 0] = bounds[1].set(1, 0, a.center * ax[1][0])
+            bounds[1][0, 1] = bounds[1].set(1, 1, a.center * ax[1][1])
+            bounds[1][0, 2] = bounds[1].set(1, 2, a.center * ax[1][2])
+            bounds[1][0].minusAssign(a.extents)
+            bounds[1][1].plusAssign(a.extents)
             AxisProjection(ax[1], b)
             if (!bounds[1].AddBounds(b)) {
                 // this box is contained in the other box
@@ -482,7 +462,7 @@ object Box {
             }
 
             // create a box from the smallest bounds axis pair
-            center.set(bounds[besti][0] + bounds[besti][1] * 0.5f)
+            center.set((bounds[besti][0] + bounds[besti][1]) * 0.5f)
             extents.set(bounds[besti][1] - center)
             center.timesAssign(ax[besti])
             axis.set(ax[besti])
@@ -536,7 +516,7 @@ object Box {
         }
 
 
-        fun PlaneSide(plane: idPlane, epsilon: Float = Plane.ON_EPSILON): Int {
+        fun PlaneSide(plane: idPlane, epsilon: Float = ON_EPSILON): Int {
             val d1: Float
             val d2: Float
             d1 = plane.Distance(center)
@@ -544,23 +524,18 @@ object Box {
                     + abs(extents[1] * plane.Normal()[1])
                     + abs(extents[2] * plane.Normal()[2]))
             if (d1 - d2 > epsilon) {
-                return Plane.PLANESIDE_FRONT
+                return PLANESIDE_FRONT
             }
             return if (d1 + d2 < -epsilon) {
-                Plane.PLANESIDE_BACK
-            } else Plane.PLANESIDE_CROSS
+                PLANESIDE_BACK
+            } else PLANESIDE_CROSS
         }
 
-        //
         fun ContainsPoint(p: idVec3): Boolean {            // includes touching
             val lp = p - center
-            if (abs(lp * axis[0]) > extents[0]
-                || abs(lp * axis[1]) > extents[1]
-                || abs(lp * axis[2]) > extents[2]
-            ) {
-                return false
-            }
-            return true
+            return !(abs(lp * axis[0]) > extents[0]
+                    || abs(lp * axis[1]) > extents[1]
+                    || abs(lp * axis[2]) > extents[2])
         }
 
         fun IntersectsBox(a: idBox): Boolean {            // includes touching
@@ -783,7 +758,6 @@ object Box {
                     && BoxPlaneClip(-localDir.z, localStart.z - extents[2], scale1, scale2))
         }
 
-        //
         /*
          ============
          idBox::FromPoints
@@ -882,13 +856,6 @@ object Box {
             center.timesAssign(axis)
         }
 
-        //					// most tight box for a translation
-        //public	void			FromPointTranslation( final idVec3 &point, final idVec3 &translation );
-        //public	void			FromBoxTranslation( final idBox &box, final idVec3 &translation );
-        //					// most tight box for a rotation
-        //public	void			FromPointRotation( final idVec3 &point, final idRotation &rotation );
-        //public	void			FromBoxRotation( final idBox &box, final idRotation &rotation );
-        //
         fun ToPoints(points: Array<idVec3>) {
             val ax = idMat3()
             val temp: Array<idVec3> = idVec3.generateArray(4)
@@ -913,8 +880,7 @@ object Box {
             return idSphere(center, extents.Length())
         }
 
-        //
-        //					// calculates the projection of this box onto the given axis
+        // calculates the projection of this box onto the given axis
         fun AxisProjection(dir: idVec3, min: CFloat, max: CFloat) {
             val d1 = dir * center
             val d2 = abs(extents[0] * (dir * axis[0])) +
@@ -935,7 +901,6 @@ object Box {
             }
         }
 
-        //
         // calculates the silhouette of the box
         fun GetProjectionSilhouetteVerts(projectionOrigin: idVec3, silVerts: Array<idVec3>): Int {
             var f: Float
@@ -951,17 +916,17 @@ object Box {
             dir2.set(points[6] - projectionOrigin)
 
             f = dir1 * axis[0]
-            planeBits = Math_h.FLOATSIGNBITNOTSET(f)
+            planeBits = FLOATSIGNBITNOTSET(f)
             f = dir2 * axis[0]
-            planeBits = planeBits or (Math_h.FLOATSIGNBITSET(f) shl 1)
+            planeBits = planeBits or (FLOATSIGNBITSET(f) shl 1)
             f = dir1 * axis[1]
-            planeBits = planeBits or (Math_h.FLOATSIGNBITNOTSET(f) shl 2)
+            planeBits = planeBits or (FLOATSIGNBITNOTSET(f) shl 2)
             f = dir2 * axis[1]
-            planeBits = planeBits or (Math_h.FLOATSIGNBITSET(f) shl 3)
+            planeBits = planeBits or (FLOATSIGNBITSET(f) shl 3)
             f = dir1 * axis[2]
-            planeBits = planeBits or (Math_h.FLOATSIGNBITNOTSET(f) shl 4)
+            planeBits = planeBits or (FLOATSIGNBITNOTSET(f) shl 4)
             f = dir2 * axis[2]
-            planeBits = planeBits or (Math_h.FLOATSIGNBITSET(f) shl 5)
+            planeBits = planeBits or (FLOATSIGNBITSET(f) shl 5)
             index = boxPlaneBitsSilVerts[planeBits]
             i = 0
             while (i < index[0]) {
@@ -982,16 +947,16 @@ object Box {
 
             planeBits = 0
             f = projectionDir * axis[0]
-            if (Math_h.FLOATNOTZERO(f)) {
-                planeBits = 1 shl Math_h.FLOATSIGNBITSET(f)
+            if (FLOATNOTZERO(f)) {
+                planeBits = 1 shl FLOATSIGNBITSET(f)
             }
             f = projectionDir * axis[1]
-            if (Math_h.FLOATNOTZERO(f)) {
-                planeBits = planeBits or (4 shl Math_h.FLOATSIGNBITSET(f))
+            if (FLOATNOTZERO(f)) {
+                planeBits = planeBits or (4 shl FLOATSIGNBITSET(f))
             }
             f = projectionDir * axis[2]
-            if (Math_h.FLOATNOTZERO(f)) {
-                planeBits = planeBits or (16 shl Math_h.FLOATSIGNBITSET(f))
+            if (FLOATNOTZERO(f)) {
+                planeBits = planeBits or (16 shl FLOATSIGNBITSET(f))
             }
             index = boxPlaneBitsSilVerts[planeBits]
             i = 0

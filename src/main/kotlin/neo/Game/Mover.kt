@@ -1,6 +1,5 @@
 package neo.Game
 
-import neo.CM.CollisionModel.trace_s
 import neo.Game.Entity.idEntity
 import neo.Game.Entity.signalNum_t
 import neo.Game.GameSys.Class.*
@@ -13,7 +12,7 @@ import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Physics.Physics_Parametric.idPhysics_Parametric
 import neo.Game.Player.idPlayer
-import neo.Game.Script.Script_Thread
+import neo.Game.Script.EV_Thread_SetCallback
 import neo.Game.Script.Script_Thread.idThread
 import neo.Renderer.Material
 import neo.Renderer.Model
@@ -21,10 +20,10 @@ import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.portalConnection_t
 import neo.TempDump
 import neo.Tools.Compilers.AAS.AASFile
+import neo.cm.trace_s
 import neo.framework.UsercmdGen
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsgDelta
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
@@ -35,79 +34,70 @@ import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idStrList
 import neo.idlib.geometry.TraceModel.idTraceModel
-import neo.idlib.math.Angles
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Curve.idCurve_Spline
-import neo.idlib.math.Extrapolate
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.idLib
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
 import kotlin.math.abs
 
-/**
- *
- */
+val EV_AccelSound: idEventDef = idEventDef("accelSound", "s")
+val EV_AccelTime: idEventDef = idEventDef("accelTime", "f")
+val EV_Bob: idEventDef = idEventDef("bob", "ffv")
+val EV_DecelSound: idEventDef = idEventDef("decelSound", "s")
+val EV_DecelTime: idEventDef = idEventDef("decelTime", "f")
+val EV_DisableSplineAngles: idEventDef = idEventDef("disableSplineAngles", null)
+val EV_Door_Close: idEventDef = idEventDef("close", null)
+val EV_Door_IsLocked: idEventDef = idEventDef("isLocked", null, 'f')
+val EV_Door_IsOpen: idEventDef = idEventDef("isOpen", null, 'f')
+val EV_Door_Lock: idEventDef = idEventDef("lock", "d")
+val EV_Door_Open: idEventDef = idEventDef("open", null)
+val EV_Door_SpawnDoorTrigger: idEventDef = idEventDef("<spawnDoorTrigger>", null)
+val EV_Door_SpawnSoundTrigger: idEventDef = idEventDef("<spawnSoundTrigger>", null)
+
+//
+val EV_Door_StartOpen: idEventDef = idEventDef("<startOpen>", null)
+val EV_EnableSplineAngles: idEventDef = idEventDef("enableSplineAngles", null)
+val EV_FindGuiTargets: idEventDef = idEventDef("<FindGuiTargets>", null)
+val EV_GotoFloor: idEventDef = idEventDef("gotoFloor", "d")
+val EV_IsMoving: idEventDef = idEventDef("isMoving", null, 'd')
+val EV_IsRotating: idEventDef = idEventDef("isRotating", null, 'd')
+val EV_Move: idEventDef = idEventDef("move", "ff")
+val EV_MoveAccelerateTo: idEventDef = idEventDef("accelTo", "ff")
+val EV_MoveDecelerateTo: idEventDef = idEventDef("decelTo", "ff")
+val EV_MoveSound: idEventDef = idEventDef("moveSound", "s")
+val EV_MoveTo: idEventDef = idEventDef("moveTo", "e")
+val EV_MoveToPos: idEventDef = idEventDef("moveToPos", "v")
+val EV_Mover_ClosePortal: idEventDef = idEventDef("closePortal")
+val EV_Mover_Disable: idEventDef = idEventDef("disable", null)
+val EV_Mover_Enable: idEventDef = idEventDef("enable", null)
+val EV_Mover_InitGuiTargets: idEventDef = idEventDef("<initguitargets>", null)
+val EV_Mover_MatchTeam: idEventDef = idEventDef("<matchteam>", "dd")
+val EV_Mover_OpenPortal: idEventDef = idEventDef("openPortal")
+
+//
+val EV_Mover_ReturnToPos1: idEventDef = idEventDef("<returntopos1>", null)
+val EV_PartBlocked: idEventDef = idEventDef("<partblocked>", "e")
+
+//
+val EV_PostArrival: idEventDef = idEventDef("postArrival", null)
+val EV_PostRestore: idEventDef = idEventDef("<postrestore>", "ddddd")
+val EV_ReachedAng: idEventDef = idEventDef("<reachedang>", null)
+val EV_ReachedPos: idEventDef = idEventDef("<reachedpos>", null)
+val EV_RemoveInitialSplineAngles: idEventDef = idEventDef("removeInitialSplineAngles", null)
+val EV_Rotate: idEventDef = idEventDef("rotate", "v")
+val EV_RotateDownTo: idEventDef = idEventDef("rotateDownTo", "df")
+val EV_RotateOnce: idEventDef = idEventDef("rotateOnce", "v")
+val EV_RotateTo: idEventDef = idEventDef("rotateTo", "v")
+val EV_RotateUpTo: idEventDef = idEventDef("rotateUpTo", "df")
+val EV_Speed: idEventDef = idEventDef("speed", "f")
+val EV_StartSpline: idEventDef = idEventDef("startSpline", "e")
+val EV_StopMoving: idEventDef = idEventDef("stopMoving", null)
+val EV_StopRotating: idEventDef = idEventDef("stopRotating", null)
+val EV_StopSpline: idEventDef = idEventDef("stopSpline", null)
+val EV_Sway: idEventDef = idEventDef("sway", "ffv")
+val EV_TeamBlocked: idEventDef = idEventDef("<teamblocked>", "ee")
+val EV_Time: idEventDef = idEventDef("time", "f")
+
 object Mover {
-    val EV_AccelSound: idEventDef = idEventDef("accelSound", "s")
-    val EV_AccelTime: idEventDef = idEventDef("accelTime", "f")
-    val EV_Bob: idEventDef = idEventDef("bob", "ffv")
-    val EV_DecelSound: idEventDef = idEventDef("decelSound", "s")
-    val EV_DecelTime: idEventDef = idEventDef("decelTime", "f")
-    val EV_DisableSplineAngles: idEventDef = idEventDef("disableSplineAngles", null)
-    val EV_Door_Close: idEventDef = idEventDef("close", null)
-    val EV_Door_IsLocked: idEventDef = idEventDef("isLocked", null, 'f')
-    val EV_Door_IsOpen: idEventDef = idEventDef("isOpen", null, 'f')
-    val EV_Door_Lock: idEventDef = idEventDef("lock", "d")
-    val EV_Door_Open: idEventDef = idEventDef("open", null)
-    val EV_Door_SpawnDoorTrigger: idEventDef = idEventDef("<spawnDoorTrigger>", null)
-    val EV_Door_SpawnSoundTrigger: idEventDef = idEventDef("<spawnSoundTrigger>", null)
-
-    //
-    val EV_Door_StartOpen: idEventDef = idEventDef("<startOpen>", null)
-    val EV_EnableSplineAngles: idEventDef = idEventDef("enableSplineAngles", null)
-    val EV_FindGuiTargets: idEventDef = idEventDef("<FindGuiTargets>", null)
-    val EV_GotoFloor: idEventDef = idEventDef("gotoFloor", "d")
-    val EV_IsMoving: idEventDef = idEventDef("isMoving", null, 'd')
-    val EV_IsRotating: idEventDef = idEventDef("isRotating", null, 'd')
-    val EV_Move: idEventDef = idEventDef("move", "ff")
-    val EV_MoveAccelerateTo: idEventDef = idEventDef("accelTo", "ff")
-    val EV_MoveDecelerateTo: idEventDef = idEventDef("decelTo", "ff")
-    val EV_MoveSound: idEventDef = idEventDef("moveSound", "s")
-    val EV_MoveTo: idEventDef = idEventDef("moveTo", "e")
-    val EV_MoveToPos: idEventDef = idEventDef("moveToPos", "v")
-    val EV_Mover_ClosePortal: idEventDef = idEventDef("closePortal")
-    val EV_Mover_Disable: idEventDef = idEventDef("disable", null)
-    val EV_Mover_Enable: idEventDef = idEventDef("enable", null)
-    val EV_Mover_InitGuiTargets: idEventDef = idEventDef("<initguitargets>", null)
-    val EV_Mover_MatchTeam: idEventDef = idEventDef("<matchteam>", "dd")
-    val EV_Mover_OpenPortal: idEventDef = idEventDef("openPortal")
-
-    //
-    val EV_Mover_ReturnToPos1: idEventDef = idEventDef("<returntopos1>", null)
-    val EV_PartBlocked: idEventDef = idEventDef("<partblocked>", "e")
-
-    //
-    val EV_PostArrival: idEventDef = idEventDef("postArrival", null)
-    val EV_PostRestore: idEventDef = idEventDef("<postrestore>", "ddddd")
-    val EV_ReachedAng: idEventDef = idEventDef("<reachedang>", null)
-    val EV_ReachedPos: idEventDef = idEventDef("<reachedpos>", null)
-    val EV_RemoveInitialSplineAngles: idEventDef = idEventDef("removeInitialSplineAngles", null)
-    val EV_Rotate: idEventDef = idEventDef("rotate", "v")
-    val EV_RotateDownTo: idEventDef = idEventDef("rotateDownTo", "df")
-    val EV_RotateOnce: idEventDef = idEventDef("rotateOnce", "v")
-    val EV_RotateTo: idEventDef = idEventDef("rotateTo", "v")
-    val EV_RotateUpTo: idEventDef = idEventDef("rotateUpTo", "df")
-    val EV_Speed: idEventDef = idEventDef("speed", "f")
-    val EV_StartSpline: idEventDef = idEventDef("startSpline", "e")
-    val EV_StopMoving: idEventDef = idEventDef("stopMoving", null)
-    val EV_StopRotating: idEventDef = idEventDef("stopRotating", null)
-    val EV_StopSpline: idEventDef = idEventDef("stopSpline", null)
-    val EV_Sway: idEventDef = idEventDef("sway", "ffv")
-    val EV_TeamBlocked: idEventDef = idEventDef("<teamblocked>", "ee")
-    val EV_Time: idEventDef = idEventDef("time", "f")
-
     /*
      ===============================================================================
 
@@ -174,7 +164,7 @@ object Mover {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
                 eventCallbacks[EV_FindGuiTargets] =
                     eventCallback_t0<idMover> { obj: idMover -> obj.Event_FindGuiTargets() }
-                eventCallbacks[Script_Thread.EV_Thread_SetCallback] =
+                eventCallbacks[EV_Thread_SetCallback] =
                     eventCallback_t0<idMover> { obj: idMover -> obj.Event_SetCallback() }
                 eventCallbacks[EV_TeamBlocked] =
                     eventCallback_t2<idMover> { obj: idMover, blockedPart: idEventArg<*>?, blockingEntity: idEventArg<*>? ->
@@ -295,7 +285,7 @@ object Mover {
                     }
                 eventCallbacks[EV_StopSpline] =
                     eventCallback_t0<idMover> { obj: idMover -> obj.Event_StopSpline() }
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idMover> { obj: idMover, activator: idEventArg<*>? -> obj.Event_Activate(activator as idEventArg<idEntity>) }
                 eventCallbacks[EV_IsMoving] =
                     eventCallback_t0<idMover> { obj: idMover -> obj.Event_IsMoving() }
@@ -312,14 +302,14 @@ object Mover {
         //
         protected var physicsObj: idPhysics_Parametric
         private var acceltime: Int
-        private var angle_delta: idAngles
+        private val angle_delta: idAngles
 
         //
         private var   /*qhandle_t*/areaPortal // 0 = no portal
                 : Int
         private var damage: Float
         private var deceltime: Int
-        private var dest_angles: idAngles
+        private val dest_angles: idAngles
         private val dest_position: idVec3
         private var lastCommand: moverCommand_t = moverCommand_t.MOVER_NONE
         private val move_delta: idVec3
@@ -354,7 +344,7 @@ object Mover {
             spawnArgs.GetFloat("damage", "0", damage)
             this.damage = damage._val
             dest_position.set(GetPhysics().GetOrigin())
-            dest_angles = GetPhysics().GetAxis().ToAngles()
+            dest_angles.set(GetPhysics().GetAxis().ToAngles())
             physicsObj.SetSelf(this)
             physicsObj.SetClipModel(idClipModel(GetPhysics().GetClipModel()!!), 1.0f)
             physicsObj.SetOrigin(GetPhysics().GetOrigin())
@@ -371,16 +361,16 @@ object Mover {
                 0,
                 0,
                 dest_position,
-                Vector.getVec3Origin(),
-                Vector.getVec3Origin()
+                getVec3Origin(),
+                getVec3Origin()
             )
             physicsObj.SetAngularExtrapolation(
                 Extrapolate.EXTRAPOLATION_NONE,
                 0,
                 0,
                 dest_angles,
-                Angles.getAng_zero(),
-                Angles.getAng_zero()
+                ang_zero,
+                ang_zero
             )
             SetPhysics(physicsObj)
 
@@ -461,12 +451,12 @@ object Mover {
             val hasSpline = CBool(false)
             savefile.ReadStaticObject(physicsObj)
             RestorePhysics(physicsObj)
-            move.stage = Mover.idMover.moveStage_t.values()[savefile.ReadInt()]
+            move.stage = moveStage_t.values()[savefile.ReadInt()]
             move.acceleration = savefile.ReadInt()
             move.movetime = savefile.ReadInt()
             move.deceleration = savefile.ReadInt()
             savefile.ReadVec3(move.dir)
-            rot.stage = Mover.idMover.moveStage_t.values()[savefile.ReadInt()]
+            rot.stage = moveStage_t.values()[savefile.ReadInt()]
             rot.acceleration = savefile.ReadInt()
             rot.movetime = savefile.ReadInt()
             rot.deceleration = savefile.ReadInt()
@@ -485,7 +475,7 @@ object Mover {
             acceltime = savefile.ReadInt()
             stopRotation = savefile.ReadBool()
             useSplineAngles = savefile.ReadBool()
-            lastCommand = Mover.idMover.moverCommand_t.values()[savefile.ReadInt()]
+            lastCommand = moverCommand_t.values()[savefile.ReadInt()]
             damage = savefile.ReadFloat()
             areaPortal = savefile.ReadInt()
             if (areaPortal > 0) {
@@ -535,8 +525,8 @@ object Mover {
             val oldMoveStage = move.stage
             val oldRotStage = rot.stage
             physicsObj.ReadFromSnapshot(msg)
-            move.stage = Mover.idMover.moveStage_t.values()[msg.ReadBits(3)]
-            rot.stage = Mover.idMover.moveStage_t.values()[msg.ReadBits(3)]
+            move.stage = moveStage_t.values()[msg.ReadBits(3)]
+            rot.stage = moveStage_t.values()[msg.ReadBits(3)]
             ReadBindFromSnapshot(msg)
             ReadGUIFromSnapshot(msg)
             if (msg.HasChanged()) {
@@ -602,7 +592,7 @@ object Mover {
                 blockingEntity.value.Damage(
                     this,
                     this,
-                    Vector.getVec3Origin(),
+                    getVec3Origin(),
                     "damage_moverCrush",
                     damage,
                     Model.INVALID_JOINT
@@ -629,9 +619,11 @@ object Mover {
                     StartSound("snd_accel", gameSoundChannel_t.SND_CHANNEL_BODY2, 0, false)
                     StartSound("snd_move", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
                 }
+
                 moveStage_t.LINEAR_STAGE -> {
                     StartSound("snd_move", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
                 }
+
                 moveStage_t.DECELERATION_STAGE -> {
                     StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY), false)
                     StartSound("snd_decel", gameSoundChannel_t.SND_CHANNEL_BODY2, 0, false)
@@ -651,9 +643,11 @@ object Mover {
                     StartSound("snd_accel", gameSoundChannel_t.SND_CHANNEL_BODY2, 0, false)
                     StartSound("snd_move", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
                 }
+
                 moveStage_t.LINEAR_STAGE -> {
                     StartSound("snd_move", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
                 }
+
                 moveStage_t.DECELERATION_STAGE -> {
                     StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY), false)
                     StartSound("snd_decel", gameSoundChannel_t.SND_CHANNEL_BODY2, 0, false)
@@ -717,8 +711,8 @@ object Mover {
                     0,
                     0,
                     dest_position,
-                    Vector.getVec3Origin(),
-                    Vector.getVec3Origin()
+                    getVec3Origin(),
+                    getVec3Origin()
                 )
             }
             lastCommand = moverCommand_t.MOVER_NONE
@@ -746,7 +740,7 @@ object Mover {
             move_thread = 0
             physicsObj.GetLocalOrigin(org)
             move_delta.set(dest_position.minus(org))
-            if (move_delta.Compare(Vector.getVec3_zero())) {
+            if (move_delta.Compare(getVec3_zero())) {
                 DoneMoving()
                 return
             }
@@ -760,7 +754,7 @@ object Mover {
             deceltime = dt
 
             // if we're moving at a specific speed, we need to calculate the move time
-            if (move_speed != 0f) {
+            if (move_speed != 0.0f) {
                 dist = move_delta.Length()
                 totalacceltime = acceltime + deceltime
 
@@ -816,8 +810,8 @@ object Mover {
                 move_time = 1
             }
             physicsObj.GetLocalAngles(ang)
-            angle_delta = dest_angles.minus(ang)
-            if (angle_delta == Angles.getAng_zero()) {
+            angle_delta.set(dest_angles.minus(ang))
+            if (angle_delta == ang_zero) {
                 // set our final angles so that we get rid of any numerical inaccuracy
                 dest_angles.Normalize360()
                 physicsObj.SetAngularExtrapolation(
@@ -825,8 +819,8 @@ object Mover {
                     0,
                     0,
                     dest_angles,
-                    Angles.getAng_zero(),
-                    Angles.getAng_zero()
+                    ang_zero,
+                    ang_zero
                 )
                 stopRotation = false
                 DoneRotating()
@@ -856,69 +850,77 @@ object Mover {
                 at = idPhysics.SnapTimeToPhysicsFrame(at * move_time / (at + dt))
                 dt = move_time - at
             }
-            angle_delta = angle_delta.times(1000.0f / (move_time.toFloat() - (at + dt) * 0.5f))
+            angle_delta.set(angle_delta.times(1000.0f / (move_time.toFloat() - (at + dt) * 0.5f)))
             stopRotation = stopwhendone || dt != 0
             rot.stage = stage
             rot.acceleration = at
             rot.movetime = move_time - at - dt
             rot.deceleration = dt
-            rot.rot = angle_delta
+            rot.rot.set(angle_delta)
             ProcessEvent(EV_ReachedAng)
         }
 
         private fun VectorForDir(dir: Float, vec: idVec3) {
             val ang = idAngles()
             when (dir.toInt()) {
-                DIR_UP -> vec.set(0f, 0f, 1f)
-                DIR_DOWN -> vec.set(0f, 0f, -1f)
+                DIR_UP -> vec.set(0.0f, 0.0f, 1.0f)
+                DIR_DOWN -> vec.set(0.0f, 0.0f, -1.0f)
                 DIR_LEFT -> {
                     physicsObj.GetLocalAngles(ang)
-                    ang.pitch = 0f
-                    ang.roll = 0f
-                    ang.yaw += 90f
+                    ang.pitch = 0.0f
+                    ang.roll = 0.0f
+                    ang.yaw += 90.0f
                     vec.set(ang.ToForward())
                 }
+
                 DIR_RIGHT -> {
                     physicsObj.GetLocalAngles(ang)
-                    ang.pitch = 0f
-                    ang.roll = 0f
-                    ang.yaw -= 90f
+                    ang.pitch = 0.0f
+                    ang.roll = 0.0f
+                    ang.yaw -= 90.0f
                     vec.set(ang.ToForward())
                 }
+
                 DIR_FORWARD -> {
                     physicsObj.GetLocalAngles(ang)
-                    ang.pitch = 0f
-                    ang.roll = 0f
+                    ang.pitch = 0.0f
+                    ang.roll = 0.0f
                     vec.set(ang.ToForward())
                 }
+
                 DIR_BACK -> {
                     physicsObj.GetLocalAngles(ang)
-                    ang.pitch = 0f
-                    ang.roll = 0f
-                    ang.yaw += 180f
+                    ang.pitch = 0.0f
+                    ang.roll = 0.0f
+                    ang.yaw += 180.0f
                     vec.set(ang.ToForward())
                 }
-                DIR_REL_UP -> vec.set(0f, 0f, 1f)
-                DIR_REL_DOWN -> vec.set(0f, 0f, -1f)
+
+                DIR_REL_UP -> vec.set(0.0f, 0.0f, 1.0f)
+                DIR_REL_DOWN -> vec.set(0.0f, 0.0f, -1.0f)
                 DIR_REL_LEFT -> {
                     physicsObj.GetLocalAngles(ang)
                     ang.ToVectors(null, vec)
-                    vec.timesAssign(-1f)
+                    vec.timesAssign(-1.0f)
                 }
+
                 DIR_REL_RIGHT -> {
                     physicsObj.GetLocalAngles(ang)
                     ang.ToVectors(null, vec)
                 }
+
                 DIR_REL_FORWARD -> {
                     physicsObj.GetLocalAngles(ang)
                     vec.set(ang.ToForward())
                 }
+
                 DIR_REL_BACK -> {
                     physicsObj.GetLocalAngles(ang)
-                    vec.set(ang.ToForward().times(-1f))
+                    vec.set(ang.ToForward().times(-1.0f))
                 }
+
                 else -> {
-                    ang.set(0f, dir, 0f)
+                    ang.set(0.0f, dir, 0.0f)
                     vec.set(GetWorldVector(ang.ToForward()))
                 }
             }
@@ -963,8 +965,8 @@ object Mover {
                 0,
                 0,
                 dest_angles,
-                Angles.getAng_zero(),
-                Angles.getAng_zero()
+                ang_zero,
+                ang_zero
             )
             DoneRotating()
         }
@@ -981,7 +983,7 @@ object Mover {
                         move.acceleration,
                         org,
                         move.dir,
-                        Vector.getVec3Origin()
+                        getVec3Origin()
                     )
                     if (move.movetime > 0) {
                         move.stage = moveStage_t.LINEAR_STAGE
@@ -991,6 +993,7 @@ object Mover {
                         move.stage = moveStage_t.FINISHED_STAGE
                     }
                 }
+
                 moveStage_t.LINEAR_STAGE -> {
                     physicsObj.SetLinearExtrapolation(
                         Extrapolate.EXTRAPOLATION_LINEAR,
@@ -998,7 +1001,7 @@ object Mover {
                         move.movetime,
                         org,
                         move.dir,
-                        Vector.getVec3Origin()
+                        getVec3Origin()
                     )
                     if (move.deceleration != 0) {
                         move.stage = moveStage_t.DECELERATION_STAGE
@@ -1006,6 +1009,7 @@ object Mover {
                         move.stage = moveStage_t.FINISHED_STAGE
                     }
                 }
+
                 moveStage_t.DECELERATION_STAGE -> {
                     physicsObj.SetLinearExtrapolation(
                         Extrapolate.EXTRAPOLATION_DECELLINEAR,
@@ -1013,10 +1017,11 @@ object Mover {
                         move.deceleration,
                         org,
                         move.dir,
-                        Vector.getVec3Origin()
+                        getVec3Origin()
                     )
                     move.stage = moveStage_t.FINISHED_STAGE
                 }
+
                 moveStage_t.FINISHED_STAGE -> {
                     if (SysCvar.g_debugMover.GetBool()) {
                         Game_local.gameLocal.Printf("%d: '%s' move done\n", Game_local.gameLocal.time, name)
@@ -1038,7 +1043,7 @@ object Mover {
                         rot.acceleration,
                         ang,
                         rot.rot,
-                        Angles.getAng_zero()
+                        ang_zero
                     )
                     if (rot.movetime > 0) {
                         rot.stage = moveStage_t.LINEAR_STAGE
@@ -1048,6 +1053,7 @@ object Mover {
                         rot.stage = moveStage_t.FINISHED_STAGE
                     }
                 }
+
                 moveStage_t.LINEAR_STAGE -> {
                     if (!stopRotation && 0 == rot.deceleration) {
                         physicsObj.SetAngularExtrapolation(
@@ -1056,7 +1062,7 @@ object Mover {
                             rot.movetime,
                             ang,
                             rot.rot,
-                            Angles.getAng_zero()
+                            ang_zero
                         )
                     } else {
                         physicsObj.SetAngularExtrapolation(
@@ -1065,7 +1071,7 @@ object Mover {
                             rot.movetime,
                             ang,
                             rot.rot,
-                            Angles.getAng_zero()
+                            ang_zero
                         )
                     }
                     if (rot.deceleration != 0) {
@@ -1074,6 +1080,7 @@ object Mover {
                         rot.stage = moveStage_t.FINISHED_STAGE
                     }
                 }
+
                 moveStage_t.DECELERATION_STAGE -> {
                     physicsObj.SetAngularExtrapolation(
                         Extrapolate.EXTRAPOLATION_DECELLINEAR,
@@ -1081,10 +1088,11 @@ object Mover {
                         rot.deceleration,
                         ang,
                         rot.rot,
-                        Angles.getAng_zero()
+                        ang_zero
                     )
                     rot.stage = moveStage_t.FINISHED_STAGE
                 }
+
                 moveStage_t.FINISHED_STAGE -> {
                     lastCommand = moverCommand_t.MOVER_NONE
                     if (stopRotation) {
@@ -1095,8 +1103,8 @@ object Mover {
                             0,
                             0,
                             dest_angles,
-                            Angles.getAng_zero(),
-                            Angles.getAng_zero()
+                            ang_zero,
+                            ang_zero
                         )
                         stopRotation = false
                     } else if (physicsObj.GetAngularExtrapolationType() == Extrapolate.EXTRAPOLATION_ACCELLINEAR) {
@@ -1107,7 +1115,7 @@ object Mover {
                             0,
                             ang,
                             rot.rot,
-                            Angles.getAng_zero()
+                            ang_zero
                         )
                     }
                     if (SysCvar.g_debugMover.GetBool()) {
@@ -1130,22 +1138,22 @@ object Mover {
             if (time.value <= 0) {
                 idGameLocal.Error("Cannot set time less than or equal to 0.")
             }
-            move_speed = 0f
-            move_time = Math_h.SEC2MS(time.value).toInt()
+            move_speed = 0.0f
+            move_time = SEC2MS(time.value).toInt()
         }
 
         private fun Event_SetDecelerationTime(time: idEventArg<Float>) {
             if (time.value < 0) {
                 idGameLocal.Error("Cannot set deceleration time less than 0.")
             }
-            deceltime = Math_h.SEC2MS(time.value).toInt()
+            deceltime = SEC2MS(time.value).toInt()
         }
 
         private fun Event_SetAccellerationTime(time: idEventArg<Float>) {
             if (time.value < 0) {
                 idGameLocal.Error("Cannot set acceleration time less than 0.")
             }
-            acceltime = Math_h.SEC2MS(time.value).toInt()
+            acceltime = SEC2MS(time.value).toInt()
         }
 
         private fun Event_MoveTo(ent: idEventArg<idEntity>) {
@@ -1190,7 +1198,7 @@ object Mover {
             if (v >= speed.value) {
                 return
             }
-            at = idPhysics.SnapTimeToPhysicsFrame(Math_h.SEC2MS(time.value).toInt())
+            at = idPhysics.SnapTimeToPhysicsFrame(SEC2MS(time.value).toInt())
             lastCommand = moverCommand_t.MOVER_MOVING
             physicsObj.GetLocalOrigin(org)
             move.stage = moveStage_t.ACCELERATION_STAGE
@@ -1229,7 +1237,7 @@ object Mover {
             if (v <= speed.value) {
                 return
             }
-            dt = idPhysics.SnapTimeToPhysicsFrame(Math_h.SEC2MS(time.value).toInt())
+            dt = idPhysics.SnapTimeToPhysicsFrame(SEC2MS(time.value).toInt())
             lastCommand = moverCommand_t.MOVER_MOVING
             physicsObj.GetLocalOrigin(org)
             move.stage = moveStage_t.DECELERATION_STAGE
@@ -1257,7 +1265,7 @@ object Mover {
             physicsObj.GetLocalAngles(ang)
             dest_angles.set(axis, angle.value)
             if (dest_angles[axis] > ang[axis]) {
-                dest_angles.minusAssign(axis, 360f)
+                dest_angles.minusAssign(axis, 360.0f)
             }
             BeginRotation(idThread.CurrentThread(), true)
         }
@@ -1271,7 +1279,7 @@ object Mover {
             physicsObj.GetLocalAngles(ang)
             dest_angles.set(axis, angle.value)
             if (dest_angles[axis] < ang[axis]) {
-                dest_angles.plusAssign(axis, 360f)
+                dest_angles.plusAssign(axis, 360.0f)
             }
             BeginRotation(idThread.CurrentThread(), true)
         }
@@ -1287,8 +1295,9 @@ object Mover {
                 DoneRotating()
             }
             physicsObj.GetLocalAngles(ang)
-            dest_angles =
+            dest_angles.set(
                 ang.plus(angles.value.times((move_time - (acceltime + deceltime) / 2).toFloat()).times(0.001f))
+            )
             BeginRotation(idThread.CurrentThread(), false)
         }
 
@@ -1298,7 +1307,7 @@ object Mover {
                 DoneRotating()
             }
             physicsObj.GetLocalAngles(ang)
-            dest_angles = ang.plus(angles.value)
+            dest_angles.set(ang.plus(angles.value))
             BeginRotation(idThread.CurrentThread(), true)
         }
 
@@ -1311,7 +1320,7 @@ object Mover {
                 (speed.value * 500).toInt(),
                 org,
                 depth.value.times(2.0f),
-                Vector.getVec3Origin()
+                getVec3Origin()
             )
         }
 
@@ -1331,7 +1340,7 @@ object Mover {
                 (duration * 1000.0f).toInt(),
                 ang,
                 angSpeed,
-                Angles.getAng_zero()
+                ang_zero
             )
         }
 
@@ -1370,14 +1379,14 @@ object Mover {
             if (null == spline) {
                 return
             }
-            ang = spline.GetCurrentFirstDerivative(0f).ToAngles()
+            ang = spline.GetCurrentFirstDerivative(0.0f).ToAngles()
             physicsObj.SetAngularExtrapolation(
                 Extrapolate.EXTRAPOLATION_NONE,
                 0,
                 0,
                 ang.unaryMinus(),
-                Angles.getAng_zero(),
-                Angles.getAng_zero()
+                ang_zero,
+                ang_zero
             )
         }
 
@@ -1412,8 +1421,8 @@ object Mover {
                 0,
                 0,
                 dest_position,
-                Vector.getVec3Origin(),
-                Vector.getVec3Origin()
+                getVec3Origin(),
+                getVec3Origin()
             )
         }
 
@@ -1447,8 +1456,8 @@ object Mover {
                 0,
                 0,
                 dest_position,
-                Vector.getVec3Origin(),
-                Vector.getVec3Origin()
+                getVec3Origin(),
+                getVec3Origin()
             )
         }
 
@@ -1486,7 +1495,7 @@ object Mover {
             var acceleration = 0
             var deceleration = 0
             var movetime = 0
-            var rot: idAngles = idAngles()
+            val rot: idAngles = idAngles()
             var stage: moveStage_t = moveStage_t.ACCELERATION_STAGE
         }
 
@@ -1556,7 +1565,7 @@ object Mover {
 
             init {
                 eventCallbacks.putAll(idMover.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idElevator> { obj: idElevator, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -1575,7 +1584,7 @@ object Mover {
                     eventCallback_t0<idElevator> { obj: idElevator -> obj.Event_PostFloorArrival() }
                 eventCallbacks[EV_GotoFloor] =
                     eventCallback_t1<idElevator> { obj: idElevator, floor: idEventArg<*>? -> obj.Event_GotoFloor(floor as idEventArg<Int>) }
-                eventCallbacks[Entity.EV_Touch] =
+                eventCallbacks[EV_Touch] =
                     eventCallback_t2<idElevator> { obj: idElevator, other: idEventArg<*>?, trace: idEventArg<*>? ->
                         obj.Event_Touch(
                             other as idEventArg<idEntity>,
@@ -1647,7 +1656,7 @@ object Mover {
         override fun Restore(savefile: idRestoreGame) {
             var i: Int
             val num: Int
-            state = Mover.idElevator.elevatorState_t.values()[savefile.ReadInt()]
+            state = elevatorState_t.values()[savefile.ReadInt()]
             num = savefile.ReadInt()
             i = 0
             while (i < num) {
@@ -1817,8 +1826,8 @@ object Mover {
         }
 
         override fun Think() {
-            val masterOrigin = idVec3()
-            val masterAxis = idMat3()
+            idVec3()
+            idMat3()
             val doorEnt = GetDoor(spawnArgs.GetString("innerdoor"))
             if (state == elevatorState_t.INIT) {
                 state = elevatorState_t.IDLE
@@ -1948,7 +1957,7 @@ object Mover {
             controlsDisabled = false
             lastTouchTime = 0
             returnFloor = 0
-            returnTime = 0f
+            returnTime = 0.0f
         }
     }
 
@@ -1964,12 +1973,12 @@ object Mover {
      */
     open class idMover_Binary : idEntity() {
         protected fun GetMovedir(dir: Float, movedir: idVec3) {
-            if (dir == -1f) {
-                movedir.set(0f, 0f, 1f)
-            } else if (dir == -2f) {
-                movedir.set(0f, 0f, -1f)
+            if (dir == -1.0f) {
+                movedir.set(0.0f, 0.0f, 1.0f)
+            } else if (dir == -2.0f) {
+                movedir.set(0.0f, 0.0f, -1.0f)
             } else {
-                movedir.set(idAngles(0f, dir, 0f).ToForward())
+                movedir.set(idAngles(0.0f, dir, 0.0f).ToForward())
             }
         }
 
@@ -1997,11 +2006,11 @@ object Mover {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
                 eventCallbacks[EV_FindGuiTargets] =
                     eventCallback_t0<idMover_Binary> { obj: idMover_Binary -> obj.Event_FindGuiTargets() }
-                eventCallbacks[Script_Thread.EV_Thread_SetCallback] =
+                eventCallbacks[EV_Thread_SetCallback] =
                     eventCallback_t0<idMover_Binary> { obj: idMover_Binary -> obj.Event_SetCallback() }
                 eventCallbacks[EV_Mover_ReturnToPos1] =
                     eventCallback_t0<idMover_Binary> { obj: idMover_Binary -> obj.Event_ReturnToPos1() }
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idMover_Binary> { obj: idMover_Binary, activator: idEventArg<*>? ->
                         obj.Event_Use_BinaryMover(activator as idEventArg<idEntity>)
                     }
@@ -2087,12 +2096,11 @@ object Mover {
                 // find the first entity spawned on this team (which could be us)
                 ent = Game_local.gameLocal.spawnedEntities.Next()
                 while (ent != null) {
-                    if (ent is idMover_Binary && TempDump.NOT(
-                            idStr.Icmp(
-                                ent.team.toString(),
-                                temp[0]!!
-                            ).toDouble()
-                        )
+                    if (ent is idMover_Binary &&
+                        idStr.Icmp(
+                            ent.team.toString(),
+                            temp[0]!!
+                        ) == 0
                     ) {
                         break
                     }
@@ -2124,16 +2132,16 @@ object Mover {
                 0,
                 0,
                 GetPhysics().GetOrigin(),
-                Vector.getVec3Origin(),
-                Vector.getVec3Origin()
+                getVec3Origin(),
+                getVec3Origin()
             )
             physicsObj.SetAngularExtrapolation(
                 Extrapolate.EXTRAPOLATION_NONE,
                 0,
                 0,
                 GetPhysics().GetAxis().ToAngles(),
-                Angles.getAng_zero(),
-                Angles.getAng_zero()
+                ang_zero,
+                ang_zero
             )
             SetPhysics(physicsObj)
             if (moveMaster !== this) {
@@ -2163,8 +2171,8 @@ object Mover {
             savefile.WriteVec3(pos1)
             savefile.WriteVec3(pos2)
             savefile.WriteInt(TempDump.etoi(moverState))
-            savefile.WriteObject(moveMaster!!)
-            savefile.WriteObject(activateChain!!)
+            savefile.WriteObject(moveMaster)
+            savefile.WriteObject(activateChain)
             savefile.WriteInt(soundPos1)
             savefile.WriteInt(sound1to2)
             savefile.WriteInt(sound2to1)
@@ -2208,7 +2216,7 @@ object Mover {
             val temp = idStr()
             savefile.ReadVec3(pos1)
             savefile.ReadVec3(pos2)
-            moverState = Mover.moverState_t.values()[savefile.ReadInt()]
+            moverState = moverState_t.values()[savefile.ReadInt()]
             savefile.ReadObject( /*reinterpret_cast<idClass *&>*/moveMaster)
             savefile.ReadObject( /*reinterpret_cast<idClass *&>*/activateChain)
             soundPos1 = savefile.ReadInt()
@@ -2279,9 +2287,9 @@ object Mover {
             val speed: Float
             pos1.set(mpos1)
             pos2.set(mpos2)
-            accelTime = idPhysics.SnapTimeToPhysicsFrame(Math_h.SEC2MS(maccelTime).toInt())
-            decelTime = idPhysics.SnapTimeToPhysicsFrame(Math_h.SEC2MS(mdecelTime).toInt())
-            speed = if (mspeed != 0f) mspeed else 100f
+            accelTime = idPhysics.SnapTimeToPhysicsFrame(SEC2MS(maccelTime).toInt())
+            decelTime = idPhysics.SnapTimeToPhysicsFrame(SEC2MS(mdecelTime).toInt())
+            speed = if (mspeed != 0.0f) mspeed else 100.0f
 
             // calculate time to reach second position from speed
             move.set(pos2.minus(pos1))
@@ -2296,10 +2304,10 @@ object Mover {
                 0,
                 0,
                 pos1,
-                Vector.getVec3Origin(),
-                Vector.getVec3Origin()
+                getVec3Origin(),
+                getVec3Origin()
             )
-            physicsObj.SetLinearInterpolation(0, 0, 0, 0, Vector.getVec3Origin(), Vector.getVec3Origin())
+            physicsObj.SetLinearInterpolation(0, 0, 0, 0, getVec3Origin(), getVec3Origin())
             SetOrigin(pos1)
             PostEventMS(EV_Mover_InitGuiTargets, 0)
         }
@@ -2314,9 +2322,9 @@ object Mover {
         fun InitTime(mpos1: idVec3, mpos2: idVec3, mtime: Float, maccelTime: Float, mdecelTime: Float) {
             pos1.set(mpos1)
             pos2.set(mpos2)
-            accelTime = idPhysics.SnapTimeToPhysicsFrame(Math_h.SEC2MS(maccelTime).toInt())
-            decelTime = idPhysics.SnapTimeToPhysicsFrame(Math_h.SEC2MS(mdecelTime).toInt())
-            duration = idPhysics.SnapTimeToPhysicsFrame(Math_h.SEC2MS(mtime).toInt())
+            accelTime = idPhysics.SnapTimeToPhysicsFrame(SEC2MS(maccelTime).toInt())
+            decelTime = idPhysics.SnapTimeToPhysicsFrame(SEC2MS(mdecelTime).toInt())
+            duration = idPhysics.SnapTimeToPhysicsFrame(SEC2MS(mtime).toInt())
             if (duration <= 0) {
                 duration = 1
             }
@@ -2326,10 +2334,10 @@ object Mover {
                 0,
                 0,
                 pos1,
-                Vector.getVec3Origin(),
-                Vector.getVec3Origin()
+                getVec3Origin(),
+                getVec3Origin()
             )
-            physicsObj.SetLinearInterpolation(0, 0, 0, 0, Vector.getVec3Origin(), Vector.getVec3Origin())
+            physicsObj.SetLinearInterpolation(0, 0, 0, 0, getVec3Origin(), getVec3Origin())
             SetOrigin(pos1)
             PostEventMS(EV_Mover_InitGuiTargets, 0)
         }
@@ -2436,14 +2444,14 @@ object Mover {
             // if all the way up, just delay before coming down
             if (moverState == moverState_t.MOVER_POS2) {
                 var slave: idMover_Binary?
-                if (wait == -1f) {
+                if (wait == -1.0f) {
                     return
                 }
                 SetGuiStates(guiBinaryMoverStates[TempDump.etoi(moverState_t.MOVER_2TO1)])
                 slave = this
                 while (slave != null) {
                     slave.CancelEvents(EV_Mover_ReturnToPos1)
-                    slave.PostEventSec(EV_Mover_ReturnToPos1, if (spawnArgs.GetBool("toggle")) 0f else wait)
+                    slave.PostEventSec(EV_Mover_ReturnToPos1, if (spawnArgs.GetBool("toggle")) 0.0f else wait)
                     slave = slave.activateChain
                 }
                 return
@@ -2524,7 +2532,7 @@ object Mover {
                     var kv = slave.spawnArgs.MatchPrefix("triggerBlocked")
                     while (kv != null) {
                         val ent = Game_local.gameLocal.FindEntity(kv.GetValue().toString())
-                        ent?.PostEventMS(Entity.EV_Activate, 0f, moveMaster!!.GetActivator())
+                        ent?.PostEventMS(EV_Activate, 0.0f, moveMaster!!.GetActivator())
                         kv = slave.spawnArgs.MatchPrefix("triggerBlocked", kv)
                     }
                 }
@@ -2549,7 +2557,7 @@ object Mover {
         override fun ReadFromSnapshot(msg: idBitMsgDelta) {
             val oldMoverState = moverState
             physicsObj.ReadFromSnapshot(msg)
-            moverState = Mover.moverState_t.values()[msg.ReadBits(3)]
+            moverState = moverState_t.values()[msg.ReadBits(3)]
             ReadBindFromSnapshot(msg)
             if (msg.HasChanged()) {
                 if (moverState != oldMoverState) {
@@ -2607,6 +2615,7 @@ object Mover {
                         0,
                         false
                     )
+
                     moverState_t.MOVER_2TO1 -> StartSound(
                         "snd_close",
                         gameSoundChannel_t.SND_CHANNEL_ANY,
@@ -2618,7 +2627,7 @@ object Mover {
         }
 
         protected fun SetMoverState(newstate: moverState_t, time: Int) {
-            val delta = idVec3()
+            idVec3()
             moverState = newstate
             move_thread = 0
             UpdateMoverSound(newstate)
@@ -2631,10 +2640,11 @@ object Mover {
                         time,
                         0,
                         pos1,
-                        Vector.getVec3Origin(),
-                        Vector.getVec3Origin()
+                        getVec3Origin(),
+                        getVec3Origin()
                     )
                 }
+
                 moverState_t.MOVER_POS2 -> {
                     Signal(signalNum_t.SIG_MOVER_POS2)
                     physicsObj.SetLinearExtrapolation(
@@ -2642,10 +2652,11 @@ object Mover {
                         time,
                         0,
                         pos2,
-                        Vector.getVec3Origin(),
-                        Vector.getVec3Origin()
+                        getVec3Origin(),
+                        getVec3Origin()
                     )
                 }
+
                 moverState_t.MOVER_1TO2 -> {
                     Signal(signalNum_t.SIG_MOVER_1TO2)
                     physicsObj.SetLinearExtrapolation(
@@ -2654,7 +2665,7 @@ object Mover {
                         duration,
                         pos1,
                         pos2.minus(pos1).times(1000.0f).div(duration.toFloat()),
-                        Vector.getVec3Origin()
+                        getVec3Origin()
                     )
                     if (accelTime != 0 || decelTime != 0) {
                         physicsObj.SetLinearInterpolation(time, accelTime, decelTime, duration, pos1, pos2)
@@ -2662,6 +2673,7 @@ object Mover {
                         physicsObj.SetLinearInterpolation(0, 0, 0, 0, pos1, pos2)
                     }
                 }
+
                 moverState_t.MOVER_2TO1 -> {
                     Signal(signalNum_t.SIG_MOVER_2TO1)
                     physicsObj.SetLinearExtrapolation(
@@ -2670,7 +2682,7 @@ object Mover {
                         duration,
                         pos2,
                         pos1.minus(pos2).times(1000.0f).div(duration.toFloat()),
-                        Vector.getVec3Origin()
+                        getVec3Origin()
                     )
                     if (accelTime != 0 || decelTime != 0) {
                         physicsObj.SetLinearInterpolation(time, accelTime, decelTime, duration, pos2, pos1)
@@ -2763,7 +2775,7 @@ object Mover {
                     ProcessEvent(EV_Mover_ClosePortal)
                 }
                 if (enabled && wait >= 0 && spawnArgs.GetBool("continuous")) {
-                    PostEventSec(Entity.EV_Activate, wait, this)
+                    PostEventSec(EV_Activate, wait, this)
                 }
                 SetBlocked(false)
             } else {
@@ -2786,7 +2798,7 @@ object Mover {
             var slave: idMover_Binary?
             slave = moveMaster
             while (slave != null) {
-                slave.Enable(true) //TODO: this is false in the original code.
+                slave.Enable(false)
                 slave = slave.activateChain
             }
         }
@@ -2929,14 +2941,14 @@ object Mover {
                     eventCallback_t1<idDoor> { obj: idDoor, blockingEntity: idEventArg<*>? ->
                         obj.Event_PartBlocked(blockingEntity as idEventArg<idEntity>)
                     }
-                eventCallbacks[Entity.EV_Touch] =
+                eventCallbacks[EV_Touch] =
                     eventCallback_t2<idDoor> { obj: idDoor, _other: idEventArg<*>?, _trace: idEventArg<*>? ->
                         obj.Event_Touch(
                             _other as idEventArg<idEntity>,
                             _trace as idEventArg<trace_s>
                         )
                     }
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idDoor> { obj: idDoor, activator: idEventArg<*>? -> obj.Event_Activate(activator as idEventArg<idEntity>) }
                 eventCallbacks[EV_Door_StartOpen] =
                     eventCallback_t0<idDoor> { obj: idDoor -> obj.Event_StartOpen() }
@@ -2956,7 +2968,7 @@ object Mover {
                     eventCallback_t0<idDoor> { obj: idDoor -> obj.Event_Locked() }
                 eventCallbacks[EV_ReachedPos] =
                     eventCallback_t0<idDoor> { obj: idDoor -> obj.Event_Reached_BinaryMover() }
-                eventCallbacks[Player.EV_SpectatorTouch] =
+                eventCallbacks[EV_SpectatorTouch] =
                     eventCallback_t2<idDoor> { obj: idDoor, _other: idEventArg<*>?, trace: idEventArg<*>? ->
                         obj.Event_SpectatorTouch(_other as idEventArg<idEntity>, trace as idEventArg<trace_s>)
                     }
@@ -2971,7 +2983,7 @@ object Mover {
         private val buddyStr: idStr
         private var companionDoor: idDoor?
         private var crusher = false
-        private var localTriggerAxis: idMat3
+        private val localTriggerAxis: idMat3 = idMat3()
         private val localTriggerOrigin: idVec3
         private var nextSndTriggerTime: Int
         private var noTouch = false
@@ -2999,7 +3011,7 @@ object Mover {
             if (!spawnArgs.GetFloat("movedir", "0", dir)) {
                 // no movedir, so angle defines movement direction and not orientation,
                 // a la oldschool Quake
-                SetAngles(Angles.getAng_zero())
+                SetAngles(ang_zero)
                 spawnArgs.GetFloat("angle", "0", dir)
             }
             GetMovedir(dir._val, moveDir)
@@ -3048,9 +3060,9 @@ object Mover {
                 PostEventMS(EV_Door_StartOpen, 1)
             }
             if (spawnArgs.GetFloat("time", "1", time)) {
-                InitTime(pos1, pos2, time._val, 0f, 0f)
+                InitTime(pos1, pos2, time._val, 0.0f, 0.0f)
             } else {
-                InitSpeed(pos1, pos2, speed._val, 0f, 0f)
+                InitSpeed(pos1, pos2, speed._val, 0.0f, 0.0f)
             }
             if (moveMaster === this) {
                 if (health != 0) {
@@ -3078,10 +3090,10 @@ object Mover {
             val locked = spawnArgs.GetInt("locked")
             if (locked != 0) {
                 // make sure all members of the team get locked
-                PostEventMS(EV_Door_Lock, 0f, locked)
+                PostEventMS(EV_Door_Lock, 0.0f, locked)
             }
             if (spawnArgs.GetBool("continuous")) {
-                PostEventSec(Entity.EV_Activate, spawnArgs.GetFloat("delay"), this)
+                PostEventSec(EV_Activate, spawnArgs.GetFloat("delay"), this)
             }
 
             // sounds have a habit of stuttering when portals close, so make them unoccluded
@@ -3106,7 +3118,7 @@ object Mover {
             savefile.WriteInt(normalAxisIndex)
             savefile.WriteClipModel(trigger)
             savefile.WriteClipModel(sndTrigger)
-            savefile.WriteObject(companionDoor!!)
+            savefile.WriteObject(companionDoor)
         }
 
         override fun Restore(savefile: idRestoreGame) {
@@ -3320,7 +3332,7 @@ object Mover {
             }
             GetMasterPosition(origin, axis)
             localTriggerOrigin.set(trigger.GetOrigin().minus(origin).times(axis.Transpose()))
-            localTriggerAxis = trigger.GetAxis().times(axis.Transpose())
+            localTriggerAxis.set(trigger.GetAxis().times(axis.Transpose()))
         }
 
         /*
@@ -3371,14 +3383,14 @@ object Mover {
                 var kv = spawnArgs.MatchPrefix("triggerClosed")
                 while (kv != null) {
                     val ent = Game_local.gameLocal.FindEntity(kv.GetValue().toString())
-                    ent?.PostEventMS(Entity.EV_Activate, 0f, moveMaster!!.GetActivator())
+                    ent?.PostEventMS(EV_Activate, 0.0f, moveMaster!!.GetActivator())
                     kv = spawnArgs.MatchPrefix("triggerClosed", kv)
                 }
             } else if (moverState == moverState_t.MOVER_1TO2) {
                 var kv = spawnArgs.MatchPrefix("triggerOpened")
                 while (kv != null) {
                     val ent = Game_local.gameLocal.FindEntity(kv.GetValue().toString())
-                    ent?.PostEventMS(Entity.EV_Activate, 0f, moveMaster!!.GetActivator())
+                    ent?.PostEventMS(EV_Activate, 0.0f, moveMaster!!.GetActivator())
                     kv = spawnArgs.MatchPrefix("triggerOpened", kv)
                 }
             }
@@ -3403,7 +3415,7 @@ object Mover {
                 blockingEntity.value.Damage(
                     this,
                     this,
-                    Vector.getVec3Origin(),
+                    getVec3Origin(),
                     "damage_moverCrush",
                     damage,
                     Model.INVALID_JOINT
@@ -3435,13 +3447,13 @@ object Mover {
         private fun Event_Activate(activator: idEventArg<idEntity>) {
             val old_lock: Int
             if (spawnArgs.GetInt("locked") != 0) {
-                if (TempDump.NOT(trigger)) {
+                if (trigger == null) {
                     PostEventMS(EV_Door_SpawnDoorTrigger, 0)
                 }
                 if (buddyStr.Length() != 0) {
                     val buddy = Game_local.gameLocal.FindEntity(buddyStr)
                     if (buddy != null) {
-                        buddy.SetShaderParm(RenderWorld.SHADERPARM_MODE, 1f)
+                        buddy.SetShaderParm(RenderWorld.SHADERPARM_MODE, 1.0f)
                         buddy.UpdateVisuals()
                     }
                 }
@@ -3460,7 +3472,7 @@ object Mover {
                 }
             }
             ActivateTargets(activator.value)
-            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] = 1f
+            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] = 1.0f
             UpdateVisuals()
             Use_BinaryMover(activator.value)
         }
@@ -3481,9 +3493,9 @@ object Mover {
             pos2.set(GetPhysics().GetOrigin())
             spawnArgs.GetFloat("speed", "400", speed)
             if (spawnArgs.GetFloat("time", "1", time)) {
-                InitTime(pos1, pos2, time._val, 0f, 0f)
+                InitTime(pos1, pos2, time._val, 0.0f, 0.0f)
             } else {
-                InitSpeed(pos1, pos2, speed._val, 0f, 0f)
+                InitSpeed(pos1, pos2, speed._val, 0.0f, 0.0f)
             }
         }
 
@@ -3691,7 +3703,7 @@ object Mover {
             sndTrigger = null
             nextSndTriggerTime = 0
             localTriggerOrigin = idVec3()
-            localTriggerAxis = idMat3.getMat3_identity()
+            localTriggerAxis.set(idMat3.getMat3_identity())
             requires = idStr()
             removeItem = 0
             syncLock = idStr()
@@ -3719,7 +3731,7 @@ object Mover {
 
             init {
                 eventCallbacks.putAll(idMover_Binary.getEventCallBacks())
-                eventCallbacks[Entity.EV_Touch] =
+                eventCallbacks[EV_Touch] =
                     eventCallback_t2<idPlat> { obj: idPlat, _other: idEventArg<*>?, trace: idEventArg<*>? ->
                         obj.Event_Touch(
                             _other as idEventArg<idEntity>,
@@ -3740,7 +3752,7 @@ object Mover {
             }
         }
 
-        private var localTriggerAxis: idMat3
+        private val localTriggerAxis: idMat3
         private val localTriggerOrigin: idVec3
         private var trigger: idClipModel? = null
         override fun Spawn() {
@@ -3756,8 +3768,8 @@ object Mover {
             damage = spawnArgs.GetFloat("damage", "0")
             wait = spawnArgs.GetFloat("wait", "1")
             spawnArgs.GetFloat("lip", "8", lip)
-            spawnArgs.GetFloat("accel_time", "0.25", accel)
-            spawnArgs.GetFloat("decel_time", "0.25", decel)
+            spawnArgs.GetFloat("accel_time", "0.25f", accel)
+            spawnArgs.GetFloat("decel_time", "0.25f", decel)
 
             // create second position
             if (!spawnArgs.GetFloat("height", "0", height)) {
@@ -3829,7 +3841,7 @@ object Mover {
             }
             GetMasterPosition(origin, axis)
             localTriggerOrigin.set(trigger.GetOrigin().minus(origin).times(axis.Transpose()))
-            localTriggerAxis = trigger.GetAxis().times(axis.Transpose())
+            localTriggerAxis.set(trigger.GetAxis().times(axis.Transpose()))
         }
 
         private fun SpawnPlatTrigger(pos: idVec3) {
@@ -3851,8 +3863,8 @@ object Mover {
                 tmax[0] = tmin[0] + 1
             }
             if (tmax[1] <= tmin[1]) {
-                tmin[0] = (bounds[0, 1] + bounds[1, 1]) * 0.5f
-                tmax[0] = tmin[1] + 1
+                tmin[1] = (bounds[0, 1] + bounds[1, 1]) * 0.5f
+                tmax[1] = tmin[1] + 1
             }
             trigger = idClipModel(idTraceModel(idBounds(tmin, tmax)))
             trigger!!.Link(
@@ -3875,7 +3887,7 @@ object Mover {
                 blockingEntity.value.Damage(
                     this,
                     this,
-                    Vector.getVec3Origin(),
+                    getVec3Origin(),
                     "damage_moverCrush",
                     damage,
                     Model.INVALID_JOINT
@@ -3997,7 +4009,7 @@ object Mover {
                 blockingEntity.value.Damage(
                     this,
                     this,
-                    Vector.getVec3Origin(),
+                    getVec3Origin(),
                     "damage_moverCrush",
                     damage._val,
                     Model.INVALID_JOINT
@@ -4016,7 +4028,7 @@ object Mover {
         //
         //
         init {
-            damage._val = 0f
+            damage._val = 0.0f
             physicsObj = idPhysics_Parametric()
             fl.neverDormant = false
         }
@@ -4039,7 +4051,7 @@ object Mover {
 
             init {
                 eventCallbacks.putAll(idMover_Periodic.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idRotater> { obj: idRotater, activator: idEventArg<*>? ->
                         obj.Event_Activate(
                             activator as idEventArg<idEntity>
@@ -4064,20 +4076,20 @@ object Mover {
                 Game_local.gameLocal.time,
                 0,
                 GetPhysics().GetOrigin(),
-                Vector.getVec3Origin(),
-                Vector.getVec3Origin()
+                getVec3Origin(),
+                getVec3Origin()
             )
             physicsObj.SetAngularExtrapolation(
                 Extrapolate.EXTRAPOLATION_LINEAR or Extrapolate.EXTRAPOLATION_NOSTOP,
                 Game_local.gameLocal.time,
                 0,
                 GetPhysics().GetAxis().ToAngles(),
-                Angles.getAng_zero(),
-                Angles.getAng_zero()
+                ang_zero,
+                ang_zero
             )
             SetPhysics(physicsObj)
             if (spawnArgs.GetBool("start_on")) {
-                ProcessEvent(Entity.EV_Activate, this)
+                ProcessEvent(EV_Activate, this)
             }
         }
 
@@ -4119,7 +4131,7 @@ object Mover {
                 0,
                 physicsObj.GetAxis().ToAngles(),
                 delta,
-                Angles.getAng_zero()
+                ang_zero
             )
         }
 
@@ -4158,7 +4170,7 @@ object Mover {
             spawnArgs.GetBool("y_axis", "0", y_axis)
 
             // set the axis of bobbing
-            delta.set(Vector.getVec3Origin())
+            delta.set(getVec3Origin())
             if (x_axis._val) {
                 delta[0] = height._val
             } else if (y_axis._val) {
@@ -4180,7 +4192,7 @@ object Mover {
                 (speed._val * 500).toInt(),
                 GetPhysics().GetOrigin(),
                 delta.times(2.0f),
-                Vector.getVec3Origin()
+                getVec3Origin()
             )
             SetPhysics(physicsObj)
         }
@@ -4213,7 +4225,7 @@ object Mover {
                 // find pendulum length
                 length._val = (abs(GetPhysics().GetBounds()[0, 2]))
                 if (length._val < 8) {
-                    length._val = (8f)
+                    length._val = (8.0f)
                 }
                 freq._val = (1 / idMath.TWO_PI * idMath.Sqrt(SysCvar.g_gravity.GetFloat() / (3 * length._val)))
             }
@@ -4230,16 +4242,16 @@ object Mover {
                 0,
                 0,
                 GetPhysics().GetOrigin(),
-                Vector.getVec3Origin(),
-                Vector.getVec3Origin()
+                getVec3Origin(),
+                getVec3Origin()
             )
             physicsObj.SetAngularExtrapolation(
                 Extrapolate.EXTRAPOLATION_DECELSINE or Extrapolate.EXTRAPOLATION_NOSTOP,
                 (phase._val * 1000).toInt(),
                 (500 / freq._val).toInt(),
                 GetPhysics().GetAxis().ToAngles(),
-                idAngles(0f, 0f, speed._val * 2.0f),
-                Angles.getAng_zero()
+                idAngles(0.0f, 0.0f, speed._val * 2.0f),
+                ang_zero
             )
             SetPhysics(physicsObj)
         }
@@ -4262,7 +4274,7 @@ object Mover {
 
             init {
                 eventCallbacks.putAll(idMover_Periodic.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idRiser> { obj: idRiser, activator: idEventArg<*>? -> obj.Event_Activate(activator as idEventArg<idEntity>) }
             }
         }
@@ -4286,8 +4298,8 @@ object Mover {
                 0,
                 0,
                 GetPhysics().GetOrigin(),
-                Vector.getVec3Origin(),
-                Vector.getVec3Origin()
+                getVec3Origin(),
+                getVec3Origin()
             )
             SetPhysics(physicsObj)
         }
@@ -4302,7 +4314,7 @@ object Mover {
                 val delta = idVec3()
                 spawnArgs.GetFloat("time", "4", time)
                 spawnArgs.GetFloat("height", "32", height)
-                delta.set(Vector.getVec3Origin())
+                delta.set(getVec3Origin())
                 delta[2] = height._val
                 physicsObj.SetLinearExtrapolation(
                     Extrapolate.EXTRAPOLATION_LINEAR,
@@ -4310,7 +4322,7 @@ object Mover {
                     (time._val * 1000).toInt(),
                     physicsObj.GetOrigin(),
                     delta,
-                    Vector.getVec3Origin()
+                    getVec3Origin()
                 )
             }
         }

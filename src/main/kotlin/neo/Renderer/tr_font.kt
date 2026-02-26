@@ -3,9 +3,6 @@ package neo.Renderer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/**
- *
- */
 object tr_font {
     val BUILD_FREETYPE: Boolean = false
     var fdFile: ByteArray? = null
@@ -264,7 +261,7 @@ object tr_font {
         //	registeredFontCount = 0;
     }
 
-    private class poor() {
+    private class poor {
         //mistreated me.
         private val fred: ByteBuffer = ByteBuffer.allocate(4)
 

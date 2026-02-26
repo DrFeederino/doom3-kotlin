@@ -1,6 +1,5 @@
 package neo.Game
 
-import neo.CM.CollisionModel.idCollisionModelManager
 import neo.Game.AFEntity.idAFEntity_Base
 import neo.Game.AFEntity.idAFEntity_Generic
 import neo.Game.AFEntity.jointTransformData_t
@@ -30,6 +29,7 @@ import neo.Sound.sound.idSoundSystem
 import neo.Sound.sound.idSoundWorld
 import neo.TempDump
 import neo.Tools.Compilers.AAS.AASFileManager.idAASFileManager
+import neo.cm.idCollisionModelManager
 import neo.framework.Async.NetworkSystem.idNetworkSystem
 import neo.framework.CVarSystem.idCVarSystem
 import neo.framework.CmdSystem.idCmdSystem
@@ -44,7 +44,7 @@ import neo.framework.UsercmdGen.usercmd_t
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
-import neo.idlib.Lib
+import neo.idlib.MAX_STRING_CHARS
 import neo.idlib.MapFile.idMapEntity
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
@@ -52,21 +52,13 @@ import neo.idlib.containers.CFloat
 import neo.idlib.geometry.JointTransform.idJointMat
 import neo.idlib.geometry.JointTransform.idJointQuat
 import neo.idlib.geometry.TraceModel.traceModel_t
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Simd
-import neo.idlib.math.Vector.getVec3Origin
-import neo.idlib.math.Vector.idVec3
 import neo.sys.sys_public.idSys
 import neo.ui.UserInterface.idUserInterface
 import neo.ui.UserInterface.idUserInterface.idUserInterfaceManager
 import java.util.*
 
-/**
- *
- */
 object Game {
     /*
      ===============================================================================
@@ -93,12 +85,12 @@ object Game {
 
     //enum {
     const val TEST_PARTICLE_MODEL = 0
-    const val TEST_PARTICLE_IMPACT = 1 + Game.TEST_PARTICLE_MODEL
-    const val TEST_PARTICLE_FLIGHT = 3 + Game.TEST_PARTICLE_MODEL
-    const val TEST_PARTICLE_MUZZLE = 2 + Game.TEST_PARTICLE_MODEL
+    const val TEST_PARTICLE_IMPACT = 1 + TEST_PARTICLE_MODEL
+    const val TEST_PARTICLE_FLIGHT = 3 + TEST_PARTICLE_MODEL
+    const val TEST_PARTICLE_MUZZLE = 2 + TEST_PARTICLE_MODEL
 
     //
-    const val TEST_PARTICLE_SELECTED = 4 + Game.TEST_PARTICLE_MODEL
+    const val TEST_PARTICLE_SELECTED = 4 + TEST_PARTICLE_MODEL
 
     //
     const val TIME_GROUP1 = 0
@@ -122,9 +114,9 @@ object Game {
         var consistencyHash // used to check for network game divergence
                 = 0
         var health = 0
-        var heartRate = 0f
+        var heartRate = 0.0f
         var sessionCommand: CharArray =
-            CharArray(Lib.MAX_STRING_CHARS) // "map", "disconnect", "victory", etc
+            CharArray(MAX_STRING_CHARS) // "map", "disconnect", "victory", etc
         var stamina = 0
         var syncNextGameFrame // used when cinematics are skipped to prevent session from simulating several game frames to
                 = false // keep the game time in sync with real time
@@ -294,8 +286,8 @@ object Game {
     class refSound_t {
         // with idSoundWorld::AllocSoundEmitter() when needed
         val origin: idVec3
-        var diversity // 0.0 to 1.0 value used to select which
-                = 0f
+        var diversity // 0.0f to 1.0f value used to select which
+                = 0.0f
         var listenerId // SSF_PRIVATE_SOUND only plays if == listenerId from PlaceListener
                 = 0
         var parms // override volume, flags, etc
@@ -336,7 +328,7 @@ object Game {
             val gotRight: Boolean
             val texture: String?
             val color = idVec3()
-            renderLight.clear() //memset( renderLight, 0, sizeof( *renderLight ) );
+            //renderLight.clear() //memset( renderLight, 0, sizeof( *renderLight ) );
             if (!args.GetVector("light_origin", "", renderLight.origin)) {
                 args.GetVector("origin", "", renderLight.origin)
             }
@@ -357,7 +349,7 @@ object Game {
                 return
             }
             if (!gotTarget) {
-                renderLight.pointLight = true
+                renderLight.pointLight._val = true
 
                 // allow an optional relative center of light and shadow offset
                 args.GetVector("light_center", "0 0 0", renderLight.lightCenter)
@@ -373,14 +365,14 @@ object Game {
 
             // get the rotation matrix in either full form, or single angle form
             val angles = idAngles()
-            var mat: idMat3 = idMat3()
+            val mat = idMat3()
             if (!args.GetMatrix("light_rotation", "1 0 0 0 1 0 0 0 1", mat)) {
                 if (!args.GetMatrix("rotation", "1 0 0 0 1 0 0 0 1", mat)) {
                     angles[1] = args.GetFloat("angle", "0")
-                    angles[0] = 0f
+                    angles[0] = 0.0f
                     angles[1] = idMath.AngleNormalize360(angles[1])
-                    angles[2] = 0f
-                    mat = angles.ToMat3()
+                    angles[2] = 0.0f
+                    mat.set(angles.ToMat3())
                 }
             }
 
@@ -396,20 +388,20 @@ object Game {
             renderLight.shaderParms[RenderWorld.SHADERPARM_GREEN] = color[1]
             renderLight.shaderParms[RenderWorld.SHADERPARM_BLUE] = color[2]
             renderLight.shaderParms[RenderWorld.SHADERPARM_TIMESCALE] = args.GetFloat("shaderParm3", "1")
-            if (TempDump.NOT(
-                    args.GetFloat("shaderParm4", "0")
-                        .also { renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = it })
+            if (
+                args.GetFloat("shaderParm4", "0")
+                    .also { renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = it } == 0.0f
             ) {
                 // offset the start time of the shader to sync it to the game time
                 renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                    -Math_h.MS2SEC(Game_local.gameLocal.time.toFloat())
+                    -MS2SEC(Game_local.gameLocal.time.toFloat())
             }
             renderLight.shaderParms[5] = args.GetFloat("shaderParm5", "0")
             renderLight.shaderParms[6] = args.GetFloat("shaderParm6", "0")
             renderLight.shaderParms[RenderWorld.SHADERPARM_MODE] = args.GetFloat("shaderParm7", "0")
-            renderLight.noShadows = args.GetBool("noshadows", "0")
-            renderLight.noSpecular = args.GetBool("nospecular", "0")
-            renderLight.parallel = args.GetBool("parallel", "0")
+            renderLight.noShadows._val = args.GetBool("noshadows", "0")
+            renderLight.noSpecular._val = args.GetBool("nospecular", "0")
+            renderLight.parallel._val = args.GetBool("parallel", "0")
             texture = args.GetString("texture", "lights/squarelight1")!!
             // allow this to be NULL
             renderLight.shader = DeclManager.declManager.FindMaterial(texture, false)
@@ -441,7 +433,7 @@ object Game {
                 if (modelDef != null) {
                     renderEntity.hModel = modelDef.ModelHandle()
                 }
-                if (TempDump.NOT(renderEntity.hModel)) {
+                if (renderEntity.hModel == null) {
                     renderEntity.hModel = ModelManager.renderModelManager.FindModel(temp)
                 }
             }
@@ -727,7 +719,7 @@ object Game {
             anim.GetInterpolatedFrame(frame, jointFrame as Array<idJointQuat>, index, numJoints)
 
             // convert joint quaternions to joint matrices
-            Simd.SIMDProcessor.ConvertJointQuatsToJointMats(
+            SIMDProcessor!!.ConvertJointQuatsToJointMats(
                 joints as Array<idJointMat>,
                 jointFrame as Array<idJointQuat>,
                 numJoints
@@ -846,7 +838,7 @@ object Game {
             args.Set("angle", Str.va("%f", yaw + 180))
             org.set(
                 player.GetPhysics().GetOrigin()
-                    .plus(idAngles(0f, yaw, 0f).ToForward().times(80f).plus(idVec3(0, 0, 1)))
+                    .plus(idAngles(0.0f, yaw, 0.0f).ToForward().times(80.0f).plus(idVec3(0, 0, 1)))
             )
             args.Set("origin", org.ToString())
             args.Set("spawnclass", "idAFEntity_Generic")
@@ -933,13 +925,13 @@ object Game {
             var i: Int
             var jointNum: Int
             val af: idDeclAF?
-            var fb: idDeclAF_Body = idDeclAF_Body()
+            var fb = idDeclAF_Body()
             val ent: renderEntity_s
             val origin = idVec3()
-            var axis: idMat3 = idMat3()
-            val bodyAxis: Array<idMat3?>
-            val newBodyAxis: Array<idMat3?>
-            val modifiedAxis: Array<idMat3?>
+            val axis = idMat3()
+            val bodyAxis: Array<idMat3>
+            val newBodyAxis: Array<idMat3>
+            val modifiedAxis: Array<idMat3>
             val jointMod: Array<declAFJointMod_t?>
             val angles = idAngles()
             val defArgs: idDict?
@@ -996,7 +988,7 @@ object Game {
 
             // get the articulated figure pose anim
             val animNum = modelDef.GetAnim("af_pose")
-            if (TempDump.NOT(animNum.toDouble())) {
+            if (animNum == 0) {
                 return null
             }
             val anim = modelDef.GetAnim(animNum)
@@ -1027,9 +1019,9 @@ object Game {
 
             // buffers to store the initial origin and axis for each body
             val bodyOrigin: Array<idVec3> = idVec3.generateArray(af.bodies.Num())
-            bodyAxis = arrayOfNulls<idMat3>(af.bodies.Num())
+            bodyAxis = Array(af.bodies.Num()) { idMat3() }
             val newBodyOrigin: Array<idVec3> = idVec3.generateArray(af.bodies.Num())
-            newBodyAxis = arrayOfNulls<idMat3>(af.bodies.Num())
+            newBodyAxis = Array(af.bodies.Num()) { idMat3() }
 
             // finish the AF positions
             data.ent = ent
@@ -1047,7 +1039,7 @@ object Game {
                     axis[2].NormalVectors(axis[0], axis[1])
                     axis[1] = axis[1].unaryMinus()
                 } else {
-                    axis = fb.angles.ToMat3()
+                    axis.set(fb.angles.ToMat3())
                 }
                 bodyOrigin[i].set(fb.origin.ToVec3())
                 newBodyOrigin[i].set(bodyOrigin[i])
@@ -1105,10 +1097,8 @@ object Game {
                 arrayOfNulls<declAFJointMod_t>(numMD5joints) //memset(jointMod, -1, numMD5joints * sizeof(declAFJointMod_t));
             val modifiedOrigin: Array<idVec3> =
                 idVec3.generateArray(numMD5joints) //memset(modifiedOrigin, 0, numMD5joints * sizeof(idVec3));
-            modifiedAxis = arrayOfNulls<idMat3>(numMD5joints) //memset(modifiedAxis, 0, numMD5joints * sizeof(idMat3));
-            for (m in 0 until modifiedAxis.size) {
-                modifiedAxis[m] = idMat3()
-            }
+            modifiedAxis =
+                Array<idMat3>(numMD5joints) { idMat3() }//memset(modifiedAxis, 0, numMD5joints * sizeof(idMat3));
 
             // get all the joint modifications
             i = 0
@@ -1159,10 +1149,12 @@ object Game {
                             ent.joints!![parentNum]!!.ToVec3().plus(localt.times(ent.joints!![parentNum]!!.ToMat3()))
                         )
                     }
+
                     declAFJointMod_t.DECLAF_JOINTMOD_BOTH -> {
                         ent.joints!![i]!!.SetRotation(modifiedAxis[i]!!)
                         ent.joints!![i]!!.SetTranslation(modifiedOrigin[i])
                     }
+
                     else -> {
                         ent.joints!![i]!!.SetRotation(localm.times(ent.joints!![parentNum]!!.ToMat3()))
                         ent.joints!![i]!!.SetTranslation(
@@ -1216,7 +1208,7 @@ object Game {
             ent = Game_local.gameLocal.spawnedEntities.Next()
             while (ent != null) {
                 if (ent.fl.selected) {
-                    ent.ProcessEvent(Entity.EV_Activate, Game_local.gameLocal.GetLocalPlayer())
+                    ent.ProcessEvent(EV_Activate, Game_local.gameLocal.GetLocalPlayer())
                 }
                 ent = ent.spawnNode.Next()
             }
@@ -1242,7 +1234,7 @@ object Game {
             id = 0
             while (id < Game_local.MAX_GENTITIES) {
                 idStr.snPrintf(name, name.capacity(), "%s_%d", classname, id)
-                if (TempDump.NOT(Game_local.gameLocal.FindEntity(name.toString()))) {
+                if (Game_local.gameLocal.FindEntity(name.toString()) == null) {
                     return name.toString()
                 }
                 id++
@@ -1509,7 +1501,5 @@ object Game {
                 : idGameEdit
         var version // API version
                 = 0
-    } //extern "C" {
-    //typedef gameExport_t * (*GetGameAPI_t)( gameImport_t *import );
-    //}
+    }
 }

@@ -1,17 +1,14 @@
 package neo.idlib.Text
 
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
+import neo.idlib.MAX_STRING_CHARS
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
-import neo.idlib.math.Lcp
+import neo.idlib.idException
+import neo.idlib.idLib
+import neo.idlib.math.*
 import java.util.*
 
-/**
- *
- */
 class CmdArgs {
     /*
      ===============================================================================
@@ -22,7 +19,7 @@ class CmdArgs {
      */
     internal inner class idCmdArgs {
         private val MAX_COMMAND_ARGS = 64
-        private val MAX_COMMAND_STRING: Int = 2 * Lib.MAX_STRING_CHARS
+        private val MAX_COMMAND_STRING: Int = 2 * MAX_STRING_CHARS
         private var argc // number of arguments
                 = 0
         private val argv: CharArray = CharArray(MAX_COMMAND_ARGS) // points into tokenized
@@ -40,8 +37,7 @@ class CmdArgs {
         }
 
         //
-        fun oSet(args: CmdArgs.idCmdArgs?) {
-            var i: Int
+        fun oSet(args: idCmdArgs?) {
             argc = args!!.argc
             //	memcpy( tokenized, args.tokenized, MAX_COMMAND_STRING );
             System.arraycopy(args.tokenized, 0, tokenized, 0, MAX_COMMAND_STRING)
@@ -95,7 +91,7 @@ class CmdArgs {
                         if (argv[p] == '\\') {
                             cmd_args += "\\\\"
                         } else {
-                            val l = cmd_args.length
+                            cmd_args.length
                             cmd_args += argv[p]
                             cmd_args += '\u0000'
                         }
@@ -179,9 +175,9 @@ class CmdArgs {
                 // regular token
                 argv[argc] = tokenized[totalLen]
                 argc++
-                val tokenizedClam = Lcp.clam(tokenized, totalLen)
+                val tokenizedClam = clam(tokenized, totalLen)
                 idStr.Copynz(tokenizedClam, token.toString(), tokenized.size - totalLen)
-                Lcp.unClam(tokenized, tokenizedClam)
+                unClam(tokenized, tokenizedClam)
                 totalLen += len + 1
             }
         }
@@ -194,9 +190,9 @@ class CmdArgs {
                 idStr.Copynz(tokenized, text, tokenized.size)
             } else {
                 argv[argc] = argv[argc - 1 + (argv.size - argc - 1) + 1]
-                val argvClam = Lcp.clam(argv, argc)
+                val argvClam = clam(argv, argc)
                 idStr.Copynz(argvClam, text, tokenized.size - (argv.size - argc - tokenized[0].code))
-                Lcp.unClam(argv, argvClam)
+                unClam(argv, argvClam)
                 argc++
             }
         }

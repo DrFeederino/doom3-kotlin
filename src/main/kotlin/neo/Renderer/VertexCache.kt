@@ -13,16 +13,13 @@ import neo.framework.Common
 import neo.idlib.CmdArgs
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.DrawVert.toByteBuffer
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.ARBVertexBufferObject
 import java.nio.ByteBuffer
 
 
-/**
- *
- */
 object VertexCache {
     val vertexCache: idVertexCache = idVertexCache()
     val EXPAND_HEADERS: Int = 1024
@@ -42,11 +39,11 @@ object VertexCache {
         TAG_TEMP // in frame temp area, not static area
     }
 
-    class vertCache_s() : Iterable<vertCache_s?> {
+    class vertCache_s : Iterable<vertCache_s?> {
         //TODO:use iterators for all our makeshift linked lists.
         var frameUsed: Int = 0 // it can't be purged if near the current frame
         var indexBuffer: Boolean = false // holds indexes instead of vertexes
-        var next: vertCache_s? = null
+        var next: vertCache_s? = this
         var prev: vertCache_s? = null // may be on the static list or one of the frame lists
         var offset: Int = 0
         var size: Int = 0 // may be larger than the amount asked for, due
@@ -57,17 +54,17 @@ object VertexCache {
         private val  /*GLuint*/vao: Int = 0
         var  /*GLuint*/vbo: Int = 0
         var virtMem: ByteBuffer? = null // only one of vbo / virtMem will be set
-        public override fun iterator(): MutableIterator<vertCache_s> {
+        override fun iterator(): MutableIterator<vertCache_s> {
             val i: MutableIterator<vertCache_s> = object : MutableIterator<vertCache_s> {
-                public override fun hasNext(): Boolean {
+                override fun hasNext(): Boolean {
                     return next != null
                 }
 
-                public override fun next(): vertCache_s {
+                override fun next(): vertCache_s {
                     return (next)!!
                 }
 
-                public override fun remove() {
+                override fun remove() {
                     throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
                 }
             }
@@ -101,8 +98,8 @@ object VertexCache {
      ==============
      */
     internal class R_ListVertexCache_f private constructor() : cmdFunction_t() {
-        public override fun run(args: CmdArgs.idCmdArgs?) {
-            VertexCache.vertexCache.List()
+        override fun run(args: CmdArgs.idCmdArgs?) {
+            vertexCache.List()
         }
 
         companion object {
@@ -111,10 +108,10 @@ object VertexCache {
     }
 
     //================================================================================
-    class idVertexCache() {
+    class idVertexCache {
         //
         private var tempBuffers // allocated at startup
-                : Array<vertCache_s?> = arrayOfNulls(VertexCache.NUM_VERTEX_FRAMES)
+                : Array<vertCache_s?> = arrayOfNulls(NUM_VERTEX_FRAMES)
 
         //
         private var allocatingTempBuffer: Boolean = false // force GL_STREAM_DRAW_ARB
@@ -174,11 +171,11 @@ object VertexCache {
             virtualMemory = false
 
             // use ARB_vertex_buffer_object unless explicitly disabled
-            if (RenderSystem_init.r_useVertexBuffers!!.GetInteger() != 0 && tr_local.glConfig.ARBVertexBufferObjectAvailable) {
+            if (r_useVertexBuffers!!.GetInteger() != 0 && glConfig.ARBVertexBufferObjectAvailable) {
                 Common.common.Printf("using ARB_vertex_buffer_object memory\n")
             } else {
                 virtualMemory = true
-                RenderSystem_init.r_useIndexBuffers!!.SetBool(false)
+                r_useIndexBuffers!!.SetBool(false)
                 Common.common.Printf("WARNING: vertex array range in virtual memory (SLOW)\n")
             }
 
@@ -195,11 +192,11 @@ object VertexCache {
             deferredFreeList.next = deferredFreeList.prev
 
             // set up the dynamic frame memory
-            frameBytes = VertexCache.FRAME_MEMORY_BYTES
+            frameBytes = FRAME_MEMORY_BYTES
             staticAllocTotal = 0
-            var junk: ByteBuffer? = BufferUtils.createByteBuffer(frameBytes) // Mem_Alloc(frameBytes);
+            var junk: ByteBuffer = BufferUtils.createByteBuffer(frameBytes) // Mem_Alloc(frameBytes);
             tempBuffers = arrayOfNulls(NUM_VERTEX_FRAMES)
-            for (i in 0 until VertexCache.NUM_VERTEX_FRAMES) {
+            for (i in 0 until NUM_VERTEX_FRAMES) {
                 allocatingTempBuffer = true // force the alloc to use GL_STREAM_DRAW_ARB
                 tempBuffers[i] = Alloc(junk, frameBytes)
                 allocatingTempBuffer = false
@@ -209,7 +206,6 @@ object VertexCache {
                 tempBuffers[i]!!.prev!!.next = tempBuffers[i]!!.next
             }
             //            Mem_Free(junk);
-            junk = null
             EndFrame()
         }
 
@@ -253,11 +249,11 @@ object VertexCache {
         // These allocations can be purged, which will zero the pointer.
 
         fun Alloc(
-            data: ByteBuffer?,
+            data: ByteBuffer,
             size: Int,
             buffer: vertCache_s? = null,
             indexBuffer: Boolean = false /*= false*/
-        ): vertCache_s? {
+        ): vertCache_s {
             var buffer: vertCache_s? = buffer
             var block: vertCache_s?
             if (size <= 0) {
@@ -269,7 +265,7 @@ object VertexCache {
 
             // if we don't have any remaining unused headers, allocate some more
             if (freeStaticHeaders.next === freeStaticHeaders) {
-                for (i in 0 until VertexCache.EXPAND_HEADERS) {
+                for (i in 0 until EXPAND_HEADERS) {
                     block = vertCache_s() //headerAllocator.Alloc();
                     block.next = freeStaticHeaders.next
                     block.prev = freeStaticHeaders
@@ -307,7 +303,7 @@ object VertexCache {
             // allocation doesn't imply used-for-drawing, because at level
             // load time lots of things may be created, but they aren't
             // referenced by the GPU yet, and can be purged if needed.
-            block.frameUsed = currentFrame - VertexCache.NUM_VERTEX_FRAMES
+            block.frameUsed = currentFrame - NUM_VERTEX_FRAMES
             block.indexBuffer = indexBuffer
 
             // copy the data
@@ -341,7 +337,7 @@ object VertexCache {
             } else {
                 block.virtMem = ByteBuffer.allocate(size)
                 //                SIMDProcessor.Memcpy(block.virtMem, data, size);
-                block.virtMem = data!!.duplicate()
+                block.virtMem = data.duplicate()
             }
             return buffer
         }
@@ -361,24 +357,24 @@ object VertexCache {
             return Alloc(byteData, size, indexBuffer)
         }
 
-        fun Alloc(data: ByteBuffer?, size: Int, indexBuffer: Boolean): vertCache_s? {
+        fun Alloc(data: ByteBuffer, size: Int, indexBuffer: Boolean): vertCache_s {
             return Alloc(data, size, null, indexBuffer)
         }
 
-        fun Alloc(data: Array<idDrawVert?>?, size: Int, buffer: vertCache_s?): vertCache_s? {
+        fun Alloc(data: Array<idDrawVert>?, size: Int, buffer: vertCache_s?): vertCache_s {
             return Alloc(toByteBuffer((data)!!), size, buffer, false)
         }
 
-        fun Alloc(data: Array<idDrawVert?>?, size: Int): vertCache_s? {
+        fun Alloc(data: Array<idDrawVert>?, size: Int): vertCache_s {
             return Alloc(toByteBuffer((data)!!), size, null)
         }
 
-        fun Alloc(data: Array<lightingCache_s>, size: Int): vertCache_s? {
-            return Alloc(lightingCache_s.Companion.toByteBuffer(data), size, null)
+        fun Alloc(data: Array<lightingCache_s>, size: Int): vertCache_s {
+            return Alloc(lightingCache_s.toByteBuffer(data), size, null)
         }
 
-        fun Alloc(data: Array<shadowCache_s>, size: Int): vertCache_s? {
-            return Alloc(shadowCache_s.Companion.toByteBuffer(data), size, null)
+        fun Alloc(data: Array<shadowCache_s>, size: Int): vertCache_s {
+            return Alloc(shadowCache_s.toByteBuffer(data), size, null)
         }
 
         /*
@@ -445,7 +441,7 @@ object VertexCache {
         // will change every frame.
         // will return NULL if the vertex cache is completely full
         // As with Position(), this may not actually be a pointer you can access.
-        fun AllocFrameTemp(data: ByteBuffer, size: Int): vertCache_s? {
+        fun AllocFrameTemp(data: ByteBuffer, size: Int): vertCache_s {
             var block: vertCache_s? = null
             if (size <= 0) {
                 Common.common.Error("idVertexCache::AllocFrameTemp: size = %d\n", size)
@@ -462,7 +458,7 @@ object VertexCache {
             // this data is just going on the shared dynamic list
             // if we don't have any remaining unused headers, allocate some more
             if (freeDynamicHeaders.next === freeDynamicHeaders) {
-                for (i in 0 until VertexCache.EXPAND_HEADERS) {
+                for (i in 0 until EXPAND_HEADERS) {
                     block = vertCache_s() // headerAllocator.Alloc();
                     block.next = freeDynamicHeaders.next
                     block.prev = freeDynamicHeaders
@@ -513,7 +509,7 @@ object VertexCache {
             return block
         }
 
-        fun AllocFrameTemp(data: Array<idDrawVert?>, size: Int): vertCache_s? {
+        fun AllocFrameTemp(data: Array<idDrawVert>, size: Int): vertCache_s? {
             return AllocFrameTemp(toByteBuffer((data)!!), size)
         }
 
@@ -579,8 +575,8 @@ object VertexCache {
         fun EndFrame() {
             // display debug information
             if (r_showVertexCache.GetBool()) {
-                var staticUseCount: Int = 0
-                var staticUseSize: Int = 0
+                var staticUseCount = 0
+                var staticUseSize = 0
                 var block: vertCache_s? = staticHeaders.next
                 while (block !== staticHeaders) {
                     if (block!!.frameUsed == currentFrame) {
@@ -612,8 +608,8 @@ object VertexCache {
                 qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB, 0)
                 qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ELEMENT_ARRAY_BUFFER_ARB, 0)
             }
-            currentFrame = tr_local.tr.frameCount
-            listNum = currentFrame % VertexCache.NUM_VERTEX_FRAMES
+            currentFrame = tr.frameCount
+            listNum = currentFrame % NUM_VERTEX_FRAMES
             staticAllocThisFrame = 0
             staticCountThisFrame = 0
             dynamicAllocThisFrame = 0
@@ -639,10 +635,10 @@ object VertexCache {
 
         // listVertexCache calls this
         fun List() {
-            var numActive: Int = 0
+            var numActive = 0
             //            int numDeferred = 0;
-            var frameStatic: Int = 0
-            var totalStatic: Int = 0
+            var frameStatic = 0
+            var totalStatic = 0
             //            int deferredSpace = 0;
             var block: vertCache_s?
             block = staticHeaders.next
@@ -654,20 +650,20 @@ object VertexCache {
                 }
                 block = block.next
             }
-            var numFreeStaticHeaders: Int = 0
+            var numFreeStaticHeaders = 0
             block = freeStaticHeaders.next
             while (block !== freeStaticHeaders) {
                 numFreeStaticHeaders++
                 block = block!!.next
             }
-            var numFreeDynamicHeaders: Int = 0
+            var numFreeDynamicHeaders = 0
             block = freeDynamicHeaders.next
             while (block !== freeDynamicHeaders) {
                 numFreeDynamicHeaders++
                 block = block!!.next
             }
             Common.common.Printf("%d megs working set\n", r_vertexBufferMegs.GetInteger())
-            Common.common.Printf("%d dynamic temp buffers of %dk\n", VertexCache.NUM_VERTEX_FRAMES, frameBytes / 1024)
+            Common.common.Printf("%d dynamic temp buffers of %dk\n", NUM_VERTEX_FRAMES, frameBytes / 1024)
             Common.common.Printf("%5d active static headers\n", numActive)
             Common.common.Printf("%5d free static headers\n", numFreeStaticHeaders)
             Common.common.Printf("%5d free dynamic headers\n", numFreeDynamicHeaders)
@@ -676,7 +672,7 @@ object VertexCache {
             } else {
                 Common.common.Printf("Vertex cache is in virtual memory (SLOW)\n")
             }
-            if (RenderSystem_init.r_useIndexBuffers!!.GetBool()) {
+            if (r_useIndexBuffers!!.GetBool()) {
                 Common.common.Printf("Index buffers are accelerated.\n")
             } else {
                 Common.common.Printf("Index buffers are not used.\n")

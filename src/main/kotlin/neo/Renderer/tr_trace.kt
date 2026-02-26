@@ -1,22 +1,16 @@
 package neo.Renderer
 
-import neo.Renderer.Image
 import neo.Renderer.Model.srfTriangles_s
-import neo.Renderer.tr_local.drawSurf_s
-import neo.Renderer.tr_local.localTrace_t
 import neo.framework.Common
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.Timer.idTimer
 import neo.idlib.geometry.DrawVert
-import neo.idlib.math.Math_h.Square
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Simd.SIMDProcessor
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.SIMDProcessor
+import neo.idlib.math.Square
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
 import org.lwjgl.opengl.GL11
 
-/**
- *
- */
 object tr_trace {
     private val TEST_TRACE: Boolean = false
 
@@ -32,15 +26,15 @@ object tr_trace {
         var j: Int
         val cullBits: ByteArray
         val planes: Array<idPlane> = idPlane.generateArray(4)
-        val hit: localTrace_t = localTrace_t()
+        val hit = localTrace_t()
         var c_testEdges: Int
         var c_testPlanes: Int
         var c_intersect: Int
-        val startDir: idVec3 = idVec3()
-        val totalOr: ByteArray = ByteArray(1)
+        val startDir = idVec3()
+        val totalOr = ByteArray(1)
         val radiusSqr: Float
         var trace_timer: idTimer? = null
-        if (tr_trace.TEST_TRACE) {
+        if (TEST_TRACE) {
             trace_timer = idTimer()
             trace_timer.Start()
         }
@@ -61,7 +55,7 @@ object tr_trace {
 
         // catagorize each point against the four planes
         cullBits = ByteArray(tri.numVerts)
-        SIMDProcessor.TracePointCull(
+        SIMDProcessor!!.TracePointCull(
             cullBits,
             totalOr,
             radius,
@@ -89,7 +83,7 @@ object tr_trace {
         radiusSqr = Square(radius)
         startDir.set(end.minus(start))
         if (null == tri.facePlanes || !tri.facePlanesCalculated) {
-            tr_trisurf.R_DeriveFacePlanes(tri)
+            R_DeriveFacePlanes(tri)
         }
         i = 0
         j = 0
@@ -100,10 +94,10 @@ object tr_trace {
             var d: Float
             var edgeLengthSqr: Float
             var plane: idPlane?
-            val point: idVec3 = idVec3()
+            val point = idVec3()
             val dir: Array<idVec3> = idVec3.generateArray(3)
-            val cross: idVec3 = idVec3()
-            val edge: idVec3 = idVec3()
+            val cross = idVec3()
+            val edge = idVec3()
             var triOr: Byte
 
             // get sidedness info for the triangle
@@ -290,10 +284,10 @@ object tr_trace {
             i += 3
             j++
         }
-        if (tr_trace.TEST_TRACE) {
+        if (TEST_TRACE) {
             trace_timer!!.Stop()
             Common.common.Printf(
-                "testVerts:%d c_testPlanes:%d c_testEdges:%d c_intersect:%d msec:%1.4f\n",
+                "testVerts:%d c_testPlanes:%d c_testEdges:%d c_intersect:%d msec:%d\n",
                 tri.numVerts, c_testPlanes, c_testEdges, c_intersect, trace_timer.Milliseconds()
             )
         }
@@ -310,8 +304,8 @@ object tr_trace {
         var j: Int
         var k: Int
         val dir: Array<idVec3> = idVec3.generateArray(6)
-        val normal: idVec3 = idVec3()
-        val point: idVec3 = idVec3()
+        val normal = idVec3()
+        val point = idVec3()
         i = 0
         while (i < tri.numIndexes) {
             val p /*[3]*/: Array<idVec3> = arrayOf(
@@ -371,24 +365,24 @@ object tr_trace {
         var i: Int
         var tri: srfTriangles_s?
         var surf: drawSurf_s
-        val start: idVec3 = idVec3()
-        val end: idVec3 = idVec3()
-        val localStart: idVec3 = idVec3()
-        val localEnd: idVec3 = idVec3()
+        val start = idVec3()
+        val end = idVec3()
+        val localStart = idVec3()
+        val localEnd = idVec3()
         var hit: localTrace_t
         val radius: Float
-        if (RenderSystem_init.r_showTrace!!.GetInteger() == 0) {
+        if (r_showTrace!!.GetInteger() == 0) {
             return
         }
-        if (RenderSystem_init.r_showTrace!!.GetInteger() == 2) {
+        if (r_showTrace!!.GetInteger() == 2) {
             radius = 5.0f
         } else {
             radius = 0.0f
         }
 
         // determine the points of the trace
-        start.set(tr_local.backEnd!!.viewDef!!.renderView.vieworg)
-        end.set(start.plus(tr_local.backEnd!!.viewDef!!.renderView.viewaxis[0].times(4000)))
+        start.set(backEnd!!.viewDef!!.renderView.vieworg)
+        end.set(start.plus(backEnd!!.viewDef!!.renderView.viewaxis[0].times(4000)))
 
         // check and draw the surfaces
         qgl.qglDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY)
@@ -421,25 +415,25 @@ object tr_trace {
             qgl.qglLoadMatrixf(surf.space!!.modelViewMatrix)
 
             // highlight the surface
-            tr_backend.GL_State(tr_local.GLS_SRCBLEND_SRC_ALPHA or tr_local.GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA)
-            qgl.qglColor4f(1f, 0f, 0f, 0.25f)
+            tr_backend.GL_State(GLS_SRCBLEND_SRC_ALPHA or GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA)
+            qgl.qglColor4f(1.0f, 0.0f, 0.0f, 0.25f)
             tr_render.RB_DrawElementsImmediate(tri)
 
             // draw the bounding box
-            tr_backend.GL_State(tr_local.GLS_DEPTHFUNC_ALWAYS)
-            qgl.qglColor4f(1f, 1f, 1f, 1f)
+            tr_backend.GL_State(GLS_DEPTHFUNC_ALWAYS)
+            qgl.qglColor4f(1.0f, 1.0f, 1.0f, 1.0f)
             tr_rendertools.RB_DrawBounds(tri.bounds)
             if (radius != 0.0f) {
                 // draw the expanded triangles
                 qgl.qglColor4f(0.5f, 0.5f, 1.0f, 1.0f)
-                tr_trace.RB_DrawExpandedTriangles(tri, radius, localStart)
+                RB_DrawExpandedTriangles(tri, radius, localStart)
             }
 
             // check the exact surfaces
-            hit = tr_trace.R_LocalTrace(localStart, localEnd, radius, tri)
-            if (hit.fraction < 1.0) {
-                qgl.qglColor4f(1f, 1f, 1f, 1f)
-                tr_rendertools.RB_DrawBounds(idBounds(hit.point).Expand(1f))
+            hit = R_LocalTrace(localStart, localEnd, radius, tri)
+            if (hit.fraction < 1.0f) {
+                qgl.qglColor4f(1.0f, 1.0f, 1.0f, 1.0f)
+                tr_rendertools.RB_DrawBounds(idBounds(hit.point).Expand(1.0f))
             }
             i++
         }

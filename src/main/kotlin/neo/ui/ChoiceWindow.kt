@@ -1,6 +1,5 @@
 package neo.ui
 
-import neo.TempDump.NOT
 import neo.TempDump.etoi
 import neo.framework.CVarSystem.cvarSystem
 import neo.framework.CVarSystem.idCVar
@@ -11,7 +10,6 @@ import neo.framework.KeyInput.K_LEFTARROW
 import neo.framework.KeyInput.K_MOUSE1
 import neo.framework.KeyInput.K_MOUSE2
 import neo.framework.KeyInput.K_RIGHTARROW
-import neo.idlib.Lib
 import neo.idlib.Text.Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT
 import neo.idlib.Text.Lexer.LEXFL_ALLOWMULTICHARLITERALS
 import neo.idlib.Text.Lexer.LEXFL_ALLOWPATHNAMES
@@ -23,6 +21,7 @@ import neo.idlib.Text.Str.idStr.Companion.Cmpn
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.va
 import neo.idlib.Text.Token.idToken
+import neo.idlib.colorBlack
 import neo.idlib.containers.CBool
 import neo.idlib.containers.idStrList
 import neo.sys.sys_public.sysEventType_t
@@ -33,9 +32,6 @@ import neo.ui.SimpleWindow.drawWin_t
 import neo.ui.UserInterfaceLocal.idUserInterfaceLocal
 import neo.ui.Window.idWindow
 
-/**
- *
- */
 class ChoiceWindow {
     class idChoiceWindow : idWindow {
         private var choiceType = 0
@@ -72,7 +68,7 @@ class ChoiceWindow {
 
         //	virtual				~idChoiceWindow();
         //
-        override fun HandleEvent(event: sysEvent_s, updateVisuals: CBool?): String? {
+        override fun HandleEvent(event: sysEvent_s, updateVisuals: CBool?): String {
             val key: Int
             var runAction = false
             var runAction2 = false
@@ -106,7 +102,7 @@ class ChoiceWindow {
                     // is a key release with no action catch
                     return ""
                 }
-            } else if (event.evType === sysEventType_t.SE_CHAR) {
+            } else if (event.evType == sysEventType_t.SE_CHAR) {
                 key = event.evValue
                 var potentialChoice = -1
                 for (i in 0 until choices.size()) {
@@ -167,9 +163,9 @@ class ChoiceWindow {
                 shadowText.RemoveColors()
                 shadowRect.x += textShadow.code.toFloat()
                 shadowRect.y += textShadow.code.toFloat()
-                dc!!.DrawText(shadowText, textScale.data, textAlign.code, Lib.colorBlack, shadowRect, false, -1)
+                dc!!.DrawText(shadowText, textScale.data, textAlign.code, colorBlack, shadowRect, false, -1)
             }
-            if (hover && NOT(noEvents) && Contains(gui!!.CursorX(), gui!!.CursorY())) {
+            if (hover && !noEvents.data && Contains(gui!!.CursorX(), gui!!.CursorY())) {
                 color = hoverColor.oCastIdVec4()
             } else {
                 hover = false
@@ -186,10 +182,6 @@ class ChoiceWindow {
                 // sets the gui state based on the current choice the window contains
                 UpdateChoice()
             }
-        }
-
-        override fun  /*size_t*/Allocated(): Int {
-            return super.Allocated()
         }
 
         override fun GetWinVarByName(
@@ -342,7 +334,7 @@ class ChoiceWindow {
         private fun UpdateChoicesAndVals() {
             val token = idToken()
             val str2 = idStr()
-            val str3 = idStr()
+            idStr()
             val src = idLexer()
             if (latchedChoices.Icmp(choicesStr.data!!) != 0) {
                 choices.clear()

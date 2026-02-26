@@ -6,13 +6,12 @@ import neo.Renderer.Model.modelSurface_s
 import neo.Renderer.Model.srfTriangles_s
 import neo.Renderer.Model_local.idRenderModelStatic
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.Renderer.tr_local.viewDef_s
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
 import neo.framework.DeclParticle.idParticleStage
 import neo.framework.DeclParticle.particleGen_t
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.containers.CInt
@@ -20,9 +19,6 @@ import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.math.Random.idRandom
 import java.util.*
 
-/**
- *
- */
 object Model_prt {
     val parametricParticle_SnapshotName: String = "_ParametricParticle_Snapshot_"
 
@@ -33,31 +29,31 @@ object Model_prt {
 
      ===============================================================================
      */
-    class idRenderModelPrt() : idRenderModelStatic() {
+    class idRenderModelPrt : idRenderModelStatic() {
         //
         private var particleSystem: idDeclParticle? = null
-        public override fun InitFromFile(fileName: String?) {
+        override fun InitFromFile(fileName: String?) {
             name = idStr((fileName)!!)
-            particleSystem = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, (fileName)!!) as idDeclParticle?
+            particleSystem = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, (fileName)) as idDeclParticle?
         }
 
-        public override fun TouchData() {
+        override fun TouchData() {
             // Ensure our particle system is added to the list of referenced decls
             particleSystem = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, name) as idDeclParticle?
         }
 
-        public override fun IsDynamicModel(): dynamicModel_t {
+        override fun IsDynamicModel(): dynamicModel_t {
             return dynamicModel_t.DM_CONTINUOUS
         }
 
-        public override fun InstantiateDynamicModel(
+        override fun InstantiateDynamicModel(
             renderEntity: renderEntity_s?,
             viewDef: viewDef_s?,
             cachedModel: idRenderModel?
         ): idRenderModel? {
             var cachedModel: idRenderModel? = cachedModel
             val staticModel: idRenderModelStatic
-            if (cachedModel != null && !RenderSystem_init.r_useCachedDynamicModels!!.GetBool()) {
+            if (cachedModel != null && !r_useCachedDynamicModels!!.GetBool()) {
 //		delete cachedModel;
                 cachedModel = null
             }
@@ -67,7 +63,7 @@ object Model_prt {
 //		delete cachedModel;
                 return null
             }
-            if (RenderSystem_init.r_skipParticles!!.GetBool()) {
+            if (r_skipParticles!!.GetBool()) {
 //		delete cachedModel;
                 return null
             }
@@ -86,7 +82,7 @@ object Model_prt {
                 staticModel = idRenderModelStatic()
                 staticModel.InitEmpty(parametricParticle_SnapshotName)
             }
-            val g: particleGen_t = particleGen_t()
+            val g = particleGen_t()
             g.renderEnt = renderEntity
             g.renderView = viewDef.renderView
             g.origin.Zero()
@@ -103,8 +99,8 @@ object Model_prt {
                     staticModel.DeleteSurfaceWithId(stageNum)
                     continue
                 }
-                val steppingRandom: idRandom = idRandom()
-                val steppingRandom2: idRandom = idRandom()
+                val steppingRandom = idRandom()
+                val steppingRandom2 = idRandom()
                 val stageAge: Int =
                     (g.renderView.time + renderEntity.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] * 1000 - stage.timeOffset * 1000).toInt()
                 val stageCycle: Int = stageAge / stage.cycleMsec
@@ -118,23 +114,23 @@ object Model_prt {
                     (((stageCycle - 1) shl 10) and idRandom.MAX_RAND) xor (renderEntity.shaderParms[RenderWorld.SHADERPARM_DIVERSITY] * idRandom.MAX_RAND).toInt()
                 )
                 val count: Int = stage.totalParticles * stage.NumQuadsPerParticle()
-                val surfaceNum: CInt = CInt()
+                val surfaceNum = CInt()
                 var surf: modelSurface_s?
                 if (staticModel.FindSurfaceWithId(stageNum, surfaceNum)) {
                     surf = staticModel.surfaces[surfaceNum._val]
-                    tr_trisurf.R_FreeStaticTriSurfVertexCaches(surf!!.geometry!!)
+                    R_FreeStaticTriSurfVertexCaches(surf!!.geometry!!)
                 } else {
                     surf = modelSurface_s()
                     staticModel.surfaces.Append(surf)
-                    surf!!.id = stageNum
+                    surf.id = stageNum
                     surf.shader = stage.material
                     surf.geometry = srfTriangles_s() //R_AllocStaticTriSurf();
-                    tr_trisurf.R_AllocStaticTriSurfVerts(surf.geometry!!, 4 * count)
-                    tr_trisurf.R_AllocStaticTriSurfIndexes(surf.geometry!!, 6 * count)
-                    tr_trisurf.R_AllocStaticTriSurfPlanes(surf.geometry!!, 6 * count)
+                    R_AllocStaticTriSurfVerts(surf.geometry!!, 4 * count)
+                    R_AllocStaticTriSurfIndexes(surf.geometry!!, 6 * count)
+                    R_AllocStaticTriSurfPlanes(surf.geometry!!, 6 * count)
                 }
-                var numVerts: Int = 0
-                val verts: Array<idDrawVert?>? = surf.geometry!!.verts
+                var numVerts = 0
+                val verts: Array<idDrawVert>? = surf.geometry!!.verts
                 for (index in 0 until stage.totalParticles) {
                     g.index = index
 
@@ -151,7 +147,7 @@ object Model_prt {
                         // before the particleSystem spawned
                         continue
                     }
-                    if (stage.cycles != 0f && particleCycle >= stage.cycles) {
+                    if (stage.cycles != 0.0f && particleCycle >= stage.cycles) {
                         // cycled systems will only run cycle times
                         continue
                     }
@@ -161,7 +157,7 @@ object Model_prt {
                         g.random = idRandom(steppingRandom2)
                     }
                     val inCycleTime: Int = particleAge - particleCycle * stage.cycleMsec
-                    if ((renderEntity.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] != 0f
+                    if ((renderEntity.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] != 0.0f
                                 && g.renderView.time - inCycleTime >= renderEntity.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] * 1000)
                     ) {
                         // don't fire any more particles
@@ -189,10 +185,10 @@ object Model_prt {
                 assert(((numVerts and 3) == 0 && numVerts <= 4 * count))
 
                 // build the indexes
-                var numIndexes: Int = 0
+                var numIndexes = 0
                 /*glIndex_t*/
                 val indexes: IntArray? = surf.geometry!!.indexes
-                var i: Int = 0
+                var i = 0
                 while (i < numVerts) {
                     indexes!![numIndexes + 0] = i
                     indexes[numIndexes + 1] = i + 2
@@ -208,21 +204,20 @@ object Model_prt {
                 surf.geometry!!.numVerts = numVerts
                 surf.geometry!!.numIndexes = numIndexes
                 surf.geometry!!.bounds.set(stage.bounds) // just always draw the particles
-                val a: Int = 0
             }
             return staticModel
         }
 
-        public override fun Bounds(ent: renderEntity_s?): idBounds {
+        override fun Bounds(ent: renderEntity_s?): idBounds {
             return particleSystem!!.bounds
         }
 
-        public override fun DepthHack(): Float {
+        override fun DepthHack(): Float {
             return particleSystem!!.depthHack
         }
 
-        public override fun Memory(): Int {
-            var total: Int = 0
+        override fun Memory(): Int {
+            var total = 0
             total += super.Memory()
             return total
         }

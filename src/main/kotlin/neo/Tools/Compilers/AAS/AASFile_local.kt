@@ -14,7 +14,7 @@ import neo.Tools.Compilers.AAS.AASFile.idReachability_Special
 import neo.framework.Common
 import neo.framework.FileSystem_h
 import neo.framework.File_h.idFile
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
@@ -22,17 +22,9 @@ import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Math_h
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.*
 import kotlin.math.abs
 
-/**
- *
- */
 object AASFile_local {
     const val AAS_EDGE_GRANULARITY = 4096
     const val AAS_INDEX_GRANULARITY = 4096
@@ -63,14 +55,14 @@ object AASFile_local {
             var edgeNum: Int
             val face: aasFace_s
             var edge: aasEdge_s
-            val center = idVec3(Vector.getVec3Origin())
+            val center = idVec3(getVec3Origin())
             face = faces[faceNum]
             if (face.numEdges > 0) {
                 i = 0
                 while (i < face.numEdges) {
                     edgeNum = edgeIndex[face.firstEdge + i]
                     edge = edges[abs(edgeNum)]
-                    center.plusAssign(vertices[edge.vertexNum[Math_h.INTSIGNBITSET(edgeNum)]])
+                    center.plusAssign(vertices[edge.vertexNum[INTSIGNBITSET(edgeNum)]])
                     i++
                 }
                 center.divAssign(face.numEdges.toFloat())
@@ -82,7 +74,7 @@ object AASFile_local {
             var i: Int
             var faceNum: Int
             val area: aasArea_s
-            val center = idVec3(Vector.getVec3Origin())
+            val center = idVec3(getVec3Origin())
             area = areas[areaNum]
             if (area.numFaces > 0) {
                 i = 0
@@ -117,7 +109,7 @@ object AASFile_local {
             while (i < face.numEdges) {
                 edgeNum = edgeIndex[face.firstEdge + i]
                 edge = edges[abs(edgeNum)]
-                bounds.AddPoint(vertices[edge.vertexNum[Math_h.INTSIGNBITSET(edgeNum)]])
+                bounds.AddPoint(vertices[edge.vertexNum[INTSIGNBITSET(edgeNum)]])
                 i++
             }
             return bounds
@@ -145,7 +137,7 @@ object AASFile_local {
             nodeNum = 1
             do {
                 node = nodes[nodeNum]
-                nodeNum = if (planeList[node.planeNum].Side(origin) == Plane.PLANESIDE_BACK) {
+                nodeNum = if (planeList[node.planeNum].Side(origin) == PLANESIDE_BACK) {
                     node.children[1]
                 } else {
                     node.children[0]
@@ -237,7 +229,7 @@ object AASFile_local {
             while (i < area.numFaces) {
                 faceNum = faceIndex[area.firstFace + i]
                 face = faces[abs(faceNum)]
-                val plane = planeList[face.planeNum xor Math_h.INTSIGNBITSET(faceNum)]
+                val plane = planeList[face.planeNum xor INTSIGNBITSET(faceNum)]
                 val dist = plane.Distance(point)
 
                 // project the point onto the face plane if it is on the wrong side
@@ -252,9 +244,9 @@ object AASFile_local {
             var side: Int
             var nodeNum: Int
             var tmpPlaneNum: Int
-            var front: Double
-            var back: Double
-            var frac: Double
+            var front: Float
+            var back: Float
+            var frac: Float
             val cur_start = idVec3()
             val cur_end = idVec3()
             val cur_mid = idVec3()
@@ -277,7 +269,7 @@ object AASFile_local {
                 tstack_p--
                 // if the trace stack is empty
                 if (tstack_p < 0) {
-                    if (TempDump.NOT(trace.lastAreaNum.toDouble())) {
+                    if (trace.lastAreaNum == 0) {
                         // completely in solid
                         trace.fraction = 0.0f
                         trace.endpos.set(start)
@@ -297,9 +289,9 @@ object AASFile_local {
                 if (nodeNum < 0) {
                     // if can't enter the area
                     if (areas[-nodeNum].flags and trace.flags != 0 || areas[-nodeNum].travelFlags and trace.travelFlags != 0) {
-                        if (TempDump.NOT(trace.lastAreaNum.toDouble())) {
+                        if (trace.lastAreaNum == 0) {
                             trace.fraction = 0.0f
-                            v1.set(Vector.getVec3Origin())
+                            v1.set(getVec3Origin())
                         } else {
                             v1.set(end.minus(start))
                             v2.set(tracestack[tstack_p].start.minus(start))
@@ -332,7 +324,7 @@ object AASFile_local {
                 if (0 == nodeNum) {
                     if (0 == trace.lastAreaNum) {
                         trace.fraction = 0.0f
-                        v1.set(Vector.getVec3Origin())
+                        v1.set(getVec3Origin())
                     } else {
                         v1.set(end.minus(start))
                         v2.set(tracestack[tstack_p].start.minus(start))
@@ -361,12 +353,12 @@ object AASFile_local {
                 cur_end.set(tracestack[tstack_p].end)
                 // the current node plane
                 plane = planeList[node.planeNum]
-                front = plane.Distance(cur_start).toDouble()
-                back = plane.Distance(cur_end).toDouble()
+                front = plane.Distance(cur_start)
+                back = plane.Distance(cur_end)
 
                 // if the whole to be traced line is totally at the front of this node
                 // only go down the tree with the front child
-                if (front >= -Plane.ON_EPSILON && back >= -Plane.ON_EPSILON) {
+                if (front >= -ON_EPSILON && back >= -ON_EPSILON) {
                     // keep the current start and end point on the stack and go down the tree with the front child
                     tracestack[tstack_p].nodeNum = node.children[0]
                     tstack_p++
@@ -375,7 +367,7 @@ object AASFile_local {
                         return false
                     }
                 } // if the whole to be traced line is totally at the back of this node
-                else if (front < Plane.ON_EPSILON && back < Plane.ON_EPSILON) {
+                else if (front < ON_EPSILON && back < ON_EPSILON) {
                     // keep the current start and end point on the stack and go down the tree with the back child
                     tracestack[tstack_p].nodeNum = node.children[1]
                     tstack_p++
@@ -394,11 +386,11 @@ object AASFile_local {
                         (front - TRACEPLANE_EPSILON) / (front - back)
                     }
                     if (frac < 0) {
-                        frac = 0.001 //0
+                        frac = 0.001f //0
                     } else if (frac > 1) {
-                        frac = 0.999 //1
+                        frac = 0.999f //1
                     }
-                    cur_mid.set(cur_start + cur_end.minus(cur_start) * frac.toFloat()) //TODO:downcast?
+                    cur_mid.set(cur_start + cur_end.minus(cur_start) * frac)
 
                     // side the front part of the line is on
                     side = if (front < 0) 1 else 0
@@ -804,7 +796,7 @@ object AASFile_local {
                     face = faces[abs(faceNum)]
 
                     // store face
-                    if (TempDump.NOT(faceRemap[abs(faceNum)])) {
+                    if (faceRemap[abs(faceNum)] == 0) {
                         faceRemap[abs(faceNum)] = newFaces.Num()
                         newFaces.Append(face)
 
@@ -820,7 +812,7 @@ object AASFile_local {
                             while (k < face.numEdges) {
                                 edgeNum = edgeIndex[face.firstEdge + k]
                                 edge = edges[abs(edgeNum)]
-                                if (TempDump.NOT(edgeRemap[abs(edgeNum)])) {
+                                if (edgeRemap[abs(edgeNum)] == 0) {
                                     if (edgeNum < 0) {
                                         edgeRemap[abs(edgeNum)] = -newEdges.Num()
                                     } else {
@@ -1185,9 +1177,9 @@ object AASFile_local {
                 }
                 node = nodes[nodeNum]
                 res = bounds.PlaneSide(planeList[node.planeNum])
-                if (res == Plane.PLANESIDE_BACK) {
+                if (res == PLANESIDE_BACK) {
                     nodeNum = node.children[1]
-                } else if (res == Plane.PLANESIDE_FRONT) {
+                } else if (res == PLANESIDE_FRONT) {
                     nodeNum = node.children[0]
                 } else {
                     nodeNum = BoundsReachableAreaNum_r(node.children[1], bounds, areaFlags, excludeTravelFlags)
@@ -1237,14 +1229,14 @@ object AASFile_local {
             var numFaces: Int
             val area: aasArea_s
             val center = idVec3()
-            val start = idVec3()
+            idVec3()
             val end = idVec3()
             val trace = aasTrace_s()
             area = areas[areaNum]
             if (0 == area.flags and (AASFile.AREA_REACHABLE_WALK or AASFile.AREA_REACHABLE_FLY) || area.flags and AASFile.AREA_LIQUID != 0) {
                 return AreaCenter(areaNum)
             }
-            center.set(Vector.getVec3Origin())
+            center.set(getVec3Origin())
             numFaces = 0
             i = 0
             while (i < area.numFaces) {
@@ -1262,7 +1254,7 @@ object AASFile_local {
             }
             center.plusAssign(2, 1.0f)
             end.set(center)
-            end.minusAssign(2, 1024f)
+            end.minusAssign(2, 1024.0f)
             Trace(trace, center, end)
             return trace.endpos
         }

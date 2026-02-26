@@ -8,14 +8,9 @@ import neo.Renderer.Model.modelSurface_s
 import neo.Renderer.Model.srfTriangles_s
 import neo.Renderer.Model_local.idRenderModelStatic
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.Renderer.tr_local.deformInfo_s
-import neo.Renderer.tr_local.viewDef_s
-import neo.Renderer.tr_trisurf.R_DeriveTangents
-import neo.TempDump.NOT
 import neo.framework.DeclManager
 import neo.framework.FileSystem_h.fileSystem
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib.idException
+import neo.idlib.BV.idBounds
 import neo.idlib.Text.Lexer.LEXFL_ALLOWPATHNAMES
 import neo.idlib.Text.Lexer.LEXFL_NOSTRINGESCAPECHARS
 import neo.idlib.Text.Parser.idParser
@@ -24,18 +19,16 @@ import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.List.idSwap
 import neo.idlib.geometry.DrawVert.idDrawVert
-import neo.idlib.math.Math_h.SEC2MS
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Math_h.idMath.Cos16
-import neo.idlib.math.Math_h.idMath.Sqrt
+import neo.idlib.idException
 import neo.idlib.math.Random.idRandom
-import neo.idlib.math.Simd.SIMDProcessor
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.SEC2MS
+import neo.idlib.math.SIMDProcessor
+import neo.idlib.math.idMath
+import neo.idlib.math.idMath.Cos16
+import neo.idlib.math.idMath.Sqrt
+import neo.idlib.math.idVec3
 import java.util.*
 
-/**
- *
- */
 object Model_liquid {
     val LIQUID_MAX_SKIP_FRAMES: Int = 5
     val LIQUID_MAX_TYPES: Int = 3
@@ -48,7 +41,7 @@ object Model_liquid {
 
      ===============================================================================
      */
-    class idRenderModelLiquid() : idRenderModelStatic() {
+    class idRenderModelLiquid : idRenderModelStatic() {
         //
         var nextDropTime: Int = 0
         private var deformInfo: deformInfo_s? = null // used to create srfTriangles_s from base frames and new vertexes
@@ -56,8 +49,8 @@ object Model_liquid {
         //
         //
         private var density: Float = 0.97f
-        private var drop_delay: Float = 1000f
-        private var drop_height: Float = 4f
+        private var drop_delay: Float = 1000.0f
+        private var drop_height: Float = 4.0f
         private var drop_radius: Int = 4
         private var liquid_type: Int = 0
         private lateinit var page1: Array<Float>
@@ -91,18 +84,18 @@ object Model_liquid {
         }
 
         @Throws(idException::class)
-        public override fun InitFromFile(fileName: String?) {
+        override fun InitFromFile(fileName: String?) {
             var i: Int
             var x: Int
             var y: Int
-            val token: idToken = idToken()
-            val parser: idParser = idParser(LEXFL_ALLOWPATHNAMES or LEXFL_NOSTRINGESCAPECHARS)
+            val token = idToken()
+            val parser = idParser(LEXFL_ALLOWPATHNAMES or LEXFL_NOSTRINGESCAPECHARS)
             val tris: idList<Int> = idList()
             var size_x: Float
             var size_y: Float
             var rate: Float
             name = idStr((fileName)!!)
-            if (!parser.LoadFile((fileName)!!)) {
+            if (!parser.LoadFile((fileName))) {
                 MakeDefaultModel()
                 return
             }
@@ -143,7 +136,7 @@ object Model_liquid {
                 } else if (0 == token.Icmp("drop_radius")) {
                     drop_radius = parser.ParseInt()
                 } else if (0 == token.Icmp("drop_delay")) {
-                    drop_delay = SEC2MS(parser.ParseFloat())
+                    drop_delay = SEC2MS(parser.ParseFloat()).toFloat()
                 } else if (0 == token.Icmp("shader")) {
                     parser.ReadToken(token)
                     shader = DeclManager.declManager.FindMaterial(token)
@@ -195,7 +188,7 @@ object Model_liquid {
                     tris[i + 2] = (y + 1) * verts_x + x - 1
                     tris[i + 3] = (y + 1) * verts_x + x - 1
                     tris[i + 4] = (y + 1) * verts_x + x
-                    tris[i + 0] = y * verts_x + x
+                    tris[i + 5] = y * verts_x + x
                     x++
                     i += 6
                 }
@@ -205,21 +198,21 @@ object Model_liquid {
             // build the information that will be common to all animations of this mesh:
             // sil edge connectivity and normal / tangent generation information
             deformInfo =
-                tr_trisurf.R_BuildDeformInfo(verts.Num(), verts.getList() as Array<idDrawVert?>, tris.Num(), tris, true)
-            bounds!!.Clear()
-            bounds!!.AddPoint(idVec3(0.0f, 0.0f, drop_height * -10.0f))
-            bounds!!.AddPoint(idVec3((verts_x - 1) * scale_x, (verts_y - 1) * scale_y, drop_height * 10.0f))
+                R_BuildDeformInfo(verts.Num(), verts.getList() as Array<idDrawVert?>, tris.Num(), tris, true)
+            bounds.Clear()
+            bounds.AddPoint(idVec3(0.0f, 0.0f, drop_height * -10.0f))
+            bounds.AddPoint(idVec3((verts_x - 1) * scale_x, (verts_y - 1) * scale_y, drop_height * 10.0f))
 
             // set the timestamp for reloadmodels
             fileSystem.ReadFile(name, null, timeStamp)
             Reset()
         }
 
-        public override fun IsDynamicModel(): dynamicModel_t {
+        override fun IsDynamicModel(): dynamicModel_t {
             return dynamicModel_t.DM_CONTINUOUS
         }
 
-        public override fun InstantiateDynamicModel(
+        override fun InstantiateDynamicModel(
             ent: renderEntity_s?,
             view: viewDef_s?,
             cachedModel: idRenderModel?
@@ -233,10 +226,10 @@ object Model_liquid {
 //		delete cachedModel;
                 cachedModel = null
             }
-            if (NOT(deformInfo)) {
+            if (deformInfo == null) {
                 return null
             }
-            if (NOT(view)) {
+            if (view == null) {
                 t = 0
             } else {
                 t = view!!.renderView.time
@@ -259,16 +252,16 @@ object Model_liquid {
             val surf: modelSurface_s = GenerateSurface(lerp)
             staticModel = idRenderModelStatic()
             staticModel.AddSurface(surf)
-            staticModel.bounds = idBounds(surf.geometry!!.bounds)
+            staticModel.bounds.set(surf.geometry!!.bounds)
             return staticModel
         }
 
-        public override fun Bounds(ent: renderEntity_s?): idBounds {
+        override fun Bounds(ent: renderEntity_s?): idBounds {
             // FIXME: need to do this better
-            return (bounds)!!
+            return (bounds)
         }
 
-        public override fun Reset() {
+        override fun Reset() {
             var i: Int
             var x: Int
             var y: Int
@@ -347,19 +340,19 @@ object Model_liquid {
             var i: Int
             val base: Int
             var vert: idDrawVert
-            val surf: modelSurface_s = modelSurface_s()
+            val surf = modelSurface_s()
             val inv_lerp: Float
             inv_lerp = 1.0f - lerp
             vert = verts[0]
             i = 0
             while (i < verts.Num()) {
-                vert.xyz.z = page1[i] * lerp + page2[i] * inv_lerp
-                vert = verts[++i]
+                verts[i].xyz.z = page1[i] * lerp + page2[i] * inv_lerp
+                i++
             }
-            tr_local.tr.pc!!.c_deformedSurfaces++
-            tr_local.tr.pc!!.c_deformedVerts += deformInfo!!.numOutputVerts
-            tr_local.tr.pc!!.c_deformedIndexes += deformInfo!!.numIndexes
-            tri = tr_trisurf.R_AllocStaticTriSurf()
+            tr.pc!!.c_deformedSurfaces++
+            tr.pc!!.c_deformedVerts += deformInfo!!.numOutputVerts
+            tr.pc!!.c_deformedIndexes += deformInfo!!.numIndexes
+            tri = R_AllocStaticTriSurf()
 
             // note that some of the data is references, and should not be freed
             tri.deformedSurface = true
@@ -374,8 +367,8 @@ object Model_liquid {
             tri.silEdges = deformInfo!!.silEdges as Array<Model.silEdge_t?>
             tri.dominantTris = deformInfo!!.dominantTris as Array<Model.dominantTri_s?>
             tri.numVerts = deformInfo!!.numOutputVerts
-            tr_trisurf.R_AllocStaticTriSurfVerts(tri, tri.numVerts)
-            SIMDProcessor.Memcpy(
+            R_AllocStaticTriSurfVerts(tri, tri.numVerts)
+            SIMDProcessor!!.Memcpy(
                 tri.verts as Array<Anim_Blend.idAnimBlend>,
                 verts.getList(),
                 deformInfo!!.numSourceVerts
@@ -388,13 +381,13 @@ object Model_liquid {
                 tri.verts!![base + i] = tri.verts!![deformInfo!!.mirroredVerts!![i]]
                 i++
             }
-            tr_trisurf.R_BoundTriSurf(tri)
+            R_BoundTriSurf(tri)
 
             // If a surface is going to be have a lighting interaction generated, it will also have to call
             // R_DeriveTangents() to get normals, tangents, and face planes.  If it only
             // needs shadows generated, it will only have to generate face planes.  If it only
             // has ambient drawing, or is culled, no additional work will be necessary
-            if (!RenderSystem_init.r_useDeferredTangents!!.GetBool()) {
+            if (!r_useDeferredTangents!!.GetBool()) {
                 // set face planes, vertex normals, tangents
                 R_DeriveTangents(tri)
             }
@@ -417,10 +410,10 @@ object Model_liquid {
             val invlength: Float = 1.0f / radsquare.toFloat()
             var dist: Float
             if (x < 0) {
-                x = 1 + drop_radius + random!!.RandomInt((verts_x - (2 * drop_radius) - 1).toDouble())
+                x = 1 + drop_radius + random!!.RandomInt(verts_x - (2 * drop_radius) - 1)
             }
             if (y < 0) {
-                y = 1 + drop_radius + random!!.RandomInt((verts_y - (2 * drop_radius) - 1).toDouble())
+                y = 1 + drop_radius + random!!.RandomInt(verts_y - (2 * drop_radius) - 1)
             }
             left = -drop_radius
             right = drop_radius

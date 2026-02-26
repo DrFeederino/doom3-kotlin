@@ -7,31 +7,35 @@ import neo.Renderer.Material.shaderStage_t
 import neo.Renderer.Material.stageLighting_t
 import neo.Renderer.Material.stageVertexColor_t
 import neo.Renderer.Material.texgen_t
+import neo.Renderer.Model.SHADOW_CAP_INFINITE
 import neo.Renderer.Model.shadowCache_s
 import neo.Renderer.Model.srfTriangles_s
-import neo.Renderer.*
-import neo.Renderer.tr_local.backEndName_t
-import neo.Renderer.tr_local.drawSurf_s
-import neo.Renderer.tr_local.idScreenRect
-import neo.Renderer.tr_local.programParameter_t
-import neo.Renderer.tr_local.program_t
-import neo.Renderer.tr_local.viewLight_s
+import neo.Renderer.VertexCache.vertexCache
+import neo.Renderer.qgl.qglColor3f
+import neo.Renderer.qgl.qglDepthBoundsEXT
+import neo.Renderer.qgl.qglDisable
+import neo.Renderer.qgl.qglEnable
+import neo.Renderer.qgl.qglProgramEnvParameter4fvARB
+import neo.Renderer.qgl.qglStencilOp
+import neo.Renderer.qgl.qglVertexPointer
+import neo.Renderer.tr_backend.GL_Cull
+import neo.Renderer.tr_main.R_GlobalPointToLocal
+import neo.Renderer.tr_render.RB_DrawShadowElementsWithCounters
 import neo.Renderer.tr_render.triFunc
-import neo.TempDump.NOT
 import neo.framework.Common
 import neo.idlib.containers.CInt
 import neo.idlib.geometry.DrawVert.idDrawVert
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
+import org.lwjgl.opengl.ARBVertexProgram.GL_VERTEX_PROGRAM_ARB
+import org.lwjgl.opengl.GL11.*
+import org.lwjgl.opengl.GL20C.glStencilOpSeparate
 import java.util.*
 import kotlin.math.abs
 
-/**
- *
- */
 object draw_common {
     /*
      =====================
@@ -68,15 +72,15 @@ object draw_common {
         genMatrix[5] = lightProject[1][1]
         genMatrix[9] = lightProject[1][2]
         genMatrix[13] = lightProject[1][3]
-        genMatrix[2] = 0f
-        genMatrix[6] = 0f
-        genMatrix[10] = 0f
-        genMatrix[14] = 0f
+        genMatrix[2] = 0.0f
+        genMatrix[6] = 0.0f
+        genMatrix[10] = 0.0f
+        genMatrix[14] = 0.0f
         genMatrix[3] = lightProject[2][0]
         genMatrix[7] = lightProject[2][1]
         genMatrix[11] = lightProject[2][2]
         genMatrix[15] = lightProject[2][3]
-        tr_main.myGlMultMatrix(genMatrix, tr_local.backEnd!!.lightTextureMatrix, finale)
+        tr_main.myGlMultMatrix(genMatrix, backEnd!!.lightTextureMatrix, finale)
         lightProject[0][0] = finale[0]
         lightProject[0][1] = finale[4]
         lightProject[0][2] = finale[8]
@@ -94,11 +98,11 @@ object draw_common {
      */
     fun RB_PrepareStageTexturing(pStage: shaderStage_t?, surf: drawSurf_s, ac: idDrawVert) {
         // set privatePolygonOffset if necessary
-        if (pStage!!.privatePolygonOffset != 0f) {
+        if (pStage!!.privatePolygonOffset != 0.0f) {
             qgl.qglEnable(GL11.GL_POLYGON_OFFSET_FILL)
             qgl.qglPolygonOffset(
-                RenderSystem_init.r_offsetFactor!!.GetFloat(),
-                RenderSystem_init.r_offsetUnits!!.GetFloat() * pStage.privatePolygonOffset
+                r_offsetFactor.GetFloat(),
+                r_offsetUnits.GetFloat() * pStage.privatePolygonOffset
             )
         }
 
@@ -120,7 +124,7 @@ object draw_common {
             qgl.qglEnable(GL11.GL_TEXTURE_GEN_Q)
             val mat = FloatArray(16)
             val plane = FloatArray(4)
-            tr_main.myGlMultMatrix(surf.space!!.modelViewMatrix, tr_local.backEnd!!.viewDef!!.projectionMatrix, mat)
+            tr_main.myGlMultMatrix(surf.space!!.modelViewMatrix, backEnd!!.viewDef!!.projectionMatrix, mat)
             plane[0] = mat[0]
             plane[1] = mat[4]
             plane[2] = mat[8]
@@ -143,7 +147,7 @@ object draw_common {
             qgl.qglEnable(GL11.GL_TEXTURE_GEN_Q)
             val mat = FloatArray(16)
             val plane = FloatArray(4)
-            tr_main.myGlMultMatrix(surf.space!!.modelViewMatrix, tr_local.backEnd!!.viewDef!!.projectionMatrix, mat)
+            tr_main.myGlMultMatrix(surf.space!!.modelViewMatrix, backEnd!!.viewDef!!.projectionMatrix, mat)
             plane[0] = mat[0]
             plane[1] = mat[4]
             plane[2] = mat[8]
@@ -161,7 +165,7 @@ object draw_common {
             qgl.qglTexGenfv(GL11.GL_Q, GL11.GL_OBJECT_PLANE, plane)
         }
         if (pStage.texture.texgen == texgen_t.TG_GLASSWARP) {
-            if (tr_local.tr.backEndRenderer == backEndName_t.BE_ARB2 /*|| tr.backEndRenderer == BE_NV30*/) {
+            if (tr.backEndRenderer == backEndName_t.BE_ARB2 /*|| tr.backEndRenderer == BE_NV30*/) {
                 qgl.qglBindProgramARB(ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_GLASSWARP)
                 qgl.qglEnable(ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB)
                 tr_backend.GL_SelectTexture(2)
@@ -173,7 +177,7 @@ object draw_common {
                 qgl.qglEnable(GL11.GL_TEXTURE_GEN_Q)
                 val mat = FloatArray(16)
                 val plane = FloatArray(4)
-                tr_main.myGlMultMatrix(surf.space!!.modelViewMatrix, tr_local.backEnd!!.viewDef!!.projectionMatrix, mat)
+                tr_main.myGlMultMatrix(surf.space!!.modelViewMatrix, backEnd!!.viewDef!!.projectionMatrix, mat)
                 plane[0] = mat[0]
                 plane[1] = mat[4]
                 plane[2] = mat[8]
@@ -193,7 +197,7 @@ object draw_common {
             }
         }
         if (pStage.texture.texgen == texgen_t.TG_REFLECT_CUBE) {
-            if (tr_local.tr.backEndRenderer == backEndName_t.BE_ARB2) {
+            if (tr.backEndRenderer == backEndName_t.BE_ARB2) {
                 // see if there is also a bump map specified
                 val bumpStage = surf.material!!.GetBumpStage()
                 if (bumpStage != null) {
@@ -247,7 +251,7 @@ object draw_common {
                 qgl.qglNormalPointer(GL11.GL_FLOAT, idDrawVert.BYTES, ac.normalOffset().toLong())
                 qgl.qglMatrixMode(GL11.GL_TEXTURE)
                 val mat = FloatArray(16)
-                tr_main.R_TransposeGLMatrix(tr_local.backEnd!!.viewDef!!.worldSpace.modelViewMatrix, mat)
+                tr_main.R_TransposeGLMatrix(backEnd!!.viewDef!!.worldSpace.modelViewMatrix, mat)
                 qgl.qglLoadMatrixf(mat)
                 qgl.qglMatrixMode(GL11.GL_MODELVIEW)
             }
@@ -257,7 +261,7 @@ object draw_common {
     fun RB_FinishStageTexturing(pStage: shaderStage_t?, surf: drawSurf_s, ac: idDrawVert) {
         DBG_RB_FinishStageTexturing++
         // unset privatePolygonOffset if necessary
-        if (pStage!!.privatePolygonOffset != 0f && !surf.material!!.TestMaterialFlag(Material.MF_POLYGONOFFSET)) {
+        if (pStage!!.privatePolygonOffset != 0.0f && !surf.material!!.TestMaterialFlag(Material.MF_POLYGONOFFSET)) {
             qgl.qglDisable(GL11.GL_POLYGON_OFFSET_FILL)
         }
         if (pStage.texture.texgen == texgen_t.TG_DIFFUSE_CUBE || pStage.texture.texgen == texgen_t.TG_SKYBOX_CUBE || pStage.texture.texgen == texgen_t.TG_WOBBLESKY_CUBE) {
@@ -274,7 +278,7 @@ object draw_common {
             qgl.qglDisable(GL11.GL_TEXTURE_GEN_Q)
         }
         if (pStage.texture.texgen == texgen_t.TG_GLASSWARP) {
-            if (tr_local.tr.backEndRenderer == backEndName_t.BE_ARB2 /*|| tr.backEndRenderer == BE_NV30*/) {
+            if (tr.backEndRenderer == backEndName_t.BE_ARB2 /*|| tr.backEndRenderer == BE_NV30*/) {
                 tr_backend.GL_SelectTexture(2)
                 Image.globalImages.BindNull()
                 tr_backend.GL_SelectTexture(1)
@@ -290,7 +294,7 @@ object draw_common {
             }
         }
         if (pStage.texture.texgen == texgen_t.TG_REFLECT_CUBE) {
-            if (tr_local.tr.backEndRenderer == backEndName_t.BE_ARB2) {
+            if (tr.backEndRenderer == backEndName_t.BE_ARB2) {
                 // see if there is also a bump map specified
                 val bumpStage = surf.material!!.GetBumpStage()
                 if (bumpStage != null) {
@@ -328,6 +332,7 @@ object draw_common {
             qgl.qglLoadIdentity()
             qgl.qglMatrixMode(GL11.GL_MODELVIEW)
             if (qgl.qglGetError() != 0) {
+                println("GL Error: ${qgl.qglGetError()}")
                 System.err.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
             }
         }
@@ -350,18 +355,18 @@ object draw_common {
      */
     fun RB_STD_FillDepthBuffer(drawSurfs: Array<drawSurf_s>?, numDrawSurfs: Int) {
         // if we are just doing 2D rendering, no need to fill the depth buffer
-        if (NOT(tr_local.backEnd!!.viewDef!!.viewEntitys)) {
+        if (backEnd!!.viewDef!!.viewEntitys == null) {
             return
         }
         tr_backend.RB_LogComment("---------- RB_STD_FillDepthBuffer ----------\n")
 
         // enable the second texture for mirror plane clipping if needed
-        if (tr_local.backEnd!!.viewDef!!.numClipPlanes != 0) {
+        if (backEnd!!.viewDef!!.numClipPlanes != 0) {
             tr_backend.GL_SelectTexture(1)
             Image.globalImages.alphaNotchImage!!.Bind()
             qgl.qglDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY)
             qgl.qglEnable(GL11.GL_TEXTURE_GEN_S)
-            qgl.qglTexCoord2f(1f, 0.5f)
+            qgl.qglTexCoord2f(1.0f, 0.5f)
         }
 
         // the first texture will be used for alpha tested surfaces
@@ -370,10 +375,10 @@ object draw_common {
 
         // decal surfaces may enable polygon offset
         qgl.qglPolygonOffset(
-            RenderSystem_init.r_offsetFactor!!.GetFloat(),
-            RenderSystem_init.r_offsetUnits!!.GetFloat()
+            r_offsetFactor!!.GetFloat(),
+            r_offsetUnits!!.GetFloat()
         )
-        tr_backend.GL_State(tr_local.GLS_DEPTHFUNC_LESS)
+        tr_backend.GL_State(GLS_DEPTHFUNC_LESS)
 
         // Enable stencil test if we are going to be using it for shadows.
         // If we didn't do this, it would be legal behavior to get z fighting
@@ -381,7 +386,7 @@ object draw_common {
         qgl.qglEnable(GL11.GL_STENCIL_TEST)
         qgl.qglStencilFunc(GL11.GL_ALWAYS, 1, 255)
         tr_render.RB_RenderDrawSurfListWithFunction(drawSurfs!!, numDrawSurfs, RB_T_FillDepthBuffer.INSTANCE)
-        if (tr_local.backEnd!!.viewDef!!.numClipPlanes != 0) {
+        if (backEnd!!.viewDef!!.numClipPlanes != 0) {
             tr_backend.GL_SelectTexture(1)
             Image.globalImages.BindNull()
             qgl.qglDisable(GL11.GL_TEXTURE_GEN_S)
@@ -396,10 +401,10 @@ object draw_common {
      Sets variables that can be used by all vertex programs
      ==================
      */
-    fun RB_SetProgramEnvironment() {
+    fun RB_SetProgramEnvironment(isPostProcess: Boolean = false) {
         val parm = BufferUtils.createFloatBuffer(4)
         var pot: Int
-        if (!tr_local.glConfig.ARBVertexProgramAvailable) {
+        if (!glConfig.ARBVertexProgramAvailable) {
             return
         }
 
@@ -417,7 +422,7 @@ object draw_common {
 //	int	 h = backEnd!!.viewDef!!.viewport.y2 - backEnd!!.viewDef!!.viewport.y1 + 1;
 //	pot = globalImages.currentRenderImage.uploadHeight;
 //	if ( h == pot ) {
-//		parm0[1] = 1.0;
+//		parm0[1] = 1.0f;
 //	} else {
 //		parm0[1] = (float)(h-1) / pot;
 //	}
@@ -428,32 +433,56 @@ object draw_common {
 //}else{
         // screen power of two correction factor, assuming the copy to _currentRender
         // also copied an extra row and column for the bilerp
-        val w = tr_local.backEnd!!.viewDef!!.viewport.x2 - tr_local.backEnd!!.viewDef!!.viewport.x1 + 1
+        val w = backEnd!!.viewDef!!.viewport.x2 - backEnd!!.viewDef!!.viewport.x1 + 1
         pot = Image.globalImages.currentRenderImage!!.uploadWidth._val
         parm.put(0, w.toFloat() / pot)
-        val h = tr_local.backEnd!!.viewDef!!.viewport.y2 - tr_local.backEnd!!.viewDef!!.viewport.y1 + 1
+        val h = backEnd!!.viewDef!!.viewport.y2 - backEnd!!.viewDef!!.viewport.y1 + 1
         pot = Image.globalImages.currentRenderImage!!.uploadHeight._val
         parm.put(1, h.toFloat() / pot)
-        parm.put(2, 0f)
-        parm.put(3, 1f)
+        parm.put(2, 0.0f)
+        parm.put(3, 1.0f)
         qgl.qglProgramEnvParameter4fvARB(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, 0, parm)
         //}
         qgl.qglProgramEnvParameter4fvARB(ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB, 0, parm)
 
-        // window coord to 0.0 to 1.0 conversion
+        // window coord to 0.0f to 1.0f conversion
         parm.put(0, 1.0f / w)
         parm.put(1, 1.0f / h)
-        parm.put(2, 0f)
-        parm.put(3, 1f)
+        parm.put(2, 0.0f)
+        parm.put(3, 1.0f)
         qgl.qglProgramEnvParameter4fvARB(ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB, 1, parm)
+
+        // DG: brightness and gamma in shader as program.env[PP_GAMMA_BRIGHTNESS] (= 21)
+        if (r_gammaInShader.GetBool()) {
+            // program.env[PP_GAMMA_BRIGHTNESS].xyz are all r_brightness, .w is 1.0/r_gamma
+            if (!isPostProcess) {
+                val brightness = r_brightness.GetFloat()
+                parm.put(0, brightness)
+                parm.put(1, brightness)
+                parm.put(2, brightness)
+                parm.put(3, 1.0f / r_gamma.GetFloat())
+            } else {
+                // don't apply gamma/brightness in postprocess passes to avoid applying them twice
+                // (setting them to 1.0 makes them no-ops)
+                parm.put(0, 1.0f)
+                parm.put(1, 1.0f)
+                parm.put(2, 1.0f)
+                parm.put(3, 1.0f)
+            }
+            qgl.qglProgramEnvParameter4fvARB(
+                ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB,
+                programParameter_t.PP_GAMMA_BRIGHTNESS,
+                parm
+            )
+        }
 
         //
         // set eye position in global space
         //
-        parm.put(0, tr_local.backEnd!!.viewDef!!.renderView.vieworg[0])
-        parm.put(1, tr_local.backEnd!!.viewDef!!.renderView.vieworg[1])
-        parm.put(2, tr_local.backEnd!!.viewDef!!.renderView.vieworg[2])
-        parm.put(3, 1f)
+        parm.put(0, backEnd!!.viewDef!!.renderView.vieworg[0])
+        parm.put(1, backEnd!!.viewDef!!.renderView.vieworg[1])
+        parm.put(2, backEnd!!.viewDef!!.renderView.vieworg[2])
+        parm.put(3, 1.0f)
         qgl.qglProgramEnvParameter4fvARB(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, 1, parm)
     }
 
@@ -465,33 +494,33 @@ object draw_common {
      ==================
      */
     fun RB_SetProgramEnvironmentSpace() {
-        if (!tr_local.glConfig.ARBVertexProgramAvailable) {
+        if (!glConfig.ARBVertexProgramAvailable) {
             return
         }
-        val space = tr_local.backEnd!!.currentSpace!!
+        val space = backEnd!!.currentSpace!!
         val parm = BufferUtils.createFloatBuffer(4)
 
         // set eye position in local space
-        tr_main.R_GlobalPointToLocal(space!!.modelMatrix, tr_local.backEnd!!.viewDef!!.renderView.vieworg, parm)
+        tr_main.R_GlobalPointToLocal(space.modelMatrix, backEnd!!.viewDef!!.renderView.vieworg, parm)
         parm.put(3, 1.0f)
         qgl.qglProgramEnvParameter4fvARB(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, 5, parm)
 
         // we need the model matrix without it being combined with the view matrix
         // so we can transform local vectors to global coordinates
-        parm.put(0, space!!.modelMatrix[0])
-        parm.put(1, space!!.modelMatrix[4])
-        parm.put(2, space!!.modelMatrix[8])
-        parm.put(3, space!!.modelMatrix[12])
+        parm.put(0, space.modelMatrix[0])
+        parm.put(1, space.modelMatrix[4])
+        parm.put(2, space.modelMatrix[8])
+        parm.put(3, space.modelMatrix[12])
         qgl.qglProgramEnvParameter4fvARB(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, 6, parm)
-        parm.put(0, space!!.modelMatrix[1])
-        parm.put(1, space!!.modelMatrix[5])
-        parm.put(2, space!!.modelMatrix[9])
-        parm.put(3, space!!.modelMatrix[13])
+        parm.put(0, space.modelMatrix[1])
+        parm.put(1, space.modelMatrix[5])
+        parm.put(2, space.modelMatrix[9])
+        parm.put(3, space.modelMatrix[13])
         qgl.qglProgramEnvParameter4fvARB(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, 7, parm)
-        parm.put(0, space!!.modelMatrix[2])
-        parm.put(1, space!!.modelMatrix[6])
-        parm.put(2, space!!.modelMatrix[10])
-        parm.put(3, space!!.modelMatrix[14])
+        parm.put(0, space.modelMatrix[2])
+        parm.put(1, space.modelMatrix[6])
+        parm.put(2, space.modelMatrix[10])
+        parm.put(3, space.modelMatrix[14])
         qgl.qglProgramEnvParameter4fvARB(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, 8, parm)
     }
 
@@ -513,20 +542,20 @@ object draw_common {
         }
 
         // change the matrix if needed
-        if (surf.space !== tr_local.backEnd!!.currentSpace) {
+        if (surf.space !== backEnd!!.currentSpace) {
             qgl.qglLoadMatrixf(surf.space!!.modelViewMatrix)
-            tr_local.backEnd!!.currentSpace = surf.space
+            backEnd!!.currentSpace = surf.space
             RB_SetProgramEnvironmentSpace()
         }
 
         // change the scissor if needed
-        if (RenderSystem_init.r_useScissor!!.GetBool() && !tr_local.backEnd!!.currentScissor!!.Equals(surf.scissorRect!!)) {
-            tr_local.backEnd!!.currentScissor = surf.scissorRect
+        if (r_useScissor!!.GetBool() && !backEnd!!.currentScissor!!.Equals(surf.scissorRect!!)) {
+            backEnd!!.currentScissor = surf.scissorRect
             qgl.qglScissor(
-                tr_local.backEnd!!.viewDef!!.viewport.x1 + tr_local.backEnd!!.currentScissor!!.x1,
-                tr_local.backEnd!!.viewDef!!.viewport.y1 + tr_local.backEnd!!.currentScissor!!.y1,
-                tr_local.backEnd!!.currentScissor!!.x2 + 1 - tr_local.backEnd!!.currentScissor!!.x1,
-                tr_local.backEnd!!.currentScissor!!.y2 + 1 - tr_local.backEnd!!.currentScissor!!.y1
+                backEnd!!.viewDef!!.viewport.x1 + backEnd!!.currentScissor!!.x1,
+                backEnd!!.viewDef!!.viewport.y1 + backEnd!!.currentScissor!!.y1,
+                backEnd!!.currentScissor!!.x2 + 1 - backEnd!!.currentScissor!!.x1,
+                backEnd!!.currentScissor!!.y2 + 1 - backEnd!!.currentScissor!!.y1
             )
         }
 
@@ -534,7 +563,7 @@ object draw_common {
         if (0 == tri.numIndexes) {
             return
         }
-        if (NOT(tri.ambientCache)) {
+        if (tri.ambientCache == null) {
             Common.common.Printf("RB_T_RenderShaderPasses: !tri.ambientCache\n")
             return
         }
@@ -549,8 +578,8 @@ object draw_common {
         if (shader.TestMaterialFlag(Material.MF_POLYGONOFFSET)) {
             qgl.qglEnable(GL11.GL_POLYGON_OFFSET_FILL)
             qgl.qglPolygonOffset(
-                RenderSystem_init.r_offsetFactor!!.GetFloat(),
-                RenderSystem_init.r_offsetUnits!!.GetFloat() * shader.GetPolygonOffset()
+                r_offsetFactor!!.GetFloat(),
+                r_offsetUnits!!.GetFloat() * shader.GetPolygonOffset()
             )
         }
         if (surf.space!!.weaponDepthHack) {
@@ -573,7 +602,7 @@ object draw_common {
 
 //            if(pStage.texture.image[0].imgName.equals("guis/assets/caverns/testmat2"))continue;
             // check the enable condition
-            if (regs[pStage!!.conditionRegister] == 0f) {
+            if (regs[pStage!!.conditionRegister] == 0.0f) {
                 stage++
                 continue
             }
@@ -585,7 +614,7 @@ object draw_common {
             }
 
             // skip if the stage is ( GL_ZERO, GL_ONE ), which is used for some alpha masks
-            if (pStage.drawStateBits and (tr_local.GLS_SRCBLEND_BITS or tr_local.GLS_DSTBLEND_BITS) == tr_local.GLS_SRCBLEND_ZERO or tr_local.GLS_DSTBLEND_ONE) {
+            if (pStage.drawStateBits and (GLS_SRCBLEND_BITS or GLS_DSTBLEND_BITS) == (GLS_SRCBLEND_ZERO or GLS_DSTBLEND_ONE)) {
                 stage++
                 continue
             }
@@ -600,11 +629,11 @@ object draw_common {
                 //--------------------------
 
                 // completely skip the stage if we don't have the capability
-                if (tr_local.tr.backEndRenderer != backEndName_t.BE_ARB2) {
+                if (tr.backEndRenderer != backEndName_t.BE_ARB2) {
                     stage++
                     continue
                 }
-                if (RenderSystem_init.r_skipNewAmbient!!.GetBool()) {
+                if (r_skipNewAmbient!!.GetBool()) {
                     stage++
                     continue
                 }
@@ -640,7 +669,7 @@ object draw_common {
                     val localViewer = idVec3()
                     tr_main.R_GlobalPointToLocal(
                         surf.space!!.modelMatrix,
-                        tr_local.backEnd!!.viewDef!!.renderView.vieworg,
+                        backEnd!!.viewDef!!.renderView.vieworg,
                         localViewer
                     )
                     newStage.megaTexture!!.BindForViewOrigin(localViewer)
@@ -698,13 +727,13 @@ object draw_common {
             color.put(3, regs[pStage.color.registers[3]])
 
             // skip the entire stage if an add would be black
-            if (pStage.drawStateBits and (tr_local.GLS_SRCBLEND_BITS or tr_local.GLS_DSTBLEND_BITS) == tr_local.GLS_SRCBLEND_ONE or tr_local.GLS_DSTBLEND_ONE && color[0] <= 0 && color[1] <= 0 && color[2] <= 0) {
+            if (pStage.drawStateBits and (GLS_SRCBLEND_BITS or GLS_DSTBLEND_BITS) == (GLS_SRCBLEND_ONE or GLS_DSTBLEND_ONE) && color[0] <= 0 && color[1] <= 0 && color[2] <= 0) {
                 stage++
                 continue
             }
 
             // skip the entire stage if a blend would be completely transparent
-            if (pStage.drawStateBits and (tr_local.GLS_SRCBLEND_BITS or tr_local.GLS_DSTBLEND_BITS) == tr_local.GLS_SRCBLEND_SRC_ALPHA or tr_local.GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA
+            if (pStage.drawStateBits and (GLS_SRCBLEND_BITS or GLS_DSTBLEND_BITS) == (GLS_SRCBLEND_SRC_ALPHA or GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA)
                 && color[3] <= 0
             ) {
                 stage++
@@ -738,7 +767,7 @@ object draw_common {
 
                 // for vertex color and modulated color, we need to enable a second
                 // texture stage
-                if (color[0] != 1f || color[1] != 1f || color[2] != 1f || color[3] != 1f) {
+                if (color[0] != 1.0f || color[1] != 1.0f || color[2] != 1.0f || color[3] != 1.0f) {
                     tr_backend.GL_SelectTexture(1)
                     Image.globalImages.whiteImage!!.Bind()
                     tr_backend.GL_TexEnv(ARBTextureEnvCombine.GL_COMBINE_ARB)
@@ -816,48 +845,51 @@ object draw_common {
         var i: Int
 
         // only obey skipAmbient if we are rendering a view
-        if (tr_local.backEnd!!.viewDef!!.viewEntitys != null && RenderSystem_init.r_skipAmbient!!.GetBool()) {
+        if (backEnd!!.viewDef!!.viewEntitys != null && r_skipAmbient!!.GetBool()) {
             return numDrawSurfs
         }
         tr_backend.RB_LogComment("---------- RB_STD_DrawShaderPasses ----------\n")
 
+        var isPostProcess = false
+
         // if we are about to draw the first surface that needs
         // the rendering in a texture, copy it over
         if (drawSurfs[0].material!!.GetSort() >= Material.SS_POST_PROCESS) {
-            if (RenderSystem_init.r_skipPostProcess!!.GetBool()) {
+            if (r_skipPostProcess!!.GetBool()) {
                 return 0
             }
+            isPostProcess = true
 
             // only dump if in a 3d view
-            if (tr_local.backEnd!!.viewDef!!.viewEntitys != null && tr_local.tr.backEndRenderer == backEndName_t.BE_ARB2) {
+            if (backEnd!!.viewDef!!.viewEntitys != null && tr.backEndRenderer == backEndName_t.BE_ARB2) {
                 val imageWidth =
-                    CInt(tr_local.backEnd!!.viewDef!!.viewport.x2 - tr_local.backEnd!!.viewDef!!.viewport.x1 + 1)
+                    CInt(backEnd!!.viewDef!!.viewport.x2 - backEnd!!.viewDef!!.viewport.x1 + 1)
                 val imageHeight =
-                    CInt(tr_local.backEnd!!.viewDef!!.viewport.y2 - tr_local.backEnd!!.viewDef!!.viewport.y1 + 1)
+                    CInt(backEnd!!.viewDef!!.viewport.y2 - backEnd!!.viewDef!!.viewport.y1 + 1)
                 Image.globalImages.currentRenderImage!!.CopyFramebuffer(
-                    tr_local.backEnd!!.viewDef!!.viewport.x1, tr_local.backEnd!!.viewDef!!.viewport.y1,
+                    backEnd!!.viewDef!!.viewport.x1, backEnd!!.viewDef!!.viewport.y1,
                     imageWidth, imageHeight, true
                 )
             }
-            tr_local.backEnd!!.currentRenderCopied = true
+            backEnd!!.currentRenderCopied = true
         }
         tr_backend.GL_SelectTexture(1)
         Image.globalImages.BindNull()
         tr_backend.GL_SelectTexture(0)
         qgl.qglEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY)
-        RB_SetProgramEnvironment()
+        RB_SetProgramEnvironment(isPostProcess)
 
         // we don't use RB_RenderDrawSurfListWithFunction()
         // because we want to defer the matrix load because many
         // surfaces won't draw any ambient passes
-        tr_local.backEnd!!.currentSpace = null
+        backEnd!!.currentSpace = null
         i = 0
         while (i < numDrawSurfs /*&& numDrawSurfs == 5*/) {
             if (drawSurfs[i].material!!.SuppressInSubview()) {
                 i++
                 continue
             }
-            if (tr_local.backEnd!!.viewDef!!.isXraySubview && drawSurfs[i].space!!.entityDef != null) {
+            if (backEnd!!.viewDef!!.isXraySubview && drawSurfs[i].space!!.entityDef != null) {
                 if (drawSurfs[i].space!!.entityDef!!.parms.xrayIndex != 2) {
                     i++
                     continue
@@ -866,7 +898,7 @@ object draw_common {
 
             // we need to draw the post process shaders after we have drawn the fog lights
             if (drawSurfs[i].material!!.GetSort() >= Material.SS_POST_PROCESS
-                && !tr_local.backEnd!!.currentRenderCopied
+                && !backEnd!!.currentRenderCopied
             ) {
                 break
             }
@@ -874,7 +906,7 @@ object draw_common {
             i++
         }
         tr_backend.GL_Cull(cullType_t.CT_FRONT_SIDED)
-        qgl.qglColor3f(1f, 1f, 1f)
+        qgl.qglColor3f(1.0f, 1.0f, 1.0f)
         return i
     }
 
@@ -894,10 +926,10 @@ object draw_common {
      =====================
      */
     fun RB_StencilShadowPass(drawSurfs: drawSurf_s?) {
-        if (!RenderSystem_init.r_shadows!!.GetBool()) {
+        if (!r_shadows!!.GetBool()) {
             return
         }
-        if (NOT(drawSurfs)) {
+        if (drawSurfs == null) {
             return
         }
         tr_backend.RB_LogComment("---------- RB_StencilShadowPass ----------\n")
@@ -905,35 +937,35 @@ object draw_common {
         qgl.qglDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY)
 
         // for visualizing the shadows
-        if (RenderSystem_init.r_showShadows!!.GetInteger() != 0) {
-            if (RenderSystem_init.r_showShadows!!.GetInteger() == 2) {
+        if (r_showShadows!!.GetInteger() != 0) {
+            if (r_showShadows!!.GetInteger() == 2) {
                 // draw filled in
-                tr_backend.GL_State(tr_local.GLS_DEPTHMASK or tr_local.GLS_SRCBLEND_ONE or tr_local.GLS_DSTBLEND_ONE or tr_local.GLS_DEPTHFUNC_LESS)
+                tr_backend.GL_State(GLS_DEPTHMASK or GLS_SRCBLEND_ONE or GLS_DSTBLEND_ONE or GLS_DEPTHFUNC_LESS)
             } else {
                 // draw as lines, filling the depth buffer
-                tr_backend.GL_State(tr_local.GLS_SRCBLEND_ONE or tr_local.GLS_DSTBLEND_ZERO or tr_local.GLS_POLYMODE_LINE or tr_local.GLS_DEPTHFUNC_ALWAYS)
+                tr_backend.GL_State(GLS_SRCBLEND_ONE or GLS_DSTBLEND_ZERO or GLS_POLYMODE_LINE or GLS_DEPTHFUNC_ALWAYS)
             }
         } else {
             // don't write to the color buffer, just the stencil buffer
-            tr_backend.GL_State(tr_local.GLS_DEPTHMASK or tr_local.GLS_COLORMASK or tr_local.GLS_ALPHAMASK or tr_local.GLS_DEPTHFUNC_LESS)
+            tr_backend.GL_State(GLS_DEPTHMASK or GLS_COLORMASK or GLS_ALPHAMASK or GLS_DEPTHFUNC_LESS)
         }
-        if (RenderSystem_init.r_shadowPolygonFactor!!.GetFloat() != 0f || RenderSystem_init.r_shadowPolygonOffset!!.GetFloat() != 0f) {
+        if (r_shadowPolygonFactor!!.GetFloat() != 0.0f || r_shadowPolygonOffset!!.GetFloat() != 0.0f) {
             qgl.qglPolygonOffset(
-                RenderSystem_init.r_shadowPolygonFactor!!.GetFloat(),
-                -RenderSystem_init.r_shadowPolygonOffset!!.GetFloat()
+                r_shadowPolygonFactor!!.GetFloat(),
+                -r_shadowPolygonOffset!!.GetFloat()
             )
             qgl.qglEnable(GL11.GL_POLYGON_OFFSET_FILL)
         }
         qgl.qglStencilFunc(GL11.GL_ALWAYS, 1, 255)
-        if (tr_local.glConfig.depthBoundsTestAvailable && RenderSystem_init.r_useDepthBoundsTest!!.GetBool()) {
+        if (glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest!!.GetBool()) {
             qgl.qglEnable(EXTDepthBoundsTest.GL_DEPTH_BOUNDS_TEST_EXT)
         }
         tr_render.RB_RenderDrawSurfChainWithFunction(drawSurfs, RB_T_Shadow.INSTANCE)
         tr_backend.GL_Cull(cullType_t.CT_FRONT_SIDED)
-        if (RenderSystem_init.r_shadowPolygonFactor!!.GetFloat() != 0f || RenderSystem_init.r_shadowPolygonOffset!!.GetFloat() != 0f) {
+        if (r_shadowPolygonFactor!!.GetFloat() != 0.0f || r_shadowPolygonOffset!!.GetFloat() != 0.0f) {
             qgl.qglDisable(GL11.GL_POLYGON_OFFSET_FILL)
         }
-        if (tr_local.glConfig.depthBoundsTestAvailable && RenderSystem_init.r_useDepthBoundsTest!!.GetBool()) {
+        if (glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest!!.GetBool()) {
             qgl.qglDisable(EXTDepthBoundsTest.GL_DEPTH_BOUNDS_TEST_EXT)
         }
         qgl.qglEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY)
@@ -954,22 +986,22 @@ object draw_common {
         var stage: shaderStage_t?
         var i: Int
         val regs: FloatArray
-        if (NOT(drawSurfs)) {
+        if (drawSurfs == null) {
             return
         }
-        if (RenderSystem_init.r_skipBlendLights!!.GetBool()) {
+        if (r_skipBlendLights!!.GetBool()) {
             return
         }
         tr_backend.RB_LogComment("---------- RB_BlendLight ----------\n")
-        lightShader = tr_local.backEnd!!.vLight!!.lightShader!!
-        regs = tr_local.backEnd!!.vLight!!.shaderRegisters!!
+        lightShader = backEnd!!.vLight!!.lightShader!!
+        regs = backEnd!!.vLight!!.shaderRegisters!!
 
         // texture 1 will get the falloff texture
         tr_backend.GL_SelectTexture(1)
         qgl.qglDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY)
         qgl.qglEnable(GL11.GL_TEXTURE_GEN_S)
-        qgl.qglTexCoord2f(0f, 0.5f)
-        tr_local.backEnd!!.vLight!!.falloffImage!!.Bind()
+        qgl.qglTexCoord2f(0.0f, 0.5f)
+        backEnd!!.vLight!!.falloffImage!!.Bind()
 
         // texture 0 will get the projected texture
         tr_backend.GL_SelectTexture(0)
@@ -980,11 +1012,11 @@ object draw_common {
         i = 0
         while (i < lightShader.GetNumStages()) {
             stage = lightShader.GetStage(i)
-            if (0f == regs[stage!!.conditionRegister]) {
+            if (0.0f == regs[stage!!.conditionRegister]) {
                 i++
                 continue
             }
-            tr_backend.GL_State(tr_local.GLS_DEPTHMASK or stage.drawStateBits or tr_local.GLS_DEPTHFUNC_EQUAL)
+            tr_backend.GL_State(GLS_DEPTHMASK or stage.drawStateBits or GLS_DEPTHFUNC_EQUAL)
             tr_backend.GL_SelectTexture(0)
             stage.texture.image!![0]!!.Bind()
             if (stage.texture.hasMatrix) {
@@ -992,11 +1024,11 @@ object draw_common {
             }
 
             // get the modulate values from the light, including alpha, unlike normal lights
-            tr_local.backEnd!!.lightColor[0] = regs[stage.color.registers[0]]
-            tr_local.backEnd!!.lightColor[1] = regs[stage.color.registers[1]]
-            tr_local.backEnd!!.lightColor[2] = regs[stage.color.registers[2]]
-            tr_local.backEnd!!.lightColor[3] = regs[stage.color.registers[3]]
-            qgl.qglColor4fv(tr_local.backEnd!!.lightColor)
+            backEnd!!.lightColor[0] = regs[stage.color.registers[0]]
+            backEnd!!.lightColor[1] = regs[stage.color.registers[1]]
+            backEnd!!.lightColor[2] = regs[stage.color.registers[2]]
+            backEnd!!.lightColor[3] = regs[stage.color.registers[3]]
+            qgl.qglColor4fv(backEnd!!.lightColor)
             tr_render.RB_RenderDrawSurfChainWithFunction(drawSurfs, RB_T_BlendLight.INSTANCE)
             tr_render.RB_RenderDrawSurfChainWithFunction(drawSurfs2, RB_T_BlendLight.INSTANCE)
             if (stage.texture.hasMatrix) {
@@ -1037,38 +1069,38 @@ object draw_common {
         tr_backend.RB_LogComment("---------- RB_FogPass ----------\n")
 
         // create a surface for the light frustom triangles, which are oriented drawn side out
-        frustumTris = tr_local.backEnd!!.vLight!!.frustumTris!!
+        frustumTris = backEnd!!.vLight!!.frustumTris!!
 
         // if we ran out of vertex cache memory, skip it
-        if (NOT(frustumTris.ambientCache)) {
+        if (frustumTris.ambientCache == null) {
             return
         }
-        ds.space = tr_local.backEnd!!.viewDef!!.worldSpace
+        ds.space = backEnd!!.viewDef!!.worldSpace
         ds.geo = frustumTris
-        ds.scissorRect = idScreenRect(tr_local.backEnd!!.viewDef!!.scissor!!)
+        ds.scissorRect = idScreenRect(backEnd!!.viewDef!!.scissor)
 
         // find the current color and density of the fog
-        lightShader = tr_local.backEnd!!.vLight!!.lightShader!!
-        regs = tr_local.backEnd!!.vLight!!.shaderRegisters!!
+        lightShader = backEnd!!.vLight!!.lightShader!!
+        regs = backEnd!!.vLight!!.shaderRegisters!!
         // assume fog shaders have only a single stage
         stage = lightShader.GetStage(0)
-        tr_local.backEnd!!.lightColor[0] = regs[stage!!.color.registers[0]]
-        tr_local.backEnd!!.lightColor[1] = regs[stage.color.registers[1]]
-        tr_local.backEnd!!.lightColor[2] = regs[stage.color.registers[2]]
-        tr_local.backEnd!!.lightColor[3] = regs[stage.color.registers[3]]
-        qgl.qglColor3fv(tr_local.backEnd!!.lightColor)
+        backEnd!!.lightColor[0] = regs[stage!!.color.registers[0]]
+        backEnd!!.lightColor[1] = regs[stage.color.registers[1]]
+        backEnd!!.lightColor[2] = regs[stage.color.registers[2]]
+        backEnd!!.lightColor[3] = regs[stage.color.registers[3]]
+        qgl.qglColor3fv(backEnd!!.lightColor)
 
         // calculate the falloff planes
         val a: Float
 
         // if they left the default value on, set a fog distance of 500
-        a = if (tr_local.backEnd!!.lightColor[3] <= 1.0) {
-            -0.5f / tr_local.DEFAULT_FOG_DISTANCE
+        a = if (backEnd!!.lightColor[3] <= 1.0f) {
+            -0.5f / DEFAULT_FOG_DISTANCE
         } else {
             // otherwise, distance = alpha color
-            -0.5f / tr_local.backEnd!!.lightColor[3]
+            -0.5f / backEnd!!.lightColor[3]
         }
-        tr_backend.GL_State(tr_local.GLS_DEPTHMASK or tr_local.GLS_SRCBLEND_SRC_ALPHA or tr_local.GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA or tr_local.GLS_DEPTHFUNC_EQUAL)
+        tr_backend.GL_State(GLS_DEPTHMASK or GLS_SRCBLEND_SRC_ALPHA or GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA or GLS_DEPTHFUNC_EQUAL)
 
         // texture 0 is the falloff image
         tr_backend.GL_SelectTexture(0)
@@ -1078,14 +1110,14 @@ object draw_common {
         qgl.qglEnable(GL11.GL_TEXTURE_GEN_S)
         qgl.qglEnable(GL11.GL_TEXTURE_GEN_T)
         qgl.qglTexCoord2f(0.5f, 0.5f) // make sure Q is set
-        fogPlanes[0][0] = a * tr_local.backEnd!!.viewDef!!.worldSpace.modelViewMatrix[2]
-        fogPlanes[0][1] = a * tr_local.backEnd!!.viewDef!!.worldSpace.modelViewMatrix[6]
-        fogPlanes[0][2] = a * tr_local.backEnd!!.viewDef!!.worldSpace.modelViewMatrix[10]
-        fogPlanes[0][3] = a * tr_local.backEnd!!.viewDef!!.worldSpace.modelViewMatrix[14]
-        fogPlanes[1][0] = a * tr_local.backEnd!!.viewDef!!.worldSpace.modelViewMatrix[0]
-        fogPlanes[1][1] = a * tr_local.backEnd!!.viewDef!!.worldSpace.modelViewMatrix[4]
-        fogPlanes[1][2] = a * tr_local.backEnd!!.viewDef!!.worldSpace.modelViewMatrix[8]
-        fogPlanes[1][3] = a * tr_local.backEnd!!.viewDef!!.worldSpace.modelViewMatrix[12]
+        fogPlanes[0][0] = a * backEnd!!.viewDef!!.worldSpace.modelViewMatrix[2]
+        fogPlanes[0][1] = a * backEnd!!.viewDef!!.worldSpace.modelViewMatrix[6]
+        fogPlanes[0][2] = a * backEnd!!.viewDef!!.worldSpace.modelViewMatrix[10]
+        fogPlanes[0][3] = a * backEnd!!.viewDef!!.worldSpace.modelViewMatrix[14]
+        fogPlanes[1][0] = a * backEnd!!.viewDef!!.worldSpace.modelViewMatrix[0]
+        fogPlanes[1][1] = a * backEnd!!.viewDef!!.worldSpace.modelViewMatrix[4]
+        fogPlanes[1][2] = a * backEnd!!.viewDef!!.worldSpace.modelViewMatrix[8]
+        fogPlanes[1][3] = a * backEnd!!.viewDef!!.worldSpace.modelViewMatrix[12]
 
         // texture 1 is the entering plane fade correction
         tr_backend.GL_SelectTexture(1)
@@ -1095,18 +1127,18 @@ object draw_common {
         qgl.qglEnable(GL11.GL_TEXTURE_GEN_T)
 
         // T will get a texgen for the fade plane, which is always the "top" plane on unrotated lights
-        fogPlanes[2][0] = 0.001f * tr_local.backEnd!!.vLight!!.fogPlane!![0]!!
-        fogPlanes[2][1] = 0.001f * tr_local.backEnd!!.vLight!!.fogPlane!![1]!!
-        fogPlanes[2][2] = 0.001f * tr_local.backEnd!!.vLight!!.fogPlane!![2]!!
-        fogPlanes[2][3] = 0.001f * tr_local.backEnd!!.vLight!!.fogPlane!![3]!!
+        fogPlanes[2][0] = 0.001f * backEnd!!.vLight!!.fogPlane!![0]
+        fogPlanes[2][1] = 0.001f * backEnd!!.vLight!!.fogPlane!![1]
+        fogPlanes[2][2] = 0.001f * backEnd!!.vLight!!.fogPlane!![2]
+        fogPlanes[2][3] = 0.001f * backEnd!!.vLight!!.fogPlane!![3]
 
         // S is based on the view origin
-        val s = tr_local.backEnd!!.viewDef!!.renderView.vieworg.times(fogPlanes[2].Normal()) + fogPlanes[2][3]
-        fogPlanes[3][0] = 0f
-        fogPlanes[3][1] = 0f
-        fogPlanes[3][2] = 0f
-        fogPlanes[3][3] = tr_local.FOG_ENTER + s
-        qgl.qglTexCoord2f(tr_local.FOG_ENTER + s, tr_local.FOG_ENTER)
+        val s = backEnd!!.viewDef!!.renderView.vieworg.times(fogPlanes[2].Normal()) + fogPlanes[2][3]
+        fogPlanes[3][0] = 0.0f
+        fogPlanes[3][1] = 0.0f
+        fogPlanes[3][2] = 0.0f
+        fogPlanes[3][3] = FOG_ENTER + s
+        qgl.qglTexCoord2f(FOG_ENTER + s, FOG_ENTER)
 
         // draw it
         tr_render.RB_RenderDrawSurfChainWithFunction(drawSurfs, RB_T_BasicFog.INSTANCE)
@@ -1114,7 +1146,7 @@ object draw_common {
 
         // the light frustum bounding planes aren't in the depth buffer, so use depthfunc_less instead
         // of depthfunc_equal
-        tr_backend.GL_State(tr_local.GLS_DEPTHMASK or tr_local.GLS_SRCBLEND_SRC_ALPHA or tr_local.GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA or tr_local.GLS_DEPTHFUNC_LESS)
+        tr_backend.GL_State(GLS_DEPTHMASK or GLS_SRCBLEND_SRC_ALPHA or GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA or GLS_DEPTHFUNC_LESS)
         tr_backend.GL_Cull(cullType_t.CT_BACK_SIDED)
         tr_render.RB_RenderDrawSurfChainWithFunction(ds, RB_T_BasicFog.INSTANCE)
         tr_backend.GL_Cull(cullType_t.CT_FRONT_SIDED)
@@ -1134,14 +1166,14 @@ object draw_common {
      */
     fun RB_STD_FogAllLights() {
         var vLight: viewLight_s?
-        if (RenderSystem_init.r_skipFogLights!!.GetBool() || RenderSystem_init.r_showOverDraw!!.GetInteger() != 0 || tr_local.backEnd!!.viewDef!!.isXraySubview /* dont fog in xray mode*/) {
+        if (r_skipFogLights!!.GetBool() || r_showOverDraw!!.GetInteger() != 0 || backEnd!!.viewDef!!.isXraySubview /* dont fog in xray mode*/) {
             return
         }
         tr_backend.RB_LogComment("---------- RB_STD_FogAllLights ----------\n")
         qgl.qglDisable(GL11.GL_STENCIL_TEST)
-        vLight = tr_local.backEnd!!.viewDef!!.viewLights
+        vLight = backEnd!!.viewDef!!.viewLights
         while (vLight != null) {
-            tr_local.backEnd!!.vLight = vLight
+            backEnd!!.vLight = vLight
             if (!vLight.lightShader!!.IsFogLight() && !vLight.lightShader!!.IsBlendLight()) {
                 vLight = vLight.next
                 continue
@@ -1193,23 +1225,23 @@ object draw_common {
     fun RB_STD_LightScale() {
         var v: Float
         var f: Float
-        if (1.0f == tr_local.backEnd!!.overBright) {
+        if (1.0f == backEnd!!.overBright) {
             return
         }
-        if (RenderSystem_init.r_skipLightScale!!.GetBool()) {
+        if (r_skipLightScale!!.GetBool()) {
             return
         }
         tr_backend.RB_LogComment("---------- RB_STD_LightScale ----------\n")
 
         // the scissor may be smaller than the viewport for subviews
-        if (RenderSystem_init.r_useScissor!!.GetBool()) {
+        if (r_useScissor!!.GetBool()) {
             qgl.qglScissor(
-                tr_local.backEnd!!.viewDef!!.viewport.x1 + tr_local.backEnd!!.viewDef!!.scissor.x1,
-                tr_local.backEnd!!.viewDef!!.viewport.y1 + tr_local.backEnd!!.viewDef!!.scissor.y1,
-                tr_local.backEnd!!.viewDef!!.scissor.x2 - tr_local.backEnd!!.viewDef!!.scissor.x1 + 1,
-                tr_local.backEnd!!.viewDef!!.scissor.y2 - tr_local.backEnd!!.viewDef!!.scissor.y1 + 1
+                backEnd!!.viewDef!!.viewport.x1 + backEnd!!.viewDef!!.scissor.x1,
+                backEnd!!.viewDef!!.viewport.y1 + backEnd!!.viewDef!!.scissor.y1,
+                backEnd!!.viewDef!!.scissor.x2 - backEnd!!.viewDef!!.scissor.x1 + 1,
+                backEnd!!.viewDef!!.scissor.y2 - backEnd!!.viewDef!!.scissor.y1 + 1
             )
-            tr_local.backEnd!!.currentScissor = tr_local.backEnd!!.viewDef!!.scissor
+            backEnd!!.currentScissor = backEnd!!.viewDef!!.scissor
         }
 
         // full screen blends
@@ -1218,25 +1250,25 @@ object draw_common {
         qgl.qglPushMatrix()
         qgl.qglLoadIdentity()
         qgl.qglOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0)
-        tr_backend.GL_State(tr_local.GLS_SRCBLEND_DST_COLOR or tr_local.GLS_DSTBLEND_SRC_COLOR)
+        tr_backend.GL_State(GLS_SRCBLEND_DST_COLOR or GLS_DSTBLEND_SRC_COLOR)
         tr_backend.GL_Cull(cullType_t.CT_TWO_SIDED) // so mirror views also get it
         Image.globalImages.BindNull()
         qgl.qglDisable(GL11.GL_DEPTH_TEST)
         qgl.qglDisable(GL11.GL_STENCIL_TEST)
-        v = 1f
-        while (abs((v - tr_local.backEnd!!.overBright).toDouble()) > 0.01) {    // a little extra slop
-            f = tr_local.backEnd!!.overBright / v
-            f /= 2f
+        v = 1.0f
+        while (abs((v - backEnd!!.overBright)) > 0.01) {    // a little extra slop
+            f = backEnd!!.overBright / v
+            f /= 2.0f
             if (f > 1) {
-                f = 1f
+                f = 1.0f
             }
             qgl.qglColor3f(f, f, f)
             v = v * f * 2
             qgl.qglBegin(GL11.GL_QUADS)
-            qgl.qglVertex2f(0f, 0f)
-            qgl.qglVertex2f(0f, 1f)
-            qgl.qglVertex2f(1f, 1f)
-            qgl.qglVertex2f(1f, 0f)
+            qgl.qglVertex2f(0.0f, 0.0f)
+            qgl.qglVertex2f(0.0f, 1.0f)
+            qgl.qglVertex2f(1.0f, 1.0f)
+            qgl.qglVertex2f(1.0f, 0.0f)
             qgl.qglEnd()
         }
         qgl.qglPopMatrix()
@@ -1255,9 +1287,9 @@ object draw_common {
         val drawSurfs: Array<drawSurf_s>
         val numDrawSurfs: Int
         tr_backend.RB_LogComment("---------- RB_STD_DrawView ----------\n")
-        tr_local.backEnd!!.depthFunc = tr_local.GLS_DEPTHFUNC_EQUAL
-        drawSurfs = tr_local.backEnd!!.viewDef!!.drawSurfs
-        numDrawSurfs = tr_local.backEnd!!.viewDef!!.numDrawSurfs
+        backEnd!!.depthFunc = GLS_DEPTHFUNC_EQUAL
+        drawSurfs = backEnd!!.viewDef!!.drawSurfs
+        numDrawSurfs = backEnd!!.viewDef!!.numDrawSurfs
 
         // clear the z buffer, set the projection matrix, etc
         tr_render.RB_BeginDrawingView()
@@ -1268,10 +1300,9 @@ object draw_common {
         // fill the depth buffer and clear color buffer to black except on
         // subviews
         RB_STD_FillDepthBuffer(drawSurfs, numDrawSurfs)
-        when (tr_local.tr.backEndRenderer) {
-            backEndName_t.BE_ARB -> draw_arb.RB_ARB_DrawInteractions()
+        when (tr.backEndRenderer) {
             backEndName_t.BE_ARB2 -> draw_arb2.RB_ARB2_DrawInteractions()
-            null -> TODO()
+            else -> TODO()
         }
 
         // disable stencil shadow test
@@ -1306,7 +1337,7 @@ object draw_common {
      ==================
      */
     class RB_T_FillDepthBuffer private constructor() : triFunc() {
-        public override fun run(surf: drawSurf_s) {
+        override fun run(surf: drawSurf_s) {
             var stage: Int
             val shader: idMaterial
             var pStage: shaderStage_t?
@@ -1317,12 +1348,12 @@ object draw_common {
             shader = surf.material!!
 
             // update the clip plane if needed
-            if (tr_local.backEnd!!.viewDef!!.numClipPlanes != 0 && surf.space !== tr_local.backEnd!!.currentSpace) {
+            if (backEnd!!.viewDef!!.numClipPlanes != 0 && surf.space !== backEnd!!.currentSpace) {
                 tr_backend.GL_SelectTexture(1)
                 val plane = idPlane()
                 tr_main.R_GlobalPlaneToLocal(
                     surf.space!!.modelMatrix,
-                    tr_local.backEnd!!.viewDef!!.clipPlanes[0]!!,
+                    backEnd!!.viewDef!!.clipPlanes[0]!!,
                     plane
                 )
                 plane.plusAssign(3, 0.5f) // the notch is in the middle
@@ -1343,7 +1374,7 @@ object draw_common {
             if (shader.Coverage() == materialCoverage_t.MC_TRANSLUCENT) {
                 return
             }
-            if (NOT(tri.ambientCache)) {
+            if (tri.ambientCache == null) {
                 Common.common.Printf("RB_T_FillDepthBuffer: !tri.ambientCache\n")
                 return
             }
@@ -1356,7 +1387,7 @@ object draw_common {
             while (stage < shader.GetNumStages()) {
                 pStage = shader.GetStage(stage)
                 // check the stage enable condition
-                if (regs[pStage!!.conditionRegister] != 0f) {
+                if (regs[pStage!!.conditionRegister] != 0.0f) {
                     break
                 }
                 stage++
@@ -1369,24 +1400,24 @@ object draw_common {
             if (shader.TestMaterialFlag(Material.MF_POLYGONOFFSET)) {
                 qgl.qglEnable(GL11.GL_POLYGON_OFFSET_FILL)
                 qgl.qglPolygonOffset(
-                    RenderSystem_init.r_offsetFactor!!.GetFloat(),
-                    RenderSystem_init.r_offsetUnits!!.GetFloat() * shader.GetPolygonOffset()
+                    r_offsetFactor!!.GetFloat(),
+                    r_offsetUnits!!.GetFloat() * shader.GetPolygonOffset()
                 )
             }
 
             // subviews will just down-modulate the color buffer by overbright
             if (shader.GetSort() == Material.SS_SUBVIEW.toFloat()) {
-                tr_backend.GL_State(tr_local.GLS_SRCBLEND_DST_COLOR or tr_local.GLS_DSTBLEND_ZERO or tr_local.GLS_DEPTHFUNC_LESS)
-                color[2] = 1.0f / tr_local.backEnd!!.overBright
+                tr_backend.GL_State(GLS_SRCBLEND_DST_COLOR or GLS_DSTBLEND_ZERO or GLS_DEPTHFUNC_LESS)
+                color[2] = 1.0f / backEnd!!.overBright
                 color[1] = color[2]
                 color[0] = color[1]
-                color[3] = 1f
+                color[3] = 1.0f
             } else {
                 // others just draw black
-                color[2] = 0f
+                color[2] = 0.0f
                 color[1] = color[2]
                 color[0] = color[1]
-                color[3] = 1f
+                color[3] = 1.0f
             }
             val ac =
                 idDrawVert(VertexCache.vertexCache.Position(tri.ambientCache)) //TODO:figure out how to work these damn casts.
@@ -1415,7 +1446,7 @@ object draw_common {
                     }
 
                     // check the stage enable condition
-                    if (regs[pStage.conditionRegister] == 0f) {
+                    if (regs[pStage.conditionRegister] == 0.0f) {
                         stage++
                         continue
                     }
@@ -1468,7 +1499,7 @@ object draw_common {
 
             // reset blending
             if (shader.GetSort() == Material.SS_SUBVIEW.toFloat()) {
-                tr_backend.GL_State(tr_local.GLS_DEPTHFUNC_LESS)
+                tr_backend.GL_State(GLS_DEPTHFUNC_LESS)
             }
         }
 
@@ -1485,59 +1516,59 @@ object draw_common {
      =====================
      */
     class RB_T_Shadow private constructor() : triFunc() {
-        public override fun run(surf: drawSurf_s) {
-            val tri: srfTriangles_s //TODO: should this be an array?
+        override fun run(surf: drawSurf_s) {
+            val tri: srfTriangles_s
 
             // set the light position if we are using a vertex program to project the rear surfaces
-            if (tr_local.tr.backEndRendererHasVertexPrograms && RenderSystem_init.r_useShadowVertexProgram!!.GetBool() && surf.space !== tr_local.backEnd!!.currentSpace) {
+            if (tr.backEndRendererHasVertexPrograms && r_useShadowVertexProgram.GetBool()
+                && surf.space != backEnd!!.currentSpace
+            ) {
                 val localLight = idVec4()
-                val lightBuffer = BufferUtils.createFloatBuffer(4)
-                tr_main.R_GlobalPointToLocal(
+
+                R_GlobalPointToLocal(
                     surf.space!!.modelMatrix,
-                    tr_local.backEnd!!.vLight!!.globalLightOrigin,
-                    localLight
+                    backEnd!!.vLight!!.globalLightOrigin,
+                    localLight.ToVec3()
                 )
-                lightBuffer.put(localLight.ToFloatPtr()).rewind() //localLight.w = 0.0f;
-                qgl.qglProgramEnvParameter4fvARB(
-                    ARBVertexProgram.GL_VERTEX_PROGRAM_ARB,
+                localLight.w = 0.0f
+                qglProgramEnvParameter4fvARB(
+                    GL_VERTEX_PROGRAM_ARB,
                     programParameter_t.PP_LIGHT_ORIGIN,
-                    lightBuffer
+                    localLight.ToFloatPtr()
                 )
             }
+
             tri = surf.geo!!
-            if (NOT(tri.shadowCache)) {
+
+            if (tri.shadowCache == null) {
                 return
             }
-            qgl.qglVertexPointer(
-                4,
-                GL11.GL_FLOAT,
-                shadowCache_s.BYTES,
-                VertexCache.vertexCache.Position(tri.shadowCache).getInt().toLong()
-            )
+
+            qglVertexPointer(4, GL_FLOAT, shadowCache_s.BYTES, vertexCache.Position(tri.shadowCache))
 
             // we always draw the sil planes, but we may not need to draw the front or rear caps
-            val numIndexes: Int
+            var numIndexes = 0
             var external = false
-            if (0 == RenderSystem_init.r_useExternalShadows!!.GetInteger()) {
+
+            if (r_useExternalShadows.GetInteger() == 0) {
                 numIndexes = tri.numIndexes
-            } else if (RenderSystem_init.r_useExternalShadows!!.GetInteger() == 2) { // force to no caps for testing
+            } else if (r_useExternalShadows.GetInteger() == 2) { // force to no caps for testing
                 numIndexes = tri.numShadowIndexesNoCaps
-            } else if (0 == surf.dsFlags and tr_local.DSF_VIEW_INSIDE_SHADOW) {
+            } else if ((surf.dsFlags and DSF_VIEW_INSIDE_SHADOW) == 0) {
                 // if we aren't inside the shadow projection, no caps are ever needed needed
                 numIndexes = tri.numShadowIndexesNoCaps
                 external = true
-            } else if (!tr_local.backEnd!!.vLight!!.viewInsideLight && 0 == surf.geo!!.shadowCapPlaneBits and Model.SHADOW_CAP_INFINITE) {
+            } else if (!backEnd!!.vLight!!.viewInsideLight && (surf.geo!!.shadowCapPlaneBits and SHADOW_CAP_INFINITE) == 0) {
                 // if we are inside the shadow projection, but outside the light, and drawing
                 // a non-infinite shadow, we can skip some caps
-                numIndexes =
-                    if (tr_local.backEnd!!.vLight!!.viewSeesShadowPlaneBits and surf.geo!!.shadowCapPlaneBits != 0) {
-                        // we can see through a rear cap, so we need to draw it, but we can skip the
-                        // caps on the actual surface
-                        tri.numShadowIndexesNoFrontCaps
-                    } else {
-                        // we don't need to draw any caps
-                        tri.numShadowIndexesNoCaps
-                    }
+                if (backEnd!!.vLight!!.viewSeesShadowPlaneBits and surf.geo!!.shadowCapPlaneBits == 0) {
+                    // we can see through a rear cap, so we need to draw it, but we can skip the
+                    // caps on the actual surface
+                    numIndexes = tri.numShadowIndexesNoFrontCaps
+                } else {
+                    // we don't need to draw any caps
+                    numIndexes = tri.numShadowIndexesNoCaps
+                }
                 external = true
             } else {
                 // must draw everything
@@ -1545,93 +1576,150 @@ object draw_common {
             }
 
             // set depth bounds
-            if (tr_local.glConfig.depthBoundsTestAvailable && RenderSystem_init.r_useDepthBoundsTest!!.GetBool()) {
-                qgl.qglDepthBoundsEXT(surf.scissorRect!!.zmin.toDouble(), surf.scissorRect!!.zmax.toDouble())
+            if (glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool()) {
+                qglDepthBoundsEXT(surf.scissorRect!!.zmin, surf.scissorRect!!.zmax)
             }
 
             // debug visualization
-            if (RenderSystem_init.r_showShadows!!.GetInteger() != 0) {
-                if (RenderSystem_init.r_showShadows!!.GetInteger() == 3) {
+            if (r_showShadows.GetInteger() != 0) {
+                if (r_showShadows.GetInteger() == 3) {
                     if (external) {
-                        qgl.qglColor3f(
-                            0.1f / tr_local.backEnd!!.overBright,
-                            1 / tr_local.backEnd!!.overBright,
-                            0.1f / tr_local.backEnd!!.overBright
-                        )
+                        qglColor3f(0.1f / backEnd!!.overBright, 1 / backEnd!!.overBright, 0.1f / backEnd!!.overBright)
                     } else {
                         // these are the surfaces that require the reverse
-                        qgl.qglColor3f(
-                            1 / tr_local.backEnd!!.overBright,
-                            0.1f / tr_local.backEnd!!.overBright,
-                            0.1f / tr_local.backEnd!!.overBright
-                        )
+                        qglColor3f(1 / backEnd!!.overBright, 0.1f / backEnd!!.overBright, 0.1f / backEnd!!.overBright)
                     }
                 } else {
                     // draw different color for turboshadows
-                    if (surf.geo!!.shadowCapPlaneBits and Model.SHADOW_CAP_INFINITE != 0) {
+                    if (surf.geo!!.shadowCapPlaneBits and SHADOW_CAP_INFINITE != 0) {
                         if (numIndexes == tri.numIndexes) {
-                            qgl.qglColor3f(
-                                1 / tr_local.backEnd!!.overBright,
-                                0.1f / tr_local.backEnd!!.overBright,
-                                0.1f / tr_local.backEnd!!.overBright
+                            qglColor3f(
+                                1 / backEnd!!.overBright,
+                                0.1f / backEnd!!.overBright,
+                                0.1f / backEnd!!.overBright
                             )
                         } else {
-                            qgl.qglColor3f(
-                                1 / tr_local.backEnd!!.overBright,
-                                0.4f / tr_local.backEnd!!.overBright,
-                                0.1f / tr_local.backEnd!!.overBright
+                            qglColor3f(
+                                1 / backEnd!!.overBright,
+                                0.4f / backEnd!!.overBright,
+                                0.1f / backEnd!!.overBright
                             )
                         }
                     } else {
                         if (numIndexes == tri.numIndexes) {
-                            qgl.qglColor3f(
-                                0.1f / tr_local.backEnd!!.overBright,
-                                1 / tr_local.backEnd!!.overBright,
-                                0.1f / tr_local.backEnd!!.overBright
+                            qglColor3f(
+                                0.1f / backEnd!!.overBright,
+                                1 / backEnd!!.overBright,
+                                0.1f / backEnd!!.overBright
                             )
                         } else if (numIndexes == tri.numShadowIndexesNoFrontCaps) {
-                            qgl.qglColor3f(
-                                0.1f / tr_local.backEnd!!.overBright,
-                                1 / tr_local.backEnd!!.overBright,
-                                0.6f / tr_local.backEnd!!.overBright
+                            qglColor3f(
+                                0.1f / backEnd!!.overBright,
+                                1 / backEnd!!.overBright,
+                                0.6f / backEnd!!.overBright
                             )
                         } else {
-                            qgl.qglColor3f(
-                                0.6f / tr_local.backEnd!!.overBright,
-                                1 / tr_local.backEnd!!.overBright,
-                                0.1f / tr_local.backEnd!!.overBright
+                            qglColor3f(
+                                0.6f / backEnd!!.overBright,
+                                1 / backEnd!!.overBright,
+                                0.1f / backEnd!!.overBright
                             )
                         }
                     }
                 }
-                qgl.qglStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP)
-                qgl.qglDisable(GL11.GL_STENCIL_TEST)
-                tr_backend.GL_Cull(cullType_t.CT_TWO_SIDED)
-                tr_render.RB_DrawShadowElementsWithCounters(tri, numIndexes)
-                tr_backend.GL_Cull(cullType_t.CT_FRONT_SIDED)
-                qgl.qglEnable(GL11.GL_STENCIL_TEST)
+
+                qglStencilOp(GL_KEEP, GL_KEEP, GL_KEEP)
+                qglDisable(GL_STENCIL_TEST)
+                GL_Cull(cullType_t.CT_TWO_SIDED)
+                RB_DrawShadowElementsWithCounters(tri, numIndexes)
+                GL_Cull(cullType_t.CT_FRONT_SIDED)
+                qglEnable(GL_STENCIL_TEST)
+
                 return
             }
 
-            // patent-free work around
-            if (!external) {
-                // "preload" the stencil buffer with the number of volumes
-                // that get clipped by the near or far clip plane
-                qgl.qglStencilOp(GL11.GL_KEEP, tr_local.tr.stencilDecr, tr_local.tr.stencilDecr)
-                tr_backend.GL_Cull(cullType_t.CT_FRONT_SIDED)
-                tr_render.RB_DrawShadowElementsWithCounters(tri, numIndexes)
-                qgl.qglStencilOp(GL11.GL_KEEP, tr_local.tr.stencilIncr, tr_local.tr.stencilIncr)
-                tr_backend.GL_Cull(cullType_t.CT_BACK_SIDED)
-                tr_render.RB_DrawShadowElementsWithCounters(tri, numIndexes)
-            }
+            // DG: that bloody patent on depth-fail stencil shadows has finally expired on 2019-10-13,
+            //     so use them (see https://patents.google.com/patent/US6384822B1/en for expiration status)
+            var useStencilOpSeperate = r_useStencilOpSeparate.GetBool()
+            if (!r_useCarmacksReverse.GetBool()) {
+                if (useStencilOpSeperate) {
+                    // not using z-fail, but using qglStencilOpSeparate()
+                    val firstFace = if (backEnd!!.viewDef!!.isMirror) GL_FRONT else GL_BACK
+                    val secondFace = if (backEnd!!.viewDef!!.isMirror) GL_BACK else GL_FRONT
+                    GL_Cull(cullType_t.CT_TWO_SIDED)
+                    if (!external) {
+                        glStencilOpSeparate(firstFace, GL_KEEP, tr.stencilDecr, tr.stencilDecr)
+                        glStencilOpSeparate(secondFace, GL_KEEP, tr.stencilIncr, tr.stencilIncr)
+                        RB_DrawShadowElementsWithCounters(tri, numIndexes)
+                    }
 
-            // traditional depth-pass stencil shadows
-            qgl.qglStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, tr_local.tr.stencilIncr)
-            tr_backend.GL_Cull(cullType_t.CT_FRONT_SIDED)
-            tr_render.RB_DrawShadowElementsWithCounters(tri, numIndexes)
-            qgl.qglStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, tr_local.tr.stencilDecr)
-            tr_backend.GL_Cull(cullType_t.CT_BACK_SIDED)
-            tr_render.RB_DrawShadowElementsWithCounters(tri, numIndexes)
+                    glStencilOpSeparate(firstFace, GL_KEEP, GL_KEEP, tr.stencilIncr)
+                    glStencilOpSeparate(secondFace, GL_KEEP, GL_KEEP, tr.stencilDecr)
+
+                    RB_DrawShadowElementsWithCounters(tri, numIndexes)
+
+                } else { // DG: this is the original code:
+                    // patent-free work around
+                    if (!external) {
+                        // "preload" the stencil buffer with the number of volumes
+                        // that get clipped by the near or far clip plane
+                        qglStencilOp(GL_KEEP, tr.stencilDecr, tr.stencilDecr)
+                        GL_Cull(cullType_t.CT_FRONT_SIDED)
+                        RB_DrawShadowElementsWithCounters(tri, numIndexes)
+                        qglStencilOp(GL_KEEP, tr.stencilIncr, tr.stencilIncr)
+                        GL_Cull(cullType_t.CT_BACK_SIDED)
+                        RB_DrawShadowElementsWithCounters(tri, numIndexes)
+                    }
+
+                    // traditional depth-pass stencil shadows
+                    qglStencilOp(GL_KEEP, GL_KEEP, tr.stencilIncr)
+                    GL_Cull(cullType_t.CT_FRONT_SIDED)
+                    RB_DrawShadowElementsWithCounters(tri, numIndexes)
+
+                    qglStencilOp(GL_KEEP, GL_KEEP, tr.stencilDecr)
+                    GL_Cull(cullType_t.CT_BACK_SIDED)
+                    RB_DrawShadowElementsWithCounters(tri, numIndexes)
+                }
+            } else { // use the formerly patented "Carmack's Reverse" Z-Fail code
+                if (useStencilOpSeperate) {
+                    // Z-Fail with glStencilOpSeparate() which will reduce draw calls
+                    val firstFace = if (backEnd!!.viewDef!!.isMirror) GL_FRONT else GL_BACK
+                    val secondFace = if (backEnd!!.viewDef!!.isMirror) GL_BACK else GL_FRONT
+                    if (!external) { // z-fail
+                        glStencilOpSeparate(firstFace, GL_KEEP, tr.stencilDecr, GL_KEEP)
+                        glStencilOpSeparate(secondFace, GL_KEEP, tr.stencilIncr, GL_KEEP)
+                    } else { // depth-pass
+                        glStencilOpSeparate(firstFace, GL_KEEP, GL_KEEP, tr.stencilIncr)
+                        glStencilOpSeparate(secondFace, GL_KEEP, GL_KEEP, tr.stencilDecr)
+                    }
+                    GL_Cull(cullType_t.CT_TWO_SIDED)
+                    RB_DrawShadowElementsWithCounters(tri, numIndexes)
+
+                } else { // Z-Fail without glStencilOpSeparate()
+
+                    // LEITH: the (formerly patented) "Carmack's Reverse" code
+
+                    // depth-fail/Z-Fail stencil shadows
+                    if (!external) {
+                        qglStencilOp(GL_KEEP, tr.stencilDecr, GL_KEEP)
+                        GL_Cull(cullType_t.CT_FRONT_SIDED)
+                        RB_DrawShadowElementsWithCounters(tri, numIndexes)
+                        qglStencilOp(GL_KEEP, tr.stencilIncr, GL_KEEP)
+                        GL_Cull(cullType_t.CT_BACK_SIDED)
+                        RB_DrawShadowElementsWithCounters(tri, numIndexes)
+                    }
+                    // traditional depth-pass stencil shadows
+                    else {
+                        qglStencilOp(GL_KEEP, GL_KEEP, tr.stencilIncr)
+                        GL_Cull(cullType_t.CT_FRONT_SIDED)
+                        RB_DrawShadowElementsWithCounters(tri, numIndexes)
+
+                        qglStencilOp(GL_KEEP, GL_KEEP, tr.stencilDecr)
+                        GL_Cull(cullType_t.CT_BACK_SIDED)
+                        RB_DrawShadowElementsWithCounters(tri, numIndexes)
+                    }
+                }
+            }
         }
 
         companion object {
@@ -1647,17 +1735,17 @@ object draw_common {
      =====================
      */
     class RB_T_BlendLight private constructor() : triFunc() {
-        public override fun run(surf: drawSurf_s) {
+        override fun run(surf: drawSurf_s) {
             val tri: srfTriangles_s
             tri = surf.geo!!
-            if (tr_local.backEnd!!.currentSpace !== surf.space) {
+            if (backEnd!!.currentSpace !== surf.space) {
                 val lightProject = idPlane.generateArray(4)
                 var i: Int
                 i = 0
                 while (i < 4) {
                     tr_main.R_GlobalPlaneToLocal(
                         surf.space!!.modelMatrix,
-                        tr_local.backEnd!!.vLight!!.lightProject[i],
+                        backEnd!!.vLight!!.lightProject[i],
                         lightProject[i]
                     )
                     i++
@@ -1696,24 +1784,27 @@ object draw_common {
      =====================
      */
     class RB_T_BasicFog private constructor() : triFunc() {
-        public override fun run(surf: drawSurf_s) {
-            if (tr_local.backEnd!!.currentSpace !== surf.space) {
+        override fun run(surf: drawSurf_s) {
+            if (backEnd!!.currentSpace !== surf.space) {
                 val local = idPlane()
+
                 tr_backend.GL_SelectTexture(0)
+
                 tr_main.R_GlobalPlaneToLocal(surf.space!!.modelMatrix, fogPlanes[0], local)
                 local.plusAssign(3, 0.5f)
                 qgl.qglTexGenfv(GL11.GL_S, GL11.GL_OBJECT_PLANE, local.ToFloatPtr())
 
-//		R_GlobalPlaneToLocal( surf.space!!.modelMatrix, fogPlanes[1], local );
-//		local[3] += 0.5;
-                local[0] = local.set(1, local.set(2, local.set(3, 0.5f)))
+                local.set(3, 0.5f)
+                local[0] = local.set(1, local.set(2, 0.0f))
                 qgl.qglTexGenfv(GL11.GL_T, GL11.GL_OBJECT_PLANE, local.ToFloatPtr())
+
                 tr_backend.GL_SelectTexture(1)
 
                 // GL_S is constant per viewer
                 tr_main.R_GlobalPlaneToLocal(surf.space!!.modelMatrix, fogPlanes[2], local)
-                local.plusAssign(3, tr_local.FOG_ENTER)
+                local.plusAssign(3, FOG_ENTER)
                 qgl.qglTexGenfv(GL11.GL_T, GL11.GL_OBJECT_PLANE, local.ToFloatPtr())
+
                 tr_main.R_GlobalPlaneToLocal(surf.space!!.modelMatrix, fogPlanes[3], local)
                 qgl.qglTexGenfv(GL11.GL_S, GL11.GL_OBJECT_PLANE, local.ToFloatPtr())
             }

@@ -11,9 +11,6 @@ import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
-/**
- *
- */
 object win_cpu {
     const val HT_CANNOT_DETECT = 4
     const val HT_DISABLED = 2
@@ -89,7 +86,7 @@ object win_cpu {
      Sys_ClockTicksPerSecond
      ================
      */
-    private var ticks = 0.0 //TODO:make final.
+    private var ticks = 0.0f //TODO:make final.
 
     /*
      ================
@@ -123,7 +120,7 @@ object win_cpu {
 //#endif
     }
 
-    fun Sys_ClockTicksPerSecond(): Double {
+    fun Sys_ClockTicksPerSecond(): Float {
 
 //#if 0
 //
@@ -135,10 +132,10 @@ object win_cpu {
 //
 //#else
         if (BuildDefines._WIN32) {
-            if (TempDump.NOT(ticks)) {
+            if (ticks == 0.0f) {
                 try {
                     val procSpeed = TempDump.atoi(wmic("cpu get MaxClockSpeed"))
-                    ticks = (procSpeed * 1000000L).toDouble()
+                    ticks = (procSpeed * 1000000L).toFloat()
                 } catch (ex: IOException) {
                     Logger.getLogger(win_cpu::class.java.name).log(Level.SEVERE, null, ex)
                 }
@@ -755,7 +752,7 @@ object win_cpu {
      */
     fun Sys_FPU_GetState(): String {
         throw TODO_Exception()
-        //	double fpuStack[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+        //	double fpuStack[8] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 //	double *fpuStackPtr = fpuStack;
 //	int i, numValues;
 //	char *ptr;
@@ -966,7 +963,6 @@ object win_cpu {
 
     @Throws(IOException::class)
     fun wmic(query: String): String {
-        val result: String
         return ""
         //        Process wmic = Runtime.getRuntime().exec("wmic " + query);
 ////                wmic.waitFor();

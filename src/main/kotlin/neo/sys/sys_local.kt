@@ -7,17 +7,14 @@ import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_String
 import neo.framework.KeyInput
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Str.idStr
+import neo.idlib.idException
 import neo.sys.sys_public.idSys
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
 import java.text.SimpleDateFormat
 import java.util.*
 
-/**
- *
- */
 class sys_local {
 
     /*
@@ -35,6 +32,7 @@ class sys_local {
      ==============================================================
      */
     class idSysLocal : idSys() {
+        private val startTime: Long = System.currentTimeMillis()
         override fun DebugPrintf(fmt: String, vararg arg: Any) {
             win_main.Sys_DebugVPrintf(fmt, *arg)
         }
@@ -43,12 +41,8 @@ class sys_local {
             win_main.Sys_DebugVPrintf(fmt, *arg)
         }
 
-        override fun GetClockTicks(): Double {
-            return win_cpu.Sys_GetClockTicks().toDouble()
-        }
-
-        override fun ClockTicksPerSecond(): Double {
-            return win_cpu.Sys_ClockTicksPerSecond()
+        override fun GetMilliseconds(): Long {
+            return (System.currentTimeMillis() - startTime)
         }
 
         override fun GetProcessorId(): Int {
@@ -85,22 +79,6 @@ class sys_local {
 
         override fun UnlockMemory(ptr: Any, bytes: Int): Boolean {
             return win_shared.Sys_UnlockMemory(ptr, bytes)
-        }
-
-        override fun GetCallStack(callStack: Long, callStackSize: Int) {
-            win_shared.Sys_GetCallStack(callStack, callStackSize)
-        }
-
-        override fun GetCallStackStr(callStack: Long, callStackSize: Int): String {
-            return win_shared.Sys_GetCallStackStr(callStack, callStackSize)
-        }
-
-        override fun GetCallStackCurStr(depth: Int): String {
-            return win_shared.Sys_GetCallStackCurStr(depth)
-        }
-
-        override fun ShutdownSymbols() {
-            win_shared.Sys_ShutdownSymbols()
         }
 
         override fun DLL_Load(dllName: String): Int {

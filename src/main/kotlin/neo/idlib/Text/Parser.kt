@@ -1,22 +1,19 @@
 package neo.idlib.Text
 
 import neo.TempDump
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Lexer.punctuation_t
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
+import neo.idlib.idException
+import neo.idlib.idLib
 import neo.sys.sys_public
 import java.nio.CharBuffer
 import java.util.*
 import kotlin.math.abs
 
-/**
- *
- */
 object Parser {
     const val BUILTIN_DATE = 3
     const val BUILTIN_FILE = 2
@@ -368,7 +365,7 @@ object Parser {
                 }
                 // check for precompiler directives
                 if (token.type == Token.TT_PUNCTUATION
-                    && token.get(0) == '#' && (token.Length() == 1 || token.get(1) == '\u0000')
+                    && token[0] == '#' && (token.Length() == 1 || token[1] == '\u0000')
                 ) {
                     // read the precompiler directive
                     if (!ReadDirective()) {
@@ -381,7 +378,7 @@ object Parser {
                     continue
                 }
                 // recursively concatenate strings that are behind each other still resolving defines
-                if (token.type == Token.TT_STRING && TempDump.NOT((scriptstack!!.GetFlags() and Lexer.LEXFL_NOSTRINGCONCAT).toDouble())) {
+                if (token.type == Token.TT_STRING && (scriptstack!!.GetFlags() and Lexer.LEXFL_NOSTRINGCONCAT) == 0) {
                     val newtoken = idToken()
                     if (ReadToken(newtoken)) {
                         if (newtoken.type == Token.TT_STRING) {
@@ -395,7 +392,7 @@ object Parser {
                 if (0 == scriptstack!!.GetFlags() and Lexer.LEXFL_NODOLLARPRECOMPILE) {
                     // check for special precompiler directives
                     if (token.type == Token.TT_PUNCTUATION
-                        && token.get(0) == '$' && (token.Length() == 1 || token.get(1) == '\u0000')
+                        && token[0] == '$' && (token.Length() == 1 || token[1] == '\u0000')
                     ) {
                         // read the precompiler directive
                         if (ReadDollarDirective()) {
@@ -958,8 +955,8 @@ object Parser {
         fun SetIncludePath(path: String) {
             includepath.set(path)
             // add trailing path seperator
-            if (includepath.get(includepath.Length() - 1) != '\\'
-                && includepath.get(includepath.Length() - 1) != '/'
+            if (includepath[includepath.Length() - 1] != '\\'
+                && includepath[includepath.Length() - 1] != '/'
             ) {
                 includepath.Append(sys_public.PATHSEPERATOR_STR)
             }
@@ -1163,13 +1160,13 @@ object Parser {
             val type = CInt()
             val skip = CInt()
             var changedScript: Int
-            if (TempDump.NOT(scriptstack)) {
+            if (scriptstack == null) {
                 idLib.common.FatalError("idParser::ReadSourceToken: not loaded")
                 return false
             }
             changedScript = 0
             // if there's no token already available
-            while (TempDump.NOT(tokens)) {
+            while (tokens == null) {
                 // if there's a token to read from the script
                 if (scriptstack!!.ReadToken(token)) {
                     token.linesCrossed += changedScript
@@ -1190,7 +1187,7 @@ object Parser {
                     changedScript = 1
                 }
                 // if this was the initial script
-                if (TempDump.NOT(scriptstack!!.next)) {
+                if (scriptstack!!.next == null) {
                     return false
                 }
                 // remove the script and return to the previous one
@@ -1380,7 +1377,6 @@ object Parser {
         ): Boolean {
             val token: idToken
             /*ID_TIME_T*/
-            var t: Long
             val curtime: String
             val buf: String //[MAX_STRING_CHARS];
             token = idToken(defToken)
@@ -1398,6 +1394,7 @@ object Parser {
                     firstToken[0] = token
                     lastToken[0] = token
                 }
+
                 BUILTIN_FILE -> {
                     token.set(scriptstack!!.GetFileName())
                     token.type = Token.TT_NAME
@@ -1408,6 +1405,7 @@ object Parser {
                     firstToken[0] = token
                     lastToken[0] = token
                 }
+
                 BUILTIN_DATE -> {
 
 //                    t = System.currentTimeMillis();
@@ -1415,9 +1413,9 @@ object Parser {
                     curtime = Date().toString()
                     token.set("\"")
                     token.Append(curtime + 4)
-                    token.set(7, '\u0000')
+                    token[7] = '\u0000'
                     token.Append(curtime + 20)
-                    token.set(10, '\u0000')
+                    token[10] = '\u0000'
                     token.Append("\"")
                     //			free(curtime);
                     token.type = Token.TT_STRING
@@ -1428,6 +1426,7 @@ object Parser {
                     firstToken[0] = token
                     lastToken[0] = token
                 }
+
                 BUILTIN_TIME -> {
 
 //                    t = System.currentTimeMillis();
@@ -1435,7 +1434,7 @@ object Parser {
                     curtime = Date().toString()
                     token.set("\"")
                     token.Append(curtime + 11)
-                    token.set(8, '\u0000')
+                    token[8] = '\u0000'
                     token.Append("\"")
                     //			free(curtime);
                     token.type = Token.TT_STRING
@@ -1446,6 +1445,7 @@ object Parser {
                     firstToken[0] = token
                     lastToken[0] = token
                 }
+
                 BUILTIN_STDC -> {
                     run { this.Warning("__STDC__ not supported\n") }
                     run {
@@ -1453,6 +1453,7 @@ object Parser {
                         lastToken[0] = null
                     }
                 }
+
                 else -> {
                     firstToken[0] = null
                     lastToken[0] = null
@@ -1996,7 +1997,6 @@ object Parser {
             var questmarkintvalue = false
             var questmarkfloatvalue = 0.0f
             var gotquestmarkvalue = false
-            val lastoperatortype = false
             //
             val operator_heap = arrayOfNulls<operator_s?>(MAX_OPERATORS)
             val numoperators = IntArray(1)
@@ -2007,7 +2007,7 @@ object Parser {
             lastValue = null
             firstValue = lastValue
             intValue._val = 0
-            floatValue._val = 0f
+            floatValue._val = 0.0f
             t = tokens
             while (t != null) {
                 when (t.type) {
@@ -2062,6 +2062,7 @@ object Parser {
                         // defined() creates a value
                         lastwasvalue = true
                     }
+
                     Token.TT_NUMBER -> {
                         if (lastwasvalue) {
                             this.Error("syntax error in #if/#elif")
@@ -2091,6 +2092,7 @@ object Parser {
                         //
                         negativevalue = false
                     }
+
                     Token.TT_PUNCTUATION -> {
                         if (negativevalue) {
                             this.Error("misplaced minus sign in #if/#elif")
@@ -2124,9 +2126,11 @@ object Parser {
                                     break
                                 }
                             }
+
                             Lexer.P_INC, Lexer.P_DEC -> {
                                 this.Error("++ or -- used in #if/#elif")
                             }
+
                             Lexer.P_SUB -> {
                                 run {
                                     if (!lastwasvalue) {
@@ -2141,6 +2145,7 @@ object Parser {
                                 }
                                 break
                             }
+
                             Lexer.P_MUL, Lexer.P_DIV, Lexer.P_MOD, Lexer.P_ADD, Lexer.P_LOGIC_AND, Lexer.P_LOGIC_OR, Lexer.P_LOGIC_GEQ, Lexer.P_LOGIC_LEQ, Lexer.P_LOGIC_EQ, Lexer.P_LOGIC_UNEQ, Lexer.P_LOGIC_GREATER, Lexer.P_LOGIC_LESS, Lexer.P_RSHIFT, Lexer.P_LSHIFT, Lexer.P_BIN_AND, Lexer.P_BIN_OR, Lexer.P_BIN_XOR, Lexer.P_COLON, Lexer.P_QUESTIONMARK -> {
                                 if (!lastwasvalue) {
                                     this.Error("operator '%s' after operator in #if/#elif", t)
@@ -2148,6 +2153,7 @@ object Parser {
                                     break
                                 }
                             }
+
                             else -> {
                                 this.Error("invalid operator '%s' in #if/#elif", t)
                                 error = true
@@ -2170,6 +2176,7 @@ object Parser {
                             lastwasvalue = false
                         }
                     }
+
                     else -> {
                         this.Error("unknown '%s' in #if/#elif", t)
                         error = true
@@ -2232,13 +2239,15 @@ object Parser {
                 when (o.op) {
                     Lexer.P_LOGIC_NOT -> {
                         v1.intValue = (if (0 == v1.intValue) 1 else 0)
-                        v1.floatValue = (if (0.0f == v1.floatValue) 1f else 0f)
+                        v1.floatValue = (if (0.0f == v1.floatValue) 1.0f else 0.0f)
                     }
+
                     Lexer.P_BIN_NOT -> v1.intValue = v1.intValue.inv()
                     Lexer.P_MUL -> {
                         v1.intValue *= v2.intValue
                         v1.floatValue *= v2.floatValue
                     }
+
                     Lexer.P_DIV -> {
                         if (0 == v2.intValue || 0.0f == v2.floatValue) {
                             this.Error("divide by zero in #if/#elif\n")
@@ -2248,6 +2257,7 @@ object Parser {
                         v1.intValue /= v2.intValue
                         v1.floatValue /= v2.floatValue
                     }
+
                     Lexer.P_MOD -> {
                         if (0 == v2.intValue) {
                             this.Error("divide by zero in #if/#elif\n")
@@ -2256,46 +2266,57 @@ object Parser {
                         }
                         v1.intValue %= v2.intValue
                     }
+
                     Lexer.P_ADD -> {
                         v1.intValue += v2.intValue
                         v1.floatValue += v2.floatValue
                     }
+
                     Lexer.P_SUB -> {
                         v1.intValue -= v2.intValue
                         v1.floatValue -= v2.floatValue
                     }
+
                     Lexer.P_LOGIC_AND -> {
                         v1.intValue = if (v1.intValue != 0 && v2.intValue != 0) 1 else 0
-                        v1.floatValue = if (v1.floatValue != 0.0f && v2.floatValue != 0.0f) 1f else 0f
+                        v1.floatValue = if (v1.floatValue != 0.0f && v2.floatValue != 0.0f) 1.0f else 0.0f
                     }
+
                     Lexer.P_LOGIC_OR -> {
                         v1.intValue = if (v1.intValue != 0 || v2.intValue != 0) 1 else 0
-                        v1.floatValue = if (v1.floatValue != 0.0f || v2.floatValue != 0.0f) 1f else 0f
+                        v1.floatValue = if (v1.floatValue != 0.0f || v2.floatValue != 0.0f) 1.0f else 0.0f
                     }
+
                     Lexer.P_LOGIC_GEQ -> {
                         v1.intValue = if (v1.intValue >= v2.intValue) 1 else 0
-                        v1.floatValue = if (v1.floatValue >= v2.floatValue) 1f else 0f
+                        v1.floatValue = if (v1.floatValue >= v2.floatValue) 1.0f else 0.0f
                     }
+
                     Lexer.P_LOGIC_LEQ -> {
                         v1.intValue = if (v1.intValue <= v2.intValue) 1 else 0
-                        v1.floatValue = if (v1.floatValue <= v2.floatValue) 1f else 0f
+                        v1.floatValue = if (v1.floatValue <= v2.floatValue) 1.0f else 0.0f
                     }
+
                     Lexer.P_LOGIC_EQ -> {
                         v1.intValue = if (v1.intValue == v2.intValue) 1 else 0
-                        v1.floatValue = if (v1.floatValue == v2.floatValue) 1f else 0f
+                        v1.floatValue = if (v1.floatValue == v2.floatValue) 1.0f else 0.0f
                     }
+
                     Lexer.P_LOGIC_UNEQ -> {
                         v1.intValue = if (v1.intValue != v2.intValue) 1 else 0
-                        v1.floatValue = if (v1.floatValue != v2.floatValue) 1f else 0f
+                        v1.floatValue = if (v1.floatValue != v2.floatValue) 1.0f else 0.0f
                     }
+
                     Lexer.P_LOGIC_GREATER -> {
                         v1.intValue = if (v1.intValue > v2.intValue) 1 else 0
-                        v1.floatValue = if (v1.floatValue > v2.floatValue) 1f else 0f
+                        v1.floatValue = if (v1.floatValue > v2.floatValue) 1.0f else 0.0f
                     }
+
                     Lexer.P_LOGIC_LESS -> {
                         v1.intValue = if (v1.intValue < v2.intValue) 1 else 0
-                        v1.floatValue = if (v1.floatValue < v2.floatValue) 1f else 0f
+                        v1.floatValue = if (v1.floatValue < v2.floatValue) 1.0f else 0.0f
                     }
+
                     Lexer.P_RSHIFT -> v1.intValue = v1.intValue shr v2.intValue
                     Lexer.P_LSHIFT -> v1.intValue = v1.intValue shl v2.intValue
                     Lexer.P_BIN_AND -> v1.intValue = v1.intValue and v2.intValue
@@ -2318,6 +2339,7 @@ object Parser {
                         }
                         gotquestmarkvalue = false
                     }
+
                     Lexer.P_QUESTIONMARK -> {
                         if (gotquestmarkvalue) {
                             this.Error("? after ? in #if/#elif")
@@ -2375,7 +2397,7 @@ object Parser {
                 if (intValue._val != 0) {
                     intValue._val = firstValue.intValue
                 }
-                if (floatValue._val != 0f) {
+                if (floatValue._val != 0.0f) {
                     floatValue._val = firstValue.floatValue
                 }
             }
@@ -2395,8 +2417,8 @@ object Parser {
             if (intValue._val != 0) {
                 intValue._val = 0
             }
-            if (floatValue._val != 0f) {
-                floatValue._val = 0f
+            if (floatValue._val != 0.0f) {
+                floatValue._val = 0.0f
             }
             return false
         }
@@ -2407,11 +2429,10 @@ object Parser {
             var firstToken: idToken?
             var lastToken: idToken?
             var t: idToken
-            var nextToken: idToken
             var define: define_s?
             var defined = false
             intvalue._val = 0
-            floatvalue._val = 0f
+            floatvalue._val = 0.0f
             //
             if (!ReadLine(token)) {
                 this.Error("no value after #if/#elif")
@@ -2496,10 +2517,9 @@ object Parser {
             var firstToken: idToken?
             var lasttoken: idToken?
             var t: idToken
-            var nexttoken: idToken
             var define: define_s?
             intValue._val = 0
-            floatValue._val = 0f
+            floatValue._val = 0.0f
             //
             if (!ReadSourceToken(token)) {
                 this.Error("no leading ( after \$evalint/\$evalfloat")
@@ -2548,9 +2568,9 @@ object Parser {
                     }
                 } //if the token is a number or a punctuation
                 else if (token.type == Token.TT_NUMBER || token.type == Token.TT_PUNCTUATION) {
-                    if (token.get(0) == '(') {
+                    if (token[0] == '(') {
                         indent++
-                    } else if (token.get(0) == ')') {
+                    } else if (token[0] == ')') {
                         indent--
                     }
                     if (indent <= 0) {
@@ -2835,7 +2855,7 @@ object Parser {
             token.type = Token.TT_NUMBER
             token.subtype = Token.TT_FLOAT or Token.TT_LONG or Token.TT_DECIMAL
             UnreadSourceToken(token)
-            if (value._val < 0f) {
+            if (value._val < 0) {
                 UnreadSignToken()
             }
             return true
@@ -2911,7 +2931,7 @@ object Parser {
             token.type = Token.TT_NUMBER
             token.subtype = Token.TT_INTEGER or Token.TT_LONG or Token.TT_DECIMAL or Token.TT_VALUESVALID
             token.intValue = abs(value._val).toLong()
-            token.floatValue = abs(value._val).toFloat()
+            token.floatValue = abs(value._val.toFloat())
             UnreadSourceToken(token)
             if (value._val < 0) {
                 UnreadSignToken()
@@ -3064,8 +3084,6 @@ object Parser {
             }
 
             private fun FreeDefine(define: define_s) {
-                var t: idToken
-                var next: idToken
 
                 //free the define parameters
 //            for (t = define.parms; t; t = next) {

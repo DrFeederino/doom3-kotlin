@@ -3,7 +3,7 @@ package neo.sys.RC
 import neo.TempDump.TODO_Exception
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.idlib.CmdArgs
-import neo.idlib.Lib.idException
+import neo.idlib.idException
 
 /*
  ===============================================================================

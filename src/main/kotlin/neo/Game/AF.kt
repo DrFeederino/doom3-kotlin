@@ -1,6 +1,5 @@
 package neo.Game
 
-import neo.CM.CollisionModel.trace_s
 import neo.Game.Animation.Anim.AFJointModType_t
 import neo.Game.Animation.Anim_Blend.idAnimator
 import neo.Game.Animation.Anim_Blend.idDeclModelDef
@@ -25,12 +24,12 @@ import neo.Game.Physics.Physics_AF.idPhysics_AF
 import neo.Renderer.Model
 import neo.Renderer.Model.idRenderModel
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.TempDump
+import neo.cm.trace_s
 import neo.framework.DeclAF.*
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declState_t
 import neo.framework.DeclManager.declType_t
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
 import neo.idlib.Text.Lexer.idLexer
@@ -41,20 +40,12 @@ import neo.idlib.containers.List.idList
 import neo.idlib.geometry.JointTransform.idJointMat
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.geometry.TraceModel.traceModel_t
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Math_h
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector.getVec3Origin
-import neo.idlib.math.Vector.idVec3
 import java.util.*
 import kotlin.math.abs
 
-/**
- *
- */
 object AF {
-    //
     val ARTICULATED_FIGURE_ANIM: String = "af_pose"
     const val POSE_BOUNDS_EXPANSION = 5.0f
 
@@ -89,7 +80,7 @@ object AF {
                 : idVec3
         protected var animator // animator on entity
                 : idAnimator?
-        protected var baseAxis // axis of base body relative to skeletal model origin
+        protected val baseAxis // axis of base body relative to skeletal model origin
                 : idMat3
         protected var hasBindConstraints // true if the bind constraints have been added
                 : Boolean
@@ -111,14 +102,11 @@ object AF {
                 : Int
         protected var restStartTime // time the articulated figure came to rest
                 : Int
-
-        //
-        //
         protected var self // entity using the animated model
                 : idEntity?
 
         fun Save(savefile: idSaveGame) {
-            savefile.WriteObject(self!!)
+            savefile.WriteObject(self)
             savefile.WriteString(GetName())
             savefile.WriteBool(hasBindConstraints)
             savefile.WriteVec3(baseOrigin)
@@ -231,11 +219,11 @@ object AF {
             }
 
             // get the modified animation
-            modifiedAnim = animator!!.GetAnim(AF.ARTICULATED_FIGURE_ANIM)
+            modifiedAnim = animator!!.GetAnim(ARTICULATED_FIGURE_ANIM)
             if (0 == modifiedAnim) {
                 Game_local.gameLocal.Warning(
                     "idAF::Load: articulated figure '%s' for entity '%s' at (%s) has no modified animation '%s'",
-                    name, ent.name, ent.GetPhysics().GetOrigin().ToString(0), AF.ARTICULATED_FIGURE_ANIM
+                    name, ent.name, ent.GetPhysics().GetOrigin().ToString(0), ARTICULATED_FIGURE_ANIM
                 )
                 return false
             }
@@ -304,8 +292,13 @@ object AF {
                 val constraint = physicsObj.GetConstraint(i)!!
                 j = 0
                 while (j < file.constraints.Num()) {
-                    if (file.constraints[j].name.Icmp(constraint.GetName()) == 0
-                        && file.constraints[j].type.ordinal == constraint.GetType().ordinal
+                    // DG: FIXME: GCC rightfully complains that file->constraints[j]->type and constraint->GetType()
+                    //  are of different enum types, and their values are different in some cases:
+                    //  CONSTRAINT_HINGESTEERING has no DECLAF_CONSTRAINT_ equivalent,
+                    //  and thus DECLAF_CONSTRAINT_SLIDER != CONSTRAINT_SLIDER (5 != 6)
+                    //  and DECLAF_CONSTRAINT_SPRING != CONSTRAINT_SPRING (6 != 10)
+                    if (file.constraints[j].name.Icmp(constraint.GetName()) == 0 &&
+                        file.constraints[j].type.ordinal == constraint.GetType().ordinal
                     ) {
                         break
                     }
@@ -384,7 +377,7 @@ object AF {
                 return
             }
             animatorPtr = ent.GetAnimator()
-            if (TempDump.NOT(animatorPtr)) {
+            if (animatorPtr == null) {
                 return
             }
             renderEntity = ent.GetRenderEntity()
@@ -393,7 +386,7 @@ object AF {
             }
 
             // if the animation is driven by the physics
-            if (self!!.GetPhysics() === physicsObj) {
+            if (self!!.GetPhysics() == physicsObj) {
                 return
             }
 
@@ -405,17 +398,17 @@ object AF {
             i = 0
             while (i < jointMods.Num()) {
                 body = physicsObj.GetBody(jointMods[i].bodyId)!!
-                animatorPtr!!.GetJointTransform(jointMods[i].jointHandle, time, origin, axis)
+                animatorPtr.GetJointTransform(jointMods[i].jointHandle, time, origin, axis)
                 body.SetWorldOrigin(
-                    renderEntity!!.origin.plus(
+                    renderEntity.origin.plus(
                         origin.plus(
                             jointMods[i].jointBodyOrigin.times(
                                 axis
                             )
-                        ).times(renderEntity!!.axis)
+                        ).times(renderEntity.axis)
                     )
                 )
-                body.SetWorldAxis(jointMods[i].jointBodyAxis.times(axis).times(renderEntity!!.axis))
+                body.SetWorldAxis(jointMods[i].jointBodyAxis.times(axis).times(renderEntity.axis))
                 i++
             }
             if (isActive) {
@@ -448,12 +441,12 @@ object AF {
                 return
             }
             renderEntity = ent.GetRenderEntity()
-            if (TempDump.NOT(renderEntity)) {
+            if (renderEntity == null) {
                 return
             }
 
             // if the animation is driven by the physics
-            if (self!!.GetPhysics() === physicsObj) {
+            if (self!!.GetPhysics() == physicsObj) {
                 return
             }
 
@@ -461,7 +454,7 @@ object AF {
             if (poseTime == time) {
                 return
             }
-            invDelta = 1.0f / Math_h.MS2SEC((time - poseTime).toFloat())
+            invDelta = 1.0f / MS2SEC((time - poseTime).toFloat())
             poseTime = time
             i = 0
             while (i < jointMods.Num()) {
@@ -469,15 +462,15 @@ object AF {
                 animatorPtr.GetJointTransform(jointMods[i].jointHandle, time, origin, axis)
                 lastOrigin.set(body.GetWorldOrigin())
                 body.SetWorldOrigin(
-                    renderEntity!!.origin.plus(
+                    renderEntity.origin.plus(
                         origin.plus(
                             jointMods[i].jointBodyOrigin.times(
                                 axis
                             )
-                        ).times(renderEntity!!.axis)
+                        ).times(renderEntity.axis)
                     )
                 )
-                body.SetWorldAxis(jointMods[i].jointBodyAxis.times(axis).times(renderEntity!!.axis))
+                body.SetWorldAxis(jointMods[i].jointBodyAxis.times(axis).times(renderEntity.axis))
                 body.SetLinearVelocity(body.GetWorldOrigin().minus(lastOrigin).times(invDelta))
                 i++
             }
@@ -627,14 +620,17 @@ object AF {
                     val bs = constraint as idAFConstraint_BallAndSocketJoint
                     bs.Translate(pos.minus(bs.GetAnchor()))
                 }
+
                 constraintType_t.CONSTRAINT_UNIVERSALJOINT -> {
                     val uj = constraint as idAFConstraint_UniversalJoint
                     uj.Translate(pos.minus(uj.GetAnchor()))
                 }
+
                 constraintType_t.CONSTRAINT_HINGE -> {
                     val hinge = constraint as idAFConstraint_Hinge
                     hinge.Translate(pos.minus(hinge.GetAnchor()))
                 }
+
                 else -> {
                     Game_local.gameLocal.Warning("cannot set the constraint position for '%s'", name)
                 }
@@ -657,7 +653,7 @@ object AF {
             var body: idAFBody?
             val origin = idVec3()
             val entityOrigin = idVec3()
-            var axis: idMat3
+            val axis = idMat3()
             val entityAxis: idMat3
             val bounds = idBounds()
             val b = idBounds()
@@ -665,7 +661,7 @@ object AF {
 
             // get model base transform
             origin.set(physicsObj.GetOrigin(0))
-            axis = physicsObj.GetAxis(0)
+            axis.set(physicsObj.GetAxis(0))
             entityAxis = baseAxis.Transpose().times(axis)
             entityOrigin.set(origin.minus(baseOrigin.times(entityAxis)))
 
@@ -674,7 +670,7 @@ object AF {
             while (i < jointMods.Num()) {
                 body = physicsObj.GetBody(jointMods[i].bodyId)!!
                 origin.set(body.GetWorldOrigin().minus(entityOrigin).times(entityAxis.Transpose()))
-                axis = body.GetWorldAxis().times(entityAxis.Transpose())
+                axis.set(body.GetWorldAxis().times(entityAxis.Transpose()))
                 b.FromTransformedBounds(body.GetClipModel()!!.GetBounds(), origin, axis)
                 bounds.timesAssign(b)
                 i++
@@ -687,9 +683,9 @@ object AF {
             val origin = idVec3()
             val renderOrigin = idVec3()
             val bodyOrigin = idVec3()
-            var axis: idMat3
-            val renderAxis: idMat3
-            var bodyAxis: idMat3
+            val axis = idMat3()
+            val renderAxis: idMat3 = idMat3()
+            val bodyAxis = idMat3()
             val renderEntity: renderEntity_s?
             if (!IsLoaded()) {
                 return false
@@ -710,9 +706,9 @@ object AF {
 
             // get the render position
             origin.set(physicsObj.GetOrigin(0))
-            axis = physicsObj.GetAxis(0)
-            renderAxis = baseAxis.Transpose().times(axis)
-            renderOrigin.set(origin.minus(baseOrigin.times(renderAxis)))
+            axis.set(physicsObj.GetAxis(0))
+            renderAxis.set(baseAxis.Transpose() * axis)
+            renderOrigin.set(origin - baseOrigin * renderAxis)
 
             // create an animation frame which reflects the current pose of the articulated figure
             animator!!.InitAFPose()
@@ -725,18 +721,15 @@ object AF {
                     continue
                 }
                 bodyOrigin.set(physicsObj.GetOrigin(jointMods[i].bodyId))
-                bodyAxis = physicsObj.GetAxis(jointMods[i].bodyId)
-                axis = jointMods[i].jointBodyAxis.Transpose().times(bodyAxis.times(renderAxis.Transpose()))
-                origin.set(
-                    bodyOrigin.minus(jointMods[i].jointBodyOrigin.times(axis).minus(renderOrigin))
-                        .times(renderAxis.Transpose())
-                )
+                bodyAxis.set(physicsObj.GetAxis(jointMods[i].bodyId))
+                axis.set(jointMods[i].jointBodyAxis.Transpose() * (bodyAxis * renderAxis.Transpose()))
+                origin.set((bodyOrigin - jointMods[i].jointBodyOrigin * axis - renderOrigin) * renderAxis.Transpose())
                 animator!!.SetAFPoseJointMod(jointMods[i].jointHandle, jointMods[i].jointMod, axis, origin)
                 i++
             }
             animator!!.FinishAFPose(
                 modifiedAnim,
-                GetBounds().Expand(AF.POSE_BOUNDS_EXPANSION),
+                GetBounds().Expand(POSE_BOUNDS_EXPANSION),
                 Game_local.gameLocal.time
             )
             animator!!.SetAFPoseBlendWeight(1.0f)
@@ -858,7 +851,7 @@ object AF {
                 lexer.ReadToken(type)
                 lexer.ReadToken(bodyName)
                 body = physicsObj.GetBody(bodyName)
-                if (TempDump.NOT(body)) {
+                if (body == null) {
                     Game_local.gameLocal.Warning(
                         "idAF::AddBindConstraints: body '%s' not found on entity '%s'",
                         bodyName,
@@ -1008,15 +1001,19 @@ object AF {
                 traceModel_t.TRM_BOX -> {
                     trm.SetupBox(bounds)
                 }
+
                 traceModel_t.TRM_OCTAHEDRON -> {
                     trm.SetupOctahedron(bounds)
                 }
+
                 traceModel_t.TRM_DODECAHEDRON -> {
                     trm.SetupDodecahedron(bounds)
                 }
+
                 traceModel_t.TRM_CYLINDER -> {
                     trm.SetupCylinder(bounds, fb.numSides)
                 }
+
                 traceModel_t.TRM_CONE -> {
 
                     // place the apex at the origin
@@ -1024,6 +1021,7 @@ object AF {
                     bounds[1].z = 0.0f
                     trm.SetupCone(bounds, fb.numSides)
                 }
+
                 traceModel_t.TRM_BONE -> {
 
                     // direction of bone
@@ -1035,6 +1033,7 @@ object AF {
                     // create bone trace model
                     trm.SetupBone(length, fb.width)
                 }
+
                 else -> assert(false)
             }
             trm.GetMassProperties(1.0f, candleMass, centerOfMass, inertiaTensor)
@@ -1128,6 +1127,7 @@ object AF {
                         physicsObj.AddConstraint(c)
                     }
                 }
+
                 declAFConstraintType_t.DECLAF_CONSTRAINT_BALLANDSOCKETJOINT -> {
                     var c: idAFConstraint_BallAndSocketJoint?
                     c = physicsObj.GetConstraint(fc.name.toString()) as idAFConstraint_BallAndSocketJoint?
@@ -1144,6 +1144,7 @@ object AF {
                         idDeclAF_Constraint.LIMIT_CONE -> {
                             c.SetConeLimit(fc.limitAxis.ToVec3(), fc.limitAngles[0], fc.shaft[0].ToVec3())
                         }
+
                         idDeclAF_Constraint.LIMIT_PYRAMID -> {
                             angles.set(fc.limitAxis.ToVec3().ToAngles())
                             angles.roll = fc.limitAngles[2]
@@ -1156,11 +1157,13 @@ object AF {
                                 fc.shaft[0].ToVec3()
                             )
                         }
+
                         else -> {
                             c.SetNoLimit()
                         }
                     }
                 }
+
                 declAFConstraintType_t.DECLAF_CONSTRAINT_UNIVERSALJOINT -> {
                     var c: idAFConstraint_UniversalJoint?
                     c = physicsObj.GetConstraint(fc.name.toString()) as idAFConstraint_UniversalJoint?
@@ -1178,17 +1181,20 @@ object AF {
                         idDeclAF_Constraint.LIMIT_CONE -> {
                             c.SetConeLimit(fc.limitAxis.ToVec3(), fc.limitAngles[0])
                         }
+
                         idDeclAF_Constraint.LIMIT_PYRAMID -> {
                             angles.set(fc.limitAxis.ToVec3().ToAngles())
                             angles.roll = fc.limitAngles[2]
                             axis.set(angles.ToMat3())
                             c.SetPyramidLimit(axis[0], axis[1], fc.limitAngles[0], fc.limitAngles[1])
                         }
+
                         else -> {
                             c.SetNoLimit()
                         }
                     }
                 }
+
                 declAFConstraintType_t.DECLAF_CONSTRAINT_HINGE -> {
                     var c: idAFConstraint_Hinge?
                     c = physicsObj.GetConstraint(fc.name.toString()) as idAFConstraint_Hinge?
@@ -1229,11 +1235,13 @@ object AF {
                             )
                             c.SetLimit(axis2, fc.limitAngles[1], shaft)
                         }
+
                         else -> {
                             c.SetNoLimit()
                         }
                     }
                 }
+
                 declAFConstraintType_t.DECLAF_CONSTRAINT_SLIDER -> {
                     var c: idAFConstraint_Slider?
                     c = physicsObj.GetConstraint(fc.name.toString()) as idAFConstraint_Slider?
@@ -1246,6 +1254,7 @@ object AF {
                     }
                     c.SetAxis(fc.axis.ToVec3())
                 }
+
                 declAFConstraintType_t.DECLAF_CONSTRAINT_SPRING -> {
                     var c: idAFConstraint_Spring?
                     c = physicsObj.GetConstraint(fc.name.toString()) as idAFConstraint_Spring?

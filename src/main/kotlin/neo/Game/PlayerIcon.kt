@@ -8,11 +8,8 @@ import neo.Renderer.RenderWorld.renderEntity_s
 import neo.TempDump
 import neo.framework.DeclManager
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 object PlayerIcon {
     val iconKeys /*[ ICON_NONE ]*/: Array<String> = arrayOf(
         "mtr_icon_lag",
@@ -110,7 +107,7 @@ object PlayerIcon {
 
         fun CreateIcon(player: idPlayer, type: playerIconType_t, origin: idVec3, axis: idMat3): Boolean {
             assert(type != playerIconType_t.ICON_NONE)
-            val mtr = player.spawnArgs.GetString(PlayerIcon.iconKeys[TempDump.etoi(type)], "_default")!!
+            val mtr = player.spawnArgs.GetString(iconKeys[TempDump.etoi(type)], "_default")!!
             return CreateIcon(player, type, mtr, origin, axis)
         }
 

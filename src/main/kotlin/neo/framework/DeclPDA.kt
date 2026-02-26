@@ -2,16 +2,13 @@ package neo.framework
 
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclManager.idDecl
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.idStrList
+import neo.idlib.idException
 
-/**
- *
- */
 class DeclPDA {
     /*
      ===============================================================================
@@ -30,15 +27,13 @@ class DeclPDA {
         private lateinit var text: idStr
         private lateinit var to: idStr
         override fun DefaultDefinition(): String {
-            run {
-                return """{
-	{
-		to	5Mail recipient
-		subject	5Nothing
-		from	5No one
-	}
-}"""
-            }
+            return """{
+                                {
+                                    to	5Mail recipient
+                                    subject	5Nothing
+                                    from	5No one
+                                }
+                            }"""
         }
 
         @Throws(idException::class)
@@ -346,8 +341,8 @@ class DeclPDA {
         private val videos: idStrList
         override fun DefaultDefinition(): String {
             return """{
-	name  "default pda"
-}"""
+	                    name  "default pda"
+                    }"""
         }
 
         @Throws(idException::class)

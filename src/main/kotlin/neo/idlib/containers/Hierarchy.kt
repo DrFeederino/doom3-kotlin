@@ -1,10 +1,7 @@
 package neo.idlib.containers
 
-import neo.idlib.Lib.idLib
+import neo.idlib.idLib
 
-/**
- *
- */
 class Hierarchy {
     /*
      ==============================================================================
@@ -164,7 +161,7 @@ class Hierarchy {
             if (node !== this) {
                 idLib.Error("idHierarchy::GetPriorSibling: could not find node in parent's list of children")
             }
-            return prev as T?
+            return prev?.owner
         }
 
         /*
@@ -231,10 +228,25 @@ class Hierarchy {
          ================
          */
         private fun GetPriorSiblingNode(): idHierarchy<T>? { // previous node with the same parent
-            val prior: idHierarchy<T>? = GetPriorSiblingNode()
-            return if (prior != null) {
-                prior.owner as idHierarchy<T>?
-            } else null
+            if (parent == null || (parent?.child == this)) {
+                return null
+            }
+
+            var prev: idHierarchy<T>?
+            var node: idHierarchy<T>?
+
+            node = parent?.child
+            prev = null
+            while ((node != this) && (node != null)) {
+                prev = node
+                node = node.sibling
+            }
+
+            if (node != this) {
+                idLib.Error("idHierarchy::GetPriorSibling: could not find node in parent's list of children")
+            }
+
+            return prev
         }
     }
 }

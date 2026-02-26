@@ -1,10 +1,5 @@
 package neo.idlib.math
 
-import neo.idlib.math.Math_h.idMath
-
-/**
- *
- */
 class Random {
     /*
      ===============================================================================
@@ -41,10 +36,10 @@ class Random {
             return seed and MAX_RAND
         }
 
-        fun RandomInt(max: Double): Int { // random integer in the range [0, max[
-            return if (max == 0.0) {
+        fun RandomInt(max: Int): Int { // random integer in the range [0, max[
+            return if (max == 0) {
                 0 // avoid divide by zero error
-            } else (RandomInt() % max).toInt()
+            } else RandomInt() % max
         }
 
         fun RandomFloat(): Float { // random number in the range [0.0f, 1.0f]
@@ -94,21 +89,21 @@ class Random {
         fun RandomInt(max: Int): Int { // random integer in the range [0, max]
             return if (max == 0) {
                 0 // avoid divide by zero error
-            } else (RandomInt() shr 16 - idMath.BitsForInteger(max)) % max
+            } else (RandomInt() shr (16 - idMath.BitsForInteger(max))) % max
         }
 
         fun RandomFloat(): Float { // random number in the range [0.0f, 1.0f]
-            val i: Long
             seed = 1664525L * seed + 1013904223L
-            i = IEEE_ONE or (seed and IEEE_MASK)
-            return i - 1.0f
+            val i = (IEEE_ONE or (seed and IEEE_MASK)).toInt()
+            val floatBits = java.lang.Float.intBitsToFloat(i)
+            return floatBits - 1.0f
         }
 
         fun CRandomFloat(): Float { // random number in the range [-1.0f, 1.0f]
-            val i: Long
             seed = 1664525L * seed + 1013904223L
-            i = IEEE_ONE or (seed and IEEE_MASK)
-            return 2.0f * i - 3.0f
+            val i = (IEEE_ONE or (seed and IEEE_MASK)).toInt()
+            val floatBits = java.lang.Float.intBitsToFloat(i)
+            return 2.0f * floatBits - 3.0f
         }
 
         companion object {

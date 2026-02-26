@@ -1,7 +1,6 @@
 package neo.Tools.Compilers.DMap
 
 import neo.Renderer.Material
-import neo.TempDump
 import neo.Tools.Compilers.DMap.dmap.bspface_s
 import neo.Tools.Compilers.DMap.dmap.node_s
 import neo.Tools.Compilers.DMap.dmap.primitive_s
@@ -12,16 +11,11 @@ import neo.Tools.Compilers.DMap.dmap.uPortal_s
 import neo.Tools.Compilers.DMap.map.FindFloatPlane
 import neo.framework.Common
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.*
 import neo.sys.win_shared
 import kotlin.math.abs
 import kotlin.math.floor
 
-/**
- *
- */
 object facebsp {
     //
     const val BLOCK_SIZE = 1024
@@ -119,7 +113,7 @@ object facebsp {
             i++
         }
         if (node.planenum == dmap.PLANENUM_LEAF) {
-            if (TempDump.NOT(node.brushlist)) {
+            if (node.brushlist == null) {
                 Common.common.Printf("NULL\n")
             } else {
                 bb = node.brushlist
@@ -194,12 +188,12 @@ object facebsp {
         for (axis in 0..2) {
             dist = if (halfSize[axis] > BLOCK_SIZE) {
                 (BLOCK_SIZE * (floor(
-                    ((node.bounds[0, axis] + halfSize[axis]) / BLOCK_SIZE).toDouble()
-                ) + 1.0f)).toFloat()
+                    ((node.bounds[0, axis] + halfSize[axis]) / BLOCK_SIZE)
+                ) + 1.0f))
             } else {
                 (BLOCK_SIZE * (floor(
-                    (node.bounds[0, axis] / BLOCK_SIZE).toDouble()
-                ) + 1.0f)).toFloat()
+                    (node.bounds[0, axis] / BLOCK_SIZE)
+                ) + 1.0f))
             }
             if (dist > node.bounds[0, axis] + 1.0f && dist < node.bounds[1, axis] - 1.0f) {
                 plane[0] = plane.set(1, plane.set(2, 0.0f))
@@ -249,17 +243,17 @@ object facebsp {
                     continue
                 }
                 side = check.w!!.PlaneSide(mapPlane)
-                if (side == Plane.SIDE_CROSS) {
+                if (side == SIDE_CROSS) {
                     splits++
-                } else if (side == Plane.SIDE_FRONT) {
+                } else if (side == SIDE_FRONT) {
                     front++
-                } else if (side == Plane.SIDE_BACK) {
+                } else if (side == SIDE_BACK) {
                     back++
                 }
                 check = check.next
             }
             value = 5 * facing - 5 * splits // - abs(front-back);
-            if (mapPlane.Type() < Plane.PLANETYPE_TRUEAXIAL) {
+            if (mapPlane.Type() < PLANETYPE_TRUEAXIAL) {
                 value += 5 // axial is better
             }
             if (value > bestValue) {
@@ -310,7 +304,7 @@ object facebsp {
                 continue
             }
             side = split.w!!.PlaneSide(plane)
-            if (side == Plane.SIDE_CROSS) {
+            if (side == SIDE_CROSS) {
                 split.w!!.Split(plane, ubrush.CLIP_EPSILON * 2, frontWinding, backWinding)
                 if (!frontWinding.isNULL()) {
                     newFace = AllocBspFace()
@@ -327,10 +321,10 @@ object facebsp {
                     childLists[1] = newFace
                 }
                 FreeBspFace(split)
-            } else if (side == Plane.SIDE_FRONT) {
+            } else if (side == SIDE_FRONT) {
                 split.next = childLists[0]
                 childLists[0] = split
-            } else if (side == Plane.SIDE_BACK) {
+            } else if (side == SIDE_BACK) {
                 split.next = childLists[1]
                 childLists[1] = split
             }
@@ -399,7 +393,7 @@ object facebsp {
         BuildFaceTree_r(tree.headnode, list)
         Common.common.Printf("%5d leafs\n", c_faceLeafs)
         end = win_shared.Sys_Milliseconds()
-        Common.common.Printf("%5.1f seconds faceBsp\n", (end - start) / 1000.0)
+        Common.common.Printf("%5.1f seconds faceBsp\n", (end - start) / 1000.0f)
         return tree
     }
 
@@ -411,15 +405,15 @@ object facebsp {
      */
     fun MakeStructuralBspFaceList(list: primitive_s?): bspface_s {
         var list = list
-        var b: uBrush_t
+        var b: uBrush_t?
         var i: Int
         var s: side_s?
         var w: idWinding?
         var f: bspface_s?
         var flist: bspface_s? = null
         while (list != null) {
-            b = list.brush as uBrush_t
-            if (TempDump.NOT(b)) {
+            b = list.brush as uBrush_t?
+            if (b == null) {
                 list = list.next
                 continue
             }
@@ -461,7 +455,7 @@ object facebsp {
      */
     fun MakeVisibleBspFaceList(list: primitive_s?): bspface_s {
         var list = list
-        var b: uBrush_t
+        var b: uBrush_t?
         var i: Int
         var s: side_s?
         var w: idWinding?
@@ -469,8 +463,8 @@ object facebsp {
         var flist: bspface_s?
         flist = null
         while (list != null) {
-            b = list.brush as uBrush_t
-            if (TempDump.NOT(b)) {
+            b = list.brush as uBrush_t?
+            if (b == null) {
                 list = list.next
                 continue
             }

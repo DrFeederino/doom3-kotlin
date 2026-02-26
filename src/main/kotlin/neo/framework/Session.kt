@@ -17,9 +17,9 @@ import neo.framework.FileSystem_h.findFile_t
 import neo.framework.Session_local.idSessionLocal
 import neo.framework.Session_local.timeDemo_t
 import neo.idlib.CmdArgs
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
+import neo.idlib.idException
 import neo.sys.sys_public.sysEvent_s
 import neo.sys.win_main
 import neo.sys.win_main.Sys_EnterCriticalSection
@@ -28,9 +28,6 @@ import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
 import java.nio.ByteBuffer
 
-/**
- *
- */
 class Session {
     fun RandomizeStack() {
         // attempt to force uninitialized stack memory bugs
@@ -49,17 +46,11 @@ class Session {
     //
     // needed by the gui system for the load game menu
     class logStats_t : SERiAL {
-
         var combat = 0
-
-
         var health = 0
-
-
-        var heartRate = 0f
-
-
+        var heartRate = 0.0f
         var stamina = 0
+
         override fun AllocBuffer(): ByteBuffer {
             throw TODO_Exception()
         }
@@ -78,11 +69,6 @@ class Session {
         }
     }
 
-    //
-    //    
-    //    
-    //    
-    //typedef const char * (*HandleGuiCommand_t)( const char * );
     abstract class HandleGuiCommand_t {
         abstract fun run(input: String): String
     }
@@ -311,6 +297,7 @@ class Session {
                     Common.common.Printf("Can't find map %s\n", string)
                     return
                 }
+
                 findFile_t.FIND_ADDON -> {
                     Common.common.Printf("map %s is in an addon pak - reloading\n", string)
                     rl_args.AppendArg("map")
@@ -318,6 +305,7 @@ class Session {
                     CmdSystem.cmdSystem.SetupReloadEngine(rl_args)
                     return
                 }
+
                 else -> {}
             }
             CVarSystem.cvarSystem.SetCVarBool("developer", false)
@@ -362,6 +350,7 @@ class Session {
                     Common.common.Printf("Can't find map %s\n", string)
                     return
                 }
+
                 findFile_t.FIND_ADDON -> {
                     Common.common.Printf("map %s is in an addon pak - reloading\n", string)
                     rl_args.AppendArg("devmap")
@@ -369,6 +358,7 @@ class Session {
                     CmdSystem.cmdSystem.SetupReloadEngine(rl_args)
                     return
                 }
+
                 else -> {}
             }
             CVarSystem.cvarSystem.SetCVarBool("developer", true)
@@ -445,8 +435,7 @@ class Session {
     internal class Session_PromptKey_f : cmdFunction_t() {
         @Throws(idException::class)
         override fun run(args: CmdArgs.idCmdArgs?) {
-            var retkey: String
-            val valid = BooleanArray(2)
+            BooleanArray(2)
             if (recursed) {
                 Common.common.Warning("promptKey recursed - aborted")
                 return
@@ -885,8 +874,7 @@ class Session {
         override fun run(args: CmdArgs.idCmdArgs?) {
             Console.console.Close()
             if (args!!.Argc() < 2 || idStr.Icmp(args.Argv(1), "quick") == 0) {
-                val saveName = Common.common.GetLanguageDict().GetString("#str_07178")
-                sessLocal.LoadGame(saveName)
+                sessLocal.QuickLoad()
             } else {
                 sessLocal.LoadGame(args.Argv(1))
             }

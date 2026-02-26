@@ -1,29 +1,23 @@
 package neo.idlib.geometry
 
 import neo.TempDump.SERiAL
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idVec2
+import neo.idlib.math.idVec3
 import org.lwjgl.BufferUtils
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.abs
 
 
-/**
- *
- */
 object DrawVert {
 
-    fun toByteBuffer(verts: Array<idDrawVert?>): ByteBuffer {
+    fun toByteBuffer(verts: Array<idDrawVert>): ByteBuffer {
         val data = BufferUtils.createByteBuffer(idDrawVert.BYTES * verts.size)
         for (vert in verts) {
             if (vert != null) {
                 data.put(vert.Write().rewind())
             }
         }
-        //        System.out.printf("%d %d %d %d\n", data.get(0) & 0xff, data.get(1) & 0xff, data.get(2) & 0xff, data.get(3) & 0xff);
-//        System.out.printf("%d %d %d %d\n", data.get(4) & 0xff, data.get(5) & 0xff, data.get(6) & 0xff, data.get(7) & 0xff);
-//        System.out.printf("%f %f %f %f\n", data.getFloat(0), data.getFloat(4), data.getFloat(8), data.getFloat(12));
         return data.flip()
     }
 
@@ -36,30 +30,17 @@ object DrawVert {
      */
     class idDrawVert : SERiAL {
         private val DBG_count = DBG_counter++
-
-
         var color: ByteArray = ByteArray(4)
-
-
-        var normal: idVec3
-
-
-        var st: idVec2
-
-
+        val normal: idVec3 = idVec3()
+        val st: idVec2 = idVec2()
         var tangents: Array<idVec3>
-
-
-        var xyz: idVec3
+        val xyz: idVec3 = idVec3()
 
         @Transient
         private var VBO_OFFSET = 0
 
         constructor() {
-            xyz = idVec3()
-            st = idVec2()
-            normal = idVec3()
-            tangents = idVec3.Companion.generateArray(2)
+            tangents = idVec3.generateArray(2)
         }
 
         /**
@@ -72,9 +53,9 @@ object DrawVert {
         }
 
         constructor (dv: idDrawVert) {
-            xyz = idVec3(dv.xyz)
-            st = idVec2(dv.st)
-            normal = idVec3(dv.normal)
+            xyz.set(dv.xyz)
+            st.set(dv.st)
+            normal.set(dv.normal)
             tangents = arrayOf(idVec3(dv.tangents[0]), idVec3(dv.tangents[1]))
         }
 
@@ -95,7 +76,7 @@ object DrawVert {
                 11, 12, 13 -> return tangents[1][index - 11]
                 14, 15, 16, 17 -> return color[index - 14].toFloat()
             }
-            return -1f
+            return -1.0f
         }
 
         fun Clear() {
@@ -136,8 +117,6 @@ object DrawVert {
         }
 
         fun SetColor(color: Int) {
-//	*reinterpret_cast<dword *>(this->color) = color;
-//            this.color = this.set_reinterpret_cast(color);
             val buffer = ByteBuffer.allocate(Integer.BYTES)
             buffer.putInt(color)
             this.color = buffer.array()
@@ -148,9 +127,13 @@ object DrawVert {
         }
 
         private fun get_reinterpret_cast(): Int {
-            return color[0].toInt() and 0x000000FF or (color[1].toInt() and 0x0000FF00
-                    ) or (color[2].toInt() and 0x00FF0000
-                    ) or (color[3].toInt() and -0x1000000)
+//            return color[0].toInt() and 0x000000FF or (color[1].toInt() and 0x0000FF00
+//                    ) or (color[2].toInt() and 0x00FF0000
+//                    ) or (color[3].toInt() and -0x1000000)
+            return (color[0].toInt() and 0xFF) or
+                    ((color[1].toInt() and 0xFF) shl 8) or
+                    ((color[2].toInt() and 0xFF) shl 16) or
+                    ((color[3].toInt() and 0xFF) shl 24)
         }
 
         private fun set_reinterpret_cast(color: Long): ShortArray {
@@ -240,7 +223,6 @@ object DrawVert {
 
         companion object {
             @Transient
-
             val SIZE: Int = (idVec3.SIZE
                     + idVec2.SIZE
                     + idVec3.SIZE
@@ -248,16 +230,8 @@ object DrawVert {
                     + 4 * java.lang.Byte.SIZE) //color
 
             @Transient
-
             val BYTES = SIZE / java.lang.Byte.SIZE
-
-            ////#if 0 // was MACOS_X see comments concerning DRAWVERT_PADDED in Simd_Altivec.h
-            ////	float			padding;
-            ////#endif
-            //public	float			operator[]( const int index ) const;
-            //public	float &			operator[]( const int index );
             private var DBG_counter = 0
-
 
             fun generateArray(length: Int): Array<idDrawVert> {
                 return Array(length) { idDrawVert() }

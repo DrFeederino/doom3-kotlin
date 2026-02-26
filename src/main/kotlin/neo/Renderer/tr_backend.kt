@@ -3,15 +3,6 @@ package neo.Renderer
 import neo.Renderer.*
 import neo.Renderer.Image.idImage
 import neo.Renderer.Material.cullType_t
-import neo.Renderer.tr_local.copyRenderCommand_t
-import neo.Renderer.tr_local.drawSurf_s
-import neo.Renderer.tr_local.drawSurfsCommand_t
-import neo.Renderer.tr_local.emptyCommand_t
-import neo.Renderer.tr_local.glstate_t
-import neo.Renderer.tr_local.renderCommand_t
-import neo.Renderer.tr_local.setBufferCommand_t
-import neo.Renderer.tr_local.tmu_t
-import neo.TempDump.NOT
 import neo.framework.Common
 import neo.idlib.containers.CInt
 import neo.sys.win_glimp.GLimp_SwapBuffers
@@ -27,9 +18,6 @@ import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
-/**
- *
- */
 object tr_backend {
     /*
      ====================
@@ -62,7 +50,7 @@ object tr_backend {
         var i: Int
         RB_LogComment("--- R_SetDefaultGLState ---\n")
         qgl.qglClearDepth(1.0)
-        qgl.qglColor4f(1f, 1f, 1f, 1f)
+        qgl.qglColor4f(1.0f, 1.0f, 1.0f, 1.0f)
 
         // the vertex array is always enabled
         qgl.qglEnableClientState(GL11.GL_VERTEX_ARRAY)
@@ -72,8 +60,8 @@ object tr_backend {
         //
         // make sure our GL state vector is set correctly
         //
-        tr_local.backEnd!!.glState = glstate_t() //memset(backEnd.glState, 0, sizeof(backEnd.glState));
-        tr_local.backEnd!!.glState.forceGlState = true
+        backEnd!!.glState = glstate_t() //memset(backEnd.glState, 0, sizeof(backEnd.glState));
+        backEnd!!.glState.forceGlState = true
         qgl.qglColorMask(1, 1, 1, 1)
         qgl.qglEnable(GL11.GL_DEPTH_TEST)
         qgl.qglEnable(GL11.GL_BLEND)
@@ -87,10 +75,10 @@ object tr_backend {
         qgl.qglDepthFunc(GL11.GL_ALWAYS)
         qgl.qglCullFace(GL11.GL_FRONT_AND_BACK)
         qgl.qglShadeModel(GL11.GL_SMOOTH)
-        if (RenderSystem_init.r_useScissor!!.GetBool()) {
-            qgl.qglScissor(0, 0, tr_local.glConfig.vidWidth, tr_local.glConfig.vidHeight)
+        if (r_useScissor!!.GetBool()) {
+            qgl.qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight)
         }
-        i = tr_local.glConfig.maxTextureUnits - 1
+        i = glConfig.maxTextureUnits - 1
         while (i >= 0) {
             GL_SelectTexture(i)
 
@@ -101,10 +89,10 @@ object tr_backend {
             qgl.qglTexGenf(GL11.GL_Q, GL11.GL_TEXTURE_GEN_MODE, GL11.GL_OBJECT_LINEAR.toFloat())
             GL_TexEnv(GL11.GL_MODULATE)
             qgl.qglDisable(GL11.GL_TEXTURE_2D)
-            if (tr_local.glConfig.texture3DAvailable) {
+            if (glConfig.texture3DAvailable) {
                 qgl.qglDisable(GL12.GL_TEXTURE_3D)
             }
-            if (tr_local.glConfig.cubeMapAvailable) {
+            if (glConfig.cubeMapAvailable) {
                 qgl.qglDisable(GL13.GL_TEXTURE_CUBE_MAP /*_EXT*/)
             }
             i--
@@ -118,12 +106,12 @@ object tr_backend {
      */
     fun RB_LogComment(vararg comment: Any?) {
 //   va_list marker;
-        if (null == tr_local.tr.logFile) {
+        if (null == tr.logFile) {
             return
         }
-        fprintf(tr_local.tr.logFile!!, "// ")
+        fprintf(tr.logFile!!, "// ")
         //	va_start( marker, comment );
-        vfprintf(tr_local.tr.logFile!!, comment)
+        vfprintf(tr.logFile!!, comment)
         //	va_end( marker );
     }
 
@@ -134,17 +122,17 @@ object tr_backend {
      ====================
      */
     fun GL_SelectTexture(unit: Int) {
-        if (tr_local.backEnd!!.glState.currenttmu == unit) {
+        if (backEnd!!.glState.currenttmu == unit) {
             return
         }
-        if (unit < 0 || unit >= tr_local.glConfig.maxTextureUnits && unit >= tr_local.glConfig.maxTextureImageUnits) {
+        if (unit < 0 || (unit >= glConfig.maxTextureUnits && unit >= glConfig.maxTextureImageUnits)) {
             Common.common.Warning("GL_SelectTexture: unit = %d", unit)
             return
         }
         qgl.qglActiveTextureARB(ARBMultitexture.GL_TEXTURE0_ARB + unit)
         qgl.qglClientActiveTextureARB(ARBMultitexture.GL_TEXTURE0_ARB + unit)
         RB_LogComment("glActiveTextureARB( %d );\nglClientActiveTextureARB( %d );\n", unit, unit)
-        tr_local.backEnd!!.glState.currenttmu = unit
+        backEnd!!.glState.currenttmu = unit
     }
 
     /*
@@ -155,30 +143,30 @@ object tr_backend {
      ====================
      */
     fun GL_Cull(cullType: Int) {
-        if (tr_local.backEnd!!.glState.faceCulling == cullType) {
+        if (backEnd!!.glState.faceCulling == cullType) {
             return
         }
         if (cullType == cullType_t.CT_TWO_SIDED.ordinal) {
             qgl.qglDisable(GL11.GL_CULL_FACE)
         } else {
-            if (tr_local.backEnd!!.glState.faceCulling == cullType_t.CT_TWO_SIDED.ordinal) {
+            if (backEnd!!.glState.faceCulling == cullType_t.CT_TWO_SIDED.ordinal) {
                 qgl.qglEnable(GL11.GL_CULL_FACE)
             }
             if (cullType == cullType_t.CT_BACK_SIDED.ordinal) {
-                if (tr_local.backEnd!!.viewDef!!.isMirror) {
+                if (backEnd!!.viewDef!!.isMirror) {
                     qgl.qglCullFace(GL11.GL_FRONT)
                 } else {
                     qgl.qglCullFace(GL11.GL_BACK)
                 }
             } else {
-                if (tr_local.backEnd!!.viewDef!!.isMirror) {
+                if (backEnd!!.viewDef!!.isMirror) {
                     qgl.qglCullFace(GL11.GL_BACK)
                 } else {
                     qgl.qglCullFace(GL11.GL_FRONT)
                 }
             }
         }
-        tr_local.backEnd!!.glState.faceCulling = cullType
+        backEnd!!.glState.faceCulling = cullType
     }
 
     fun GL_Cull(cullType: Enum<cullType_t>) {
@@ -192,7 +180,7 @@ object tr_backend {
      */
     fun GL_TexEnv(env: Int) {
         val tmu: tmu_t
-        tmu = tr_local.backEnd!!.glState.tmu[tr_local.backEnd!!.glState.currenttmu!!]!!
+        tmu = backEnd!!.glState.tmu[backEnd!!.glState.currenttmu]!!
         if (env == tmu.texEnv) {
             return
         }
@@ -216,7 +204,7 @@ object tr_backend {
      =================
      */
     fun GL_ClearStateDelta() {
-        tr_local.backEnd!!.glState.forceGlState = true
+        backEnd!!.glState.forceGlState = true
     }
 
     /*
@@ -229,13 +217,13 @@ object tr_backend {
     fun GL_State(stateBits: Int) {
         val diff: Int
         DBG_GL_State++
-        if (!RenderSystem_init.r_useStateCaching!!.GetBool() || tr_local.backEnd!!.glState.forceGlState) {
+        if (!r_useStateCaching!!.GetBool() || backEnd!!.glState.forceGlState) {
             // make sure everything is set all the time, so we
             // can see if our delta checking is screwing up
             diff = -1
-            tr_local.backEnd!!.glState.forceGlState = false
+            backEnd!!.glState.forceGlState = false
         } else {
-            diff = stateBits xor tr_local.backEnd!!.glState.glStateBits
+            diff = stateBits xor backEnd!!.glState.glStateBits
             if (0 == diff) {
                 return
             }
@@ -244,10 +232,10 @@ object tr_backend {
         //
         // check depthFunc bits
         //
-        if ((diff and (tr_local.GLS_DEPTHFUNC_EQUAL or tr_local.GLS_DEPTHFUNC_LESS or tr_local.GLS_DEPTHFUNC_ALWAYS)) != 0) {
-            if ((stateBits and tr_local.GLS_DEPTHFUNC_EQUAL) != 0) {
+        if ((diff and (GLS_DEPTHFUNC_EQUAL or GLS_DEPTHFUNC_LESS or GLS_DEPTHFUNC_ALWAYS)) != 0) {
+            if ((stateBits and GLS_DEPTHFUNC_EQUAL) != 0) {
                 qgl.qglDepthFunc(GL11.GL_EQUAL)
-            } else if ((stateBits and tr_local.GLS_DEPTHFUNC_ALWAYS) != 0) {
+            } else if ((stateBits and GLS_DEPTHFUNC_ALWAYS) != 0) {
                 qgl.qglDepthFunc(GL11.GL_ALWAYS)
             } else {
                 qgl.qglDepthFunc(GL11.GL_LEQUAL)
@@ -257,33 +245,33 @@ object tr_backend {
         //
         // check blend bits
         //
-        if ((diff and (tr_local.GLS_SRCBLEND_BITS or tr_local.GLS_DSTBLEND_BITS)) != 0) {
+        if ((diff and (GLS_SRCBLEND_BITS or GLS_DSTBLEND_BITS)) != 0) {
             val  /*GLenum*/srcFactor: Int
             val dstFactor: Int
-            when (stateBits and tr_local.GLS_SRCBLEND_BITS) {
-                tr_local.GLS_SRCBLEND_ZERO -> srcFactor = GL11.GL_ZERO
-                tr_local.GLS_SRCBLEND_ONE -> srcFactor = GL11.GL_ONE
-                tr_local.GLS_SRCBLEND_DST_COLOR -> srcFactor = GL11.GL_DST_COLOR
-                tr_local.GLS_SRCBLEND_ONE_MINUS_DST_COLOR -> srcFactor = GL11.GL_ONE_MINUS_DST_COLOR
-                tr_local.GLS_SRCBLEND_SRC_ALPHA -> srcFactor = GL11.GL_SRC_ALPHA
-                tr_local.GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA -> srcFactor = GL11.GL_ONE_MINUS_SRC_ALPHA
-                tr_local.GLS_SRCBLEND_DST_ALPHA -> srcFactor = GL11.GL_DST_ALPHA
-                tr_local.GLS_SRCBLEND_ONE_MINUS_DST_ALPHA -> srcFactor = GL11.GL_ONE_MINUS_DST_ALPHA
-                tr_local.GLS_SRCBLEND_ALPHA_SATURATE -> srcFactor = GL11.GL_SRC_ALPHA_SATURATE
+            when (stateBits and GLS_SRCBLEND_BITS) {
+                GLS_SRCBLEND_ZERO -> srcFactor = GL11.GL_ZERO
+                GLS_SRCBLEND_ONE -> srcFactor = GL11.GL_ONE
+                GLS_SRCBLEND_DST_COLOR -> srcFactor = GL11.GL_DST_COLOR
+                GLS_SRCBLEND_ONE_MINUS_DST_COLOR -> srcFactor = GL11.GL_ONE_MINUS_DST_COLOR
+                GLS_SRCBLEND_SRC_ALPHA -> srcFactor = GL11.GL_SRC_ALPHA
+                GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA -> srcFactor = GL11.GL_ONE_MINUS_SRC_ALPHA
+                GLS_SRCBLEND_DST_ALPHA -> srcFactor = GL11.GL_DST_ALPHA
+                GLS_SRCBLEND_ONE_MINUS_DST_ALPHA -> srcFactor = GL11.GL_ONE_MINUS_DST_ALPHA
+                GLS_SRCBLEND_ALPHA_SATURATE -> srcFactor = GL11.GL_SRC_ALPHA_SATURATE
                 else -> {
                     srcFactor = GL11.GL_ONE
                     Common.common.Error("GL_State: invalid src blend state bits\n")
                 }
             }
-            when (stateBits and tr_local.GLS_DSTBLEND_BITS) {
-                tr_local.GLS_DSTBLEND_ZERO -> dstFactor = GL11.GL_ZERO
-                tr_local.GLS_DSTBLEND_ONE -> dstFactor = GL11.GL_ONE
-                tr_local.GLS_DSTBLEND_SRC_COLOR -> dstFactor = GL11.GL_SRC_COLOR
-                tr_local.GLS_DSTBLEND_ONE_MINUS_SRC_COLOR -> dstFactor = GL11.GL_ONE_MINUS_SRC_COLOR
-                tr_local.GLS_DSTBLEND_SRC_ALPHA -> dstFactor = GL11.GL_SRC_ALPHA
-                tr_local.GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA -> dstFactor = GL11.GL_ONE_MINUS_SRC_ALPHA
-                tr_local.GLS_DSTBLEND_DST_ALPHA -> dstFactor = GL11.GL_DST_ALPHA
-                tr_local.GLS_DSTBLEND_ONE_MINUS_DST_ALPHA -> dstFactor = GL11.GL_ONE_MINUS_DST_ALPHA
+            when (stateBits and GLS_DSTBLEND_BITS) {
+                GLS_DSTBLEND_ZERO -> dstFactor = GL11.GL_ZERO
+                GLS_DSTBLEND_ONE -> dstFactor = GL11.GL_ONE
+                GLS_DSTBLEND_SRC_COLOR -> dstFactor = GL11.GL_SRC_COLOR
+                GLS_DSTBLEND_ONE_MINUS_SRC_COLOR -> dstFactor = GL11.GL_ONE_MINUS_SRC_COLOR
+                GLS_DSTBLEND_SRC_ALPHA -> dstFactor = GL11.GL_SRC_ALPHA
+                GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA -> dstFactor = GL11.GL_ONE_MINUS_SRC_ALPHA
+                GLS_DSTBLEND_DST_ALPHA -> dstFactor = GL11.GL_DST_ALPHA
+                GLS_DSTBLEND_ONE_MINUS_DST_ALPHA -> dstFactor = GL11.GL_ONE_MINUS_DST_ALPHA
                 else -> {
                     dstFactor = GL11.GL_ONE
                     Common.common.Error("GL_State: invalid dst blend state bits\n")
@@ -300,8 +288,8 @@ object tr_backend {
         //
         // check depthmask
         //
-        if ((diff and tr_local.GLS_DEPTHMASK) != 0) {
-            if ((stateBits and tr_local.GLS_DEPTHMASK) != 0) {
+        if ((diff and GLS_DEPTHMASK) != 0) {
+            if ((stateBits and GLS_DEPTHMASK) != 0) {
                 qgl.qglDepthMask(qgl.qGL_FALSE)
             } else {
                 qgl.qglDepthMask(qgl.qGL_TRUE)
@@ -311,19 +299,19 @@ object tr_backend {
         //
         // check colormask
         //
-        if ((diff and (tr_local.GLS_REDMASK or tr_local.GLS_GREENMASK or tr_local.GLS_BLUEMASK or tr_local.GLS_ALPHAMASK)) != 0) {
-            val r: Boolean = (stateBits and tr_local.GLS_REDMASK) == 0
-            val g: Boolean = (stateBits and tr_local.GLS_GREENMASK) == 0
-            val b: Boolean = (stateBits and tr_local.GLS_BLUEMASK) == 0
-            val a: Boolean = (stateBits and tr_local.GLS_ALPHAMASK) == 0
+        if ((diff and (GLS_REDMASK or GLS_GREENMASK or GLS_BLUEMASK or GLS_ALPHAMASK)) != 0) {
+            val r: Boolean = (stateBits and GLS_REDMASK) == 0
+            val g: Boolean = (stateBits and GLS_GREENMASK) == 0
+            val b: Boolean = (stateBits and GLS_BLUEMASK) == 0
+            val a: Boolean = (stateBits and GLS_ALPHAMASK) == 0
             qgl.qglColorMask(r, g, b, a) //solid backgroundus
         }
 
         //
         // fill/line mode
         //
-        if ((diff and tr_local.GLS_POLYMODE_LINE) != 0) {
-            if ((stateBits and tr_local.GLS_POLYMODE_LINE) != 0) {
+        if ((diff and GLS_POLYMODE_LINE) != 0) {
+            if ((stateBits and GLS_POLYMODE_LINE) != 0) {
                 qgl.qglPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE)
             } else {
                 qgl.qglPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL)
@@ -333,9 +321,9 @@ object tr_backend {
         //
         // alpha test
         //
-        if ((diff and tr_local.GLS_ATEST_BITS) != 0) {
-            if (tr_local.backEnd!!.viewDef!!.numDrawSurfs == 5) {
-                val temp: drawSurf_s = tr_local.backEnd!!.viewDef!!.drawSurfs[3]
+        if ((diff and GLS_ATEST_BITS) != 0) {
+            if (backEnd!!.viewDef!!.numDrawSurfs == 5) {
+                backEnd!!.viewDef!!.drawSurfs[3]
                 //                backEnd.viewDef.drawSurfs[0] =
 //                backEnd.viewDef.drawSurfs[1] =
 //                backEnd.viewDef.drawSurfs[2] =
@@ -370,19 +358,19 @@ object tr_backend {
 ////                temp.shaderRegisters[25] = 3.96123600f;
 ////                temp.shaderRegisters[26] = 0.000000000f;
             }
-            when (stateBits and tr_local.GLS_ATEST_BITS) {
+            when (stateBits and GLS_ATEST_BITS) {
                 0 -> qgl.qglDisable(GL11.GL_ALPHA_TEST)
-                tr_local.GLS_ATEST_EQ_255 -> {
+                GLS_ATEST_EQ_255 -> {
                     qgl.qglEnable(GL11.GL_ALPHA_TEST)
-                    qgl.qglAlphaFunc(GL11.GL_EQUAL, 1f)
+                    qgl.qglAlphaFunc(GL11.GL_EQUAL, 1.0f)
                 }
 
-                tr_local.GLS_ATEST_LT_128 -> {
+                GLS_ATEST_LT_128 -> {
                     qgl.qglEnable(GL11.GL_ALPHA_TEST)
                     qgl.qglAlphaFunc(GL11.GL_LESS, 0.5f)
                 }
 
-                tr_local.GLS_ATEST_GE_128 -> {
+                GLS_ATEST_GE_128 -> {
                     qgl.qglEnable(GL11.GL_ALPHA_TEST)
                     qgl.qglAlphaFunc(GL11.GL_GEQUAL, 0.5f)
                 }
@@ -390,7 +378,7 @@ object tr_backend {
                 else -> assert((false))
             }
         }
-        tr_local.backEnd!!.glState.glStateBits = stateBits
+        backEnd!!.glState.glStateBits = stateBits
     }
 
     /*
@@ -402,9 +390,9 @@ object tr_backend {
      */
     fun RB_SetGL2D() {
         // set 2D virtual screen size
-        qgl.qglViewport(0, 0, tr_local.glConfig.vidWidth, tr_local.glConfig.vidHeight)
-        if (RenderSystem_init.r_useScissor!!.GetBool()) {
-            qgl.qglScissor(0, 0, tr_local.glConfig.vidWidth, tr_local.glConfig.vidHeight)
+        qgl.qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight)
+        if (r_useScissor!!.GetBool()) {
+            qgl.qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight)
         }
         qgl.qglMatrixMode(GL11.GL_PROJECTION)
         qgl.qglLoadIdentity()
@@ -412,9 +400,9 @@ object tr_backend {
         qgl.qglMatrixMode(GL11.GL_MODELVIEW)
         qgl.qglLoadIdentity()
         GL_State(
-            (tr_local.GLS_DEPTHFUNC_ALWAYS
-                    or tr_local.GLS_SRCBLEND_SRC_ALPHA
-                    or tr_local.GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA)
+            (GLS_DEPTHFUNC_ALWAYS
+                    or GLS_SRCBLEND_SRC_ALPHA
+                    or GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA)
         )
         GL_Cull(cullType_t.CT_TWO_SIDED)
         qgl.qglDisable(GL11.GL_DEPTH_TEST)
@@ -432,24 +420,24 @@ object tr_backend {
 
         // see which draw buffer we want to render the frame to
         cmd = data as setBufferCommand_t
-        tr_local.backEnd!!.frameCount = cmd.frameCount
+        backEnd!!.frameCount = cmd.frameCount
         qgl.qglDrawBuffer(cmd.buffer)
 
         // clear screen for debugging
         // automatically enable this with several other debug tools
         // that might leave unrendered portions of the screen
-        if ((RenderSystem_init.r_clear!!.GetFloat() != 0f) || (RenderSystem_init.r_clear!!.GetString()!!.length != 1) || RenderSystem_init.r_lockSurfaces!!.GetBool() || RenderSystem_init.r_singleArea!!.GetBool() || RenderSystem_init.r_showOverDraw!!.GetBool()) {
+        if ((r_clear!!.GetFloat() != 0.0f) || (r_clear!!.GetString()!!.length != 1) || r_lockSurfaces!!.GetBool() || r_singleArea!!.GetBool() || r_showOverDraw!!.GetBool()) {
             try {
-                Scanner(RenderSystem_init.r_clear!!.GetString()).use({ sscanf ->
+                Scanner(r_clear!!.GetString()).use({ sscanf ->
 //		if ( sscanf( r_clear.GetString(), "%f %f %f", c[0], c[1], c[2] ) == 3 ) {
                     val c: FloatArray = floatArrayOf(sscanf.nextFloat(), sscanf.nextFloat(), sscanf.nextFloat())
                     //if 3 floats are parsed
-                    qgl.qglClearColor(c[0], c[1], c[2], 1f)
+                    qgl.qglClearColor(c[0], c[1], c[2], 1.0f)
                 })
             } catch (elif: NoSuchElementException) {
-                if (RenderSystem_init.r_clear!!.GetInteger() == 2) {
+                if (r_clear!!.GetInteger() == 2) {
                     qgl.qglClearColor(0.0f, 0.0f, 0.0f, 1.0f)
-                } else if (RenderSystem_init.r_showOverDraw!!.GetBool()) {
+                } else if (r_showOverDraw!!.GetBool()) {
                     qgl.qglClearColor(1.0f, 1.0f, 1.0f, 1.0f)
                 } else {
                     qgl.qglClearColor(0.4f, 0.0f, 0.25f, 1.0f)
@@ -478,36 +466,36 @@ object tr_backend {
         val end: Int
         RB_SetGL2D()
 
-        //qglClearColor( 0.2, 0.2, 0.2, 1 );
+        //qglClearColor( 0.2f, 0.2f, 0.2f, 1 );
         //qglClear( GL_COLOR_BUFFER_BIT );
         qgl.qglFinish()
         start = Sys_Milliseconds()
         i = 0
         while (i < Image.globalImages.images.Num()) {
             image = Image.globalImages.images[i]
-            if (image!!.texNum == idImage.Companion.TEXTURE_NOT_LOADED && image.partialImage == null) {
+            if (image!!.texNum == idImage.TEXTURE_NOT_LOADED && image.partialImage == null) {
                 i++
                 continue
             }
-            w = (tr_local.glConfig.vidWidth / 20).toFloat()
-            h = (tr_local.glConfig.vidHeight / 15).toFloat()
+            w = (glConfig.vidWidth / 20).toFloat()
+            h = (glConfig.vidHeight / 15).toFloat()
             x = i % 20 * w
             y = i / 20 * h
 
             // show in proportional size in mode 2
-            if (RenderSystem_init.r_showImages!!.GetInteger() == 2) {
+            if (r_showImages!!.GetInteger() == 2) {
                 w *= image.uploadWidth._val / 512.0f
                 h *= image.uploadHeight._val / 512.0f
             }
             image.Bind()
             qgl.qglBegin(GL11.GL_QUADS)
-            qgl.qglTexCoord2f(0f, 0f)
+            qgl.qglTexCoord2f(0.0f, 0.0f)
             qgl.qglVertex2f(x, y)
-            qgl.qglTexCoord2f(1f, 0f)
+            qgl.qglTexCoord2f(1.0f, 0.0f)
             qgl.qglVertex2f(x + w, y)
-            qgl.qglTexCoord2f(1f, 1f)
+            qgl.qglTexCoord2f(1.0f, 1.0f)
             qgl.qglVertex2f(x + w, y + h)
-            qgl.qglTexCoord2f(0f, 1f)
+            qgl.qglTexCoord2f(0.0f, 1.0f)
             qgl.qglVertex2f(x, y + h)
             qgl.qglEnd()
             i++
@@ -525,18 +513,18 @@ object tr_backend {
      */
     fun RB_SwapBuffers(data: Any?) {
         // texture swapping test
-        if (RenderSystem_init.r_showImages!!.GetInteger() != 0) {
+        if (r_showImages!!.GetInteger() != 0) {
             RB_ShowImages()
         }
 
         // force a gl sync if requested
-        if (RenderSystem_init.r_finish!!.GetBool()) {
+        if (r_finish!!.GetBool()) {
             qgl.qglFinish()
         }
         RB_LogComment("***************** RB_SwapBuffers *****************\n\n\n")
 
         // don't flip if drawing to front buffer
-        if (!RenderSystem_init.r_frontBuffer!!.GetBool()) {
+        if (!r_frontBuffer!!.GetBool()) {
             GLimp_SwapBuffers()
         }
     }
@@ -551,13 +539,13 @@ object tr_backend {
     fun RB_CopyRender(data: Any) {
         val cmd: copyRenderCommand_t
         cmd = data as copyRenderCommand_t
-        if (RenderSystem_init.r_skipCopyTexture!!.GetBool()) {
+        if (r_skipCopyTexture!!.GetBool()) {
             return
         }
         RB_LogComment("***************** RB_CopyRender *****************\n")
         if (cmd.image != null) {
-            val imageWidth: CInt = CInt(cmd.imageWidth)
-            val imageHeight: CInt = CInt(cmd.imageHeight)
+            val imageWidth = CInt(cmd.imageWidth)
+            val imageHeight = CInt(cmd.imageHeight)
             cmd.image!!.CopyFramebuffer(cmd.x, cmd.y, imageWidth, imageHeight, false)
             cmd.imageWidth = imageWidth._val
             cmd.imageHeight = imageHeight._val
@@ -567,11 +555,11 @@ object tr_backend {
     fun RB_ExecuteBackEndCommands(cmds: emptyCommand_t?) {
         // r_debugRenderToTexture
         var cmds: emptyCommand_t? = cmds
-        var c_draw3d: Int = 0
-        var c_draw2d: Int = 0
-        var c_setBuffers: Int = 0
-        var c_swapBuffers: Int = 0
-        var c_copyRenders: Int = 0
+        var c_draw3d = 0
+        var c_draw2d = 0
+        var c_setBuffers = 0
+        var c_swapBuffers = 0
+        var c_copyRenders = 0
         if (renderCommand_t.RC_NOP == cmds!!.commandId && null == cmds.next) {
             return
         }
@@ -616,12 +604,12 @@ object tr_backend {
 
         // go back to the default texture so the editor doesn't mess up a bound image
         qgl.qglBindTexture(GL11.GL_TEXTURE_2D, 0)
-        tr_local.backEnd!!.glState.tmu[0]!!.current2DMap = -1
+        backEnd!!.glState.tmu[0]!!.current2DMap = -1
 
         // stop rendering on this thread
         backEndFinishTime = Sys_Milliseconds()
-        tr_local.backEnd!!.pc.msec = backEndFinishTime - backEndStartTime
-        if (RenderSystem_init.r_debugRenderToTexture!!.GetInteger() == 1) {
+        backEnd!!.pc.msec = backEndFinishTime - backEndStartTime
+        if (r_debugRenderToTexture!!.GetInteger() == 1) {
             Common.common.Printf(
                 "3d: %d, 2d: %d, SetBuf: %d, SwpBuf: %d, CpyRenders: %d, CpyFrameBuf: %d\n",
                 c_draw3d,
@@ -629,14 +617,14 @@ object tr_backend {
                 c_setBuffers,
                 c_swapBuffers,
                 c_copyRenders,
-                tr_local.backEnd!!.c_copyFrameBuffer
+                backEnd!!.c_copyFrameBuffer
             )
-            tr_local.backEnd!!.c_copyFrameBuffer = 0
+            backEnd!!.c_copyFrameBuffer = 0
         }
     }
 
-    private fun fprintf(logFile: FileChannel, string: String) {
-        if (NOT(logFile)) {
+    private fun fprintf(logFile: FileChannel?, string: String) {
+        if (logFile == null) {
             return
         }
         try {
@@ -646,12 +634,12 @@ object tr_backend {
         }
     }
 
-    private fun vfprintf(logFile: FileChannel, vararg comments: Any) {
-        if (NOT(logFile)) {
+    private fun vfprintf(logFile: FileChannel?, vararg comments: Any) {
+        if (logFile == null) {
             return
         }
         try {
-            var bla: String = ""
+            var bla = ""
             for (c: Any in comments) {
                 bla += c
             }

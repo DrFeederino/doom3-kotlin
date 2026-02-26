@@ -1,14 +1,10 @@
 package neo.idlib.containers
 
-import neo.idlib.containers.HashIndex.idHashIndex
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Vector.idVec
+import neo.idlib.math.idMath
+import neo.idlib.math.idVec
 import kotlin.math.abs
 
-/**
- *
- */
 class VectorSet {
     /*
      ===============================================================================
@@ -20,26 +16,20 @@ class VectorSet {
      ===============================================================================
      */
     class idVectorSet<T> : idList<T> {
-        //
-        //
         private var dimension: Int = 0
-        private var boxHalfSize /*= new float[dimension]*/: FloatArray = FloatArray(dimension)
+        private var boxHalfSize: FloatArray = FloatArray(dimension)
         private var boxHashSize = 0
-        private var boxInvSize /*= new float[dimension]*/: FloatArray = FloatArray(dimension)
+        private var boxInvSize: FloatArray = FloatArray(dimension)
         private val hash: idHashIndex = idHashIndex()
         private var maxs: idVec<*>? = null
         private var mins: idVec<*>? = null
 
-        //
-        //
         constructor(dimension: Int) {
             this.dimension = dimension
             boxInvSize = FloatArray(dimension)
             boxHalfSize = FloatArray(dimension)
             hash.Clear(idMath.IPow(boxHashSize, dimension), 128)
             boxHashSize = 16
-            //	memset( boxInvSize, 0, dimension * sizeof( boxInvSize[0] ) );
-//	memset( boxHalfSize, 0, dimension * sizeof( boxHalfSize[0] ) );
         }
 
         constructor(mins: idVec<*>, maxs: idVec<*>, boxHashSize: Int, initialSize: Int, dimension: Int) {
@@ -47,12 +37,6 @@ class VectorSet {
             Init(mins, maxs, boxHashSize, initialSize)
         }
 
-        //
-        //							// returns total size of allocated memory
-        //public	size_t					Allocated( void ) const { return idList<T>::Allocated() + hash.Allocated(); }
-        //							// returns total size of allocated memory including size of T
-        //public	size_t					Size( void ) const { return sizeof( *this ) + Allocated(); }
-        //
         fun Init(mins: idVec<*>, maxs: idVec<*>, boxHashSize: Int, initialSize: Int) {
             var i: Int
             var boxSize: Float
@@ -64,7 +48,7 @@ class VectorSet {
             this.boxHashSize = boxHashSize
             i = 0
             while (i < dimension) {
-                boxSize = (maxs[i] - mins[i]) / boxHashSize.toFloat()
+                boxSize = (maxs[i] - mins[i]) / boxHashSize
                 boxInvSize[i] = 1.0f / boxSize
                 boxHalfSize[i] = boxSize * 0.5f
                 i++
@@ -81,7 +65,6 @@ class VectorSet {
             hash.Clear()
         }
 
-        //
         fun FindVector(v: idVec<*>, epsilon: Float): Int {
             var i: Int
             var j: Int
@@ -143,7 +126,6 @@ class VectorSet {
      ===============================================================================
      */
     class idVectorSubset<type> {
-        //
         private var dimension: Int = 0
         private lateinit var boxHalfSize: FloatArray /*= new float[dimension]*/
         private var boxHashSize = 0
@@ -152,8 +134,6 @@ class VectorSet {
         private var maxs: idVec<*>? = null
         private var mins: idVec<*>? = null
 
-        //
-        //
         private constructor()
 
         constructor(dimension: Int) {
@@ -162,8 +142,6 @@ class VectorSet {
             boxHalfSize = FloatArray(dimension)
             hash.Clear(idMath.IPow(boxHashSize, dimension), 128)
             boxHashSize = 16
-            //	memset( boxInvSize, 0, dimension * sizeof( boxInvSize[0] ) );
-//	memset( boxHalfSize, 0, dimension * sizeof( boxHalfSize[0] ) );
         }
 
         constructor(mins: idVec<*>, maxs: idVec<*>, boxHashSize: Int, initialSize: Int, dimension: Int) {
@@ -171,12 +149,6 @@ class VectorSet {
             Init(mins, maxs, boxHashSize, initialSize)
         }
 
-        //
-        //							// returns total size of allocated memory
-        //	size_t					Allocated( void ) const { return idList<type>::Allocated() + hash.Allocated(); }
-        //							// returns total size of allocated memory including size of type
-        //	size_t					Size( void ) const { return sizeof( *this ) + Allocated(); }
-        //
         fun Init(mins: idVec<*>, maxs: idVec<*>, boxHashSize: Int, initialSize: Int) {
             var i: Int
             var boxSize: Float
@@ -194,11 +166,9 @@ class VectorSet {
         }
 
         fun Clear() {
-//	idList<type>::Clear();
             hash.Clear()
         }
 
-        //
         // returns either vectorNum or an index to a previously found vector
         fun FindVector(vectorList: Array<idVec<*>>, vectorNum: Int, epsilon: Float): Int {
             var i: Int

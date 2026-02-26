@@ -1,7 +1,5 @@
 package neo.Game
 
-import neo.CM.CollisionModel.trace_s
-import neo.CM.CollisionModel_local
 import neo.Game.Entity.idEntity
 import neo.Game.FX.idEntityFx
 import neo.Game.GameSys.Class.eventCallback_t
@@ -21,28 +19,25 @@ import neo.Renderer.Material
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderView_s
 import neo.TempDump
+import neo.cm.collisionModelManager
+import neo.cm.trace_s
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CFloat
 import neo.idlib.geometry.TraceModel.idTraceModel
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector.getVec3_zero
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.*
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.tan
 
-/**
- *
- */
+
+val EV_SecurityCam_AddLight: idEventDef = idEventDef("<addLight>")
+val EV_SecurityCam_Alert: idEventDef = idEventDef("<alert>")
+val EV_SecurityCam_ContinueSweep: idEventDef = idEventDef("<continueSweep>")
+val EV_SecurityCam_Pause: idEventDef = idEventDef("<pause>")
+val EV_SecurityCam_ReverseSweep: idEventDef = idEventDef("<reverseSweep>")
+
 object SecurityCamera {
-    val EV_SecurityCam_AddLight: idEventDef = idEventDef("<addLight>")
-    val EV_SecurityCam_Alert: idEventDef = idEventDef("<alert>")
-    val EV_SecurityCam_ContinueSweep: idEventDef = idEventDef("<continueSweep>")
-    val EV_SecurityCam_Pause: idEventDef = idEventDef("<pause>")
 
     /*
      ===================================================================================
@@ -51,7 +46,6 @@ object SecurityCamera {
 
      ===================================================================================
      */
-    val EV_SecurityCam_ReverseSweep: idEventDef = idEventDef("<reverseSweep>")
 
     class idSecurityCamera : idEntity() {
         companion object {
@@ -84,7 +78,7 @@ object SecurityCamera {
         private var alertMode = 0
 
         // enum { SCANNING, LOSINGINTEREST, ALERT, ACTIVATED };
-        private var angle = 0f
+        private var angle = 0.0f
         private var flipAxis = false
         private var modelAxis = 0
         private var negativeSweep = false
@@ -92,15 +86,15 @@ object SecurityCamera {
 
         //
         private var pvsArea = 0
-        private var scanDist = 0f
-        private var scanFov = 0f
-        private var scanFovCos = 0f
-        private var stopSweeping = 0f
-        private var sweepAngle = 0f
-        private var sweepEnd = 0f
+        private var scanDist = 0.0f
+        private var scanFov = 0.0f
+        private var scanFovCos = 0.0f
+        private var stopSweeping = 0.0f
+        private var sweepAngle = 0.0f
+        private var sweepEnd = 0.0f
 
         //
-        private var sweepStart = 0f
+        private var sweepStart = 0.0f
         private var sweeping = false
         private val trm: idTraceModel
         override fun Spawn() {
@@ -121,7 +115,7 @@ object SecurityCamera {
             }
             negativeSweep = sweepAngle < 0
             sweepAngle = abs(sweepAngle)
-            scanFovCos = cos((scanFov * idMath.PI / 360.0f).toDouble()).toFloat()
+            scanFovCos = cos((scanFov * idMath.PI / 360.0f))
             angle = GetPhysics().GetAxis().ToAngles().yaw
             StartSweep()
             SetAlertMode(SCANNING)
@@ -141,7 +135,7 @@ object SecurityCamera {
             if (str.IsEmpty()) {
                 str.set(spawnArgs.GetString("model")) // use the visual model
             }
-            if (!CollisionModel_local.collisionModelManager.TrmFromModel(str, trm)) {
+            if (!collisionModelManager.TrmFromModel(str, trm)) {
                 idGameLocal.Error("idSecurityCamera '%s': cannot load collision model %s", name, str)
                 return
             }
@@ -247,7 +241,7 @@ object SecurityCamera {
             Present()
         }
 
-        override fun GetRenderView(): renderView_s? {
+        override fun GetRenderView(): renderView_s {
             val rv = super.GetRenderView()!!
             rv.fov_x = scanFov
             rv.fov_y = scanFov
@@ -261,7 +255,7 @@ object SecurityCamera {
             StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
             val fx = spawnArgs.GetString("fx_destroyed")
             if (fx.isNotEmpty()) { //fx[0] != '\0' ) {
-                idEntityFx.StartFx(fx, getVec3_zero(), idMat3.getMat3_zero(), this, true)
+                idEntityFx.StartFx(fx, null, null, this, true)
             }
             physicsObj.SetSelf(this)
             physicsObj.SetClipModel(idClipModel(trm), 0.02f)
@@ -285,7 +279,7 @@ object SecurityCamera {
         ): Boolean {
             val fx = spawnArgs.GetString("fx_damage")
             if (fx.isNotEmpty()) { //fx[0] != '\0' ) {
-                idEntityFx.StartFx(fx, getVec3_zero(), idMat3.getMat3_zero(), this, true)
+                idEntityFx.StartFx(fx, null, null, this, true)
             }
             return true
         }
@@ -317,7 +311,6 @@ object SecurityCamera {
             // add to refresh list
             if (modelDefHandle == -1) {
                 modelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(renderEntity!!)
-                val a = 0
             } else {
                 Game_local.gameRenderWorld!!.UpdateEntityDef(modelDefHandle, renderEntity!!)
             }
@@ -327,7 +320,7 @@ object SecurityCamera {
             val speed: Int
             sweeping = true
             sweepStart = Game_local.gameLocal.time.toFloat()
-            speed = Math_h.SEC2MS(SweepSpeed()).toInt()
+            speed = SEC2MS(SweepSpeed()).toInt()
             sweepEnd = sweepStart + speed
             PostEventMS(EV_SecurityCam_Pause, speed)
             StartSound("snd_moving", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
@@ -344,7 +337,7 @@ object SecurityCamera {
             i = 0
             while (i < Game_local.gameLocal.numClients) {
                 ent = Game_local.gameLocal.entities[i] as idPlayer
-                if (TempDump.NOT(ent) || ent.fl.notarget) {
+                if (ent == null || ent.fl.notarget) {
                     i++
                     continue
                 }
@@ -400,8 +393,8 @@ object SecurityCamera {
             val c = CFloat()
             val right = idVec3()
             val up = idVec3()
-            val color = idVec4(1f, 0f, 0f, 1f)
-            val color2 = idVec4(0f, 0f, 1f, 1f)
+            val color = idVec4(1.0f, 0.0f, 0.0f, 1.0f)
+            val color2 = idVec4(0.0f, 0.0f, 1.0f, 1.0f)
             val lastPoint = idVec3()
             val point = idVec3()
             val lastHalfPoint = idVec3()
@@ -409,7 +402,7 @@ object SecurityCamera {
             val center = idVec3()
             val dir = idVec3(GetAxis())
             dir.NormalVectors(right, up)
-            radius = tan((scanFov * idMath.PI / 360.0f).toDouble()).toFloat()
+            radius = tan((scanFov * idMath.PI / 360.0f))
             halfRadius = radius * 0.5f
             lastPoint.set(dir.plus(up.times(radius)))
             lastPoint.Normalize()
@@ -462,7 +455,7 @@ object SecurityCamera {
             val f = Game_local.gameLocal.time - (sweepEnd - sweepStart) * pct
             val speed: Int
             sweepStart = f
-            speed = Math_h.MS2SEC(SweepSpeed()).toInt()
+            speed = MS2SEC(SweepSpeed()).toInt()
             sweepEnd = sweepStart + speed
             PostEventMS(EV_SecurityCam_Pause, (speed * (1.0f - pct)).toInt())
             StartSound("snd_moving", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
@@ -472,7 +465,7 @@ object SecurityCamera {
 
         private fun Event_Pause() {
             val sweepWait: Float
-            sweepWait = spawnArgs.GetFloat("sweepWait", "0.5")
+            sweepWait = spawnArgs.GetFloat("sweepWait", "0.5f")
             sweeping = false
             StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
             StartSound("snd_stop", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
@@ -495,7 +488,7 @@ object SecurityCamera {
             val right = idVec3()
             val up = idVec3()
             val target = idVec3()
-            val temp = idVec3()
+            idVec3()
             val dir = idVec3()
             val radius: Float
             val lightOffset = idVec3()
@@ -503,7 +496,7 @@ object SecurityCamera {
             dir.set(GetAxis())
             dir.NormalVectors(right, up)
             target.set(GetPhysics().GetOrigin().plus(dir.times(scanDist)))
-            radius = tan((scanFov * idMath.PI / 360.0f).toDouble()).toFloat()
+            radius = tan((scanFov * idMath.PI / 360.0f))
             up.set(dir.plus(up.times(radius)))
             up.Normalize()
             up.set(GetPhysics().GetOrigin().plus(up.times(scanDist)))

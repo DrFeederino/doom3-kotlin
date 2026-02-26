@@ -5,22 +5,15 @@ import neo.Tools.Compilers.DMap.dmap.mapTri_s
 import neo.Tools.Compilers.DMap.dmap.optimizeGroup_s
 import neo.Tools.Compilers.DMap.dmap.uEntity_t
 import neo.framework.Common
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.Text.Str.idStr
 import neo.idlib.geometry.DrawVert.idDrawVert
-import neo.idlib.math.Angles.idAngles
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
 import kotlin.math.ceil
 import kotlin.math.floor
 
-/**
- *
- */
 object tritjunction {
-    //
     const val HASH_BINS = 16
 
     /*
@@ -73,15 +66,13 @@ object tritjunction {
     //#define	SNAP_FRACTIONS	8
     //#define	SNAP_FRACTIONS	1
     //
-    const val VERTEX_EPSILON = 1.0 / SNAP_FRACTIONS
-
-    //
+    const val VERTEX_EPSILON = 1.0f / SNAP_FRACTIONS
     const val COLINEAR_EPSILON = 1.8 * VERTEX_EPSILON
     val hashIntMins: IntArray = IntArray(3)
     val hashIntScale: IntArray = IntArray(3)
     val hashVerts: Array<Array<Array<hashVert_s?>>> =
         Array(HASH_BINS) { Array(HASH_BINS) { arrayOfNulls<hashVert_s?>(HASH_BINS) } }
-    var hashBounds: idBounds = idBounds()
+    val hashBounds: idBounds = idBounds()
     val hashScale: idVec3 = idVec3()
     var numHashVerts = 0
     var numTotalVerts = 0
@@ -103,7 +94,7 @@ object tritjunction {
         // snap the vert to integral values
         i = 0
         while (i < 3) {
-            iv[i] = floor((v[i] + 0.5 / SNAP_FRACTIONS) * SNAP_FRACTIONS).toInt()
+            iv[i] = floor((v[i] + 0.5f / SNAP_FRACTIONS) * SNAP_FRACTIONS).toInt()
             block[i] = (iv[i] - hashIntMins[i]) / hashIntScale[i]
             if (block[i] < 0) {
                 block[i] = 0
@@ -134,7 +125,7 @@ object tritjunction {
                 i++
             }
             if (i == 3) {
-                Vector.VectorCopy(hv.v, v)
+                VectorCopy(hv.v, v)
                 return hv
             }
             hv = hv.next
@@ -150,7 +141,7 @@ object tritjunction {
         hv.v[0] = iv[0].toFloat() / SNAP_FRACTIONS
         hv.v[1] = iv[1].toFloat() / SNAP_FRACTIONS
         hv.v[2] = iv[2].toFloat() / SNAP_FRACTIONS
-        Vector.VectorCopy(hv.v, v)
+        VectorCopy(hv.v, v)
         numHashVerts++
         return hv
     }
@@ -171,16 +162,16 @@ object tritjunction {
         bounds.AddPoint(tri.v[1].xyz)
         bounds.AddPoint(tri.v[2].xyz)
 
-        // add a 1.0 slop margin on each side
+        // add a 1.0f slop margin on each side
         i = 0
         while (i < 3) {
-            blocks[0][i] = ((bounds[0, i] - 1.0 - hashBounds[0, i]) / hashScale[i]).toInt()
+            blocks[0][i] = ((bounds[0, i] - 1.0f - hashBounds[0, i]) / hashScale[i]).toInt()
             if (blocks[0][i] < 0) {
                 blocks[0][i] = 0
             } else if (blocks[0][i] >= HASH_BINS) {
                 blocks[0][i] = HASH_BINS - 1
             }
-            blocks[1][i] = ((bounds[1, i] + 1.0 - hashBounds[0, i]) / hashScale[i]).toInt()
+            blocks[1][i] = ((bounds[1, i] + 1.0f - hashBounds[0, i]) / hashScale[i]).toInt()
             if (blocks[1][i] < 0) {
                 blocks[1][i] = 0
             } else if (blocks[1][i] >= HASH_BINS) {
@@ -226,8 +217,8 @@ object tritjunction {
         // spread the bounds so it will never have a zero size
         i = 0
         while (i < 3) {
-            hashBounds[0, i] = floor((hashBounds[0, i] - 1).toDouble()).toFloat()
-            hashBounds[1, i] = ceil((hashBounds[1, i] + 1).toDouble()).toFloat()
+            hashBounds[0, i] = floor((hashBounds[0, i] - 1))
+            hashBounds[1, i] = ceil((hashBounds[1, i] + 1))
             hashIntMins[i] = (hashBounds[0, i] * SNAP_FRACTIONS).toInt()
             hashScale[i] = (hashBounds[1, i] - hashBounds[0, i]) / HASH_BINS
             hashIntScale[i] = (hashScale[i] * SNAP_FRACTIONS).toInt()
@@ -337,20 +328,20 @@ object tritjunction {
             v1 = a.v[i]
             v2 = a.v[(i + 1) % 3]
             v3 = a.v[(i + 2) % 3]
-            Vector.VectorSubtract(v2.xyz, v1.xyz, dir)
+            VectorSubtract(v2.xyz, v1.xyz, dir)
             len = dir.Normalize()
 
             // if it is close to one of the edge vertexes, skip it
-            Vector.VectorSubtract(v, v1.xyz, temp)
-            d = Vector.DotProduct(temp, dir)
+            VectorSubtract(v, v1.xyz, temp)
+            d = DotProduct(temp, dir)
             if (d <= 0 || d >= len) {
                 i++
                 continue
             }
 
             // make sure it is on the line
-            Vector.VectorMA(v1.xyz, d, dir, temp)
-            Vector.VectorSubtract(temp, v, temp)
+            VectorMA(v1.xyz, d, dir, temp)
+            VectorSubtract(temp, v, temp)
             off = temp.Length()
             if (off <= -COLINEAR_EPSILON || off >= COLINEAR_EPSILON) {
                 i++
@@ -359,7 +350,7 @@ object tritjunction {
 
             // take the x/y/z from the splitter,
             // but interpolate everything else from the original tri
-            Vector.VectorCopy(v, split.xyz)
+            VectorCopy(v, split.xyz)
             frac = d / len
             split.st[0] = v1.st[0] + frac * (v2.st[0] - v1.st[0])
             split.st[1] = v1.st[1] + frac * (v2.st[1] - v1.st[1])
@@ -379,7 +370,7 @@ object tritjunction {
             new2.next = new1
             plane1.FromPoints(new1.hashVert[0].v, new1.hashVert[1].v, new1.hashVert[2].v)
             plane2.FromPoints(new2.hashVert[0].v, new2.hashVert[1].v, new2.hashVert[2].v)
-            d = Vector.DotProduct(plane1, plane2)
+            d = DotProduct(plane1, plane2)
 
             // if the two split triangle's normals don't face the same way,
             // it should not be split
@@ -577,8 +568,8 @@ object tritjunction {
         // spread the bounds so it will never have a zero size
         i = 0
         while (i < 3) {
-            hashBounds[0, i] = floor((hashBounds[0, i] - 1).toDouble()).toFloat()
-            hashBounds[1, i] = ceil((hashBounds[1, i] + 1).toDouble()).toFloat()
+            hashBounds[0, i] = floor((hashBounds[0, i] - 1))
+            hashBounds[1, i] = ceil((hashBounds[1, i] + 1))
             hashIntMins[i] = (hashBounds[0, i] * SNAP_FRACTIONS).toInt()
             hashScale[i] = (hashBounds[1, i] - hashBounds[0, i]) / HASH_BINS
             hashIntScale[i] = (hashScale[i] * SNAP_FRACTIONS).toInt()
@@ -632,12 +623,12 @@ object tritjunction {
                 val model = ModelManager.renderModelManager.FindModel(modelName)!!
 
 //			common.Printf( "adding T junction verts for %s.\n", entity.mapEntity.epairs.GetString( "name" ) );
-                var axis = idMat3()
+                val axis = idMat3()
                 // get the rotation matrix in either full form, or single angle form
                 if (!entity.mapEntity.epairs.GetMatrix("rotation", "1 0 0 0 1 0 0 0 1", axis)) {
                     val angle = entity.mapEntity.epairs.GetFloat("angle")
                     if (angle != 0.0f) {
-                        axis = idAngles(0.0f, angle, 0.0f).ToMat3()
+                        axis.set(idAngles(0.0f, angle, 0.0f).ToMat3())
                     } else {
                         axis.Identity()
                     }

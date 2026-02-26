@@ -11,9 +11,6 @@ import neo.ui.ListGUI.idListGUI
 import neo.ui.UserInterface.idUserInterface.idUserInterfaceManager
 import neo.ui.UserInterfaceLocal.idUserInterfaceManagerLocal
 
-/**
- *
- */
 object UserInterface {
     var uiManagerLocal = idUserInterfaceManagerLocal()
 
@@ -90,7 +87,7 @@ object UserInterface {
             return GetStateString(varName, "")
         }
 
-        abstract fun GetStateboolean(varName: String?, defaultString: String? /*= "0"*/): Boolean
+        abstract fun GetStateboolean(varName: String?, defaultString: String /*= "0"*/): Boolean
         fun GetStateboolean(varName: String?): Boolean {
             return GetStateboolean(varName, "0")
         }

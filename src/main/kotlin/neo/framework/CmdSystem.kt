@@ -3,20 +3,17 @@ package neo.framework
 import neo.TempDump.void_callback
 import neo.framework.DeclManager.declType_t
 import neo.framework.FileSystem_h.idFileList
+import neo.idlib.BIT
 import neo.idlib.CmdArgs
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.List.cmp_t
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idStrList
+import neo.idlib.idException
+import neo.idlib.idLib
 import java.nio.ByteBuffer
 
-/**
- *
- */
 object CmdSystem {
     /*
      ===============================================================================
@@ -37,27 +34,27 @@ object CmdSystem {
     const val CMD_FL_ALL: Long = -1
 
 
-    val CMD_FL_CHEAT: Long = Lib.BIT(0) // command is considered a cheat
+    val CMD_FL_CHEAT: Long = BIT(0) // command is considered a cheat
         .toLong()
 
 
-    val CMD_FL_GAME: Long = Lib.BIT(4) // game command
+    val CMD_FL_GAME: Long = BIT(4) // game command
         .toLong()
 
 
-    val CMD_FL_RENDERER: Long = Lib.BIT(2) // renderer command
+    val CMD_FL_RENDERER: Long = BIT(2) // renderer command
         .toLong()
 
 
-    val CMD_FL_SOUND: Long = Lib.BIT(3) // sound command
+    val CMD_FL_SOUND: Long = BIT(3) // sound command
         .toLong()
 
 
-    val CMD_FL_SYSTEM: Long = Lib.BIT(1) // system command
+    val CMD_FL_SYSTEM: Long = BIT(1) // system command
         .toLong()
 
 
-    val CMD_FL_TOOL: Long = Lib.BIT(5) // tool command
+    val CMD_FL_TOOL: Long = BIT(5) // tool command
         .toLong()
     private var cmdSystemLocal: idCmdSystemLocal = idCmdSystemLocal()
 
@@ -172,7 +169,7 @@ object CmdSystem {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
                 callback.run(Str.va("%s 0", args!!.Argv(0)))
-                callback.run(Str.va("%s 1", args!!.Argv(0)))
+                callback.run(Str.va("%s 1", args.Argv(0)))
             }
 
             companion object {
@@ -445,7 +442,6 @@ object CmdSystem {
         }
 
         override fun Shutdown() {
-            var cmd: commandDef_s
 
 //            for (cmd = commands; cmd != null; cmd = commands) {
 //                commands = commands.next;
@@ -497,21 +493,17 @@ object CmdSystem {
             var last: commandDef_s?
             last = commands.also { cmd = it }
             while (cmd != null) {
-                if (idStr.Cmp(cmdName, cmd!!.name) == 0) {
-                    if (cmd === commands) { //first iteration.
-                        commands = cmd!!.next //TODO:BOINTER. edit: check if this equals **last;
+                if (idStr.Cmp(cmdName, cmd.name) == 0) {
+                    if (cmd == commands) { //first iteration.
+                        commands = cmd.next //TODO:BOINTER. edit: check if this equals **last;
                     } else { //set last.next to last.next.next,
                         //where last.next is the current cmd. so basically setting overwriting the current node.
-                        last!!.next = cmd!!.next
+                        last!!.next = cmd.next
                     }
-                    //                    cmd.name = cmd.description = null;
-//                    Mem_Free(cmd.name);
-//                    Mem_Free(cmd.description);
-//			delete cmd;
                     return
                 }
                 last = cmd
-                cmd = cmd!!.next
+                cmd = cmd.next
             }
         }
 
@@ -541,14 +533,14 @@ object CmdSystem {
         override fun ArgCompletion(cmdString: String, callback: void_callback<String>) {
             var cmd: commandDef_s?
             val args = CmdArgs.idCmdArgs()
-            args!!.TokenizeString(cmdString, false)
+            args.TokenizeString(cmdString, false)
             cmd = commands
             while (cmd != null) {
                 if (null == cmd.argCompletion) {
                     cmd = cmd.next
                     continue
                 }
-                if (idStr.Icmp(args!!.Argv(0), cmd.name) == 0) {
+                if (idStr.Icmp(args.Argv(0), cmd.name) == 0) {
                     cmd.argCompletion!!.run(args, callback)
                     break
                 }
@@ -562,12 +554,15 @@ object CmdSystem {
                 cmdExecution_t.CMD_EXEC_NOW -> {
                     ExecuteCommandText(text)
                 }
+
                 cmdExecution_t.CMD_EXEC_INSERT -> {
                     InsertCommandText(text)
                 }
+
                 cmdExecution_t.CMD_EXEC_APPEND -> {
                     AppendCommandText(text)
                 }
+
                 else -> {
                     idLib.common.FatalError("idCmdSystemLocal::BufferCommandText: bad exec type")
                 }
@@ -648,14 +643,14 @@ object CmdSystem {
 //            va_list argPtr;
             string = args!!.Argv(0)
             string += " "
-            string += args!!.Argv(1)
+            string += args.Argv(1)
             if (completionString.Icmp(string) != 0) {
                 val parm: idStr
                 val path = idStr()
                 var names: idFileList?
                 completionString.set(string)
                 completionParms.clear()
-                parm = idStr(args!!.Argv(1))
+                parm = idStr(args.Argv(1))
                 parm.ExtractFilePath(path)
                 if (stripFolder || path.Length() == 0) {
                     path.set(folder).Append(path)
@@ -672,7 +667,7 @@ object CmdSystem {
                     } else {
                         name.Strip("/")
                     }
-                    name = idStr(args!!.Argv(0) + " $name" + "/")
+                    name = idStr(args.Argv(0) + " $name" + "/")
                     completionParms.add(name)
                     i++
                 }
@@ -691,7 +686,7 @@ object CmdSystem {
                         } else {
                             name.Strip("/")
                         }
-                        name.set(args!!.Argv(0) + " $name")
+                        name.set(args.Argv(0) + " $name")
                         completionParms.add(name)
                         i++
                     }
@@ -733,10 +728,12 @@ object CmdSystem {
                 cmdExecution_t.CMD_EXEC_NOW -> {
                     ExecuteTokenizedString(args)
                 }
+
                 cmdExecution_t.CMD_EXEC_APPEND -> {
                     AppendCommandText("_execTokenized\n")
                     tokenizedCmds.Append(args)
                 }
+
                 else -> {
                     idLib.common.FatalError("idCmdSystemLocal::BufferCommandArgs: bad exec type")
                 }
@@ -779,8 +776,8 @@ object CmdSystem {
             if (0 == args!!.Argc()) {
                 return  // no tokens
             }
-            if (args!!.Argv(0) == "bla1") {
-                args!!.set("map game/alphalabs1") //HACKME::11
+            if (args.Argv(0) == "bla1") {
+                args.set("map game/alphalabs1") //HACKME::11
             }
 
             // check registered command functions
@@ -788,38 +785,38 @@ object CmdSystem {
             while (cmd != null) {
 
 //                cmd = prev;
-                if (idStr.Icmp(args!!.Argv(0), cmd!!.name) == 0) {
+                if (idStr.Icmp(args.Argv(0), cmd.name) == 0) {
                     // rearrange the links so that the command will be
                     // near the head of the list next time it is used
                     if (cmd !== commands) { //no re-arranging necessary for first element.
-                        prev!!.next = cmd!!.next
-                        cmd!!.next = commands
+                        prev!!.next = cmd.next
+                        cmd.next = commands
                         commands = cmd
                     }
-                    if (cmd!!.flags and (CMD_FL_CHEAT or CMD_FL_TOOL) != 0L && Session.session != null && Session.session.IsMultiplayer() && !CVarSystem.cvarSystem.GetCVarBool(
+                    if (cmd.flags and (CMD_FL_CHEAT or CMD_FL_TOOL) != 0L && Session.session != null && Session.session.IsMultiplayer() && !CVarSystem.cvarSystem.GetCVarBool(
                             "net_allowCheats"
                         )
                     ) {
-                        idLib.common.Printf("Command '%s' not valid in multiplayer mode.\n", cmd!!.name)
+                        idLib.common.Printf("Command '%s' not valid in multiplayer mode.\n", cmd.name)
                         return
                     }
                     // perform the action
-                    if (null == cmd!!.function) {
+                    if (null == cmd.function) {
                         break
                     } else {
-                        cmd!!.function!!.run(args)
+                        cmd.function!!.run(args)
                     }
                     return
                 }
                 prev = cmd
-                cmd = cmd!!.next
+                cmd = cmd.next
             }
 
             // check cvars
             if (CVarSystem.cvarSystem.Command(args)) {
                 return
             }
-            idLib.common.Printf("Unknown command '%s'\n", args!!.Argv(0))
+            idLib.common.Printf("Unknown command '%s'\n", args.Argv(0))
         }
 
         /*
@@ -989,14 +986,14 @@ object CmdSystem {
                     idLib.common.Printf("exec <filename> : execute a script file\n")
                     return
                 }
-                filename = idStr(args!!.Argv(1))
+                filename = idStr(args.Argv(1))
                 filename.DefaultFileExtension(".cfg")
                 len = FileSystem_h.fileSystem.ReadFile(filename.toString(),  /*reinterpret_cast<void **>*/f, null)
                 if (null == f[0]) {
-                    idLib.common.Printf("couldn't exec %s\n", args!!.Argv(1))
+                    idLib.common.Printf("couldn't exec %s\n", args.Argv(1))
                     return
                 }
-                idLib.common.Printf("execing %s\n", args!!.Argv(1))
+                idLib.common.Printf("execing %s\n", args.Argv(1))
                 cmdSystemLocal.BufferCommandText(cmdExecution_t.CMD_EXEC_INSERT, String(f[0]!!.array()))
                 FileSystem_h.fileSystem.FreeFile(f)
             }
@@ -1024,7 +1021,7 @@ object CmdSystem {
                     idLib.common.Printf("vstr <variablename> : execute a variable command\n")
                     return
                 }
-                v = CVarSystem.cvarSystem.GetCVarString(args!!.Argv(1))
+                v = CVarSystem.cvarSystem.GetCVarString(args.Argv(1))
                 cmdSystemLocal.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, Str.va("%s\n", v))
             }
 
@@ -1049,7 +1046,7 @@ object CmdSystem {
                 var i: Int
                 i = 1
                 while (i < args!!.Argc()) {
-                    idLib.common.Printf("%s ", args!!.Argv(i))
+                    idLib.common.Printf("%s ", args.Argv(i))
                     i++
                 }
                 idLib.common.Printf("\n")
@@ -1076,7 +1073,7 @@ object CmdSystem {
                 var i: Int
                 i = 0
                 while (i < args!!.Argc()) {
-                    idLib.common.Printf("%d: %s\n", i, args!!.Argv(i))
+                    idLib.common.Printf("%d: %s\n", i, args.Argv(i))
                     i++
                 }
             }
@@ -1099,7 +1096,7 @@ object CmdSystem {
         private class Wait_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
                 if (args!!.Argc() == 2) {
-                    cmdSystemLocal.SetWait(args!!.Argv(1).toInt())
+                    cmdSystemLocal.SetWait(args.Argv(1).toInt())
                 } else {
                     cmdSystemLocal.SetWait(1)
                 }
@@ -1139,7 +1136,7 @@ object CmdSystem {
                 var cmd: commandDef_s?
                 val cmdList = idList<commandDef_s>()
                 if (args!!.Argc() > 1) {
-                    match = args!!.Args(1, -1)
+                    match = args.Args(1, -1)
                     match = match.replace(" ".toRegex(), "")
                 } else {
                     match = ""

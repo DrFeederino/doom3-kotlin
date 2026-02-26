@@ -1,12 +1,8 @@
 package neo.Renderer
 
 import neo.Renderer.RenderWorld_local.portal_s
-import neo.Renderer.tr_local.idScreenRect
-import neo.idlib.math.Plane.idPlane
+import neo.idlib.math.idPlane
 
-/**
- *
- */
 object RenderWorld_portals {
     /*
 
@@ -28,14 +24,13 @@ object RenderWorld_portals {
         //
         var numPortalPlanes: Int = 0
         var p: portal_s? = null
-        val portalPlanes: Array<idPlane> = idPlane.generateArray(RenderWorld_portals.MAX_PORTAL_PLANES + 1)
+        val portalPlanes: Array<idPlane> = idPlane.generateArray(MAX_PORTAL_PLANES + 1)
 
         //
         var rect: idScreenRect
 
         // positive side is outside the visible frustum
         constructor() {
-            p = portal_s()
             rect = idScreenRect()
         }
 
@@ -43,6 +38,7 @@ object RenderWorld_portals {
             this.p = p.p
             next = p.next
             rect = idScreenRect(p.rect)
+            numPortalPlanes = p.numPortalPlanes
             for (i in portalPlanes.indices) {
                 portalPlanes.get(i).set(p.portalPlanes.get(i))
             }

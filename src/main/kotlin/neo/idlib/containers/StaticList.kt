@@ -1,12 +1,8 @@
 package neo.idlib.containers
 
-import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
-/**
- *
- */
 class StaticList {
     /*
      ===============================================================================
@@ -177,15 +173,12 @@ class StaticList {
          ================
          */
         fun Append(other: idStaticList<T>): Int {        // append list
-            var i: Int
             var n = other.Num()
-            if (num + n > other.size) { //TODO:which size??
+            if (num + n > size) { //TODO:which size??
                 n = size - num
             }
-            i = 0
-            while (i < n) {
-                list[i + num] = other.list[i]
-                i++
+            for (i in 0 until n) {
+                list[num + i] = other.list[i]
             }
             num += n
             return Num()
@@ -364,12 +357,10 @@ class StaticList {
          ================
          */
         fun DeleteContents(clear: Boolean) {                        // delete the contents of the list
-            var i: Int
             if (clear) {
                 Clear()
             } else {
-//		memset( list, 0, sizeof( list ) );
-                Arrays.fill(list, 0)
+                list = arrayOfNulls<Any>(size) as Array<T>
             }
         }
     }

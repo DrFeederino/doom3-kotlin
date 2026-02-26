@@ -3,9 +3,6 @@ package neo.Renderer
 import neo.Renderer.Interaction.idInteraction
 import neo.Renderer.Material.idMaterial
 import neo.Renderer.Model.idRenderModel
-import neo.Renderer.tr_local.areaReference_s
-import neo.Renderer.tr_local.idRenderEntityLocal
-import neo.Renderer.tr_local.idRenderLightLocal
 import neo.Sound.sound.idSoundEmitter
 import neo.TempDump.Atomics.*
 import neo.TempDump.SERiAL
@@ -14,28 +11,26 @@ import neo.framework.Common.Companion.common
 import neo.framework.DeclManager
 import neo.framework.DeclSkin.idDeclSkin
 import neo.framework.DemoFile.idDemoFile
-import neo.idlib.BV.Bounds.idBounds
 import neo.idlib.BV.Box.idBox
 import neo.idlib.BV.Frustum.idFrustum
 import neo.idlib.BV.Sphere.idSphere
+import neo.idlib.BV.idBounds
 import neo.idlib.CmdArgs
-import neo.idlib.Lib.idException
+import neo.idlib.containers.CBool
 import neo.idlib.containers.CInt
 import neo.idlib.geometry.JointTransform.idJointMat
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.geometry.Winding.idWinding
+import neo.idlib.idException
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.getVec3Origin
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.getVec3Origin
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import neo.ui.UserInterface.idUserInterface
 import java.nio.*
 import java.util.*
 
-/**
- *
- */
 object RenderWorld {
     //
     // shader parms
@@ -62,7 +57,7 @@ object RenderWorld {
     val SHADERPARM_BEAM_END_Z: Int = 10
     val SHADERPARM_BEAM_WIDTH: Int = 11
     val SHADERPARM_BLUE: Int = 2
-    val SHADERPARM_DIVERSITY: Int = 5 // random between 0.0 and 1.0 for some effects (muzzle flashes, etc)
+    val SHADERPARM_DIVERSITY: Int = 5 // random between 0.0f and 1.0f for some effects (muzzle flashes, etc)
     val SHADERPARM_GREEN: Int = 1
     val SHADERPARM_MD3_BACKLERP: Int = 10
 
@@ -101,14 +96,14 @@ object RenderWorld {
         if (!shader[0]!!.IsDrawn()) {
             return false
         }
-        if (tr_local.tr.primaryRenderView!!.globalMaterial != null) {
-            shader[0] = tr_local.tr.primaryRenderView!!.globalMaterial
+        if (tr.primaryRenderView!!.globalMaterial != null) {
+            shader[0] = tr.primaryRenderView!!.globalMaterial
             return true
         }
-        if (RenderSystem_init.r_materialOverride!!.GetString() != null && !RenderSystem_init.r_materialOverride!!.GetString()!!
+        if (r_materialOverride!!.GetString() != null && !r_materialOverride!!.GetString()!!
                 .isEmpty()
         ) {
-            shader[0] = DeclManager.declManager.FindMaterial(RenderSystem_init.r_materialOverride!!.GetString()!!)
+            shader[0] = DeclManager.declManager.FindMaterial(r_materialOverride!!.GetString()!!)
             return true
         }
         return false
@@ -171,7 +166,7 @@ object RenderWorld {
         PS_BLOCK_ALL //= (1 << NUM_PORTAL_ATTRIBUTES) - 1
     }
 
-    abstract class deferredEntityCallback_t() : SERiAL {
+    abstract class deferredEntityCallback_t : SERiAL {
         abstract fun run(e: renderEntity_s?, v: renderView_s?): Boolean
     }
 
@@ -184,7 +179,7 @@ object RenderWorld {
         // if non-zero, the surface and shadow (if it casts one)
         // will only show up in the specific view, ie: player weapons
         var allowSurfaceInViewID: Int = 0
-        var axis: idMat3
+        val axis: idMat3 = idMat3()
         var bodyId: Int = 0
 
         //
@@ -197,8 +192,8 @@ object RenderWorld {
         // The callback function should clear renderEntity->callback if it doesn't
         // want to be called again next time the entity is referenced (ie, if the
         // callback has now made the entity valid until the next updateEntity)
-        var bounds // only needs to be set for deferred models and md5s
-                : idBounds
+        val bounds // only needs to be set for deferred models and md5s
+                : idBounds = idBounds()
         var callback: deferredEntityCallback_t? = null
 
         //
@@ -216,14 +211,14 @@ object RenderWorld {
         var forceUpdate: Int = 0 // force an update (NOTE: not a bool to keep this struct a multiple of 4 bytes)//TODO:
 
         // networking: see WriteGUIToSnapshot / ReadGUIFromSnapshot
-        var gui: Array<idUserInterface?> = arrayOfNulls(RenderWorld.MAX_RENDERENTITY_GUI)
+        var gui: Array<idUserInterface?> = arrayOfNulls(MAX_RENDERENTITY_GUI)
         var hModel: idRenderModel? = null // this can only be null if callback is set
         var joints // array of joints that will modify vertices.
                 : Array<idJointMat?>? = null
 
         // NULL if non-deformable model.  NOT freed by renderer
         //
-        var modelDepthHack: Float = 0f // squash depth range so particle effects don't clip into walls
+        var modelDepthHack: Float = 0.0f // squash depth range so particle effects don't clip into walls
 
         //
         var noDynamicInteractions: Boolean = false // don't create any light / shadow interactions after
@@ -241,7 +236,7 @@ object RenderWorld {
         // axis rotation vectors must be unit length for many
         // R_LocalToGlobal functions to work, so don't scale models!
         // axis vectors are [0] = forward, [1] = left, [2] = up
-        val origin: idVec3
+        val origin: idVec3 = idVec3()
         var referenceShader: idMaterial? = null // used so flares can reference the proper light shader
         var referenceSound: idSoundEmitter? = null // for shader sound tables, allowing effects to vary with sounds
 
@@ -269,25 +264,21 @@ object RenderWorld {
         var weaponDepthHack: Boolean = false // squash depth range so view weapons don't poke into walls
         var xrayIndex: Int = 0
 
-        constructor() {
-            origin = idVec3()
-            axis = idMat3()
-            bounds = idBounds()
-        }
+        constructor()
 
         constructor(newEntity: renderEntity_s) {
             hModel = newEntity.hModel
             entityNum = newEntity.entityNum
             bodyId = newEntity.bodyId
-            bounds = idBounds(newEntity.bounds)
+            bounds.set(newEntity.bounds)
             callback = newEntity.callback
             callbackData = newEntity.callbackData
             suppressSurfaceInViewID = newEntity.suppressSurfaceInViewID
             suppressShadowInViewID = newEntity.suppressShadowInViewID
             suppressShadowInLightID = newEntity.suppressShadowInLightID
             allowSurfaceInViewID = newEntity.allowSurfaceInViewID
-            origin = idVec3(newEntity.origin)
-            axis = idMat3(newEntity.axis)
+            origin.set(newEntity.origin)
+            axis.set(newEntity.axis)
             customShader = newEntity.customShader
             referenceShader = newEntity.referenceShader
             customSkin = newEntity.customSkin
@@ -313,7 +304,7 @@ object RenderWorld {
             hModel = shadow.hModel
             entityNum = shadow.entityNum._val
             bodyId = shadow.bodyId._val
-            bounds = shadow.bounds
+            bounds.set(shadow.bounds)
             callback = shadow.callback
             callbackData = shadow.callbackData
             suppressSurfaceInViewID = shadow.suppressSurfaceInViewID._val
@@ -321,7 +312,7 @@ object RenderWorld {
             suppressShadowInLightID = shadow.suppressShadowInLightID._val
             allowSurfaceInViewID = shadow.allowSurfaceInViewID._val
             origin.set(shadow.origin)
-            axis = shadow.axis
+            axis.set(shadow.axis)
             customShader = shadow.customShader
             referenceShader = shadow.referenceShader
             customSkin = shadow.customSkin
@@ -340,11 +331,11 @@ object RenderWorld {
         }
 
         fun clear() {
-            val newEntity: renderEntity_s = renderEntity_s()
+            val newEntity = renderEntity_s()
             hModel = newEntity.hModel
             entityNum = newEntity.entityNum
             bodyId = newEntity.bodyId
-            bounds = newEntity.bounds
+            bounds.set(newEntity.bounds)
             callback = newEntity.callback
             callbackData = newEntity.callbackData
             suppressSurfaceInViewID = newEntity.suppressSurfaceInViewID
@@ -352,7 +343,7 @@ object RenderWorld {
             suppressShadowInLightID = newEntity.suppressShadowInLightID
             allowSurfaceInViewID = newEntity.allowSurfaceInViewID
             origin.set(newEntity.origin)
-            axis = newEntity.axis
+            axis.set(newEntity.axis)
             customShader = newEntity.customShader
             referenceShader = newEntity.referenceShader
             customSkin = newEntity.customSkin
@@ -370,8 +361,8 @@ object RenderWorld {
             xrayIndex = newEntity.xrayIndex
         }
 
-        public override fun hashCode(): Int {
-            var hash: Int = 7
+        override fun hashCode(): Int {
+            var hash = 7
             hash = 71 * hash + Objects.hashCode(hModel)
             hash = 71 * hash + entityNum
             hash = 71 * hash + bodyId
@@ -393,7 +384,7 @@ object RenderWorld {
             hash = 71 * hash + Objects.hashCode(remoteRenderView)
             hash = 71 * hash + numJoints
             hash = 71 * hash + joints.contentDeepHashCode()
-            hash = 71 * hash + java.lang.Float.floatToIntBits(modelDepthHack)
+            hash = 71 * hash + modelDepthHack.toBits().toInt()
             hash = 71 * hash + (if (noSelfShadow) 1 else 0)
             hash = 71 * hash + (if (noShadow) 1 else 0)
             hash = 71 * hash + (if (noDynamicInteractions) 1 else 0)
@@ -404,7 +395,7 @@ object RenderWorld {
             return hash
         }
 
-        public override fun equals(obj: Any?): Boolean {
+        override fun equals(obj: Any?): Boolean {
             if (obj == null) {
                 return false
             }
@@ -475,7 +466,7 @@ object RenderWorld {
             if (!joints.contentDeepEquals(other.joints)) {
                 return false
             }
-            if (java.lang.Float.floatToIntBits(modelDepthHack) != java.lang.Float.floatToIntBits(other.modelDepthHack)) {
+            if (modelDepthHack.toBits() != other.modelDepthHack.toBits()) {
                 return false
             }
             if (noSelfShadow != other.noSelfShadow) {
@@ -524,24 +515,24 @@ object RenderWorld {
         //
         // if non-zero, the light will only show up in the specific view
         // which can allow player gun gui lights and such to not effect everyone
-        var allowLightInViewID: Int = 0
-        var axis: idMat3 = idMat3() // rotation vectors, must be unit length
+        var allowLightInViewID: CInt = CInt()
+        val axis: idMat3 = idMat3() // rotation vectors, must be unit length
 
         //
         // muzzle flash lights will not cast shadows from player and weapon world models
-        var lightId: Int = 0
+        var lightId: CInt = CInt()
 
         //
         // I am sticking the four bools together so there are no unused gaps in
         // the padded structure, which could confuse the memcmp that checks for redundant
         // updates
-        var noShadows: Boolean = false // (should we replace this with material parameters on the shader?)
-        var noSpecular: Boolean = false // (should we replace this with material parameters on the shader?)
-        var parallel: Boolean = false // lightCenter gives the direction to the light at infinity
+        var noShadows: CBool = CBool() // (should we replace this with material parameters on the shader?)
+        var noSpecular: CBool = CBool() // (should we replace this with material parameters on the shader?)
+        var parallel: CBool = CBool() // lightCenter gives the direction to the light at infinity
 
         //
-        var pointLight: Boolean =
-            false // otherwise a projection light (should probably invert the sense of this, because points are way more common)
+        var pointLight: CBool =
+            CBool() // otherwise a projection light (should probably invert the sense of this, because points are way more common)
 
         //
         // Dmap will generate an optimized shadow volume named _prelight_<lightName>
@@ -558,100 +549,27 @@ object RenderWorld {
         // if non-zero, the light will not show up in the specific view,
         // which may be used if we want to have slightly different muzzle
         // flash lights for the player and other views
-        var suppressLightInViewID: Int = 0
+        var suppressLightInViewID: CInt = CInt()
 
         constructor()
 
-        //copy constructor
-        constructor(other: renderLight_s) {
-            axis = idMat3(other.axis)
-            origin.set(other.origin)
-            suppressLightInViewID = other.suppressLightInViewID
-            allowLightInViewID = other.allowLightInViewID
-            noShadows = other.noShadows
-            noSpecular = other.noSpecular
-            pointLight = other.pointLight
-            parallel = other.parallel
-            lightRadius.set(other.lightRadius)
-            lightCenter.set(other.lightCenter)
-            target.set(other.target)
-            right.set(other.right)
-            up.set(other.up)
-            start.set(other.start)
-            end.set(other.end)
-            prelightModel = other.prelightModel
-            lightId = other.lightId
-            shader = other.shader
-            System.arraycopy(other.shaderParms, 0, shaderParms, 0, other.shaderParms.size)
-            referenceSound = other.referenceSound
-        }
-
-        fun clear() { //TODO:hardcoded values
-            val temp: renderLight_s = renderLight_s()
-            axis = temp.axis
-            origin.set(temp.origin)
-            suppressLightInViewID = temp.suppressLightInViewID
-            allowLightInViewID = temp.allowLightInViewID
-            noShadows = temp.noShadows
-            noSpecular = temp.noSpecular
-            pointLight = temp.pointLight
-            parallel = temp.parallel
-            lightRadius.set(temp.lightRadius)
-            lightCenter.set(temp.lightCenter)
-            target.set(temp.target)
-            right.set(temp.right)
-            up.set(temp.up)
-            start.set(temp.start)
-            end.set(temp.end)
-            prelightModel = temp.prelightModel
-            lightId = temp.lightId
-            shader = temp.shader
-            referenceSound = temp.referenceSound
-        }
-
-        fun atomicSet(shadow: renderLightShadow) {
-            axis = shadow.axis
-            origin.set(shadow.origin)
-            suppressLightInViewID = shadow.suppressLightInViewID._val
-            allowLightInViewID = shadow.allowLightInViewID._val
-            noShadows = shadow.noShadows._val
-            noSpecular = shadow.noSpecular._val
-            pointLight = shadow.pointLight._val
-            parallel = shadow.parallel._val
-            lightRadius.set(shadow.lightRadius)
-            lightCenter.set(shadow.lightCenter)
-            target.set(shadow.target)
-            right.set(shadow.right)
-            up.set(shadow.up)
-            start.set(shadow.start)
-            end.set(shadow.end)
-            prelightModel = shadow.prelightModel
-            lightId = shadow.lightId._val
-            shader = shadow.shader
-            referenceSound = shadow.referenceSound
-        }
     }
 
     class renderView_s : SERiAL {
         val vieworg: idVec3 = idVec3()
         private val DBG_count: Int = DBG_counter++
-
-        //
         var cramZNear: Boolean = false // for cinematics, we want to set ZNear much lower
         var forceUpdate: Boolean = false // for an update
-
-        //
-        var fov_x: Float = 0f
-        var fov_y: Float = 0f
+        var fov_x: Float = 0.0f
+        var fov_y: Float = 0.0f
         var globalMaterial: idMaterial? = null // used to override everything draw
         var shaderParms: FloatArray =
-            FloatArray(RenderWorld.MAX_GLOBAL_SHADER_PARMS) // can be used in any way by shader
+            FloatArray(MAX_GLOBAL_SHADER_PARMS) // can be used in any way by shader
 
-        //
         // time in milliseconds for shader effects and other time dependent rendering issues
         var time: Int = 0
         var viewID: Int = 0
-        var viewaxis: idMat3 = idMat3() // transformation matrix, view looks down the positive X axis
+        val viewaxis: idMat3 = idMat3() // transformation matrix, view looks down the positive X axis
 
         //
         // sized from 0 to SCREEN_WIDTH / SCREEN_HEIGHT (640/480), not actual resolution
@@ -670,7 +588,7 @@ object RenderWorld {
             fov_x = renderView.fov_x
             fov_y = renderView.fov_y
             vieworg.set((renderView.vieworg))
-            viewaxis = idMat3(renderView.viewaxis)
+            viewaxis.set(renderView.viewaxis)
             cramZNear = renderView.cramZNear
             forceUpdate = renderView.forceUpdate
             time = renderView.time
@@ -685,26 +603,26 @@ object RenderWorld {
             height = shadow.height._val
             fov_x = shadow.fov_x._val
             fov_y = shadow.fov_y._val
-            vieworg.set((shadow.vieworg))
-            viewaxis = idMat3(shadow.viewaxis)
+            vieworg.set(shadow.vieworg)
+            viewaxis.set(shadow.viewaxis)
             cramZNear = shadow.cramZNear._val
             forceUpdate = shadow.forceUpdate._val
             time = shadow.time._val
-            for (a in 0 until RenderWorld.MAX_GLOBAL_SHADER_PARMS) {
+            for (a in 0 until MAX_GLOBAL_SHADER_PARMS) {
                 shaderParms[a] = shadow.shaderParms[a]._val
             }
             globalMaterial = shadow.globalMaterial
         }
 
-        public override fun AllocBuffer(): ByteBuffer {
+        override fun AllocBuffer(): ByteBuffer {
             throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
         }
 
-        public override fun Read(buffer: ByteBuffer) {
+        override fun Read(buffer: ByteBuffer) {
             throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
         }
 
-        public override fun Write(): ByteBuffer {
+        override fun Write(): ByteBuffer {
             throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
         }
 
@@ -716,7 +634,7 @@ object RenderWorld {
     }
 
     // exitPortal_t is returned by idRenderWorld::GetPortal()
-    class exitPortal_t() {
+    class exitPortal_t {
         var areas: IntArray = IntArray(2) // areas connected by this portal
         var blockingBits: Int = 0 // PS_BLOCK_VIEW, PS_BLOCK_AIR, etc
         var  /*qhandle_t */portalHandle: Int = 0
@@ -724,31 +642,23 @@ object RenderWorld {
     }
 
     // guiPoint_t is returned by idRenderWorld::GuiTrace()
-    class guiPoint_t() {
+    class guiPoint_t {
         var guiId: Int = 0 // id of gui ( 0, 1, or 2 ) that the trace happened against
-        var x: Float = 0f
-        var y: Float = 0f // 0.0 to 1.0 range if trace hit a gui, otherwise -1
+        var x: Float = 0.0f
+        var y: Float = 0.0f // 0.0f to 1.0f range if trace hit a gui, otherwise -1
     }
 
     // modelTrace_t is for tracing vs. visual geometry
-    class modelTrace_s() {
+    class modelTrace_s {
         var entity: renderEntity_s? = null // render entity that was hit
-        var fraction: Float = 0f // fraction of trace completed
+        var fraction: Float = 0.0f // fraction of trace completed
         var jointNumber: Int = 0 // md5 joint nearest to the hit triangle
         var material: idMaterial? = null // material of hit surface
         val normal: idVec3 = idVec3() // hit triangle normal vector in global space
         val point: idVec3 = idVec3() // end point of trace in global space
-        fun clear() {
-            point.Zero()
-            normal.Zero()
-            material = idMaterial()
-            entity = renderEntity_s()
-            jointNumber = 0
-            fraction = jointNumber.toFloat()
-        }
     }
 
-    abstract class idRenderWorld() {
+    abstract class idRenderWorld {
         //	virtual					~idRenderWorld() {};
         // The same render world can be reinitialized as often as desired
         // a NULL or empty mapName will create an empty, single area world
@@ -783,7 +693,7 @@ object RenderWorld {
         // winding plane and the same distance from the projection origin towards the winding.
         abstract fun ProjectDecalOntoWorld(
             winding: idFixedWinding,
-            projectionOrigin: idVec3?,
+            projectionOrigin: idVec3,
             parallel: Boolean,
             fadeDepth: Float,
             material: idMaterial?,
@@ -794,7 +704,7 @@ object RenderWorld {
         abstract fun ProjectDecal(
             entityHandle: Int,
             winding: idFixedWinding,
-            projectionOrigin: idVec3?,
+            projectionOrigin: idVec3,
             parallel: Boolean,
             fadeDepth: Float,
             material: idMaterial?,
@@ -829,7 +739,7 @@ object RenderWorld {
         // This is used by the game to identify portals that are contained
         // inside doors, so the connection between areas can be topologically
         // terminated when the door shuts.
-        abstract fun FindPortal(b: idBounds?): Int
+        abstract fun FindPortal(b: idBounds): Int
 
         // doors explicitly close off portals when shut
         // multiple bits can be set to block multiple things, ie: ( PS_VIEW | PS_LOCATION | PS_AIR )
@@ -846,11 +756,11 @@ object RenderWorld {
 
         // Will return -1 if the point is not in an area, otherwise
         // it will return 0 <= value < NumAreas()
-        abstract fun PointInArea(point: idVec3?): Int
+        abstract fun PointInArea(point: idVec3): Int
 
         // fills the *areas array with the numbers of the areas the bounds cover
         // returns the total number of areas the bounds cover
-        abstract fun BoundsInAreas(bounds: idBounds?, areas: IntArray?, maxAreas: Int): Int
+        abstract fun BoundsInAreas(bounds: idBounds, areas: IntArray?, maxAreas: Int): Int
 
         // Used by the sound system to do area flowing
         abstract fun NumPortalsInArea(areaNum: Int): Int
@@ -863,14 +773,14 @@ object RenderWorld {
         // fraction location of the trace on the gui surface, or -1,-1 if no hit.
         // This doesn't do any occlusion testing, simply ignoring non-gui surfaces.
         // start / end are in global world coordinates.
-        abstract fun GuiTrace(entityHandle: Int, start: idVec3?, end: idVec3?): guiPoint_t
+        abstract fun GuiTrace(entityHandle: Int, start: idVec3, end: idVec3): guiPoint_t
 
         // Traces vs the render model, possibly instantiating a dynamic version, and returns true if something was hit
         abstract fun ModelTrace(
             trace: modelTrace_s,
             entityHandle: Int,
-            start: idVec3?,
-            end: idVec3?,
+            start: idVec3,
+            end: idVec3,
             radius: Float
         ): Boolean
 
@@ -924,39 +834,39 @@ object RenderWorld {
         // Line drawing for debug visualization
         abstract fun DebugClearLines(time: Int) // a time of 0 will clear all lines and text
         abstract fun DebugLine(
-            color: idVec4?,
-            start: idVec3?,
-            end: idVec3?,
+            color: idVec4,
+            start: idVec3,
+            end: idVec3,
             lifetime: Int /*= 0*/,
             depthTest: Boolean /* = false*/
         )
 
 
-        fun DebugLine(color: idVec4?, start: idVec3?, end: idVec3?, lifetime: Int = 0 /*= 0*/) {
+        fun DebugLine(color: idVec4, start: idVec3, end: idVec3, lifetime: Int = 0 /*= 0*/) {
             DebugLine(color, start, end, lifetime, false)
         }
 
-        abstract fun DebugArrow(color: idVec4?, start: idVec3?, end: idVec3, size: Int, lifetime: Int /*= 0*/)
-        fun DebugArrow(color: idVec4?, start: idVec3?, end: idVec3, size: Int) {
+        abstract fun DebugArrow(color: idVec4, start: idVec3, end: idVec3, size: Int, lifetime: Int /*= 0*/)
+        fun DebugArrow(color: idVec4, start: idVec3, end: idVec3, size: Int) {
             DebugArrow(color, start, end, size, 0)
         }
 
         abstract fun DebugWinding(
-            color: idVec4?,
+            color: idVec4,
             w: idWinding,
             origin: idVec3,
-            axis: idMat3?,
+            axis: idMat3,
             lifetime: Int /*= 0*/,
             depthTest: Boolean /*= false*/
         )
 
 
-        fun DebugWinding(color: idVec4?, w: idWinding, origin: idVec3, axis: idMat3?, lifetime: Int = 0 /*= 0*/) {
+        fun DebugWinding(color: idVec4, w: idWinding, origin: idVec3, axis: idMat3, lifetime: Int = 0 /*= 0*/) {
             DebugWinding(color, w, origin, axis, lifetime, false)
         }
 
         abstract fun DebugCircle(
-            color: idVec4?,
+            color: idVec4,
             origin: idVec3,
             dir: idVec3,
             radius: Float,
@@ -967,7 +877,7 @@ object RenderWorld {
 
 
         fun DebugCircle(
-            color: idVec4?,
+            color: idVec4,
             origin: idVec3,
             dir: idVec3,
             radius: Float,
@@ -978,82 +888,82 @@ object RenderWorld {
         }
 
         abstract fun DebugSphere(
-            color: idVec4?,
+            color: idVec4,
             sphere: idSphere,
             lifetime: Int /* = 0*/,
             depthTest: Boolean /* = false */
         )
 
 
-        fun DebugSphere(color: idVec4?, sphere: idSphere, lifetime: Int = 0 /* = 0*/) {
+        fun DebugSphere(color: idVec4, sphere: idSphere, lifetime: Int = 0 /* = 0*/) {
             DebugSphere(color, sphere, lifetime, false)
         }
 
         abstract fun DebugBounds(
-            color: idVec4?,
+            color: idVec4,
             bounds: idBounds,
             org: idVec3 /* = vec3_origin*/,
             lifetime: Int /* = 0*/
         )
 
 
-        fun DebugBounds(color: idVec4?, bounds: idBounds, org: idVec3 = getVec3Origin() /* = vec3_origin*/) {
+        fun DebugBounds(color: idVec4, bounds: idBounds, org: idVec3 = getVec3Origin() /* = vec3_origin*/) {
             DebugBounds(color, bounds, org, 0)
         }
 
-        abstract fun DebugBox(color: idVec4?, box: idBox, lifetime: Int /* = 0*/)
-        fun DebugBox(color: idVec4?, box: idBox) {
+        abstract fun DebugBox(color: idVec4, box: idBox, lifetime: Int /* = 0*/)
+        fun DebugBox(color: idVec4, box: idBox) {
             DebugBox(color, box, 0)
         }
 
         abstract fun DebugFrustum(
-            color: idVec4?,
+            color: idVec4,
             frustum: idFrustum,
             showFromOrigin: Boolean /* = false*/,
             lifetime: Int /*= 0*/
         )
 
 
-        fun DebugFrustum(color: idVec4?, frustum: idFrustum, showFromOrigin: Boolean = false /* = false*/) {
+        fun DebugFrustum(color: idVec4, frustum: idFrustum, showFromOrigin: Boolean = false /* = false*/) {
             DebugFrustum(color, frustum, showFromOrigin, 0)
         }
 
         abstract fun DebugCone(
-            color: idVec4?,
+            color: idVec4,
             apex: idVec3,
-            dir: idVec3?,
+            dir: idVec3,
             radius1: Float,
             radius2: Float,
             lifetime: Int /*= 0*/
         )
 
-        fun DebugCone(color: idVec4?, apex: idVec3, dir: idVec3?, radius1: Float, radius2: Float) {
+        fun DebugCone(color: idVec4, apex: idVec3, dir: idVec3, radius1: Float, radius2: Float) {
             DebugCone(color, apex, dir, radius1, radius2, 0)
         }
 
-        abstract fun DebugAxis(origin: idVec3?, axis: idMat3)
+        abstract fun DebugAxis(origin: idVec3, axis: idMat3)
 
         // Polygon drawing for debug visualization.
         abstract fun DebugClearPolygons(time: Int) // a time of 0 will clear all polygons
         abstract fun DebugPolygon(
-            color: idVec4?,
+            color: idVec4,
             winding: idWinding?,
             lifeTime: Int /* = 0*/,
             depthTest: Boolean /*= false*/
         )
 
 
-        fun DebugPolygon(color: idVec4?, winding: idWinding?, lifeTime: Int = 0 /* = 0*/) {
+        fun DebugPolygon(color: idVec4, winding: idWinding?, lifeTime: Int = 0 /* = 0*/) {
             DebugPolygon(color, winding, lifeTime, false)
         }
 
         // Text drawing for debug visualization.
         abstract fun DrawText(
             text: String?,
-            origin: idVec3?,
+            origin: idVec3,
             scale: Float,
-            color: idVec4?,
-            viewAxis: idMat3?,
+            color: idVec4,
+            viewAxis: idMat3,
             align: Int /*= 1*/,
             lifetime: Int /*= 0*/,
             depthTest: Boolean /* = false*/
@@ -1062,10 +972,10 @@ object RenderWorld {
 
         fun DrawText(
             text: String?,
-            origin: idVec3?,
+            origin: idVec3,
             scale: Float,
-            color: idVec4?,
-            viewAxis: idMat3?,
+            color: idVec4,
+            viewAxis: idMat3,
             align: Int = 1 /*= 1*/,
             lifetime: Int = 0 /*= 0*/
         ) {
@@ -1079,18 +989,18 @@ object RenderWorld {
      ===================
      */
     class R_ListRenderLightDefs_f private constructor() : cmdFunction_t() {
-        public override fun run(args: CmdArgs.idCmdArgs?) {
+        override fun run(args: CmdArgs.idCmdArgs?) {
             var i: Int
             var ldef: idRenderLightLocal?
-            if (null == tr_local.tr.primaryWorld) {
+            if (null == tr.primaryWorld) {
                 return
             }
-            var active: Int = 0
-            var totalRef: Int = 0
-            var totalIntr: Int = 0
+            var active = 0
+            var totalRef = 0
+            var totalIntr = 0
             i = 0
-            while (i < tr_local.tr.primaryWorld!!.lightDefs.Num()) {
-                ldef = tr_local.tr.primaryWorld!!.lightDefs[i]
+            while (i < tr.primaryWorld!!.lightDefs.Num()) {
+                ldef = tr.primaryWorld!!.lightDefs[i]
                 if (null == ldef) {
                     common.Printf("%4d: FREED\n", i)
                     i++
@@ -1098,7 +1008,7 @@ object RenderWorld {
                 }
 
                 // count up the interactions
-                var iCount: Int = 0
+                var iCount = 0
                 var inter: idInteraction? = ldef.firstInteraction
                 while (inter != null) {
                     iCount++
@@ -1107,7 +1017,7 @@ object RenderWorld {
                 totalIntr += iCount
 
                 // count up the references
-                var rCount: Int = 0
+                var rCount = 0
                 var ref: areaReference_s? = ldef.references
                 while (ref != null) {
                     rCount++
@@ -1132,18 +1042,18 @@ object RenderWorld {
      ===================
      */
     class R_ListRenderEntityDefs_f private constructor() : cmdFunction_t() {
-        public override fun run(args: CmdArgs.idCmdArgs?) {
+        override fun run(args: CmdArgs.idCmdArgs?) {
             var i: Int
             var mdef: idRenderEntityLocal?
-            if (null == tr_local.tr.primaryWorld) {
+            if (null == tr.primaryWorld) {
                 return
             }
-            var active: Int = 0
-            var totalRef: Int = 0
-            var totalIntr: Int = 0
+            var active = 0
+            var totalRef = 0
+            var totalIntr = 0
             i = 0
-            while (i < tr_local.tr.primaryWorld!!.entityDefs.Num()) {
-                mdef = tr_local.tr.primaryWorld!!.entityDefs[i]
+            while (i < tr.primaryWorld!!.entityDefs.Num()) {
+                mdef = tr.primaryWorld!!.entityDefs[i]
                 if (null == mdef) {
                     common.Printf("%4d: FREED\n", i)
                     i++
@@ -1151,7 +1061,7 @@ object RenderWorld {
                 }
 
                 // count up the interactions
-                var iCount: Int = 0
+                var iCount = 0
                 var inter: idInteraction? = mdef.firstInteraction
                 while (inter != null) {
                     iCount++
@@ -1160,7 +1070,7 @@ object RenderWorld {
                 totalIntr += iCount
 
                 // count up the references
-                var rCount: Int = 0
+                var rCount = 0
                 var ref: areaReference_s? = mdef.entityRefs
                 while (ref != null) {
                     rCount++

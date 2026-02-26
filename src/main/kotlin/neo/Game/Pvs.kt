@@ -5,25 +5,20 @@ import neo.Renderer.RenderWorld.exitPortal_t
 import neo.Renderer.RenderWorld.portalConnection_t
 import neo.TempDump
 import neo.framework.Common
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
-import neo.idlib.Lib
 import neo.idlib.Timer.idTimer
+import neo.idlib.colorCyan
+import neo.idlib.colorRed
 import neo.idlib.containers.CInt
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.*
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.experimental.and
 import kotlin.experimental.or
 
-/**
- *
- */
 object Pvs {
     /*
      ===================================================================================
@@ -67,7 +62,7 @@ object Pvs {
     class pvsPortal_t {
         var areaNum // area this portal leads to
                 = 0
-        var bounds // winding bounds
+        val bounds // winding bounds
                 : idBounds = idBounds()
         var done // true if pvs is calculated for this portal
                 = false
@@ -84,7 +79,7 @@ object Pvs {
     }
 
     class pvsArea_t {
-        var bounds // bounds of the whole area
+        val bounds // bounds of the whole area
                 : idBounds = idBounds()
         var numPortals // number of portals in this area
                 = 0
@@ -162,7 +157,7 @@ object Pvs {
 
             timer.Stop()
 
-            Game_local.gameLocal.Printf("%5.0f msec to calculate PVS\n", timer.Milliseconds())
+            Game_local.gameLocal.Printf("%5d msec to calculate PVS\n", timer.Milliseconds())
             Game_local.gameLocal.Printf("%5d areas\n", numAreas)
             Game_local.gameLocal.Printf("%5d portals\n", numPortals)
             Game_local.gameLocal.Printf("%5d areas visible on average\n", totalVisibleAreas / numAreas)
@@ -442,7 +437,7 @@ object Pvs {
             var portal: exitPortal_t?
             val plane = idPlane()
             val offset = idVec3()
-            var color: idVec4
+            val color: idVec4 = idVec4()
             val handle: pvsHandle_t?
             sourceArea = Game_local.gameRenderWorld!!.PointInArea(source)
             if (sourceArea == -1) {
@@ -455,11 +450,13 @@ object Pvs {
                     j++
                     continue
                 }
-                color = if (j == sourceArea) {
-                    Lib.colorRed
-                } else {
-                    Lib.colorCyan
-                }
+                color.set(
+                    if (j == sourceArea) {
+                        colorRed
+                    } else {
+                        colorCyan
+                    }
+                )
                 n = Game_local.gameRenderWorld!!.NumPortalsInArea(j)
 
                 // draw all the portals of the area
@@ -496,7 +493,7 @@ object Pvs {
             var portal: exitPortal_t?
             val plane = idPlane()
             val offset = idVec3()
-            var color: idVec4
+            val color: idVec4 = idVec4()
             val handle: pvsHandle_t?
             num = Game_local.gameRenderWorld!!.BoundsInAreas(source, areas, MAX_BOUNDS_AREAS)
             if (0 == num) {
@@ -516,11 +513,13 @@ object Pvs {
                     }
                     i++
                 }
-                color = if (i < num) {
-                    Lib.colorRed
-                } else {
-                    Lib.colorCyan
-                }
+                color.set(
+                    if (i < num) {
+                        colorRed
+                    } else {
+                        colorCyan
+                    }
+                )
                 n = Game_local.gameRenderWorld!!.NumPortalsInArea(j)
 
                 // draw all the portals of the area
@@ -557,7 +556,7 @@ object Pvs {
             var portal: exitPortal_t?
             val plane = idPlane()
             val offset = idVec3()
-            var color: idVec4
+            val color: idVec4 = idVec4()
             if (handle.i < 0 || handle.i >= MAX_CURRENT_PVS || handle.h != currentPVS[handle.i].handle.h) {
                 idGameLocal.Error("idPVS::DrawCurrentPVS: invalid handle")
             }
@@ -571,11 +570,13 @@ object Pvs {
                     j++
                     continue
                 }
-                color = if (j == sourceArea) {
-                    Lib.colorRed
-                } else {
-                    Lib.colorCyan
-                }
+                color.set(
+                    if (j == sourceArea) {
+                        colorRed
+                    } else {
+                        colorCyan
+                    }
+                )
                 n = Game_local.gameRenderWorld!!.NumPortalsInArea(j)
 
                 // draw all the portals of the area
@@ -793,7 +794,7 @@ object Pvs {
                     areaSide = side1
 
                     // if the whole area is at the back side of the portal
-                    if (areaSide == Plane.PLANESIDE_BACK) {
+                    if (areaSide == PLANESIDE_BACK) {
                         j++
                         continue
                     }
@@ -802,10 +803,10 @@ object Pvs {
                         p2 = area.portals!![p]!!
 
                         // if we the whole area is not at the front we need to check
-                        if (areaSide != Plane.PLANESIDE_FRONT) {
+                        if (areaSide != PLANESIDE_FRONT) {
                             // if the second portal is completely at the back side of the first portal
                             side1 = p2.bounds.PlaneSide(p1.plane)
-                            if (side1 == Plane.PLANESIDE_BACK) {
+                            if (side1 == PLANESIDE_BACK) {
                                 p++
                                 continue
                             }
@@ -813,19 +814,19 @@ object Pvs {
 
                         // if the first portal is completely at the front of the second portal
                         side2 = p1.bounds.PlaneSide(p2.plane)
-                        if (side2 == Plane.PLANESIDE_FRONT) {
+                        if (side2 == PLANESIDE_FRONT) {
                             p++
                             continue
                         }
 
                         // if the second portal is not completely at the front of the first portal
-                        if (side1 != Plane.PLANESIDE_FRONT) {
+                        if (side1 != PLANESIDE_FRONT) {
                             // more accurate check
                             k = 0
                             while (k < p2.w!!.GetNumPoints()) {
 
                                 // if more than an epsilon at the front side
-                                if (p1.plane.Side(p2.w!![k].ToVec3(), Plane.ON_EPSILON) == Plane.PLANESIDE_FRONT) {
+                                if (p1.plane.Side(p2.w!![k].ToVec3(), ON_EPSILON) == PLANESIDE_FRONT) {
                                     break
                                 }
                                 k++
@@ -837,13 +838,13 @@ object Pvs {
                         }
 
                         // if the first portal is not completely at the back side of the second portal
-                        if (side2 != Plane.PLANESIDE_BACK) {
+                        if (side2 != PLANESIDE_BACK) {
                             // more accurate check
                             k = 0
                             while (k < p1.w!!.GetNumPoints()) {
 
                                 // if more than an epsilon at the back side
-                                if (p2.plane.Side(p1.w!![k].ToVec3(), Plane.ON_EPSILON) == Plane.PLANESIDE_BACK) {
+                                if (p2.plane.Side(p1.w!![k].ToVec3(), ON_EPSILON) == PLANESIDE_BACK) {
                                     break
                                 }
                                 k++
@@ -1043,7 +1044,7 @@ object Pvs {
                 while (j < pass.GetNumPoints()) {
                     v2.set(pass[j].ToVec3().minus(source[i].ToVec3()))
                     normal.set(v1.Cross(v2))
-                    if (normal.Normalize() < 0.01f) {
+                    if (normal.Normalize() < 0.01) {
                         j++
                         continue
                     }
@@ -1061,12 +1062,12 @@ object Pvs {
                             continue
                         }
                         d = source[k].ToVec3().times(normal) - dist
-                        if (d < -Plane.ON_EPSILON) {
+                        if (d < -ON_EPSILON) {
                             // source is on the negative side, so we want all
                             // pass and target on the positive side
                             flipTest = false
                             break
-                        } else if (d > Plane.ON_EPSILON) {
+                        } else if (d > ON_EPSILON) {
                             // source is on the positive side, so we want all
                             // pass and target on the negative side
                             flipTest = true
@@ -1095,9 +1096,9 @@ object Pvs {
                             continue
                         }
                         d = pass[k].ToVec3().times(normal) - dist
-                        if (d < -Plane.ON_EPSILON) {
+                        if (d < -ON_EPSILON) {
                             break
-                        } else if (d > Plane.ON_EPSILON) {
+                        } else if (d > ON_EPSILON) {
                             front = true
                         }
                         k++
@@ -1198,7 +1199,7 @@ object Pvs {
                     byteNum = 0
                     while (byteNum < portalVisBytes) {
                         canSee = 0
-                        mightSee = (source.mightSee!![byteNum] and target.mightSee!![byteNum]).toByte()
+                        mightSee = (source.mightSee!![byteNum] and target.mightSee!![byteNum])
 
                         // go through eight portals at a time to speed things up
                         bitNum = 0
@@ -1218,11 +1219,11 @@ object Pvs {
                             while (l < numBounds._val) {
                                 sides[l] = p.bounds.PlaneSide(passageBounds[l])
                                 // if completely at the back of the passage bounding plane
-                                if (sides[l] == Plane.PLANESIDE_BACK) {
+                                if (sides[l] == PLANESIDE_BACK) {
                                     break
                                 }
                                 // if completely at the front
-                                if (sides[l] == Plane.PLANESIDE_FRONT) {
+                                if (sides[l] == PLANESIDE_FRONT) {
                                     front++
                                 }
                                 l++
@@ -1240,7 +1241,7 @@ object Pvs {
                                 while (l < numBounds._val) {
 
                                     // only clip if the winding possibly crosses this plane
-                                    if (sides[l] != Plane.PLANESIDE_CROSS) {
+                                    if (sides[l] != PLANESIDE_CROSS) {
                                         l++
                                         continue
                                     }
@@ -1429,7 +1430,7 @@ object Pvs {
         }
 
         private fun AllocCurrentPVS( /*unsigned*/
-            h: Int
+                                     h: Int
         ): pvsHandle_t {
             var i: Int
             val handle = pvsHandle_t()

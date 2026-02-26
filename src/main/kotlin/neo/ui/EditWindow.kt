@@ -1,7 +1,6 @@
 package neo.ui
 
 import neo.Renderer.Material
-import neo.TempDump.NOT
 import neo.TempDump.ctos
 import neo.TempDump.etoi
 import neo.TempDump.itob
@@ -22,9 +21,9 @@ import neo.framework.KeyInput.K_INS
 import neo.framework.KeyInput.K_KP_ENTER
 import neo.framework.KeyInput.K_LEFTARROW
 import neo.framework.KeyInput.K_RIGHTARROW
+import neo.framework.KeyInput.K_SHIFT
 import neo.framework.KeyInput.K_UPARROW
 import neo.framework.KeyInput.idKeyInput.IsDown
-import neo.idlib.Lib
 import neo.idlib.Text.Parser.idParser
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.CharIsPrintable
@@ -32,9 +31,10 @@ import neo.idlib.Text.Str.idStr.Companion.Cmpn
 import neo.idlib.Text.Str.idStr.Companion.Copynz
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.idStr.Companion.IsColor
+import neo.idlib.colorWhite
 import neo.idlib.containers.CBool
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Math_h.idMath.FtoiFast
+import neo.idlib.math.idMath.FtoiFast
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
 import neo.sys.win_input.Sys_GetConsoleKey
@@ -48,9 +48,6 @@ import neo.ui.Winvar.idWinBool
 import neo.ui.Winvar.idWinVar
 import java.nio.ByteBuffer
 
-/**
- *
- */
 object EditWindow {
     const val MAX_EDITFIELD = 4096
 
@@ -72,10 +69,10 @@ object EditWindow {
         private var maxChars = 0
         private var numeric = false
         private var paintOffset = 0
-        private val password: idWinBool? = idWinBool()
+        private val password: idWinBool = idWinBool()
         private var readonly = false
         private var scroller: idSliderWindow? = null
-        private var sizeBias = 0f
+        private var sizeBias = 0.0f
         private val sourceFile = idStr()
         private val textIndex = 0
 
@@ -107,8 +104,8 @@ object EditWindow {
             }
             val scale = textScale.oCastFloat()
             var pass = ""
-            val buffer: String?
-            if (password != null) {
+            val buffer: String
+            if (password.data) {
                 var temp = 0 //text;
                 while (temp < text.Length()) {
                     pass += "*"
@@ -116,21 +113,21 @@ object EditWindow {
                 }
                 buffer = pass
             } else {
-                buffer = text.c_str()
+                buffer = text.c_str()!!
             }
             if (cursorPos > len) {
                 cursorPos = len
             }
             val rect = idRectangle(textRect)
-            rect.x -= paintOffset.toFloat()
-            rect.w += paintOffset.toFloat()
+            rect.x -= paintOffset
+            rect.w += paintOffset
             if (wrap && scroller!!.GetHigh() > 0.0f) {
                 val lineHeight = GetMaxCharHeight() + 5
                 rect.y -= scroller!!.GetValue() * lineHeight
                 rect.w -= sizeBias
                 rect.h = (breaks.Num() + 1) * lineHeight
             }
-            if (hover && !noEvents.oCastBoolean() && Contains(gui!!.CursorX(), gui!!.CursorY())) {
+            if (hover && !noEvents.data && Contains(gui!!.CursorX(), gui!!.CursorY())) {
                 color = hoverColor.oCastIdVec4()
             } else {
                 hover = false
@@ -156,8 +153,8 @@ object EditWindow {
             Copynz(buffer, text.c_str()!!, buffer.size)
             val key = event.evValue
             var len = text.Length()
-            if (event.evType === sysEventType_t.SE_CHAR) {
-                if (event.evValue == Sys_GetConsoleKey(false).code || event.evValue == Sys_GetConsoleKey(true).code) {
+            if (event.evType == sysEventType_t.SE_CHAR) {
+                if (event.evValue == Sys_GetConsoleKey(IsDown(K_SHIFT)).code) {
                     return ""
                 }
                 if (updateVisuals != null) {
@@ -226,7 +223,7 @@ object EditWindow {
                     cursorPos++
                 }
                 EnsureCursorVisible()
-            } else if (event.evType === sysEventType_t.SE_KEY && event.evValue2 != 0) {
+            } else if (event.evType == sysEventType_t.SE_KEY && event.evValue2 != 0) {
                 if (updateVisuals != null) {
                     updateVisuals._val = true
                 }
@@ -334,7 +331,7 @@ object EditWindow {
                     RunScript(etoi(ON.ON_ESC))
                     return cmd.toString()
                 }
-            } else if (event.evType === sysEventType_t.SE_KEY && 0 == event.evValue2) {
+            } else if (event.evType == sysEventType_t.SE_KEY && 0 == event.evValue2) {
                 if (key == K_ENTER || key == K_KP_ENTER) {
                     RunScript(etoi(ON.ON_ENTERRELEASE))
                     return cmd.toString()
@@ -365,10 +362,6 @@ object EditWindow {
         override fun GainFocus() {
             cursorPos = text.Length()
             EnsureCursorVisible()
-        }
-
-        override fun  /*size_t*/Allocated(): Int {
-            return super.Allocated()
         }
 
         override fun GetWinVarByName(
@@ -405,13 +398,13 @@ object EditWindow {
             if (0 == Cmpn(eventName!!, "cvar read ", 10)) {
                 event = idStr(eventName)
                 group = event.Mid(10, event.Length() - 10)
-                if (NOT(group.Cmp(cvarGroup.data!!))) {
+                if (group.Cmp(cvarGroup.data!!) == 0) {
                     UpdateCvar(true, true)
                 }
             } else if (0 == Cmpn(eventName, "cvar write ", 11)) {
                 event = idStr(eventName)
                 group = event.Mid(11, event.Length() - 11)
-                if (NOT(group.Cmp(cvarGroup.data!!))) {
+                if (group.Cmp(cvarGroup.data!!) == 0) {
                     UpdateCvar(false, true)
                 }
             }
@@ -443,7 +436,7 @@ object EditWindow {
                 return true
             }
             if (Icmp(_name, "password") == 0) {
-                password!!.data = src.ParseBool()
+                password.data = src.ParseBool()
                 return true
             }
             if (Icmp(_name, "cvarMax") == 0) {
@@ -455,7 +448,7 @@ object EditWindow {
 
         private fun InitCvar() {
             if (cvarStr.data == null || cvarStr.data!!.IsEmpty()) {
-                if (text.GetName() == null) {
+                if (text.GetName().isEmpty()) {
                     common.Warning(
                         "idEditWindow::InitCvar: gui '%s' window '%s' has an empty cvar string",
                         gui!!.GetSourceFile(),
@@ -481,7 +474,7 @@ object EditWindow {
         // false: write to the cvar system
         // force == true overrides liveUpdate 0
         private fun UpdateCvar(read: Boolean, force: Boolean = false /*= false*/) {
-            if (force || liveUpdate.oCastBoolean()) {
+            if (force || liveUpdate.data) {
                 if (cvar != null) {
                     if (read) {
                         text.data!!.set(cvar!!.GetString())
@@ -505,10 +498,10 @@ object EditWindow {
             wrap = false
             sourceFile.set("")
             scroller = null
-            sizeBias = 0f
+            sizeBias = 0.0f
             lastTextLength = 0
             forceScroll = false
-            password!!.data = false
+            password.data = false
             cvar = null
             liveUpdate.data = true
             readonly = false
@@ -521,13 +514,13 @@ object EditWindow {
             } else if (maxChars == 1) {
                 cursorPos = 0
             }
-            if (NOT(dc)) {
+            if (dc == null) {
                 return
             }
             SetFont()
             if (!wrap) {
                 var cursorX = 0
-                if (password!!.data) {
+                if (password.data) {
                     cursorX = cursorPos * dc!!.CharWidth('*', textScale.data)
                 } else {
                     var i = 0
@@ -563,7 +556,7 @@ object EditWindow {
                     text.data,
                     textScale.data,
                     textAlign.code,
-                    Lib.colorWhite,
+                    colorWhite,
                     rect,
                     true,
                     if (itob(flags and Window.WIN_FOCUS)) cursorPos else -1,
@@ -572,7 +565,7 @@ object EditWindow {
                 )
                 val fit = (textRect.h / (GetMaxCharHeight() + 5)).toInt()
                 if (fit < breaks.Num() + 1) {
-                    scroller!!.SetRange(0f, (breaks.Num() + 1 - fit).toFloat(), 1f)
+                    scroller!!.SetRange(0.0f, (breaks.Num() + 1 - fit).toFloat(), 1.0f)
                 } else {
                     // The text fits completely in the box
                     scroller!!.SetRange(0.0f, 0.0f, 1.0f)
@@ -620,13 +613,13 @@ object EditWindow {
             val scrollRect = idRectangle()
             if (horizontal) {
                 sizeBias = mat.GetImageHeight().toFloat()
-                scrollRect.x = 0f
+                scrollRect.x = 0.0f
                 scrollRect.y = clientRect.h - sizeBias
                 scrollRect.w = clientRect.w
                 scrollRect.h = sizeBias
             } else {
                 scrollRect.x = clientRect.w - sizeBias
-                scrollRect.y = 0f
+                scrollRect.y = 0.0f
                 scrollRect.w = sizeBias
                 scrollRect.h = clientRect.h
             }

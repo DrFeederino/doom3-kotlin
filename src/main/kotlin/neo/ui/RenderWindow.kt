@@ -14,11 +14,7 @@ import neo.idlib.Dict_h.idDict
 import neo.idlib.Text.Parser.idParser
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Vector.getVec3Origin
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.*
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.SimpleWindow.drawWin_t
 import neo.ui.UserInterfaceLocal.idUserInterfaceLocal
@@ -28,9 +24,6 @@ import neo.ui.Winvar.idWinStr
 import neo.ui.Winvar.idWinVec4
 import kotlin.math.atan
 
-/**
- *
- */
 class RenderWindow {
     class idRenderWindow : idWindow {
         private val animClass = idStr()
@@ -70,12 +63,6 @@ class RenderWindow {
             CommonInit()
         }
 
-        //	// virtual ~idRenderWindow();
-        //
-        override fun PostParse() {
-            super.PostParse()
-        }
-
         override fun Draw(time: Int, x: Float, y: Float) {
             if (GuiModel.idGuiModel.bla) {
                 bla1++
@@ -88,22 +75,19 @@ class RenderWindow {
             refdef!!.vieworg.set(viewOffset.ToVec3())
             //refdef.vieworg.Set(-128, 0, 0);
             refdef!!.viewaxis.Identity()
-            refdef!!.shaderParms[0] = 1f
-            refdef!!.shaderParms[1] = 1f
-            refdef!!.shaderParms[2] = 1f
-            refdef!!.shaderParms[3] = 1f
+            refdef!!.shaderParms[0] = 1.0f
+            refdef!!.shaderParms[1] = 1.0f
+            refdef!!.shaderParms[2] = 1.0f
+            refdef!!.shaderParms[3] = 1.0f
+
             refdef!!.x = drawRect.x.toInt()
             refdef!!.y = drawRect.y.toInt()
             refdef!!.width = drawRect.w.toInt()
             refdef!!.height = drawRect.h.toInt()
-            refdef!!.fov_x = 90f
-            refdef!!.fov_y = (2 * atan((drawRect.h / drawRect.w).toDouble()) * idMath.M_RAD2DEG).toFloat()
+            refdef!!.fov_x = 90.0f
+            refdef!!.fov_y = (2 * atan((drawRect.h / drawRect.w)) * idMath.M_RAD2DEG)
             refdef!!.time = time
             world!!.RenderScene(refdef!!)
-        }
-
-        override fun  /*size_t*/Allocated(): Int {
-            return super.Allocated()
         }
 
         override fun GetWinVarByName(
@@ -195,7 +179,7 @@ class RenderWindow {
         }
 
         private fun PreRender() {
-            if (needsRender.oCastBoolean()) {
+            if (needsRender.data) {
                 world!!.InitFromMap(null)
                 val spawnArgs = idDict()
                 spawnArgs.Set("classname", "light")
@@ -216,10 +200,10 @@ class RenderWindow {
                 if (worldEntity!!.hModel != null) {
                     val v = idVec3(modelRotate.ToVec3())
                     worldEntity!!.axis.set(v.ToMat3())
-                    worldEntity!!.shaderParms[0] = 1f
-                    worldEntity!!.shaderParms[1] = 1f
-                    worldEntity!!.shaderParms[2] = 1f
-                    worldEntity!!.shaderParms[3] = 1f
+                    worldEntity!!.shaderParms[0] = 1.0f
+                    worldEntity!!.shaderParms[1] = 1.0f
+                    worldEntity!!.shaderParms[2] = 1.0f
+                    worldEntity!!.shaderParms[3] = 1.0f
                     modelDef = world!!.AddEntityDef(worldEntity!!)
                 }
                 needsRender.data = false

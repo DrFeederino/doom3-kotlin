@@ -1,6 +1,5 @@
 package neo.Game
 
-import neo.CM.CollisionModel.trace_s
 import neo.Game.AFEntity.idAFEntity_Base
 import neo.Game.AI.AI.idAI
 import neo.Game.Entity.idEntity
@@ -19,30 +18,26 @@ import neo.Game.Sound.idSound
 import neo.Game.WorldSpawn.idWorldspawn
 import neo.Renderer.Material
 import neo.Renderer.Model
-import neo.TempDump
+import neo.cm.trace_s
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declState_t
 import neo.framework.UsercmdGen
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.*
 import neo.idlib.BV.Box.idBox
+import neo.idlib.BV.idBounds
 import neo.idlib.Dict_h.idKeyValue
-import neo.idlib.Lib
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List
-import neo.idlib.math.Angles.idAngles
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.experimental.and
 
-/**
- *
- */
 object GameEdit {
     /*
      ===============================================================================
@@ -55,7 +50,7 @@ object GameEdit {
     private val gameEditLocal: idGameEdit = idGameEdit()
 
 
-    val gameEdit = GameEdit.gameEditLocal
+    val gameEdit = gameEditLocal
     private fun sscanf(key: idStr, pattern: String): Int {
         var pattern = pattern
         var a = -1
@@ -96,12 +91,12 @@ object GameEdit {
             val origin = GetPhysics().GetOrigin()
             val axis = GetPhysics().GetAxis()
             Game_local.gameRenderWorld!!.DebugArrow(
-                Lib.colorYellow,
+                colorYellow,
                 origin + (axis[1] * -5.0f + axis[2] * 5.0f),
                 origin,
                 2
             )
-            Game_local.gameRenderWorld!!.DebugArrow(Lib.colorRed, origin, draggedPosition, 2)
+            Game_local.gameRenderWorld!!.DebugArrow(colorRed, origin, draggedPosition, 2)
         }
 
         override fun Think() {
@@ -150,21 +145,20 @@ object GameEdit {
             val viewPoint = idVec3()
             val origin = idVec3()
             val viewAxis = idMat3()
-            var axis = idMat3()
+            val axis = idMat3()
             val trace = trace_s()
             var newEnt: idEntity?
-            var angles: idAngles
             var   /*jointHandle_t*/newJoint = 0
             var newBodyName = idStr()
             player.GetViewPos(viewPoint, viewAxis)
 
             // if no entity selected for dragging
-            if (TempDump.NOT(dragEnt.GetEntity())) {
+            if (dragEnt.GetEntity() == null) {
                 if (player.usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK != 0) {
                     Game_local.gameLocal.clip.TracePoint(
                         trace,
                         viewPoint,
-                        viewPoint + viewAxis[0] * GameEdit.MAX_DRAG_TRACE_DISTANCE,
+                        viewPoint + viewAxis[0] * MAX_DRAG_TRACE_DISTANCE,
                         Material.CONTENTS_SOLID or Material.CONTENTS_RENDERMODEL or Material.CONTENTS_BODY,
                         player
                     )
@@ -212,7 +206,7 @@ object GameEdit {
                             val phys = dragEnt.GetEntity()!!.GetPhysics()
                             localPlayerPoint.set(trace.c.point.minus(viewPoint).times(viewAxis.Transpose()))
                             origin.set(phys.GetOrigin(id))
-                            axis = phys.GetAxis(id)
+                            axis.set(phys.GetAxis(id))
                             localEntityPoint.set(trace.c.point.minus(origin).times(axis.Transpose()))
                             cursor!!.drag.Init(SysCvar.g_dragDamping.GetFloat())
                             cursor!!.drag.SetPhysics(phys, id, localEntityPoint)
@@ -250,7 +244,7 @@ object GameEdit {
                             drag.GetType().name,
                             dragAnimator.GetJointName(joint),
                             bodyName
-                        ), cursor!!.GetPhysics().GetOrigin(), 0.1f, Lib.colorWhite, viewAxis, 1
+                        ), cursor!!.GetPhysics().GetOrigin(), 0.1f, colorWhite, viewAxis, 1
                     )
                 } else {
                     cursor!!.draggedPosition.set(cursor!!.GetPhysics().GetOrigin())
@@ -260,7 +254,7 @@ object GameEdit {
                             drag.GetName(),
                             drag.GetType().name,
                             bodyName
-                        ), cursor!!.GetPhysics().GetOrigin(), 0.1f, Lib.colorWhite, viewAxis, 1
+                        ), cursor!!.GetPhysics().GetOrigin(), 0.1f, colorWhite, viewAxis, 1
                     )
                 }
             }
@@ -271,7 +265,7 @@ object GameEdit {
                 val renderEntity = selected.GetEntity()!!.GetRenderEntity()
                 if (renderEntity != null) {
                     Game_local.gameRenderWorld!!.DebugBox(
-                        Lib.colorYellow,
+                        colorYellow,
                         idBox(renderEntity.bounds, renderEntity.origin, renderEntity.axis)
                     )
                 }
@@ -316,7 +310,7 @@ object GameEdit {
             while (kv != null) {
                 key.set(kv.GetKey())
                 key.Strip("bindConstraint ")
-                if (GameEdit.sscanf(key, "bind%d").also { num = it } != -1) {
+                if (sscanf(key, "bind%d").also { num = it } != -1) {
                     if (num >= largestNum) {
                         largestNum = num + 1
                     }
@@ -436,7 +430,7 @@ object GameEdit {
         }
 
         fun RemoveSelectedEntity(ent: idEntity?) {
-            if (selectedEntities.Find(ent) !== Integer.valueOf(0)) {
+            if (selectedEntities.Find(ent) != null) {
                 selectedEntities.Remove(ent!!)
             }
         }
@@ -455,7 +449,7 @@ object GameEdit {
 
         fun DisplayEntities() {
             var ent: idEntity?
-            if (TempDump.NOT(Game_local.gameLocal.GetLocalPlayer())) {
+            if (Game_local.gameLocal.GetLocalPlayer() == null) {
                 return
             }
             selectableEntityClasses.Clear()
@@ -466,6 +460,7 @@ object GameEdit {
                     sit.textKey.set("texture")
                     selectableEntityClasses.Append(sit)
                 }
+
                 2 -> {
                     sit.typeInfo = idSound::class.java
                     sit.textKey.set("s_shader")
@@ -474,38 +469,44 @@ object GameEdit {
                     sit.textKey.set("texture")
                     selectableEntityClasses.Append(sit)
                 }
+
                 3 -> {
                     sit.typeInfo = idAFEntity_Base::class.java
                     sit.textKey.set("articulatedFigure")
                     selectableEntityClasses.Append(sit)
                 }
+
                 4 -> {
                     sit.typeInfo = idFuncEmitter::class.java
                     sit.textKey.set("model")
                     selectableEntityClasses.Append(sit)
                 }
+
                 5 -> {
                     sit.typeInfo = idAI::class.java
                     sit.textKey.set("name")
                     selectableEntityClasses.Append(sit)
                 }
+
                 6 -> {
                     sit.typeInfo = idEntity::class.java
                     sit.textKey.set("name")
                     selectableEntityClasses.Append(sit)
                 }
+
                 7 -> {
                     sit.typeInfo = idEntity::class.java
                     sit.textKey.set("model")
                     selectableEntityClasses.Append(sit)
                 }
+
                 else -> return
             }
             val viewBounds = idBounds(Game_local.gameLocal.GetLocalPlayer()!!.GetPhysics().GetOrigin())
             val viewTextBounds = idBounds(Game_local.gameLocal.GetLocalPlayer()!!.GetPhysics().GetOrigin())
             val axis = Game_local.gameLocal.GetLocalPlayer()!!.viewAngles.ToMat3()
-            viewBounds.ExpandSelf(512f)
-            viewTextBounds.ExpandSelf(128f)
+            viewBounds.ExpandSelf(512.0f)
+            viewTextBounds.ExpandSelf(128.0f)
             var textKey: idStr
             ent = Game_local.gameLocal.spawnedEntities.Next()
             while (ent != null) {
@@ -538,61 +539,61 @@ object GameEdit {
                     ent = ent.spawnNode.Next()
                     continue
                 }
-                Game_local.gameRenderWorld!!.DebugBounds(color, idBounds(ent.GetPhysics().GetOrigin()).Expand(8f))
+                Game_local.gameRenderWorld!!.DebugBounds(color, idBounds(ent.GetPhysics().GetOrigin()).Expand(8.0f))
                 if (drawArrows) {
                     val start = idVec3(ent.GetPhysics().GetOrigin())
                     val end = idVec3(start.plus(idVec3(1, 0, 0).times(20.0f)))
-                    Game_local.gameRenderWorld!!.DebugArrow(Lib.colorWhite, start, end, 2)
+                    Game_local.gameRenderWorld!!.DebugArrow(colorWhite, start, end, 2)
                     Game_local.gameRenderWorld!!.DrawText(
                         "x+",
                         end.plus(idVec3(4, 0, 0)),
                         0.15f,
-                        Lib.colorWhite,
+                        colorWhite,
                         axis
                     )
                     end.set(start.plus(idVec3(1, 0, 0).times(-20.0f)))
-                    Game_local.gameRenderWorld!!.DebugArrow(Lib.colorWhite, start, end, 2)
+                    Game_local.gameRenderWorld!!.DebugArrow(colorWhite, start, end, 2)
                     Game_local.gameRenderWorld!!.DrawText(
                         "x-",
                         end.plus(idVec3(-4, 0, 0)),
                         0.15f,
-                        Lib.colorWhite,
+                        colorWhite,
                         axis
                     )
                     end.set(start.plus(idVec3(0, 1, 0).times(20.0f)))
-                    Game_local.gameRenderWorld!!.DebugArrow(Lib.colorGreen, start, end, 2)
+                    Game_local.gameRenderWorld!!.DebugArrow(colorGreen, start, end, 2)
                     Game_local.gameRenderWorld!!.DrawText(
                         "y+",
                         end.plus(idVec3(0, 4, 0)),
                         0.15f,
-                        Lib.colorWhite,
+                        colorWhite,
                         axis
                     )
                     end.set(start.plus(idVec3(0, 1, 0).times(-20.0f)))
-                    Game_local.gameRenderWorld!!.DebugArrow(Lib.colorGreen, start, end, 2)
+                    Game_local.gameRenderWorld!!.DebugArrow(colorGreen, start, end, 2)
                     Game_local.gameRenderWorld!!.DrawText(
                         "y-",
                         end.plus(idVec3(0, -4, 0)),
                         0.15f,
-                        Lib.colorWhite,
+                        colorWhite,
                         axis
                     )
                     end.set(start.plus(idVec3(0, 0, 1).times(20.0f)))
-                    Game_local.gameRenderWorld!!.DebugArrow(Lib.colorBlue, start, end, 2)
+                    Game_local.gameRenderWorld!!.DebugArrow(colorBlue, start, end, 2)
                     Game_local.gameRenderWorld!!.DrawText(
                         "z+",
                         end.plus(idVec3(0, 0, 4)),
                         0.15f,
-                        Lib.colorWhite,
+                        colorWhite,
                         axis
                     )
                     end.set(start.plus(idVec3(0, 0, 1).times(-20.0f)))
-                    Game_local.gameRenderWorld!!.DebugArrow(Lib.colorBlue, start, end, 2)
+                    Game_local.gameRenderWorld!!.DebugArrow(colorBlue, start, end, 2)
                     Game_local.gameRenderWorld!!.DrawText(
                         "z-",
                         end.plus(idVec3(0, 0, -4)),
                         0.15f,
-                        Lib.colorWhite,
+                        colorWhite,
                         axis
                     )
                 }
@@ -603,7 +604,7 @@ object GameEdit {
                             text,
                             ent.GetPhysics().GetOrigin().plus(idVec3(0, 0, 12)),
                             0.25f,
-                            Lib.colorWhite,
+                            colorWhite,
                             axis,
                             1
                         )
@@ -624,12 +625,12 @@ object GameEdit {
                     text?.set(selectableEntityClasses[i].textKey)
                     if (color != null) {
                         if (ent.fl.selected) {
-                            color.set(Lib.colorRed)
+                            color.set(colorRed)
                         } else {
                             when (i) {
-                                1 -> color.set(Lib.colorYellow)
-                                2 -> color.set(Lib.colorBlue)
-                                else -> color.set(Lib.colorGreen)
+                                1 -> color.set(colorYellow)
+                                2 -> color.set(colorBlue)
+                                else -> color.set(colorGreen)
                             }
                         }
                     }

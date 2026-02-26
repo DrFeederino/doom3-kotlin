@@ -3,13 +3,9 @@ package neo.idlib
 import neo.TempDump
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CInt
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.*
 import neo.sys.sys_public.netadr_t
 import neo.sys.sys_public.netadrtype_t
 import java.nio.ByteBuffer
@@ -17,9 +13,6 @@ import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.math.abs
 
-/**
- *
- */
 object BitMsg {
     /*
      ==============================================================================
@@ -287,7 +280,7 @@ object BitMsg {
                     if (put > numBits) {
                         put = numBits
                     }
-                    fraction = value and (1 shl put) - 1
+                    fraction = value and ((1 shl put) - 1)
                     val pos = curSize - 1
                     val `val` = writeData!!.get(pos).toInt()
                     writeData!!.put(pos, (`val` or (fraction shl writeBit)).toByte())
@@ -321,7 +314,7 @@ object BitMsg {
         }
 
         fun WriteFloat(f: Float) {
-            WriteBits(java.lang.Float.floatToIntBits(f), 32)
+            WriteBits(f.toBits().toInt(), 32)
         }
 
         fun WriteFloat(f: Float, exponentBits: Int, mantissaBits: Int) {
@@ -330,11 +323,11 @@ object BitMsg {
         }
 
         fun WriteAngle8(f: Float) {
-            WriteByte(Math_h.ANGLE2BYTE(f).toInt().toByte())
+            WriteByte(ANGLE2BYTE(f).toInt().toByte())
         }
 
         fun WriteAngle16(f: Float) {
-            WriteShort(Math_h.ANGLE2SHORT(f).toInt().toShort())
+            WriteShort(ANGLE2SHORT(f).toInt().toShort())
         }
 
         fun WriteDir(dir: idVec3, numBits: Int) {
@@ -395,7 +388,7 @@ object BitMsg {
             val dataPtr: ByteArray
             dataPtr = GetByteSpace(4)
             System.arraycopy(adr.ip, 0, dataPtr, 0, 4)
-            WriteUShort(adr.port.toInt())
+            WriteUShort(adr.port)
         }
 
         fun WriteDeltaChar(oldValue: Byte, newValue: Byte) {
@@ -415,7 +408,11 @@ object BitMsg {
         }
 
         fun WriteDeltaFloat(oldValue: Float, newValue: Float) {
-            WriteDelta(java.lang.Float.floatToIntBits(oldValue), java.lang.Float.floatToIntBits(newValue), 32)
+            WriteDelta(
+                java.lang.Float.floatToIntBits(oldValue.toFloat()),
+                java.lang.Float.floatToIntBits(newValue.toFloat()),
+                32
+            )
         }
 
         fun WriteDeltaFloat(oldValue: Float, newValue: Float, exponentBits: Int, mantissaBits: Int) {
@@ -626,7 +623,7 @@ object BitMsg {
         @Throws(idException::class)
         fun ReadFloat(): Float {
             val value: Float
-            value = java.lang.Float.intBitsToFloat(ReadBits(32))
+            value = java.lang.Float.intBitsToFloat(ReadBits(32)).toFloat()
             return value
         }
 
@@ -638,12 +635,12 @@ object BitMsg {
 
         @Throws(idException::class)
         fun ReadAngle8(): Float {
-            return Math_h.BYTE2ANGLE(ReadByte().toByte())
+            return BYTE2ANGLE(ReadByte())
         }
 
         @Throws(idException::class)
         fun ReadAngle16(): Float {
-            return Math_h.SHORT2ANGLE(ReadShort())
+            return SHORT2ANGLE(ReadShort())
         }
 
         @Throws(idException::class)
@@ -703,7 +700,7 @@ object BitMsg {
                 adr.ip[i] = ReadByte().toInt().toChar()
                 i++
             }
-            adr.port = ReadUShort().toInt()
+            adr.port = ReadUShort()
         }
 
         @Throws(idException::class)
@@ -729,7 +726,8 @@ object BitMsg {
         @Throws(idException::class)
         fun ReadDeltaFloat(oldValue: Float): Float {
             val value: Float
-            value = java.lang.Float.intBitsToFloat(ReadDelta(java.lang.Float.floatToIntBits(oldValue), 32))
+            value = java.lang.Float.intBitsToFloat(ReadDelta(java.lang.Float.floatToIntBits(oldValue.toFloat()), 32))
+                .toFloat()
             return value
         }
 
@@ -779,8 +777,8 @@ object BitMsg {
 
         @Throws(idException::class)
         fun ReadDeltaDict(dict: idDict, base: idDict?): Boolean {
-            val key = CharArray(Lib.MAX_STRING_CHARS)
-            val value = CharArray(Lib.MAX_STRING_CHARS)
+            val key = CharArray(MAX_STRING_CHARS)
+            val value = CharArray(MAX_STRING_CHARS)
             var changed = false
             if (base != null) {
                 dict.set(base)
@@ -863,11 +861,11 @@ object BitMsg {
                 numBits /= 3
                 max = (1 shl numBits - 1) - 1
                 bias = 0.5f / max
-                bits = Math_h.FLOATSIGNBITSET(dir.x) shl numBits * 3 - 1
+                bits = FLOATSIGNBITSET(dir.x) shl numBits * 3 - 1
                 bits = bits or (idMath.Ftoi((abs(dir.x) + bias) * max) shl numBits * 2)
-                bits = bits or (Math_h.FLOATSIGNBITSET(dir.y) shl numBits * 2 - 1)
+                bits = bits or (FLOATSIGNBITSET(dir.y) shl numBits * 2 - 1)
                 bits = bits or (idMath.Ftoi((abs(dir.y) + bias) * max) shl numBits * 1)
-                bits = bits or (Math_h.FLOATSIGNBITSET(dir.z) shl numBits * 1 - 1)
+                bits = bits or (FLOATSIGNBITSET(dir.z) shl numBits * 1 - 1)
                 bits = bits or (idMath.Ftoi((abs(dir.z) + bias) * max) shl numBits * 0)
                 return bits
             }
@@ -974,7 +972,7 @@ object BitMsg {
 
         @Throws(idException::class)
         fun WriteFloat(f: Float) {
-            WriteBits(java.lang.Float.floatToIntBits(f), 32)
+            WriteBits(java.lang.Float.floatToIntBits(f.toFloat()), 32)
         }
 
         @Throws(idException::class)
@@ -985,12 +983,12 @@ object BitMsg {
 
         @Throws(idException::class)
         fun WriteAngle8(f: Float) {
-            WriteBits(Math_h.ANGLE2BYTE(f).toInt(), 8)
+            WriteBits(ANGLE2BYTE(f).toInt(), 8)
         }
 
         @Throws(idException::class)
         fun WriteAngle16(f: Float) {
-            WriteBits(Math_h.ANGLE2SHORT(f).toInt(), 16)
+            WriteBits(ANGLE2SHORT(f).toInt(), 16)
         }
 
         @Throws(idException::class)
@@ -1080,7 +1078,11 @@ object BitMsg {
 
         @Throws(idException::class)
         fun WriteDeltaFloat(oldValue: Float, newValue: Float) {
-            WriteDelta(java.lang.Float.floatToIntBits(oldValue), java.lang.Float.floatToIntBits(newValue), 32)
+            WriteDelta(
+                java.lang.Float.floatToIntBits(oldValue.toFloat()),
+                java.lang.Float.floatToIntBits(newValue.toFloat()),
+                32
+            )
         }
 
         @Throws(idException::class)
@@ -1200,7 +1202,7 @@ object BitMsg {
         @Throws(idException::class)
         fun ReadFloat(): Float {
             val value: Float
-            value = java.lang.Float.intBitsToFloat(ReadBits(32))
+            value = java.lang.Float.intBitsToFloat(ReadBits(32)).toFloat()
             return value
         }
 
@@ -1212,12 +1214,12 @@ object BitMsg {
 
         @Throws(idException::class)
         fun ReadAngle8(): Float {
-            return Math_h.BYTE2ANGLE(ReadByte().toByte())
+            return BYTE2ANGLE(ReadByte().toByte())
         }
 
         @Throws(idException::class)
         fun ReadAngle16(): Float {
-            return Math_h.SHORT2ANGLE(ReadShort().toShort())
+            return SHORT2ANGLE(ReadShort().toShort())
         }
 
         @Throws(idException::class)
@@ -1310,7 +1312,8 @@ object BitMsg {
         @Throws(idException::class)
         fun ReadDeltaFloat(oldValue: Float): Float {
             val value: Float
-            value = java.lang.Float.intBitsToFloat(ReadDelta(java.lang.Float.floatToIntBits(oldValue), 32))
+            value = java.lang.Float.intBitsToFloat(ReadDelta(java.lang.Float.floatToIntBits(oldValue.toFloat()), 32))
+                .toFloat()
             return value
         }
 

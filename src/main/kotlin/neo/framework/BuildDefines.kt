@@ -1,9 +1,6 @@
 package neo.framework
 
 
-/**
- *
- */
 object BuildDefines {
     // build an exe with no CVAR_CHEAT controls
     const val ID_ALLOW_CHEATS = false

@@ -2,42 +2,28 @@ package neo.idlib.Text
 
 import neo.TempDump
 import neo.framework.File_h.idFile
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
+import neo.idlib.BIT
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
+import neo.idlib.idException
+import neo.idlib.idLib
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Quat.idCQuat
-import neo.idlib.math.Quat.idQuat
-import neo.idlib.math.Vector.idVec
-import neo.idlib.math.Vector.idVec3
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.util.*
 
-/**
- *
- */
 object Lexer {
-
     val LEXFL_ALLOWBACKSLASHSTRINGCONCAT: Int =
-        Lib.BIT(12) // allow multiple strings seperated by '\' to be concatenated
+        BIT(12) // allow multiple strings seperated by '\' to be concatenated
     val LEXFL_ALLOWFLOATEXCEPTIONS: Int =
-        Lib.BIT(10) // allow float exceptions like 1.#INF or 1.#IND to be parsed
-    val LEXFL_ALLOWIPADDRESSES: Int = Lib.BIT(9) // allow ip addresses to be parsed as numbers
-
-
-    val LEXFL_ALLOWMULTICHARLITERALS: Int = Lib.BIT(11) // allow multi character literals
-    val LEXFL_ALLOWNUMBERNAMES: Int = Lib.BIT(8) // allow names to start with a number
-
-
-    val LEXFL_ALLOWPATHNAMES: Int = Lib.BIT(7) // allow path seperators in names
-    val LEXFL_NOBASEINCLUDES: Int = Lib.BIT(6) // don't include files embraced with < >
-
-
-    val LEXFL_NODOLLARPRECOMPILE: Int = Lib.BIT(5) // don't use the $ sign for precompilation
+        BIT(10) // allow float exceptions like 1.#INF or 1.#IND to be parsed
+    val LEXFL_ALLOWIPADDRESSES: Int = BIT(9) // allow ip addresses to be parsed as numbers
+    val LEXFL_ALLOWMULTICHARLITERALS: Int = BIT(11) // allow multi character literals
+    val LEXFL_ALLOWNUMBERNAMES: Int = BIT(8) // allow names to start with a number
+    val LEXFL_ALLOWPATHNAMES: Int = BIT(7) // allow path seperators in names
+    val LEXFL_NOBASEINCLUDES: Int = BIT(6) // don't include files embraced with < >
+    val LEXFL_NODOLLARPRECOMPILE: Int = BIT(5) // don't use the $ sign for precompilation
 
     /**
      * ===============================================================================
@@ -59,20 +45,20 @@ object Lexer {
      * ===============================================================================
      */
     // lexer flags
-    val LEXFL_NOERRORS: Int = Lib.BIT(0) // don't print any errors
+    val LEXFL_NOERRORS: Int = BIT(0) // don't print any errors
 
 
-    val LEXFL_NOFATALERRORS: Int = Lib.BIT(2) // errors aren't fatal
+    val LEXFL_NOFATALERRORS: Int = BIT(2) // errors aren't fatal
 
 
     val LEXFL_NOSTRINGCONCAT: Int =
-        Lib.BIT(3) // multiple strings seperated by whitespaces are not concatenated
+        BIT(3) // multiple strings seperated by whitespaces are not concatenated
 
 
-    val LEXFL_NOSTRINGESCAPECHARS: Int = Lib.BIT(4) // no escape characters inside strings
-    val LEXFL_NOWARNINGS: Int = Lib.BIT(1) // don't print any warnings
+    val LEXFL_NOSTRINGESCAPECHARS: Int = BIT(4) // no escape characters inside strings
+    val LEXFL_NOWARNINGS: Int = BIT(1) // don't print any warnings
     val LEXFL_ONLYSTRINGS: Int =
-        Lib.BIT(13) // parse as whitespace deliminated strings (quoted strings keep quotes)
+        BIT(13) // parse as whitespace deliminated strings (quoted strings keep quotes)
     const val P_PRECOMP = 51
     const val PUNCTABLE = true
     const val P_ADD = 29
@@ -864,7 +850,7 @@ object Lexer {
                 } else {
                     Error("couldn't read expected floating point number")
                 }
-                return 0f
+                return 0.0f
             }
             if (token.type == Token.TT_PUNCTUATION && token.toString() == "-") {
                 ExpectTokenType(Token.TT_NUMBER, 0, token)
@@ -1076,6 +1062,7 @@ object Lexer {
                             continue
                         }
                     }
+
                     '\n' -> {
                         if (doTabs) {
                             skipWhite = true
@@ -1083,10 +1070,12 @@ object Lexer {
                             continue
                         }
                     }
+
                     '{' -> {
                         depth++
                         tabs++
                     }
+
                     '}' -> {
                         depth--
                         tabs--
@@ -1143,6 +1132,7 @@ object Lexer {
                             continue
                         }
                     }
+
                     '\n' -> {
                         if (doTabs) {
                             skipWhite = true
@@ -1150,10 +1140,12 @@ object Lexer {
                             continue
                         }
                     }
+
                     '{' -> {
                         depth++
                         tabs++
                     }
+
                     '}' -> {
                         depth--
                         tabs--
@@ -1367,7 +1359,7 @@ object Lexer {
                 default_setup = true
                 i = default_punctuations.size
             } else {
-                if (TempDump.NOT(punctuationTable) || punctuationTable.contentEquals(default_punctuationtable)
+                if (punctuationTable.isEmpty() || punctuationTable.contentEquals(default_punctuationtable)
                 ) {
                     punctuationTable = IntArray(256) // (int *) Mem_Alloc(256 * sizeof(int));
                 }
@@ -1426,71 +1418,71 @@ object Lexer {
          */
         @Throws(idException::class)
         private fun ReadWhiteSpace(): Boolean {
-            return try {
-                while (true) {
-                    // skip white space
-                    while (buffer.get(script_p) <= ' ') {
-                        if (0 == buffer.get(script_p).code) {
+            if (filename.CheckExtension("roq")) {
+                return false
+            }
+            while (true) {
+                // skip white space
+                while (buffer.get(script_p) <= ' ') {
+                    if (buffer.get(script_p) == Char(0)) {
+                        return false
+                    }
+                    if (buffer.get(script_p) == '\n') {
+                        line++
+                    }
+                    script_p++
+                }
+                // skip comments
+                if (buffer.get(script_p) == '/') {
+                    // comments //
+                    if (buffer.get(script_p + 1) == '/') {
+                        script_p++
+                        do {
+                            script_p++
+                            if (buffer.get(script_p) == Char(0)) {
+                                return false
+                            }
+                        } while (buffer.get(script_p) != '\n')
+                        line++
+                        script_p++
+                        if (buffer.get(script_p) == Char(0)) {
                             return false
                         }
-                        if (buffer.get(script_p) == '\n') {
-                            line++
+                        continue
+                    }
+                    // comments /* */
+                    else if (buffer.get(script_p + 1) == '*') {
+                        script_p++
+                        while (true) {
+                            script_p++
+                            if (buffer.get(script_p) == Char(0)) {
+                                return false
+                            }
+                            if (buffer.get(script_p) == '\n') {
+                                line++
+                            } else if (buffer.get(script_p) == '/') {
+                                if (buffer.get(script_p - 1) == '*') {
+                                    break
+                                }
+                                if (buffer.get(script_p + 1) == '*') {
+                                    Warning("nested comment")
+                                }
+                            }
                         }
                         script_p++
-                    }
-                    // skip comments
-                    if (buffer.get(script_p) == '/') {
-                        // comments //
-                        if (buffer.get(script_p + 1) == '/') {
-                            script_p++
-                            do {
-                                script_p++
-                                if (0 == buffer.get(script_p).code) {
-                                    return false
-                                }
-                            } while (buffer.get(script_p) != '\n')
-                            line++
-                            script_p++
-                            if (0 == buffer.get(script_p).code) {
-                                return false
-                            }
-                            continue
-                        } // comments /* */
-                        else if (buffer.get(script_p + 1) == '*') {
-                            script_p++
-                            while (true) {
-                                script_p++
-                                if (0 == buffer.get(script_p).code) {
-                                    return false //0;
-                                }
-                                if (buffer.get(script_p) == '\n') {
-                                    line++
-                                } else if (buffer.get(script_p) == '/') {
-                                    if (buffer.get(script_p - 1) == '*') {
-                                        break
-                                    }
-                                    if (buffer.get(script_p + 1) == '*') {
-                                        Warning("nested comment")
-                                    }
-                                }
-                            }
-                            script_p++
-                            if (0 == buffer.get(script_p).code) {
-                                return false
-                            }
-                            script_p++
-                            if (0 == buffer.get(script_p).code) {
-                                return false
-                            }
-                            continue
+                        if (buffer.get(script_p) == Char(0)) {
+                            return false
                         }
+                        script_p++
+                        if (buffer.get(script_p) == Char(0)) {
+                            return false
+                        }
+                        continue
                     }
-                    break
                 }
-                true
-            } catch (e: IndexOutOfBoundsException) { //TODO:think of a more elegant solution you lout!
-                false
+                break
             }
+            return true
         }
 
         @Throws(idException::class)
@@ -1539,6 +1531,7 @@ object Lexer {
                     }
                     c = `val`
                 }
+
                 else -> {
                     if (buffer.get(script_p) < '0' || buffer.get(script_p) > '9') {
                         Error("unknown escape char")
@@ -1595,7 +1588,7 @@ object Lexer {
             script_p++
             while (true) {
                 // if there is an escape character and escape characters are allowed
-                if (buffer.get(script_p) == '\\' && 0 == flags and LEXFL_NOSTRINGESCAPECHARS) {
+                if (buffer.get(script_p) == '\\' && 0 == (flags and LEXFL_NOSTRINGESCAPECHARS)) {
                     if (!ReadEscapeCharacter(ch)) {
                         return false
                     }
@@ -1606,7 +1599,7 @@ object Lexer {
                     script_p++
                     // if consecutive strings should not be concatenated
                     if (flags and LEXFL_NOSTRINGCONCAT != 0
-                        && (0 == flags and LEXFL_ALLOWBACKSLASHSTRINGCONCAT || quote != '\"'.code)
+                        && (0 == (flags and LEXFL_ALLOWBACKSLASHSTRINGCONCAT) || quote != '\"'.code)
                     ) {
                         break
                     }
@@ -1654,7 +1647,7 @@ object Lexer {
             }
             //            token.set(token.len, '\0');
             if (token.type == Token.TT_LITERAL) {
-                if (0 == flags and LEXFL_ALLOWMULTICHARLITERALS) {
+                if (0 == (flags and LEXFL_ALLOWMULTICHARLITERALS)) {
                     if (token.Length() != 1) {
                         Warning("literal is not one character long")
                     }
@@ -1799,7 +1792,7 @@ object Lexer {
                             token.AppendDirty(c)
                             c = buffer.get(++script_p)
                         }
-                        if (0 == flags and LEXFL_ALLOWFLOATEXCEPTIONS) {
+                        if (0 == (flags and LEXFL_ALLOWFLOATEXCEPTIONS)) {
 //                            token.AppendDirty('\0');	// zero terminate for c_str
                             Error("parsed %s", token.toString())
                         }

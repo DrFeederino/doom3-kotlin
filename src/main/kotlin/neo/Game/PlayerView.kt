@@ -9,23 +9,16 @@ import neo.Renderer.RenderSystem
 import neo.Renderer.RenderWorld.renderView_s
 import neo.framework.DeclManager
 import neo.idlib.Dict_h.idDict
-import neo.idlib.Lib
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Str.idStr
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.colorWhite
+import neo.idlib.idLib
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
 import neo.ui.UserInterface.idUserInterface
 import kotlin.math.abs
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-/**
- *
- */
 object PlayerView {
     const val IMPULSE_DELAY = 150
     const val MAX_SCREEN_BLOBS = 8
@@ -39,18 +32,18 @@ object PlayerView {
      */
     // screenBlob_t is for the on-screen damage claw marks, etc
     class screenBlob_t {
-        var driftAmount = 0f
+        var driftAmount = 0.0f
         var finishTime = 0
         var material: Material.idMaterial? = null
-        var s1 = 0f
-        var t1 = 0f
-        var s2 = 0f
-        var t2 = 0f
+        var s1 = 0.0f
+        var t1 = 0.0f
+        var s2 = 0.0f
+        var t2 = 0.0f
         var startFadeTime = 0
-        var x = 0f
-        var y = 0f
-        var w = 0f
-        var h = 0f
+        var x = 0.0f
+        var y = 0.0f
+        var w = 0.0f
+        var h = 0.0f
     }
 
     class idPlayerView {
@@ -108,11 +101,10 @@ object PlayerView {
                 : Material.idMaterial?
         private val view: renderView_s
         fun Save(savefile: idSaveGame) {
-            var i: Int
             var blob: screenBlob_t
             blob = screenBlobs[0]!!
-            i = 0
-            while (i < MAX_SCREEN_BLOBS) {
+            for (i in 0 until MAX_SCREEN_BLOBS) {
+                val blob = screenBlobs[i]!!
                 savefile.WriteMaterial(blob.material)
                 savefile.WriteFloat(blob.x)
                 savefile.WriteFloat(blob.y)
@@ -125,7 +117,6 @@ object PlayerView {
                 savefile.WriteInt(blob.finishTime)
                 savefile.WriteInt(blob.startFadeTime)
                 savefile.WriteFloat(blob.driftAmount)
-                blob = screenBlobs[++i]!!
             }
             savefile.WriteInt(dvFinishTime)
             savefile.WriteMaterial(dvMaterial)
@@ -145,17 +136,13 @@ object PlayerView {
             savefile.WriteFloat(fadeRate)
             savefile.WriteInt(fadeTime)
             savefile.WriteAngles(shakeAng)
-            savefile.WriteObject(player as idPlayer)
+            savefile.WriteObject(player)
             savefile.WriteRenderView(view)
         }
 
         fun Restore(savefile: idRestoreGame) {
-            var i: Int
-            var blob: screenBlob_t
-
-//            blob = screenBlobs[ 0];
-            blob = screenBlobs[0.also { i = it }]!!
-            while (i < MAX_SCREEN_BLOBS) {
+            for (i in 0 until MAX_SCREEN_BLOBS) {
+                val blob = screenBlobs[i]!!
                 savefile.ReadMaterial(blob.material!!)
                 blob.x = savefile.ReadFloat()
                 blob.y = savefile.ReadFloat()
@@ -168,7 +155,6 @@ object PlayerView {
                 blob.finishTime = savefile.ReadInt()
                 blob.startFadeTime = savefile.ReadInt()
                 blob.driftAmount = savefile.ReadFloat()
-                blob = screenBlobs[++i]!!
             }
             dvFinishTime = savefile.ReadInt()
             savefile.ReadMaterial(dvMaterial!!)
@@ -197,11 +183,13 @@ object PlayerView {
         }
 
         fun ClearEffects() {
-            lastDamageTime = Math_h.MS2SEC((Game_local.gameLocal.time - 99999).toFloat())
+            lastDamageTime = MS2SEC((Game_local.gameLocal.time - 99999).toFloat())
             dvFinishTime = Game_local.gameLocal.time - 99999
             kickFinishTime = Game_local.gameLocal.time - 99999
             for (i in 0 until MAX_SCREEN_BLOBS) {
-                screenBlobs[i] = screenBlob_t()
+                if (screenBlobs[i] == null) {
+                    screenBlobs[i] = screenBlob_t()
+                }
                 screenBlobs[i]!!.finishTime = Game_local.gameLocal.time
             }
             fadeTime = 0
@@ -217,76 +205,78 @@ object PlayerView {
          ==============
          */
         fun DamageImpulse(localKickDir: idVec3, damageDef: idDict) {
-            //
-            // double vision effect
-            //
-            if (lastDamageTime > 0.0f && Math_h.SEC2MS(lastDamageTime) + PlayerView.IMPULSE_DELAY > Game_local.gameLocal.time) {
-                // keep shotgun from obliterating the view
-                return
-            }
-            val dvTime = damageDef.GetFloat("dv_time")
-            if (dvTime != 0f) {
-                if (dvFinishTime < Game_local.gameLocal.time) {
-                    dvFinishTime = Game_local.gameLocal.time
+            if (SysCvar.g_hitEffect.GetBool()) {
+                //
+                // double vision effect
+                //
+                if (lastDamageTime > 0.0f && SEC2MS(lastDamageTime) + IMPULSE_DELAY > Game_local.gameLocal.time) {
+                    // keep shotgun from obliterating the view
+                    return
                 }
-                dvFinishTime += (SysCvar.g_dvTime.GetFloat() * dvTime).toInt()
-                // don't let it add up too much in god mode
-                if (dvFinishTime > Game_local.gameLocal.time + 5000) {
-                    dvFinishTime = Game_local.gameLocal.time + 5000
+                val dvTime = damageDef.GetFloat("dv_time")
+                if (dvTime != 0.0f) {
+                    if (dvFinishTime < Game_local.gameLocal.time) {
+                        dvFinishTime = Game_local.gameLocal.time
+                    }
+                    dvFinishTime += (SysCvar.g_dvTime.GetFloat() * dvTime).toInt()
+                    // don't let it add up too much in god mode
+                    if (dvFinishTime > Game_local.gameLocal.time + 5000) {
+                        dvFinishTime = Game_local.gameLocal.time + 5000
+                    }
                 }
-            }
 
-            //
-            // head angle kick
-            //
-            val kickTime = damageDef.GetFloat("kick_time")
-            if (kickTime != 0f) {
-                kickFinishTime = (Game_local.gameLocal.time + SysCvar.g_kickTime.GetFloat() * kickTime).toInt()
+                //
+                // head angle kick
+                //
+                val kickTime = damageDef.GetFloat("kick_time")
+                if (kickTime != 0.0f) {
+                    kickFinishTime = (Game_local.gameLocal.time + SysCvar.g_kickTime.GetFloat() * kickTime).toInt()
 
-                // forward / back kick will pitch view
-                kickAngles[0] = localKickDir[0]
+                    // forward / back kick will pitch view
+                    kickAngles[0] = localKickDir[0]
 
-                // side kick will yaw view
-                kickAngles[1] = localKickDir[1] * 0.5f
+                    // side kick will yaw view
+                    kickAngles[1] = localKickDir[1] * 0.5f
 
-                // up / down kick will pitch view
-                kickAngles.plusAssign(0, localKickDir[2])
+                    // up / down kick will pitch view
+                    kickAngles.plusAssign(0, localKickDir[2])
 
-                // roll will come from  side
-                kickAngles[2] = localKickDir[1]
-                val kickAmplitude = damageDef.GetFloat("kick_amplitude")
-                if (kickAmplitude != 0f) {
-                    kickAngles.timesAssign(kickAmplitude)
+                    // roll will come from  side
+                    kickAngles[2] = localKickDir[1]
+                    val kickAmplitude = damageDef.GetFloat("kick_amplitude")
+                    if (kickAmplitude != 0.0f) {
+                        kickAngles.timesAssign(kickAmplitude)
+                    }
                 }
-            }
 
-            //
-            // screen blob
-            //
-            val blobTime = damageDef.GetFloat("blob_time")
-            if (blobTime != 0f) {
-                val blob = GetScreenBlob()
-                blob.startFadeTime = Game_local.gameLocal.time
-                blob.finishTime = (Game_local.gameLocal.time + blobTime * SysCvar.g_blobTime.GetFloat()).toInt()
-                val materialName = damageDef.GetString("mtr_blob")
-                blob.material = DeclManager.declManager.FindMaterial(materialName)
-                blob.x = damageDef.GetFloat("blob_x")
-                blob.x += ((Game_local.gameLocal.random.RandomInt() and 63) - 32).toFloat()
-                blob.y = damageDef.GetFloat("blob_y")
-                blob.y += ((Game_local.gameLocal.random.RandomInt() and 63) - 32).toFloat()
-                val scale = (256 + ((Game_local.gameLocal.random.RandomInt() and 63) - 32)) / 256.0f
-                blob.w = damageDef.GetFloat("blob_width") * SysCvar.g_blobSize.GetFloat() * scale
-                blob.h = damageDef.GetFloat("blob_height") * SysCvar.g_blobSize.GetFloat() * scale
-                blob.s1 = 0f
-                blob.t1 = 0f
-                blob.s2 = 1f
-                blob.t2 = 1f
-            }
+                //
+                // screen blob
+                //
+                val blobTime = damageDef.GetFloat("blob_time")
+                if (blobTime != 0.0f) {
+                    val blob = GetScreenBlob()
+                    blob.startFadeTime = Game_local.gameLocal.time
+                    blob.finishTime = (Game_local.gameLocal.time + blobTime * SysCvar.g_blobTime.GetFloat()).toInt()
+                    val materialName = damageDef.GetString("mtr_blob")
+                    blob.material = DeclManager.declManager.FindMaterial(materialName)
+                    blob.x = damageDef.GetFloat("blob_x")
+                    blob.x += ((Game_local.gameLocal.random.RandomInt() and 63) - 32).toFloat()
+                    blob.y = damageDef.GetFloat("blob_y")
+                    blob.y += ((Game_local.gameLocal.random.RandomInt() and 63) - 32).toFloat()
+                    val scale = (256 + ((Game_local.gameLocal.random.RandomInt() and 63) - 32)) / 256.0f
+                    blob.w = damageDef.GetFloat("blob_width") * SysCvar.g_blobSize.GetFloat() * scale
+                    blob.h = damageDef.GetFloat("blob_height") * SysCvar.g_blobSize.GetFloat() * scale
+                    blob.s1 = 0.0f
+                    blob.t1 = 0.0f
+                    blob.s2 = 1.0f
+                    blob.t2 = 1.0f
+                }
 
-            //
-            // save lastDamageTime for tunnel vision accentuation
-            //
-            lastDamageTime = Math_h.MS2SEC(Game_local.gameLocal.time.toFloat())
+                //
+                // save lastDamageTime for tunnel vision accentuation
+                //
+                lastDamageTime = MS2SEC(Game_local.gameLocal.time.toFloat())
+            }
         }
 
         /*
@@ -317,12 +307,12 @@ object PlayerView {
          ===================
          */
         fun AngleOffset(): idAngles {            // returns the current kick angle
-            var ang: idAngles = idAngles()
+            val ang: idAngles = idAngles()
             ang.Zero()
             if (Game_local.gameLocal.time < kickFinishTime) {
                 val offset = (kickFinishTime - Game_local.gameLocal.time).toFloat()
-                ang = kickAngles.times(offset * offset * SysCvar.g_kickAmplitude.GetFloat())
-                for (i in 0..2) {
+                ang.set(kickAngles * offset * offset * SysCvar.g_kickAmplitude.GetFloat())
+                for (i in 0 until 3) {
                     if (ang[i] > 70.0f) {
                         ang[i] = 70.0f
                     } else if (ang[i] < -70.0f) {
@@ -345,9 +335,9 @@ object PlayerView {
             )
             //
             // shakeVolume should somehow be molded into an angle here
-            // it should be thought of as being in the range 0.0 . 1.0, although
+            // it should be thought of as being in the range 0.0f . 1.0f, although
             // since CurrentShakeAmplitudeForPosition() returns all the shake sounds
-            // the player can hear, it can go over 1.0 too.
+            // the player can hear, it can go over 1.0f too.
             //
             shakeAng[0] = Game_local.gameLocal.random.CRandomFloat() * shakeVolume
             shakeAng[1] = Game_local.gameLocal.random.CRandomFloat() * shakeVolume
@@ -364,7 +354,7 @@ object PlayerView {
                 if (player!!.GetInfluenceMaterial() != null || player!!.GetInfluenceEntity() != null) {
                     InfluenceVision(hud, view)
                 } else if (Game_local.gameLocal.time < dvFinishTime) {
-                    DoubleVision(hud, view, dvFinishTime - Game_local.gameLocal.time)
+                    FloatVision(hud, view, dvFinishTime - Game_local.gameLocal.time)
                 } else if (player!!.PowerUpActive(Player.BERSERK)) {
                     BerserkVision(hud, view)
                 } else {
@@ -405,7 +395,7 @@ object PlayerView {
             }
             fadeToColor.set(color)
             if (time <= 0) {
-                fadeRate = 0f
+                fadeRate = 0.0f
                 time = 0
                 fadeColor.set(fadeToColor)
             } else {
@@ -426,8 +416,8 @@ object PlayerView {
          =================
          */
         fun Flash(color: idVec4, time: Int) {
-            Fade(idVec4(0f, 0f, 0f, 0f), time)
-            fadeFromColor.set(Lib.Companion.colorWhite)
+            Fade(idVec4(0.0f, 0.0f, 0.0f, 0.0f), time)
+            fadeFromColor.set(colorWhite)
         }
 
         /*
@@ -439,42 +429,7 @@ object PlayerView {
          ==================
          */
         fun AddBloodSpray(duration: Float) { //TODO:fix?
-            /*
-             if ( duration <= 0 || bloodSprayMaterial == NULL || g_skipViewEffects.GetBool() ) {
-             return;
-             }
-             // visit this for chainsaw
-             screenBlob_t *blob = GetScreenBlob();
-             blob->startFadeTime = gameLocal.time;
-             blob->finishTime = gameLocal.time + ( duration * 1000 );
-             blob->material = bloodSprayMaterial;
-             blob->x = ( gameLocal.random.RandomInt() & 63 ) - 32;
-             blob->y = ( gameLocal.random.RandomInt() & 63 ) - 32;
-             blob->driftAmount = 0.5f + gameLocal.random.CRandomFloat() * 0.5;
-             float scale = ( 256 + ( ( gameLocal.random.RandomInt()&63 ) - 32 ) ) / 256.0f;
-             blob->w = 600 * g_blobSize.GetFloat() * scale;
-             blob->h = 480 * g_blobSize.GetFloat() * scale;
-             float s1 = 0.0f;
-             float t1 = 0.0f;
-             float s2 = 1.0f;
-             float t2 = 1.0f;
-             if ( blob->driftAmount < 0.6 ) {
-             s1 = 1.0f;
-             s2 = 0.0f;
-             } else if ( blob->driftAmount < 0.75 ) {
-             t1 = 1.0f;
-             t2 = 0.0f;
-             } else if ( blob->driftAmount < 0.85 ) {
-             s1 = 1.0f;
-             s2 = 0.0f;
-             t1 = 1.0f;
-             t2 = 0.0f;
-             }
-             blob->s1 = s1;
-             blob->t1 = t1;
-             blob->s2 = s2;
-             blob->t2 = t2;
-             */
+
         }
 
         // temp for view testing
@@ -507,8 +462,6 @@ object PlayerView {
             // hack the shake in at the very last moment, so it can't cause any consistency problems
             val hackedView = view
             hackedView.viewaxis.set(hackedView.viewaxis.times(ShakeAxis()))
-            //            hackedView.viewaxis = idMat3.getMat3_identity();//HACKME::10
-//            hackedView.viewaxis = new idMat3(-1.0f, -3.8941437E-7f, -0.0f, 3.8941437E-7f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
             Game_local.gameRenderWorld!!.RenderScene(hackedView)
             if (player!!.spectating) {
                 return
@@ -522,13 +475,13 @@ object PlayerView {
                         continue
                     }
                     blob.y += blob.driftAmount
-                    var fade =
-                        (blob.finishTime - Game_local.gameLocal.time).toFloat() / (blob.finishTime - blob.startFadeTime)
+                    var fade: Float =
+                        ((blob.finishTime - Game_local.gameLocal.time) / (blob.finishTime - blob.startFadeTime)).toFloat()
                     if (fade > 1.0f) {
                         fade = 1.0f
                     }
-                    if (fade != 0f) {
-                        RenderSystem.renderSystem.SetColor4(1f, 1f, 1f, fade)
+                    if (fade != 0.0f) {
+                        RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, fade)
                         RenderSystem.renderSystem.DrawStretchPic(
                             blob.x,
                             blob.y,
@@ -547,8 +500,18 @@ object PlayerView {
                 // armor impulse feedback
                 val armorPulse = (Game_local.gameLocal.time - player!!.lastArmorPulse) / 250.0f
                 if (armorPulse > 0.0f && armorPulse < 1.0f) {
-                    RenderSystem.renderSystem.SetColor4(1f, 1f, 1f, 1.0f - armorPulse)
-                    RenderSystem.renderSystem.DrawStretchPic(0f, 0f, 640f, 480f, 0f, 0f, 1f, 1f, armorMaterial)
+                    RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f - armorPulse)
+                    RenderSystem.renderSystem.DrawStretchPic(
+                        0.0f,
+                        0.0f,
+                        640.0f,
+                        480.0f,
+                        0.0f,
+                        0.0f,
+                        1.0f,
+                        1.0f,
+                        armorMaterial
+                    )
                 }
 
                 // tunnel vision
@@ -567,7 +530,7 @@ object PlayerView {
                 }
                 if (alpha < 1.0f) {
                     RenderSystem.renderSystem.SetColor4(
-                        if (player!!.health <= 0.0f) Math_h.MS2SEC(Game_local.gameLocal.time.toFloat()) else lastDamageTime,
+                        if (player!!.health <= 0.0f) MS2SEC(Game_local.gameLocal.time.toFloat()) else lastDamageTime,
                         1.0f,
                         1.0f,
                         if (player!!.health <= 0.0f) 0.0f else alpha
@@ -633,7 +596,7 @@ object PlayerView {
             }
         }
 
-        private fun DoubleVision(hud: idUserInterface, view: renderView_s?, offset: Int) {
+        private fun FloatVision(hud: idUserInterface, view: renderView_s?, offset: Int) {
             if (!SysCvar.g_doubleVision.GetBool()) {
                 SingleView(hud, view)
                 return
@@ -642,7 +605,7 @@ object PlayerView {
             if (scale > 0.5f) {
                 scale = 0.5f
             }
-            var shift = (scale * sin(sqrt(offset.toDouble()) * SysCvar.g_dvFrequency.GetFloat())).toFloat()
+            var shift = (scale * sin(sqrt(offset.toFloat()) * SysCvar.g_dvFrequency.GetFloat())).toFloat()
             shift = abs(shift)
 
             // if double vision, render to a texture
@@ -652,33 +615,33 @@ object PlayerView {
             RenderSystem.renderSystem.UnCrop()
 
             // carry red tint if in berserk mode
-            val color = idVec4(1f, 1f, 1f, 1f)
+            val color = idVec4(1.0f, 1.0f, 1.0f, 1.0f)
             if (Game_local.gameLocal.time < player!!.inventory.powerupEndTime[Player.BERSERK]) {
-                color.y = 0f
-                color.z = 0f
+                color.y = 0.0f
+                color.z = 0.0f
             }
             RenderSystem.renderSystem.SetColor4(color.x, color.y, color.z, 1.0f)
             RenderSystem.renderSystem.DrawStretchPic(
-                0f,
-                0f,
+                0.0f,
+                0.0f,
                 RenderSystem.SCREEN_WIDTH.toFloat(),
                 RenderSystem.SCREEN_HEIGHT.toFloat(),
-                shift,
-                1f,
-                1f,
-                0f,
+                shift.toFloat(),
+                1.0f,
+                1.0f,
+                0.0f,
                 dvMaterial
             )
             RenderSystem.renderSystem.SetColor4(color.x, color.y, color.z, 0.5f)
             RenderSystem.renderSystem.DrawStretchPic(
-                0f,
-                0f,
+                0.0f,
+                0.0f,
                 RenderSystem.SCREEN_WIDTH.toFloat(),
                 RenderSystem.SCREEN_HEIGHT.toFloat(),
-                0f,
-                1f,
-                1 - shift,
-                0f,
+                0.0f,
+                1.0f,
+                (1 - shift).toFloat(),
+                0.0f,
                 dvMaterial
             )
         }
@@ -690,14 +653,14 @@ object PlayerView {
             RenderSystem.renderSystem.UnCrop()
             RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
             RenderSystem.renderSystem.DrawStretchPic(
-                0f,
-                0f,
+                0.0f,
+                0.0f,
                 RenderSystem.SCREEN_WIDTH.toFloat(),
                 RenderSystem.SCREEN_HEIGHT.toFloat(),
-                0f,
-                1f,
-                1f,
-                0f,
+                0.0f,
+                1.0f,
+                1.0f,
+                0.0f,
                 dvMaterial
             )
         }
@@ -710,7 +673,7 @@ object PlayerView {
                     player!!.GetInfluenceEntity()!!.GetPhysics().GetOrigin().minus(player!!.GetPhysics().GetOrigin())
                         .Length()
                 if (player!!.GetInfluenceRadius() != 0.0f && distance < player!!.GetInfluenceRadius()) {
-//			pct = distance / player.GetInfluenceRadius();//TODO:wtf?
+                    pct = distance / player!!.GetInfluenceRadius();//TODO:wtf?
                     pct = 1.0f - idMath.ClampFloat(0.0f, 1.0f, pct)
                 }
             }
@@ -733,8 +696,8 @@ object PlayerView {
                 SingleView(hud, view)
                 //		return;
             } else {
-                val offset = (25 + sin(Game_local.gameLocal.time.toDouble())).toInt()
-                DoubleVision(hud, view, (pct * offset).toInt())
+                val offset = (25 + sin(Game_local.gameLocal.time.toFloat())).toInt()
+                FloatVision(hud, view, (pct * offset).toInt())
             }
         }
 
@@ -762,14 +725,14 @@ object PlayerView {
                     fadeColor[3]
                 )
                 RenderSystem.renderSystem.DrawStretchPic(
-                    0f,
-                    0f,
-                    640f,
-                    480f,
-                    0f,
-                    0f,
-                    1f,
-                    1f,
+                    0.0f,
+                    0.0f,
+                    640.0f,
+                    480.0f,
+                    0.0f,
+                    0.0f,
+                    1.0f,
+                    1.0f,
                     DeclManager.declManager.FindMaterial("_white")
                 )
             }
@@ -804,9 +767,9 @@ object PlayerView {
             dvFinishTime = 0
             kickFinishTime = 0
             kickAngles = idAngles()
-            lastDamageTime = 0f
+            lastDamageTime = 0.0f
             fadeTime = 0
-            fadeRate = 0f
+            fadeRate = 0.0f
             fadeFromColor = idVec4()
             fadeToColor = idVec4()
             fadeColor = idVec4()

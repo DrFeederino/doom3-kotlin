@@ -17,6 +17,8 @@ import neo.framework.KeyInput.K_PGDN
 import neo.framework.KeyInput.K_PGUP
 import neo.framework.KeyInput.K_UPARROW
 import neo.framework.KeyInput.idKeyInput.IsDown
+import neo.idlib.Max
+import neo.idlib.Min
 import neo.idlib.Text.Lexer.LEXFL_NOFATALERRORS
 import neo.idlib.Text.Lexer.LEXFL_NOSTRINGCONCAT
 import neo.idlib.Text.Lexer.LEXFL_NOSTRINGESCAPECHARS
@@ -31,23 +33,18 @@ import neo.idlib.containers.CBool
 import neo.idlib.containers.HashTable.idHashTable
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idStrList
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idVec2
+import neo.idlib.math.idVec4
 import neo.sys.sys_public.sys
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.DeviceContext.idDeviceContext.ALIGN
 import neo.ui.Rectangle.idRectangle
-import neo.ui.SimpleWindow.drawWin_t
 import neo.ui.SliderWindow.idSliderWindow
 import neo.ui.UserInterfaceLocal.idUserInterfaceLocal
 import neo.ui.Window.idWindow
-import neo.ui.Winvar.idWinVar
 
-/**
- *
- */
 object ListWindow {
     const val TAB_TYPE_ICON = 1
 
@@ -69,8 +66,8 @@ object ListWindow {
     // };
     class idTabRect {
         var align = 0
-        var iconSize = idVec2()
-        var iconVOffset = 0f
+        val iconSize = idVec2()
+        var iconVOffset = 0.0f
         var type = 0
         var valign = 0
         var w = 0
@@ -89,7 +86,7 @@ object ListWindow {
         private val listName = idStr()
         private var multipleSel = false
         private var scroller: idSliderWindow? = null
-        private var sizeBias = 0f
+        private var sizeBias = 0.0f
         private val tabAlignStr = idStr()
         private val tabIconSizeStr = idStr()
         private val tabIconVOffsetStr = idStr()
@@ -122,7 +119,7 @@ object ListWindow {
             val vert = GetMaxCharHeight()
             val numVisibleLines = (textRect.h / vert).toInt()
             var key = event.evValue
-            if (event.evType === sysEventType_t.SE_KEY) {
+            if (event.evType == sysEventType_t.SE_KEY) {
                 if (0 == event.evValue2) {
                     // We only care about key down, not up
                     return ret
@@ -154,7 +151,7 @@ object ListWindow {
                                 }
                             } else {
                                 if (IsSelected(cur) && gui!!.GetTime() < clickTime + doubleClickSpeed) {
-                                    // Double-click causes ON_ENTER to get run
+                                    // Float-click causes ON_ENTER to get run
                                     RunScript(etoi(ON.ON_ENTER))
                                     return cmd.toString()
                                 }
@@ -181,7 +178,7 @@ object ListWindow {
                 } else {
                     return ret
                 }
-            } else if (event.evType === sysEventType_t.SE_CHAR) {
+            } else if (event.evType == sysEventType_t.SE_CHAR) {
                 if (!CharIsPrintable(key)) {
                     return ret
                 }
@@ -363,14 +360,14 @@ object ListWindow {
                     r.type = TAB_TYPE_TEXT
                 }
                 if (tabSizes.Num() > 0) {
-                    r.iconSize = tabSizes[i]
+                    r.iconSize.set(tabSizes[i])
                 } else {
                     r.iconSize.Zero()
                 }
-                if (tabIconVOffsets.Num() > 0) {
+                if (tabIconVOffsets.Num() > 0 && i < tabVAligns.Num()) {
                     r.iconVOffset = tabIconVOffsets[i]
                 } else {
-                    r.iconVOffset = 0f
+                    r.iconVOffset = 0.0f
                 }
                 tabInfo.Append(r)
             }
@@ -378,7 +375,7 @@ object ListWindow {
         }
 
         override fun Draw(time: Int, x: Float, y: Float) {
-            var color: idVec4?
+            val color = idVec4()
             val work = idStr()
             val count = listItems.size()
             val rect = idRectangle(textRect)
@@ -394,7 +391,7 @@ object ListWindow {
                     rect.w = width
                 }
             }
-            if (noEvents.oCastBoolean() || !Contains(gui!!.CursorX(), gui!!.CursorY())) {
+            if (noEvents.data || !Contains(gui!!.CursorX(), gui!!.CursorY())) {
                 hover = false
             }
             for (i in top until count) {
@@ -403,17 +400,19 @@ object ListWindow {
                     dc!!.DrawFilledRect(rect.x, rect.y + pixelOffset, rect.w, rect.h, borderColor.data)
                     if (flags and Window.WIN_FOCUS != 0) {
                         val color2 = borderColor.data
-                        color2!!.w = 1.0f
+                        color2.w = 1.0f
                         dc!!.DrawRect(rect.x, rect.y + pixelOffset, rect.w, rect.h, 1.0f, color2)
                     }
                 }
                 rect.y++
                 rect.h = lineHeight - 1
-                color = if (hover && !noEvents.oCastBoolean() && Contains(rect, gui!!.CursorX(), gui!!.CursorY())) {
-                    hoverColor.data
-                } else {
-                    foreColor.data
-                }
+                color.set(
+                    if (hover && !noEvents.data && Contains(rect, gui!!.CursorX(), gui!!.CursorY())) {
+                        hoverColor.data
+                    } else {
+                        foreColor.data
+                    }
+                )
                 rect.h = lineHeight + pixelOffset
                 rect.y--
                 if (tabInfo.Num() > 0) {
@@ -510,21 +509,8 @@ object ListWindow {
             UpdateList()
         }
 
-        override fun  /*size_t*/Allocated(): Int {
-            return super.Allocated()
-        }
-
-        override fun GetWinVarByName(
-            _name: String?,
-            winLookup: Boolean /*= false*/,
-            owner: Array<drawWin_t?>? /*= NULL*/
-        ): idWinVar? {
-            return super.GetWinVarByName(_name, winLookup, owner)
-        }
-
         fun UpdateList() {
             val str = idStr()
-            var strName: idStr
             listItems.clear()
             for (i in 0 until Window.MAX_LIST_ITEMS) {
                 if (gui!!.State().GetString(va("%s_item_%d", listName, i), "", str)) {
@@ -537,21 +523,34 @@ object ListWindow {
             }
             val vert = GetMaxCharHeight()
             val fit = (textRect.h / vert).toInt()
+            var selection = gui!!.State().GetInt(va("%s_sel_0", listName.c_str()))
             if (listItems.size() < fit) {
                 scroller!!.SetRange(0.0f, 0.0f, 1.0f)
+                top = 0
+                scroller!!.SetValue(0.0f)
             } else {
                 scroller!!.SetRange(0.0f, listItems.size() - fit + 1.0f, 1.0f)
+
+                // DG: scroll to selected item
+                var value = scroller!!.GetValue()
+                if (value < 0.0f) {
+                    value = 0.0f
+                    top = 0
+                } else if (value > listItems.size() - 1) {
+                    value = (listItems.size() - 1).toFloat()
+                }
+                var maxVisibleVal = Min(value + fit, scroller!!.GetHigh())
+                if (selection >= 0 && (selection < value || selection > maxVisibleVal)) {
+                    // if selected entry is not currently visible, center it (if possible)
+                    value = Max(0.0f, selection - 0.5f * fit)
+                }
+
+                scroller!!.SetValue(value)
+                top = value.toInt()
             }
-            SetCurrentSel(gui!!.State().GetInt(va("%s_sel_0", listName)))
-            var value = scroller!!.GetValue()
-            if (value > listItems.size() - 1) {
-                value = (listItems.size() - 1).toFloat()
-            }
-            if (value < 0.0f) {
-                value = 0.0f
-            }
-            scroller!!.SetValue(value)
-            top = value.toInt()
+
+            SetCurrentSel(selection)
+
             typedTime = 0
             clickTime = 0
             typed.set("")
@@ -616,7 +615,7 @@ object ListWindow {
             clickTime = 0
             currentSel.Clear()
             top = 0
-            sizeBias = 0f
+            sizeBias = 0.0f
             horizontal = false
             scroller = idSliderWindow(dc, gui)
             multipleSel = false
@@ -643,13 +642,13 @@ object ListWindow {
             val scrollRect = idRectangle()
             if (horizontal) {
                 sizeBias = mat.GetImageHeight().toFloat()
-                scrollRect.x = 0f
+                scrollRect.x = 0.0f
                 scrollRect.y = clientRect.h - sizeBias
                 scrollRect.w = clientRect.w
                 scrollRect.h = sizeBias
             } else {
                 scrollRect.x = clientRect.w - sizeBias
-                scrollRect.y = 0f
+                scrollRect.y = 0.0f
                 scrollRect.w = sizeBias
                 scrollRect.h = clientRect.h
             }

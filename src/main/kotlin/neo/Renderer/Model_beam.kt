@@ -5,15 +5,11 @@ import neo.Renderer.Model.idRenderModel
 import neo.Renderer.Model.modelSurface_s
 import neo.Renderer.Model.srfTriangles_s
 import neo.Renderer.Model_local.idRenderModelStatic
-import neo.Renderer.tr_local.viewDef_s
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.math.Math_h.idMath.FtoiFast
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.BV.idBounds
+import neo.idlib.math.idMath.FtoiFast
+import neo.idlib.math.idVec3
 import neo.Renderer.RenderWorld.renderEntity_s as renderEntity_s1
 
-/**
- *
- */
 object Model_beam {
     /*
 
@@ -30,16 +26,16 @@ object Model_beam {
 
      ===============================================================================
      */
-    class idRenderModelBeam() : idRenderModelStatic() {
-        public override fun IsDynamicModel(): dynamicModel_t {
+    class idRenderModelBeam : idRenderModelStatic() {
+        override fun IsDynamicModel(): dynamicModel_t {
             return dynamicModel_t.DM_CONTINUOUS // regenerate for every view
         }
 
-        public override fun IsLoaded(): Boolean {
+        override fun IsLoaded(): Boolean {
             return true // don't ever need to load
         }
 
-        public override fun InstantiateDynamicModel(
+        override fun InstantiateDynamicModel(
             renderEntity: renderEntity_s1?,
             viewDef: viewDef_s?,
             cachedModel: idRenderModel?
@@ -66,21 +62,21 @@ object Model_beam {
             } else {
                 staticModel = idRenderModelStatic()
                 staticModel.InitEmpty(beam_SnapshotName)
-                tri = tr_trisurf.R_AllocStaticTriSurf()
-                tr_trisurf.R_AllocStaticTriSurfVerts(tri, 4)
-                tr_trisurf.R_AllocStaticTriSurfIndexes(tri, 6)
+                tri = R_AllocStaticTriSurf()
+                R_AllocStaticTriSurfVerts(tri, 4)
+                R_AllocStaticTriSurfIndexes(tri, 6)
                 tri.verts!![0]!!.Clear()
-                tri.verts!![0]!!.st[0] = 0f
-                tri.verts!![0]!!.st[1] = 0f
+                tri.verts!![0]!!.st[0] = 0.0f
+                tri.verts!![0]!!.st[1] = 0.0f
                 tri.verts!![1]!!.Clear()
-                tri.verts!![1]!!.st[0] = 0f
-                tri.verts!![1]!!.st[1] = 1f
+                tri.verts!![1]!!.st[0] = 0.0f
+                tri.verts!![1]!!.st[1] = 1.0f
                 tri.verts!![2]!!.Clear()
-                tri.verts!![2]!!.st[0] = 1f
-                tri.verts!![2]!!.st[1] = 0f
+                tri.verts!![2]!!.st[0] = 1.0f
+                tri.verts!![2]!!.st[1] = 0.0f
                 tri.verts!![3]!!.Clear()
-                tri.verts!![3]!!.st[0] = 1f
-                tri.verts!![3]!!.st[1] = 1f
+                tri.verts!![3]!!.st[0] = 1.0f
+                tri.verts!![3]!!.st[1] = 1.0f
                 tri.indexes!![0] = 0
                 tri.indexes!![1] = 2
                 tri.indexes!![2] = 1
@@ -91,23 +87,23 @@ object Model_beam {
                 tri.numIndexes = 6
                 surf!!.geometry = tri
                 surf.id = 0
-                surf.shader = tr_local.tr.defaultMaterial
+                surf.shader = tr.defaultMaterial
                 staticModel.AddSurface(surf)
             }
-            val target: idVec3 = idVec3(renderEntity.shaderParms, RenderWorld.SHADERPARM_BEAM_END_X)
+            val target = idVec3(renderEntity.shaderParms, RenderWorld.SHADERPARM_BEAM_END_X)
 
             // we need the view direction to project the minor axis of the tube
             // as the view changes
-            val localView: idVec3 = idVec3()
-            val localTarget: idVec3 = idVec3()
-            val modelMatrix: FloatArray = FloatArray(16)
+            val localView = idVec3()
+            val localTarget = idVec3()
+            val modelMatrix = FloatArray(16)
             tr_main.R_AxisToModelMatrix(renderEntity.axis, renderEntity.origin, modelMatrix)
             tr_main.R_GlobalPointToLocal(modelMatrix, viewDef.renderView.vieworg, localView)
             tr_main.R_GlobalPointToLocal(modelMatrix, target, localTarget)
-            val major: idVec3 = idVec3(localTarget)
-            val minor: idVec3 = idVec3()
-            val mid: idVec3 = idVec3(localTarget.times(0.5f))
-            val dir: idVec3 = idVec3(mid.minus(localView))
+            val major = idVec3(localTarget)
+            val minor = idVec3()
+            val mid = idVec3(localTarget.times(0.5f))
+            val dir = idVec3(mid.minus(localView))
             minor.Cross(major, dir)
             minor.Normalize()
             if (renderEntity.shaderParms[RenderWorld.SHADERPARM_BEAM_WIDTH] != 0.0f) {
@@ -137,20 +133,20 @@ object Model_beam {
             tri.verts!![3]!!.color[1] = green
             tri.verts!![3]!!.color[2] = blue
             tri.verts!![3]!!.color[3] = alpha
-            tr_trisurf.R_BoundTriSurf(tri)
-            staticModel!!.bounds = idBounds(tri.bounds)
+            R_BoundTriSurf(tri)
+            staticModel.bounds.set(tri.bounds)
             return staticModel
         }
 
-        public override fun Bounds(renderEntity: renderEntity_s1?): idBounds {
-            val b: idBounds = idBounds()
+        override fun Bounds(renderEntity: renderEntity_s1?): idBounds {
+            val b = idBounds()
             b.Zero()
             if (null == renderEntity) {
                 b.ExpandSelf(8.0f)
             } else {
-                val target: idVec3 = idVec3(renderEntity.shaderParms, RenderWorld.SHADERPARM_BEAM_END_X)
-                val localTarget: idVec3 = idVec3()
-                val modelMatrix: FloatArray = FloatArray(16)
+                val target = idVec3(renderEntity.shaderParms, RenderWorld.SHADERPARM_BEAM_END_X)
+                val localTarget = idVec3()
+                val modelMatrix = FloatArray(16)
                 tr_main.R_AxisToModelMatrix(renderEntity.axis, renderEntity.origin, modelMatrix)
                 tr_main.R_GlobalPointToLocal(modelMatrix, target, localTarget)
                 b.AddPoint(localTarget)

@@ -1,18 +1,12 @@
 package neo.idlib.geometry
 
-import neo.idlib.Lib
+import neo.idlib.MAX_WORLD_COORD
+import neo.idlib.MIN_WORLD_COORD
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.List.idSwap
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Plane
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.*
 import kotlin.math.abs
 
-/**
- *
- */
 object Winding2D {
     /*
      ===============================================================================
@@ -23,10 +17,10 @@ object Winding2D {
      */
     const val MAX_POINTS_ON_WINDING_2D = 16
     fun GetAxialBevel(plane1: idVec3, plane2: idVec3, point: idVec2, bevel: idVec3): Boolean {
-        if (Math_h.FLOATSIGNBITSET(plane1.x) xor Math_h.FLOATSIGNBITSET(plane2.x) != 0) {
+        if (FLOATSIGNBITSET(plane1.x) xor FLOATSIGNBITSET(plane2.x) != 0) {
             if (abs(plane1.x) > 0.1f && abs(plane2.x) > 0.1f) {
                 bevel.x = 0.0f
-                if (Math_h.FLOATSIGNBITSET(plane1.y) != 0) {
+                if (FLOATSIGNBITSET(plane1.y) != 0) {
                     bevel.y = -1.0f
                 } else {
                     bevel.y = 1.0f
@@ -35,10 +29,10 @@ object Winding2D {
                 return true
             }
         }
-        if (Math_h.FLOATSIGNBITSET(plane1.y) xor Math_h.FLOATSIGNBITSET(plane2.y) != 0) {
+        if (FLOATSIGNBITSET(plane1.y) xor FLOATSIGNBITSET(plane2.y) != 0) {
             if (abs(plane1.y) > 0.1f && abs(plane2.y) > 0.1f) {
                 bevel.y = 0.0f
-                if (Math_h.FLOATSIGNBITSET(plane1.x) != 0) {
+                if (FLOATSIGNBITSET(plane1.x) != 0) {
                     bevel.x = -1.0f
                 } else {
                     bevel.x = 1.0f
@@ -52,9 +46,6 @@ object Winding2D {
 
     class idWinding2D {
         private var numPoints = 0
-
-        //
-        //
         private val p = idVec2.generateArray(MAX_POINTS_ON_WINDING_2D)
 
         fun set(winding: idWinding2D): idWinding2D {
@@ -68,7 +59,6 @@ object Winding2D {
             return this
         }
 
-        //public	final idVec2 	operator[]( final int index ) ;
         operator fun get(index: Int): idVec2 {
             return p[index]
         }
@@ -152,8 +142,8 @@ object Winding2D {
             // expand the planes
             i = 0
             while (i < numPlanes) {
-                v.x = bounds[Math_h.FLOATSIGNBITSET(planes[i].x)].x
-                v.y = bounds[Math_h.FLOATSIGNBITSET(planes[i].y)].y
+                v.x = bounds[FLOATSIGNBITSET(planes[i].x)].x
+                v.y = bounds[FLOATSIGNBITSET(planes[i].y)].y
                 planes[i].z += v.x * planes[i].x + v.y * planes[i].y
                 i++
             }
@@ -182,8 +172,8 @@ object Winding2D {
             var dot: Float
             var i: Int
             var j: Int
-            var p1: idVec2
-            var p2: idVec2
+            val p1 = idVec2()
+            val p2 = idVec2()
             val mid = idVec2()
             val f: idWinding2D
             val b: idWinding2D
@@ -198,11 +188,11 @@ object Winding2D {
                 dot = plane.x * p[i].x + plane.y * p[i].y + plane.z
                 dists[i] = dot
                 if (dot > epsilon) {
-                    sides[i] = Plane.SIDE_FRONT
+                    sides[i] = SIDE_FRONT
                 } else if (dot < -epsilon) {
-                    sides[i] = Plane.SIDE_BACK
+                    sides[i] = SIDE_BACK
                 } else {
-                    sides[i] = Plane.SIDE_ON
+                    sides[i] = SIDE_ON
                 }
                 counts[sides[i]]++
                 i++
@@ -213,14 +203,14 @@ object Winding2D {
             front[0] = back[0] //TODO:check double pointers
 
             // if nothing at the front of the clipping plane
-            if (0 == counts[Plane.SIDE_FRONT]) {
+            if (0 == counts[SIDE_FRONT]) {
                 back[0][0] = Copy()
-                return Plane.SIDE_BACK
+                return SIDE_BACK
             }
             // if nothing at the back of the clipping plane
-            if (0 == counts[Plane.SIDE_BACK]) {
+            if (0 == counts[SIDE_BACK]) {
                 front[0][0] = Copy()
-                return Plane.SIDE_FRONT
+                return SIDE_FRONT
             }
             maxpts = numPoints + 4 // cant use counts[0]+2 because of fp grouping errors
             f = idWinding2D()
@@ -229,8 +219,8 @@ object Winding2D {
             back[0][0] = b
             i = 0
             while (i < numPoints) {
-                p1 = p[i]
-                if (sides[i] == Plane.SIDE_ON) {
+                p1.set(p[i])
+                if (sides[i] == SIDE_ON) {
                     f.p[f.numPoints] = p1
                     f.numPoints++
                     b.p[b.numPoints] = p1
@@ -238,25 +228,25 @@ object Winding2D {
                     i++
                     continue
                 }
-                if (sides[i] == Plane.SIDE_FRONT) {
+                if (sides[i] == SIDE_FRONT) {
                     f.p[f.numPoints] = p1
                     f.numPoints++
                 }
-                if (sides[i] == Plane.SIDE_BACK) {
+                if (sides[i] == SIDE_BACK) {
                     b.p[b.numPoints] = p1
                     b.numPoints++
                 }
-                if (sides[i + 1] == Plane.SIDE_ON || sides[i + 1] == sides[i]) {
+                if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) {
                     i++
                     continue
                 }
 
                 // generate a split point
-                p2 = p[(i + 1) % numPoints]
+                p2.set(p[(i + 1) % numPoints])
 
                 // always calculate the split going from the same side
                 // or minor epsilon issues can happen
-                if (sides[i] == Plane.SIDE_FRONT) {
+                if (sides[i] == SIDE_FRONT) {
                     dot = dists[i] / (dists[i] - dists[i + 1])
                     j = 0
                     while (j < 2) {
@@ -293,7 +283,7 @@ object Winding2D {
                 b.numPoints++
                 i++
             }
-            return Plane.SIDE_CROSS
+            return SIDE_CROSS
         }
 
         // cuts off the part at the back side of the plane, returns true if some part was at the front
@@ -307,23 +297,23 @@ object Winding2D {
             val counts = IntArray(3)
             var dot: Float
             val dists = FloatArray(MAX_POINTS_ON_WINDING_2D + 1)
-            var p1: idVec2
-            var p2: idVec2
+            val p1 = idVec2()
+            val p2 = idVec2()
             val mid = idVec2()
             val newPoints = idVec2.generateArray(MAX_POINTS_ON_WINDING_2D + 4)
-            counts[Plane.SIDE_ON] = 0
-            counts[Plane.SIDE_BACK] = counts[Plane.SIDE_ON]
-            counts[Plane.SIDE_FRONT] = counts[Plane.SIDE_BACK]
+            counts[SIDE_ON] = 0
+            counts[SIDE_BACK] = counts[SIDE_ON]
+            counts[SIDE_FRONT] = counts[SIDE_BACK]
             i = 0
             while (i < numPoints) {
                 dot = plane.x * p[i].x + plane.y * p[i].y + plane.z
                 dists[i] = dot
                 if (dot > epsilon) {
-                    sides[i] = Plane.SIDE_FRONT
+                    sides[i] = SIDE_FRONT
                 } else if (dot < -epsilon) {
-                    sides[i] = Plane.SIDE_BACK
+                    sides[i] = SIDE_BACK
                 } else {
-                    sides[i] = Plane.SIDE_ON
+                    sides[i] = SIDE_ON
                 }
                 counts[sides[i]]++
                 i++
@@ -332,35 +322,35 @@ object Winding2D {
             dists[i] = dists[0]
 
             // if the winding is on the plane and we should keep it
-            if (keepOn && 0 == counts[Plane.SIDE_FRONT] && 0 == counts[Plane.SIDE_BACK]) {
+            if (keepOn && 0 == counts[SIDE_FRONT] && 0 == counts[SIDE_BACK]) {
                 return true
             }
-            if (0 == counts[Plane.SIDE_FRONT]) {
+            if (0 == counts[SIDE_FRONT]) {
                 numPoints = 0
                 return false
             }
-            if (0 == counts[Plane.SIDE_BACK]) {
+            if (0 == counts[SIDE_BACK]) {
                 return true
             }
             maxpts = numPoints + 4 // cant use counts[0]+2 because of fp grouping errors
             newNumPoints = 0
             i = 0
             while (i < numPoints) {
-                p1 = p[i]
+                p1.set(p[i])
                 if (newNumPoints + 1 > maxpts) {
                     return true // can't split -- fall back to original
                 }
-                if (sides[i] == Plane.SIDE_ON) {
+                if (sides[i] == SIDE_ON) {
                     newPoints[newNumPoints].set(p1)
                     newNumPoints++
                     i++
                     continue
                 }
-                if (sides[i] == Plane.SIDE_FRONT) {
+                if (sides[i] == SIDE_FRONT) {
                     newPoints[newNumPoints].set(p1)
                     newNumPoints++
                 }
-                if (sides[i + 1] == Plane.SIDE_ON || sides[i + 1] == sides[i]) {
+                if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) {
                     i++
                     continue
                 }
@@ -369,7 +359,7 @@ object Winding2D {
                 }
 
                 // generate a split point
-                p2 = p[(i + 1) % numPoints]
+                p2.set(p[(i + 1) % numPoints])
                 dot = dists[i] / (dists[i] - dists[i + 1])
                 j = 0
                 while (j < 2) {
@@ -393,7 +383,7 @@ object Winding2D {
             }
             numPoints = newNumPoints
             //	memcpy( p, newPoints, newNumPoints * sizeof(idVec2) );
-            System.arraycopy(newNumPoints, 0, p, 0, newNumPoints)
+            System.arraycopy(newPoints, 0, p, 0, newNumPoints)
 
             return true
         }
@@ -422,14 +412,14 @@ object Winding2D {
 
         fun GetArea(): Float {
             var i: Int
-            var d1: idVec2
-            var d2: idVec2
+            val d1 = idVec2()
+            val d2 = idVec2()
             var total: Float
             total = 0.0f
             i = 2
             while (i < numPoints) {
-                d1 = p[i - 1] - p[0]
-                d2 = p[i] - p[0]
+                d1.set(p[i - 1] - p[0])
+                d2.set(p[i] - p[0])
                 total += d1.x * d2.y - d1.y * d2.x
                 i++
             }
@@ -453,11 +443,11 @@ object Winding2D {
             var i: Int
             var radius: Float
             var r: Float
-            var dir: idVec2
+            val dir = idVec2()
             radius = 0.0f
             i = 0
             while (i < numPoints) {
-                dir = p[i] - center
+                dir.set(p[i] - center)
                 r = dir * dir
                 if (r > radius) {
                     radius = r
@@ -497,12 +487,12 @@ object Winding2D {
         fun IsTiny(): Boolean {
             var i: Int
             var len: Float
-            var delta: idVec2
+            val delta = idVec2()
             var edges: Int
             edges = 0
             i = 0
             while (i < numPoints) {
-                delta = p[(i + 1) % numPoints] - p[i]
+                delta.set(p[(i + 1) % numPoints] - p[i])
                 len = delta.Length()
                 if (len > EDGE_LENGTH) {
                     if (++edges == 3) {
@@ -521,7 +511,7 @@ object Winding2D {
             while (i < numPoints) {
                 j = 0
                 while (j < 2) {
-                    if (p[i][j] <= Lib.MIN_WORLD_COORD || p[i][j] >= Lib.MAX_WORLD_COORD) {
+                    if (p[i][j] <= MIN_WORLD_COORD || p[i][j] >= MAX_WORLD_COORD) {
                         return true
                     }
                     j++
@@ -551,28 +541,28 @@ object Winding2D {
                 d = plane.x * p[i].x + plane.y * p[i].y + plane.z
                 if (d < min) {
                     min = d
-                    if (Math_h.FLOATSIGNBITSET(min) and Math_h.FLOATSIGNBITNOTSET(max) != 0) {
+                    if (FLOATSIGNBITSET(min) and FLOATSIGNBITNOTSET(max) != 0) {
                         return 0.0f
                     }
                 }
                 if (d > max) {
                     max = d
-                    if (Math_h.FLOATSIGNBITSET(min) and Math_h.FLOATSIGNBITNOTSET(max) != 0) {
+                    if (FLOATSIGNBITSET(min) and FLOATSIGNBITNOTSET(max) != 0) {
                         return 0.0f
                     }
                 }
                 i++
             }
-            if (Math_h.FLOATSIGNBITNOTSET(min) != 0) {
+            if (FLOATSIGNBITNOTSET(min) != 0) {
                 return min
             }
-            return if (Math_h.FLOATSIGNBITSET(max) != 0) {
+            return if (FLOATSIGNBITSET(max) != 0) {
                 max
             } else 0.0f
         }
 
         //public	int				PlaneSide( final idVec3 plane, final float epsilon = ON_EPSILON ) ;
-        fun PlaneSide(plane: idVec3, epsilon: Float): Int {
+        fun PlaneSide(plane: idVec3, epsilon: Float = ON_EPSILON): Int {
             var front: Boolean
             var back: Boolean
             var i: Int
@@ -584,25 +574,23 @@ object Winding2D {
                 d = plane.x * p[i].x + plane.y * p[i].y + plane.z
                 if (d < -epsilon) {
                     if (front) {
-                        return Plane.SIDE_CROSS
+                        return SIDE_CROSS
                     }
                     back = true
-                    //                    continue;
                 } else if (d > epsilon) {
                     if (back) {
-                        return Plane.SIDE_CROSS
+                        return SIDE_CROSS
                     }
                     front = true
-                    //                    continue;
                 }
                 i++
             }
             if (back) {
-                return Plane.SIDE_BACK
+                return SIDE_BACK
             }
             return if (front) {
-                Plane.SIDE_FRONT
-            } else Plane.SIDE_ON
+                SIDE_FRONT
+            } else SIDE_ON
         }
 
         fun PointInside(point: idVec2, epsilon: Float): Boolean {
@@ -631,34 +619,34 @@ object Winding2D {
             val epsilon = 0.1f
             val plane = idVec3()
             val edges: Array<idVec3> = idVec3.generateArray(2)
-            counts[Plane.SIDE_ON] = 0
-            counts[Plane.SIDE_BACK] = counts[Plane.SIDE_ON]
-            counts[Plane.SIDE_FRONT] = counts[Plane.SIDE_BACK]
+            counts[SIDE_ON] = 0
+            counts[SIDE_BACK] = counts[SIDE_ON]
+            counts[SIDE_FRONT] = counts[SIDE_BACK]
             plane.set(Plane2DFromPoints(start, end))
             i = 0
             while (i < numPoints) {
                 d1 = plane.x * p[i].x + plane.y * p[i].y + plane.z
                 if (d1 > epsilon) {
-                    sides[i] = Plane.SIDE_FRONT
+                    sides[i] = SIDE_FRONT
                 } else if (d1 < -epsilon) {
-                    sides[i] = Plane.SIDE_BACK
+                    sides[i] = SIDE_BACK
                 } else {
-                    sides[i] = Plane.SIDE_ON
+                    sides[i] = SIDE_ON
                 }
                 counts[sides[i]]++
                 i++
             }
             sides[i] = sides[0]
-            if (0 == counts[Plane.SIDE_FRONT]) {
+            if (0 == counts[SIDE_FRONT]) {
                 return false
             }
-            if (0 == counts[Plane.SIDE_BACK]) {
+            if (0 == counts[SIDE_BACK]) {
                 return false
             }
             numEdges = 0
             i = 0
             while (i < numPoints) {
-                if (sides[i] != sides[i + 1] && sides[i + 1] != Plane.SIDE_ON) {
+                if (sides[i] != sides[i + 1] && sides[i + 1] != SIDE_ON) {
                     edges[numEdges++].set(Plane2DFromPoints(p[i], p[(i + 1) % numPoints]))
                     if (numEdges >= 2) {
                         break
@@ -671,12 +659,12 @@ object Winding2D {
             }
             d1 = edges[0].x * start.x + edges[0].y * start.y + edges[0].z
             d2 = edges[0].x * end.x + edges[0].y * end.y + edges[0].z
-            if (Math_h.FLOATSIGNBITNOTSET(d1) and Math_h.FLOATSIGNBITNOTSET(d2) != 0) {
+            if (FLOATSIGNBITNOTSET(d1) and FLOATSIGNBITNOTSET(d2) != 0) {
                 return false
             }
             d1 = edges[1].x * start.x + edges[1].y * start.y + edges[1].z
             d2 = edges[1].x * end.x + edges[1].y * end.y + edges[1].z
-            return Math_h.FLOATSIGNBITNOTSET(d1) and Math_h.FLOATSIGNBITNOTSET(d2) == 0
+            return FLOATSIGNBITNOTSET(d1) and FLOATSIGNBITNOTSET(d2) == 0
         }
 
         //public	boolean			RayIntersection( final idVec2 start, final idVec2 dir, float scale1, float scale2) ;
@@ -699,34 +687,34 @@ object Winding2D {
             val edges: Array<idVec3> = idVec3.generateArray(2)
             scale1._val = (0.0f)
             scale2._val = (0.0f)
-            counts[Plane.SIDE_ON] = 0
-            counts[Plane.SIDE_BACK] = counts[Plane.SIDE_ON]
-            counts[Plane.SIDE_FRONT] = counts[Plane.SIDE_BACK]
+            counts[SIDE_ON] = 0
+            counts[SIDE_BACK] = counts[SIDE_ON]
+            counts[SIDE_FRONT] = counts[SIDE_BACK]
             plane.set(Plane2DFromVecs(start, dir))
             i = 0
             while (i < numPoints) {
                 d1 = plane.x * p[i].x + plane.y * p[i].y + plane.z
                 if (d1 > epsilon) {
-                    sides[i] = Plane.SIDE_FRONT
+                    sides[i] = SIDE_FRONT
                 } else if (d1 < -epsilon) {
-                    sides[i] = Plane.SIDE_BACK
+                    sides[i] = SIDE_BACK
                 } else {
-                    sides[i] = Plane.SIDE_ON
+                    sides[i] = SIDE_ON
                 }
                 counts[sides[i]]++
                 i++
             }
             sides[i] = sides[0]
-            if (0 == counts[Plane.SIDE_FRONT]) {
+            if (0 == counts[SIDE_FRONT]) {
                 return false
             }
-            if (0 == counts[Plane.SIDE_BACK]) {
+            if (0 == counts[SIDE_BACK]) {
                 return false
             }
             numEdges = 0
             i = 0
             while (i < numPoints) {
-                if (sides[i] != sides[i + 1] && sides[i + 1] != Plane.SIDE_ON) {
+                if (sides[i] != sides[i + 1] && sides[i + 1] != SIDE_ON) {
                     localEdgeNums[numEdges] = i
                     edges[numEdges++].set(Plane2DFromPoints(p[i], p[(i + 1) % numPoints]))
                     if (numEdges >= 2) {
@@ -762,7 +750,6 @@ object Winding2D {
             }
             return true
         }
-
 
         fun Plane2DFromVecs(start: idVec2, dir: idVec2, normalize: Boolean = false): idVec3 {
             val plane = idVec3()

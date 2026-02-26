@@ -1,14 +1,7 @@
 package neo.idlib.math.Matrix
 
 import neo.idlib.Text.Str.idStr
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Math_h.DEG2RAD
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Quat.idCQuat
-import neo.idlib.math.Quat.idQuat
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.*
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
@@ -22,7 +15,7 @@ import kotlin.math.cos
 //
 //===============================================================
 class idMat3 {
-    val mat: Array<idVec3> = idVec3.Companion.generateArray(3)
+    val mat: Array<idVec3> = idVec3.generateArray(3)
 
     constructor()
     constructor(x: idVec3, y: idVec3, z: idVec3) {
@@ -39,7 +32,17 @@ class idMat3 {
         mat[2].z = z.z
     }
 
-    constructor(xx: Float, xy: Float, xz: Float, yx: Float, yy: Float, yz: Float, zx: Float, zy: Float, zz: Float) {
+    constructor(
+        xx: Float,
+        xy: Float,
+        xz: Float,
+        yx: Float,
+        yy: Float,
+        yz: Float,
+        zx: Float,
+        zy: Float,
+        zz: Float
+    ) {
         mat[0].x = xx
         mat[0].y = xy
         mat[0].z = xz
@@ -68,7 +71,7 @@ class idMat3 {
     }
 
     constructor(src: Array<FloatArray>) {
-//	memcpy( mat, src, 3 * 3 * sizeof( float ) );
+//	memcpy( mat, src, 3 * 3 * sizeof( Float ) );
         mat[0].set(idVec3(src[0][0], src[0][1], src[0][2]))
         mat[1].set(idVec3(src[1][0], src[1][1], src[1][2]))
         mat[2].set(idVec3(src[2][0], src[2][1], src[2][2]))
@@ -99,7 +102,7 @@ class idMat3 {
         )
     }
 
-    //public	idMat3 &		operator*=( const float a );
+    //public	idMat3 &		operator*=( const Float a );
     operator fun times(a: Float): idMat3 {
         return idMat3(
             mat[0].x * a, mat[0].y * a, mat[0].z * a,
@@ -120,11 +123,11 @@ class idMat3 {
     //public	idMat3 &		operator+=( const idMat3 &a );
     operator fun times(a: idMat3): idMat3 {
         var j: Int
-        //            float dstPtr;
+        //            Float dstPtr;
         val dst = idMat3()
-        val m1Ptr: FloatArray = ToFloatPtr() //reinterpret_cast<const float *>(this);
-        val m2Ptr: FloatArray = a.ToFloatPtr() //reinterpret_cast<const float *>(&a);
-        //	dstPtr = reinterpret_cast<float *>(&dst);
+        val m1Ptr: FloatArray = this.ToFloatPtr() //reinterpret_cast<const Float *>(this);
+        val m2Ptr: FloatArray = a.ToFloatPtr() //reinterpret_cast<const Float *>(&a);
+        //	dstPtr = reinterpret_cast<Float *>(&dst);
         var i = 0
         while (i < 3) {
             j = 0
@@ -149,7 +152,7 @@ class idMat3 {
     }
 
     //
-    //public	friend idMat3	operator*( const float a, const idMat3 &mat );
+    //public	friend idMat3	operator*( const Float a, const idMat3 &mat );
     operator fun minus(a: idMat3): idMat3 {
         return idMat3(
             mat[0].x - a.mat[0].x, mat[0].y - a.mat[0].y, mat[0].z - a.mat[0].z,
@@ -255,7 +258,15 @@ class idMat3 {
             return false
         }
         val other = obj as idMat3
-        return mat[0] == other.mat[0] && mat[1] == other.mat[1] && mat[2] == other.mat[2]
+        return Compare(other)
+    }
+
+    fun equals(a: idMat3): Boolean { // exact compare, no epsilon
+        return Compare(a)
+    }
+
+    fun notEquals(a: idMat3): Boolean { // exact compare, no epsilon
+        return !Compare(a)
     }
 
     fun Zero() {
@@ -269,12 +280,12 @@ class idMat3 {
     }
 
 
-    fun IsIdentity(epsilon: Float = idMat0.MATRIX_EPSILON.toFloat()): Boolean {
+    fun IsIdentity(epsilon: Float = MATRIX_EPSILON): Boolean {
         return Compare(getMat3_identity(), epsilon)
     }
 
 
-    fun IsSymmetric(epsilon: Float = idMat0.MATRIX_EPSILON.toFloat()): Boolean {
+    fun IsSymmetric(epsilon: Float = MATRIX_EPSILON): Boolean {
         if (abs(mat[0].y - mat[1].x) > epsilon) {
             return false
         }
@@ -284,7 +295,7 @@ class idMat3 {
     }
 
 
-    fun IsDiagonal(epsilon: Float = idMat0.MATRIX_EPSILON.toFloat()): Boolean {
+    fun IsDiagonal(epsilon: Float = MATRIX_EPSILON): Boolean {
         return (abs(mat[0].y) <= epsilon
                 && abs(mat[0].z) <= epsilon
                 && abs(mat[1].x) <= epsilon
@@ -337,7 +348,7 @@ class idMat3 {
     }
 
     fun OrthoNormalize(): idMat3 {
-        val ortho: idMat3 = this
+        val ortho: idMat3 = idMat3(this)
         ortho.mat[0].Normalize()
         ortho.mat[2].Cross(mat[0], mat[1])
         ortho.mat[2].Normalize()
@@ -377,7 +388,7 @@ class idMat3 {
     }
 
     fun Inverse(): idMat3 { // returns the inverse ( m * m.Inverse() = identity )
-        val invMat: idMat3 = idMat3(this)
+        val invMat = idMat3(this)
         val r = invMat.InverseSelf()
         assert(r)
         return invMat
@@ -390,32 +401,32 @@ class idMat3 {
         inverse.mat[0].x = mat[1].y * mat[2].z - mat[1].z * mat[2].y
         inverse.mat[1].x = mat[1].z * mat[2].x - mat[1].x * mat[2].z
         inverse.mat[2].x = mat[1].x * mat[2].y - mat[1].y * mat[2].x
-        val det: Double =
-            (mat[0].x * inverse.mat[0].x + mat[0].y * inverse.mat[1].x + mat[0].z * inverse.mat[2].x).toDouble()
-        if (abs(det.toFloat()) < idMat0.MATRIX_INVERSE_EPSILON) {
+        val det: Float =
+            (mat[0].x * inverse.mat[0].x + mat[0].y * inverse.mat[1].x + mat[0].z * inverse.mat[2].x)
+        if (abs(det) < MATRIX_INVERSE_EPSILON) {
             return false
         }
-        val invDet: Double = 1.0f / det
+        val invDet: Float = 1.0f / det
         inverse.mat[0].y = mat[0].z * mat[2].y - mat[0].y * mat[2].z
         inverse.mat[0].z = mat[0].y * mat[1].z - mat[0].z * mat[1].y
         inverse.mat[1].y = mat[0].x * mat[2].z - mat[0].z * mat[2].x
         inverse.mat[1].z = mat[0].z * mat[1].x - mat[0].x * mat[1].z
         inverse.mat[2].y = mat[0].y * mat[2].x - mat[0].x * mat[2].y
         inverse.mat[2].z = mat[0].x * mat[1].y - mat[0].y * mat[1].x
-        mat[0].x = (inverse.mat[0].x * invDet).toFloat()
-        mat[0].y = (inverse.mat[0].y * invDet).toFloat()
-        mat[0].z = (inverse.mat[0].z * invDet).toFloat()
-        mat[1].x = (inverse.mat[1].x * invDet).toFloat()
-        mat[1].y = (inverse.mat[1].y * invDet).toFloat()
-        mat[1].z = (inverse.mat[1].z * invDet).toFloat()
-        mat[2].x = (inverse.mat[2].x * invDet).toFloat()
-        mat[2].y = (inverse.mat[2].y * invDet).toFloat()
-        mat[2].z = (inverse.mat[2].z * invDet).toFloat()
+        mat[0].x = (inverse.mat[0].x * invDet)
+        mat[0].y = (inverse.mat[0].y * invDet)
+        mat[0].z = (inverse.mat[0].z * invDet)
+        mat[1].x = (inverse.mat[1].x * invDet)
+        mat[1].y = (inverse.mat[1].y * invDet)
+        mat[1].z = (inverse.mat[1].z * invDet)
+        mat[2].x = (inverse.mat[2].x * invDet)
+        mat[2].y = (inverse.mat[2].y * invDet)
+        mat[2].z = (inverse.mat[2].z * invDet)
         return true
     }
 
     fun InverseFast(): idMat3 { // returns the inverse ( m * m.Inverse() = identity )
-        val invMat: idMat3 = this
+        val invMat = idMat3(this)
         val r = invMat.InverseFastSelf()
         assert(r)
         return invMat
@@ -498,7 +509,7 @@ class idMat3 {
 
     fun ToAngles(): idAngles {
         val angles = idAngles()
-        val theta: Double
+        val theta: Float
         var sp: Float
         sp = mat[0].z
 
@@ -508,16 +519,16 @@ class idMat3 {
         } else if (sp < -1.0f) {
             sp = -1.0f
         }
-        theta = -asin(sp.toDouble())
-        val cp: Double = cos(theta)
+        theta = -asin(sp)
+        val cp: Float = cos(theta)
         if (cp > 8192.0f * idMath.FLT_EPSILON) {
-            angles.pitch = Vector.RAD2DEG(theta)
-            angles.yaw = Vector.RAD2DEG(atan2(mat[0].y.toDouble(), mat[0].x.toDouble()))
-            angles.roll = Vector.RAD2DEG(atan2(mat[1].z.toDouble(), mat[2].z.toDouble()))
+            angles.pitch = RAD2DEG(theta)
+            angles.yaw = RAD2DEG(atan2(mat[0].y, mat[0].x))
+            angles.roll = RAD2DEG(atan2(mat[1].z, mat[2].z))
         } else {
-            angles.pitch = Vector.RAD2DEG(theta)
-            angles.yaw = Vector.RAD2DEG(-atan2(mat[1].x.toDouble(), mat[1].y.toDouble()))
-            angles.roll = 0f
+            angles.pitch = RAD2DEG(theta)
+            angles.yaw = RAD2DEG(-atan2(mat[1].x, mat[1].y))
+            angles.roll = 0.0f
         }
         return angles
     }
@@ -611,7 +622,7 @@ class idMat3 {
             r.angle *= 2.0f * idMath.M_RAD2DEG
         }
         r.origin.Zero()
-        r.axis = this
+        r.axis.set(this)
         r.axisValid = true
         return r
     }
@@ -626,7 +637,7 @@ class idMat3 {
         )
     }
 
-    //	public	float *			ToFloatPtr( void );
+    //	public	Float *			ToFloatPtr( void );
     fun ToAngularVelocity(): idVec3 {
         val rotation = ToRotation()
         return rotation.GetVec() * DEG2RAD(rotation.GetAngle())
@@ -643,24 +654,8 @@ class idMat3 {
         )
     }
 
-    //
-
     fun ToString(precision: Int = 2): String {
         return idStr.FloatArrayToString(ToFloatPtr(), GetDimension(), precision)
-    }
-
-    fun getRow(row: Int): idVec3 {
-        return mat[row]
-    }
-
-    @Deprecated("")
-    fun setRow(rowNumber: Int, row: idVec3) {
-        mat[rowNumber] = row
-    }
-
-    @Deprecated("")
-    fun setRow(rowNumber: Int, x: Float, y: Float, z: Float) {
-        mat[rowNumber] = idVec3(x, y, z)
     }
 
     fun set(x: Int, y: Int, value: Float): Float {
@@ -688,9 +683,9 @@ class idMat3 {
 
     fun plusAssign(x: Int, y: Int, value: Float) {
         when (y) {
-            0 -> mat[x].x -= value
-            1 -> mat[x].y -= value
-            2 -> mat[x].z -= value
+            0 -> mat[x].x += value
+            1 -> mat[x].y += value
+            2 -> mat[x].z += value
         }
     }
 
@@ -731,9 +726,11 @@ class idMat3 {
 
     companion object {
         val BYTES: Int = idVec3.BYTES * 3
-        private val mat3_identity: idMat3 = idMat3(idVec3(1f, 0f, 0f), idVec3(0f, 1f, 0f), idVec3(0f, 0f, 1f))
+        private val mat3_identity: idMat3 =
+            idMat3(idVec3(1.0f, 0.0f, 0.0f), idVec3(0.0f, 1.0f, 0.0f), idVec3(0.0f, 0.0f, 1.0f))
         private val mat3_default: idMat3 = mat3_identity
-        private val mat3_zero: idMat3 = idMat3(idVec3(0f, 0f, 0f), idVec3(0f, 0f, 0f), idVec3(0f, 0f, 0f))
+        private val mat3_zero: idMat3 =
+            idMat3(idVec3(0.0f, 0.0f, 0.0f), idVec3(0.0f, 0.0f, 0.0f), idVec3(0.0f, 0.0f, 0.0f))
         private const val DBG_counter = 0
         fun getMat3_zero(): idMat3 {
             return idMat3(mat3_zero)
@@ -761,7 +758,7 @@ class idMat3 {
 
         fun timesAssign(vec: idVec3, mat: idMat3): idVec3 {
             val x = mat.mat[0].x * vec.x + mat.mat[1].x * vec.y + mat.mat[2].x * vec.z
-            val y = mat.getRow(0).y * vec.x + mat.mat[1].y * vec.y + mat.mat[2].y * vec.z
+            val y = mat[0].y * vec.x + mat.mat[1].y * vec.y + mat.mat[2].y * vec.z
             vec.z = mat.mat[0].z * vec.x + mat.mat[1].z * vec.y + mat.mat[2].z * vec.z
             vec.x = x
             vec.y = y
@@ -789,7 +786,7 @@ class idMat3 {
                 transpose.mat[0].z * b.mat[0].z + transpose.mat[1].z * b.mat[1].z + transpose.mat[2].z * b.mat[2].z
         }
 
-        //public	idMat3			operator*( const float a ) const;
+        //public	idMat3			operator*( const Float a ) const;
         fun SkewSymmetric(src: idVec3): idMat3 {
             return idMat3(0.0f, -src.z, src.y, src.z, 0.0f, -src.x, -src.y, src.x, 0.0f)
         }

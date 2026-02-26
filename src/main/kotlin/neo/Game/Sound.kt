@@ -9,34 +9,32 @@ import neo.Game.Game_local.gameSoundChannel_t
 import neo.TempDump
 import neo.framework.Common
 import neo.framework.DeclManager
+import neo.idlib.BIT
 import neo.idlib.Dict_h.idDict
-import neo.idlib.Lib
 import neo.idlib.containers.CInt
-import neo.idlib.math.Angles
-import neo.idlib.math.Angles.idAngles
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.ang_zero
+import neo.idlib.math.getVec3_zero
+import neo.idlib.math.idAngles
+import neo.idlib.math.idVec3
 
-/**
- *
- */
+val EV_Speaker_Off: idEventDef = idEventDef("Off", null)
+val EV_Speaker_On: idEventDef = idEventDef("On", null)
+val EV_Speaker_Timer: idEventDef = idEventDef("<timer>", null)
+
 object Sound {
-    val EV_Speaker_Off: idEventDef = idEventDef("Off", null)
-    val EV_Speaker_On: idEventDef = idEventDef("On", null)
-    val EV_Speaker_Timer: idEventDef = idEventDef("<timer>", null)
-    val SSF_ANTI_PRIVATE_SOUND: Int = Lib.BIT(1) // plays for everyone but the current listenerId
-    val SSF_GLOBAL: Int = Lib.BIT(3) // play full volume to all speakers and all listeners
-    val SSF_LOOPING: Int = Lib.BIT(5) // repeat the sound continuously
-    val SSF_NO_DUPS: Int = Lib.BIT(9) // try not to play the same sound twice in a row
-    val SSF_NO_FLICKER: Int = Lib.BIT(8) // always return 1.0 for volume queries
-    val SSF_NO_OCCLUSION: Int = Lib.BIT(2) // don't flow through portals, only use straight line
-    val SSF_OMNIDIRECTIONAL: Int = Lib.BIT(4) // fall off with distance, but play same volume in all speakers
-    val SSF_PLAY_ONCE: Int = Lib.BIT(6) // never restart if already playing on any channel of a given emitter
+    val SSF_ANTI_PRIVATE_SOUND: Int = BIT(1) // plays for everyone but the current listenerId
+    val SSF_GLOBAL: Int = BIT(3) // play full volume to all speakers and all listeners
+    val SSF_LOOPING: Int = BIT(5) // repeat the sound continuously
+    val SSF_NO_DUPS: Int = BIT(9) // try not to play the same sound twice in a row
+    val SSF_NO_FLICKER: Int = BIT(8) // always return 1.0f for volume queries
+    val SSF_NO_OCCLUSION: Int = BIT(2) // don't flow through portals, only use straight line
+    val SSF_OMNIDIRECTIONAL: Int = BIT(4) // fall off with distance, but play same volume in all speakers
+    val SSF_PLAY_ONCE: Int = BIT(6) // never restart if already playing on any channel of a given emitter
 
     // sound shader flags
-    val SSF_PRIVATE_SOUND: Int = Lib.BIT(0) // only plays for the current listenerId
-    val SSF_UNCLAMPED: Int = Lib.BIT(7) // don't clamp calculated volumes at 1.0
+    val SSF_PRIVATE_SOUND: Int = BIT(0) // only plays for the current listenerId
+    val SSF_UNCLAMPED: Int = BIT(7) // don't clamp calculated volumes at 1.0f
 
     /*
      ===============================================================================
@@ -84,9 +82,8 @@ object Sound {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idSound> { obj: idSound, activator: idEventArg<*>? -> obj.Event_Trigger(activator as idEventArg<idEntity>) }
-                eventCallback_t1<idSound> { obj: idSound, activator: idEventArg<*>? -> obj.Event_Trigger(activator as idEventArg<idEntity>) }
                 eventCallbacks[EV_Speaker_On] =
                     eventCallback_t0<idSound> { obj: idSound -> obj.Event_On() }
                 eventCallbacks[EV_Speaker_Off] =
@@ -180,7 +177,7 @@ object Sound {
             }
             soundVol = 0.0f
             lastSoundVol = 0.0f
-            if (shakeRotate != Angles.getAng_zero() || shakeTranslate != Vector.getVec3_zero()) {
+            if (shakeRotate != ang_zero || shakeTranslate != getVec3_zero()) {
                 BecomeActive(Entity.TH_THINK)
             }
             if (!refSound.waitfortrigger && wait > 0.0f) {

@@ -1,6 +1,5 @@
 package neo.Game.Physics
 
-import neo.CM.CollisionModel.trace_s
 import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class
 import neo.Game.GameSys.SaveGame.idRestoreGame
@@ -9,15 +8,13 @@ import neo.Game.Game_local
 import neo.Game.Game_local.idEntityPtr
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics_Base.idPhysics_Base
-import neo.idlib.BV.Bounds.idBounds
+import neo.cm.trace_s
+import neo.idlib.BV.idBounds
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.getVec3_zero
+import neo.idlib.math.idRotation
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 class Physics_Actor {
     /*
      ===================================================================================
@@ -31,31 +28,28 @@ class Physics_Actor {
      ===================================================================================
      */
     open class idPhysics_Actor : idPhysics_Base() {
-        // CLASS_PROTOTYPE( idPhysics_Actor );
         protected var clipModel // clip model used for collision detection
                 : idClipModel? = null
-        protected var clipModelAxis // axis of clip model aligned with gravity direction
+        protected val clipModelAxis // axis of clip model aligned with gravity direction
                 : idMat3 = idMat3()
 
-        //
         // results of last evaluate
         protected val groundEntityPtr: idEntityPtr<idEntity?>
         protected var invMass: Float
 
-        //
         // derived properties
         protected var mass: Float
         protected var masterDeltaYaw: Float
 
-        //
         // master
         protected var masterEntity: idEntity?
         protected var masterYaw: Float
 
-        // ~idPhysics_Actor();
         override fun _deconstructor() {
-            idClipModel.delete(clipModel!!)
-            clipModel = null
+            if (clipModel != null) {             // null check before delete
+                idClipModel.delete(clipModel!!)
+                clipModel = null
+            }
             super._deconstructor()
         }
 
@@ -64,14 +58,14 @@ class Physics_Actor {
             savefile.WriteMat3(clipModelAxis)
             savefile.WriteFloat(mass)
             savefile.WriteFloat(invMass)
-            savefile.WriteObject(masterEntity as Class.idClass)
+            savefile.WriteObject(masterEntity as Class.idClass?)
             savefile.WriteFloat(masterYaw)
             savefile.WriteFloat(masterDeltaYaw)
             groundEntityPtr.Save(savefile)
         }
 
         override fun Restore(savefile: idRestoreGame) {
-            savefile.ReadClipModel(clipModel as idClipModel)
+            savefile.ReadClipModel(clipModel)
             savefile.ReadMat3(clipModelAxis)
             mass = savefile.ReadFloat()
             invMass = savefile.ReadFloat()
@@ -94,7 +88,7 @@ class Physics_Actor {
         // align the clip model with the gravity direction
         fun SetClipModelAxis() {
             // align clip model to gravity direction
-            if (gravityNormal[2] == -1.0f || gravityNormal == Vector.getVec3_zero()) {
+            if (gravityNormal[2] == -1.0f || gravityNormal == getVec3_zero()) {
                 clipModelAxis.Identity()
             } else {
                 clipModelAxis[2] = gravityNormal.unaryMinus()
@@ -260,7 +254,7 @@ class Physics_Actor {
             masterEntity = null
             masterYaw = 0.0f
             masterDeltaYaw = 0.0f
-            groundEntityPtr = idEntityPtr(null)
+            groundEntityPtr = idEntityPtr()
         }
     }
 }

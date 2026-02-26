@@ -8,13 +8,17 @@ import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_Integer
 import neo.framework.KeyInput.idKeyInput
 import neo.framework.UsercmdGen.idUsercmdGenLocal.*
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
+import neo.idlib.BIT
+import neo.idlib.LittleLong
+import neo.idlib.LittleShort
 import neo.idlib.Text.Str.idStr
-import neo.idlib.math.Angles
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.idException
+import neo.idlib.math.ANGLE2SHORT
+import neo.idlib.math.PITCH
+import neo.idlib.math.YAW
+import neo.idlib.math.idMath.ClampChar
+import neo.idlib.math.idMath.M_MS2SEC
+import neo.idlib.math.idVec3
 import neo.sys.sys_public.joystickAxis_t
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.win_input
@@ -28,24 +32,15 @@ import kotlin.experimental.xor
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-/**
- *
- */
 object UsercmdGen {
-    val BUTTON_5: Int = Lib.BIT(5)
-    val BUTTON_6: Int = Lib.BIT(6)
-    val BUTTON_7: Int = Lib.BIT(7)
-
-    //
-    // usercmd_t->button bits
-    val BUTTON_ATTACK: Int = Lib.BIT(0)
-    val BUTTON_MLOOK: Int = Lib.BIT(4)
-    val BUTTON_RUN: Int = Lib.BIT(1)
-    val BUTTON_SCORES: Int = Lib.BIT(3)
-    val BUTTON_ZOOM: Int = Lib.BIT(2)
-
-    //
-    // usercmd_t->impulse commands
+    val BUTTON_5: Int = BIT(5)
+    val BUTTON_6: Int = BIT(6)
+    val BUTTON_7: Int = BIT(7)
+    val BUTTON_ATTACK: Int = BIT(0)
+    val BUTTON_MLOOK: Int = BIT(4)
+    val BUTTON_RUN: Int = BIT(1)
+    val BUTTON_SCORES: Int = BIT(3)
+    val BUTTON_ZOOM: Int = BIT(2)
     const val IMPULSE_0 = 0 // weap 0
     const val IMPULSE_1 = 1 // weap 1
     const val IMPULSE_10 = 10 // weap 10
@@ -77,9 +72,6 @@ object UsercmdGen {
     const val IMPULSE_7 = 7 // weap 7
     const val IMPULSE_8 = 8 // weap 8
     const val IMPULSE_9 = 9 // weap 9
-
-    //
-    // usercmd_t->flags
     const val UCF_IMPULSE_SEQUENCE = 0x0001 // toggled every time an impulse command is sent
 
     /*
@@ -91,16 +83,10 @@ object UsercmdGen {
      */
     const val USERCMD_HZ = 60 // 60 frames per second
     const val USERCMD_MSEC = 1000 / USERCMD_HZ
-
-    //
     const val KEY_MOVESPEED = 127
     const val MAX_BUFFERED_USERCMD = 64
-
-    //
-    //
     const val MAX_CHAT_BUFFER = 127
 
-    //
     val userCmdStrings: Array<userCmdString_t> = arrayOf(
         userCmdString_t("_moveUp", usercmdButton_t.UB_UP),
         userCmdString_t("_moveDown", usercmdButton_t.UB_DOWN),
@@ -246,10 +232,10 @@ object UsercmdGen {
         constructor()
 
         fun ByteSwap() {            // on big endian systems, byte swap the shorts and ints
-            angles[0] = Lib.LittleShort(angles[0])
-            angles[1] = Lib.LittleShort(angles[1])
-            angles[2] = Lib.LittleShort(angles[2])
-            sequence = Lib.LittleLong(sequence)
+            angles[0] = LittleShort(angles[0])
+            angles[1] = LittleShort(angles[1])
+            angles[2] = LittleShort(angles[2])
+            sequence = LittleLong(sequence)
         }
 
         override fun hashCode(): Int {
@@ -647,7 +633,7 @@ object UsercmdGen {
                 toggled_crouch.SetKeyState(ButtonState(usercmdButton_t.UB_DOWN), in_toggleCrouch.GetBool())
                 toggled_run.SetKeyState(
                     ButtonState(usercmdButton_t.UB_SPEED),
-                    in_toggleRun.GetBool() && idAsyncNetwork.Companion.IsActive()
+                    in_toggleRun.GetBool() && idAsyncNetwork.IsActive()
                 )
                 toggled_zoom.SetKeyState(ButtonState(usercmdButton_t.UB_ZOOM), in_toggleZoom.GetBool())
 
@@ -667,10 +653,10 @@ object UsercmdGen {
                 JoystickMove()
 
                 // check to make sure the angles haven't wrapped
-                if (viewangles[Angles.PITCH] - oldAngles[Angles.PITCH] > 90) {
-                    viewangles[Angles.PITCH] = oldAngles[Angles.PITCH] + 90
-                } else if (oldAngles[Angles.PITCH] - viewangles[Angles.PITCH] > 90) {
-                    viewangles[Angles.PITCH] = oldAngles[Angles.PITCH] - 90
+                if (viewangles[PITCH] - oldAngles[PITCH] > 90) {
+                    viewangles[PITCH] = oldAngles[PITCH] + 90
+                } else if (oldAngles[PITCH] - viewangles[PITCH] > 90) {
+                    viewangles[PITCH] = oldAngles[PITCH] - 90
                 }
             } else {
                 mouseDx = 0.0
@@ -678,7 +664,7 @@ object UsercmdGen {
             }
             i = 0
             while (i < 3) {
-                cmd.angles[i] = Math_h.ANGLE2SHORT(viewangles[i]).toInt().toShort()
+                cmd.angles[i] = ANGLE2SHORT(viewangles[i]).toInt().toShort()
                 i++
             }
             cmd.mx = continuousMouseX.toInt().toShort()
@@ -724,23 +710,23 @@ object UsercmdGen {
         private fun AdjustAngles() {
             val speed: Float
             speed = if ((toggled_run.on != 0) xor (in_alwaysRun.GetBool() && idAsyncNetwork.IsActive())) {
-                idMath.M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.GetFloat()
+                M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.GetFloat()
             } else {
-                idMath.M_MS2SEC * USERCMD_MSEC
+                M_MS2SEC * USERCMD_MSEC
             }
             if (0 == ButtonState(usercmdButton_t.UB_STRAFE)) {
                 viewangles.minusAssign(
-                    Angles.YAW,
+                    YAW,
                     speed * in_yawSpeed.GetFloat() * ButtonState(usercmdButton_t.UB_RIGHT)
                 )
-                viewangles.plusAssign(Angles.YAW, speed * in_yawSpeed.GetFloat() * ButtonState(usercmdButton_t.UB_LEFT))
+                viewangles.plusAssign(YAW, speed * in_yawSpeed.GetFloat() * ButtonState(usercmdButton_t.UB_LEFT))
             }
             viewangles.minusAssign(
-                Angles.PITCH,
+                PITCH,
                 speed * in_pitchSpeed.GetFloat() * ButtonState(usercmdButton_t.UB_LOOKUP)
             )
             viewangles.plusAssign(
-                Angles.PITCH,
+                PITCH,
                 speed * in_pitchSpeed.GetFloat() * ButtonState(usercmdButton_t.UB_LOOKDOWN)
             )
         }
@@ -769,34 +755,34 @@ object UsercmdGen {
             up += KEY_MOVESPEED * ButtonState(usercmdButton_t.UB_UP)
             forward += KEY_MOVESPEED * ButtonState(usercmdButton_t.UB_FORWARD)
             forward -= KEY_MOVESPEED * ButtonState(usercmdButton_t.UB_BACK)
-            cmd.forwardmove = idMath.ClampChar(forward).code.toByte()
-            cmd.rightmove = idMath.ClampChar(side).code.toByte()
-            cmd.upmove = idMath.ClampChar(up).code.toByte()
+            cmd.forwardmove = ClampChar(forward).code.toByte()
+            cmd.rightmove = ClampChar(side).code.toByte()
+            cmd.upmove = ClampChar(up).code.toByte()
         }
 
         private fun JoystickMove() {
             val anglespeed: Float
             anglespeed = if ((toggled_run.on != 0) xor (in_alwaysRun.GetBool() && idAsyncNetwork.IsActive())) {
-                idMath.M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.GetFloat()
+                M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.GetFloat()
             } else {
-                idMath.M_MS2SEC * USERCMD_MSEC
+                M_MS2SEC * USERCMD_MSEC
             }
             if (0 == ButtonState(usercmdButton_t.UB_STRAFE)) {
                 viewangles.plusAssign(
-                    Angles.YAW,
+                    YAW,
                     anglespeed * in_yawSpeed.GetFloat() * joystickAxis[joystickAxis_t.AXIS_SIDE.ordinal]
                 )
                 viewangles.plusAssign(
-                    Angles.PITCH,
+                    PITCH,
                     anglespeed * in_pitchSpeed.GetFloat() * joystickAxis[joystickAxis_t.AXIS_FORWARD.ordinal]
                 )
             } else {
                 cmd.rightmove =
-                    idMath.ClampChar(cmd.rightmove + joystickAxis[joystickAxis_t.AXIS_SIDE.ordinal]).code.toByte()
+                    ClampChar(cmd.rightmove + joystickAxis[joystickAxis_t.AXIS_SIDE.ordinal]).code.toByte()
                 cmd.forwardmove =
-                    idMath.ClampChar(cmd.forwardmove + joystickAxis[joystickAxis_t.AXIS_FORWARD.ordinal]).code.toByte()
+                    ClampChar(cmd.forwardmove + joystickAxis[joystickAxis_t.AXIS_FORWARD.ordinal]).code.toByte()
             }
-            cmd.upmove = idMath.ClampChar(cmd.upmove + joystickAxis[joystickAxis_t.AXIS_UP.ordinal]).code.toByte()
+            cmd.upmove = ClampChar(cmd.upmove + joystickAxis[joystickAxis_t.AXIS_UP.ordinal]).code.toByte()
         }
 
         private fun MouseMove() {
@@ -816,8 +802,8 @@ object UsercmdGen {
             if (smooth > 8) {
                 smooth = 8
             }
-            mx = 0f
-            my = 0f
+            mx = 0.0f
+            my = 0.0f
             i = 0
             while (i < smooth) {
                 mx += history[historyCounter - i + 8 and 7][0].toFloat()
@@ -835,8 +821,8 @@ object UsercmdGen {
             if (smooth > 8) {
                 smooth = 8
             }
-            strafeMx = 0f
-            strafeMy = 0f
+            strafeMx = 0.0f
+            strafeMy = 0.0f
             i = 0
             while (i < smooth) {
                 strafeMx += history[historyCounter - i + 8 and 7][0].toFloat()
@@ -848,7 +834,7 @@ object UsercmdGen {
             historyCounter++
             if (abs(mx) > 1000 || abs(my) > 1000) {
                 win_main.Sys_DebugPrintf("idUsercmdGenLocal.MouseMove: Ignoring ridiculous mouse delta.\n")
-                my = 0f
+                my = 0.0f
                 mx = my
             }
             mx *= sensitivity.GetFloat()
@@ -874,21 +860,21 @@ object UsercmdGen {
                 strafeMx *= m_strafeScale.GetFloat()
                 strafeMy *= m_strafeScale.GetFloat()
                 // clamp as a vector, instead of separate floats
-                val len = sqrt((strafeMx * strafeMx + strafeMy * strafeMy).toDouble()).toFloat()
+                val len = sqrt((strafeMx * strafeMx + strafeMy * strafeMy).toFloat()).toFloat()
                 if (len > 127) {
                     strafeMx = strafeMx * 127 / len
                     strafeMy = strafeMy * 127 / len
                 }
             }
             if (0 == ButtonState(usercmdButton_t.UB_STRAFE)) {
-                viewangles.minusAssign(Angles.YAW, m_yaw.GetFloat() * mx)
+                viewangles.minusAssign(YAW, m_yaw.GetFloat() * mx)
             } else {
-                cmd.rightmove = idMath.ClampChar((cmd.rightmove + strafeMx).toInt()).code.toByte()
+                cmd.rightmove = ClampChar((cmd.rightmove + strafeMx).toInt()).code.toByte()
             }
             if (0 == ButtonState(usercmdButton_t.UB_STRAFE) && cmd.buttons.toInt() and BUTTON_MLOOK != 0) {
-                viewangles.plusAssign(Angles.PITCH, m_pitch.GetFloat() * my)
+                viewangles.plusAssign(PITCH, m_pitch.GetFloat() * my)
             } else {
-                cmd.forwardmove = idMath.ClampChar((cmd.forwardmove - strafeMy).toInt()).code.toByte()
+                cmd.forwardmove = ClampChar((cmd.forwardmove - strafeMy).toInt()).code.toByte()
             }
         }
 
@@ -1102,8 +1088,8 @@ object UsercmdGen {
                 "1",
                 CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_INTEGER,
                 "number of samples blended for mouse viewing",
-                1f,
-                8f,
+                1.0f,
+                8.0f,
                 ArgCompletion_Integer(1, 8)
             )
             private val m_strafeScale: idCVar = idCVar(
@@ -1117,8 +1103,8 @@ object UsercmdGen {
                 "4",
                 CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_INTEGER,
                 "number of samples blended for mouse moving",
-                1f,
-                8f,
+                1.0f,
+                8.0f,
                 ArgCompletion_Integer(1, 8)
             )
             private val m_yaw: idCVar = idCVar(

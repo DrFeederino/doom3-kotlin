@@ -5,26 +5,18 @@ import neo.Renderer.Material.idMaterial
 import neo.Renderer.Model.idRenderModel
 import neo.Renderer.Model.modelSurface_s
 import neo.Renderer.Model.srfTriangles_s
-import neo.Renderer.tr_local.viewEntity_s
 import neo.framework.Common
 import neo.framework.DemoFile.idDemoFile
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.containers.CFloat
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Math_h.idMath.FtoiFast
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane.SIDE_CROSS
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Simd.SIMDProcessor
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec5
+import neo.idlib.math.idMath.FtoiFast
 import java.util.*
 
-/**
- *
- */
 object ModelDecal {
     /*
      ===============================================================================
@@ -42,20 +34,20 @@ object ModelDecal {
      */
     val NUM_DECAL_BOUNDING_PLANES: Int = 6
 
-    class decalProjectionInfo_s() {
+    class decalProjectionInfo_s {
         val boundingPlanes: Array<idPlane> = idPlane.generateArray(6)
-        var fadeDepth: Float = 0f
+        var fadeDepth: Float = 0.0f
         val fadePlanes: Array<idPlane> = idPlane.generateArray(2)
         var force: Boolean = false
-        var material: idMaterial = idMaterial()
+        var material: idMaterial? = null
         var parallel: Boolean = false
-        var projectionBounds: idBounds = idBounds()
+        val projectionBounds: idBounds = idBounds()
         val projectionOrigin: idVec3 = idVec3()
         var startTime: Int = 0
         val textureAxis: Array<idPlane> = idPlane.generateArray(2)
     }
 
-    class idRenderModelDecal() {
+    class idRenderModelDecal {
         private val indexStartTime: IntArray = IntArray(MAX_DECAL_INDEXES)
         private val  /*glIndex_t*/indexes: IntArray = IntArray(MAX_DECAL_INDEXES)
 
@@ -64,7 +56,7 @@ object ModelDecal {
         private var nextDecal: idRenderModelDecal?
         private val tri: srfTriangles_s
         private val vertDepthFade: FloatArray = FloatArray(MAX_DECAL_VERTS)
-        private val verts: Array<idDrawVert?> = arrayOfNulls(MAX_DECAL_VERTS)
+        private val verts: Array<idDrawVert> = Array(MAX_DECAL_VERTS) { idDrawVert() }
 
         //
         //
@@ -101,10 +93,10 @@ object ModelDecal {
                 }
 
                 // allocate memory for the cull bits
-                val cullBits: ByteArray = ByteArray(stri.numVerts)
+                val cullBits = ByteArray(stri.numVerts)
 
                 // catagorize all points by the planes
-                SIMDProcessor.DecalPointCull(
+                SIMDProcessor!!.DecalPointCull(
                     cullBits,
                     localInfo.boundingPlanes,
                     stri.verts as Array<idDrawVert>,
@@ -112,8 +104,8 @@ object ModelDecal {
                 )
 
                 // find triangles inside the projection volume
-                var triNum: Int = 0
-                var index: Int = 0
+                var triNum = 0
+                var index = 0
                 while (index < stri.numIndexes) {
                     val v1: Int = stri.indexes!![index + 0]
                     val v2: Int = stri.indexes!![index + 1]
@@ -138,7 +130,7 @@ object ModelDecal {
                     }
 
                     // create a winding with texture coordinates for the triangle
-                    val fw: idFixedWinding = idFixedWinding()
+                    val fw = idFixedWinding()
                     fw.SetNumPoints(3)
                     if (localInfo.parallel) {
                         for (j in 0..2) {
@@ -148,8 +140,8 @@ object ModelDecal {
                         }
                     } else {
                         for (j in 0..2) {
-                            val dir: idVec3 = idVec3()
-                            val scale: CFloat = CFloat()
+                            val dir = idVec3()
+                            val scale = CFloat()
                             fw[j].set(stri.verts!![stri.indexes!![index + j]]!!.xyz)
                             dir.set(fw[j].ToVec3().minus(localInfo.projectionOrigin))
                             localInfo.boundingPlanes[NUM_DECAL_BOUNDING_PLANES - 1]
@@ -206,7 +198,7 @@ object ModelDecal {
             // set vertex colors and remove faded triangles
             i = 0
             while (i < tri.numIndexes) {
-                var deltaTime: Int = tr_local.tr.viewDef!!.renderView.time - indexStartTime[i]
+                var deltaTime: Int = tr.viewDef!!.renderView.time - indexStartTime[i]
                 if (deltaTime > maxTime) {
                     i += 3
                     continue
@@ -243,7 +235,7 @@ object ModelDecal {
 
             // copy the current vertexes to temp vertex cache
             newTri.ambientCache =
-                VertexCache.vertexCache.AllocFrameTemp(tri.verts as Array<idDrawVert?>, tri.numVerts * idDrawVert.BYTES)
+                VertexCache.vertexCache.AllocFrameTemp(tri.verts as Array<idDrawVert>, tri.numVerts * idDrawVert.BYTES)
 
             // create the drawsurf
             tr_light.R_AddDrawSurf(newTri, space, space.entityDef!!.parms, material!!, space.scissorRect)
@@ -266,7 +258,7 @@ object ModelDecal {
         // chain, creating a new one if necessary.
         private fun AddWinding(
             w: idWinding,
-            decalMaterial: idMaterial,
+            decalMaterial: idMaterial?,
             fadePlanes: Array<idPlane> /*[2]*/,
             fadeDepth: Float,
             startTime: Int
@@ -292,12 +284,12 @@ object ModelDecal {
                     }
                     if (fade < 0.0f) {
                         fade = 0.0f
-                    } else if (fade > 0.99f) {
+                    } else if (fade > 0.99) {
                         fade = 1.0f
                     }
                     fade = 1.0f - fade
                     vertDepthFade[tri.numVerts + i] = fade
-                    tri.verts!![tri.numVerts + i]!!.xyz.set(w[i].ToVec3())
+                    tri.verts!![tri.numVerts + i].xyz.set(w[i].ToVec3())
                     tri.verts!![tri.numVerts + i]!!.st[0] = w[i].s
                     tri.verts!![tri.numVerts + i]!!.st[1] = w[i].t
                     for (k in 0..3) {
@@ -340,7 +332,7 @@ object ModelDecal {
         // The parts at the back sides of the fade planes are faded with the given depth.
         private fun AddDepthFadedWinding(
             w: idWinding,
-            decalMaterial: idMaterial,
+            decalMaterial: idMaterial?,
             fadePlanes: Array<idPlane> /*[2]*/,
             fadeDepth: Float,
             startTime: Int
@@ -391,23 +383,23 @@ object ModelDecal {
                 }
                 assert((material != null))
                 info.projectionOrigin.set((projectionOrigin)!!)
-                info.material = idMaterial(material)
+                info.material = material
                 info.parallel = parallel
                 info.fadeDepth = fadeDepth
                 info.startTime = startTime
                 info.force = false
 
                 // get the winding plane and the depth of the projection volume
-                val windingPlane: idPlane = idPlane()
+                val windingPlane = idPlane()
                 winding.GetPlane(windingPlane)
-                val depth: Float = windingPlane.Distance((projectionOrigin)!!)
+                val depth: Float = windingPlane.Distance((projectionOrigin))
 
                 // find the bounds for the projection
                 winding.GetBounds(info.projectionBounds)
                 if (parallel) {
                     info.projectionBounds.ExpandSelf(depth)
                 } else {
-                    info.projectionBounds.AddPoint((projectionOrigin)!!)
+                    info.projectionBounds.AddPoint((projectionOrigin))
                 }
 
                 // calculate the world space projection volume bounding planes, positive sides face outside the decal
@@ -422,7 +414,7 @@ object ModelDecal {
                 } else {
                     for (i in 0 until winding.GetNumPoints()) {
                         info.boundingPlanes[i].FromPoints(
-                            (projectionOrigin)!!,
+                            (projectionOrigin),
                             winding[i].ToVec3(),
                             winding[(i + 1) % winding.GetNumPoints()].ToVec3()
                         )
@@ -442,9 +434,9 @@ object ModelDecal {
                 var len: Float
                 val texArea: Float
                 val inva: Float
-                val temp: idVec3 = idVec3()
-                val d0: idVec5 = idVec5()
-                val d1: idVec5 = idVec5()
+                val temp = idVec3()
+                val d0 = idVec5()
+                val d1 = idVec5()
                 val a: idVec5 = winding[0]
                 val b: idVec5 = winding[1]
                 val c: idVec5 = winding[2]
@@ -478,7 +470,7 @@ object ModelDecal {
                 origin: idVec3,
                 axis: idMat3
             ) {
-                val modelMatrix: FloatArray = FloatArray(16)
+                val modelMatrix = FloatArray(16)
                 tr_main.R_AxisToModelMatrix(axis, origin, modelMatrix)
                 for (j in 0 until NUM_DECAL_BOUNDING_PLANES) {
                     tr_main.R_GlobalPlaneToLocal(
@@ -492,10 +484,10 @@ object ModelDecal {
                 tr_main.R_GlobalPlaneToLocal(modelMatrix, info.textureAxis[0], localInfo.textureAxis[0])
                 tr_main.R_GlobalPlaneToLocal(modelMatrix, info.textureAxis[1], localInfo.textureAxis[1])
                 tr_main.R_GlobalPointToLocal(modelMatrix, info.projectionOrigin, localInfo.projectionOrigin)
-                localInfo.projectionBounds = info.projectionBounds
+                localInfo.projectionBounds.set(info.projectionBounds)
                 localInfo.projectionBounds.TranslateSelf(origin.unaryMinus())
                 localInfo.projectionBounds.RotateSelf(axis.Transpose())
-                localInfo.material = idMaterial(info.material)
+                localInfo.material = info.material
                 localInfo.parallel = info.parallel
                 localInfo.fadeDepth = info.fadeDepth
                 localInfo.startTime = info.startTime
@@ -509,7 +501,7 @@ object ModelDecal {
                 val minTime: Int
                 var newNumIndexes: Int
                 var newNumVerts: Int
-                val inUse: IntArray = IntArray(MAX_DECAL_VERTS)
+                val inUse = IntArray(MAX_DECAL_VERTS)
                 val decalInfo: decalInfo_t?
                 val nextDecal: idRenderModelDecal?
                 if (decals == null) {

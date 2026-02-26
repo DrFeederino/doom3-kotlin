@@ -5,16 +5,13 @@ import neo.framework.Compressor.idCompressor
 import neo.framework.File_h.idFile
 import neo.framework.File_h.idFile_Memory
 import neo.idlib.Dict_h.idDict
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
+import neo.idlib.idException
 import java.nio.ByteBuffer
 
-/**
- *
- */
 object DemoFile {
     val DEMO_MAGIC: String = Licensee.GAME_NAME + " RDEMO"
 
@@ -31,17 +28,12 @@ object DemoFile {
 
     class idDemoFile : idFile() {
         private var compressor: idCompressor? = null
-
-        //
         private val demoStrings: idList<idStr>
         private var f: idFile? = null
         private var fLog: idFile? = null
         private var fileImage: ByteBuffer? = null
         private var log = false
         private val logStr: idStr = idStr()
-
-        //
-        //
         private var writing = false
         override fun GetName(): String {
             return if (f != null) f!!.GetName() else ""

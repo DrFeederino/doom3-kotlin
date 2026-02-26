@@ -11,8 +11,6 @@ import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local
 import neo.Game.Game_local.idGameLocal.Companion.Error
-import neo.Game.Script.Script_Compiler.idCompiler
-import neo.Game.Script.Script_Compiler.opcode_s
 import neo.Game.Script.Script_Program.function_t
 import neo.Game.Script.Script_Program.idCompileError
 import neo.Game.Script.Script_Program.idTypeDef
@@ -27,11 +25,12 @@ import neo.framework.File_h.idFile
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Cmp
 import neo.idlib.containers.CInt
-import neo.idlib.containers.HashIndex.idHashIndex
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.StaticList.idStaticList
+import neo.idlib.containers.idHashIndex
 import neo.idlib.containers.idStrList
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.hashing.MD4_BlockChecksum
+import neo.idlib.math.idVec3
 import java.nio.ByteBuffer
 import java.util.*
 
@@ -244,10 +243,8 @@ class idProgram {
             System.arraycopy(statementList[i]!!.toArray(), 0, statementIntArray, i * 6, 6)
             i++
         }
-        result =
-            0 // new BigInteger(MD4_BlockChecksum(statementIntArray, /*sizeof(statementBlock_t)*/ statements.Num())).intValue();
+        result = MD4_BlockChecksum(statementIntArray, statementIntArray.size).toInt()
 
-//	delete [] statementList;
         return result
     }
 
@@ -256,16 +253,16 @@ class idProgram {
         Game_local.gameLocal.Printf("Initializing scripts\n")
         // make sure all data is freed up
 
-        idThread.Restart();
+        idThread.Restart()
 
         // get ready for loading scripts
-        BeginCompilation();
+        BeginCompilation()
 
         // load the default script
         if (!defaultScript.isNullOrEmpty()) {
-            CompileFile(defaultScript);
+            CompileFile(defaultScript)
         }
-        FinishCompilation();
+        FinishCompilation()
     }
 
     /*
@@ -399,7 +396,7 @@ class idProgram {
             statement = AllocStatement()
             statement!!.linenumber = 0
             statement.file = 0
-            statement.op = Script_Compiler.OP_RETURN
+            statement.op = OP_RETURN
             statement.a = null
             statement.b = null
             statement.c = null
@@ -650,7 +647,7 @@ class idProgram {
             //
             // vector
             //
-            if (Script_Compiler.RESULT_STRING == name) {
+            if (RESULT_STRING == name) {
                 // <RESULT> vector defs don't need the _x, _y and _z components
                 assert(scope!!.Type() == Script_Program.ev_function)
                 def.value!!.stackOffset = scope.value!!.functionPtr!!.locals
@@ -884,7 +881,7 @@ class idProgram {
 
             // skip past the ::
             start = pos + 2
-        } while (def!!.Type() == Script_Program.ev_namespace)
+        } while (def.Type() == Script_Program.ev_namespace)
         val funcName = fullname.Right(fullname.Length() - start).toString()
         def = GetDef(null, funcName, namespaceDef)
         if (null == def) {
@@ -929,7 +926,7 @@ class idProgram {
         return null
     }
 
-    fun AllocFunction(def: idVarDef?): function_t? {
+    fun AllocFunction(def: idVarDef?): function_t {
         if (functions.Num() >= functions.Max()) {
             throw idCompileError(String.format("Exceeded maximum allowed number of functions (%d)", functions.Max()))
         }
@@ -975,7 +972,6 @@ class idProgram {
 
     fun AllocStatement(): statement_s? {
         if (statements.Num() == 61960) {
-            val a = 0
         }
         if (statements.Num() >= statements.Max()) {
             throw idCompileError(String.format("Exceeded maximum allowed number of statements (%d)", statements.Max()))
@@ -985,7 +981,6 @@ class idProgram {
 
     fun GetStatement(index: Int): statement_s {
         if (index == 61961) {
-            val a = 0
         }
         return statements[index]
     }
@@ -1006,7 +1001,7 @@ class idProgram {
         returnDef!!.value!!.intPtr = value
     }
 
-    fun ReturnVector(vec: idVec3?) {
+    fun ReturnVector(vec: idVec3) {
         returnDef!!.value!!.setVectorPtr(vec)
     }
 

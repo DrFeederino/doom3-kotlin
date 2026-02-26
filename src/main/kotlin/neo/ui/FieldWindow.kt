@@ -9,20 +9,15 @@ import neo.ui.Rectangle.idRectangle
 import neo.ui.UserInterfaceLocal.idUserInterfaceLocal
 import neo.ui.Window.idWindow
 
-/**
- *
- */
 class FieldWindow {
     internal class idFieldWindow : idWindow {
         private var cursorPos = 0
-        private val cursorVar: idStr? = null
+        private val cursorVar: idStr = idStr()
         private var lastCursorPos = 0
         private var lastTextLength = 0
         private var paintOffset = 0
         private var showCursor = false
 
-        //
-        //
         constructor(gui: idUserInterfaceLocal) : super(gui) {
             this.gui = gui
             CommonInit()
@@ -34,7 +29,6 @@ class FieldWindow {
             CommonInit()
         }
 
-        //virtual ~idFieldWindow();
         override fun Draw(time: Int, x: Float, y: Float) {
             val scale = textScale.oCastFloat()
             val len = text.Length()

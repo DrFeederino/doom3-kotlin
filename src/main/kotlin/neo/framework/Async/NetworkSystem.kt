@@ -3,9 +3,6 @@ package neo.framework.Async
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.idlib.BitMsg.idBitMsg
 
-/**
- *
- */
 object NetworkSystem {
     /**
      * Disclaimer: Use at own risk! @see https://www.ietf.org/rfc/rfc3514.txt

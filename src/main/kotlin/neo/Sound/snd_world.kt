@@ -20,20 +20,15 @@ import neo.framework.*
 import neo.framework.DemoFile.demoSystem_t
 import neo.framework.DemoFile.idDemoFile
 import neo.framework.File_h.idFile
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib
+import neo.idlib.BV.idBounds
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
+import neo.idlib.colorRed
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane.idPlane
 import neo.idlib.math.Random.idRandom
-import neo.idlib.math.Simd
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
 import neo.sys.win_main.Sys_EnterCriticalSection
 import neo.sys.win_main.Sys_LeaveCriticalSection
 import org.lwjgl.BufferUtils
@@ -44,9 +39,6 @@ import kotlin.math.abs
 import kotlin.math.atan
 import kotlin.math.min
 
-/**
- *
- */
 class snd_world {
     class s_stats {
         var activeSounds = 0
@@ -104,7 +96,7 @@ class snd_world {
 
         //
         var slowmoActive = false
-        var slowmoSpeed = 0f
+        var slowmoSpeed = 0.0f
 
         //
         var soundClassFade: Array<idSoundFade> =
@@ -138,7 +130,7 @@ class snd_world {
         override fun StopAllSounds() {
             for (i in 0 until emitters.Num()) {
                 val def = emitters[i]
-                def.StopSound(sound.SCHANNEL_ANY)
+                def.StopSound(SCHANNEL_ANY)
             }
         }
 
@@ -281,9 +273,9 @@ class snd_world {
             val start44kHz: Int
             start44kHz = if (fpa[0] != null) {
                 // if we are recording an AVI demo, don't use hardware time
-                lastAVI44kHz + Simd.MIXBUFFER_SAMPLES
+                lastAVI44kHz + MIXBUFFER_SAMPLES
             } else {
-                snd_system.soundSystemLocal.GetCurrent44kHzTime() + Simd.MIXBUFFER_SAMPLES
+                snd_system.soundSystemLocal.GetCurrent44kHzTime() + MIXBUFFER_SAMPLES
             }
 
             // fade it
@@ -336,7 +328,7 @@ class snd_world {
                 return
             }
             var _dc: Int
-            if (TempDump.NOT(readDemo.ReadInt().also { _dc = it }.toDouble())) {
+            if (readDemo.ReadInt().also { _dc = it } == 0) {
                 return
             }
             val dc = soundDemoCommand_t.values()[_dc]
@@ -350,6 +342,7 @@ class snd_world {
                     Sys_LeaveCriticalSection()
                     UnPause()
                 }
+
                 soundDemoCommand_t.SCMD_PLACE_LISTENER -> {
                     val origin = idVec3()
                     val axis = idMat3()
@@ -361,6 +354,7 @@ class snd_world {
                     gameTime = readDemo.ReadInt()
                     PlaceListener(origin, axis, listenerId, gameTime, "")
                 }
+
                 soundDemoCommand_t.SCMD_ALLOC_EMITTER -> {
                     index = readDemo.ReadInt()
                     if (index < 1 || index > emitters.Num()) {
@@ -377,12 +371,14 @@ class snd_world {
                     def.removeStatus = snd_emitter.REMOVE_STATUS_ALIVE
                     def.soundWorld = this
                 }
+
                 soundDemoCommand_t.SCMD_FREE -> {
                     val immediate: Int
                     index = readDemo.ReadInt()
                     immediate = readDemo.ReadInt()
                     EmitterForIndex(index)!!.Free(immediate != 0)
                 }
+
                 soundDemoCommand_t.SCMD_UPDATE -> {
                     val origin = idVec3()
                     val listenerId: Int
@@ -398,6 +394,7 @@ class snd_world {
                     parms.soundClass = readDemo.ReadInt()
                     EmitterForIndex(index)!!.UpdateEmitter(origin, listenerId, parms)
                 }
+
                 soundDemoCommand_t.SCMD_START -> {
                     val shader: idSoundShader
                     val channel: Int
@@ -410,6 +407,7 @@ class snd_world {
                     shaderFlags = readDemo.ReadInt()
                     EmitterForIndex(index)!!.StartSound(shader, channel, diversity, shaderFlags)
                 }
+
                 soundDemoCommand_t.SCMD_MODIFY -> {
                     val channel: Int
                     val parms = snd_shader.soundShaderParms_t()
@@ -423,12 +421,14 @@ class snd_world {
                     parms.soundClass = readDemo.ReadInt()
                     EmitterForIndex(index)!!.ModifySound(channel, parms)
                 }
+
                 soundDemoCommand_t.SCMD_STOP -> {
                     val channel: Int
                     index = readDemo.ReadInt()
                     channel = readDemo.ReadInt()
                     EmitterForIndex(index)!!.StopSound(channel)
                 }
+
                 soundDemoCommand_t.SCMD_FADE -> {
                     val channel: Int
                     val to: Float
@@ -444,7 +444,7 @@ class snd_world {
 
         override fun PlayShaderDirectly(shaderName: String, channel: Int /*= -1*/) {
             if (localSound != null && channel == -1) {
-                localSound!!.StopSound(sound.SCHANNEL_ANY)
+                localSound!!.StopSound(SCHANNEL_ANY)
             } else if (localSound != null) {
                 localSound!!.StopSound(channel)
             }
@@ -503,7 +503,7 @@ class snd_world {
         override fun AVIOpen(path: String, name: String) {
             aviDemoPath.set(path)
             aviDemoName.set(name)
-            lastAVI44kHz = game44kHz - game44kHz % Simd.MIXBUFFER_SAMPLES
+            lastAVI44kHz = game44kHz - game44kHz % MIXBUFFER_SAMPLES
             if (snd_system.soundSystemLocal.snd_audio_hw!!.GetNumberOfSpeakers() == 6) {
                 fpa[0] = FileSystem_h.fileSystem.OpenFileWrite(aviDemoPath.toString() + "channel_51_left.raw")
                 fpa[1] = FileSystem_h.fileSystem.OpenFileWrite(aviDemoPath.toString() + "channel_51_right.raw")
@@ -525,9 +525,9 @@ class snd_world {
             }
 
             // make sure the final block is written
-            game44kHz += Simd.MIXBUFFER_SAMPLES
+            game44kHz += MIXBUFFER_SAMPLES
             AVIUpdate()
-            game44kHz -= Simd.MIXBUFFER_SAMPLES
+            game44kHz -= MIXBUFFER_SAMPLES
             i = 0
             while (i < 6) {
                 if (fpa[i] != null) {
@@ -799,7 +799,7 @@ class snd_world {
                 enviroSuitActive = savefile.ReadBool()
             } else {
                 slowmoActive = false
-                slowmoSpeed = 0f
+                slowmoSpeed = 0.0f
                 enviroSuitActive = false
             }
         }
@@ -838,28 +838,27 @@ class snd_world {
             params.soundClass = saveGame.ReadInt()
         }
 
-        fun WriteToSaveGameSoundChannel(saveGame: idFile?, ch: idSoundChannel?) {
-            throw TODO_Exception()
-            //            saveGame.WriteBool(ch.triggerState);
-//            saveGame.WriteUnsignedChar((char) 0);
-//            saveGame.WriteUnsignedChar((char) 0);
-//            saveGame.WriteUnsignedChar((char) 0);
-//            saveGame.WriteInt(ch.trigger44kHzTime);
-//            saveGame.WriteInt(ch.triggerGame44kHzTime);
-//            WriteToSaveGameSoundShaderParams(saveGame, ch.parms);
-//            saveGame.WriteInt((int) ch.leadinSample);
-//            saveGame.WriteInt(ch.triggerChannel);
-//            saveGame.WriteInt((int) ch.soundShader);
-//            saveGame.WriteInt((int) ch.decoder);
-//            saveGame.WriteFloat(ch.diversity);
-//            saveGame.WriteFloat(ch.lastVolume);
-//            for (int m = 0; m < 6; m++) {
-//                saveGame.WriteFloat(ch.lastV[m]);
-//            }
-//            saveGame.WriteInt(ch.channelFade.fadeStart44kHz);
-//            saveGame.WriteInt(ch.channelFade.fadeEnd44kHz);
-//            saveGame.WriteFloat(ch.channelFade.fadeStartVolume);
-//            saveGame.WriteFloat(ch.channelFade.fadeEndVolume);
+        fun WriteToSaveGameSoundChannel(saveGame: idFile, ch: idSoundChannel) {
+            saveGame.WriteBool(ch.triggerState)
+            saveGame.WriteUnsignedChar(Char(0))
+            saveGame.WriteUnsignedChar(Char(0))
+            saveGame.WriteUnsignedChar(Char(0))
+            saveGame.WriteInt(ch.trigger44kHzTime)
+            saveGame.WriteInt(ch.triggerGame44kHzTime)
+            WriteToSaveGameSoundShaderParams(saveGame, ch.parms!!)
+            saveGame.WriteInt(0 /* ch.leadinSample */)
+            saveGame.WriteInt(ch.triggerChannel)
+            saveGame.WriteInt(0 /* ch.soundShader */)
+            saveGame.WriteInt(0 /* ch.decoder */)
+            saveGame.WriteFloat(ch.diversity)
+            saveGame.WriteFloat(ch.lastVolume)
+            for (m in 0 until 6) {
+                saveGame.WriteFloat(ch.lastV[m])
+            }
+            saveGame.WriteInt(ch.channelFade.fadeStart44kHz)
+            saveGame.WriteInt(ch.channelFade.fadeEnd44kHz)
+            saveGame.WriteFloat(ch.channelFade.fadeStartVolume)
+            saveGame.WriteFloat(ch.channelFade.fadeEndVolume)
         }
 
         fun WriteToSaveGameSoundShaderParams(saveGame: idFile, params: snd_shader.soundShaderParms_t) {
@@ -940,7 +939,7 @@ class snd_world {
             aviDemoName.set("")
             localSound = null
             slowmoActive = false
-            slowmoSpeed = 0f
+            slowmoSpeed = 0.0f
             enviroSuitActive = false
         }
 
@@ -1010,8 +1009,8 @@ class snd_world {
                     if (def.distance < def.maxDistance || idSoundSystemLocal.s_drawSounds.GetInteger() > 1) {
                         val ref = idBounds()
                         ref.Clear()
-                        ref.AddPoint(idVec3(-10f, -10f, -10f))
-                        ref.AddPoint(idVec3(10f, 10f, 10f))
+                        ref.AddPoint(idVec3(-10.0f, -10.0f, -10.0f))
+                        ref.AddPoint(idVec3(10.0f, 10.0f, 10.0f))
                         val vis = 1.0f - def.distance / def.maxDistance
 
                         // draw a box
@@ -1019,14 +1018,20 @@ class snd_world {
 
                         // draw an arrow to the audible position, possible a portal center
                         if (def.origin !== def.spatializedOrigin) {
-                            rw!!.DebugArrow(Lib.colorRed, def.origin, def.spatializedOrigin, 4)
+                            rw!!.DebugArrow(colorRed, def.origin, def.spatializedOrigin, 4)
                         }
 
                         // draw the index
                         val textPos = idVec3(def.origin)
-                        textPos.minusAssign(2, 8f)
-                        rw!!.DrawText(Str.va("%d", def.index), textPos, 0.1f, idVec4(1f, 0f, 0f, 1f), listenerAxis)
-                        textPos.plusAssign(2, 8f)
+                        textPos.minusAssign(2, 8.0f)
+                        rw!!.DrawText(
+                            Str.va("%d", def.index),
+                            textPos,
+                            0.1f,
+                            idVec4(1.0f, 0.0f, 0.0f, 1.0f),
+                            listenerAxis
+                        )
+                        textPos.plusAssign(2, 8.0f)
 
                         // run through all the channels
                         k = 0
@@ -1053,8 +1058,8 @@ class snd_world {
                                 max.toInt(),
                                 defaulted
                             )
-                            rw!!.DrawText(text, textPos, 0.1f, idVec4(1f, 0f, 0f, 1f), listenerAxis)
-                            textPos.plusAssign(2, 8f)
+                            rw!!.DrawText(text, textPos, 0.1f, idVec4(1.0f, 0.0f, 0.0f, 1.0f), listenerAxis)
+                            textPos.plusAssign(2, 8.0f)
                             k++
                         }
                     }
@@ -1071,7 +1076,7 @@ class snd_world {
                     DeclManager.declManager.FindMaterial("guis/assets/soundmeter/audiobg", false)
                 if (gui != null) {
                     val foo: shaderStage_t = gui.GetStage(0)!!
-                    if (TempDump.NOT(foo.texture.cinematic[0])) {
+                    if (foo.texture.cinematic[0] == null) {
                         foo.texture.cinematic[0] = idSndWindow()
                     }
                 }
@@ -1235,7 +1240,7 @@ class snd_world {
             val noOcclusion =
                 parms.soundShaderFlags and snd_shader.SSF_NO_OCCLUSION != 0 || !idSoundSystemLocal.s_useOcclusion.GetBool()
 
-            // speed goes from 1 to 0.2
+            // speed goes from 1 to 0.2f
             if (idSoundSystemLocal.s_slowAttenuate.GetBool() && slowmoActive && !chan.disallowSlow) {
                 maxD *= slowmoSpeed
             }
@@ -1259,7 +1264,7 @@ class snd_world {
             // some initial chunk of the loop as well, because the volume is scaled for the
             // entire mix buffer
             volume =
-                if (shader.leadinVolume != 0f && current44kHz - chan.trigger44kHzTime < sample.LengthIn44kHzSamples()) {
+                if (shader.leadinVolume != 0.0f && current44kHz - chan.trigger44kHzTime < sample.LengthIn44kHzSamples()) {
                     snd_system.soundSystemLocal.dB2Scale(shader.leadinVolume)
                 } else {
                     snd_system.soundSystemLocal.dB2Scale(parms.volume)
@@ -1278,7 +1283,7 @@ class snd_world {
             // if it's a global sound then
             // it's not affected by distance or occlusion
             //
-            var spatialize = 1f
+            var spatialize = 1.0f
             val spatializedOriginInMeters = idVec3()
             if (!global) {
                 val dlen: Float
@@ -1313,12 +1318,12 @@ class snd_world {
             //
             if (parms.soundShaderFlags and snd_shader.SSF_PRIVATE_SOUND != 0) {
                 if (sound.listenerId != listenerPrivateId) {
-                    volume = 0f
+                    volume = 0.0f
                 }
             }
             if (parms.soundShaderFlags and snd_shader.SSF_ANTI_PRIVATE_SOUND != 0) {
                 if (sound.listenerId == listenerPrivateId) {
-                    volume = 0f
+                    volume = 0.0f
                 }
             }
 
@@ -1336,7 +1341,7 @@ class snd_world {
             val offset = current44kHz - chan.trigger44kHzTime
             //            float[] inputSamples = new float[MIXBUFFER_SAMPLES * 2 + 16];
 //            float[] alignedInputSamples = (float[]) ((((int) inputSamples) + 15) & ~15);
-            var alignedInputSamples = FloatArray(Simd.MIXBUFFER_SAMPLES * 2 + 16)
+            var alignedInputSamples = FloatArray(MIXBUFFER_SAMPLES * 2 + 16)
 
             //
             // allocate and initialize hardware source
@@ -1360,17 +1365,17 @@ class snd_world {
                     if (global || omni) {
                         AL10.alSourcei(chan.openalSource, AL10.AL_SOURCE_RELATIVE, AL10.AL_TRUE)
                         AL10.alSource3f(chan.openalSource, AL10.AL_POSITION, 0.0f, 0.0f, 0.0f)
-                        AL10.alSourcef(chan.openalSource, AL10.AL_GAIN, min(volume, 1.0f))
+                        AL10.alSourcef(chan.openalSource, AL10.AL_GAIN, min(volume.toFloat(), 1.0f))
                     } else {
                         AL10.alSourcei(chan.openalSource, AL10.AL_SOURCE_RELATIVE, AL10.AL_FALSE)
                         AL10.alSource3f(
                             chan.openalSource,
                             AL10.AL_POSITION,
-                            -spatializedOriginInMeters.y,
-                            spatializedOriginInMeters.z,
-                            -spatializedOriginInMeters.x
+                            -spatializedOriginInMeters.y.toFloat(),
+                            spatializedOriginInMeters.z.toFloat(),
+                            -spatializedOriginInMeters.x.toFloat()
                         )
-                        AL10.alSourcef(chan.openalSource, AL10.AL_GAIN, min(volume, 1.0f))
+                        AL10.alSourcef(chan.openalSource, AL10.AL_GAIN, min(volume.toFloat(), 1.0f))
                     }
                     AL10.alSourcei(
                         chan.openalSource,
@@ -1378,13 +1383,13 @@ class snd_world {
                         if (looping && chan.soundShader!!.entries[0]!!.hardwareBuffer) AL10.AL_TRUE else AL10.AL_FALSE
                     )
                     if (!BuildDefines.MACOS_X) {
-                        AL10.alSourcef(chan.openalSource, AL10.AL_REFERENCE_DISTANCE, minD)
-                        AL10.alSourcef(chan.openalSource, AL10.AL_MAX_DISTANCE, maxD)
+                        AL10.alSourcef(chan.openalSource, AL10.AL_REFERENCE_DISTANCE, minD.toFloat())
+                        AL10.alSourcef(chan.openalSource, AL10.AL_MAX_DISTANCE, maxD.toFloat())
                     }
                     AL10.alSourcef(
                         chan.openalSource,
                         AL10.AL_PITCH,
-                        if (slowmoActive && !chan.disallowSlow) slowmoSpeed else 1.0f
+                        if (slowmoActive && !chan.disallowSlow) slowmoSpeed.toFloat() else 1.0f
                     )
                     //                    if (ID_OPENAL) {
 //                        long lOcclusion = (enviroSuitActive ? -1150 : 0);
@@ -1437,7 +1442,7 @@ class snd_world {
                                 chan.triggered = true
                             }
                         }
-                        val length = Simd.MIXBUFFER_SAMPLES * sample.objectInfo.nChannels
+                        val length = MIXBUFFER_SAMPLES * sample.objectInfo.nChannels
                         j = 0
                         while (j < finishedbuffers) {
                             val samples = FloatBuffer.wrap(alignedInputSamples)
@@ -1459,7 +1464,7 @@ class snd_world {
                                     //                                    System.out.println("<<" + bla);
                                 }
                             }
-                            val d = data.duplicate().position(0)
+                            data.duplicate().position(0)
                             //                            System.out.printf(">>\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n", d.get(), d.get(), d.get(), d.get(), d.get(), d.get(), d.get(), d.get(), d.get(), d.get());
 //                            System.out.printf(">>\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n", d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat());
                             AL10.alBufferData(
@@ -1470,7 +1475,7 @@ class snd_world {
                             )
                             //                                fc.write(d);
 //                            System.out.println("  buffers2 " + AL10.alGetError());
-                            chan.openalStreamingOffset += Simd.MIXBUFFER_SAMPLES
+                            chan.openalStreamingOffset += MIXBUFFER_SAMPLES
                             j++
                         }
                         for (i in 0 until finishedbuffers) {
@@ -1491,9 +1496,9 @@ class snd_world {
                     if (sample.objectInfo.nChannels == 2) {
                         // need to add a stereo path, but very few samples go through this
                         alignedInputSamples =
-                            FloatArray(Simd.MIXBUFFER_SAMPLES * 2) //memset(alignedInputSamples, 0, sizeof(alignedInputSamples[0]) * MIXBUFFER_SAMPLES * 2);
+                            FloatArray(MIXBUFFER_SAMPLES * 2) //memset(alignedInputSamples, 0, sizeof(alignedInputSamples[0]) * MIXBUFFER_SAMPLES * 2);
                     } else {
-                        slow.GatherChannelSamples(offset, Simd.MIXBUFFER_SAMPLES, alignedInputSamples)
+                        slow.GatherChannelSamples(offset, MIXBUFFER_SAMPLES, alignedInputSamples)
                     }
                     sound.SetSlowChannel(chan, slow)
                 } else {
@@ -1504,11 +1509,11 @@ class snd_world {
                         // we should probably check to make sure any looping is also to a stereo sample...
                         chan.GatherChannelSamples(
                             offset * 2,
-                            Simd.MIXBUFFER_SAMPLES * 2,
+                            MIXBUFFER_SAMPLES * 2,
                             FloatBuffer.wrap(alignedInputSamples)
                         )
                     } else {
-                        chan.GatherChannelSamples(offset, Simd.MIXBUFFER_SAMPLES, FloatBuffer.wrap(alignedInputSamples))
+                        chan.GatherChannelSamples(offset, MIXBUFFER_SAMPLES, FloatBuffer.wrap(alignedInputSamples))
                     }
                 }
 
@@ -1536,11 +1541,11 @@ class snd_world {
                 // cleared mask bits set the mix volume to zero
                 for (i in 0..5) {
                     if (0 == mask and (1 shl i)) {
-                        ears[i] = 0f
+                        ears[i] = 0.0f
                     }
                 }
 
-                // if sounds are generally normalized, using a mixing volume over 1.0 will
+                // if sounds are generally normalized, using a mixing volume over 1.0f will
                 // almost always cause clipping noise.  If samples aren't normalized, there
                 // is a good call to allow overvolumes
                 if (idSoundSystemLocal.s_clipVolumes.GetBool() && 0 == parms.soundShaderFlags and snd_shader.SSF_UNCLAMPED) {
@@ -1562,36 +1567,36 @@ class snd_world {
                 }
                 if (numSpeakers == 6) {
                     if (sample.objectInfo.nChannels == 1) {
-                        Simd.SIMDProcessor.MixSoundSixSpeakerMono(
+                        SIMDProcessor!!.MixSoundSixSpeakerMono(
                             finalMixBuffer,
                             alignedInputSamples,
-                            Simd.MIXBUFFER_SAMPLES,
+                            MIXBUFFER_SAMPLES,
                             chan.lastV,
                             ears
                         )
                     } else {
-                        Simd.SIMDProcessor.MixSoundSixSpeakerStereo(
+                        SIMDProcessor!!.MixSoundSixSpeakerStereo(
                             finalMixBuffer,
                             alignedInputSamples,
-                            Simd.MIXBUFFER_SAMPLES,
+                            MIXBUFFER_SAMPLES,
                             chan.lastV,
                             ears
                         )
                     }
                 } else {
                     if (sample.objectInfo.nChannels == 1) {
-                        Simd.SIMDProcessor.MixSoundTwoSpeakerMono(
+                        SIMDProcessor!!.MixSoundTwoSpeakerMono(
                             finalMixBuffer,
                             alignedInputSamples,
-                            Simd.MIXBUFFER_SAMPLES,
+                            MIXBUFFER_SAMPLES,
                             chan.lastV,
                             ears
                         )
                     } else {
-                        Simd.SIMDProcessor.MixSoundTwoSpeakerStereo(
+                        SIMDProcessor!!.MixSoundTwoSpeakerStereo(
                             finalMixBuffer,
                             alignedInputSamples,
-                            Simd.MIXBUFFER_SAMPLES,
+                            MIXBUFFER_SAMPLES,
                             chan.lastV,
                             ears
                         )
@@ -1634,16 +1639,16 @@ class snd_world {
             // update the listener position and orientation
             if (idSoundSystemLocal.useOpenAL) {
                 val listenerPosition = FloatArray(3)
-                listenerPosition[0] = -listenerPos.y
-                listenerPosition[1] = listenerPos.z
-                listenerPosition[2] = -listenerPos.x
+                listenerPosition[0] = -listenerPos.y.toFloat()
+                listenerPosition[1] = listenerPos.z.toFloat()
+                listenerPosition[2] = -listenerPos.x.toFloat()
                 val listenerOrientation = BufferUtils.createFloatBuffer(6)
-                listenerOrientation.put(0, -listenerAxis[0].y)
-                listenerOrientation.put(1, +listenerAxis[0].z)
-                listenerOrientation.put(2, -listenerAxis[0].x)
-                listenerOrientation.put(3, -listenerAxis[2].y)
-                listenerOrientation.put(4, +listenerAxis[2].z)
-                listenerOrientation.put(5, -listenerAxis[2].x)
+                listenerOrientation.put(0, -listenerAxis[0].y.toFloat())
+                listenerOrientation.put(1, +listenerAxis[0].z.toFloat())
+                listenerOrientation.put(2, -listenerAxis[0].x.toFloat())
+                listenerOrientation.put(3, -listenerAxis[2].y.toFloat())
+                listenerOrientation.put(4, +listenerAxis[2].z.toFloat())
+                listenerOrientation.put(5, -listenerAxis[2].x.toFloat())
                 AL10.alListenerf(AL10.AL_GAIN, 1.0f)
                 AL10.alListener3f(AL10.AL_POSITION, listenerPosition[0], listenerPosition[1], listenerPosition[2])
                 AL10.alListenerfv(AL10.AL_ORIENTATION, listenerOrientation) //SO6874122
@@ -1730,7 +1735,7 @@ class snd_world {
                 i++
             }
             if (!idSoundSystemLocal.useOpenAL && enviroSuitActive) {
-                snd_system.soundSystemLocal.DoEnviroSuit(finalMixBuffer, Simd.MIXBUFFER_SAMPLES, numSpeakers)
+                snd_system.soundSystemLocal.DoEnviroSuit(finalMixBuffer, MIXBUFFER_SAMPLES, numSpeakers)
             }
         }
 
@@ -1745,10 +1750,10 @@ class snd_world {
          */
         fun AVIUpdate() {
             val numSpeakers: Int
-            if (game44kHz - lastAVI44kHz < Simd.MIXBUFFER_SAMPLES) {
+            if (game44kHz - lastAVI44kHz < MIXBUFFER_SAMPLES) {
                 return
             }
-            numSpeakers = if (TempDump.NOT(snd_system.soundSystemLocal.snd_audio_hw)) {
+            numSpeakers = if (snd_system.soundSystemLocal.snd_audio_hw == null) {
                 2
             } else {
                 snd_system.soundSystemLocal.snd_audio_hw!!.GetNumberOfSpeakers()
@@ -1756,14 +1761,14 @@ class snd_world {
 
 //            float[] mix = new float[MIXBUFFER_SAMPLES * 6 + 16];
 //            float[] mix_p = (float[]) (((int) mix + 15) & ~15);	// SIMD align
-            val mix_p = FloatArray(Simd.MIXBUFFER_SAMPLES * 6 + 16)
+            val mix_p = FloatArray(MIXBUFFER_SAMPLES * 6 + 16)
 
 //            SIMDProcessor.Memset(mix_p, 0, MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
 //
             MixLoop(lastAVI44kHz, numSpeakers, mix_p)
             for (i in 0 until numSpeakers) {
-                val outD = ByteBuffer.allocate(Simd.MIXBUFFER_SAMPLES * 2)
-                for (j in 0 until Simd.MIXBUFFER_SAMPLES) {
+                val outD = ByteBuffer.allocate(MIXBUFFER_SAMPLES * 2)
+                for (j in 0 until MIXBUFFER_SAMPLES) {
                     val s = mix_p[j * numSpeakers + i]
                     if (s < -32768.0f) {
                         outD.putShort(Short.MIN_VALUE)
@@ -1776,7 +1781,7 @@ class snd_world {
                 // write to file
                 fpa[i]!!.Write(outD) //, MIXBUFFER_SAMPLES * sizeof(short));
             }
-            lastAVI44kHz += Simd.MIXBUFFER_SAMPLES
+            lastAVI44kHz += MIXBUFFER_SAMPLES
             return
         }
 
@@ -1810,7 +1815,7 @@ class snd_world {
             val numPortals = rw!!.NumPortalsInArea(soundArea)
             for (p in 0 until numPortals) {
                 val re = rw!!.GetPortal(soundArea, p)
-                var occlusionDistance = 0f
+                var occlusionDistance = 0.0f
 
                 // air blocking windows will block sound like closed doors
                 if (0 == re.blockingBits and (TempDump.etoi(portalConnection_t.PS_BLOCK_VIEW) or TempDump.etoi(
@@ -1892,7 +1897,7 @@ class snd_world {
             // work out the distance from the listener to the emitter
             var dlen: Float
             if (!sound.playing) {
-                return 0f
+                return 0.0f
             }
             if (listenerPosition != null) {
                 // this doesn't do the portal spatialization
@@ -1900,7 +1905,7 @@ class snd_world {
                 dlen = dist.Length()
                 dlen *= snd_shader.DOOM_TO_METERS
             } else {
-                dlen = 1f
+                dlen = 1.0f
             }
             activeChannelCount = 0
             i = 0
@@ -1944,7 +1949,7 @@ class snd_world {
                         if (dlen >= maxd) {
                             volume = 0.0f
                         } else if (dlen > mind) {
-                            var frac = idMath.ClampFloat(0f, 1f, 1.0f - (dlen - mind) / (maxd - mind))
+                            var frac = idMath.ClampFloat(0.0f, 1.0f, 1.0f - (dlen - mind) / (maxd - mind))
                             if (idSoundSystemLocal.s_quadraticFalloff.GetBool()) {
                                 frac *= frac
                             }
@@ -1986,11 +1991,11 @@ class snd_world {
                             j = 0
                             while (j < AMPLITUDE_SAMPLES) {
                                 if (offset >= amplitudeData.limit()) {
-                                    offset = amplitudeData.limit() - 1;
+                                    offset = amplitudeData.limit() - 1
                                 }
-                                    sourceBuffer[j] =
-                                        if (j and 1 == 1) amplitudeData[(offset / 512) * 2] else amplitudeData[(offset / 512) * 2 + 1]
-                                    j++
+                                sourceBuffer[j] =
+                                    if (j and 1 == 1) amplitudeData[(offset / 512) * 2] else amplitudeData[(offset / 512) * 2 + 1]
+                                j++
                             }
                         }
                     } else {
@@ -2035,7 +2040,7 @@ class snd_world {
                 i++
             }
             val sout: Float
-            sout = (atan(((high - low) / 32767.0f).toDouble()) / Math_h.DEG2RAD(45f)).toFloat()
+            sout = (atan(((high - low) / 32767.0f)) / DEG2RAD(45.0f))
             return sout
         }
 
@@ -2071,7 +2076,7 @@ class snd_world {
          which would be problematic in multiplayer
          ===============
          */
-            private const val AMPLITUDE_SAMPLES = Simd.MIXBUFFER_SAMPLES / 8
+            private const val AMPLITUDE_SAMPLES = MIXBUFFER_SAMPLES / 8
 
             // background music
             /*

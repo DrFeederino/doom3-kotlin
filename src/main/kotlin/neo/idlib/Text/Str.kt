@@ -4,18 +4,15 @@ import neo.TempDump
 import neo.TempDump.SERiAL
 import neo.TempDump.TODO_Exception
 import neo.framework.CmdSystem.cmdFunction_t
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Token.idToken
-import neo.idlib.math.Math_h
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.idLib
+import neo.idlib.math.INTSIGNBITNOTSET
+import neo.idlib.math.idVec4
 import java.nio.ByteBuffer
 import java.nio.file.Paths
 import java.util.*
 
 
-/**
- *
- */
 object Str {
     const val C_COLOR_BLACK = '9'.code
     const val C_COLOR_BLUE = '4'.code
@@ -132,7 +129,7 @@ object Str {
             var i = Length()
             while (i > 0 && data[i - 1] == c) {
                 len--
-                data = data.substring(0, len - 1)
+                data = data.substring(0, len)
                 i--
             }
         }
@@ -266,13 +263,9 @@ object Str {
         //public	operator			const char *( void );
         //
         constructor(f: Float) {
-            val text = java.lang.Float.toString(f)
+            val text = f.toString()
             val l = text.length
             Init()
-            //	l = idStr.snPrintf( text, sizeof( text ), "%f", f );
-//	l = this.snPrintf( text, text.length , "%f", f );
-//	while( l > 0 && text[l-1] == '0' ) text[--l] = '\0';
-//	while( l > 0 && text[l-1] == '.' ) text[--l] = '\0';
             EnsureAlloced(l + 1)
             //	strcpy( data, text );
             data = text
@@ -481,13 +474,16 @@ object Str {
             assert(text != null)
             return Icmp(data, text)
         }
+
         fun Icmp(text: idStr): Int {
             return this.Icmp(text.toString())
         }
+
         fun Icmpn(text: String, n: Int): Int {
             assert(text != null)
             return Icmpn(data, text, n)
         }
+
         fun IcmpPrefix(text: String): Int {
             assert(text != null)
             return Icmpn(data, text, text.length)
@@ -561,13 +557,9 @@ object Str {
 
         fun Append(text: String) {
             val newLen: Int
-            var i: Int
-            newLen = len + text.trim().length
+            newLen = len + text.length
             EnsureAlloced(newLen + 1)
-            //	for ( i = 0; i < text.length; i++ ) {
-//		data[ len + i ] = text[ i ];
-//	}
-            data += text.trim()
+            data += text
             len = newLen
             //	data[ len ] = '\0';
         }
@@ -578,7 +570,6 @@ object Str {
 
         fun Append(text: String, l: Int) {
             val newLen: Int
-            var i: Int
             if (text != null && l > 0) {
                 newLen = len + l
                 EnsureAlloced(newLen + 1)
@@ -593,7 +584,6 @@ object Str {
 
         fun Insert(a: Char, index: Int) {
             var index = index
-            var i: Int
             val l: Int
             if (index < 0) {
                 index = 0
@@ -612,7 +602,6 @@ object Str {
 
         fun Insert(text: String, index: Int) {
             var index = index
-            var i: Int
             val l: Int
             if (index < 0) {
                 index = 0
@@ -827,7 +816,7 @@ object Str {
                 while (len >= l && data.endsWith(string)) {
                     len -= l
                     //			data[len] = '\0';
-                    data = data.substring(0, len - 1)
+                    data = data.substring(0, len)
                 }
             }
         }
@@ -840,7 +829,7 @@ object Str {
             if (l > 0 && len >= l && data.endsWith(string)) {
                 len -= l
                 //		data[len] = '\0';
-                data = data.substring(0, len - 1)
+                data = data.substring(0, len)
                 return true
             }
             return false
@@ -876,7 +865,7 @@ object Str {
             // Remove the trailing quote first
             if (data[len - 1] == '\"') {
 //		data[len-1] = '\0';
-                data = data.substring(0, len - 2)
+                data = data.substring(0, len - 1)
                 len--
             }
 
@@ -965,7 +954,7 @@ object Str {
 //			data[ i ] = '/';
 //		}
 //	}
-            data = data.replace("\\\\".toRegex(), "/")
+            data = data.replace('\\', '/')
             return this
         }
 
@@ -1009,7 +998,7 @@ object Str {
                 if (data[i] == '.') {
 //			data[i] = '\0';
                     len = i
-                    data = data.substring(0, len - 1)
+                    data = data.substring(0, len)
                     break
                 }
                 i++
@@ -1018,7 +1007,6 @@ object Str {
         }
 
         fun DefaultFileExtension(extension: String): idStr { // if there's no file extension use the default
-            var i: Int
 
             // do nothing if the string already has an extension
 //            for (i = len - 1; i >= 0; i--) {
@@ -1346,7 +1334,7 @@ object Str {
             val mod: Int
             assert(amount > 0)
             mod = amount % STR_ALLOC_GRAN
-            newsize = if (0 != mod) {
+            newsize = if (0 == mod) {
                 amount
             } else {
                 amount + STR_ALLOC_GRAN - mod
@@ -1417,7 +1405,7 @@ object Str {
             len = buffer.limit()
             data = ""
             for (i in 0 until buffer.limit()) {
-                data += Char(buffer.array()[i].toInt())
+                data += Char(buffer.array()[i].toUShort())
             }
             alloced = len
         }
@@ -1481,7 +1469,7 @@ object Str {
 
         fun IsNumeric(): Boolean {
             return try {
-                data.toDouble()
+                data.toFloat()
                 true
             } catch (e: NumberFormatException) {
                 false
@@ -1554,7 +1542,7 @@ object Str {
 
             fun IsNumeric(s: String): Boolean {
                 return try {
-                    s.toDouble()
+                    s.toFloat()
                     true
                 } catch (e: NumberFormatException) {
                     false
@@ -1585,7 +1573,7 @@ object Str {
 
 
             fun isdigit(c: Char): Boolean {
-                return '0' >= c && c <= '9'
+                return c in '0'..'9'
             }
 
             fun IsColor(s: String): Boolean {
@@ -1702,7 +1690,7 @@ object Str {
                 return Icmp(TempDump.ctos(t1), TempDump.ctos(s2))
             }
 
-            fun Icmp(s1: String, s2: String): Int {
+            fun Icmp(s1: String?, s2: String?): Int {
                 return ("" + s1).compareTo("" + s2, ignoreCase = true)
             }
 
@@ -1752,7 +1740,7 @@ object Str {
                                 break
                             }
                         }
-                        return (Math_h.INTSIGNBITNOTSET(d) shl 1) - 1
+                        return (INTSIGNBITNOTSET(d) shl 1) - 1
                     }
                 } while (c1 != 0)
                 return 0 // strings are equal
@@ -1821,7 +1809,7 @@ object Str {
 //                        return 1;
 //                    }
 //                    // same folder depth so use the regular compare
-//                    return (Math_h.INTSIGNBITNOTSET(d) << 1) - 1;
+//                    return (INTSIGNBITNOTSET(d) << 1) - 1;
 //                }
 //            } while (c1 != 0);
 //
@@ -1887,7 +1875,7 @@ object Str {
                             return 1
                         }
                         // same folder depth so use the regular compare
-                        return (Math_h.INTSIGNBITNOTSET(d) shl 1) - 1
+                        return (INTSIGNBITNOTSET(d) shl 1) - 1
                     }
                 } while (c1 != 0)
                 return 0
@@ -2085,17 +2073,6 @@ object Str {
          */
             fun vsnPrintf(dest: Array<String>, size: Int, fmt: String, vararg args: Any): Int {
                 var ret = 0
-
-//#ifdef _WIN32
-//#undef _vsnprintf
-//	ret = _vsnprintf( dest, size-1, fmt, argptr );
-//#define _vsnprintf	use_idStr_vsnPrintf
-//#else
-//#undef vsnprintf
-//	ret = vsnprintf( dest, size, fmt, argptr );
-//#define vsnprintf	use_idStr_vsnPrintf
-//#endif
-//            dest[size - 1] = '\0';
                 ret = String.format(fmt, *args).also { dest[0] = it }.length
                 if (ret < 0 || ret >= size) {
                     dest[0] = ""
@@ -2151,8 +2128,9 @@ object Str {
                 if (end == -1) {
                     end = str.length
                 }
+                val indexOfText = str.substring(start, end).indexOf(text)
                 return if (casesensitive) {
-                    str.substring(start, end).indexOf(text)
+                    if (indexOfText == -1) indexOfText else indexOfText + start
                 } else {
                     str.substring(start, end).lowercase(Locale.getDefault())
                         .indexOf(text.lowercase(Locale.getDefault()))
@@ -2223,10 +2201,6 @@ object Str {
                 index = index + 1 and 3
                 format = String.format("%%.%df", precision)
                 n = snPrintf(s, s.capacity(), format, array[0])
-                //	if ( precision > 0 ) {
-//		while( n > 0 && s[n-1] == '0' ) s[--n] = '\0';
-//		while( n > 0 && s[n-1] == '.' ) s[--n] = '\0';
-//	}
                 format = String.format(" %%.%df", precision)
                 i = 1
                 while (i < length) {

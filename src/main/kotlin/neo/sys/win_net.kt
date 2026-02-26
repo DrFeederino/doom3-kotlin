@@ -4,12 +4,9 @@ import neo.TempDump
 import neo.TempDump.TODO_Exception
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
-import neo.framework.CVarSystem.net
-import neo.framework.Common
 import neo.framework.Common.Companion.common
 import neo.idlib.containers.CInt
 import neo.sys.sys_public.netadr_t
-import java.lang.Exception
 import java.net.*
 import java.nio.ByteBuffer
 import java.util.*
@@ -32,7 +29,7 @@ class win_net {
     }
 
     class idUDPLag {
-        fun Alloc(): win_net.udpMsg_s {
+        fun Alloc(): udpMsg_s {
             return udpMsg_s()
         }
 
@@ -69,19 +66,21 @@ class win_net {
                 CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_BOOL,
                 ""
             )
-        val net_socksPassword: idCVar =
-            idCVar("net_socksPassword", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE, "")
+
+        //        val net_socksPassword: idCVar =
+//            idCVar("net_socksPassword", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE, "")
         val net_socksPort: idCVar = idCVar(
             "net_socksPort",
             "1080",
             CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_INTEGER,
             ""
         )
-        val net_socksServer: idCVar =
-            idCVar("net_socksServer", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE, "")
-        val net_socksUsername: idCVar =
-            idCVar("net_socksUsername", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE, "")
-        val netint: Array<net_interface?> = arrayOfNulls<net_interface?>(Companion.MAX_INTERFACES)
+
+        //        val net_socksServer: idCVar =
+//            idCVar("net_socksServer", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE, "")
+        //val net_socksUsername: idCVar =
+        //    idCVar("net_socksUsername", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE, "")
+        val netint: Array<net_interface?> = arrayOfNulls<net_interface?>(MAX_INTERFACES)
         var num_interfaces = 0
         var usingSocks = false
 
@@ -208,7 +207,7 @@ class win_net {
             var portArr = Array<Int>(5) { 0 }
             var port = 0
             var hostname = ""
-            var buf = CharArray(256)
+            CharArray(256)
             if (s[0] >= '0' && s[0] <= '9') {
                 if (!"0.0.0.0".equals(s)) {
                     hostname = s
@@ -229,9 +228,9 @@ class win_net {
                 }
                 var h = InetSocketAddress(s.substring(0, s.indexOf(':')), port)
                 if (h.isUnresolved) {
-                    return false;
+                    return false
                 }
-                hostname = h.hostName;
+                hostname = h.hostName
                 sadr[0] = h
             }
             return true
@@ -295,8 +294,8 @@ class win_net {
                 netSocket.receive(datagramPacket)
 
                 if (datagramPacket.length == maxSize) {
-                    common.Printf("Net_GetUDPPacket: oversize packet from %s\n", String(net_from.ip));
-                    return false;
+                    common.Printf("Net_GetUDPPacket: oversize packet from %s\n", String(net_from.ip))
+                    return false
                 }
                 size._val = datagramPacket.length
                 return true
@@ -383,7 +382,7 @@ class win_net {
                 //netSocket.connect(packet.address, packet.port)
                 netSocket.send(packet)
             } catch (e: SocketException) {
-                common.Printf("Net_SendUDPPacket: %s\n", e.message!!);
+                common.Printf("Net_SendUDPPacket: %s\n", e.message!!)
             }
 
         }
@@ -444,7 +443,6 @@ class win_net {
      ====================
      */
         fun Sys_InitNetworking() {
-            var r: Int
             //
 //        r = WSAStartup(MAKEWORD(1, 1),  & winsockdata);
 //        if (r) {
@@ -453,7 +451,7 @@ class win_net {
 //        }
 //
             winsockInitialized = true
-            Common.common.Printf("Winsock Initialized\n")
+            common.Printf("Winsock Initialized\n")
             val   /*PIP_ADAPTER_INFO*/pAdapterInfo: Enumeration<NetworkInterface>
             var   /*PIP_ADAPTER_INFO*/pAdapter: NetworkInterface
             //        DWORD dwRetVal = 0;
@@ -485,7 +483,7 @@ class win_net {
                     NetworkInterface.getNetworkInterfaces() //if( ( dwRetVal = GetAdaptersInfo( pAdapterInfo, &ulOutBufLen) ) != NO_ERROR ) {
                 while (pAdapterInfo.hasMoreElements()) {
                     pAdapter = pAdapterInfo.nextElement()!!
-                    Common.common.Printf("Found interface: %s %s - ", pAdapter.name, pAdapter.displayName)
+                    common.Printf("Found interface: %s %s - ", pAdapter.name, pAdapter.displayName)
                     pIPAddrStrings = pAdapter.inetAddresses
                     while (pIPAddrStrings.hasMoreElements()) {
                         pIPAddr = pIPAddrStrings.nextElement()
@@ -495,7 +493,7 @@ class win_net {
                         if (pIPAddr is Inet6Address) {
                             continue  //TODO:skip ipv6, for now.
                         }
-                        //                        if (!idStr.Icmp("127.0.0.1", pIPAddrString.IpAddress.String)) {
+                        //                        if (!idStr.Icmp("127.0f.0f.1", pIPAddrString.IpAddress.String)) {
 //                            foundLoopback = true;
 //                        }
 //                    foundLoopback |= pIPAddr.isLoopbackAddress();
@@ -505,37 +503,37 @@ class win_net {
                         }
 
                         //skip null netmasks
-                        if (TempDump.NOT(ip_m.toDouble())) {
-                            Common.common.Printf("%s NULL netmask - skipped", pIPAddr.hostAddress)
+                        if (ip_m == 0L) {
+                            common.Printf("%s NULL netmask - skipped", pIPAddr.hostAddress)
                             //                        pIPAddr = pIPAddr.Next;
                             continue
                         }
-                        Common.common.Printf("%s/%s", pIPAddr.hostAddress, ip_m)
+                        common.Printf("%s/%s", pIPAddr.hostAddress, ip_m)
                         netint[num_interfaces] = net_interface(ip_a, ip_m)
                         num_interfaces++
-                        if (num_interfaces >= Companion.MAX_INTERFACES) {
-                            Common.common.Printf(
+                        if (num_interfaces >= MAX_INTERFACES) {
+                            common.Printf(
                                 "\nSys_InitNetworking: MAX_INTERFACES(%d) hit.\n",
-                                Companion.MAX_INTERFACES
+                                MAX_INTERFACES
                             )
                             //                            free( pAdapterInfo );
                             return
                         }
                     }
-                    Common.common.Printf("\n")
+                    common.Printf("\n")
                 }
             } catch (ex: SocketException) {
                 Logger.getLogger(win_net::class.java.name).log(Level.SEVERE, null, ex)
                 // happens if you have no network connection
-                Common.common.Printf("Sys_InitNetworking: GetAdaptersInfo failed (%ld).\n", -1 /*dwRetVal*/)
+                common.Printf("Sys_InitNetworking: GetAdaptersInfo failed (%ld).\n", -1 /*dwRetVal*/)
             }
 
 //        //TODO: check if java is as retarded as win32.
 //        // for some retarded reason, win32 doesn't count loopback as an adapter...
 //        if (!foundLoopback && num_interfaces < MAX_INTERFACES) {
 //            common.Printf("Sys_InitNetworking: adding loopback interface\n");
-//            netint[num_interfaces].ip = ntohl(inet_addr("127.0.0.1"));
-//            netint[num_interfaces].mask = ntohl(inet_addr("255.0.0.0"));
+//            netint[num_interfaces].ip = ntohl(inet_addr("127.0f.0f.1"));
+//            netint[num_interfaces].mask = ntohl(inet_addr("255.0f.0f.0f"));
 //            num_interfaces++;
 //        }
 //            free( pAdapterInfo );
@@ -551,8 +549,8 @@ class win_net {
             if (!Net_StringToSockaddr(s!!, sadr, doDNSResolve)) {
                 return false
             }
-            Net_SockadrToNetadr(sadr, a!!);
-            return true;
+            Net_SockadrToNetadr(sadr, a!!)
+            return true
         }
 
         /*
@@ -618,7 +616,7 @@ class win_net {
             if (net_interface.isNotEmpty()) {
                 common.Printf("Opening IP socket: %s:%d\n", net_interface, port)
             } else {
-                common.DPrintf("Opening IP socket: localhost:%d\n", port);
+                common.DPrintf("Opening IP socket: localhost:%d\n", port)
             }
             var newSocket: DatagramSocket? = null
             try {

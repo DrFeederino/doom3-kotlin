@@ -2,7 +2,7 @@ package neo.Game
 
 import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.*
-import neo.Game.GameSys.Class.Companion.EV_Remove
+import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -14,7 +14,6 @@ import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderEntity_s
 import neo.Renderer.RenderWorld.renderLight_s
-import neo.TempDump
 import neo.framework.DeclFX.*
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
@@ -24,17 +23,13 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Math_h
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
 
-/**
- *
- */
+val EV_Fx_Action: idEventDef = idEventDef("_fxAction", "e") // implemented by subclasses
+val EV_Fx_KillFx: idEventDef = idEventDef("_killfx")
+
 object FX {
-    val EV_Fx_Action: idEventDef = idEventDef("_fxAction", "e") // implemented by subclasses
 
     /*
      ===============================================================================
@@ -43,7 +38,6 @@ object FX {
 
      ===============================================================================
      */
-    val EV_Fx_KillFx: idEventDef = idEventDef("_killfx")
 
     /*
      ===============================================================================
@@ -54,7 +48,7 @@ object FX {
      */
     class idFXLocalAction {
         var decalDropped = false
-        var delay = 0f
+        var delay = 0.0f
         var launched = false
         var   /*qhandle_t*/lightDefHandle // handle to renderer light def
                 = 0
@@ -75,7 +69,7 @@ object FX {
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
             //	virtual					~idEntityFx();
-            fun StartFx(fx: String?, useOrigin: idVec3, useAxis: idMat3, ent: idEntity?, bind: Boolean): idEntityFx? {
+            fun StartFx(fx: String?, useOrigin: idVec3?, useAxis: idMat3?, ent: idEntity?, bind: Boolean): idEntityFx? {
                 if (SysCvar.g_skipFX.GetBool() || null == fx || fx.isEmpty()) {
                     return null
                 }
@@ -85,10 +79,10 @@ object FX {
                 val nfx = Game_local.gameLocal.SpawnEntityType(idEntityFx::class.java, args) as idEntityFx
                 if (nfx.Joint() != null && !nfx.Joint()!!.isEmpty()) {
                     nfx.BindToJoint(ent!!, nfx.Joint()!!, true)
-                    nfx.SetOrigin(Vector.getVec3Origin())
+                    nfx.SetOrigin(getVec3Origin())
                 } else {
-                    nfx.SetOrigin(useOrigin)
-                    nfx.SetAxis(useAxis)
+                    nfx.SetOrigin(if (useOrigin != null) useOrigin else ent!!.GetPhysics().GetOrigin())
+                    nfx.SetAxis(if (useAxis != null) useAxis else ent!!.GetPhysics().GetAxis())
                 }
                 if (bind) {
                     // never bind to world spawn
@@ -100,7 +94,7 @@ object FX {
                 return nfx
             }
 
-            fun StartFx(fx: idStr, useOrigin: idVec3, useAxis: idMat3, ent: idEntity?, bind: Boolean): idEntityFx? {
+            fun StartFx(fx: idStr, useOrigin: idVec3?, useAxis: idMat3?, ent: idEntity?, bind: Boolean): idEntityFx? {
                 return StartFx(fx.toString(), useOrigin, useAxis, ent, bind)
             }
 
@@ -109,14 +103,14 @@ object FX {
             }
 
             init {
-                eventCallbacks.putAll(idEntity.Companion.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks.putAll(idEntity.getEventCallBacks())
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idEntityFx> { obj: idEntityFx, activator: idEventArg<*>? ->
                         obj.Event_Trigger(
                             activator as idEventArg<idEntity>
                         )
                     }
-                eventCallbacks[FX.EV_Fx_KillFx] =
+                eventCallbacks[EV_Fx_KillFx] =
                     eventCallback_t0<idEntityFx> { obj: idEntityFx -> obj.Event_ClearFx() }
             }
         }
@@ -140,8 +134,8 @@ object FX {
             }
             if (!spawnArgs.GetBool("triggered")) {
                 Setup(fx[0]!!)
-                if (spawnArgs.GetBool("test") || spawnArgs.GetBool("start") || spawnArgs.GetFloat("restart") != 0f) {
-                    PostEventMS(Entity.EV_Activate, 0f, this)
+                if (spawnArgs.GetBool("test") || spawnArgs.GetBool("start") || spawnArgs.GetFloat("restart") != 0.0f) {
+                    PostEventMS(EV_Activate, 0.0f, this)
                 }
             }
         }
@@ -245,7 +239,7 @@ object FX {
             }
 
             // early during MP Spawn() with no information. wait till we ReadFromSnapshot for more
-            if (Game_local.gameLocal.isClient && (null == fx || !fx.isEmpty())) { //[0] == '\0' ) ) {
+            if (Game_local.gameLocal.isClient && (null == fx || fx.isEmpty())) { //[0] == '\0' ) ) {
                 return
             }
             systemName.set(fx)
@@ -261,7 +255,7 @@ object FX {
                 for (i in 0 until fxEffect!!.events.Num()) {
                     val fxaction = fxEffect!!.events[i]
                     val laction = actions[i]
-                    if (fxaction.random1 != 0f || fxaction.random2 != 0f) {
+                    if (fxaction.random1 != 0.0f || fxaction.random2 != 0.0f) {
                         laction.delay =
                             fxaction.random1 + Game_local.gameLocal.random.RandomFloat() * (fxaction.random2 - fxaction.random1)
                     } else {
@@ -284,7 +278,7 @@ object FX {
             val ent = arrayOfNulls<idEntity>(1)
             var projectileDef: idDict?
             var projectile: idProjectile?
-            if (TempDump.NOT(fxEffect)) {
+            if (fxEffect == null) {
                 return
             }
             ieff = 0
@@ -303,7 +297,7 @@ object FX {
                 //
                 // see if it's delayed
                 //
-                if (laction.delay != 0f) {
+                if (laction.delay != 0.0f) {
                     if (laction.start + (time - laction.start) < laction.start + laction.delay * 1000) {
                         ieff++
                         continue
@@ -314,13 +308,13 @@ object FX {
                 // each event can have it's own delay and restart
                 //
                 val actualStart =
-                    if (laction.delay != 0f) laction.start + (laction.delay * 1000).toInt() else laction.start
+                    if (laction.delay != 0.0f) laction.start + (laction.delay * 1000).toInt() else laction.start
                 val pct = (time - actualStart).toFloat() / (1000 * fxaction.duration)
                 if (pct >= 1.0f) {
                     laction.start = -1
                     var totalDelay: Float
-                    if (fxaction.restart != 0f) {
-                        totalDelay = if (fxaction.random1 != 0f || fxaction.random2 != 0f) {
+                    if (fxaction.restart != 0.0f) {
+                        totalDelay = if (fxaction.random1 != 0.0f || fxaction.random2 != 0.0f) {
                             fxaction.random1 + Game_local.gameLocal.random.RandomFloat() * (fxaction.random2 - fxaction.random1)
                         } else {
                             fxaction.delay
@@ -335,7 +329,7 @@ object FX {
                     j = 0
                     while (j < fxEffect!!.events.Num()) {
                         if (fxEffect!!.events[j].name.Icmp(fxaction.fire) == 0) {
-                            actions[j].delay = 0f
+                            actions[j].delay = 0.0f
                         }
                         j++
                     }
@@ -365,11 +359,11 @@ object FX {
                                 useAction.renderLight.shaderParms[RenderWorld.SHADERPARM_BLUE] = fxaction.lightColor.z
                                 useAction.renderLight.shaderParms[RenderWorld.SHADERPARM_TIMESCALE] = 1.0f
                                 useAction.renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                                    -Math_h.MS2SEC(time.toFloat())
+                                    -MS2SEC(time.toFloat())
                                 useAction.renderLight.referenceSound = refSound.referenceSound
-                                useAction.renderLight.pointLight = true
+                                useAction.renderLight.pointLight._val = true
                                 if (fxaction.noshadows) {
-                                    useAction.renderLight.noShadows = true
+                                    useAction.renderLight.noShadows._val = true
                                 }
                                 useAction.lightDefHandle =
                                     Game_local.gameRenderWorld!!.AddLightDef(useAction.renderLight)
@@ -387,6 +381,7 @@ object FX {
                         }
                         ApplyFade(fxaction, useAction, time, actualStart)
                     }
+
                     fx_enum.FX_SOUND -> {
                         if (!useAction.soundStarted) {
                             useAction.soundStarted = true
@@ -406,6 +401,7 @@ object FX {
                             }
                         }
                     }
+
                     fx_enum.FX_DECAL -> {
                         if (!useAction.decalDropped) {
                             useAction.decalDropped = true
@@ -419,6 +415,7 @@ object FX {
                             )
                         }
                     }
+
                     fx_enum.FX_SHAKE -> {
                         if (!useAction.shakeStarted) {
                             val args = idDict()
@@ -429,7 +426,7 @@ object FX {
                             while (j < Game_local.gameLocal.numClients) {
                                 val player = Game_local.gameLocal.GetClientByNum(j)
                                 if (player != null && player.GetPhysics().GetOrigin().minus(GetPhysics().GetOrigin())
-                                        .LengthSqr() < Math_h.Square(fxaction.shakeDistance)
+                                        .LengthSqr() < Square(fxaction.shakeDistance)
                                 ) {
                                     if (!Game_local.gameLocal.isMultiplayer || !fxaction.shakeIgnoreMaster || GetBindMaster() !== player) {
                                         player.playerView.DamageImpulse(fxaction.offset, args)
@@ -459,6 +456,7 @@ object FX {
                             useAction.shakeStarted = true
                         }
                     }
+
                     fx_enum.FX_ATTACHENTITY, fx_enum.FX_PARTICLE, fx_enum.FX_MODEL -> {
                         if (useAction.modelDefHandle == -1) {
 //					memset( &useAction.renderEntity, 0, sizeof( renderEntity_t ) );
@@ -471,7 +469,7 @@ object FX {
                             useAction.renderEntity.shaderParms[RenderWorld.SHADERPARM_GREEN] = 1.0f
                             useAction.renderEntity.shaderParms[RenderWorld.SHADERPARM_BLUE] = 1.0f
                             useAction.renderEntity.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                                -Math_h.MS2SEC(time.toFloat())
+                                -MS2SEC(time.toFloat())
                             useAction.renderEntity.shaderParms[3] = 1.0f
                             useAction.renderEntity.shaderParms[5] = 0.0f
                             if (useAction.renderEntity.hModel != null) {
@@ -484,6 +482,7 @@ object FX {
                         }
                         ApplyFade(fxaction, useAction, time, actualStart)
                     }
+
                     fx_enum.FX_LAUNCH -> {
                         if (Game_local.gameLocal.isClient) {
                             // client never spawns entities outside of ClientReadSnapshot
@@ -505,11 +504,12 @@ object FX {
                                     projectile.Launch(
                                         GetPhysics().GetOrigin(),
                                         GetPhysics().GetAxis()[0],
-                                        Vector.getVec3Origin()
+                                        getVec3Origin()
                                     )
                                 }
                             }
                         }
+                        break
                     }
 
                     else -> {}
@@ -519,7 +519,7 @@ object FX {
         }
 
         fun Start(time: Int) {
-            if (TempDump.NOT(fxEffect)) {
+            if (fxEffect == null) {
                 return
             }
             started = time
@@ -541,7 +541,7 @@ object FX {
 
         fun Duration(): Int {
             var max = 0
-            if (TempDump.NOT(fxEffect)) {
+            if (fxEffect == null) {
                 return max
             }
             for (i in 0 until fxEffect!!.events.Num()) {
@@ -587,7 +587,7 @@ object FX {
             ReadBindFromSnapshot(msg)
             fx_index = Game_local.gameLocal.ClientRemapDecl(declType_t.DECL_FX, msg.ReadLong())
             start_time = msg.ReadLong()
-            if (fx_index != -1 && start_time > 0 && TempDump.NOT(fxEffect) && started < 0) {
+            if (fx_index != -1 && start_time > 0 && fxEffect == null && started < 0) {
                 spawnArgs.GetInt("effect_lapse", "1000", max_lapse)
                 if (Game_local.gameLocal.time - start_time > max_lapse._val) {
                     // too late, skip the effect completely
@@ -596,7 +596,7 @@ object FX {
                 }
                 val fx = DeclManager.declManager.DeclByIndex(declType_t.DECL_FX, fx_index) as idDeclFX
                 if (null == fx) {
-                    idGameLocal.Companion.Error("FX at index %d not found", fx_index)
+                    idGameLocal.Error("FX at index %d not found", fx_index)
                 }
                 fxEffect = fx
                 Setup(fx.GetName())
@@ -624,17 +624,17 @@ object FX {
             if (spawnArgs.GetString("fx", "", fx)) {
                 Setup(fx[0]!!)
                 Start(Game_local.gameLocal.time)
-                PostEventMS(FX.EV_Fx_KillFx, Duration())
+                PostEventMS(EV_Fx_KillFx, Duration())
                 BecomeActive(Entity.TH_THINK)
             }
             fxActionDelay = spawnArgs.GetFloat("fxActionDelay")
             nextTriggerTime = if (fxActionDelay != 0.0f) {
-                (Game_local.gameLocal.time + Math_h.SEC2MS(fxActionDelay)).toInt()
+                (Game_local.gameLocal.time + SEC2MS(fxActionDelay))
             } else {
                 // prevent multiple triggers on same frame
                 Game_local.gameLocal.time + 1
             }
-            PostEventSec(FX.EV_Fx_Action, fxActionDelay, activator.value)
+            PostEventSec(EV_Fx_Action, fxActionDelay, activator.value)
         }
 
         /*
@@ -652,15 +652,15 @@ object FX {
             CleanUp()
             BecomeInactive(Entity.TH_THINK)
             if (spawnArgs.GetBool("test")) {
-                PostEventMS(Entity.EV_Activate, 0f, this)
+                PostEventMS(EV_Activate, 0.0f, this)
             } else {
-                if (spawnArgs.GetFloat("restart") != 0f || !spawnArgs.GetBool("triggered")) {
+                if (spawnArgs.GetFloat("restart") != 0.0f || !spawnArgs.GetBool("triggered")) {
                     var rest = spawnArgs.GetFloat("restart", "0")
                     if (rest == 0.0f) {
                         PostEventSec(EV_Remove, 0.1f)
                     } else {
                         rest *= Game_local.gameLocal.random.RandomFloat()
-                        PostEventSec(Entity.EV_Activate, rest, this)
+                        PostEventSec(EV_Activate, rest, this)
                     }
                 }
             }
@@ -690,28 +690,28 @@ object FX {
         }
 
         protected fun ApplyFade(fxaction: idFXSingleAction, laction: idFXLocalAction, time: Int, actualStart: Int) {
-            if (fxaction.fadeInTime != 0f || fxaction.fadeOutTime != 0f) {
+            if (fxaction.fadeInTime != 0.0f || fxaction.fadeOutTime != 0.0f) {
                 var fadePct =
-                    (time - actualStart).toFloat() / (1000.0f * if (fxaction.fadeInTime != 0f) fxaction.fadeInTime else fxaction.fadeOutTime)
-                if (fadePct > 1.0) {
+                    (time - actualStart).toFloat() / (1000.0f * if (fxaction.fadeInTime != 0.0f) fxaction.fadeInTime else fxaction.fadeOutTime)
+                if (fadePct > 1.0f) {
                     fadePct = 1.0f
                 }
                 if (laction.modelDefHandle != -1) {
                     laction.renderEntity.shaderParms[RenderWorld.SHADERPARM_RED] =
-                        if (fxaction.fadeInTime != 0f) fadePct else 1.0f - fadePct
+                        if (fxaction.fadeInTime != 0.0f) fadePct else 1.0f - fadePct
                     laction.renderEntity.shaderParms[RenderWorld.SHADERPARM_GREEN] =
-                        if (fxaction.fadeInTime != 0f) fadePct else 1.0f - fadePct
+                        if (fxaction.fadeInTime != 0.0f) fadePct else 1.0f - fadePct
                     laction.renderEntity.shaderParms[RenderWorld.SHADERPARM_BLUE] =
-                        if (fxaction.fadeInTime != 0f) fadePct else 1.0f - fadePct
+                        if (fxaction.fadeInTime != 0.0f) fadePct else 1.0f - fadePct
                     Game_local.gameRenderWorld!!.UpdateEntityDef(laction.modelDefHandle, laction.renderEntity)
                 }
                 if (laction.lightDefHandle != -1) {
                     laction.renderLight.shaderParms[RenderWorld.SHADERPARM_RED] =
-                        fxaction.lightColor.x * if (fxaction.fadeInTime != 0f) fadePct else 1.0f - fadePct
+                        fxaction.lightColor.x * if (fxaction.fadeInTime != 0.0f) fadePct else 1.0f - fadePct
                     laction.renderLight.shaderParms[RenderWorld.SHADERPARM_GREEN] =
-                        fxaction.lightColor.y * if (fxaction.fadeInTime != 0f) fadePct else 1.0f - fadePct
+                        fxaction.lightColor.y * if (fxaction.fadeInTime != 0.0f) fadePct else 1.0f - fadePct
                     laction.renderLight.shaderParms[RenderWorld.SHADERPARM_BLUE] =
-                        fxaction.lightColor.z * if (fxaction.fadeInTime != 0f) fadePct else 1.0f - fadePct
+                        fxaction.lightColor.z * if (fxaction.fadeInTime != 0.0f) fadePct else 1.0f - fadePct
                     Game_local.gameRenderWorld!!.UpdateLightDef(laction.lightDefHandle, laction.renderLight)
                 }
             }
@@ -749,8 +749,8 @@ object FX {
             }
 
             init {
-                eventCallbacks.putAll(idEntity.Companion.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks.putAll(idEntity.getEventCallBacks())
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTeleporter> { obj: idTeleporter, activator: idEventArg<*>? ->
                         obj.Event_DoAction(activator as idEventArg<idEntity>)
                     }
@@ -761,7 +761,7 @@ object FX {
         private fun Event_DoAction(activator: idEventArg<idEntity>) {
             val angle: Float
             angle = spawnArgs.GetFloat("angle")
-            val a = idAngles(0f, spawnArgs.GetFloat("angle"), 0f)
+            val a = idAngles(0.0f, spawnArgs.GetFloat("angle"), 0.0f)
             activator.value.Teleport(GetPhysics().GetOrigin(), a, null)
         }
 

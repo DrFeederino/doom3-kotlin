@@ -1,17 +1,15 @@
-package neo.CM
+package neo.cm
 
-import neo.CM.CollisionModel.contactInfo_t
-import neo.CM.CollisionModel.trace_s
 import neo.Renderer.Material.idMaterial
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.Text.Str.idStr
 import neo.idlib.geometry.TraceModel
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Pluecker.idPluecker
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idPlane
+import neo.idlib.math.idPluecker
+import neo.idlib.math.idRotation
+import neo.idlib.math.idVec3
 
 /*
     Represents CollisionModel.h
@@ -24,7 +22,7 @@ abstract class AbstractCollisionModel_local {
         var numWindings = 0 // number of windings
         val origin: idVec3 = idVec3() // origin for radius
         var primitiveNum = 0// number of primitive the windings came from
-        var radius = 0f// radius relative to origin for all windings
+        var radius = 0.0f // radius relative to origin for all windings
         var w: Array<idFixedWinding?> = arrayOfNulls<idFixedWinding?>(MAX_WINDING_LIST) // windings
     }
 
@@ -61,8 +59,8 @@ abstract class AbstractCollisionModel_local {
         var vertexNum: IntArray = IntArray(2) // start and end point of edge
 
         companion object {
-            val SIZE: Int = Integer.SIZE + java.lang.Short.SIZE + java.lang.Short.SIZE +
-                    java.lang.Long.SIZE + java.lang.Long.SIZE + Integer.SIZE + idVec3.SIZE
+            val SIZE: Int =
+                Integer.SIZE + java.lang.Short.SIZE + java.lang.Short.SIZE + java.lang.Long.SIZE + java.lang.Long.SIZE + Integer.SIZE + idVec3.SIZE
             val BYTES = SIZE / java.lang.Byte.SIZE
 
             fun generateArray(length: Int): Array<cm_edge_s> {
@@ -86,13 +84,8 @@ abstract class AbstractCollisionModel_local {
         val plane: idPlane = idPlane() // polygon plane
 
         companion object {
-            val BYTES: Int = (idBounds.BYTES
-                    + Integer.BYTES
-                    + Integer.BYTES
-                    + Integer.BYTES
-                    + idPlane.BYTES
-                    + Integer.BYTES
-                    + Integer.BYTES)
+            val BYTES: Int =
+                (idBounds.BYTES + Integer.BYTES + Integer.BYTES + Integer.BYTES + idPlane.BYTES + Integer.BYTES + Integer.BYTES)
         }
 
         fun oSet(p: cm_polygon_s) {
@@ -102,7 +95,7 @@ abstract class AbstractCollisionModel_local {
             material = p.material
             plane.set(p.plane)
             numEdges = p.numEdges
-            edges[0] = p.edges[0]
+            edges = p.edges.copyOf(numEdges)
         }
 
         override fun equals(other: Any?): Boolean {
@@ -164,13 +157,8 @@ abstract class AbstractCollisionModel_local {
         var primitiveNum = 0 // number of brush primitive
 
         companion object {
-            val BYTES: Int = (Integer.BYTES
-                    + idBounds.BYTES
-                    + Integer.BYTES
-                    + Integer.BYTES
-                    + Integer.BYTES
-                    + Integer.BYTES
-                    + idPlane.BYTES)
+            val BYTES: Int =
+                (Integer.BYTES + idBounds.BYTES + Integer.BYTES + Integer.BYTES + Integer.BYTES + Integer.BYTES + idPlane.BYTES)
         }
     }
 
@@ -190,19 +178,15 @@ abstract class AbstractCollisionModel_local {
 
     class cm_node_s {
         var brushes: cm_brushRef_s? = null// brushes in node
-        var children: Array<cm_node_s?> = kotlin.arrayOfNulls(2) // node children
+        var children: Array<cm_node_s?> = arrayOfNulls(2) // node children
         var parent: cm_node_s? = null // parent of this node
-        var planeDist: Float = 0f // node plane distance
+        var planeDist: Float = 0.0f // node plane distance
         var planeType: Int = 0// node axial plane type
         var polygons: cm_polygonRef_s? = null // polygons in node
 
         companion object {
-            val BYTES = (Integer.BYTES
-                    + java.lang.Float.BYTES
-                    + cm_polygonRef_s.BYTES
-                    + cm_brushRef_s.BYTES
-                    + Integer.BYTES
-                    + Integer.BYTES)
+            val BYTES =
+                (Integer.BYTES + java.lang.Float.BYTES + cm_polygonRef_s.BYTES + cm_brushRef_s.BYTES + Integer.BYTES + Integer.BYTES)
         }
     }
 
@@ -310,7 +294,7 @@ abstract class AbstractCollisionModel_local {
     }
 
     class cm_traceWork_s {
-        var angle = 0f// angle for rotational collision
+        var angle = 0.0f// angle for rotational collision
         val axis: idVec3 = idVec3() // rotation axis in model space
         var axisIntersectsTrm = false // true if the rotation axis intersects the trace model
         val bounds: idBounds = idBounds() // bounds of full trace
@@ -324,11 +308,11 @@ abstract class AbstractCollisionModel_local {
         val heartPlane1: idPlane = idPlane() // polygons should be near anough the trace heart planes
         val heartPlane2: idPlane = idPlane()
         var isConvex = false// true if the trace model is convex
-        var matrix: idMat3 = idMat3() // rotates axis of rotation to the z-axis
+        val matrix: idMat3 = idMat3() // rotates axis of rotation to the z-axis
         var maxContacts = 0 // max size of contact array
-        var maxDistFromHeartPlane1 = 0f
-        var maxDistFromHeartPlane2 = 0f
-        var maxTan = 0f // max tangent of half the positive angle used instead of fraction
+        var maxDistFromHeartPlane1 = 0.0f
+        var maxDistFromHeartPlane2 = 0.0f
+        var maxTan = 0.0f // max tangent of half the positive angle used instead of fraction
         var model: cm_model_s? = null// model colliding with
         val modelVertexRotation: idRotation = idRotation() // inverse rotation for model vertices
         var numContacts = 0 // number of contacts found
@@ -344,7 +328,7 @@ abstract class AbstractCollisionModel_local {
             cm_trmPolygon_s.generateArray(TraceModel.MAX_TRACEMODEL_POLYS) // trm polygons
         var positionTest = false // true if not tracing but doing a position test
         var quickExit = false// set to quickly stop the collision detection calculations
-        var radius = 0f // rotation radius of trm start
+        var radius = 0.0f // rotation radius of trm start
         var rotation = false// true if calculating rotational collision
         val size: idBounds = idBounds()// bounds of transformed trm relative to start
         val start: idVec3 = idVec3() // start of trace

@@ -5,16 +5,9 @@ import neo.Game.Physics.Force.idForce
 import neo.Game.Physics.Physics.idPhysics
 import neo.framework.UsercmdGen.USERCMD_MSEC
 import neo.idlib.containers.CFloat
-import neo.idlib.math.Math_h.MS2SEC
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
 
-/**
- *
- */
 class Force_Drag {
     /*
      ===============================================================================
@@ -28,11 +21,11 @@ class Force_Drag {
         // properties
         private var damping = 0.5f
         private val dragPosition // drag towards this position
-                : idVec3 = Vector.getVec3_zero()
+                : idVec3 = getVec3_zero()
         private var id // clip model id of physics object
                 = 0
         private val p // position on clip model
-                : idVec3 = Vector.getVec3_zero()
+                : idVec3 = getVec3_zero()
 
         //
         // positioning
@@ -101,7 +94,7 @@ class Force_Drag {
             l1 = dir1.Normalize()
             l2 = dir2.Normalize()
 
-            rotation.Set(centerOfMass, dir2.Cross(dir1), Vector.RAD2DEG(idMath.ACos(dir1.times(dir2))))
+            rotation.Set(centerOfMass, dir2.Cross(dir1), RAD2DEG(idMath.ACos(dir1.times(dir2))))
             physics!!.SetAngularVelocity(rotation.ToAngularVelocity() / MS2SEC(USERCMD_MSEC.toFloat()), id)
             velocity.set(
                 physics!!.GetLinearVelocity(id) * damping + dir1 * ((l1 - l2) * (1.0f - damping) / MS2SEC(USERCMD_MSEC.toFloat()))

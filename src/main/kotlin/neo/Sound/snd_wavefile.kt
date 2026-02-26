@@ -7,9 +7,11 @@ import neo.TempDump.TODO_Exception
 import neo.framework.FileSystem_h
 import neo.framework.File_h.fsOrigin_t
 import neo.framework.File_h.idFile
-import neo.idlib.Lib
+import neo.idlib.LittleLong
+import neo.idlib.LittleRevBytes
+import neo.idlib.LittleShort
 import neo.idlib.Text.Str.idStr
-import neo.idlib.math.Simd
+import neo.idlib.math.SIMDProcessor
 import neo.sys.sys_public
 import neo.sys.win_main
 import org.lwjgl.BufferUtils
@@ -17,9 +19,6 @@ import org.lwjgl.stb.STBVorbis
 import org.lwjgl.stb.STBVorbisInfo
 import java.nio.ByteBuffer
 
-/**
- *
- */
 object snd_wavefile {
     val fourcc_riff = mmioFOURCC('R'.code, 'I'.code, 'F'.code, 'F'.code)
     fun mmioFOURCC(ch0: Int, ch1: Int, ch2: Int, ch3: Int): Long {
@@ -151,7 +150,7 @@ object snd_wavefile {
                 if (mpbDataCur!!.get(dwSizeToRead) > mpbData!!.get(mulDataSize.toInt())) {
                     dwSizeToRead = (mulDataSize - mpbDataCur!!.position()).toInt()
                 }
-                Simd.SIMDProcessor.Memcpy(pBuffer, mpbDataCur!!, dwSizeToRead)
+                SIMDProcessor!!.Memcpy(pBuffer, mpbDataCur!!, dwSizeToRead)
                 mpbDataCur!!.position(pos)
                 if (pdwSizeRead != null) {
                     pdwSizeRead[0] = dwSizeToRead
@@ -167,7 +166,7 @@ object snd_wavefile {
                 dwSizeToRead = mhmmio!!.Read(pBuffer, dwSizeToRead)
                 // this is hit by ogg code, which does it's own byte swapping internally
                 if (!isOgg) {
-                    Lib.LittleRevBytes(pBuffer.array(), 2, dwSizeToRead / 2)
+                    LittleRevBytes(pBuffer.array(), 2, dwSizeToRead / 2)
                 }
                 if (pdwSizeRead != null) {
                     pdwSizeRead[0] = dwSizeToRead
@@ -245,7 +244,7 @@ object snd_wavefile {
                 } while (mck.ckid != mmioFOURCC('d'.code, 'a'.code, 't'.code, 'a'.code))
                 mck.cksize = mhmmio!!.ReadInt()
                 assert(!isOgg)
-                mck.cksize = Lib.LittleLong(mck.cksize)
+                mck.cksize = LittleLong(mck.cksize)
                 mseekBase = mhmmio!!.Tell().toLong()
             }
             return 0
@@ -271,9 +270,9 @@ object snd_wavefile {
             mpwfx = waveformatextensible_s() //memset( &mpwfx, 0, sizeof( waveformatextensible_t ) );
             mhmmio!!.Read(mckRiff, 12)
             assert(!isOgg)
-            mckRiff.ckid = Lib.LittleLong(mckRiff.ckid).toLong()
-            mckRiff.cksize = Lib.LittleLong(mckRiff.cksize)
-            mckRiff.fccType = Lib.LittleLong(mckRiff.fccType).toLong()
+            mckRiff.ckid = LittleLong(mckRiff.ckid).toLong()
+            mckRiff.cksize = LittleLong(mckRiff.cksize)
+            mckRiff.fccType = LittleLong(mckRiff.fccType).toLong()
             mckRiff.dwDataOffset = 12
 
             // Check to make sure this is a valid wave file
@@ -294,8 +293,8 @@ object snd_wavefile {
                     return -1
                 }
                 assert(!isOgg)
-                ckIn.ckid = Lib.LittleLong(ckIn.ckid).toLong()
-                ckIn.cksize = Lib.LittleLong(ckIn.cksize)
+                ckIn.ckid = LittleLong(ckIn.ckid).toLong()
+                ckIn.cksize = LittleLong(ckIn.cksize)
                 ckIn.dwDataOffset += ckIn.cksize - 8
             } while (ckIn.ckid != mmioFOURCC('f'.code, 'm'.code, 't'.code, ' '.code))
 
@@ -310,12 +309,12 @@ object snd_wavefile {
                 return -1
             }
             assert(!isOgg)
-            pcmWaveFormat.wf.wFormatTag = Lib.LittleShort(pcmWaveFormat.wf.wFormatTag.toShort()).toInt()
-            pcmWaveFormat.wf.nChannels = Lib.LittleShort(pcmWaveFormat.wf.nChannels.toShort()).toInt()
-            pcmWaveFormat.wf.nSamplesPerSec = Lib.LittleLong(pcmWaveFormat.wf.nSamplesPerSec)
-            pcmWaveFormat.wf.nAvgBytesPerSec = Lib.LittleLong(pcmWaveFormat.wf.nAvgBytesPerSec)
-            pcmWaveFormat.wf.nBlockAlign = Lib.LittleShort(pcmWaveFormat.wf.nBlockAlign.toShort()).toInt()
-            pcmWaveFormat.wBitsPerSample = Lib.LittleShort(pcmWaveFormat.wBitsPerSample.toShort()).toInt()
+            pcmWaveFormat.wf.wFormatTag = LittleShort(pcmWaveFormat.wf.wFormatTag.toShort()).toInt()
+            pcmWaveFormat.wf.nChannels = LittleShort(pcmWaveFormat.wf.nChannels.toShort()).toInt()
+            pcmWaveFormat.wf.nSamplesPerSec = LittleLong(pcmWaveFormat.wf.nSamplesPerSec)
+            pcmWaveFormat.wf.nAvgBytesPerSec = LittleLong(pcmWaveFormat.wf.nAvgBytesPerSec)
+            pcmWaveFormat.wf.nBlockAlign = LittleShort(pcmWaveFormat.wf.nBlockAlign.toShort()).toInt()
+            pcmWaveFormat.wBitsPerSample = LittleShort(pcmWaveFormat.wBitsPerSample.toShort()).toInt()
 
             // Copy the bytes from the pcm structure to the waveformatex_t structure
             mpwfx = waveformatextensible_s(pcmWaveFormat)

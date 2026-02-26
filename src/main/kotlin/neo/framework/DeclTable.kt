@@ -1,15 +1,12 @@
 package neo.framework
 
 import neo.framework.DeclManager.idDecl
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.idException
+import neo.idlib.math.idMath
 
-/**
- *
- */
 class DeclTable {
     /*
      ===============================================================================

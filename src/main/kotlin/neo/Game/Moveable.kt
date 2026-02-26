@@ -1,13 +1,10 @@
 package neo.Game
 
-import neo.CM.CollisionModel
-import neo.CM.CollisionModel.trace_s
-import neo.CM.CollisionModel_local
 import neo.Game.Animation.Anim_Blend.idDeclModelDef
 import neo.Game.Entity.idEntity
 import neo.Game.FX.idEntityFx
 import neo.Game.GameSys.Class.*
-import neo.Game.GameSys.Class.Companion.EV_Remove
+import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -25,6 +22,9 @@ import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderEntity_s
 import neo.Renderer.RenderWorld.renderLight_s
 import neo.TempDump
+import neo.cm.CM_CLIP_EPSILON
+import neo.cm.collisionModelManager
+import neo.cm.trace_s
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.UsercmdGen
@@ -34,18 +34,20 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.geometry.TraceModel.idTraceModel
-import neo.idlib.math.Curve.idCurve_Spline
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
 import java.nio.ByteBuffer
 
-/**
- *
- */
+val EV_BecomeNonSolid: idEventDef = idEventDef("becomeNonSolid")
+val EV_EnableDamage: idEventDef = idEventDef("enableDamage", "f")
+val EV_IsAtRest: idEventDef = idEventDef("isAtRest", null, 'd')
+
+val EV_Respawn: idEventDef = idEventDef("<respawn>")
+
+//
+val EV_SetOwnerFromSpawnArgs: idEventDef = idEventDef("<setOwnerFromSpawnArgs>")
+val EV_TriggerTargets: idEventDef = idEventDef("<triggertargets>")
+
 object Moveable {
     const val BOUNCE_SOUND_MAX_VELOCITY = 200.0f
 
@@ -66,9 +68,6 @@ object Moveable {
 
      ===============================================================================
      */
-    val EV_BecomeNonSolid: idEventDef = idEventDef("becomeNonSolid")
-    val EV_EnableDamage: idEventDef = idEventDef("enableDamage", "f")
-    val EV_IsAtRest: idEventDef = idEventDef("isAtRest", null, 'd')
 
     /*
      ===============================================================================
@@ -79,11 +78,6 @@ object Moveable {
 
      ===============================================================================
      */
-    val EV_Respawn: idEventDef = idEventDef("<respawn>")
-
-    //
-    val EV_SetOwnerFromSpawnArgs: idEventDef = idEventDef("<setOwnerFromSpawnArgs>")
-    val EV_TriggerTargets: idEventDef = idEventDef("<triggertargets>")
 
     open class idMoveable : idEntity() {
         companion object {
@@ -97,7 +91,7 @@ object Moveable {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idMoveable> { obj: idMoveable, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
@@ -160,7 +154,7 @@ object Moveable {
             if (clipModelName.IsEmpty()) {
                 clipModelName.set(spawnArgs.GetString("model")) // use the visual model
             }
-            if (!CollisionModel_local.collisionModelManager.TrmFromModel(clipModelName, trm)) {
+            if (!collisionModelManager.TrmFromModel(clipModelName, trm)) {
                 idGameLocal.Error("idMoveable '%s': cannot load collision model %s", name, clipModelName)
                 return
             }
@@ -168,11 +162,11 @@ object Moveable {
             // if the model should be shrinked
             clipShrink = spawnArgs.GetInt("clipshrink")
             if (clipShrink != 0) {
-                trm.Shrink(clipShrink * CollisionModel.CM_CLIP_EPSILON)
+                trm.Shrink(clipShrink * CM_CLIP_EPSILON)
             }
 
             // get rigid body properties
-            spawnArgs.GetFloat("density", "0.5", density)
+            spawnArgs.GetFloat("density", "0.5f", density)
             density._val = (idMath.ClampFloat(0.001f, 1000.0f, density._val))
             spawnArgs.GetFloat("friction", "0.05", friction)
             friction._val = (idMath.ClampFloat(0.0f, 1.0f, friction._val))
@@ -192,7 +186,7 @@ object Moveable {
             health = spawnArgs.GetInt("health", "0")
             spawnArgs.GetString("broken", "", brokenModel)
             if (health != 0) {
-                if (!brokenModel.IsEmpty() && TempDump.NOT(ModelManager.renderModelManager.CheckModel(brokenModel.toString()))) {
+                if (!brokenModel.IsEmpty() && ModelManager.renderModelManager.CheckModel(brokenModel.toString()) == null) {
                     idGameLocal.Error(
                         "idMoveable '%s' at (%s): cannot load broken model '%s'",
                         name,
@@ -302,7 +296,7 @@ object Moveable {
 
         fun EnableDamage(enable: Boolean, duration: Float) {
             canDamage = enable
-            if (duration != 0f) {
+            if (duration != 0.0f) {
                 PostEventSec(EV_EnableDamage, duration, if (!enable) 0.0f else 1.0f)
             }
         }
@@ -345,7 +339,7 @@ object Moveable {
                 }
             }
             if (fxCollide.Length() != 0 && Game_local.gameLocal.time > nextCollideFxTime) {
-                idEntityFx.StartFx(fxCollide, collision.c.point, idMat3.getMat3_zero(), this, false)
+                idEntityFx.StartFx(fxCollide, collision.c.point, null, this, false)
                 nextCollideFxTime = Game_local.gameLocal.time + 3500
             }
             return false
@@ -449,13 +443,13 @@ object Moveable {
             if (delay == 0.0f) {
                 physicsObj.SetLinearVelocity(init_velocity)
             } else {
-                PostEventSec(Entity.EV_SetLinearVelocity, delay, init_velocity)
+                PostEventSec(EV_SetLinearVelocity, delay, init_velocity)
             }
             delay = spawnArgs.GetFloat("init_avelocityDelay", "0")
             if (delay == 0.0f) {
                 physicsObj.SetAngularVelocity(init_avelocity)
             } else {
-                PostEventSec(Entity.EV_SetAngularVelocity, delay, init_avelocity)
+                PostEventSec(EV_SetAngularVelocity, delay, init_avelocity)
             }
             InitInitialSpline(Game_local.gameLocal.time)
         }
@@ -467,7 +461,7 @@ object Moveable {
         protected fun Event_SetOwnerFromSpawnArgs() {
             val owner = arrayOfNulls<String>(1)
             if (spawnArgs.GetString("owner", "", owner)) {
-                ProcessEvent(Entity.EV_SetOwner, Game_local.gameLocal.FindEntity(owner[0]!!))
+                ProcessEvent(EV_SetOwner, Game_local.gameLocal.FindEntity(owner[0]!!))
             }
         }
 
@@ -512,7 +506,7 @@ object Moveable {
             nextDamageTime = 0
             nextSoundTime = 0
             initialSpline = null
-            initialSplineDir = Vector.getVec3_zero()
+            initialSplineDir = getVec3_zero()
             explode = false
             unbindOnDeath = false
             allowStep = false
@@ -539,13 +533,13 @@ object Moveable {
         // CLASS_PROTOTYPE( idBarrel );
         private val lastOrigin // origin of the barrel the last think frame
                 : idVec3
-        private var additionalAxis // additional rotation axis
+        private val additionalAxis // additional rotation axis
                 : idMat3
         private var additionalRotation // additional rotation of the barrel about it's axis
                 : Float
         private var barrelAxis // one of the coordinate axes the barrel cylinder is parallel to
                 = 0
-        private var lastAxis // axis of the barrel the last think frame
+        private val lastAxis // axis of the barrel the last think frame
                 : idMat3
         private var radius // radius of barrel
                 = 1.0f
@@ -560,7 +554,7 @@ object Moveable {
             // always a vertical barrel with cylinder axis parallel to the z-axis
             barrelAxis = 2
             lastOrigin.set(GetPhysics().GetOrigin())
-            lastAxis = GetPhysics().GetAxis()
+            lastAxis.set(GetPhysics().GetAxis())
             additionalRotation = 0.0f
             additionalAxis.Identity()
         }
@@ -614,7 +608,7 @@ object Moveable {
                     movedDistance = dir.LengthSqr()
 
                     // if the barrel moved and the barrel is not aligned with the gravity direction
-                    if (movedDistance > 0.0f && Math.abs(gravityNormal.times(curAxis[barrelAxis])) < 0.7f) {
+                    if (movedDistance > 0.0f && idMath.Fabs(gravityNormal * curAxis[barrelAxis]) < 0.7f) {
 
                         // barrel movement since last think frame orthogonal to the barrel axis
                         movedDistance = idMath.Sqrt(movedDistance)
@@ -638,16 +632,16 @@ object Moveable {
                             } else {
                                 additionalRotation -= angle
                             }
-                            dir.set(Vector.getVec3Origin())
+                            dir.set(getVec3Origin())
                             dir[barrelAxis] = 1.0f
-                            additionalAxis = idRotation(Vector.getVec3Origin(), dir, additionalRotation).ToMat3()
+                            additionalAxis.set(idRotation(getVec3Origin(), dir, additionalRotation).ToMat3())
                         }
                     }
                 }
 
                 // save state for next think
                 lastOrigin.set(curOrigin)
-                lastAxis = curAxis
+                lastAxis.set(curAxis)
             }
             Present()
         }
@@ -662,7 +656,7 @@ object Moveable {
         }
 
         override fun GetPhysicsToVisualTransform(origin: idVec3, axis: idMat3): Boolean {
-            origin.set(Vector.getVec3Origin())
+            origin.set(getVec3Origin())
             axis.set(additionalAxis)
             return true
         }
@@ -671,12 +665,10 @@ object Moveable {
             Think()
         }
 
-        //
-        //
         init {
             lastOrigin = idVec3()
             lastAxis = idMat3.getMat3_identity()
-            additionalRotation = 0f
+            additionalRotation = 0.0f
             additionalAxis = idMat3.getMat3_identity()
             fl.networkSync = true
         }
@@ -706,22 +698,19 @@ object Moveable {
 
             init {
                 eventCallbacks.putAll(idMoveable.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idExplodingBarrel> { obj: idExplodingBarrel, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
                 eventCallbacks[EV_Respawn] =
                     eventCallback_t0<idExplodingBarrel> { obj: idExplodingBarrel -> obj.Event_Respawn() }
-                eventCallbacks[Projectile.EV_Explode] =
+                eventCallbacks[EV_Explode] =
                     eventCallback_t0<idExplodingBarrel> { obj: idExplodingBarrel -> obj.Event_Explode() }
                 eventCallbacks[EV_TriggerTargets] =
                     eventCallback_t0<idExplodingBarrel> { obj: idExplodingBarrel -> obj.Event_TriggerTargets() }
             }
         }
 
-        // };
-        //
-        //
         private val spawnOrigin: idVec3
         private var light: renderLight_s
         private var   /*qhandle_t*/lightDefHandle: Int
@@ -729,7 +718,7 @@ object Moveable {
         private var   /*qhandle_t*/particleModelDefHandle: Int
         private var particleRenderEntity: renderEntity_s
         private var particleTime: Int
-        private var spawnAxis: idMat3
+        private val spawnAxis: idMat3 = idMat3()
         private var state: explode_state_t = explode_state_t.NORMAL
         private var time: Float
 
@@ -749,7 +738,7 @@ object Moveable {
             health = spawnArgs.GetInt("health", "5")
             fl.takedamage = true
             spawnOrigin.set(GetPhysics().GetOrigin())
-            spawnAxis = GetPhysics().GetAxis()
+            spawnAxis.set(GetPhysics().GetAxis())
             state = explode_state_t.NORMAL
             particleModelDefHandle = -1
             lightDefHandle = -1
@@ -777,7 +766,7 @@ object Moveable {
         override fun Restore(savefile: idRestoreGame) {
             savefile.ReadVec3(spawnOrigin)
             savefile.ReadMat3(spawnAxis)
-            state = Moveable.idExplodingBarrel.explode_state_t.values()[savefile.ReadInt()]
+            state = explode_state_t.values()[savefile.ReadInt()]
             particleModelDefHandle = savefile.ReadInt()
             lightDefHandle = savefile.ReadInt()
             savefile.ReadRenderEntity(particleRenderEntity)
@@ -792,7 +781,7 @@ object Moveable {
             if (lightDefHandle >= 0) {
                 if (state == explode_state_t.BURNING) {
                     // ramp the color up over 250 ms
-                    var pct = (Game_local.gameLocal.time - lightTime) / 250f
+                    var pct = (Game_local.gameLocal.time - lightTime) / 250.0f
                     if (pct > 1.0f) {
                         pct = 1.0f
                     }
@@ -832,7 +821,7 @@ object Moveable {
                 return
             }
             if (damageDef.FindKey("radius") != null && GetPhysics().GetContents() != 0 && GetBindMaster() == null) {
-                PostEventMS(Projectile.EV_Explode, 400)
+                PostEventMS(EV_Explode, 400)
             } else {
                 idEntity_Damage(inflictor, attacker, dir, damageDefName, damageScale, location)
             }
@@ -845,7 +834,7 @@ object Moveable {
             var f = spawnArgs.GetFloat("burn")
             if (f > 0.0f && state == explode_state_t.NORMAL) {
                 state = explode_state_t.BURNING
-                PostEventSec(Projectile.EV_Explode, f)
+                PostEventSec(EV_Explode, f)
                 StartSound("snd_burn", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
                 AddParticles(spawnArgs.GetString("model_burn", ""), true)
                 return
@@ -901,8 +890,8 @@ object Moveable {
                 kv = spawnArgs.MatchPrefix("def_debris", kv)
             }
             physicsObj.PutToRest()
-            CancelEvents(Projectile.EV_Explode)
-            CancelEvents(Entity.EV_Activate)
+            CancelEvents(EV_Explode)
+            CancelEvents(EV_Activate)
             f = spawnArgs.GetFloat("respawn")
             if (f > 0.0f) {
                 PostEventSec(EV_Respawn, f)
@@ -940,6 +929,7 @@ object Moveable {
                     }
                     true
                 }
+
                 else -> {
                     super.ClientReceiveEvent(event, time, msg)
                 }
@@ -966,9 +956,9 @@ object Moveable {
                     particleRenderEntity.shaderParms[RenderWorld.SHADERPARM_BLUE] = rgb
                     particleRenderEntity.shaderParms[RenderWorld.SHADERPARM_ALPHA] = rgb
                     particleRenderEntity.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                        -Math_h.MS2SEC(Game_local.gameLocal.realClientTime.toFloat())
+                        -MS2SEC(Game_local.gameLocal.realClientTime.toFloat())
                     particleRenderEntity.shaderParms[RenderWorld.SHADERPARM_DIVERSITY] =
-                        if (burn) 1.0f else Game_local.gameLocal.random.RandomInt(90.0).toFloat()
+                        if (burn) 1.0f else Game_local.gameLocal.random.RandomInt(90).toFloat()
                     if (null == particleRenderEntity.hModel) {
                         particleRenderEntity.hModel = ModelManager.renderModelManager.FindModel(name)
                     }
@@ -992,8 +982,8 @@ object Moveable {
             light.lightRadius.z = light.lightRadius.x
             light.lightRadius.y = light.lightRadius.z
             light.origin.set(physicsObj.GetOrigin())
-            light.origin.z += 128f
-            light.pointLight = true
+            light.origin.z += 128.0f
+            light.pointLight._val = true
             light.shader = DeclManager.declManager.FindMaterial(name)
             light.shaderParms[RenderWorld.SHADERPARM_RED] = 2.0f
             light.shaderParms[RenderWorld.SHADERPARM_GREEN] = 2.0f
@@ -1034,17 +1024,17 @@ object Moveable {
         }
 
         public override fun Event_Activate(activator: idEventArg<idEntity>) {
-            Killed(activator.value, activator.value, 0, Vector.getVec3Origin(), 0)
+            Killed(activator.value, activator.value, 0, getVec3Origin(), 0)
         }
 
         private fun Event_Respawn() {
             var i: Int
             val minRespawnDist = spawnArgs.GetInt("respawn_range", "256")
             if (minRespawnDist != 0) {
-                var minDist = -1f
+                var minDist = -1.0f
                 i = 0
                 while (i < Game_local.gameLocal.numClients) {
-                    if (TempDump.NOT(Game_local.gameLocal.entities[i]) || Game_local.gameLocal.entities[i] !is idPlayer) {
+                    if (Game_local.gameLocal.entities[i] == null || Game_local.gameLocal.entities[i] !is idPlayer) {
                         i++
                         continue
                     }
@@ -1080,7 +1070,7 @@ object Moveable {
         private fun Event_Explode() {
             if (state == explode_state_t.NORMAL || state == explode_state_t.BURNING) {
                 state = explode_state_t.BURNEXPIRED
-                Killed(null, null, 0, Vector.getVec3_zero(), 0)
+                Killed(null, null, 0, getVec3_zero(), 0)
             }
         }
 
@@ -1099,7 +1089,6 @@ object Moveable {
 
         init {
             spawnOrigin = idVec3()
-            spawnAxis = idMat3()
             state = explode_state_t.NORMAL
             particleModelDefHandle = -1
             lightDefHandle = -1

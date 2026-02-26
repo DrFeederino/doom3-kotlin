@@ -4,7 +4,6 @@ import neo.Game.GameEdit
 import neo.Renderer.Material
 import neo.Renderer.Material.materialCoverage_t
 import neo.Renderer.tr_lightrun
-import neo.TempDump
 import neo.Tools.Compilers.DMap.dmap.mapLight_t
 import neo.Tools.Compilers.DMap.dmap.mapTri_s
 import neo.Tools.Compilers.DMap.dmap.optimizeGroup_s
@@ -15,7 +14,7 @@ import neo.Tools.Compilers.DMap.dmap.uBrush_t
 import neo.Tools.Compilers.DMap.dmap.uEntity_t
 import neo.framework.Common
 import neo.framework.DeclManager
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.MapFile
 import neo.idlib.MapFile.idMapBrush
 import neo.idlib.MapFile.idMapBrushSide
@@ -27,13 +26,10 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CBool
 import neo.idlib.geometry.Surface.idSurface
 import neo.idlib.geometry.Surface_Patch.idSurface_Patch
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector
+import neo.idlib.math.DotProduct
+import neo.idlib.math.idPlane
 import kotlin.math.floor
 
-/**
- *
- */
 object map {
     const val DIST_EPSILON = 0.01f
 
@@ -51,27 +47,16 @@ object map {
      brushes, each of which has a side definition.
 
      */
-    //
-    // private declarations
-    //
     const val MAX_BUILD_SIDES = 300
-
-    //
-    //
     const val NORMAL_EPSILON = 0.00001f
 
-    //
     // brushes are parsed into a temporary array of sides,
     // which will have duplicates removed before the final brush is allocated
     var buildBrush: uBrush_t = uBrush_t()
     var c_areaportals = 0
     var c_numMapPatches = 0
-
-    //
     var entityPrimitive // to track editor brush numbers
             = 0
-
-    //
     var uEntity: uEntity_t = uEntity_t()
 
     /*
@@ -220,12 +205,12 @@ object map {
                 plane.set(dmap.dmapGlobals.mapPlanes[s.planenum])
                 plane.plusAssign(3, plane.Normal().times(ent.origin))
                 s.planenum = FindFloatPlane(plane)
-                s.texVec.v[0].plusAssign(3, Vector.DotProduct(ent.origin, s.texVec.v[0]))
-                s.texVec.v[1].plusAssign(3, Vector.DotProduct(ent.origin, s.texVec.v[1]))
+                s.texVec.v[0].plusAssign(3, DotProduct(ent.origin, s.texVec.v[0]))
+                s.texVec.v[1].plusAssign(3, DotProduct(ent.origin, s.texVec.v[1]))
 
                 // remove any integral shift
-                s.texVec.v[0].minusAssign(3, floor(s.texVec.v[0][3].toDouble()).toFloat())
-                s.texVec.v[1].minusAssign(3, floor(s.texVec.v[1][3].toDouble()).toFloat())
+                s.texVec.v[0].minusAssign(3, floor(s.texVec.v[0][3]))
+                s.texVec.v[1].minusAssign(3, floor(s.texVec.v[1][3]))
                 i++
             }
             ubrush.CreateBrushWindings(b)
@@ -320,8 +305,8 @@ object map {
             s.material = DeclManager.declManager.FindMaterial(ms.GetMaterial())
             ms.GetTextureVectors(s.texVec.v)
             // remove any integral shift, which will help with grouping
-            s.texVec.v[0].minusAssign(3, floor(s.texVec.v[0][3].toDouble()).toFloat())
-            s.texVec.v[1].minusAssign(3, floor(s.texVec.v[1][3].toDouble()).toFloat())
+            s.texVec.v[0].minusAssign(3, floor(s.texVec.v[0][3]))
+            s.texVec.v[1].minusAssign(3, floor(s.texVec.v[1][3]))
             i++
         }
 
@@ -333,7 +318,7 @@ object map {
         // get the content for the entire brush
         SetBrushContents(buildBrush)
         b = FinishBrush()
-        if (TempDump.NOT(b)) {
+        if (b == null) {
             return
         }
         if (fixedDegeneracies[0] && dmap.dmapGlobals.verboseentities) {
@@ -467,7 +452,7 @@ object map {
         val name = arrayOfNulls<String>(1)
         mapEnt.epairs.GetString("name", "", name)
         idStr.Copynz(light.name, name[0]!!, light.name.size)
-        if (TempDump.NOT(light.name[0])) {
+        if (light.name[0] == null) {
             Common.common.Error(
                 "Light at (%f,%f,%f) didn't have a name",
                 light.def.parms.origin[0], light.def.parms.origin[1], light.def.parms.origin[2]

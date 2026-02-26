@@ -15,8 +15,8 @@ import neo.framework.File_h.idFile_InZip
 import neo.framework.File_h.idFile_Permanent
 import neo.idlib.CmdArgs
 import neo.idlib.Dict_h.idDict
-import neo.idlib.Lib
-import neo.idlib.Lib.idLib
+import neo.idlib.LittleLong
+import neo.idlib.MAX_STRING_CHARS
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Parser.idParser
@@ -25,9 +25,10 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.CInt
-import neo.idlib.containers.HashIndex.idHashIndex
 import neo.idlib.containers.List.idList
+import neo.idlib.containers.idHashIndex
 import neo.idlib.containers.idStrList
+import neo.idlib.idLib
 import neo.sys.sys_public
 import neo.sys.win_main
 import neo.sys.win_main.Sys_EnterCriticalSection
@@ -326,7 +327,7 @@ object FileSystem_h {
         companion object {
             @Transient
             val SIZE: Int = (idStr.SIZE
-                    + 8 * Lib.MAX_STRING_CHARS
+                    + 8 * MAX_STRING_CHARS
                     + Integer.SIZE
                     + Integer.SIZE
                     + Integer.SIZE
@@ -921,7 +922,7 @@ object FileSystem_h {
 
         fun StartBackgroundDownloadThread() {
             return
-//            if (TempDump.NOT(backgroundThread.threadHandle)) { //TODO:enable this.
+//            if (backgroundThread.threadHandle)) { //TODO:enable this.
 //                win_main.Sys_CreateThread(
 //                    BackgroundDownloadThread.INSTANCE,
 //                    null,
@@ -931,7 +932,7 @@ object FileSystem_h {
 //                    emptyArray(),
 //                    sys_public.g_thread_count
 //                )
-//                if (TempDump.NOT(backgroundThread.threadHandle)) {
+//                if (backgroundThread.threadHandle)) {
 //                    idLib.common.Warning("idFileSystemLocal::StartBackgroundDownloadThread: failed")
 //                }
 //            } else {
@@ -1005,7 +1006,7 @@ object FileSystem_h {
                     }
                     sp = next
                 }
-                loop = if (loop === searchPaths) addonPaks else null
+                loop = if (loop == searchPaths) addonPaks else null
             }
 
             // any FS_ calls will now be an error until reinitialized
@@ -1292,7 +1293,7 @@ object FileSystem_h {
         }
 
         override fun BuildOSPath(base: String, game: String, relativePath: String): String {
-            val OSPath = StringBuilder(Lib.MAX_STRING_CHARS)
+            val OSPath = StringBuilder(MAX_STRING_CHARS)
             val newPath: idStr
             if (fs_caseSensitiveOS.GetBool() || Common.com_developer.GetBool()) {
                 // extract the path, make sure it's all lowercase
@@ -1810,10 +1811,10 @@ object FileSystem_h {
             val buf: ByteBuffer?
             val len = CInt()
             val isConfig: Boolean
-            if (TempDump.NOT(searchPaths)) {
+            if (searchPaths == null) {
                 idLib.common.FatalError("Filesystem call made without initialization\n")
             }
-            if (TempDump.NOT(relativePath) || relativePath.isEmpty()) {
+            if (relativePath == null || relativePath.isEmpty()) {
                 idLib.common.FatalError("idFileSystemLocal::ReadFile with empty name\n")
             }
             if (timestamp != null) {
@@ -2044,7 +2045,7 @@ object FileSystem_h {
                     }
                     netpath = idStr(BuildOSPath(dir.path.toString(), dir.gamedir.toString(), relativePath))
                     fp = OpenOSFileCorrectName(netpath, "rb")
-                    if (TempDump.NOT(fp)) {
+                    if (fp == null) {
                         search = search.next
                         continue
                     }
@@ -2093,6 +2094,7 @@ object FileSystem_h {
                                 if (isFromCDPath) {
                                     CopyFile(netpath.toString(), copypath.toString())
                                 }
+
                             2 ->                                 // from cd path + timestamps
                                 if (isFromCDPath) {
                                     CopyFile(netpath.toString(), copypath.toString())
@@ -2112,9 +2114,11 @@ object FileSystem_h {
                                         CopyFile(sourcepath.toString(), copypath.toString())
                                     }
                                 }
+
                             3 -> if (isFromCDPath || isFromBasePath) {
                                 CopyFile(netpath.toString(), copypath.toString())
                             }
+
                             4 -> if (isFromCDPath && !isFromBasePath) {
                                 CopyFile(netpath.toString(), copypath.toString())
                             }
@@ -2268,7 +2272,7 @@ object FileSystem_h {
             CreateOSPath(OSpath)
             f = idFile_Permanent()
             f.o = OpenOSFile(OSpath, "wb")
-            if (TempDump.NOT(f.o)) {
+            if (f.o == null) {
 //		delete f;
                 return null
             }
@@ -2306,7 +2310,7 @@ object FileSystem_h {
             }
             f = idFile_Permanent()
             f.o = OpenOSFile(OSpath, "ab")
-            if (TempDump.NOT(f.o)) {
+            if (f.o == null) {
 //		delete f;
                 return null
             }
@@ -2338,7 +2342,7 @@ object FileSystem_h {
             idLib.common.DPrintf("idFileSystem::OpenExplicitFileRead - reading from: %s\n", OSPath)
             f = idFile_Permanent()
             f.o = OpenOSFile(OSPath, "rb")
-            if (TempDump.NOT(f.o)) {
+            if (f.o == null) {
 //		delete f;
                 return null
             }
@@ -2362,7 +2366,7 @@ object FileSystem_h {
             CreateOSPath(OSPath)
             f = idFile_Permanent()
             f.o = OpenOSFile(OSPath, "wb")
-            if (TempDump.NOT(f.o)) {
+            if (f.o == null) {
 //		delete f;
                 return null
             }
@@ -2690,7 +2694,7 @@ object FileSystem_h {
             i = 0
             while (i < testList.size()) {
                 if (testList[i].Length() != 0
-                    && TempDump.NOT(testList[i].Icmpn(pak.pakFilename.toString(), testList[i].Length()).toDouble())
+                    && testList[i].Icmpn(pak.pakFilename.toString(), testList[i].Length()) == 0
                 ) {
                     relativePath.set(pak.pakFilename.toString().substring(testList[i].Length() + 1))
                     break
@@ -2704,7 +2708,7 @@ object FileSystem_h {
                 )
                 return 0
             }
-            idStr.Copynz(path, relativePath.c_str(), Lib.MAX_STRING_CHARS)
+            idStr.Copynz(path, relativePath.c_str(), MAX_STRING_CHARS)
             return pak.length
         }
 
@@ -2764,7 +2768,7 @@ object FileSystem_h {
 
         override fun FindFile(path: String, scheduleAddons: Boolean): findFile_t {
             val pak = arrayOfNulls<pack_t?>(1)
-            val f = OpenFileReadFlags(
+            OpenFileReadFlags(
                 path,
                 FSFLAG_SEARCH_DIRS or FSFLAG_SEARCH_PAKS or FSFLAG_SEARCH_ADDONS,
                 pak
@@ -3913,7 +3917,7 @@ object FileSystem_h {
 //                }
                     filename_inzip = entry.name
                     if (entry.size > 0) {
-                        fs_headerLongs[fs_numHeaderLongs++] = Lib.LittleLong(entry.crc)
+                        fs_headerLongs[fs_numHeaderLongs++] = LittleLong(entry.crc)
                     }
                     hash = HashFileName(filename_inzip)
                     buildBuffer[i] = fileInPack_s()
@@ -3953,7 +3957,7 @@ object FileSystem_h {
                     pakFile = pakFile.next
                 }
                 pack.checksum = 0 //new BigInteger(MD4_BlockChecksum(fs_headerLongs, fs_numHeaderLongs)).intValue();
-                pack.checksum = Lib.LittleLong(pack.checksum)
+                pack.checksum = LittleLong(pack.checksum)
 
 //            Mem_Free(fs_headerLongs);
                 return pack
@@ -4578,8 +4582,8 @@ object FileSystem_h {
                 "0",
                 CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INIT or CVarSystem.CVAR_INTEGER,
                 "",
-                0f,
-                4f,
+                0.0f,
+                4.0f,
                 ArgCompletion_Integer(0, 3)
             )
 
@@ -4589,8 +4593,8 @@ object FileSystem_h {
                 "0",
                 CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER,
                 "",
-                0f,
-                2f,
+                0.0f,
+                2.0f,
                 ArgCompletion_Integer(0, 2)
             )
             private val fs_devpath: idCVar =
@@ -4637,10 +4641,10 @@ object FileSystem_h {
 
             private fun CurlProgressFunction(
                 clientp: Array<Any>,
-                dltotal: Double,
-                dlnow: Double,
-                ultotal: Double,
-                ulnow: Double
+                dltotal: Float,
+                dlnow: Float,
+                ultotal: Float,
+                ulnow: Float
             ): Int {
                 val bgl = clientp[0] as backgroundDownload_s
                 if (bgl.url.status == dlStatus_t.DL_ABORTING) {

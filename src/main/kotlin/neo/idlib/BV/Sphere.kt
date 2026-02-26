@@ -1,17 +1,9 @@
 package neo.idlib.BV
 
 import neo.idlib.containers.CFloat
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Simd.SIMDProcessor
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.*
 import java.util.*
 
-/**
- *
- */
 class Sphere {
     /*
      ===============================================================================
@@ -22,10 +14,8 @@ class Sphere {
      */
     class idSphere {
         private val origin: idVec3
-        private var radius = 0f
+        private var radius = 0.0f
 
-        //
-        //
         constructor() {
             origin = idVec3()
         }
@@ -40,7 +30,6 @@ class Sphere {
             radius = r
         }
 
-        //
         operator fun get(index: Int): Float {
             return origin[index]
         }
@@ -58,9 +47,6 @@ class Sphere {
             return this
         }
 
-        //public	idSphere		operator+( final idSphere &s )
-        //public	idSphere &		operator+=( final idSphere &s )
-        //
         fun Compare(a: idSphere): Boolean {                            // exact compare, no epsilon
             return origin.Compare(a.origin) && radius == a.radius
         }
@@ -69,12 +55,10 @@ class Sphere {
             return origin.Compare(a.origin, epsilon) && Math.abs(radius - a.radius) <= epsilon
         }
 
-        //public	boolean			operator==(	final idSphere &a )						// exact compare, no epsilon
-        //public	boolean			operator!=(	final idSphere &a )						// exact compare, no epsilon
         override fun hashCode(): Int {
             var hash = 7
             hash = 97 * hash + Objects.hashCode(origin)
-            hash = 97 * hash + java.lang.Float.floatToIntBits(radius)
+            hash = 97 * hash + radius.toBits().toInt()
             return hash
         }
 
@@ -86,9 +70,7 @@ class Sphere {
                 return false
             }
             val other = other as idSphere
-            return if (origin != other.origin) {
-                false
-            } else java.lang.Float.floatToIntBits(radius) == java.lang.Float.floatToIntBits(other.radius)
+            return Compare(other)
         }
 
         fun Clear() {                                    // inside out sphere
@@ -185,15 +167,15 @@ class Sphere {
         }
 
 
-        fun PlaneSide(plane: idPlane, epsilon: Float = Plane.ON_EPSILON): Int {
+        fun PlaneSide(plane: idPlane, epsilon: Float = ON_EPSILON): Int {
             val d: Float
             d = plane.Distance(origin)
             if (d > radius + epsilon) {
-                return Plane.PLANESIDE_FRONT
+                return PLANESIDE_FRONT
             }
             return if (d < -radius - epsilon) {
-                Plane.PLANESIDE_BACK
-            } else Plane.PLANESIDE_CROSS
+                PLANESIDE_BACK
+            } else PLANESIDE_CROSS
         }
 
         fun ContainsPoint(p: idVec3): Boolean {            // includes touching
@@ -289,12 +271,12 @@ class Sphere {
             val mins = idVec3()
             val maxs = idVec3()
 
-            SIMDProcessor.MinMax(mins, maxs, points, numPoints)
+            SIMDProcessor!!.MinMax(mins, maxs, points, numPoints)
 
             origin.set((mins + maxs) * 0.5f)
 
             radiusSqr = 0.0f
-            for (i in 0..numPoints) {
+            for (i in 0 until numPoints) {
                 dist = (points[i] - origin).LengthSqr()
                 if (dist > radiusSqr) {
                     radiusSqr = dist

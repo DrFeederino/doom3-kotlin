@@ -7,24 +7,22 @@ import neo.Renderer.Model.idRenderModel
 import neo.Renderer.RenderWorld
 import neo.Sound.sound.idSoundEmitter
 import neo.framework.DeclSkin.idDeclSkin
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.CmdArgs
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.containers.LinkList.idLinkList
 import neo.idlib.geometry.JointTransform.idJointMat
-import neo.idlib.math.Curve
+import neo.idlib.idException
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idVec3
 import neo.ui.UserInterface.idUserInterface
 import org.lwjgl.BufferUtils
 import org.lwjgl.openal.AL10
 import java.io.IOException
 import java.io.Serializable
-import java.lang.reflect.Field
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.nio.ByteBuffer
@@ -39,9 +37,6 @@ import java.util.logging.Logger
 import java.util.stream.IntStream
 import javax.swing.undo.CannotUndoException
 
-/**
- *
- */
 object TempDump {
     //TODO:rename/refactor to ToolBox or something
     private val CALL_STACK_MAP: MutableMap<String, Int> = HashMap()
@@ -56,7 +51,7 @@ object TempDump {
 
     fun strLen(str: CharArray): Int {
         var len: Int
-        if (NOT(str)) {
+        if (str.isEmpty() || '\u0000' == str[0]) {
             return -1
         }
         len = 0
@@ -72,7 +67,7 @@ object TempDump {
 
     fun strLen(str: ByteArray, offset: Int = 0): Int {
         var len: Int
-        if (NOT(str)) {
+        if (str.isEmpty()) {
             return -1
         }
         len = offset
@@ -107,8 +102,7 @@ object TempDump {
         return if (null == a || null == b || a.size < length || b.size < length) {
             false
         } else Arrays.equals(
-            Arrays.copyOf(a, length),
-            Arrays.copyOf(b, length)
+            Arrays.copyOf(a, length), Arrays.copyOf(b, length)
         )
     }
 
@@ -177,7 +171,7 @@ object TempDump {
      * **index**.
      */
 
-    fun replaceByIndex(character: kotlin.Char, index: Int, string: String): String {
+    fun replaceByIndex(character: Char, index: Int, string: String): String {
         return string.substring(0, index) + character + string.substring(index + 1)
     }
 
@@ -188,22 +182,22 @@ object TempDump {
      * @return True if **ALL** objects[0...i] = null.
      */
 
-    fun NOT(vararg objects: Any?): Boolean {
-        //TODO: make sure incoming object isn't Integer or Float...etc.
-        if (objects == null) return true
-        for (o in objects) {
-            if (o != null) {
-                return false
-            }
-        }
-        return true
-    }
+//    fun NOT(vararg objects: Any?): Boolean {
+//        //TODO: make sure incoming object isn't Integer or Float...etc.
+//        if (objects == null) return true
+//        for (o in objects) {
+//            if (o != null) {
+//                return false
+//            }
+//        }
+//        return true
+//    }
 
 
-    fun NOT(objects: Any?): Boolean {
-        //TODO: make sure incoming object isn't Integer or Float...etc.
-        if (objects == null) return true else return false
-    }
+//    fun NOT(objects: Any?): Boolean {
+//        //TODO: make sure incoming object isn't Integer or Float...etc.
+//        if (objects == null) return true else return false
+//    }
 
     /**
      * @param number
@@ -211,10 +205,6 @@ object TempDump {
      */
     fun SNOT(number: Double): Int {
         return if (0.0 == number) 1 else 0
-    }
-
-    fun NOT(number: Double): Boolean {
-        return 0.0 == number
     }
 
     /**
@@ -292,9 +282,10 @@ object TempDump {
      * FloatBuffer to Float Array
      */
     fun fbtofa(fb: FloatBuffer): FloatArray {
-        val fa = FloatArray(fb.capacity())
-        fb.duplicate()[fa]
-        return fa
+//        val fa = FloatArray(fb.capacity())
+//        fb.duplicate()[fa]
+//        return fa
+        return fb.array()
     }
 
 
@@ -322,10 +313,10 @@ object TempDump {
 
 
     fun atof(ascii: String): Float {
-        return try {
-            ascii.trim { it <= ' ' }.toFloat()
-        } catch (e: NumberFormatException) {
-            0f
+        try {
+            return ascii.trim { it <= ' ' }.replace(",", ".").toFloat()
+        } catch (nfe: Exception) {
+            return 0f
         }
     }
 
@@ -348,12 +339,12 @@ object TempDump {
     }
 
 
-    fun ctos(ascii: kotlin.Char): String {
+    fun ctos(ascii: Char): String {
         return "" + ascii
     }
 
     fun btos(bytes: ByteArray, offset: Int, length: Int): String? {
-        return if (NOT(bytes)) {
+        return if (bytes.isEmpty()) {
             null
         } else String(bytes, offset, length)
     }
@@ -365,7 +356,7 @@ object TempDump {
     }
 
     fun atobb(ascii: String?): ByteBuffer? {
-        return if (NOT(ascii)) {
+        return if (ascii == null || ascii.isEmpty() || ascii == "\u0000") {
             null
         } else StandardCharsets.UTF_8.encode(ascii)
 
@@ -373,20 +364,20 @@ object TempDump {
     }
 
     fun atobb(ascii: idStr): ByteBuffer? {
-        return if (NOT(ascii)) {
+        return if (ascii.data.isEmpty() || ascii.data == "\u0000") {
             null
         } else atobb(ascii.toString())
     }
 
     fun atobb(ascii: CharArray): ByteBuffer? {
-        return if (NOT(ascii)) {
+        return if (ascii.isEmpty() || ascii[0] == '\u0000') {
             null
         } else atobb(ctos(ascii))
     }
 
     fun stobb(arr: ShortArray): ByteBuffer? {
         val buffer: ByteBuffer?
-        if (NOT(arr)) {
+        if (arr.isEmpty()) {
             return null
         }
         buffer = ByteBuffer.allocate(arr.size * 2)
@@ -402,10 +393,7 @@ object TempDump {
 
 
     fun bbtocb(buffer: ByteBuffer): CharBuffer {
-
-//        buffer.rewind();
-//        return Charset.forName("UTF-8").decode(buffer);
-        return StandardCharsets.ISO_8859_1.decode(buffer)
+        return StandardCharsets.ISO_8859_1.decode(buffer.rewind())
     }
 
     fun bbtoa(buffer: ByteBuffer): String {
@@ -586,6 +574,12 @@ object TempDump {
         return array
     }
 
+    interface Settable<T> {
+        fun set(other: T): T
+        fun new(): T
+        fun zero()
+    }
+
     /**
      *
      */
@@ -597,7 +591,7 @@ object TempDump {
          *
          * @return
          */
-        open fun AllocBuffer(): ByteBuffer
+        fun AllocBuffer(): ByteBuffer
 
         /**
          * Reads the ByteBuffer and converts and sets its values to the current
@@ -605,14 +599,14 @@ object TempDump {
          *
          * @param buffer
          */
-        open fun Read(buffer: ByteBuffer)
+        fun Read(buffer: ByteBuffer)
 
         /**
          * Prepares a ByteBuffer representation of the class for writing.
          *
          * @return
          */
-        open fun Write(): ByteBuffer
+        fun Write(): ByteBuffer
 
         companion object {
             //TODO:remove Serializable
@@ -625,8 +619,8 @@ object TempDump {
      *
      */
     interface NiLLABLE<type> {
-        open fun oSet(node: type): type
-        open fun isNULL(): Boolean
+        fun oSet(node: type): type
+        fun isNULL(): Boolean
     }
 
     abstract class void_callback<type> {
@@ -655,148 +649,148 @@ object TempDump {
         private val O_PLUS: String = "plus"
         private val O_SET: String = "set"
         private val ZERO: String = "Zero"
-        fun GetDimension(`object`: Any): Int {
-            val clazz: Class<*> = `object`.javaClass
-            var returnValue = 0
-            try {
-                val getDimension = clazz.getDeclaredMethod(GET_DIMENSION)
-                returnValue = getDimension.invoke(`object`) as Int
-            } catch (ex: NoSuchMethodException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: SecurityException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: IllegalAccessException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: IllegalArgumentException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: InvocationTargetException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            }
-            return returnValue
-        }
-
-        fun Zero(`object`: Any) {
-            val clazz: Class<*> = `object`.javaClass
-            val getDimension: Method?
-            try {
-                getDimension = clazz.getDeclaredMethod(ZERO)
-                getDimension.invoke(`object`)
-            } catch (ex: NoSuchMethodException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: SecurityException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: IllegalAccessException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: IllegalArgumentException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: InvocationTargetException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            }
-        }
-
-        fun _Get(`object`: Any, declaredField: String): Any? {
-            val clazz: Class<*> = `object`.javaClass
-            val field: Field?
-            var returnObject: Any? = null
-            try {
-                field = clazz.getDeclaredField(declaredField)
-                returnObject = field[`object`]
-            } catch (ex: NoSuchFieldException) {
-                Logger.getLogger(TempDump::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: SecurityException) {
-                Logger.getLogger(TempDump::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: IllegalArgumentException) {
-                Logger.getLogger(TempDump::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: IllegalAccessException) {
-                Logger.getLogger(TempDump::class.java.name).log(Level.SEVERE, null, ex)
-            }
-            return returnObject
-        }
-
-        fun _Get(`object`: Any, index: Int): Float {
-            return _GetMul(`object`, index, 1f) //TODO:you know what to do
-        }
-
-        fun _GetMul(`object`: Any, index: Int, value: Float): Float {
-            val clazz: Class<*> = `object`.javaClass
-            var returnValue = 0f
-            val get: Method?
-            val times: Method
-            val returnObject: Any?
-            try {
-//                System.out.printf("%s\n\n", Arrays.toString(clazz.getDeclaredMethods()));
-                get = clazz.getDeclaredMethod(O_GET, Int::class.javaPrimitiveType)
-                returnObject = get.invoke(`object`, index)
-                try {
-                    times = returnObject.javaClass.getDeclaredMethod(O_MULTIPLY)
-                    returnValue =
-                        times.invoke(returnObject, value) as Float //object becomes float when multiplied(idMat)
-                } catch (ex: NoSuchMethodException) {
-                    returnValue = returnObject as Float * value //object that has float(idVec)
-                }
-            } catch (ex: NoSuchMethodException) {
-                returnValue = `object` as Float * value //float
-            } catch (ex: SecurityException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: IllegalAccessException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: IllegalArgumentException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: InvocationTargetException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            }
-            return returnValue
-        }
-
-        fun _GetGet(`object`: Any, x: Int, y: Int): Float {
-            val clazz: Class<*> = `object`.javaClass
-            var returnValue = 0f
-            val get: Method?
-            val oGet2: Method
-            val returnObject: Any?
-            try {
-                get = clazz.getDeclaredMethod(O_GET)
-                returnObject = get.invoke(`object`, x)
-                oGet2 = returnObject.javaClass.getDeclaredMethod(O_GET)
-                returnValue = oGet2.invoke(returnObject, y) as Float
-            } catch (ex: NoSuchMethodException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: SecurityException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: IllegalAccessException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: IllegalArgumentException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: InvocationTargetException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            }
-            return returnValue
-        }
-
-        fun _GetSet(`object`: Any, x: Int, y: Int, value: Float): Float {
-            val clazz: Class<*> = `object`.javaClass
-            var returnValue = 0f
-            val get: Method?
-            val oGet2: Method
-            val returnObject: Any?
-            try {
-                get = clazz.getDeclaredMethod(O_GET)
-                returnObject = get.invoke(`object`, x)
-                oGet2 = returnObject.javaClass.getDeclaredMethod(O_SET)
-                returnValue = oGet2.invoke(returnObject, y, value) as Float
-            } catch (ex: NoSuchMethodException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: SecurityException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: IllegalAccessException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: IllegalArgumentException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: InvocationTargetException) {
-                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
-            }
-            return returnValue
-        }
+//        fun GetDimension(`object`: Any): Int {
+//            val clazz: Class<*> = `object`.javaClass
+//            var returnValue = 0
+//            //try {
+//                val getDimension = clazz.getDeclaredMethod(GET_DIMENSION)
+//                returnValue = getDimension.invoke(`object`) as Int
+////            } catch (ex: NoSuchMethodException) {
+////                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+////            } catch (ex: SecurityException) {
+////                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+////            } catch (ex: IllegalAccessException) {
+////                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+////            } catch (ex: IllegalArgumentException) {
+////                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+////            } catch (ex: InvocationTargetException) {
+////                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+////            }
+//            return returnValue
+//        }
+//
+//        fun Zero(`object`: Any) {
+//            val clazz: Class<*> = `object`.javaClass
+//            val getDimension: Method?
+//            try {
+//                getDimension = clazz.getDeclaredMethod(ZERO)
+//                getDimension.invoke(`object`)
+//            } catch (ex: NoSuchMethodException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: SecurityException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: IllegalAccessException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: IllegalArgumentException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: InvocationTargetException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            }
+//        }
+//
+//        fun _Get(`object`: Any, declaredField: String): Any? {
+//            val clazz: Class<*> = `object`.javaClass
+//            val field: Field?
+//            var returnObject: Any? = null
+//            try {
+//                field = clazz.getDeclaredField(declaredField)
+//                returnObject = field[`object`]
+//            } catch (ex: NoSuchFieldException) {
+//                Logger.getLogger(TempDump::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: SecurityException) {
+//                Logger.getLogger(TempDump::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: IllegalArgumentException) {
+//                Logger.getLogger(TempDump::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: IllegalAccessException) {
+//                Logger.getLogger(TempDump::class.java.name).log(Level.SEVERE, null, ex)
+//            }
+//            return returnObject
+//        }
+//
+//        fun _Get(`object`: Any, index: Int): Float {
+//            return _GetMul(`object`, index, 1.0f) //TODO:you know what to do
+//        }
+//
+//        fun _GetMul(`object`: Any, index: Int, value: Float): Float {
+//            val clazz: Class<*> = `object`.javaClass
+//            var returnValue = 0.0f
+//            val get: Method?
+//            val times: Method
+//            val returnObject: Any?
+//            try {
+////                System.out.printf("%s\n\n", Arrays.toString(clazz.getDeclaredMethods()));
+//                get = clazz.getDeclaredMethod(O_GET, Int::class.javaPrimitiveType)
+//                returnObject = get.invoke(`object`, index)
+//                try {
+//                    times = returnObject.javaClass.getDeclaredMethod(O_MULTIPLY)
+//                    returnValue =
+//                        times.invoke(returnObject, value) as Float //object becomes float when multiplied(idMat)
+//                } catch (ex: NoSuchMethodException) {
+//                    returnValue = returnObject as Float * value //object that has float(idVec)
+//                }
+//            } catch (ex: NoSuchMethodException) {
+//                returnValue = `object` as Float * value //float
+//            } catch (ex: SecurityException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: IllegalAccessException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: IllegalArgumentException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: InvocationTargetException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            }
+//            return returnValue
+//        }
+//
+//        fun _GetGet(`object`: Any, x: Int, y: Int): Float {
+//            val clazz: Class<*> = `object`.javaClass
+//            var returnValue = 0.0f
+//            val get: Method?
+//            val oGet2: Method
+//            val returnObject: Any?
+//            try {
+//                get = clazz.getDeclaredMethod(O_GET)
+//                returnObject = get.invoke(`object`, x)
+//                oGet2 = returnObject.javaClass.getDeclaredMethod(O_GET)
+//                returnValue = oGet2.invoke(returnObject, y) as Float
+//            } catch (ex: NoSuchMethodException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: SecurityException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: IllegalAccessException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: IllegalArgumentException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: InvocationTargetException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            }
+//            return returnValue
+//        }
+//
+//        fun _GetSet(`object`: Any, x: Int, y: Int, value: Float): Float {
+//            val clazz: Class<*> = `object`.javaClass
+//            var returnValue = 0.0f
+//            val get: Method?
+//            val oGet2: Method
+//            val returnObject: Any?
+//            try {
+//                get = clazz.getDeclaredMethod(O_GET)
+//                returnObject = get.invoke(`object`, x)
+//                oGet2 = returnObject.javaClass.getDeclaredMethod(O_SET)
+//                returnValue = oGet2.invoke(returnObject, y, value) as Float
+//            } catch (ex: NoSuchMethodException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: SecurityException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: IllegalAccessException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: IllegalArgumentException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            } catch (ex: InvocationTargetException) {
+//                Logger.getLogger(Curve::class.java.name).log(Level.SEVERE, null, ex)
+//            }
+//            return returnValue
+//        }
 
         fun _Minus(object1: Any, object2: Any): Any {
             return ooOOoooOOoo(object1, object2, O_MINUS)
@@ -853,155 +847,56 @@ object TempDump {
 
     class Atomics {
         class renderViewShadow {
-            //
-
             var cramZNear: CBool = CBool(false)
-
-
             var forceUpdate: CBool = CBool(false)
 
-            //
-
             var fov_x: CFloat = CFloat()
-
-
             var fov_y: CFloat = CFloat()
 
-
             var globalMaterial: idMaterial? = null
-
-
             var shaderParms = Array(RenderWorld.MAX_GLOBAL_SHADER_PARMS) { CFloat() }
-
-            //
-
             var time: CInt = CInt()
-
-
             var viewID: CInt = CInt()
 
-
-            var viewaxis: idMat3 = idMat3()
-
-
+            val viewaxis: idMat3 = idMat3()
             val vieworg: idVec3 = idVec3()
 
-            //
-
             var x: CInt = CInt()
-
-
             var y: CInt = CInt()
 
-
             var width: CInt = CInt()
-
-
             var height: CInt = CInt()
         }
 
         class renderEntityShadow {
-            //
-
             var allowSurfaceInViewID: CInt = CInt()
-
-
-            var axis: idMat3 = idMat3()
-
-
+            val axis: idMat3 = idMat3()
             var bodyId: CInt = CInt()
-
-            //      
-
-            var bounds: idBounds = idBounds()
-
-
+            val bounds: idBounds = idBounds()
             var callback: RenderWorld.deferredEntityCallback_t? = null
-
-            //
-
             var callbackData: ByteBuffer? = null
-
-            //
-
             var customShader: idMaterial? = null
-
-
             var customSkin: idDeclSkin? = null
-
-            //
-
             var entityNum: CInt = CInt()
-
-            //
-
             var forceUpdate: CInt = CInt()
-
-            //
-
             var gui: Array<idUserInterface?> = arrayOfNulls(RenderWorld.MAX_RENDERENTITY_GUI)
-
-
             var hModel: idRenderModel? = null
-
-
             var joints: Array<idJointMat>? = null
-
-            //
-
             var modelDepthHack: CFloat = CFloat()
-
-            //
-
             var noDynamicInteractions: CBool = CBool()
-
-            //
-
             var noSelfShadow: CBool = CBool()
-
-
             var noShadow: CBool = CBool()
-
-            //
-
             var numJoints: CInt = CInt()
-
-            //
-
-            var origin: idVec3 = idVec3()
-
-
+            val origin: idVec3 = idVec3()
             var referenceShader: idMaterial? = null
-
-
             var referenceSound: idSoundEmitter? = null
-
-            //
-
             var remoteRenderView: RenderWorld.renderView_s? = null
-
-
             var shaderParms = Array(Material.MAX_ENTITY_SHADER_PARMS) { CFloat() }
-
-            //
-
             var suppressShadowInLightID: CInt = CInt()
-
-
             var suppressShadowInViewID: CInt = CInt()
-
-            //
-
             var suppressSurfaceInViewID: CInt = CInt()
-
-
             var timeGroup: CInt = CInt()
-
-            //
-
             var weaponDepthHack: CBool = CBool()
-
-
             var xrayIndex: CInt = CInt()
         }
 
@@ -1011,7 +906,7 @@ object TempDump {
             var allowLightInViewID: CInt = CInt()
 
 
-            var axis: idMat3 = idMat3()
+            val axis: idMat3 = idMat3()
 
 
             val end: idVec3 = idVec3()

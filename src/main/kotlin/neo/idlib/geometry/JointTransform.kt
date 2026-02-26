@@ -1,15 +1,12 @@
 package neo.idlib.geometry
 
-import neo.idlib.math.Math_h.idMath
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Quat.idQuat
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idMath
+import neo.idlib.math.idQuat
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import kotlin.math.abs
 
-/**
- *
- */
 class JointTransform {
     /*
      ===============================================================================
@@ -19,10 +16,7 @@ class JointTransform {
      ===============================================================================
      */
     class idJointQuat {
-
         val q: idQuat
-
-
         val t: idVec3
 
         constructor() {
@@ -231,7 +225,7 @@ class JointTransform {
                 return false
             }
             val other = obj as idJointMat
-            return mat.contentEquals(other.mat)
+            return Compare(other)
         }
 
         fun ToMat3(): idMat3 {
@@ -290,17 +284,13 @@ class JointTransform {
             return jq
         }
 
-        //public	const float *	ToFloatPtr( void ) const;
-        fun ToFloatPtr(): FloatArray {
+        fun ToFloatArray(): FloatArray {
             return mat
         }
 
         companion object {
             const val SIZE = 12 * java.lang.Float.BYTES
             const val BYTES = SIZE / java.lang.Byte.SIZE
-
-            //
-            //
             private var DBG_counter = 0
         }
     }

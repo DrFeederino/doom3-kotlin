@@ -1,6 +1,5 @@
 package neo.Game.GameSys
 
-import neo.CM.CollisionModel_local
 import neo.Game.*
 import neo.Game.AFEntity.idAFEntity_Base
 import neo.Game.AFEntity.idAFEntity_Generic
@@ -27,8 +26,8 @@ import neo.Renderer.Model.modelSurface_s
 import neo.Renderer.Model.srfTriangles_s
 import neo.Renderer.RenderWorld.MAX_RENDERENTITY_GUI
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.TempDump
 import neo.TempDump.void_callback
+import neo.cm.collisionModelManager
 import neo.framework.Async.NetworkSystem
 import neo.framework.CmdSystem
 import neo.framework.CmdSystem.cmdExecution_t
@@ -36,11 +35,10 @@ import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
 import neo.framework.FileSystem_h
 import neo.framework.File_h.idFile
+import neo.idlib.BIT
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.CmdArgs
 import neo.idlib.Dict_h.idDict
-import neo.idlib.Lib
-import neo.idlib.Lib.idLib
 import neo.idlib.MapFile.idMapEntity
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
@@ -50,18 +48,13 @@ import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.containers.idStrList
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.idLib
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Matrix.idMat4
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
 import java.nio.ByteBuffer
+import kotlin.math.tan
 
-/**
- *
- */
 object SysCmds {
     const val MAX_DEBUGLINES = 128
     var debugLines = Array(MAX_DEBUGLINES) { gameDebugLine_t() }
@@ -72,7 +65,7 @@ object SysCmds {
      ==================
      */
     fun Cmd_GetFloatArg(args: CmdArgs.idCmdArgs, argNum: IntArray): Float {
-        val value: String = args!!.Argv(argNum[0]++)
+        val value: String = args.Argv(argNum[0]++)
         return value.toFloat()
     }
 
@@ -88,12 +81,12 @@ object SysCmds {
         val ignore = idStrList()
         var name: String?
         var i: Int
-        if (TempDump.NOT(Game_local.gameLocal.GetLocalPlayer()) || !Game_local.gameLocal.CheatsOk(false)) {
+        if (Game_local.gameLocal.GetLocalPlayer() == null || !Game_local.gameLocal.CheatsOk(false)) {
             return
         }
         i = 1
-        while (i < args!!.Argc()) {
-            name = args!!.Argv(i)
+        while (i < args.Argc()) {
+            name = args.Argv(i)
             ignore.add(idStr.parseStr(name))
             i++
         }
@@ -108,7 +101,7 @@ object SysCmds {
                     i++
                 }
                 if (i >= ignore.size()) {
-                    ent.PostEventMS(Class.EV_Remove, 0)
+                    ent.PostEventMS(EV_Remove, 0)
                 }
             }
             ent = ent.spawnNode.Next()
@@ -132,7 +125,7 @@ object SysCmds {
             Game_local.gameLocal.Printf("usage: %s <text>\n", cmd)
             return
         }
-        text = idStr(args!!.Args())
+        text = idStr(args.Args())
         if (text.Length() == 0) {
             return
         }
@@ -163,11 +156,7 @@ object SysCmds {
             NetworkSystem.networkSystem.ClientSendReliableMessage(outMsg)
         } else {
             Game_local.gameLocal.mpGame.ProcessChatMessage(
-                Game_local.gameLocal.localClientNum,
-                team,
-                name,
-                text.toString(),
-                null
+                Game_local.gameLocal.localClientNum, team, name, text.toString(), null
             )
         }
     }
@@ -201,17 +190,17 @@ object SysCmds {
         val up = idVec3()
         val p1 = idVec3()
         val p2 = idVec3()
-        var color: idVec4
+        val color = idVec4()
         var l: Float
         i = 0
         while (i < MAX_DEBUGLINES) {
             if (debugLines[i].used) {
                 if (!debugLines[i].blink || Game_local.gameLocal.time and (1 shl 9) != 0) {
-                    color = idVec4(
+                    color.set(
                         (debugLines[i].color and 1).toFloat(),
                         (debugLines[i].color shr 1 and 1).toFloat(),
                         (debugLines[i].color shr 2 and 1).toFloat(),
-                        1f
+                        1.0f
                     )
                     Game_local.gameRenderWorld!!.DebugLine(color, debugLines[i].start, debugLines[i].end)
                     //
@@ -252,7 +241,7 @@ object SysCmds {
             var   /*size_t*/size: Int
             var match: String?
             if (args!!.Argc() > 1) {
-                match = args!!.Args()
+                match = args.Args()
                 match = match.replace(" ".toRegex(), "")
             } else {
                 match = ""
@@ -273,8 +262,7 @@ object SysCmds {
                     continue
                 }
                 Game_local.gameLocal.Printf(
-                    "%4d: %-20s %-20s %s\n", e,
-                    check.GetEntityDefName(), check.GetClassname(), check.name
+                    "%4d: %-20s %-20s %s\n", e, check.GetEntityDefName(), check.GetClassname(), check.name
                 )
                 count++
                 size += check.spawnArgs.Allocated().toInt()
@@ -347,9 +335,7 @@ object SysCmds {
                 val kv = ent.spawnArgs.GetKeyVal(i)!!
                 Game_local.gameLocal.Printf(
                     """"%s"  ${Str.S_COLOR_WHITE}"%s"
-                        """,
-                    kv.GetKey(),
-                    kv.GetValue()
+                        """, kv.GetKey(), kv.GetValue()
                 )
                 i++
             }
@@ -443,7 +429,7 @@ object SysCmds {
             KillEntities(args!!, idAI::class.java)
 
             // kill any projectiles as well since they have pointers to the monster that created them
-            KillEntities(args!!, idProjectile::class.java)
+            KillEntities(args, idProjectile::class.java)
         }
 
         companion object {
@@ -463,7 +449,7 @@ object SysCmds {
      */
     class Cmd_KillMovables_f private constructor() : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            if (TempDump.NOT(Game_local.gameLocal.GetLocalPlayer()) || !Game_local.gameLocal.CheatsOk(false)) {
+            if (Game_local.gameLocal.GetLocalPlayer() == null || !Game_local.gameLocal.CheatsOk(false)) {
                 return
             }
             KillEntities(args!!, idMoveable::class.java)
@@ -486,11 +472,11 @@ object SysCmds {
      */
     class Cmd_KillRagdolls_f private constructor() : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            if (TempDump.NOT(Game_local.gameLocal.GetLocalPlayer()) || !Game_local.gameLocal.CheatsOk(false)) {
+            if (Game_local.gameLocal.GetLocalPlayer() == null || !Game_local.gameLocal.CheatsOk(false)) {
                 return
             }
             KillEntities(args!!, idAFEntity_Generic::class.java)
-            KillEntities(args!!, idAFEntity_WithAttachedHead::class.java)
+            KillEntities(args, idAFEntity_WithAttachedHead::class.java)
         }
 
         companion object {
@@ -527,7 +513,7 @@ object SysCmds {
                     while (i < Game_local.gameLocal.numClients) {
                         if (Game_local.gameLocal.entities[i] != null) {
                             Game_local.gameLocal.entities[i]!!.PostEventSec(
-                                Player.EV_Player_SelectWeapon,
+                                EV_Player_SelectWeapon,
                                 0.5f,
                                 Game_local.gameLocal.entities[i]!!.spawnArgs.GetString("def_weapon1")
                             )
@@ -537,9 +523,7 @@ object SysCmds {
                 }
             }
             if (idStr.Cmpn(name, "weapon_", 7) == 0 || idStr.Cmpn(
-                    name,
-                    "item_",
-                    5
+                    name, "item_", 5
                 ) == 0 || idStr.Cmpn(name, "ammo_", 5) == 0
             ) {
                 player.GiveItem(name)
@@ -552,7 +536,7 @@ object SysCmds {
                 }
             }
             if (give_all || idStr.Icmp(name, "weapons") == 0) {
-                player.inventory.weapons = Lib.BIT(Player.MAX_WEAPONS) - 1
+                player.inventory.weapons = BIT(Player.MAX_WEAPONS) - 1
                 player.CacheWeapons()
                 if (!give_all) {
                     return
@@ -576,22 +560,22 @@ object SysCmds {
                 }
             }
             if (idStr.Icmp(name, "berserk") == 0) {
-                player.GivePowerUp(Player.BERSERK, Math_h.SEC2MS(30.0f).toInt())
+                player.GivePowerUp(Player.BERSERK, SEC2MS(30.0f))
                 return
             }
             if (idStr.Icmp(name, "invis") == 0) {
-                player.GivePowerUp(Player.INVISIBILITY, Math_h.SEC2MS(30.0f).toInt())
+                player.GivePowerUp(Player.INVISIBILITY, SEC2MS(30.0f))
                 return
             }
             if (idStr.Icmp(name, "pda") == 0) {
-                player.GivePDA(idStr.parseStr(args!!.Argv(2)), null)
+                player.GivePDA(idStr.parseStr(args.Argv(2)), null)
                 return
             }
             if (idStr.Icmp(name, "video") == 0) {
-                player.GiveVideo(args!!.Argv(2), null)
+                player.GiveVideo(args.Argv(2), null)
                 return
             }
-            if (!give_all && !player.Give(args!!.Argv(1), args!!.Argv(2))) {
+            if (!give_all && !player.Give(args.Argv(1), args.Argv(2))) {
                 Game_local.gameLocal.Printf("unknown item\n")
             }
         }
@@ -757,8 +741,7 @@ object SysCmds {
                     }
                     player.Kill(false, false)
                     CmdSystem.cmdSystem.BufferCommandText(
-                        cmdExecution_t.CMD_EXEC_NOW,
-                        Str.va(
+                        cmdExecution_t.CMD_EXEC_NOW, Str.va(
                             "say killed client %d '%s^0'\n",
                             player.entityNumber,
                             Game_local.gameLocal.userInfo[player.entityNumber].GetString("ui_name")
@@ -801,7 +784,7 @@ object SysCmds {
                 Game_local.gameLocal.Printf("usage: playerModel <modelname>\n")
                 return
             }
-            name = args!!.Argv(1)
+            name = args.Argv(1)
             player.spawnArgs.Set("model", name)
             pos.set(player.GetPhysics().GetOrigin())
             ang = idAngles(player.viewAngles)
@@ -892,8 +875,7 @@ object SysCmds {
                 return
             }
             CmdSystem.cmdSystem.BufferCommandText(
-                cmdExecution_t.CMD_EXEC_NOW,
-                Str.va(
+                cmdExecution_t.CMD_EXEC_NOW, Str.va(
                     "say kicking out client %d '%s^0'\n",
                     player.entityNumber,
                     Game_local.gameLocal.userInfo[player.entityNumber].GetString("ui_name")
@@ -956,17 +938,17 @@ object SysCmds {
             if (player == null || !Game_local.gameLocal.CheatsOk()) {
                 return
             }
-            if (args!!.Argc() != 4 && args!!.Argc() != 5) {
+            if (args!!.Argc() != 4 && args.Argc() != 5) {
                 Game_local.gameLocal.Printf("usage: setviewpos <x> <y> <z> <yaw>\n")
                 return
             }
             angels.Zero()
-            if (args!!.Argc() == 5) {
-                angels.yaw = args!!.Argv(4).toFloat()
+            if (args.Argc() == 5) {
+                angels.yaw = args.Argv(4).toFloat()
             }
             i = 0
             while (i < 3) {
-                origin[i] = args!!.Argv(i + 1).toFloat()
+                origin[i] = args.Argv(i + 1).toFloat()
                 i++
             }
             origin.z -= SysCvar.pm_normalviewheight.GetFloat() - 0.25f
@@ -1000,7 +982,7 @@ object SysCmds {
                 Game_local.gameLocal.Printf("usage: teleport <name of entity to teleport to>\n")
                 return
             }
-            ent = Game_local.gameLocal.FindEntity(args!!.Argv(1))
+            ent = Game_local.gameLocal.FindEntity(args.Argv(1))
             if (null == ent) {
                 Game_local.gameLocal.Printf("entity not found\n")
                 return
@@ -1026,8 +1008,8 @@ object SysCmds {
      */
     class Cmd_Trigger_f private constructor() : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            val origin = idVec3()
-            var angles: idAngles
+            idVec3()
+            idAngles()
             val player: idPlayer?
             val ent: idEntity?
             player = Game_local.gameLocal.GetLocalPlayer()
@@ -1038,13 +1020,13 @@ object SysCmds {
                 Game_local.gameLocal.Printf("usage: trigger <name of entity to trigger>\n")
                 return
             }
-            ent = Game_local.gameLocal.FindEntity(args!!.Argv(1))
+            ent = Game_local.gameLocal.FindEntity(args.Argv(1))
             if (null == ent) {
                 Game_local.gameLocal.Printf("entity not found\n")
                 return
             }
             ent.Signal(signalNum_t.SIG_TRIGGER)
-            ent.ProcessEvent(Entity.EV_Activate, player)
+            ent.ProcessEvent(EV_Activate, player)
             ent.TriggerGuis()
         }
 
@@ -1079,18 +1061,18 @@ object SysCmds {
                 return
             }
             yaw = player.viewAngles.yaw
-            value = args!!.Argv(1)
+            value = args.Argv(1)
             dict.Set("classname", value)
             dict.Set("angle", Str.va("%f", yaw + 180))
             org.set(
                 player.GetPhysics().GetOrigin()
-                    .plus(idAngles(0f, yaw, 0f).ToForward().times(80f).plus(idVec3(0, 0, 1)))
+                    .plus(idAngles(0.0f, yaw, 0.0f).ToForward().times(80.0f).plus(idVec3(0, 0, 1)))
             )
             dict.Set("origin", org.ToString())
             i = 2
-            while (i < args!!.Argc() - 1) {
-                key = args!!.Argv(i)
-                value = args!!.Argv(i + 1)
+            while (i < args.Argc() - 1) {
+                key = args.Argv(i)
+                value = args.Argv(i + 1)
                 dict.Set(key, value)
                 i += 2
             }
@@ -1114,14 +1096,14 @@ object SysCmds {
      */
     class Cmd_Damage_f private constructor() : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            if (TempDump.NOT(Game_local.gameLocal.GetLocalPlayer()) || !Game_local.gameLocal.CheatsOk(false)) {
+            if (Game_local.gameLocal.GetLocalPlayer() == null || !Game_local.gameLocal.CheatsOk(false)) {
                 return
             }
             if (args!!.Argc() != 3) {
                 Game_local.gameLocal.Printf("usage: damage <name of entity to damage> <damage>\n")
                 return
             }
-            val ent = Game_local.gameLocal.FindEntity(args!!.Argv(1))
+            val ent = Game_local.gameLocal.FindEntity(args.Argv(1))
             if (null == ent) {
                 Game_local.gameLocal.Printf("entity not found\n")
                 return
@@ -1131,7 +1113,7 @@ object SysCmds {
                 Game_local.gameLocal.world,
                 idVec3(0, 0, 1),
                 "damage_moverCrush",
-                args!!.Argv(2).toInt().toFloat(),
+                args.Argv(2).toInt().toFloat(),
                 Model.INVALID_JOINT
             )
         }
@@ -1153,15 +1135,15 @@ object SysCmds {
      */
     class Cmd_Remove_f private constructor() : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            if (TempDump.NOT(Game_local.gameLocal.GetLocalPlayer()) || !Game_local.gameLocal.CheatsOk(false)) {
+            if (Game_local.gameLocal.GetLocalPlayer() == null || !Game_local.gameLocal.CheatsOk(false)) {
                 return
             }
             if (args!!.Argc() != 2) {
                 Game_local.gameLocal.Printf("usage: remove <name of entity to remove>\n")
                 return
             }
-            val ent = Game_local.gameLocal.FindEntity(args!!.Argv(1))
-            if (TempDump.NOT(ent)) {
+            val ent = Game_local.gameLocal.FindEntity(args.Argv(1))
+            if (ent == null) {
                 Game_local.gameLocal.Printf("entity not found\n")
                 return
             }
@@ -1188,7 +1170,7 @@ object SysCmds {
             val filename = idStr()
             var key: String?
             var value: String?
-            var name: String = ""
+            var name = ""
             val player: idPlayer?
             val dict = idDict()
             player = Game_local.gameLocal.GetLocalPlayer()
@@ -1196,32 +1178,32 @@ object SysCmds {
                 return
             }
             val rv = player.GetRenderView()!!
-            val fov = Math.tan((idMath.M_DEG2RAD * rv.fov_x / 2).toDouble()).toFloat()
+            val fov = tan(idMath.M_DEG2RAD * rv.fov_x / 2)
             dict.SetMatrix("rotation", idMat3.getMat3_default())
             dict.SetVector("origin", rv.vieworg)
             dict.SetVector("light_target", rv.viewaxis[0])
             dict.SetVector("light_right", rv.viewaxis[1].times(-fov))
             dict.SetVector("light_up", rv.viewaxis[2].times(fov))
-            dict.SetVector("light_start", rv.viewaxis[0].times(16f))
-            dict.SetVector("light_end", rv.viewaxis[0].times(1000f))
+            dict.SetVector("light_start", rv.viewaxis[0].times(16.0f))
+            dict.SetVector("light_end", rv.viewaxis[0].times(1000.0f))
             if (args!!.Argc() >= 2) {
-                value = args!!.Argv(1)
-                filename.set(args!!.Argv(1))
+                value = args.Argv(1)
+                filename.set(args.Argv(1))
                 filename.DefaultFileExtension(".tga")
                 dict.Set("texture", filename)
             }
             dict.Set("classname", "light")
             i = 2
-            while (i < args!!.Argc() - 1) {
-                key = args!!.Argv(i)
-                value = args!!.Argv(i + 1)
+            while (i < args.Argc() - 1) {
+                key = args.Argv(i)
+                value = args.Argv(i + 1)
                 dict.Set(key, value)
                 i += 2
             }
             i = 0
             while (i < Game_local.MAX_GENTITIES) {
                 name = Str.va("spawned_light_%d", i) // not just light_, or it might pick up a prelight shadow
-                if (TempDump.NOT(Game_local.gameLocal.FindEntity(name))) {
+                if (Game_local.gameLocal.FindEntity(name) == null) {
                     break
                 }
                 i++
@@ -1248,7 +1230,7 @@ object SysCmds {
         override fun run(args: CmdArgs.idCmdArgs?) {
             var key: String?
             var value: String?
-            var name: String = ""
+            var name = ""
             var i: Int
             val player: idPlayer?
             val dict = idDict()
@@ -1258,23 +1240,23 @@ object SysCmds {
             }
             dict.SetVector("origin", player.GetRenderView()!!.vieworg)
             if (args!!.Argc() >= 2) {
-                value = args!!.Argv(1)
+                value = args.Argv(1)
                 dict.Set("light", value)
             } else {
                 dict.Set("light", "300")
             }
             dict.Set("classname", "light")
             i = 2
-            while (i < args!!.Argc() - 1) {
-                key = args!!.Argv(i)
-                value = args!!.Argv(i + 1)
+            while (i < args.Argc() - 1) {
+                key = args.Argv(i)
+                value = args.Argv(i + 1)
                 dict.Set(key, value)
                 i += 2
             }
             i = 0
             while (i < Game_local.MAX_GENTITIES) {
                 name = Str.va("light_%d", i)
-                if (TempDump.NOT(Game_local.gameLocal.FindEntity(name))) {
+                if (Game_local.gameLocal.FindEntity(name) == null) {
                     break
                 }
                 i++
@@ -1405,7 +1387,7 @@ object SysCmds {
             if (args!!.Argc() < 2) {
                 return
             }
-            name = args!!.Argv(1)
+            name = args.Argv(1)
             offset.set(player.GetPhysics().GetOrigin().plus(player.viewAngles.ToForward().times(100.0f)))
             dict.Set("origin", offset.ToString())
             dict.Set("test", "1")
@@ -1459,8 +1441,8 @@ object SysCmds {
                 Game_local.gameLocal.Printf("no free debug lines\n")
                 return
             }
-            value = args!!.Argv(0)
-            debugLines[i].arrow = TempDump.NOT(idStr.Icmp(value, "addarrow").toDouble())
+            value = args.Argv(0)
+            debugLines[i].arrow = idStr.Icmp(value, "addarrow") == 0
             debugLines[i].used = true
             debugLines[i].blink = false
             argNum[0] = 1
@@ -1498,7 +1480,7 @@ object SysCmds {
                 Game_local.gameLocal.Printf("usage: removeline <num>\n")
                 return
             }
-            value = args!!.Argv(1)
+            value = args.Argv(1)
             num = value.toInt()
             i = 0
             while (i < MAX_DEBUGLINES) {
@@ -1541,7 +1523,7 @@ object SysCmds {
                 Game_local.gameLocal.Printf("usage: blinkline <num>\n")
                 return
             }
-            value = args!!.Argv(1)
+            value = args.Argv(1)
             num = value.toInt()
             i = 0
             while (i < MAX_DEBUGLINES) {
@@ -1592,16 +1574,13 @@ object SysCmds {
                     PrintFloat(debugLines[i].end.y)
                     PrintFloat(debugLines[i].end.z)
                     Game_local.gameLocal.Printf(
-                        "%d  %d  %d\n",
-                        debugLines[i].color,
-                        debugLines[i].blink,
-                        debugLines[i].arrow
+                        "%d  %d  %d\n", debugLines[i].color, debugLines[i].blink, debugLines[i].arrow
                     )
                     num++
                 }
                 i++
             }
-            if (TempDump.NOT(num.toDouble())) {
+            if (num == 0) {
                 Game_local.gameLocal.Printf("no debug lines\n")
             }
         }
@@ -1624,7 +1603,7 @@ object SysCmds {
             if (!Game_local.gameLocal.CheatsOk()) {
                 return
             }
-            CollisionModel_local.collisionModelManager.ListModels()
+            collisionModelManager.ListModels()
         }
 
         companion object {
@@ -1656,11 +1635,11 @@ object SysCmds {
                 )
                 return
             }
-            value = args!!.Argv(1)
-            if (TempDump.NOT(idStr.Icmp(value, "all").toDouble())) {
-                CollisionModel_local.collisionModelManager.ModelInfo(-1)
+            value = args.Argv(1)
+            if (idStr.Icmp(value, "all") == 0) {
+                collisionModelManager.ModelInfo(-1)
             } else {
-                CollisionModel_local.collisionModelManager.ModelInfo(value.toInt())
+                collisionModelManager.ModelInfo(value.toInt())
             }
         }
 
@@ -1690,7 +1669,7 @@ object SysCmds {
             if (args!!.Argc() < 2) {
                 exporter.ExportModels("def", ".def")
             } else {
-                name.set(args!!.Argv(1))
+                name.set(args.Argv(1))
                 name.set("def/$name")
                 name.DefaultFileExtension(".def")
                 exporter.ExportDefFile(name.toString())
@@ -1724,7 +1703,7 @@ object SysCmds {
             if (args!!.Argc() < 2) {
                 exporter.ExportModels("def", ".def")
             } else {
-                name.set(args!!.Argv(1))
+                name.set(args.Argv(1))
                 name.set("def/$name")
                 name.DefaultFileExtension(".def")
                 exporter.ExportDefFile(name.toString())
@@ -1780,7 +1759,7 @@ object SysCmds {
             var i: Int
             if (args!!.Argc() > 1) {
                 animator = idAnimator()
-                classname = args!!.Argv(1)
+                classname = args.Argv(1)
                 dict = Game_local.gameLocal.FindEntityDefDict(classname, false)
                 if (null == dict) {
                     Game_local.gameLocal.Printf("Entitydef '%s' not found\n", classname)
@@ -1834,10 +1813,10 @@ object SysCmds {
             }
             aasNum = SysCvar.aas_test.GetInteger()
             val aas = Game_local.gameLocal.GetAAS(aasNum)
-            if (TempDump.NOT(aas)) {
+            if (aas == null) {
                 Game_local.gameLocal.Printf("No aas #%d loaded\n", aasNum)
             } else {
-                aas!!.Stats()
+                aas.Stats()
             }
         }
 
@@ -1862,18 +1841,18 @@ object SysCmds {
             if (player == null || !Game_local.gameLocal.CheatsOk()) {
                 return
             }
-            if (args!!.Argc() < 2 || args!!.Argc() > 3) {
+            if (args!!.Argc() < 2 || args.Argc() > 3) {
                 Game_local.gameLocal.Printf("usage: testDamage <damageDefName> [angle]\n")
                 return
             }
-            damageDefName = args!!.Argv(1)
+            damageDefName = args.Argv(1)
             val dir = idVec3()
-            if (args!!.Argc() == 3) {
-                val angle = args!!.Argv(2).toFloat()
+            if (args.Argc() == 3) {
+                val angle = args.Argv(2).toFloat()
                 val d1 = CFloat()
                 val d0 = CFloat()
-                idMath.SinCos(Math_h.DEG2RAD(angle), d1, d0)
-                dir.set(idVec3(d0._val, d1._val, 0f))
+                idMath.SinCos(DEG2RAD(angle), d1, d0)
+                dir.set(idVec3(d0._val, d1._val, 0.0f))
             } else {
                 dir.set(idVec3())
                 //            dir.Zero();
@@ -1908,12 +1887,12 @@ object SysCmds {
             if (player == null || !Game_local.gameLocal.CheatsOk()) {
                 return
             }
-            if (args!!.Argc() < 3 || args!!.Argc() > 4) {
+            if (args!!.Argc() < 3 || args.Argc() > 4) {
                 Game_local.gameLocal.Printf("usage: testBoneFx <fxName> <boneName>\n")
                 return
             }
-            fx = args!!.Argv(1)
-            bone = args!!.Argv(2)
+            fx = args.Argv(1)
+            bone = args.Argv(2)
             player.StartFxOnBone(fx, bone)
         }
 
@@ -1940,8 +1919,8 @@ object SysCmds {
             val dir = idVec3()
             val d1 = CFloat()
             val d0 = CFloat()
-            idMath.SinCos(Math_h.DEG2RAD(45.0f), d1, d0)
-            dir.set(idVec3(d0._val, d1._val, 0f))
+            idMath.SinCos(DEG2RAD(45.0f), d1, d0)
+            dir.set(idVec3(d0._val, d1._val, 0.0f))
             SysCvar.g_testDeath.SetBool(true)
             player.Damage(null, null, dir, "damage_triggerhurt_1000", 1.0f, Model.INVALID_JOINT)
             if (args!!.Argc() >= 2) {
@@ -2005,7 +1984,7 @@ object SysCmds {
                 return
             }
             if (args!!.Argc() > 1) {
-                mapName = idStr(args!!.Argv(1))
+                mapName = idStr(args.Argv(1))
                 mapName.set("maps/$mapName")
             } else {
                 mapName = idStr(mapFile.GetName())
@@ -2020,7 +1999,7 @@ object SysCmds {
                 i = 0
                 while (i < 9999) {
                     name = Str.va("%s_%d", s.GetEntityDefName(), i)
-                    if (TempDump.NOT(Game_local.gameLocal.FindEntity(name))) {
+                    if (Game_local.gameLocal.FindEntity(name) == null) {
                         break
                     }
                     i++
@@ -2096,8 +2075,8 @@ object SysCmds {
             }
             e = 0
             while (e < Game_local.MAX_GENTITIES) {
-                m = Game_local.gameLocal.entities[e] as idMoveable
-                if (TempDump.NOT(m) || m !is idMoveable) {
+                m = Game_local.gameLocal.entities[e] as? idMoveable
+                if (m == null) {
                     e++
                     continue
                 }
@@ -2118,7 +2097,7 @@ object SysCmds {
                 return
             }
             if (args!!.Argc() > 1) {
-                mapName.set(args!!.Argv(1))
+                mapName.set(args.Argv(1))
                 mapName.set("maps/$mapName")
             } else {
                 mapName.set(mapFile.GetName())
@@ -2144,7 +2123,7 @@ object SysCmds {
                     i = 0
                     while (i < 9999) {
                         name = Str.va("%s_%d", m.GetEntityDefName(), i)
-                        if (TempDump.NOT(Game_local.gameLocal.FindEntity(name))) {
+                        if (Game_local.gameLocal.FindEntity(name) == null) {
                             break
                         }
                         i++
@@ -2190,7 +2169,7 @@ object SysCmds {
                 return
             }
             if (args!!.Argc() > 1) {
-                mapName.set(args!!.Argv(1))
+                mapName.set(args.Argv(1))
                 mapName.set("maps/$mapName")
             } else {
                 mapName.set(mapFile.GetName())
@@ -2198,7 +2177,7 @@ object SysCmds {
             e = 0
             while (e < Game_local.MAX_GENTITIES) {
                 af = Game_local.gameLocal.entities[e] as idAFEntity_Base
-                if (TempDump.NOT(af)) {
+                if (af == null) {
                     e++
                     continue
                 }
@@ -2212,8 +2191,7 @@ object SysCmds {
                 }
                 if (!af.IsAtRest()) {
                     Game_local.gameLocal.Warning(
-                        "the articulated figure for entity %s is not at rest",
-                        Game_local.gameLocal.entities[e]!!.name
+                        "the articulated figure for entity %s is not at rest", Game_local.gameLocal.entities[e]!!.name
                     )
                 }
                 dict.Clear()
@@ -2228,7 +2206,7 @@ object SysCmds {
                     i = 0
                     while (i < 9999) {
                         name = Str.va("%s_%d", af.GetEntityDefName(), i)
-                        if (TempDump.NOT(Game_local.gameLocal.FindEntity(name))) {
+                        if (Game_local.gameLocal.FindEntity(name) == null) {
                             break
                         }
                         i++
@@ -2341,7 +2319,7 @@ object SysCmds {
                 return
             }
             if (args!!.Argc() > 1) {
-                mapName.set(args!!.Argv(1))
+                mapName.set(args.Argv(1))
                 mapName.set("maps/$mapName")
             } else {
                 mapName.set(mapFile.GetName())
@@ -2349,7 +2327,7 @@ object SysCmds {
             e = 0
             while (e < Game_local.MAX_GENTITIES) {
                 light = Game_local.gameLocal.entities[e] as idLight
-                if (TempDump.NOT(light) || light !is idLight) {
+                if (light == null || light !is idLight) {
                     e++
                     continue
                 }
@@ -2365,7 +2343,7 @@ object SysCmds {
                     i = 0
                     while (i < 9999) {
                         name = Str.va("%s_%d", light.GetEntityDefName(), i)
-                        if (TempDump.NOT(Game_local.gameLocal.FindEntity(name))) {
+                        if (Game_local.gameLocal.FindEntity(name) == null) {
                             break
                         }
                         i++
@@ -2409,7 +2387,7 @@ object SysCmds {
                 return
             }
             if (args!!.Argc() > 1) {
-                mapName.set(args!!.Argv(1))
+                mapName.set(args.Argv(1))
                 mapName.set("maps/$mapName")
             } else {
                 mapName.set(mapFile.GetName())
@@ -2417,7 +2395,7 @@ object SysCmds {
             e = 0
             while (e < Game_local.MAX_GENTITIES) {
                 ent = Game_local.gameLocal.entities[e]
-                if (TempDump.NOT(ent)) {
+                if (ent == null) {
                     e++
                     continue
                 }
@@ -2513,20 +2491,20 @@ object SysCmds {
             // Argv(1) = filename for map (viewnotes/mapname/person)
             // Argv(2) = note number (person0001)
             // Argv(3) = comments
-            val str = idStr(args!!.Argv(1))
+            val str = idStr(args.Argv(1))
             str.SetFileExtension(".txt")
             val file = FileSystem_h.fileSystem.OpenFileAppend(str.toString())
             if (file != null) {
                 file.WriteFloatString("\"view\"\t( %s )\t( %s )\r\n", origin.ToString(), axis.ToString())
-                file.WriteFloatString("\"comments\"\t\"%s: %s\"\r\n\r\n", args!!.Argv(2), args!!.Argv(3))
+                file.WriteFloatString("\"comments\"\t\"%s: %s\"\r\n\r\n", args.Argv(2), args.Argv(3))
                 FileSystem_h.fileSystem.CloseFile(file)
             }
-            val viewComments = idStr(args!!.Argv(1))
+            val viewComments = idStr(args.Argv(1))
             viewComments.StripLeading("viewnotes/")
             viewComments.plusAssign(" -- Loc: ")
             viewComments.plusAssign(origin.ToString())
             viewComments.plusAssign("\n")
-            viewComments.plusAssign(args!!.Argv(3))
+            viewComments.plusAssign(args.Argv(3))
             player.hud!!.SetStateString("viewcomments", viewComments.toString())
             player.hud!!.HandleNamedEvent("showViewComments")
         }
@@ -2580,7 +2558,7 @@ object SysCmds {
                 str.StripFileExtension()
                 str.plusAssign("/")
                 if (args!!.Argc() > 1) {
-                    str.plusAssign(args!!.Argv(1))
+                    str.plusAssign(args.Argv(1))
                 } else {
                     str.plusAssign("comments")
                 }
@@ -2590,8 +2568,10 @@ object SysCmds {
                     return
                 }
             }
-            if (parser.ExpectTokenString("view") && parser.Parse1DMatrix(3, origin)
-                && parser.Parse1DMatrix(9, axis) && parser.ExpectTokenString("comments") && parser.ReadToken(token)
+            if (parser.ExpectTokenString("view") && parser.Parse1DMatrix(3, origin) && parser.Parse1DMatrix(
+                    9,
+                    axis
+                ) && parser.ExpectTokenString("comments") && parser.ReadToken(token)
             ) {
                 player.hud!!.SetStateString("viewcomments", token.toString())
                 player.hud!!.HandleNamedEvent("showViewComments")
@@ -2695,9 +2675,7 @@ object SysCmds {
                 return
             }
             Game_local.gameLocal.Printf(
-                "Teleporting to gui entity \"%s\", gui #%d.\n",
-                ent.name,
-                Game_local.gameLocal.lastGUI
+                "Teleporting to gui entity \"%s\", gui #%d.\n", ent.name, Game_local.gameLocal.lastGUI
             )
             renderEnt = ent.GetRenderEntity()!!
             surfIndex = Game_local.gameLocal.lastGUI++
@@ -2729,10 +2707,7 @@ object SysCmds {
          =================
          */
         fun FindEntityGUIs(
-            ent: idEntity,
-            surfaces: Array<modelSurface_s>,
-            maxSurfs: Int,
-            guiSurfaces: CInt
+            ent: idEntity, surfaces: Array<modelSurface_s>, maxSurfs: Int, guiSurfaces: CInt
         ): Boolean {
             val renderEnt: renderEntity_s
             val renderModel: idRenderModel?
@@ -2796,25 +2771,22 @@ object SysCmds {
      */
     class Cmd_TestId_f private constructor() : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            var id: String = ""
+            var id = ""
             var i: Int
             if (args!!.Argc() == 1) {
                 Common.common.Printf("usage: testid <string id>\n")
                 return
             }
             i = 1
-            while (i < args!!.Argc()) {
-                id += args!!.Argv(i)
+            while (i < args.Argc()) {
+                id += args.Argv(i)
                 i++
             }
             if (idStr.Cmpn(id, Common.STRTABLE_ID, Common.STRTABLE_ID_LENGTH) != 0) {
                 id = Common.STRTABLE_ID + id
             }
             Game_local.gameLocal.mpGame.AddChatLine(
-                Common.common.GetLanguageDict().GetString(id),
-                "<nothing>",
-                "<nothing>",
-                "<nothing>"
+                Common.common.GetLanguageDict().GetString(id), "<nothing>", "<nothing>", "<nothing>"
             )
         }
 

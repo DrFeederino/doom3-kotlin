@@ -1,7 +1,6 @@
 package neo.Tools.Compilers.DMap
 
 import neo.Renderer.Material
-import neo.TempDump
 import neo.Tools.Compilers.DMap.dmap.node_s
 import neo.Tools.Compilers.DMap.dmap.side_s
 import neo.Tools.Compilers.DMap.dmap.tree_s
@@ -10,17 +9,15 @@ import neo.Tools.Compilers.DMap.dmap.uEntity_t
 import neo.Tools.Compilers.DMap.dmap.uPortal_s
 import neo.framework.Common
 import neo.framework.DeclManager
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib
+import neo.idlib.BV.idBounds
+import neo.idlib.MAX_WORLD_COORD
+import neo.idlib.MIN_WORLD_COORD
 import neo.idlib.MapFile.idMapEntity
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.ON_EPSILON
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 object portals {
     //
     const val BASE_WINDING_EPSILON = 0.001f
@@ -86,7 +83,7 @@ object portals {
      =============
      */
     fun Portal_Passable(p: uPortal_s): Boolean {
-        if (TempDump.NOT(p.onnode)) {
+        if (p.onnode == null) {
             return false // to global outsideleaf
         }
         if (p.nodes[0]!!.planenum != dmap.PLANENUM_LEAF
@@ -218,10 +215,10 @@ object portals {
                 val pl = bplanes[n]
                 //			memset (pl, 0, sizeof(*pl));
                 if (j != 0) {
-                    pl[i] = -1f
+                    pl[i] = -1.0f
                     pl[3] = bounds[j, i]
                 } else {
-                    pl[i] = 1f
+                    pl[i] = 1.0f
                     pl[3] = -bounds[j, i]
                 }
                 p.plane.set(pl)
@@ -241,7 +238,7 @@ object portals {
                     j++
                     continue
                 }
-                portals[i].winding = portals[i].winding!!.Clip(bplanes[j], Plane.ON_EPSILON)
+                portals[i].winding = portals[i].winding!!.Clip(bplanes[j], ON_EPSILON)
                 j++
             }
             i++
@@ -362,25 +359,21 @@ object portals {
             RemovePortalFromNode(p, p.nodes[0]!!)
             RemovePortalFromNode(p, p.nodes[1]!!)
 
-            //
             // cut the portal into two portals, one on each side of the cut plane
-            //
             p.winding!!.Split(plane, SPLIT_WINDING_EPSILON, frontwinding!!, backwinding!!)
             if (frontwinding != null && frontwinding.IsTiny()) {
-//			delete frontwinding;
                 frontwinding = null
                 c_tinyportals++
             }
             if (backwinding != null && backwinding.IsTiny()) {
-//			delete backwinding;
                 backwinding = null
                 c_tinyportals++
             }
-            if (TempDump.NOT(frontwinding) && TempDump.NOT(backwinding)) {    // tiny windings on both sides
+            if (frontwinding == null && backwinding == null) {    // tiny windings on both sides
                 p = next_portal
                 continue
             }
-            if (TempDump.NOT(frontwinding)) {
+            if (frontwinding == null) {
 //			delete backwinding;
                 if (side == 0) {
                     AddPortalToNodes(p, b, other_node!!)
@@ -390,7 +383,7 @@ object portals {
                 p = next_portal
                 continue
             }
-            if (TempDump.NOT(backwinding)) {
+            if (backwinding == null) {
 //			delete frontwinding;
                 if (side == 0) {
                     AddPortalToNodes(p, f, other_node!!)
@@ -456,7 +449,7 @@ object portals {
         }
         i = 0
         while (i < 3) {
-            if (node.bounds[0, i] < Lib.MIN_WORLD_COORD || node.bounds[1, i] > Lib.MAX_WORLD_COORD
+            if (node.bounds[0, i] < MIN_WORLD_COORD || node.bounds[1, i] > MAX_WORLD_COORD
             ) {
                 Common.common.Warning("node with unbounded volume")
                 break
@@ -662,7 +655,7 @@ object portals {
                 j = 0
                 while (j < orig.numsides) {
                     s = orig.sides[j]
-                    if (TempDump.NOT(s.visibleHull)) {
+                    if (s.visibleHull == null) {
                         j++
                         continue
                     }
@@ -848,7 +841,7 @@ object portals {
                 continue
             }
             w = side.visibleHull
-            if (TempDump.NOT(w)) {
+            if (w == null) {
                 p = p.next[s]
                 continue
             }
@@ -929,7 +922,7 @@ object portals {
 
         // anything not reachable by an entity
         // can be filled away
-        if (TempDump.NOT(node.occupied.toDouble())) {
+        if (node.occupied == 0) {
             if (!node.opaque) {
                 c_outside++
                 node.opaque = true

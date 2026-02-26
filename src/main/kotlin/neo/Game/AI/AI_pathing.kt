@@ -1,7 +1,5 @@
 package neo.Game.AI
 
-import neo.CM.CollisionModel.CM_BOX_EPSILON
-import neo.CM.CollisionModel.trace_s
 import neo.Game.AI.AAS.idAAS
 import neo.Game.AI.AI.obstaclePath_s
 import neo.Game.AI.AI.predictedPath_s
@@ -14,26 +12,22 @@ import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics.idPhysics
 import neo.Tools.Compilers.AAS.AASFile
 import neo.Tools.Compilers.AAS.AASFile.aasTrace_s
-import neo.idlib.BV.Bounds.idBounds
+import neo.cm.CM_BOX_EPSILON
+import neo.cm.trace_s
 import neo.idlib.BV.Box.idBox
-import neo.idlib.Lib
+import neo.idlib.BV.idBounds
+import neo.idlib.colorCyan
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.containers.Queue.idQueueTemplate
 import neo.idlib.geometry.Winding2D.idWinding2D
 import neo.idlib.geometry.Winding2D.idWinding2D.Companion.Plane2DFromPoints
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.FLOATSIGNBITNOTSET
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.*
 import neo.ui.DeviceContext.idDeviceContext
+import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.cos
 
-/**
- *
- */
 object AI_pathing {
     const val CLIP_BOUNDS_EPSILON = 10.0f
     const val MAX_AAS_WALL_EDGES = 256
@@ -76,6 +70,7 @@ object AI_pathing {
      ============
      */
     fun LineIntersectsPath(start: idVec2, end: idVec2, node: pathNode_s): Boolean {
+        var node = node
         var d0: Float
         var d1: Float
         var d2: Float
@@ -86,16 +81,16 @@ object AI_pathing {
         d0 = plane1.x * node.pos.x + plane1.y * node.pos.y + plane1.z
         while (node.parent != null) {
             d1 = plane1.x * node.parent!!.pos.x + plane1.y * node.parent!!.pos.y + plane1.z
-            if (Math_h.FLOATSIGNBITSET(d0) xor Math_h.FLOATSIGNBITSET(d1) != 0) {
+            if (FLOATSIGNBITSET(d0) xor FLOATSIGNBITSET(d1) != 0) {
                 plane2.set(Plane2DFromPoints(node.pos, node.parent!!.pos))
                 d2 = plane2.x * start.x + plane2.y * start.y + plane2.z
                 d3 = plane2.x * end.x + plane2.y * end.y + plane2.z
-                if (Math_h.FLOATSIGNBITSET(d2) xor Math_h.FLOATSIGNBITSET(d3) != 0) {
+                if (FLOATSIGNBITSET(d2) xor FLOATSIGNBITSET(d3) != 0) {
                     return true
                 }
             }
             d0 = d1
-            node.oSet(node.parent!!)
+            node = node.parent!!
         }
         return false
     }
@@ -152,13 +147,13 @@ object AI_pathing {
         val scale = Array(2) { CFloat() }
         val plane = idVec3()
         val bestPlane = idVec3()
-        var newPoint: idVec2
-        var dir: idVec2
-        var bestPoint: idVec2 = idVec2()
+        val newPoint = idVec2()
+        val dir = idVec2()
+        val bestPoint = idVec2()
         val queue: IntArray
         val obstacleVisited: BooleanArray
-        var w1: idWinding2D = idWinding2D()
-        var w2: idWinding2D = idWinding2D()
+        val w1 = idWinding2D()
+        val w2 = idWinding2D()
         obstacle._val = -1
         edgeNum._val = -1
         bestObstacle = PointInsideObstacle(obstacles, numObstacles, point)
@@ -183,7 +178,12 @@ object AI_pathing {
             }
             i++
         }
-        newPoint = point - bestPlane.ToVec2() * (bestd + PUSH_OUTSIDE_OBSTACLES)
+
+        if (i == 0) {
+            return
+        }
+
+        newPoint.set(point - bestPlane.ToVec2() * (bestd + PUSH_OUTSIDE_OBSTACLES))
         if (PointInsideObstacle(obstacles, numObstacles, newPoint) == -1) {
             point.set(newPoint)
             obstacle._val = bestObstacle
@@ -201,7 +201,7 @@ object AI_pathing {
         bestd = idMath.INFINITY
         i = queue[0]
         while (queueStart < queueEnd) {
-            w1 = obstacles[i].winding
+            w1.set(obstacles[i].winding)
             w1.Expand(PUSH_OUTSIDE_OBSTACLES)
             j = 0
             while (j < numObstacles) {
@@ -219,23 +219,23 @@ object AI_pathing {
                 }
                 queue[queueEnd++] = j
                 obstacleVisited[j] = true
-                w2 = obstacles[j].winding
+                w2.set(obstacles[j].winding)
                 w2.Expand(0.2f)
                 k = 0
                 while (k < w1.GetNumPoints()) {
-                    dir = w1[(k + 1) % w1.GetNumPoints()] - w1[k]
+                    dir.set(w1[(k + 1) % w1.GetNumPoints()] - w1[k])
                     if (!w2.RayIntersection(w1[k], dir, scale[0], scale[1], edgeNums)) {
                         k++
                         continue
                     }
                     n = 0
                     while (n < 2) {
-                        newPoint = w1[k] + dir * scale[n]._val
+                        newPoint.set(w1[k] + dir * scale[n]._val)
                         if (PointInsideObstacle(obstacles, numObstacles, newPoint) == -1) {
                             d = (newPoint - point).LengthSqr()
                             if (d < bestd) {
                                 bestd = d
-                                bestPoint = newPoint
+                                bestPoint.set(newPoint)
                                 bestEdgeNum = edgeNums[n]
                                 bestObstacle = j
                             }
@@ -272,7 +272,6 @@ object AI_pathing {
         blockingObstacle: CInt,
         blockingEdgeNum: CInt
     ): Boolean {
-        var blockingScale = blockingScale
         var i: Int
         val edgeNums = IntArray(2)
         val dist: Float
@@ -302,7 +301,7 @@ object AI_pathing {
             }
             if (obstacles[i].winding.RayIntersection(startPos, delta, scale1, scale2, edgeNums)) {
                 if (scale1._val < blockingScale._val && scale1._val * dist > -0.01f && scale2._val * dist > 0.01f) {
-                    blockingScale = scale1
+                    blockingScale._val = scale1._val
                     blockingObstacle._val = i
                     blockingEdgeNum._val = edgeNums[0]
                 }
@@ -352,13 +351,13 @@ object AI_pathing {
         val nextStart = idVec3()
         val nextEnd = idVec3()
         val silVerts: Array<idVec3> = idVec3.generateArray(32)
-        var edgeDir: idVec2
+        val edgeDir = idVec2()
         val edgeNormal = idVec2()
-        var nextEdgeDir: idVec2
+        val nextEdgeDir = idVec2()
         val nextEdgeNormal = idVec2()
-        var lastEdgeNormal = idVec2()
+        val lastEdgeNormal = idVec2()
         val expBounds: Array<idVec2> = idVec2.generateArray(2)
-        var obDelta: idVec2
+        idVec2()
         var obPhys: idPhysics
         var box: idBox
         var obEnt: idEntity
@@ -404,9 +403,9 @@ object AI_pathing {
                 }
                 // if the actor is moving
                 val v1 = idVec3(obPhys.GetLinearVelocity())
-                if (v1.LengthSqr() > Math_h.Square(10.0f)) {
+                if (v1.LengthSqr() > Square(10.0f)) {
                     val v2 = idVec3(physics.GetLinearVelocity())
-                    if (v2.LengthSqr() > Math_h.Square(10.0f)) {
+                    if (v2.LengthSqr() > Square(10.0f)) {
                         // if moving in about the same direction
                         if (v1.times(v2) > 0.0f) {
                             i++
@@ -504,14 +503,14 @@ object AI_pathing {
             while (i < numWallEdges && numObstacles < MAX_OBSTACLES) {
                 aas.GetEdge(wallEdges[i], start, end)
                 aas.GetEdgeVertexNumbers(wallEdges[i], verts)
-                edgeDir = end.ToVec2() - start.ToVec2()
+                edgeDir.set(end.ToVec2() - start.ToVec2())
                 edgeDir.Normalize()
                 edgeNormal.x = edgeDir.y
                 edgeNormal.y = -edgeDir.x
                 if (i < numWallEdges - 1) {
                     aas.GetEdge(wallEdges[i + 1], nextStart, nextEnd)
                     aas.GetEdgeVertexNumbers(wallEdges[i + 1], nextVerts)
-                    nextEdgeDir = nextEnd.ToVec2() - nextStart.ToVec2()
+                    nextEdgeDir.set(nextEnd.ToVec2() - nextStart.ToVec2())
                     nextEdgeDir.Normalize()
                     nextEdgeNormal.x = nextEdgeDir.y
                     nextEdgeNormal.y = -nextEdgeDir.x
@@ -537,7 +536,7 @@ object AI_pathing {
 
 //			memcpy( lastVerts, verts, sizeof( lastVerts ) );
                 System.arraycopy(verts, 0, lastVerts, 0, lastVerts.size)
-                lastEdgeNormal = edgeNormal
+                lastEdgeNormal.set(edgeNormal)
                 i++
             }
         }
@@ -639,7 +638,7 @@ object AI_pathing {
         while (true) {
             edgeNum = (node.edgeNum + node.dir) % numPoints
             node.delta.set(obstacles[node.obstacle].winding[edgeNum] - node.pos)
-            if (node.delta.LengthSqr() > 0.01f) {
+            if (node.delta.LengthSqr() > 0.01) {
                 break
             }
             node.edgeNum = (node.edgeNum + numPoints + (2 * node.dir - 1)) % numPoints
@@ -680,7 +679,6 @@ object AI_pathing {
                     continue
                 }
                 break
-                n = n.parent
             }
             return n == null
         }
@@ -708,7 +706,7 @@ object AI_pathing {
         val root: pathNode_s
         var node: pathNode_s?
         var child: pathNode_s
-        // gcc 4.0
+        // gcc 4.0f
         val pathNodeQueue = idQueueTemplate<pathNode_s?>()
         val treeQueue = idQueueTemplate<pathNode_s?>()
         root = pathNode_s() //pathNodeAllocator.Alloc();
@@ -893,8 +891,8 @@ object AI_pathing {
         val edgeNums = IntArray(2)
         var curNode: pathNode_s
         var nextNode: pathNode_s
-        var curPos: idVec2
-        var curDelta: idVec2
+        val curPos = idVec2()
+        val curDelta = idVec2()
         val bounds: Array<idVec2> = idVec2.generateArray(2)
         var curLength: Float
         val scale1 = CFloat()
@@ -912,8 +910,8 @@ object AI_pathing {
                     nextNode = nextNode.parent!!
                     continue
                 }
-                curPos = curNode.pos
-                curDelta = nextNode.pos - curPos
+                curPos.set(curNode.pos)
+                curDelta.set(nextNode.pos - curPos)
                 curLength = curDelta.Length()
 
                 // get bounds for the current movement delta
@@ -1003,7 +1001,8 @@ object AI_pathing {
         var bestPathLength: Float
         var pathToGoalExists: Boolean
         var optimizedPathCalculated: Boolean
-        optimizedPath[1] = idVec2(-107374176f, -107374176f) // TODO: need to check if -107374176 is some magic fuckery
+        optimizedPath[1] =
+            idVec2(-107374176.0f, -107374176.0f) // TODO: need to check if -107374176 is some magic fuckery
         seekPos.Zero()
         seekPos.z = height
         pathToGoalExists = false
@@ -1015,7 +1014,7 @@ object AI_pathing {
         while (node != null) {
             pathToGoalExists = pathToGoalExists or (node.dist < 0.1f)
             if (node.dist <= bestNode.dist) {
-                if (Math.abs(node.dist - bestNode.dist) < 0.1f) {
+                if (abs(node.dist - bestNode.dist) < 0.1f) {
                     if (!optimizedPathCalculated) {
                         bestNumPathPoints =
                             OptimizePath(root, bestNode, obstacles, numObstacles, optimizedPath)
@@ -1054,7 +1053,11 @@ object AI_pathing {
             }
         }
         if (!pathToGoalExists) {
-            seekPos.set(root.children[0]!!.pos)
+            if (root.children[0] != null) {
+                seekPos.set(root.children[0]!!.pos)
+            } else {
+                seekPos.set(root.pos)
+            }
         } else if (!optimizedPathCalculated) {
             OptimizePath(root, bestNode, obstacles, numObstacles, optimizedPath)
             seekPos.set(optimizedPath[1])
@@ -1069,7 +1072,7 @@ object AI_pathing {
             while (i < numPathPoints - 1) {
                 start.set(optimizedPath[i])
                 end.set(optimizedPath[i + 1])
-                Game_local.gameRenderWorld!!.DebugArrow(Lib.colorCyan, start, end, 1)
+                Game_local.gameRenderWorld!!.DebugArrow(colorCyan, start, end, 1)
                 i++
             }
         }
@@ -1225,9 +1228,9 @@ object AI_pathing {
             }
             d = idMath.Sqrt(p[i])
             bal[n].angle =
-                Math.atan2((0.5f * (2.0f * y * p[i] - gravity) / d).toDouble(), (d * x).toDouble()).toFloat()
-            bal[n].time = (x / (cos(bal[n].angle.toDouble()) * speed)).toFloat()
-            bal[n].angle = idMath.AngleNormalize180(Vector.RAD2DEG(bal[n].angle))
+                atan2((0.5f * (2.0f * y * p[i] - gravity) / d).toDouble(), (d * x).toDouble()).toFloat()
+            bal[n].time = (x / (cos(bal[n].angle) * speed))
+            bal[n].angle = idMath.AngleNormalize180(RAD2DEG(bal[n].angle))
             n++
             i++
         }
@@ -1263,12 +1266,12 @@ object AI_pathing {
     class pathTrace_s {
         var blockingEntity: idEntity? = null
         val endPos: idVec3 = idVec3()
-        var fraction = 0f
+        var fraction = 0.0f
         val normal: idVec3 = idVec3()
     }
 
     class obstacle_s {
-        var bounds: Array<idVec2> = idVec2.generateArray(2)
+        val bounds: Array<idVec2> = idVec2.generateArray(2)
         var entity: idEntity? = null
         var winding: idWinding2D = idWinding2D()
     }
@@ -1287,7 +1290,7 @@ object AI_pathing {
         var children: Array<pathNode_s?> = arrayOfNulls<pathNode_s?>(2)
         val delta: idVec2 = idVec2()
         var dir = 0
-        var dist = 0f
+        var dist = 0.0f
         var edgeNum = 0
         var next: pathNode_s? = null
         var numNodes = 0
@@ -1341,8 +1344,8 @@ object AI_pathing {
      */
     class ballistics_s {
         var angle // angle in degrees in the range [-180, 180]
-                = 0f
+                = 0.0f
         var time // time it takes before the projectile arrives
-                = 0f
+                = 0.0f
     }
 }

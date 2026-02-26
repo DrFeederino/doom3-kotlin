@@ -6,8 +6,8 @@ import neo.framework.Common
 import neo.framework.Compressor.idCompressor
 import neo.framework.File_h.idFile_BitMsg
 import neo.idlib.BitMsg.idBitMsg
-import neo.idlib.Lib.idException
 import neo.idlib.containers.CInt
+import neo.idlib.idException
 import neo.sys.sys_public.idPort
 import neo.sys.sys_public.netadr_t
 import neo.sys.sys_public.netadrtype_t
@@ -15,9 +15,6 @@ import neo.sys.win_net
 import java.nio.ByteBuffer
 import java.util.*
 
-/**
- *
- */
 object MsgChannel {
     //
     const val CONNECTIONLESS_MESSAGE_ID = -1 // id for connectionless messages
@@ -81,15 +78,15 @@ object MsgChannel {
         private var fragmentSequence = 0
         private var id // our identification used instead of port number
                 : Int
-        private var incomingCompression = 0f
-        private var incomingDroppedPackets = 0f
+        private var incomingCompression = 0.0f
+        private var incomingDroppedPackets = 0.0f
         private var incomingPacketLossTime = 0
         private var incomingRateBytes = 0
         private var incomingRateTime = 0
 
         //
         // variables to keep track of the incoming packet loss
-        private var incomingReceivedPackets = 0f
+        private var incomingReceivedPackets = 0.0f
         private var incomingSequence = 0
         private var lastDataBytes // bytes left to send at last send time
                 = 0
@@ -103,7 +100,7 @@ object MsgChannel {
 
         //
         // variables to keep track of the compression ratio
-        private var outgoingCompression = 0f
+        private var outgoingCompression = 0.0f
         private var outgoingRateBytes = 0
 
         //

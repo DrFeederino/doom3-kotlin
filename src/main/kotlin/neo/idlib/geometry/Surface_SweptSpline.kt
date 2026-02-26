@@ -1,16 +1,9 @@
 package neo.idlib.geometry
 
 import neo.idlib.geometry.Surface.idSurface
-import neo.idlib.math.Curve.idCurve_NURBS
-import neo.idlib.math.Curve.idCurve_Spline
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
 
-/**
- *
- */
 class Surface_SweptSpline {
     /*
      ===============================================================================
@@ -20,26 +13,13 @@ class Surface_SweptSpline {
      ===============================================================================
      */
     internal inner class idSurface_SweptSpline : idSurface() {
-        //
         protected var spline: idCurve_Spline<idVec4>? = null
-
-        //	public						~idSurface_SweptSpline( void );
-        //
         protected var sweptSpline: idCurve_Spline<idVec4>? = null
         fun SetSpline(spline: idCurve_Spline<idVec4>) {
-//            if (null != this.spline) {
-////		delete this->spline;
-//                this.spline = null;
-//            }
             this.spline = spline
         }
 
-        //
         fun SetSweptSpline(sweptSpline: idCurve_Spline<idVec4>) {
-//            if (null != this.sweptSpline) {
-////		delete this->sweptSpline;
-//                this.sweptSpline = null;
-//            }
             this.sweptSpline = sweptSpline
         }
 
@@ -53,16 +33,12 @@ class Surface_SweptSpline {
         fun SetSweptCircle(radius: Float) {
             val nurbs = idCurve_NURBS(idVec4::class.java)
             nurbs.Clear()
-            nurbs.AddValue(0.0f, idVec4(radius, radius, 0.0f, 0.00f))
+            nurbs.AddValue(0.0f, idVec4(radius, radius, 0.0f, 0.0f))
             nurbs.AddValue(100.0f, idVec4(-radius, radius, 0.0f, 0.25f))
             nurbs.AddValue(200.0f, idVec4(-radius, -radius, 0.0f, 0.50f))
             nurbs.AddValue(300.0f, idVec4(radius, -radius, 0.0f, 0.75f))
             nurbs.SetBoundaryType(idCurve_Spline.BT_CLOSED)
             nurbs.SetCloseTime(100.0f)
-            //            if (null != sweptSpline) {
-////		delete sweptSpline;
-//                sweptSpline = null;
-//            }
             sweptSpline = nurbs
         }
 
@@ -86,8 +62,8 @@ class Surface_SweptSpline {
             var j1: Int
             var totalTime: Float
             var t: Float
-            var splinePos: idVec4
-            var splineD1: idVec4
+            val splinePos: idVec4 = idVec4()
+            val splineD1: idVec4 = idVec4()
             val splineMat = idMat3()
             if (null == spline || null == sweptSpline) {
                 super.Clear()
@@ -104,8 +80,8 @@ class Surface_SweptSpline {
             i = 0
             while (i < sweptSplineSubdivisions) {
                 t = totalTime * i / sweptSplineDiv
-                splinePos = sweptSpline!!.GetCurrentValue(t)
-                splineD1 = sweptSpline!!.GetCurrentFirstDerivative(t)
+                splinePos.set(sweptSpline!!.GetCurrentValue(t))
+                splineD1.set(sweptSpline!!.GetCurrentFirstDerivative(t))
                 verts[baseOffset + i].xyz.set(splinePos.ToVec3())
                 verts[baseOffset + i].st[0] = splinePos.w
                 verts[baseOffset + i].tangents[0] = splineD1.ToVec3()
@@ -120,8 +96,8 @@ class Surface_SweptSpline {
             i = 0
             while (i < splineSubdivisions) {
                 t = totalTime * i / splineDiv
-                splinePos = spline!!.GetCurrentValue(t)
-                splineD1 = spline!!.GetCurrentFirstDerivative(t)
+                splinePos.set(spline!!.GetCurrentValue(t))
+                splineD1.set(spline!!.GetCurrentFirstDerivative(t))
                 GetFrame(splineMat, splineD1.ToVec3(), splineMat)
                 offset = i * sweptSplineSubdivisions
                 j = 0
@@ -166,18 +142,14 @@ class Surface_SweptSpline {
             GenerateEdgeIndexes()
         }
 
-        //
         override fun Clear() {
             super.Clear()
-            //	delete spline;
             spline = null
             spline = null
-            //	delete sweptSpline;
             sweptSpline = null
             sweptSpline = null
         }
 
-        //
         protected fun GetFrame(previousFrame: idMat3, dir: idVec3, newFrame: idMat3) {
             val wx: Float
             val wy: Float
@@ -235,11 +207,11 @@ class Surface_SweptSpline {
 
             newFrame.set(previousFrame * axis)
 
-            newFrame.setRow(2, dir)
+            newFrame[2].set(dir)
             newFrame[2].Normalize() //TODO:check if this normalizes back ref
-            newFrame.setRow(1, newFrame[1].Cross(newFrame[2], newFrame[0]))
+            newFrame[1].set(newFrame[1].Cross(newFrame[2], newFrame[0]))
             newFrame[1].Normalize()
-            newFrame.setRow(0, newFrame[0].Cross(newFrame[1], newFrame[2]))
+            newFrame[0].set(newFrame[0].Cross(newFrame[1], newFrame[2]))
             newFrame[0].Normalize()
         }
     }

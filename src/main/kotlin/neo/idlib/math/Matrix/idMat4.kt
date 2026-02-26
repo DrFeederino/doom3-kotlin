@@ -1,7 +1,7 @@
 package neo.idlib.math.Matrix
 
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import kotlin.math.abs
 
 //===============================================================
@@ -324,7 +324,15 @@ class idMat4 {
             return false
         }
         val other = obj as idMat4
-        return mat.contentDeepEquals(other.mat)
+        return Compare(other)
+    }
+
+    fun equals(a: idMat4): Boolean { // exact compare, no epsilon
+        return Compare(a)
+    }
+
+    fun notEquals(a: idMat4): Boolean { // exact compare, no epsilon
+        return !Compare(a)
     }
 
     fun Zero() {
@@ -336,12 +344,12 @@ class idMat4 {
     }
 
 
-    fun IsIdentity(epsilon: Float = idMat0.MATRIX_EPSILON.toFloat()): Boolean {
+    fun IsIdentity(epsilon: Float): Boolean {
         return Compare(getMat4_identity(), epsilon)
     }
 
 
-    fun IsSymmetric(epsilon: Float = idMat0.MATRIX_EPSILON.toFloat()): Boolean {
+    fun IsSymmetric(epsilon: Float): Boolean {
         for (i in 1..3) {
             for (j in 0 until i) {
                 if (abs(mat[i][j] - mat[j][i]) > epsilon) {
@@ -353,7 +361,7 @@ class idMat4 {
     }
 
 
-    fun IsDiagonal(epsilon: Float = idMat0.MATRIX_EPSILON.toFloat()): Boolean {
+    fun IsDiagonal(epsilon: Float): Boolean {
         for (i in 0..3) {
             for (j in 0..3) {
                 if (i != j && abs(mat[i][j]) > epsilon) {
@@ -365,9 +373,9 @@ class idMat4 {
     }
 
     fun IsRotated(): Boolean {
-        return 0f != (mat[0][1] + mat[0][2]
-                + mat[1][0] + mat[1][2]
-                + mat[2][0] + mat[2][1])
+        return !(mat[0][1] == 0.0f && mat[0][2] == 0.0f &&
+                mat[1][0] == 0.0f && mat[1][2] == 0.0f &&
+                mat[2][0] == 0.0f && mat[2][1] == 0.0f)
     }
 
     fun ProjectVector(src: idVec4, dst: idVec4) {
@@ -448,8 +456,7 @@ class idMat4 {
     }
 
     fun Inverse(): idMat4 { // returns the inverse ( m * m.Inverse() = identity )
-        val invMat: idMat4
-        invMat = this
+        val invMat = idMat4(this)
         val r = invMat.InverseSelf()
         assert(r)
         return invMat
@@ -477,7 +484,7 @@ class idMat4 {
         val det3_201_123 = mat[2].y * det2_01_23 - mat[2].z * det2_01_13 + mat[2].w * det2_01_12
         det =
             -det3_201_123 * mat[3].x + det3_201_023 * mat[3].y - det3_201_013 * mat[3].z + det3_201_012 * mat[3].w
-        if (abs(det) < idMat0.MATRIX_INVERSE_EPSILON) {
+        if (abs(det) < MATRIX_INVERSE_EPSILON) {
             return false
         }
         invDet = 1.0f / det
@@ -529,8 +536,7 @@ class idMat4 {
     }
 
     fun InverseFast(): idMat4 { // returns the inverse ( m * m.Inverse() = identity )
-        val invMat: idMat4
-        invMat = this
+        val invMat = idMat4(this)
         val r = invMat.InverseFastSelf()
         assert(r)
         return invMat
@@ -538,20 +544,17 @@ class idMat4 {
 
     fun InverseFastSelf(): Boolean // returns false if determinant is zero
     {
-//    #else
-        //	6*8+2*6 = 60 multiplications
-        //		2*1 =  2 divisions
-        val r0 = Array<FloatArray>(2) { FloatArray(2) }
-        val r1 = Array<FloatArray>(2) { FloatArray(2) }
-        val r2 = Array<FloatArray>(2) { FloatArray(2) }
-        val r3 = Array<FloatArray>(2) { FloatArray(2) }
+        val r0 = Array(2) { FloatArray(2) }
+        val r1 = Array(2) { FloatArray(2) }
+        val r2 = Array(2) { FloatArray(2) }
+        val r3 = Array(2) { FloatArray(2) }
         val a: Float
         var det: Float
         var invDet: Float
 
         // r0 = m0.Inverse();
         det = mat[0].x * mat[1].y - mat[0].y * mat[1].x
-        if (abs(det) < idMat0.MATRIX_INVERSE_EPSILON) {
+        if (abs(det) < MATRIX_INVERSE_EPSILON) {
             return false
         }
         invDet = 1.0f / det
@@ -580,7 +583,7 @@ class idMat4 {
 
         // r3.InverseSelf();
         det = r3[0][0] * r3[1][1] - r3[0][1] * r3[1][0]
-        if (abs(det) < idMat0.MATRIX_INVERSE_EPSILON) {
+        if (abs(det) < MATRIX_INVERSE_EPSILON) {
             return false
         }
         invDet = 1.0f / det
@@ -622,14 +625,10 @@ class idMat4 {
         return true
     }
 
-    //public	idMat4			TransposeMultiply( const idMat4 &b ) const;
     fun GetDimension(): Int {
         return 16
     }
 
-    //public	const float *	ToFloatPtr( void ) const;
-    //public	float *			ToFloatPtr( void );
-    //public	const char *	ToString( int precision = 2 ) const;
     private fun setCell(x: Int, y: Int, value: Float) {
         when (y) {
             0 -> mat[x].x = value
@@ -659,9 +658,19 @@ class idMat4 {
 
     companion object {
         private val mat4_identity: idMat4 =
-            idMat4(idVec4(1f, 0f, 0f, 0f), idVec4(0f, 1f, 0f, 0f), idVec4(0f, 0f, 1f, 0f), idVec4(0f, 0f, 0f, 1f))
+            idMat4(
+                idVec4(1.0f, 0.0f, 0.0f, 0.0f),
+                idVec4(0.0f, 1.0f, 0.0f, 0.0f),
+                idVec4(0.0f, 0.0f, 1.0f, 0.0f),
+                idVec4(0.0f, 0.0f, 0.0f, 1.0f)
+            )
         private val mat4_zero: idMat4 =
-            idMat4(idVec4(0f, 0f, 0f, 0f), idVec4(0f, 0f, 0f, 0f), idVec4(0f, 0f, 0f, 0f), idVec4(0f, 0f, 0f, 0f))
+            idMat4(
+                idVec4(0.0f, 0.0f, 0.0f, 0.0f),
+                idVec4(0.0f, 0.0f, 0.0f, 0.0f),
+                idVec4(0.0f, 0.0f, 0.0f, 0.0f),
+                idVec4(0.0f, 0.0f, 0.0f, 0.0f)
+            )
 
         fun getMat4_zero(): idMat4 {
             return idMat4(mat4_zero)

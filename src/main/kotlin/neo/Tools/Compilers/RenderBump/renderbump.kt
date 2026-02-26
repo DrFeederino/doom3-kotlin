@@ -9,15 +9,13 @@ import neo.TempDump.TODO_Exception
 import neo.Tools.Compilers.DMap.dmap.Dmap_f
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.CmdArgs
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Str.idStr
 import neo.idlib.geometry.Winding.idWinding
+import neo.idlib.idException
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
 import neo.sys.win_glimp
 import neo.sys.win_shared
 import org.lwjgl.BufferUtils
@@ -27,11 +25,7 @@ import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.sqrt
 
-/**
- *
- */
 object renderbump {
-    //
     const val DEFAULT_TRACE_FRACTION = 0.05
 
     /*
@@ -43,8 +37,6 @@ object renderbump {
      */
     const val DIST_NO_INTERSECTION = -999999999.0f
     const val HASH_AXIS_BINS = 100
-
-    //
     const val INITIAL_TRI_TO_LINK_EXPANSION = 16 // can grow as needed
     const val MAX_LINKS_PER_BLOCK = 0x100000
     const val MAX_LINK_BLOCKS = 0x100
@@ -69,13 +61,11 @@ object renderbump {
     const val MAX_QPATH = 256
     const val RAY_STEPS = 100
     private const val SKIP_MIRRORS = false //TODO:set default value
-
-    //
     var oldWidth = 0
     var oldHeight = 0
     var rayNumber // for avoiding retests of bins and faces
             = 0
-    var traceFraction = 0f
+    var traceFraction = 0.0f
 
     /*
      ===============
@@ -83,8 +73,8 @@ object renderbump {
      ===============
      */
     fun SaveWindow() {
-        oldWidth = tr_local.glConfig.vidWidth
-        oldHeight = tr_local.glConfig.vidHeight
+        oldWidth = glConfig.vidWidth
+        oldHeight = glConfig.vidHeight
     }
 
     /*
@@ -94,29 +84,6 @@ object renderbump {
      */
     fun ResizeWindow(width: Int, height: Int) {
         throw TODO_Exception()
-        //        if (WIN32) {
-//            int winWidth, winHeight;
-//            if (glConfig.isFullscreen) {
-//                winWidth = width;
-//                winHeight = height;
-//            } else {
-//                RECT r;
-//
-//                // adjust width and height for window border
-//                r.bottom = height;
-//                r.left = 0;
-//                r.top = 0;
-//                r.right = width;
-//
-//                AdjustWindowRect(r, WINDOW_STYLE | WS_SYSMENU, FALSE);
-//                winHeight = r.bottom - r.top;
-//                winWidth = r.right - r.left;
-//
-//            }
-//            SetWindowPos(win32.hWnd, HWND_TOP, 0, 0, winWidth, winHeight, SWP_SHOWWINDOW);
-//
-//            qwglMakeCurrent(win32.hDC, win32.hGLRC);
-//        }
     }
 
     /*
@@ -126,26 +93,6 @@ object renderbump {
      */
     fun RestoreWindow() {
         throw TODO_Exception()
-        //        if (WIN32) {
-//            int winWidth, winHeight;
-//            if (glConfig.isFullscreen) {
-//                winWidth = oldWidth;
-//                winHeight = oldHeight;
-//            } else {
-//                RECT r;
-//
-//                // adjust width and height for window border
-//                r.bottom = oldHeight;
-//                r.left = 0;
-//                r.top = 0;
-//                r.right = oldWidth;
-//
-//                AdjustWindowRect(r, WINDOW_STYLE | WS_SYSMENU, FALSE);
-//                winHeight = r.bottom - r.top;
-//                winWidth = r.right - r.left;
-//            }
-//            SetWindowPos(win32.hWnd, HWND_TOP, 0, 0, winWidth, winHeight, SWP_SHOWWINDOW);
-//        }
     }
 
     /*
@@ -172,8 +119,6 @@ object renderbump {
         while (i < width) {
             j = 0
             while (j < height) {
-
-//			out = data + ( j * width + i ) * 4;
                 out = (j * width + i) * 4
                 if (data.get(out + 0).toInt() != emptyR || data.get(out + 1).toInt() != emptyG || data.get(out + 2)
                         .toInt() != emptyB
@@ -181,7 +126,7 @@ object renderbump {
                     j++
                     continue
                 }
-                normal.set(Vector.getVec3Origin())
+                normal.set(getVec3Origin())
                 k = -1
                 while (k < 2) {
                     l = -1
@@ -201,7 +146,7 @@ object renderbump {
                     }
                     k++
                 }
-                if (normal.Normalize() < 0.5) {
+                if (normal.Normalize() < 0.5f) {
                     j++
                     continue  // no valid samples
                 }
@@ -245,7 +190,7 @@ object renderbump {
                     j++
                     continue
                 }
-                normal.set(Vector.getVec3Origin())
+                normal.set(getVec3Origin())
                 var count = 0
                 k = -1
                 while (k < 2) {
@@ -431,7 +376,7 @@ object renderbump {
 
         // only test against planes facing the same direction as our normal
         d = plane.Normal().times(normal)
-        if (d <= 0.0001f) {
+        if (d <= 0.0001) {
             return DIST_NO_INTERSECTION
         }
 
@@ -450,21 +395,21 @@ object renderbump {
         }
 
         // if normal is inside all edge planes, this face is hit
-        Vector.VectorSubtract(v[0], point, dir[0])
-        Vector.VectorSubtract(v[1], point, dir[1])
+        VectorSubtract(v[0], point, dir[0])
+        VectorSubtract(v[1], point, dir[1])
         edge.set(dir[0].Cross(dir[1]))
-        d = Vector.DotProduct(normal, edge)
+        d = DotProduct(normal, edge)
         if (d > 0.0f) {
             return DIST_NO_INTERSECTION
         }
-        Vector.VectorSubtract(v[2], point, dir[2])
+        VectorSubtract(v[2], point, dir[2])
         edge.set(dir[1].Cross(dir[2]))
-        d = Vector.DotProduct(normal, edge)
+        d = DotProduct(normal, edge)
         if (d > 0.0f) {
             return DIST_NO_INTERSECTION
         }
         edge.set(dir[2].Cross(dir[0]))
-        d = Vector.DotProduct(normal, edge)
+        d = DotProduct(normal, edge)
         if (d > 0.0f) {
             return DIST_NO_INTERSECTION
         }
@@ -484,7 +429,7 @@ object renderbump {
         }
 
         // triangularly interpolate the normals to the sample point
-        sampledNormal.set(Vector.getVec3Origin())
+        sampledNormal.set(getVec3Origin())
         j = 0
         while (j < 3) {
             sampledNormal.plusAssign(highMesh.verts!![highMesh.indexes!![faceNum * 3 + j]]!!.normal.times(bary[j]))
@@ -546,7 +491,7 @@ object renderbump {
         // the max distance will be the traceFrac times the longest axis of the high poly model
         bestDist = -rb.traceDist
         maxDist = rb.traceDist
-        sampledNormal.set(Vector.getVec3Origin())
+        sampledNormal.set(getVec3Origin())
         c_hits = 0
 
         // this is a pretty damn lazy way to walk through a 3D grid, and has a (very slight)
@@ -559,9 +504,9 @@ object renderbump {
                         .plus(normal.times(-1.0f + 2.0f * i / RAY_STEPS).times(rb.traceDist))
                 )
             ) //TODO:check if downcasting from doubles to floats has any effect
-            block[0] = floor((p[0] / rb.hash.binSize[0]).toDouble()).toInt()
-            block[1] = floor((p[1] / rb.hash.binSize[1]).toDouble()).toInt()
-            block[2] = floor((p[2] / rb.hash.binSize[2]).toDouble()).toInt()
+            block[0] = floor((p[0] / rb.hash.binSize[0])).toInt()
+            block[1] = floor((p[1] / rb.hash.binSize[1])).toInt()
+            block[2] = floor((p[2] / rb.hash.binSize[2])).toInt()
             if (block[0] < 0 || block[0] >= HASH_AXIS_BINS) {
                 i++
                 continue
@@ -619,10 +564,10 @@ object renderbump {
         val area: Float
         d1[0] = b[0] - a[0]
         d1[1] = b[1] - a[1]
-        d1[2] = 0f
+        d1[2] = 0.0f
         d2[0] = c[0] - a[0]
         d2[1] = c[1] - a[1]
-        d2[2] = 0f
+        d2[2] = 0.0f
         cross.set(d1.Cross(d2))
         area = 0.5f * cross.Length()
         return if (cross[2] < 0) {
@@ -683,10 +628,10 @@ object renderbump {
         verts[2][1] = lowMesh.verts!![lowMesh.indexes!![lowFaceNum * 3 + 2]]!!.st[1] * rbs[0].width - 0.5f
 
         // find the texcoord bounding box
-        bounds[0][0] = 99999f
-        bounds[0][1] = 99999f
-        bounds[1][0] = -99999f
-        bounds[1][1] = -99999f
+        bounds[0][0] = 99999.0f
+        bounds[0][1] = 99999.0f
+        bounds[1][0] = -99999.0f
+        bounds[1][1] = -99999.0f
         i = 0
         while (i < 2) {
             j = 0
@@ -706,10 +651,10 @@ object renderbump {
         // the bilerp support texels (which may be anti-aliased down)
         // are not just duplications of what is on the interior
         val edgeOverlap = 4.0f
-        ibounds[0][0] = floor((bounds[0][0] - edgeOverlap).toDouble()).toFloat()
-        ibounds[1][0] = ceil((bounds[1][0] + edgeOverlap).toDouble()).toFloat()
-        ibounds[0][1] = floor((bounds[0][1] - edgeOverlap).toDouble()).toFloat()
-        ibounds[1][1] = ceil((bounds[1][1] + edgeOverlap).toDouble()).toFloat()
+        ibounds[0][0] = floor((bounds[0][0] - edgeOverlap))
+        ibounds[1][0] = ceil((bounds[1][0] + edgeOverlap))
+        ibounds[0][1] = floor((bounds[0][1] - edgeOverlap))
+        ibounds[1][1] = ceil((bounds[1][1] + edgeOverlap))
 
         // calculate edge vectors
         i = 0
@@ -721,7 +666,7 @@ object renderbump {
             edge[i][0] = v2[1] - v1[1]
             edge[i][1] = v1[0] - v2[0]
             val len =
-                sqrt((edge[i][0] * edge[i][0] + edge[i][1] * edge[i][1]).toDouble()).toFloat()
+                sqrt((edge[i][0] * edge[i][0] + edge[i][1] * edge[i][1]))
             edge[i][0] /= len
             edge[i][1] /= len
             edge[i][2] = -(v1[0] * edge[i][0] + v1[1] * edge[i][1])
@@ -745,7 +690,7 @@ object renderbump {
 //                float[] edgeDistance = rb.edgeDistances[k / 4];
                 if (SKIP_MIRRORS) {
                     // if this texel has already been filled by a true interior pixel, don't overwrite it
-                    if (rb.edgeDistances[0 + k / 4] == 0f) {
+                    if (rb.edgeDistances[0 + k / 4] == 0.0f) {
                         j++
                         q++
                         continue
@@ -778,7 +723,7 @@ object renderbump {
                     edgeTexel = true
                     if (SKIP_MIRRORS) {
                         // if this texel has already been filled by another edge pixel, don't overwrite it
-                        if (rb.edgeDistances[1 + k / 4] == 1f) {
+                        if (rb.edgeDistances[1 + k / 4] == 1.0f) {
                             j++
                             q++
                             continue
@@ -801,11 +746,11 @@ object renderbump {
                 }
 
                 // calculate the interpolated xyz, normal, and tangents of this sample
-                point.set(Vector.getVec3Origin())
-                traceNormal.set(Vector.getVec3Origin())
-                normal.set(Vector.getVec3Origin())
-                tangents[0].set(Vector.getVec3Origin())
-                tangents[1].set(Vector.getVec3Origin())
+                point.set(getVec3Origin())
+                traceNormal.set(getVec3Origin())
+                normal.set(getVec3Origin())
+                tangents[0].set(getVec3Origin())
+                tangents[1].set(getVec3Origin())
                 k = 0
                 while (k < 3) {
                     var index: Int
@@ -849,7 +794,7 @@ object renderbump {
 //				continue;
 //			}
                 // mark whether this is an interior or edge texel
-                rb.edgeDistances[0 + k / 4] = if (edgeTexel) 1.0f else 0f
+                rb.edgeDistances[0 + k / 4] = if (edgeTexel) 1.0f else 0.0f
 
                 // fill the object space normal map spot
                 r = (128 + 127 * sampledNormal[0]).toInt()
@@ -907,9 +852,9 @@ object renderbump {
             totalIndexes += surf.geometry!!.numIndexes
             i++
         }
-        val newTri = tr_trisurf.R_AllocStaticTriSurf()
-        tr_trisurf.R_AllocStaticTriSurfVerts(newTri, totalVerts)
-        tr_trisurf.R_AllocStaticTriSurfIndexes(newTri, totalIndexes)
+        val newTri = R_AllocStaticTriSurf()
+        R_AllocStaticTriSurfVerts(newTri, totalVerts)
+        R_AllocStaticTriSurfIndexes(newTri, totalIndexes)
         newTri.numVerts = totalVerts
         newTri.numIndexes = totalIndexes
         newTri.bounds.Clear()
@@ -937,7 +882,7 @@ object renderbump {
         val surf = modelSurface_s()
         surf.id = 0
         surf.geometry = newTri
-        surf.shader = tr_local.tr.defaultMaterial
+        surf.shader = tr.defaultMaterial
         val newModel = ModelManager.renderModelManager.AllocModel()
         newModel.AddSurface(surf)
         ModelManager.renderModelManager.FreeModel(model)
@@ -1123,17 +1068,17 @@ object renderbump {
         val surf = rb.highModel!!.Surface(0)
         mesh = surf!!.geometry!!
         rb.mesh = mesh
-        tr_trisurf.R_DeriveFacePlanes(mesh)
+        R_DeriveFacePlanes(mesh)
 
         // create a face hash table to accelerate the tracing
         rb.hash = CreateTriHash(mesh)
 
         // bound the entire file
-        tr_trisurf.R_BoundTriSurf(mesh)
+        R_BoundTriSurf(mesh)
         bounds = mesh.bounds
 
         // the traceDist will be the traceFrac times the larges bounds axis
-        rb.traceDist = 0f
+        rb.traceDist = 0.0f
         i = 0
         while (i < 3) {
             var d: Float
@@ -1171,7 +1116,7 @@ object renderbump {
             rb.colorPic!!.put(i + 1, 128.toByte())
             rb.colorPic!!.put(i + 2, 128.toByte())
             rb.colorPic!!.put(i + 3, 0.toByte())
-            rb.edgeDistances[i / 4] = -1f // not traced yet
+            rb.edgeDistances[i / 4] = -1.0f // not traced yet
             i += 4
         }
     }
@@ -1215,8 +1160,8 @@ object renderbump {
         var outputName: CharArray = CharArray(MAX_QPATH)
         var saveColorMap = false
         var saveGlobalMap = false
-        var traceDist = 0f
-        var traceFrac = 0f
+        var traceDist = 0.0f
+        var traceFrac = 0.0f
         var width = 0
         var height = 0
     }
@@ -1282,7 +1227,7 @@ object renderbump {
                     "surface %d, shader %s\nrenderBump = %s ", i,
                     ms.shader!!.GetName(), cmdLine
                 )
-                if (TempDump.NOT(ms.geometry)) {
+                if (ms.geometry == null) {
                     Common.common.Printf("(no geometry)\n")
                     i++
                     continue
@@ -1335,7 +1280,7 @@ object renderbump {
                     j++
                 }
                 if (j != localArgs.Argc() - 2) {
-                    Common.common.Error("usage: renderBump [-size width height] [-aa <1-2>] [globalMap] [colorMap] [-trace <0.01 - 1.0>] normalMapImageFile highPolyAseFile")
+                    Common.common.Error("usage: renderBump [-size width height] [-aa <1-2>] [globalMap] [colorMap] [-trace <0.01 - 1.0f>] normalMapImageFile highPolyAseFile")
                 }
                 idStr.Copynz(opt.outputName, localArgs.Argv(j), localArgs.Argv(j).length)
                 idStr.Copynz(opt.highName, localArgs.Argv(j + 1), localArgs.Argv(j + 1).length)
@@ -1393,7 +1338,7 @@ object renderbump {
             //
 //            R_StaticFree(renderBumps);
             endTime = win_shared.Sys_Milliseconds()
-            Common.common.Printf("%5.2f seconds for renderBump\n", (endTime - startTime) / 1000.0)
+            Common.common.Printf("%5.2f seconds for renderBump\n", (endTime - startTime) / 1000.0f)
             Common.common.Printf("---------- RenderBump Completed ----------\n")
 
             // stop updating the screen as we print
@@ -1429,7 +1374,7 @@ object renderbump {
             var height: Int
             val source: String
             var i: Int
-            val bounds: idBounds = idBounds()
+            val bounds = idBounds()
             var mesh: srfTriangles_s
             val boundsScale: Float
 
@@ -1437,7 +1382,7 @@ object renderbump {
             Common.common.SetRefreshOnPrint(true)
             height = 256
             width = height
-            boundsScale = 0f
+            boundsScale = 0.0f
 
             // check options
             i = 1
@@ -1486,7 +1431,7 @@ object renderbump {
             mesh = surf!!.geometry!!
 
             // bound the entire file
-            tr_trisurf.R_BoundTriSurf(mesh)
+            R_BoundTriSurf(mesh)
             bounds.set(mesh.bounds)
             SaveWindow()
             ResizeWindow(width, height)
@@ -1503,7 +1448,7 @@ object renderbump {
             qgl.qglDisable(GL11.GL_TEXTURE_2D)
             qgl.qglDepthMask(TempDump.itob(GL11.GL_TRUE))
             qgl.qglDepthFunc(GL11.GL_LEQUAL)
-            qgl.qglColor3f(1f, 1f, 1f)
+            qgl.qglColor3f(1.0f, 1.0f, 1.0f)
             qgl.qglMatrixMode(GL11.GL_PROJECTION)
             qgl.qglLoadIdentity()
             qgl.qglOrtho(
@@ -1538,7 +1483,7 @@ object renderbump {
                     (sample and 3) / 4.0f * (bounds[1, 0] - bounds[0, 0]) / width //TODO:loss of precision, float instead of double.
                 yOff = sample / 4 / 4.0f * (bounds[1, 2] - bounds[0, 2]) / height
                 for (colorPass in 0..1) {
-                    qgl.qglClearColor(0.5f, 0.5f, 0.5f, 0f)
+                    qgl.qglClearColor(0.5f, 0.5f, 0.5f, 0.0f)
                     qgl.qglClear(GL11.GL_COLOR_BUFFER_BIT or GL11.GL_DEPTH_BUFFER_BIT)
                     qgl.qglBegin(GL11.GL_TRIANGLES)
                     i = 0
@@ -1594,10 +1539,6 @@ object renderbump {
                                             0.5f - 0.5f * plane[1]
                                         )
                                     }
-
-//							qglVertex3f( (*a2)[0] + xOff, (*a2)[2] + yOff, (*a2)[1] );//TODO:check this pointer cast thing
-//							qglVertex3f( (*b2)[0] + xOff, (*b2)[2] + yOff, (*b2)[1] );
-//							qglVertex3f( (*c2)[0] + xOff, (*c2)[2] + yOff, (*c2)[1] );
                                     qgl.qglVertex3f(a2[0] + xOff, a2[2] + yOff, a2[1])
                                     qgl.qglVertex3f(b2[0] + xOff, b2[2] + yOff, b2[1])
                                     qgl.qglVertex3f(c2[0] + xOff, c2[2] + yOff, c2[1])

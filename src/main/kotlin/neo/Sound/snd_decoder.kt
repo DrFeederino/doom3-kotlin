@@ -4,7 +4,7 @@ import neo.Sound.snd_cache.idSoundSample
 import neo.Sound.snd_local.idSampleDecoder
 import neo.TempDump.TODO_Exception
 import neo.framework.File_h.idFile_Memory
-import neo.idlib.math.Simd
+import neo.idlib.math.SIMDProcessor
 import neo.sys.sys_public
 import neo.sys.win_main
 import org.lwjgl.BufferUtils
@@ -16,9 +16,6 @@ import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
-/**
- *
- */
 object snd_decoder {
     /*
      ===================================================================================
@@ -205,10 +202,12 @@ object snd_decoder {
                     snd_local.WAVE_FORMAT_TAG_PCM -> {
                         DecodePCM(sample, sampleOffset44k, sampleCount44k, dest.array()) //TODO:fix with offset
                     }
+
                     snd_local.WAVE_FORMAT_TAG_OGG -> {
                         DBG_Decode++
                         DecodeOGG(sample, sampleOffset44k, sampleCount44k, dest)
                     }
+
                     else -> {
                         0
                     }
@@ -218,7 +217,7 @@ object snd_decoder {
             }
             if (readSamples44k < sampleCount44k) {
 //                memset(dest + readSamples44k, 0, (sampleCount44k - readSamples44k) * sizeof(dest[0]));
-                Arrays.fill(dest.array(), readSamples44k, sampleCount44k - readSamples44k, 0f)
+                Arrays.fill(dest.array(), readSamples44k, sampleCount44k - readSamples44k, 0.0f)
             }
         }
 
@@ -358,7 +357,7 @@ object snd_decoder {
                 for (i in 0 until sample.objectInfo.nChannels) {
                     samples.getFloatBuffer(i, num_samples)[samplesArray[i]]
                 }
-                Simd.SIMDProcessor.UpSampleOGGTo44kHz(
+                SIMDProcessor!!.UpSampleOGGTo44kHz(
                     dest,
                     readSamples shl shift,
                     samplesArray,

@@ -1,36 +1,20 @@
 package neo.Renderer
 
-import neo.Renderer.tr_local.drawSurf_s
-import neo.Renderer.tr_local.frameData_t
-import neo.Renderer.tr_local.frameMemoryBlock_s
-import neo.Renderer.tr_local.idScreenRect
-import neo.Renderer.tr_local.viewDef_s
-import neo.Renderer.tr_local.viewEntity_s
 import neo.framework.Common
 import neo.framework.Session
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib
+import neo.idlib.*
+import neo.idlib.BV.idBounds
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.List.cmp_t
-import neo.idlib.math.Math_h.DEG2RAD
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Math_h.idMath.FtoiFast
-import neo.idlib.math.Math_h.idMath.SinCos
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane.idPlane
 import neo.idlib.math.Random.idRandom
-import neo.idlib.math.Vector.DotProduct
-import neo.idlib.math.Vector.VectorSubtract
-import neo.idlib.math.Vector.idVec
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idMath.FtoiFast
+import neo.idlib.math.idMath.SinCos
 import java.nio.FloatBuffer
 import java.util.*
 import kotlin.math.tan
 
-/**
- *
- */
 object tr_main {
     //====================================================================
     //=====================================================
@@ -42,14 +26,14 @@ object tr_main {
      ======================
      */
     val colors /*[]*/: Array<idVec4> = arrayOf(
-        Lib.colorRed,
-        Lib.colorGreen,
-        Lib.colorBlue,
-        Lib.colorYellow,
-        Lib.colorMagenta,
-        Lib.colorCyan,
-        Lib.colorWhite,
-        Lib.colorPurple
+        colorRed,
+        colorGreen,
+        colorBlue,
+        colorYellow,
+        colorMagenta,
+        colorCyan,
+        colorWhite,
+        colorPurple
     )
 
     /*
@@ -59,13 +43,14 @@ object tr_main {
      Sets up the world to view matrix for a given viewParm
      =================
      */
-    private val s_flipMatrix /*[16]*/: FloatArray = floatArrayOf( // convert from our coordinate system (looking down X)
-        // to OpenGL's coordinate system (looking down -Z)
-        -0f, 0f, -1f, 0f,
-        -1f, 0f, -0f, 0f,
-        -0f, 1f, -0f, 0f,
-        -0f, 0f, -0f, 1f
-    )
+    private val s_flipMatrix /*[16]*/: FloatArray =
+        floatArrayOf( // convert from our coordinate system (looking down X)
+            // to OpenGL's coordinate system (looking down -Z)
+            -0.0f, 0.0f, -1.0f, 0.0f,
+            -1.0f, 0.0f, -0.0f, 0.0f,
+            -0.0f, 1.0f, -0.0f, 0.0f,
+            -0.0f, 0.0f, -0.0f, 1.0f
+        )
 
     /*
      ================
@@ -105,20 +90,20 @@ object tr_main {
      ======================
      */
     fun R_ScreenRectFromViewFrustumBounds(bounds: idBounds): idScreenRect {
-        val screenRect: idScreenRect = idScreenRect()
+        val screenRect = idScreenRect()
         screenRect.x1 =
-            FtoiFast(0.5f * (1.0f - bounds[1].y) * (tr_local.tr.viewDef!!.viewport.x2 - tr_local.tr.viewDef!!.viewport.x1))
+            FtoiFast(0.5f * (1.0f - bounds[1].y) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1))
         screenRect.x2 =
-            FtoiFast(0.5f * (1.0f - bounds[0].y) * (tr_local.tr.viewDef!!.viewport.x2 - tr_local.tr.viewDef!!.viewport.x1))
+            FtoiFast(0.5f * (1.0f - bounds[0].y) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1))
         screenRect.y1 =
-            FtoiFast(0.5f * (1.0f + bounds[0].z) * (tr_local.tr.viewDef!!.viewport.y2 - tr_local.tr.viewDef!!.viewport.y1))
+            FtoiFast(0.5f * (1.0f + bounds[0].z) * (tr.viewDef!!.viewport.y2 - tr.viewDef!!.viewport.y1))
         screenRect.y2 =
-            FtoiFast(0.5f * (1.0f + bounds[1].z) * (tr_local.tr.viewDef!!.viewport.y2 - tr_local.tr.viewDef!!.viewport.y1))
-        if (RenderSystem_init.r_useDepthBoundsTest!!.GetInteger() != 0) {
-            val zmin: CFloat = CFloat(screenRect.zmin)
-            val zmax: CFloat = CFloat(screenRect.zmax)
-            R_TransformEyeZToWin(-bounds[0].x, tr_local.tr.viewDef!!.projectionMatrix, zmin)
-            R_TransformEyeZToWin(-bounds[1].x, tr_local.tr.viewDef!!.projectionMatrix, zmax)
+            FtoiFast(0.5f * (1.0f + bounds[1].z) * (tr.viewDef!!.viewport.y2 - tr.viewDef!!.viewport.y1))
+        if (r_useDepthBoundsTest!!.GetInteger() != 0) {
+            val zmin = CFloat(screenRect.zmin)
+            val zmax = CFloat(screenRect.zmax)
+            R_TransformEyeZToWin(-bounds[0].x, tr.viewDef!!.projectionMatrix, zmin)
+            R_TransformEyeZToWin(-bounds[1].x, tr.viewDef!!.projectionMatrix, zmax)
             screenRect.zmin = zmin._val
             screenRect.zmax = zmax._val
         }
@@ -127,10 +112,10 @@ object tr_main {
 
     fun R_ShowColoredScreenRect(rect: idScreenRect, colorIndex: Int) {
         if (!rect.IsEmpty()) {
-            tr_local.tr.viewDef!!.renderWorld!!.DebugScreenRect(
+            tr.viewDef!!.renderWorld!!.DebugScreenRect(
                 colors[colorIndex and 7],
                 rect,
-                tr_local.tr.viewDef!!
+                tr.viewDef!!
             )
         }
     }
@@ -141,17 +126,14 @@ object tr_main {
      ====================
      */
     fun R_ToggleSmpFrame() {
-        if (RenderSystem_init.r_lockSurfaces!!.GetBool()) {
-            return
-        }
-        tr_trisurf.R_FreeDeferredTriSurfs(tr_local.frameData)
+        R_FreeDeferredTriSurfs(frameData)
 
         // clear frame-temporary data
         var block: frameMemoryBlock_s?
 
         // update the highwater mark
         R_CountFrameData()
-        val frame: frameData_t = tr_local.frameData!!
+        val frame: frameData_t = frameData!!
 
         // reset the memory allocation to the first block
         frame.alloc = frame.memory
@@ -174,11 +156,11 @@ object tr_main {
         var block: frameMemoryBlock_s?
 
         // free any current data
-        var frame: frameData_t? = tr_local.frameData
+        var frame: frameData_t? = frameData
         if (null == frame) {
             return
         }
-        tr_trisurf.R_FreeDeferredTriSurfs(frame)
+        R_FreeDeferredTriSurfs(frame)
         var nextBlock: frameMemoryBlock_s?
         block = frame.memory
         while (block != null) {
@@ -187,7 +169,7 @@ object tr_main {
             block = nextBlock
         }
         frame = null
-        tr_local.frameData = null
+        frameData = null
     }
 
     /*
@@ -198,8 +180,8 @@ object tr_main {
     fun R_InitFrameData() {
         val block: frameMemoryBlock_s?
         R_ShutdownFrameData()
-        tr_local.frameData = frameData_t() // Mem_ClearedAlloc(sizeof(frameData));
-        val frame: frameData_t = tr_local.frameData!!
+        frameData = frameData_t() // Mem_ClearedAlloc(sizeof(frameData));
+        val frame: frameData_t = frameData!!
         val size: Int = MEMORY_BLOCK_SIZE
         block = frameMemoryBlock_s() // Mem_Alloc(size /*+ sizeof( *block )*/);
         if (null == block) {
@@ -221,8 +203,8 @@ object tr_main {
     @Deprecated("")
     fun R_CountFrameData(): Int {
         var block: frameMemoryBlock_s?
-        var count: Int = 0
-        val frame: frameData_t = tr_local.frameData!!
+        var count = 0
+        val frame: frameData_t = frameData!!
         block = frame.memory
         while (block != null) {
             count += block.used
@@ -391,15 +373,15 @@ object tr_main {
         modelMatrix[6] = axis[1, 2]
         modelMatrix[10] = axis[2, 2]
         modelMatrix[14] = origin[2]
-        modelMatrix[3] = 0f
-        modelMatrix[7] = 0f
-        modelMatrix[11] = 0f
-        modelMatrix[15] = 1f
+        modelMatrix[3] = 0.0f
+        modelMatrix[7] = 0.0f
+        modelMatrix[11] = 0.0f
+        modelMatrix[15] = 1.0f
     }
 
     // FIXME: these assume no skewing or scaling transforms
     fun R_LocalPointToGlobal(modelMatrix: FloatArray /*[16]*/, `in`: idVec3): idVec3 {
-        val out: idVec3 = idVec3()
+        val out = idVec3()
 
 // if (MACOS_X && __i386__){
         // __m128 m0, m1, m2, m3;
@@ -447,7 +429,7 @@ object tr_main {
     }
 
     fun R_GlobalPointToLocal(modelMatrix: FloatArray? /*[16]*/, `in`: idVec3, out: idVec<*>) {
-        val temp: FloatArray = FloatArray(4)
+        val temp = FloatArray(4)
         VectorSubtract(`in`.ToFloatPtr(), Arrays.copyOfRange(modelMatrix, 12, 16), temp)
         out[0] = DotProduct(temp, (modelMatrix)!!)
         out[1] = DotProduct(temp, Arrays.copyOfRange(modelMatrix, 4, 8))
@@ -455,7 +437,7 @@ object tr_main {
     }
 
     fun R_GlobalPointToLocal(modelMatrix: FloatArray? /*[16]*/, `in`: idVec3, out: FloatArray) {
-        val temp: FloatArray = FloatArray(4)
+        val temp = FloatArray(4)
         VectorSubtract(`in`.ToFloatPtr(), Arrays.copyOfRange(modelMatrix, 12, 16), temp)
         out[0] = DotProduct(temp, (modelMatrix)!!)
         out[1] = DotProduct(temp, Arrays.copyOfRange(modelMatrix, 4, 8))
@@ -463,7 +445,7 @@ object tr_main {
     }
 
     fun R_GlobalPointToLocal(modelMatrix: FloatArray? /*[16]*/, `in`: idVec3, out: FloatBuffer) {
-        val temp: FloatArray = FloatArray(4)
+        val temp = FloatArray(4)
         VectorSubtract(`in`.ToFloatPtr(), Arrays.copyOfRange(modelMatrix, 12, 16), temp)
         out.put(0, DotProduct(temp, (modelMatrix)!!))
         out.put(1, DotProduct(temp, Arrays.copyOfRange(modelMatrix, 4, 8)))
@@ -524,18 +506,18 @@ object tr_main {
         planes: Array<idPlane>
     ): Boolean {
         var d: Float
-        val worldOrigin: idVec3 = idVec3()
+        val worldOrigin = idVec3()
         val worldRadius: Float
         var frust: idPlane
-        if (RenderSystem_init.r_useCulling!!.GetInteger() == 0) {
+        if (r_useCulling!!.GetInteger() == 0) {
             return false
         }
 
         // transform the surface bounds into world space
-        val localOrigin: idVec3 = idVec3((bounds[0].plus(bounds[1])).times(0.5f))
+        val localOrigin = idVec3((bounds[0].plus(bounds[1])).times(0.5f))
         worldOrigin.set(R_LocalPointToGlobal(modelMatrix!!, localOrigin))
         worldRadius = (bounds[0].minus(localOrigin)).Length() // FIXME: won't be correct for scaled objects
-        var i: Int = 0
+        var i = 0
         while (i < numPlanes) {
             frust = planes[i]
             d = frust.Distance(worldOrigin)
@@ -555,18 +537,18 @@ object tr_main {
     ): Boolean {
         var j: Int
         val transformed: Array<idVec3> = idVec3.generateArray(8)
-        val dists: FloatArray = FloatArray(8)
-        val v: idVec3 = idVec3()
+        val dists = FloatArray(8)
+        val v = idVec3()
         var frust: idPlane
         DBG_R_CornerCullLocalBox++
 
         // we can disable box culling for experimental timing purposes
-        if (RenderSystem_init.r_useCulling!!.GetInteger() < 2) {
+        if (r_useCulling!!.GetInteger() < 2) {
             return false
         }
 
         // transform into world space
-        var i: Int = 0
+        var i = 0
         while (i < 8) {
             v[0] = bounds[(i shr 0) and 1, 0]
             v[1] = bounds[(i shr 1) and 1, 1]
@@ -593,7 +575,7 @@ object tr_main {
 //                System.out.println(">>>>>>>>>>> " + Arrays.toString(dists));
 //                System.out.println("<<<<<<<<<<< " + DBG_R_CornerCullLocalBox);
                 // all points were behind one of the planes
-                tr_local.tr.pc!!.c_box_cull_out++
+                tr.pc!!.c_box_cull_out++
                 return true
             }
             i++
@@ -602,7 +584,7 @@ object tr_main {
 //        System.out.println(">>>>>>>>>>> " + Arrays.toString(transformed));
 //        System.out.println(">>>>>>>>>>> " + Arrays.toString(dists));
 //        System.out.println("<<<<<<<<<<< " + DBG_R_CornerCullLocalBox);
-        tr_local.tr.pc!!.c_box_cull_in++
+        tr.pc!!.c_box_cull_in++
         return false // not culled
     }
 
@@ -615,12 +597,12 @@ object tr_main {
      =================
      */
     fun R_CullLocalBox(
-        bounds: idBounds?,
+        bounds: idBounds,
         modelMatrix: FloatArray? /*[16]*/,
         numPlanes: Int,
         planes: Array<idPlane?>?
     ): Boolean {
-        if (R_RadiusCullLocalBox(bounds!!, modelMatrix, numPlanes, planes as Array<idPlane>)) {
+        if (R_RadiusCullLocalBox(bounds, modelMatrix, numPlanes, planes as Array<idPlane>)) {
             return true
         }
         return R_CornerCullLocalBox(bounds, modelMatrix, numPlanes, planes as Array<idPlane>)
@@ -638,7 +620,7 @@ object tr_main {
         eye: idPlane,
         dst: idPlane
     ) {
-        var i: Int = 0
+        var i = 0
         while (i < 4) {
             eye[i] = (src[0] * modelMatrix[i + 0 * 4]
                     ) + (src[1] * modelMatrix[i + 1 * 4]
@@ -665,42 +647,42 @@ object tr_main {
      */
     fun R_GlobalToNormalizedDeviceCoordinates(global: idVec3, ndc: idVec3) {
         var i: Int
-        val view: idPlane = idPlane()
-        val clip: idPlane = idPlane()
+        val view = idPlane()
+        val clip = idPlane()
 
         // _D3XP added work on primaryView when no viewDef
-        if (null == tr_local.tr.viewDef) {
+        if (null == tr.viewDef) {
             i = 0
             while (i < 4) {
-                view[i] = (global[0] * tr_local.tr.primaryView!!.worldSpace.modelViewMatrix[i + 0 * 4]
-                        ) + (global[1] * tr_local.tr.primaryView!!.worldSpace.modelViewMatrix[i + 1 * 4]
-                        ) + (global[2] * tr_local.tr.primaryView!!.worldSpace.modelViewMatrix[i + 2 * 4]
-                        ) + tr_local.tr.primaryView!!.worldSpace.modelViewMatrix[i + 3 * 4]
+                view[i] = (global[0] * tr.primaryView!!.worldSpace.modelViewMatrix[i + 0 * 4]
+                        ) + (global[1] * tr.primaryView!!.worldSpace.modelViewMatrix[i + 1 * 4]
+                        ) + (global[2] * tr.primaryView!!.worldSpace.modelViewMatrix[i + 2 * 4]
+                        ) + tr.primaryView!!.worldSpace.modelViewMatrix[i + 3 * 4]
                 i++
             }
             i = 0
             while (i < 4) {
-                clip[i] = (view[0] * tr_local.tr.primaryView!!.projectionMatrix[i + 0 * 4]
-                        ) + (view[1] * tr_local.tr.primaryView!!.projectionMatrix[i + 1 * 4]
-                        ) + (view[2] * tr_local.tr.primaryView!!.projectionMatrix[i + 2 * 4]
-                        ) + (view[3] * tr_local.tr.primaryView!!.projectionMatrix[i + 3 * 4])
+                clip[i] = (view[0] * tr.primaryView!!.projectionMatrix[i + 0 * 4]
+                        ) + (view[1] * tr.primaryView!!.projectionMatrix[i + 1 * 4]
+                        ) + (view[2] * tr.primaryView!!.projectionMatrix[i + 2 * 4]
+                        ) + (view[3] * tr.primaryView!!.projectionMatrix[i + 3 * 4])
                 i++
             }
         } else {
             i = 0
             while (i < 4) {
-                view[i] = (global[0] * tr_local.tr.viewDef!!.worldSpace.modelViewMatrix[i + 0 * 4]
-                        ) + (global[1] * tr_local.tr.viewDef!!.worldSpace.modelViewMatrix[i + 1 * 4]
-                        ) + (global[2] * tr_local.tr.viewDef!!.worldSpace.modelViewMatrix[i + 2 * 4]
-                        ) + tr_local.tr.viewDef!!.worldSpace.modelViewMatrix[i + 3 * 4]
+                view[i] = (global[0] * tr.viewDef!!.worldSpace.modelViewMatrix[i + 0 * 4]
+                        ) + (global[1] * tr.viewDef!!.worldSpace.modelViewMatrix[i + 1 * 4]
+                        ) + (global[2] * tr.viewDef!!.worldSpace.modelViewMatrix[i + 2 * 4]
+                        ) + tr.viewDef!!.worldSpace.modelViewMatrix[i + 3 * 4]
                 i++
             }
             i = 0
             while (i < 4) {
-                clip[i] = (view[0] * tr_local.tr.viewDef!!.projectionMatrix[i + 0 * 4]
-                        ) + (view[1] * tr_local.tr.viewDef!!.projectionMatrix[i + 1 * 4]
-                        ) + (view[2] * tr_local.tr.viewDef!!.projectionMatrix[i + 2 * 4]
-                        ) + (view[3] * tr_local.tr.viewDef!!.projectionMatrix[i + 3 * 4])
+                clip[i] = (view[0] * tr.viewDef!!.projectionMatrix[i + 0 * 4]
+                        ) + (view[1] * tr.viewDef!!.projectionMatrix[i + 1 * 4]
+                        ) + (view[2] * tr.viewDef!!.projectionMatrix[i + 2 * 4]
+                        ) + (view[3] * tr.viewDef!!.projectionMatrix[i + 3 * 4])
                 i++
             }
         }
@@ -728,52 +710,38 @@ object tr_main {
      ==========================
      */
     fun myGlMultMatrix(a: FloatArray /*[16]*/, b: FloatArray /*[16]*/, out: FloatArray /*[16]*/) {
-        if (false) {
-//            int i, j;
-//
-//            for (i = 0; i < 4; i++) {
-//                for (j = 0; j < 4; j++) {
-//                    out[ i * 4 + j] =
-//                            a[ i * 4 + 0] * b[ 0 * 4 + j]
-//                            + a[ i * 4 + 1] * b[ 1 * 4 + j]
-//                            + a[ i * 4 + 2] * b[ 2 * 4 + j]
-//                            + a[ i * 4 + 3] * b[ 3 * 4 + j];
-//                }
-//            }
-        } else {
-            out[0 * 4 + 0] =
-                (a[0 * 4 + 0] * b[0 * 4 + 0]) + (a[0 * 4 + 1] * b[1 * 4 + 0]) + (a[0 * 4 + 2] * b[2 * 4 + 0]) + (a[0 * 4 + 3] * b[3 * 4 + 0])
-            out[0 * 4 + 1] =
-                (a[0 * 4 + 0] * b[0 * 4 + 1]) + (a[0 * 4 + 1] * b[1 * 4 + 1]) + (a[0 * 4 + 2] * b[2 * 4 + 1]) + (a[0 * 4 + 3] * b[3 * 4 + 1])
-            out[0 * 4 + 2] =
-                (a[0 * 4 + 0] * b[0 * 4 + 2]) + (a[0 * 4 + 1] * b[1 * 4 + 2]) + (a[0 * 4 + 2] * b[2 * 4 + 2]) + (a[0 * 4 + 3] * b[3 * 4 + 2])
-            out[0 * 4 + 3] =
-                (a[0 * 4 + 0] * b[0 * 4 + 3]) + (a[0 * 4 + 1] * b[1 * 4 + 3]) + (a[0 * 4 + 2] * b[2 * 4 + 3]) + (a[0 * 4 + 3] * b[3 * 4 + 3])
-            out[1 * 4 + 0] =
-                (a[1 * 4 + 0] * b[0 * 4 + 0]) + (a[1 * 4 + 1] * b[1 * 4 + 0]) + (a[1 * 4 + 2] * b[2 * 4 + 0]) + (a[1 * 4 + 3] * b[3 * 4 + 0])
-            out[1 * 4 + 1] =
-                (a[1 * 4 + 0] * b[0 * 4 + 1]) + (a[1 * 4 + 1] * b[1 * 4 + 1]) + (a[1 * 4 + 2] * b[2 * 4 + 1]) + (a[1 * 4 + 3] * b[3 * 4 + 1])
-            out[1 * 4 + 2] =
-                (a[1 * 4 + 0] * b[0 * 4 + 2]) + (a[1 * 4 + 1] * b[1 * 4 + 2]) + (a[1 * 4 + 2] * b[2 * 4 + 2]) + (a[1 * 4 + 3] * b[3 * 4 + 2])
-            out[1 * 4 + 3] =
-                (a[1 * 4 + 0] * b[0 * 4 + 3]) + (a[1 * 4 + 1] * b[1 * 4 + 3]) + (a[1 * 4 + 2] * b[2 * 4 + 3]) + (a[1 * 4 + 3] * b[3 * 4 + 3])
-            out[2 * 4 + 0] =
-                (a[2 * 4 + 0] * b[0 * 4 + 0]) + (a[2 * 4 + 1] * b[1 * 4 + 0]) + (a[2 * 4 + 2] * b[2 * 4 + 0]) + (a[2 * 4 + 3] * b[3 * 4 + 0])
-            out[2 * 4 + 1] =
-                (a[2 * 4 + 0] * b[0 * 4 + 1]) + (a[2 * 4 + 1] * b[1 * 4 + 1]) + (a[2 * 4 + 2] * b[2 * 4 + 1]) + (a[2 * 4 + 3] * b[3 * 4 + 1])
-            out[2 * 4 + 2] =
-                (a[2 * 4 + 0] * b[0 * 4 + 2]) + (a[2 * 4 + 1] * b[1 * 4 + 2]) + (a[2 * 4 + 2] * b[2 * 4 + 2]) + (a[2 * 4 + 3] * b[3 * 4 + 2])
-            out[2 * 4 + 3] =
-                (a[2 * 4 + 0] * b[0 * 4 + 3]) + (a[2 * 4 + 1] * b[1 * 4 + 3]) + (a[2 * 4 + 2] * b[2 * 4 + 3]) + (a[2 * 4 + 3] * b[3 * 4 + 3])
-            out[3 * 4 + 0] =
-                (a[3 * 4 + 0] * b[0 * 4 + 0]) + (a[3 * 4 + 1] * b[1 * 4 + 0]) + (a[3 * 4 + 2] * b[2 * 4 + 0]) + (a[3 * 4 + 3] * b[3 * 4 + 0])
-            out[3 * 4 + 1] =
-                (a[3 * 4 + 0] * b[0 * 4 + 1]) + (a[3 * 4 + 1] * b[1 * 4 + 1]) + (a[3 * 4 + 2] * b[2 * 4 + 1]) + (a[3 * 4 + 3] * b[3 * 4 + 1])
-            out[3 * 4 + 2] =
-                (a[3 * 4 + 0] * b[0 * 4 + 2]) + (a[3 * 4 + 1] * b[1 * 4 + 2]) + (a[3 * 4 + 2] * b[2 * 4 + 2]) + (a[3 * 4 + 3] * b[3 * 4 + 2])
-            out[3 * 4 + 3] =
-                (a[3 * 4 + 0] * b[0 * 4 + 3]) + (a[3 * 4 + 1] * b[1 * 4 + 3]) + (a[3 * 4 + 2] * b[2 * 4 + 3]) + (a[3 * 4 + 3] * b[3 * 4 + 3])
-        }
+        out[0 * 4 + 0] =
+            a[0 * 4 + 0] * b[0 * 4 + 0] + a[0 * 4 + 1] * b[1 * 4 + 0] + a[0 * 4 + 2] * b[2 * 4 + 0] + a[0 * 4 + 3] * b[3 * 4 + 0]
+        out[0 * 4 + 1] =
+            a[0 * 4 + 0] * b[0 * 4 + 1] + a[0 * 4 + 1] * b[1 * 4 + 1] + a[0 * 4 + 2] * b[2 * 4 + 1] + a[0 * 4 + 3] * b[3 * 4 + 1]
+        out[0 * 4 + 2] =
+            a[0 * 4 + 0] * b[0 * 4 + 2] + a[0 * 4 + 1] * b[1 * 4 + 2] + a[0 * 4 + 2] * b[2 * 4 + 2] + a[0 * 4 + 3] * b[3 * 4 + 2]
+        out[0 * 4 + 3] =
+            a[0 * 4 + 0] * b[0 * 4 + 3] + a[0 * 4 + 1] * b[1 * 4 + 3] + a[0 * 4 + 2] * b[2 * 4 + 3] + a[0 * 4 + 3] * b[3 * 4 + 3]
+        out[1 * 4 + 0] =
+            a[1 * 4 + 0] * b[0 * 4 + 0] + a[1 * 4 + 1] * b[1 * 4 + 0] + a[1 * 4 + 2] * b[2 * 4 + 0] + a[1 * 4 + 3] * b[3 * 4 + 0]
+        out[1 * 4 + 1] =
+            a[1 * 4 + 0] * b[0 * 4 + 1] + a[1 * 4 + 1] * b[1 * 4 + 1] + a[1 * 4 + 2] * b[2 * 4 + 1] + a[1 * 4 + 3] * b[3 * 4 + 1]
+        out[1 * 4 + 2] =
+            a[1 * 4 + 0] * b[0 * 4 + 2] + a[1 * 4 + 1] * b[1 * 4 + 2] + a[1 * 4 + 2] * b[2 * 4 + 2] + a[1 * 4 + 3] * b[3 * 4 + 2]
+        out[1 * 4 + 3] =
+            a[1 * 4 + 0] * b[0 * 4 + 3] + a[1 * 4 + 1] * b[1 * 4 + 3] + a[1 * 4 + 2] * b[2 * 4 + 3] + a[1 * 4 + 3] * b[3 * 4 + 3]
+        out[2 * 4 + 0] =
+            a[2 * 4 + 0] * b[0 * 4 + 0] + a[2 * 4 + 1] * b[1 * 4 + 0] + a[2 * 4 + 2] * b[2 * 4 + 0] + a[2 * 4 + 3] * b[3 * 4 + 0]
+        out[2 * 4 + 1] =
+            a[2 * 4 + 0] * b[0 * 4 + 1] + a[2 * 4 + 1] * b[1 * 4 + 1] + a[2 * 4 + 2] * b[2 * 4 + 1] + a[2 * 4 + 3] * b[3 * 4 + 1]
+        out[2 * 4 + 2] =
+            a[2 * 4 + 0] * b[0 * 4 + 2] + a[2 * 4 + 1] * b[1 * 4 + 2] + a[2 * 4 + 2] * b[2 * 4 + 2] + a[2 * 4 + 3] * b[3 * 4 + 2]
+        out[2 * 4 + 3] =
+            a[2 * 4 + 0] * b[0 * 4 + 3] + a[2 * 4 + 1] * b[1 * 4 + 3] + a[2 * 4 + 2] * b[2 * 4 + 3] + a[2 * 4 + 3] * b[3 * 4 + 3]
+        out[3 * 4 + 0] =
+            a[3 * 4 + 0] * b[0 * 4 + 0] + a[3 * 4 + 1] * b[1 * 4 + 0] + a[3 * 4 + 2] * b[2 * 4 + 0] + a[3 * 4 + 3] * b[3 * 4 + 0]
+        out[3 * 4 + 1] =
+            a[3 * 4 + 0] * b[0 * 4 + 1] + a[3 * 4 + 1] * b[1 * 4 + 1] + a[3 * 4 + 2] * b[2 * 4 + 1] + a[3 * 4 + 3] * b[3 * 4 + 1]
+        out[3 * 4 + 2] =
+            a[3 * 4 + 0] * b[0 * 4 + 2] + a[3 * 4 + 1] * b[1 * 4 + 2] + a[3 * 4 + 2] * b[2 * 4 + 2] + a[3 * 4 + 3] * b[3 * 4 + 2]
+        out[3 * 4 + 3] =
+            a[3 * 4 + 0] * b[0 * 4 + 3] + a[3 * 4 + 1] * b[1 * 4 + 3] + a[3 * 4 + 2] * b[2 * 4 + 3] + a[3 * 4 + 3] * b[3 * 4 + 3]
     }
 
     /*
@@ -783,7 +751,7 @@ object tr_main {
      */
     fun R_TransposeGLMatrix(`in`: FloatArray /*[16]*/, out: FloatArray /*[16]*/) {
         var j: Int
-        var i: Int = 0
+        var i = 0
         while (i < 4) {
             j = 0
             while (j < 4) {
@@ -795,44 +763,44 @@ object tr_main {
     }
 
     fun R_SetViewMatrix(viewDef: viewDef_s) {
-        val origin: idVec3 = idVec3()
-        val viewerMatrix: FloatArray = FloatArray(16)
-        viewDef!!.worldSpace = viewEntity_s()
-        val world: viewEntity_s = viewDef!!.worldSpace //memset(world, 0, sizeof(world));
+        val origin = idVec3()
+        val viewerMatrix = FloatArray(16)
+        viewDef.worldSpace = viewEntity_s()
+        val world: viewEntity_s = viewDef.worldSpace //memset(world, 0, sizeof(world));
 
         // the model matrix is an identity
-        world.modelMatrix[0 * 4 + 0] = 1f
-        world.modelMatrix[1 * 4 + 1] = 1f
-        world.modelMatrix[2 * 4 + 2] = 1f
+        world.modelMatrix[0 * 4 + 0] = 1.0f
+        world.modelMatrix[1 * 4 + 1] = 1.0f
+        world.modelMatrix[2 * 4 + 2] = 1.0f
 
         // transform by the camera placement
-        origin.set(viewDef!!.renderView.vieworg)
-        viewerMatrix[0] = viewDef!!.renderView.viewaxis[0, 0]
-        viewerMatrix[4] = viewDef!!.renderView.viewaxis[0, 1]
-        viewerMatrix[8] = viewDef!!.renderView.viewaxis[0, 2]
+        origin.set(viewDef.renderView.vieworg)
+        viewerMatrix[0] = viewDef.renderView.viewaxis[0, 0]
+        viewerMatrix[4] = viewDef.renderView.viewaxis[0, 1]
+        viewerMatrix[8] = viewDef.renderView.viewaxis[0, 2]
         viewerMatrix[12] =
             (-origin[0] * viewerMatrix[0]) + (-origin[1] * viewerMatrix[4]) + (-origin[2] * viewerMatrix[8])
-        viewerMatrix[1] = viewDef!!.renderView.viewaxis[1, 0]
-        viewerMatrix[5] = viewDef!!.renderView.viewaxis[1, 1]
-        viewerMatrix[9] = viewDef!!.renderView.viewaxis[1, 2]
+        viewerMatrix[1] = viewDef.renderView.viewaxis[1, 0]
+        viewerMatrix[5] = viewDef.renderView.viewaxis[1, 1]
+        viewerMatrix[9] = viewDef.renderView.viewaxis[1, 2]
         viewerMatrix[13] =
             (-origin[0] * viewerMatrix[1]) + (-origin[1] * viewerMatrix[5]) + (-origin[2] * viewerMatrix[9])
-        viewerMatrix[2] = viewDef!!.renderView.viewaxis[2, 0]
-        viewerMatrix[6] = viewDef!!.renderView.viewaxis[2, 1]
-        viewerMatrix[10] = viewDef!!.renderView.viewaxis[2, 2]
+        viewerMatrix[2] = viewDef.renderView.viewaxis[2, 0]
+        viewerMatrix[6] = viewDef.renderView.viewaxis[2, 1]
+        viewerMatrix[10] = viewDef.renderView.viewaxis[2, 2]
         viewerMatrix[14] =
             (-origin[0] * viewerMatrix[2]) + (-origin[1] * viewerMatrix[6]) + (-origin[2] * viewerMatrix[10])
-        viewerMatrix[3] = 0f
-        viewerMatrix[7] = 0f
-        viewerMatrix[11] = 0f
-        viewerMatrix[15] = 1f
+        viewerMatrix[3] = 0.0f
+        viewerMatrix[7] = 0.0f
+        viewerMatrix[11] = 0.0f
+        viewerMatrix[15] = 1.0f
 
         // convert from our coordinate system (looking down X)
         // to OpenGL's coordinate system (looking down -Z)
         myGlMultMatrix(viewerMatrix, s_flipMatrix, world.modelViewMatrix)
     }
 
-    fun R_SetupProjection() {
+    fun R_SetupProjection(viewDef: viewDef_s) {
         var xmin: Float
         var xmax: Float
         var ymin: Float
@@ -843,53 +811,53 @@ object tr_main {
         // random jittering is usefull when multiple
         // frames are going to be blended together
         // for motion blurred anti-aliasing
-        if (RenderSystem_init.r_jitter!!.GetBool()) {
+        if (r_jitter!!.GetBool()) {
             jitterx = random!!.RandomFloat()
-            jittery = random!!.RandomFloat()
+            jittery = random.RandomFloat()
         } else {
-            jittery = 0f
+            jittery = 0.0f
             jitterx = jittery
         }
 
         //
         // set up projection matrix
         //
-        var zNear: Float = RenderSystem_init.r_znear!!.GetFloat()
-        if (tr_local.tr.viewDef!!.renderView.cramZNear) {
-            zNear *= 0.25.toFloat()
+        var zNear: Float = r_znear!!.GetFloat()
+        if (viewDef.renderView.cramZNear) {
+            zNear *= 0.25f
         }
-        ymax = (zNear * tan((tr_local.tr.viewDef!!.renderView.fov_y * idMath.PI / 360.0f).toDouble())).toFloat()
+        ymax = (zNear * tan((viewDef.renderView.fov_y * idMath.PI / 360.0f)))
         ymin = -ymax
-        xmax = (zNear * tan((tr_local.tr.viewDef!!.renderView.fov_x * idMath.PI / 360.0f).toDouble())).toFloat()
+        xmax = (zNear * tan((viewDef.renderView.fov_x * idMath.PI / 360.0f)))
         xmin = -xmax
         val width: Float = xmax - xmin
         val height: Float = ymax - ymin
-        jitterx = jitterx * width / (tr_local.tr.viewDef!!.viewport.x2 - tr_local.tr.viewDef!!.viewport.x1 + 1)
+        jitterx = jitterx * width / (viewDef.viewport.x2 - viewDef.viewport.x1 + 1)
         xmin += jitterx
         xmax += jitterx
-        jittery = jittery * height / (tr_local.tr.viewDef!!.viewport.y2 - tr_local.tr.viewDef!!.viewport.y1 + 1)
+        jittery = jittery * height / (viewDef.viewport.y2 - viewDef.viewport.y1 + 1)
         ymin += jittery
         ymax += jittery
-        tr_local.tr.viewDef!!.projectionMatrix[0] = 2 * zNear / width
-        tr_local.tr.viewDef!!.projectionMatrix[4] = 0f
-        tr_local.tr.viewDef!!.projectionMatrix[8] = (xmax + xmin) / width // normally 0
-        tr_local.tr.viewDef!!.projectionMatrix[12] = 0f
-        tr_local.tr.viewDef!!.projectionMatrix[1] = 0f
-        tr_local.tr.viewDef!!.projectionMatrix[5] = 2 * zNear / height
-        tr_local.tr.viewDef!!.projectionMatrix[9] = (ymax + ymin) / height // normally 0
-        tr_local.tr.viewDef!!.projectionMatrix[13] = 0f
+        viewDef.projectionMatrix[0] = 2 * zNear / width
+        viewDef.projectionMatrix[4] = 0.0f
+        viewDef.projectionMatrix[8] = (xmax + xmin) / width // normally 0
+        viewDef.projectionMatrix[12] = 0.0f
+        viewDef.projectionMatrix[1] = 0.0f
+        viewDef.projectionMatrix[5] = 2 * zNear / height
+        viewDef.projectionMatrix[9] = (ymax + ymin) / height // normally 0
+        viewDef.projectionMatrix[13] = 0.0f
 
         // this is the far-plane-at-infinity formulation, and
         // crunches the Z range slightly so w=0 vertexes do not
         // rasterize right at the wraparound point
-        tr_local.tr.viewDef!!.projectionMatrix[2] = 0f
-        tr_local.tr.viewDef!!.projectionMatrix[6] = 0f
-        tr_local.tr.viewDef!!.projectionMatrix[10] = -0.999f
-        tr_local.tr.viewDef!!.projectionMatrix[14] = -2.0f * zNear
-        tr_local.tr.viewDef!!.projectionMatrix[3] = 0f
-        tr_local.tr.viewDef!!.projectionMatrix[7] = 0f
-        tr_local.tr.viewDef!!.projectionMatrix[11] = -1f
-        tr_local.tr.viewDef!!.projectionMatrix[15] = 0f
+        viewDef.projectionMatrix[2] = 0.0f
+        viewDef.projectionMatrix[6] = 0.0f
+        viewDef.projectionMatrix[10] = -0.999f
+        viewDef.projectionMatrix[14] = -2.0f * zNear
+        viewDef.projectionMatrix[3] = 0.0f
+        viewDef.projectionMatrix[7] = 0.0f
+        viewDef.projectionMatrix[11] = -1.0f
+        viewDef.projectionMatrix[15] = 0.0f
     }
 
     /*
@@ -900,53 +868,53 @@ object tr_main {
      FIXME: derive from modelview matrix times projection matrix
      =================
      */
-    fun R_SetupViewFrustum() {
-        val xs: CFloat = CFloat(0.0f)
-        val xc: CFloat = CFloat(0.0f)
-        var ang: Float = DEG2RAD(tr_local.tr.viewDef!!.renderView.fov_x) * 0.5f
+    fun R_SetupViewFrustum(viewDef: viewDef_s) {
+        val xs = CFloat(0.0f)
+        val xc = CFloat(0.0f)
+        var ang: Float = DEG2RAD(viewDef.renderView.fov_x) * 0.5f
         SinCos(ang, xs, xc)
-        tr_local.tr.viewDef!!.frustum[0].set(
-            tr_local.tr.viewDef!!.renderView.viewaxis[0].times(xs._val)
-                .plus(tr_local.tr.viewDef!!.renderView.viewaxis[1].times(xc._val))
+        viewDef.frustum[0].set(
+            viewDef.renderView.viewaxis[0].times(xs._val)
+                .plus(viewDef.renderView.viewaxis[1].times(xc._val))
         )
-        tr_local.tr.viewDef!!.frustum[1].set(
-            tr_local.tr.viewDef!!.renderView.viewaxis[0].times(xs._val)
-                .minus(tr_local.tr.viewDef!!.renderView.viewaxis[1].times(xc._val))
+        viewDef.frustum[1].set(
+            viewDef.renderView.viewaxis[0].times(xs._val)
+                .minus(viewDef.renderView.viewaxis[1].times(xc._val))
         )
-        ang = DEG2RAD(tr_local.tr.viewDef!!.renderView.fov_y) * 0.5f
+        ang = DEG2RAD(viewDef.renderView.fov_y) * 0.5f
         SinCos(ang, xs, xc)
-        tr_local.tr.viewDef!!.frustum[2].set(
-            tr_local.tr.viewDef!!.renderView.viewaxis[0].times(xs._val)
-                .plus(tr_local.tr.viewDef!!.renderView.viewaxis[2].times(xc._val))
+        viewDef.frustum[2].set(
+            viewDef.renderView.viewaxis[0].times(xs._val)
+                .plus(viewDef.renderView.viewaxis[2].times(xc._val))
         )
-        tr_local.tr.viewDef!!.frustum[3].set(
-            tr_local.tr.viewDef!!.renderView.viewaxis[0].times(xs._val)
-                .minus(tr_local.tr.viewDef!!.renderView.viewaxis[2].times(xc._val))
+        viewDef.frustum[3].set(
+            viewDef.renderView.viewaxis[0].times(xs._val)
+                .minus(viewDef.renderView.viewaxis[2].times(xc._val))
         )
 
         // plane four is the front clipping plane
-        tr_local.tr.viewDef!!.frustum[4].set( /* vec3_origin - */tr_local.tr.viewDef!!.renderView.viewaxis[0])
-        var i: Int = 0
+        viewDef.frustum[4].set( /* vec3_origin - */viewDef.renderView.viewaxis[0])
+        var i = 0
         while (i < 5) {
 
             // flip direction so positive side faces out (FIXME: globally unify this)
-            tr_local.tr.viewDef!!.frustum[i].set(tr_local.tr.viewDef!!.frustum[i].Normal().unaryMinus())
-            tr_local.tr.viewDef!!.frustum[i][3] =
-                -(tr_local.tr.viewDef!!.renderView.vieworg.times(tr_local.tr.viewDef!!.frustum[i].Normal()))
+            viewDef.frustum[i].set(viewDef.frustum[i].Normal().unaryMinus())
+            viewDef.frustum[i][3] =
+                -(viewDef.renderView.vieworg.times(viewDef.frustum[i].Normal()))
             i++
         }
 
         // eventually, plane five will be the rear clipping plane for fog
-        var dNear: Float = RenderSystem_init.r_znear!!.GetFloat()
-        if (tr_local.tr.viewDef!!.renderView.cramZNear) {
+        var dNear: Float = r_znear!!.GetFloat()
+        if (viewDef.renderView.cramZNear) {
             dNear *= 0.25f
         }
-        val dFar: Float = Lib.MAX_WORLD_SIZE.toFloat()
-        val dLeft: Float = (dFar * tan(DEG2RAD(tr_local.tr.viewDef!!.renderView.fov_x * 0.5f).toDouble())).toFloat()
-        val dUp: Float = (dFar * tan(DEG2RAD(tr_local.tr.viewDef!!.renderView.fov_y * 0.5f).toDouble())).toFloat()
-        tr_local.tr.viewDef!!.viewFrustum.SetOrigin(tr_local.tr.viewDef!!.renderView.vieworg)
-        tr_local.tr.viewDef!!.viewFrustum.SetAxis(tr_local.tr.viewDef!!.renderView.viewaxis)
-        tr_local.tr.viewDef!!.viewFrustum.SetSize(dNear, dFar, dLeft, dUp)
+        val dFar: Float = MAX_WORLD_SIZE.toFloat()
+        val dLeft: Float = (dFar * tan(DEG2RAD(viewDef.renderView.fov_x * 0.5f)))
+        val dUp: Float = (dFar * tan(DEG2RAD(viewDef.renderView.fov_y * 0.5f)))
+        viewDef.viewFrustum.SetOrigin(viewDef.renderView.vieworg)
+        viewDef.viewFrustum.SetAxis(viewDef.renderView.viewaxis)
+        viewDef.viewFrustum.SetSize(dNear, dFar, dLeft, dUp)
     }
 
     /*
@@ -955,23 +923,23 @@ object tr_main {
      ===================
      */
     fun R_ConstrainViewFrustum() {
-        val bounds: idBounds = idBounds()
+        val bounds = idBounds()
 
         // constrain the view frustum to the total bounds of all visible lights and visible entities
         bounds.Clear()
-        var vLight: tr_local.viewLight_s? = tr_local.tr.viewDef!!.viewLights
+        var vLight: viewLight_s? = tr.viewDef!!.viewLights
         while (vLight != null) {
             bounds.AddBounds(vLight.lightDef!!.frustumTris!!.bounds)
             vLight = vLight.next
         }
-        var vEntity: viewEntity_s? = tr_local.tr.viewDef!!.viewEntitys
+        var vEntity: viewEntity_s? = tr.viewDef!!.viewEntitys
         while (vEntity != null) {
             bounds.AddBounds(vEntity.entityDef!!.referenceBounds)
             vEntity = vEntity.next
         }
-        tr_local.tr.viewDef!!.viewFrustum.ConstrainToBounds(bounds)
-        if (RenderSystem_init.r_useFrustumFarDistance!!.GetFloat() > 0.0f) {
-            tr_local.tr.viewDef!!.viewFrustum.MoveFarDistance(RenderSystem_init.r_useFrustumFarDistance!!.GetFloat())
+        tr.viewDef!!.viewFrustum.ConstrainToBounds(bounds)
+        if (r_useFrustumFarDistance!!.GetFloat() > 0.0f) {
+            tr.viewDef!!.viewFrustum.MoveFarDistance(r_useFrustumFarDistance!!.GetFloat())
         }
     }
 
@@ -983,8 +951,8 @@ object tr_main {
     fun R_SortDrawSurfs() {
         // sort the drawsurfs by sort type, then orientation, then shader
 //        qsort(tr.viewDef!!.drawSurfs, tr.viewDef!!.numDrawSurfs, sizeof(tr.viewDef!!.drawSurfs[0]), R_QsortSurfaces);
-        if (tr_local.tr.viewDef!!.drawSurfs != null) {
-            Arrays.sort(tr_local.tr.viewDef!!.drawSurfs, 0, tr_local.tr.viewDef!!.numDrawSurfs, R_QsortSurfaces())
+        if (tr.viewDef!!.drawSurfs != null) {
+            Arrays.sort(tr.viewDef!!.drawSurfs, 0, tr.viewDef!!.numDrawSurfs, R_QsortSurfaces())
             //            int bla = 0;
 //            for (int i = 0; i < tr.viewDef!!.numDrawSurfs; i++) {
 //                Material.shaderStage_t[] stages = tr.viewDef!!.drawSurfs[i].material.stages;
@@ -1014,24 +982,24 @@ object tr_main {
         if (parms.renderView.width <= 0 || parms.renderView.height <= 0) {
             return
         }
-        tr_local.tr.viewCount++
+        tr.viewCount++
         //        System.out.println("tr.viewCount::R_RenderView");
 
         // save view in case we are a subview
-        oldView = tr_local.tr.viewDef
-        tr_local.tr.viewDef = parms
-        tr_local.tr.sortOffset = 0f
+        oldView = tr.viewDef
+        tr.viewDef = parms
+        tr.sortOffset = 0.0f
 
         // set the matrix for world space to eye space
-        R_SetViewMatrix(tr_local.tr.viewDef!!)
+        R_SetViewMatrix(tr.viewDef!!)
 
         // the four sides of the view frustum are needed
         // for culling and portal visibility
-        R_SetupViewFrustum()
+        R_SetupViewFrustum(tr.viewDef!!)
 
         // we need to set the projection matrix before doing
         // portal-to-screen scissor box calculations
-        R_SetupProjection()
+        R_SetupProjection(tr.viewDef!!)
 
         // identify all the visible portalAreas, and the entityDefs and
         // lightDefs that are in them and pass culling.
@@ -1060,7 +1028,7 @@ object tr_main {
         if (tr_subview.R_GenerateSubViews()) {
             // if we are debugging subviews, allow the skipping of the
             // main view draw
-            if (RenderSystem_init.r_subviewOnly!!.GetBool()) {
+            if (r_subviewOnly!!.GetBool()) {
                 return
             }
         }
@@ -1068,14 +1036,14 @@ object tr_main {
         // write everything needed to the demo file
         if (Session.session.writeDemo != null) {
 //		static_cast<idRenderWorldLocal *>(parms.renderWorld)->WriteVisibleDefs( tr.viewDef );
-            parms.renderWorld!!.WriteVisibleDefs(tr_local.tr.viewDef!!)
+            parms.renderWorld!!.WriteVisibleDefs(tr.viewDef!!)
         }
 
         // add the rendering commands for this viewDef
         RenderSystem.R_AddDrawViewCmd(parms)
 
         // restore view in case we are a subview
-        tr_local.tr.viewDef = oldView
+        tr.viewDef = oldView
     }
 
     /*
@@ -1091,8 +1059,8 @@ object tr_main {
 
      =======================
      */
-    class R_QsortSurfaces() : cmp_t<drawSurf_s?> {
-        public override fun compare(a: drawSurf_s?, b: drawSurf_s?): Int {
+    class R_QsortSurfaces : cmp_t<drawSurf_s?> {
+        override fun compare(a: drawSurf_s?, b: drawSurf_s?): Int {
 
             //this check assumes that the array contains nothing but nulls from this point.
             if (null == a && null == b) {

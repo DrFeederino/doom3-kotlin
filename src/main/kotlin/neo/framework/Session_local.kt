@@ -3,8 +3,8 @@ package neo.framework
 import neo.Game.Game.escReply_t
 import neo.Game.Game_local
 import neo.Renderer.Material
+import neo.Renderer.R_ScreenshotFilename
 import neo.Renderer.RenderSystem
-import neo.Renderer.RenderSystem_init
 import neo.Renderer.RenderWorld.renderView_s
 import neo.Sound.snd_system
 import neo.Sound.sound.idSoundWorld
@@ -26,15 +26,15 @@ import neo.framework.FileSystem_h.dlStatus_t
 import neo.framework.FileSystem_h.idFileList
 import neo.framework.File_h.idFile
 import neo.framework.KeyInput.idKeyInput
+import neo.framework.Licensee.GAME_NAME
+import neo.framework.Licensee.SAVEGAME_VERSION
 import neo.framework.Session.*
 import neo.framework.Session.Companion.MAX_LOGGED_STATS
 import neo.framework.Session_menu.idListSaveGameCompare
 import neo.framework.UsercmdGen.inhibit_t
 import neo.framework.UsercmdGen.usercmd_t
-import neo.idlib.CmdArgs
+import neo.idlib.*
 import neo.idlib.Dict_h.idDict
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str
@@ -55,9 +55,6 @@ import neo.ui.UserInterfaceLocal.idUserInterfaceLocal
 import java.nio.ByteBuffer
 import java.util.*
 
-/**
- *
- */
 object Session_local {
     var CONNECT_TRANSMIT_TIME = 1000
     var MAX_LOGGED_USERCMDS = 60 * 60 * 60 // one hour of single player, 15 minutes of four player
@@ -120,7 +117,7 @@ object Session_local {
         //
         var aviCaptureMode // if true, screenshots will be taken and sound captured
                 = false
-        var aviDemoFrameCount = 0f
+        var aviDemoFrameCount = 0.0f
         val aviDemoShortName: idStr = idStr() //
         var aviTicStart = 0
         var bytesNeededForMapLoad //
@@ -408,21 +405,19 @@ object Session_local {
                 CmdSystem.CMD_FL_SYSTEM,
                 "tests a gui"
             )
-            if (BuildDefines.ID_DEDICATED) {
-                CmdSystem.cmdSystem.AddCommand(
-                    "saveGame",
-                    SaveGame_f.getInstance(),
-                    CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
-                    "saves a game"
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "loadGame",
-                    LoadGame_f.getInstance(),
-                    CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
-                    "loads a game",
-                    ArgCompletion_SaveGame.getInstance()
-                )
-            }
+            CmdSystem.cmdSystem.AddCommand(
+                "saveGame",
+                SaveGame_f.getInstance(),
+                CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
+                "saves a game"
+            )
+            CmdSystem.cmdSystem.AddCommand(
+                "loadGame",
+                LoadGame_f.getInstance(),
+                CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
+                "loads a game",
+                ArgCompletion_SaveGame.getInstance()
+            )
             CmdSystem.cmdSystem.AddCommand(
                 "takeViewNotes",
                 TakeViewNotes_f.getInstance(),
@@ -608,7 +603,7 @@ object Session_local {
             if (guiLoading != null && bytesNeededForMapLoad != 0) {
                 val n = FileSystem_h.fileSystem.GetReadCount().toFloat()
                 val pct = n / bytesNeededForMapLoad
-                // pct = idMath::ClampFloat( 0.0f, 100.0f, pct );
+                // pct = idMath::ClampFloat( 0.0f.0f, 100.0f.0f, pct );
                 guiLoading!!.SetStateFloat("map_loading", pct)
                 guiLoading!!.StateChanged(Common.com_frameTime)
             }
@@ -695,14 +690,14 @@ object Session_local {
             }
             if (readDemo != null) {
                 minTic = if (null == timeDemo && numDemoFrames != 1) {
-                    lastDemoTic + Session_local.USERCMD_PER_DEMO_FRAME
+                    lastDemoTic + USERCMD_PER_DEMO_FRAME
                 } else {
                     // timedemos and demoshots will run as fast as they can, other demos
                     // will not run more than 30 hz
                     latchedTicNumber
                 }
             } else if (writeDemo != null) {
-                minTic = lastGameTic + Session_local.USERCMD_PER_DEMO_FRAME // demos are recorded at 30 hz
+                minTic = lastGameTic + USERCMD_PER_DEMO_FRAME // demos are recorded at 30 hz
             }
 
             // fixedTic lets us run a forced number of usercmd each frame without timing
@@ -819,7 +814,7 @@ object Session_local {
             // never use more than USERCMD_PER_DEMO_FRAME,
             // which makes it go into slow motion when recording
             if (writeDemo != null) {
-                val fixedTic = Session_local.USERCMD_PER_DEMO_FRAME
+                val fixedTic = USERCMD_PER_DEMO_FRAME
                 // we should have waited long enough
                 if (numCmdsToRun < fixedTic) {
                     Common.common.Error("idSessionLocal::Frame: numCmdsToRun < fixedTic")
@@ -871,7 +866,7 @@ object Session_local {
         @Throws(idException::class)
         override fun ProcessEvent(event: sysEvent_s): Boolean {
             // hitting escape anywhere brings up the menu
-            if (TempDump.NOT(guiActive) && event.evType == sysEventType_t.SE_KEY && event.evValue2 == 1 && event.evValue == KeyInput.K_ESCAPE) {
+            if (guiActive == null && event.evType == sysEventType_t.SE_KEY && event.evValue2 == 1 && event.evValue == KeyInput.K_ESCAPE) {
                 Console.console.Close()
                 if (Game_local.game != null) {
                     val gui: idUserInterface = idUserInterfaceLocal()
@@ -929,7 +924,7 @@ object Session_local {
 
         @Throws(idException::class)
         override fun StartMenu(playIntro: Boolean) {
-            if (guiActive === guiMainMenu) {
+            if (guiActive == guiMainMenu) {
                 return
             }
             if (readDemo != null) {
@@ -977,10 +972,10 @@ object Session_local {
             if (null == guiActive) {
                 return
             }
-            if (guiActive === guiMainMenu) {
+            if (guiActive == guiMainMenu) {
                 SetSaveGameGuiVars()
                 SetMainMenuGuiVars()
-            } else if (guiActive === guiRestartMenu) {
+            } else if (guiActive == guiRestartMenu) {
                 SetSaveGameGuiVars()
             }
             val ev: sysEvent_s
@@ -1084,18 +1079,21 @@ object Session_local {
                     guiMsg!!.SetStateString("visible_left", "0")
                     guiMsg!!.SetStateString("visible_right", "0")
                 }
+
                 msgBoxType_t.MSG_OK -> {
                     guiMsg!!.SetStateString("mid", Common.common.GetLanguageDict().GetString("#str_04339"))
                     guiMsg!!.SetStateString("visible_mid", "1")
                     guiMsg!!.SetStateString("visible_left", "0")
                     guiMsg!!.SetStateString("visible_right", "0")
                 }
+
                 msgBoxType_t.MSG_ABORT -> {
                     guiMsg!!.SetStateString("mid", Common.common.GetLanguageDict().GetString("#str_04340"))
                     guiMsg!!.SetStateString("visible_mid", "1")
                     guiMsg!!.SetStateString("visible_left", "0")
                     guiMsg!!.SetStateString("visible_right", "0")
                 }
+
                 msgBoxType_t.MSG_OKCANCEL -> {
                     guiMsg!!.SetStateString("left", Common.common.GetLanguageDict().GetString("#str_04339"))
                     guiMsg!!.SetStateString("right", Common.common.GetLanguageDict().GetString("#str_04340"))
@@ -1103,6 +1101,7 @@ object Session_local {
                     guiMsg!!.SetStateString("visible_left", "1")
                     guiMsg!!.SetStateString("visible_right", "1")
                 }
+
                 msgBoxType_t.MSG_YESNO -> {
                     guiMsg!!.SetStateString("left", Common.common.GetLanguageDict().GetString("#str_04341"))
                     guiMsg!!.SetStateString("right", Common.common.GetLanguageDict().GetString("#str_04342"))
@@ -1110,6 +1109,7 @@ object Session_local {
                     guiMsg!!.SetStateString("visible_left", "1")
                     guiMsg!!.SetStateString("visible_right", "1")
                 }
+
                 msgBoxType_t.MSG_PROMPT -> {
                     guiMsg!!.SetStateString("left", Common.common.GetLanguageDict().GetString("#str_04339"))
                     guiMsg!!.SetStateString("right", Common.common.GetLanguageDict().GetString("#str_04340"))
@@ -1119,6 +1119,7 @@ object Session_local {
                     guiMsg!!.SetStateString("visible_entry", "1")
                     guiMsg!!.HandleNamedEvent("Prompt")
                 }
+
                 msgBoxType_t.MSG_CDKEY -> {
                     guiMsg!!.SetStateString("left", Common.common.GetLanguageDict().GetString("#str_04339"))
                     guiMsg!!.SetStateString("right", Common.common.GetLanguageDict().GetString("#str_04340"))
@@ -1145,6 +1146,7 @@ object Session_local {
                     guiMsg!!.SetStateString("str_xpchk", "")
                     guiMsg!!.HandleNamedEvent("CDKey")
                 }
+
                 msgBoxType_t.MSG_WAIT -> {}
                 else -> Common.common.Printf("idSessionLocal::MessageBox: unknown msg box type\n")
             }
@@ -1152,7 +1154,7 @@ object Session_local {
             msgFireBack[1].set("" + fire_no)
             guiMsgRestore = guiActive
             guiActive = guiMsg
-            guiMsg!!.SetCursor(325f, 290f)
+            guiMsg!!.SetCursor(325.0f, 290.0f)
             guiActive!!.Activate(true, Common.com_frameTime)
             msgRunning = true
             msgRetIndex = -1
@@ -1201,7 +1203,7 @@ object Session_local {
         }
 
         override fun StopBox() {
-            if (guiActive === guiMsg) {
+            if (guiActive == guiMsg) {
                 HandleMsgCommands("stop")
             }
         }
@@ -1268,7 +1270,7 @@ object Session_local {
                                 sMsg = String.format("%s / %s", sNow, sTotal)
                             } else {
                                 sETA = String.format(
-                                    "%.0f sec",
+                                    "%.0f.0f sec",
                                     (dltotal.toFloat() / dlnow.toFloat() - 1.0f) * lapsed / 1000
                                 )
                                 sMsg = String.format("%s / %s ( %s - %s )", sNow, sTotal, sBW, sETA)
@@ -1576,7 +1578,7 @@ object Session_local {
 
         // loads a map and starts a new game on it
         override fun SetCDKeyGuiVars() {
-            if (TempDump.NOT(guiMainMenu)) {
+            if (guiMainMenu == null) {
                 return
             }
             guiMainMenu!!.SetStateString(
@@ -1737,9 +1739,9 @@ object Session_local {
             if (!wipeHold && latchedTic >= wipeStopTic) {
                 return
             }
-            val fade = (latchedTic - wipeStartTic).toFloat() / (wipeStopTic - wipeStartTic)
-            RenderSystem.renderSystem.SetColor4(1f, 1f, 1f, fade)
-            RenderSystem.renderSystem.DrawStretchPic(0f, 0f, 640f, 480f, 0f, 0f, 1f, 1f, wipeMaterial)
+            val fade = (latchedTic - wipeStartTic) / (wipeStopTic - wipeStartTic)
+            RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, fade.toFloat())
+            RenderSystem.renderSystem.DrawStretchPic(0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, wipeMaterial)
         }
 
         /*
@@ -1858,247 +1860,358 @@ object Session_local {
 
         @Throws(idException::class)
         fun LoadGame(saveName: String): Boolean {
-            return if (BuildDefines.ID_DEDICATED) {
-                Common.common.Printf("Dedicated servers cannot load games.\n")
-                false
-            } else {
-                var i: Int
-                val `in`: idStr
-                val loadFile: idStr
-                val saveMap = idStr()
-                val gamename = idStr()
-                if (IsMultiplayer()) {
-                    Common.common.Printf("Can't load during net play.\n")
-                    return false
-                }
+            val saveFilePath: idStr = idStr()
+            val loadFile: idStr = idStr()
+            val saveMap = idStr()
+            val gamename = idStr()
 
-                //Hide the dialog box if it is up.
-                StopBox()
-                loadFile = idStr(saveName)
-                ScrubSaveGameFileName(loadFile)
-                loadFile.SetFileExtension(".save")
-                `in` = idStr("savegames/")
-                `in`.Append(loadFile)
-
-                // Open savegame file
-                // only allow loads from the game directory because we don't want a base game to load
-                val game = idStr(CVarSystem.cvarSystem.GetCVarString("fs_game"))
-                savegameFile = FileSystem_h.fileSystem.OpenFileRead(
-                    `in`.toString(),
-                    true,
-                    if (game.Length() != 0) game.toString() else null
-                )
-                if (savegameFile == null) {
-                    Common.common.Warning("Couldn't open savegame file %s", `in`.toString())
-                    return false
-                }
-                loadingSaveGame = true
-
-                // Read in save game header
-                // Game Name / Version / Map Name / Persistant Player Info
-                // game
-                savegameFile!!.ReadString(gamename)
-                gamename.set(gamename.toString().substring(0, 6))
-                assert(gamename.toString() == Licensee.GAME_NAME)
-                // if this isn't a savegame for the correct game, abort loadgame
-                if (!Licensee.GAME_NAME.contains(gamename.toString())) {
-                    Common.common.Warning("Attempted to load an invalid savegame: %s", `in`.toString())
-                    loadingSaveGame = false
-                    FileSystem_h.fileSystem.CloseFile(savegameFile!!)
-                    savegameFile = null
-                    return false
-                }
-                val readVersion = CInt()
-                savegameFile!!.ReadInt(readVersion)
-                savegameVersion = readVersion._val
-
-                // map
-                savegameFile!!.ReadString(saveMap)
-
-                // persistent player info
-                i = 0
-                while (i < AsyncNetwork.MAX_ASYNC_CLIENTS) {
-                    mapSpawnData.persistentPlayerInfo[i].ReadFromFileHandle(savegameFile!!)
-                    i++
-                }
-
-                // check the version, if it doesn't match, cancel the loadgame,
-                // but still load the map with the persistant playerInfo from the header
-                // so that the player doesn't lose too much progress.
-                if (savegameVersion != Licensee.SAVEGAME_VERSION
-                    && !(savegameVersion == 16 && Licensee.SAVEGAME_VERSION == 17)
-                ) {    // handle savegame v16 in v17
-                    Common.common.Warning("Savegame Version mismatch: aborting loadgame and starting level with persistent data")
-                    loadingSaveGame = false
-                    FileSystem_h.fileSystem.CloseFile(savegameFile!!)
-                    savegameFile = null
-                }
-                Common.common.DPrintf("loading a v%d savegame\n", savegameVersion)
-                if (saveMap.Length() > 0) {
-
-                    // Start loading map
-                    mapSpawnData.serverInfo.Clear()
-                    mapSpawnData.serverInfo.set(CVarSystem.cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_SERVERINFO))
-                    mapSpawnData.serverInfo.Set("si_gameType", "singleplayer")
-                    mapSpawnData.serverInfo.Set("si_map", saveMap.toString())
-                    mapSpawnData.syncedCVars.Clear()
-                    mapSpawnData.syncedCVars.set(CVarSystem.cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_NETWORKSYNC))
-                    mapSpawnData.mapSpawnUsercmd[0] = UsercmdGen.usercmdGen.TicCmd(latchedTicNumber)
-                    // make sure no buttons are pressed
-                    mapSpawnData.mapSpawnUsercmd[0].buttons = 0
-                    ExecuteMapChange()
-                    SetGUI(null, null)
-                }
-                if (loadingSaveGame) {
-                    FileSystem_h.fileSystem.CloseFile(savegameFile!!)
-                    loadingSaveGame = false
-                    savegameFile = null
-                }
-                true
+            if (IsMultiplayer()) {
+                Common.common.Printf("Can't load during net play.\n")
+                return false
             }
+
+            //Hide the dialog box if it is up.
+            StopBox()
+
+            loadFile.set(saveName)
+            ScrubSaveGameFileName(loadFile)
+            loadFile.SetFileExtension(".save")
+
+            saveFilePath.set("savegames/")
+            saveFilePath.Append(loadFile)
+
+            // Open savegame file
+            // only allow loads from the game directory because we don't want a base game to load
+            val game = idStr(CVarSystem.cvarSystem.GetCVarString("fs_game"))
+            savegameFile = FileSystem_h.fileSystem.OpenFileRead(
+                saveFilePath.toString(),
+                true,
+                if (game.Length() != 0) game.toString() else null
+            )
+
+            if (savegameFile == null) {
+                Common.common.Warning("Couldn't open savegame file %s", saveFilePath.toString())
+                return false
+            }
+
+            loadingSaveGame = true
+
+            // Read in save game header
+            // Game Name / Version / Map Name / Persistant Player Info
+
+            // game
+            savegameFile?.ReadString(gamename)
+
+            // if this isn't a savegame for the correct game, abort loadgame
+            if (!(gamename.toString() == GAME_NAME || gamename.toString() == "DOOM 3")) {
+                Common.common.Warning("Attempted to load an invalid savegame: %s", saveFilePath.toString())
+
+                loadingSaveGame = false
+                FileSystem_h.fileSystem.CloseFile(savegameFile!!)
+                savegameFile = null
+                return false
+            }
+
+            // version
+            val readVersion = CInt()
+            savegameFile!!.ReadInt(readVersion)
+            savegameVersion = readVersion._val
+
+            // map
+            savegameFile!!.ReadString(saveMap)
+
+            // persistent player info
+            for (i in 0 until AsyncNetwork.MAX_ASYNC_CLIENTS) {
+                mapSpawnData.persistentPlayerInfo[i].ReadFromFileHandle(savegameFile!!)
+            }
+
+            // check the version, if it doesn't match, cancel the loadgame,
+            // but still load the map with the persistant playerInfo from the header
+            // so that the player doesn't lose too much progress.
+            if (savegameVersion < 16 || savegameVersion > SAVEGAME_VERSION) { // dhewm3 supports savegames with v16 - v18
+                Common.common.Warning("Savegame Version mismatch: aborting loadgame and starting level with persistent data")
+                loadingSaveGame = false
+                FileSystem_h.fileSystem.CloseFile(savegameFile!!)
+                savegameFile = null
+            }
+
+            Common.common.DPrintf("loading a v%d savegame\n", savegameVersion)
+            if (saveMap.Length() > 0) {
+
+                // Start loading map
+                mapSpawnData.serverInfo.Clear()
+
+                mapSpawnData.serverInfo.set(CVarSystem.cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_SERVERINFO))
+                mapSpawnData.serverInfo.Set("si_gameType", "singleplayer")
+
+                mapSpawnData.serverInfo.Set("si_map", saveMap.toString())
+
+                mapSpawnData.syncedCVars.Clear()
+                mapSpawnData.syncedCVars.set(CVarSystem.cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_NETWORKSYNC))
+
+                mapSpawnData.mapSpawnUsercmd[0] = UsercmdGen.usercmdGen.TicCmd(latchedTicNumber)
+                // make sure no buttons are pressed
+                mapSpawnData.mapSpawnUsercmd[0].buttons = 0
+
+                ExecuteMapChange()
+
+                SetGUI(null, null)
+            }
+
+            if (loadingSaveGame) {
+                FileSystem_h.fileSystem.CloseFile(savegameFile!!)
+                loadingSaveGame = false
+                savegameFile = null
+            }
+
+            return true
+        }
+
+        fun QuickLoad(): Boolean {
+            var saveName = Common.common.GetLanguageDict().GetString("#str_07178")
+
+            val saveFilePathBase = idStr(saveName)
+            ScrubSaveGameFileName(saveFilePathBase)
+            saveFilePathBase.set("savegames/" + saveFilePathBase)
+
+            var game: String? = CVarSystem.cvarSystem.GetCVarString("fs_game")
+            if (game!!.isNotEmpty() && game[0] == Char(0)) {
+                game = null
+            }
+
+            // find the newest QuickSave (or QuickSave2, QuickSave3, ...)
+            val maxNum = com_numQuicksaves.GetInteger()
+            var indexToUse = 1
+            var newestTime = 0L
+            for (i in 1..maxNum) {
+                val saveFilePath = idStr(saveFilePathBase)
+                if (i > 1) {
+                    // the first one is just called "QuickSave" without a number, like before.
+                    // the others are called "QuickSave2" "QuickSave3" etc
+                    saveFilePath.Append(i.toString())
+                }
+                saveFilePath.SetFileExtension(".save")
+
+                val f = FileSystem_h.fileSystem.OpenFileRead(saveFilePath.toString(), true, game)
+                if (f != null) {
+                    val ts = f.Timestamp()
+                    assert(ts != 0L)
+                    if (ts > newestTime) {
+                        indexToUse = i
+                        newestTime = ts
+                    }
+                }
+            }
+
+            if (indexToUse > 1) {
+                saveName += indexToUse.toString()
+            }
+
+            return Session.sessLocal.LoadGame(saveName)
         }
 
 
         @Throws(idException::class)
         fun SaveGame(saveName: String, autosave: Boolean = false /*= false*/): Boolean {
-            return false //HACKME::8
-            //            if (ID_DEDICATED) {
-//                common.Printf("Dedicated servers cannot save games.\n");
-//                return false;
-//            } else {
-//                int i;
-//                idStr gameFile, previewFile, descriptionFile;
-//                String mapName;
-//
-//                if (!mapSpawned) {
-//                    common.Printf("Not playing a game.\n");
-//                    return false;
-//                }
-//
-//                if (IsMultiplayer()) {
-//                    common.Printf("Can't save during net play.\n");
-//                    return false;
-//                }
-//
-//                if (game.GetPersistentPlayerInfo(0).GetInt("health") <= 0) {
-//                    MessageBox(MSG_OK, common.GetLanguageDict().GetString("#str_04311"), common.GetLanguageDict().GetString("#str_04312"), true);
-//                    common.Printf("You must be alive to save the game\n");
-//                    return false;
-//                }
-//
-//                if (Sys_GetDriveFreeSpace(cvarSystem.GetCVarString("fs_savepath")) < 25) {
-//                    MessageBox(MSG_OK, common.GetLanguageDict().GetString("#str_04313"), common.GetLanguageDict().GetString("#str_04314"), true);
-//                    common.Printf("Not enough drive space to save the game\n");
-//                    return false;
-//                }
-//
-//                idSoundWorld pauseWorld = soundSystem.GetPlayingSoundWorld();
-//                if (pauseWorld != null) {
-//                    pauseWorld.Pause();
-//                    soundSystem.SetPlayingSoundWorld(null);
-//                }
-//
-//                // setup up filenames and paths
-//                gameFile = new idStr(saveName);
-//                ScrubSaveGameFileName(gameFile);
-//
-//                gameFile = new idStr("savegames/" + gameFile);
-//                gameFile.SetFileExtension(".save");
-//
-//                previewFile = new idStr(gameFile);
-//                previewFile.SetFileExtension(".tga");
-//
-//                descriptionFile = new idStr(gameFile);
-//                descriptionFile.SetFileExtension(".txt");
-//
-//                // Open savegame file
-//                idFile fileOut = fileSystem.OpenFileWrite(gameFile.toString());
-//                if (fileOut == null) {
-//                    common.Warning("Failed to open save file '%s'\n", gameFile.toString());
-//                    if (pauseWorld != null) {
-//                        soundSystem.SetPlayingSoundWorld(pauseWorld);
-//                        pauseWorld.UnPause();
-//                    }
-//                    return false;
-//                }
-//
-//                // Write SaveGame Header:
-//                // Game Name / Version / Map Name / Persistant Player Info
-//                // game
-//                final String gamename = GAME_NAME;
-//                fileOut.WriteString(gamename);
-//
-//                // version
-//                fileOut.WriteInt(SAVEGAME_VERSION);
-//
-//                // map
-//                mapName = mapSpawnData.serverInfo.GetString("si_map");
-//                fileOut.WriteString(mapName);
-//
-//                // persistent player info
-//                for (i = 0; i < MAX_ASYNC_CLIENTS; i++) {
-//                    mapSpawnData.persistentPlayerInfo[i] = game.GetPersistentPlayerInfo(i);
-//                    mapSpawnData.persistentPlayerInfo[i].WriteToFileHandle(fileOut);
-//                }
-//
-//                // let the game save its state
-//                game.SaveGame(fileOut);
-//
-//                // close the sava game file
-//                fileSystem.CloseFile(fileOut);
-//
-//                // Write screenshot
-//                if (!autosave) {
-//                    renderSystem.CropRenderSize(320, 240, false);
-//                    game.Draw(0);
-//                    renderSystem.CaptureRenderToFile(previewFile.toString(), true);
-//                    renderSystem.UnCrop();
-//                }
-//
-//                // Write description, which is just a text file with
-//                // the unclean save name on line 1, map name on line 2, screenshot on line 3
-//                idFile fileDesc = fileSystem.OpenFileWrite(descriptionFile.toString());
-//                if (fileDesc == null) {
-//                    common.Warning("Failed to open description file '%s'\n", descriptionFile);
-//                    if (pauseWorld != null) {
-//                        soundSystem.SetPlayingSoundWorld(pauseWorld);
-//                        pauseWorld.UnPause();
-//                    }
-//                    return false;
-//                }
-//
-//                idStr description = new idStr(saveName);
-//                description.Replace("\\", "\\\\");
-//                description.Replace("\"", "\\\"");
-//
-//                final idDeclEntityDef mapDef = (idDeclEntityDef) declManager.FindType(DECL_MAPDEF, mapName, false);
-//                if (mapDef != null) {
-//                    mapName = common.GetLanguageDict().GetString(mapDef.dict.GetString("name", mapName));
-//                }
-//
-//                fileDesc.Printf("\"%s\"\n", description);
-//                fileDesc.Printf("\"%s\"\n", mapName);
-//
-//                if (autosave) {
-//                    idStr sshot = new idStr(mapSpawnData.serverInfo.GetString("si_map"));
-//                    sshot.StripPath();
-//                    sshot.StripFileExtension();
-//                    fileDesc.Printf("\"guis/assets/autosave/%s\"\n", sshot.toString());
-//                } else {
-//                    fileDesc.Printf("\"\"\n");
-//                }
-//
-//                fileSystem.CloseFile(fileDesc);
-//
-//                if (pauseWorld != null) {
-//                    soundSystem.SetPlayingSoundWorld(pauseWorld);
-//                    pauseWorld.UnPause();
-//                }
-//
-//                syncNextGameFrame = true;
-//
-//                return true;
+            // TODO: uncomment
+            return false
+//            val previewFile = idStr()
+//            val descriptionFile = idStr()
+//            val mapName = idStr()
+//            // DG: support setting an explicit savename to avoid problems with autosave names
+//            val gameFile = idStr(saveName)
+//            if (!mapSpawned) {
+//                Common.common.Printf("Not playing a game.\n")
+//                return false
 //            }
+//
+//            if (IsMultiplayer()) {
+//                Common.common.Printf("Can't save during net play.\n")
+//                return false
+//            }
+//
+//            if (Game_local.game.GetPersistentPlayerInfo(0).GetInt("health") <= 0) {
+//                MessageBox(
+//                    msgBoxType_t.MSG_OK,
+//                    Common.common.GetLanguageDict().GetString("#str_04311"),
+//                    Common.common.GetLanguageDict().GetString("#str_04312"),
+//                    true
+//                )
+//                Common.common.Printf("You must be alive to save the game\n")
+//                return false
+//            }
+//
+//            if (Sys_GetDriveFreeSpace(CVarSystem.cvarSystem.GetCVarString("fs_savepath")) < 25) {
+//                MessageBox(
+//                    msgBoxType_t.MSG_OK,
+//                    Common.common.GetLanguageDict().GetString("#str_04313"),
+//                    Common.common.GetLanguageDict().GetString("#str_04314"),
+//                    true
+//                )
+//                Common.common.Printf("Not enough drive space to save the game\n")
+//                return false
+//            }
+//
+//            val pauseWorld = snd_system.soundSystem.GetPlayingSoundWorld()
+//            if (pauseWorld != null) {
+//                pauseWorld.Pause()
+//                snd_system.soundSystem.SetPlayingSoundWorld(null)
+//            }
+//
+//            // setup up filenames and paths
+//            ScrubSaveGameFileName(gameFile)
+//
+//            gameFile.set("savegames/" + gameFile)
+//            gameFile.SetFileExtension(".save")
+//
+//            previewFile.set(gameFile)
+//            previewFile.SetFileExtension(".tga")
+//
+//            descriptionFile.set(gameFile)
+//            descriptionFile.SetFileExtension(".txt")
+//
+//            // Open savegame file
+//            val fileOut = FileSystem_h.fileSystem.OpenFileWrite(gameFile.toString())
+//            if (fileOut == null) {
+//                Common.common.Warning("Failed to open save file '%s'\n", gameFile.toString())
+//                if (pauseWorld != null) {
+//                    snd_system.soundSystem.SetPlayingSoundWorld(pauseWorld)
+//                    pauseWorld.UnPause()
+//                }
+//                return false
+//            }
+//
+//            // Write SaveGame Header:
+//            // Game Name / Version / Map Name / Persistant Player Info
+//
+//            // game
+//            val gamename = GAME_NAME
+//            fileOut.WriteString(gamename)
+//
+//            // version
+//            fileOut.WriteInt(SAVEGAME_VERSION)
+//
+//            // map
+//            mapName.set(mapSpawnData.serverInfo.GetString("si_map"))
+//            fileOut.WriteString(mapName.toString())
+//
+//            // persistent player info
+//            for (i in 0 until AsyncNetwork.MAX_ASYNC_CLIENTS) {
+//                mapSpawnData.persistentPlayerInfo[i] = Game_local.game.GetPersistentPlayerInfo(i)
+//                mapSpawnData.persistentPlayerInfo[i].WriteToFileHandle(fileOut)
+//            }
+//
+//            // let the game save its state
+//            Game_local.game.SaveGame(fileOut)
+//
+//            // close the sava game file
+//            FileSystem_h.fileSystem.CloseFile(fileOut)
+//
+//            // Write screenshot
+//            if (!autosave) {
+//                RenderSystem.renderSystem.CropRenderSize(320, 240, false)
+//                Game_local.game.Draw(0)
+//                RenderSystem.renderSystem.CaptureRenderToFile(previewFile.toString(), true)
+//                RenderSystem.renderSystem.UnCrop()
+//            }
+//
+//            // Write description, which is just a text file with
+//            // the unclean save name on line 1, map name on line 2, screenshot on line 3
+//            val fileDesc = FileSystem_h.fileSystem.OpenFileWrite(descriptionFile.toString())
+//            if (fileDesc == null) {
+//                Common.common.Warning("Failed to open description file '%s'\n", descriptionFile.toString())
+//                if (pauseWorld != null) {
+//                    snd_system.soundSystem.SetPlayingSoundWorld(pauseWorld)
+//                    pauseWorld.UnPause()
+//                }
+//                return false
+//            }
+//
+//            val description = idStr(saveName)
+//            description.Replace("\\", "\\\\")
+//            description.Replace("\"", "\\\"")
+//
+//            val mapDef =
+//                DeclManager.declManager.FindType(declType_t.DECL_MAPDEF, mapName.toString(), false) as idDeclEntityDef?
+//            if (mapDef != null) {
+//                mapName.set(
+//                    Common.common.GetLanguageDict().GetString(mapDef.dict.GetString("name", mapName.toString()))
+//                )
+//            }
+//
+//            fileDesc.Printf("\"%s\"\n", description.toString())
+//            fileDesc.Printf("\"%s\"\n", mapName.toString())
+//
+//            if (autosave) {
+//                val sshot = idStr(mapSpawnData.serverInfo.GetString("si_map"))
+//                sshot.StripPath()
+//                sshot.StripFileExtension()
+//                fileDesc.Printf("\"guis/assets/autosave/%s\"\n", sshot.toString())
+//            } else {
+//                fileDesc.Printf("\"\"\n")
+//            }
+//
+//            FileSystem_h.fileSystem.CloseFile(fileDesc)
+//
+//            if (pauseWorld != null) {
+//                snd_system.soundSystem.SetPlayingSoundWorld(pauseWorld)
+//                pauseWorld.UnPause()
+//            }
+//
+//            syncNextGameFrame = true
+//
+//            return true
+        }
+
+        fun QuickSave(): Boolean {
+            var saveName = Common.common.GetLanguageDict().GetString("#str_07178")
+
+            val saveFilePathBase = idStr(saveName)
+            ScrubSaveGameFileName(saveFilePathBase)
+            saveFilePathBase.set("savegames/" + saveFilePathBase)
+
+            var game: String? = CVarSystem.cvarSystem.GetCVarString("fs_game")
+            if (game!!.isNotEmpty() && game[0] == Char(0)) {
+                game = null
+            }
+
+            val maxNum = com_numQuicksaves.GetInteger()
+            var indexToUse = 1
+            var oldestTime = 0L
+            for (i in 1..maxNum) {
+                val saveFilePath = idStr(saveFilePathBase)
+                if (i > 1) {
+                    // the first one is just called "QuickSave" without a number, like before.
+                    // the others are called "QuickSave2" "QuickSave3" etc
+                    saveFilePath.Append(i.toString())
+                }
+                saveFilePath.SetFileExtension(".save")
+
+                val f = FileSystem_h.fileSystem.OpenFileRead(saveFilePath.toString(), true, game)
+                if (f == null) {
+                    // this savegame doesn't exist yet => we can use this index for the name
+                    indexToUse = i
+                    break
+                } else {
+                    val ts = f.Timestamp()
+                    assert(ts != 0L)
+                    if (ts < oldestTime || oldestTime == 0L) {
+                        // this is the oldest quicksave we found so far => a candidate to be overwritten
+                        indexToUse = i
+                        oldestTime = ts
+                    }
+                }
+            }
+
+            if (indexToUse > 1) {
+                saveName += indexToUse.toString()
+            }
+
+            if (SaveGame(saveName)) {
+                Common.common.Printf("%s\n", saveName)
+                return true
+            }
+            return false
         }
 
         fun GetAuthMsg(): String {
@@ -2159,14 +2272,14 @@ object Session_local {
             }
             RenderSystem.renderSystem.SetColor4(0.1f, 0.1f, 0.1f, 1.0f)
             RenderSystem.renderSystem.DrawStretchPic(
-                0f,
+                0.0f,
                 (480 - ANGLE_GRAPH_HEIGHT).toFloat(),
                 (UsercmdGen.MAX_BUFFERED_USERCMD * ANGLE_GRAPH_STRETCH).toFloat(),
                 ANGLE_GRAPH_HEIGHT.toFloat(),
-                0f,
-                0f,
-                1f,
-                1f,
+                0.0f,
+                0.0f,
+                1.0f,
+                1.0f,
                 whiteMaterial
             )
             RenderSystem.renderSystem.SetColor4(0.9f, 0.9f, 0.9f, 1.0f)
@@ -2178,12 +2291,12 @@ object Session_local {
                 RenderSystem.renderSystem.DrawStretchPic(
                     (i * ANGLE_GRAPH_STRETCH).toFloat(),
                     (480 - h).toFloat(),
-                    1f,
+                    1.0f,
                     h.toFloat(),
-                    0f,
-                    0f,
-                    1f,
-                    1f,
+                    0.0f,
+                    0.0f,
+                    1.0f,
+                    1.0f,
                     whiteMaterial
                 )
             }
@@ -2196,35 +2309,35 @@ object Session_local {
                 if (guiLoading != null) {
                     guiLoading!!.Redraw(Common.com_frameTime)
                 }
-                if (guiActive === guiMsg) {
+                if (guiActive == guiMsg) {
                     guiMsg!!.Redraw(Common.com_frameTime)
                 }
             } else if (guiTest != null) {
                 // if testing a gui, clear the screen and draw it
                 // clear the background, in case the tested gui is transparent
                 // NOTE that you can't use this for aviGame recording, it will tick at real com_frameTime between screenshots..
-                RenderSystem.renderSystem.SetColor(Lib.colorBlack)
+                RenderSystem.renderSystem.SetColor(colorBlack)
                 RenderSystem.renderSystem.DrawStretchPic(
-                    0f,
-                    0f,
-                    640f,
-                    480f,
-                    0f,
-                    0f,
-                    1f,
-                    1f,
+                    0.0f,
+                    0.0f,
+                    640.0f,
+                    480.0f,
+                    0.0f,
+                    0.0f,
+                    1.0f,
+                    1.0f,
                     DeclManager.declManager.FindMaterial("_white")
                 )
                 guiTest!!.Redraw(Common.com_frameTime)
             } else if (guiActive != null && !guiActive!!.State().GetBool("gameDraw")) {
 
                 // draw the frozen gui in the background
-                if (guiActive === guiMsg && guiMsgRestore != null) {
+                if (guiActive == guiMsg && guiMsgRestore != null) {
                     guiMsgRestore!!.Redraw(Common.com_frameTime)
                 }
 
                 // draw the menus full screen
-                if (guiActive === guiTakeNotes && !com_skipGameDraw.GetBool()) {
+                if (guiActive == guiTakeNotes && !com_skipGameDraw.GetBool()) {
                     Game_local.game.Draw(GetLocalClientNum())
                 }
                 DBG_Draw++
@@ -2243,16 +2356,16 @@ object Session_local {
                     Common.time_gameDraw += end - start // note time used for com_speeds
                 }
                 if (!gameDraw) {
-                    RenderSystem.renderSystem.SetColor(Lib.colorBlack)
+                    RenderSystem.renderSystem.SetColor(colorBlack)
                     RenderSystem.renderSystem.DrawStretchPic(
-                        0f,
-                        0f,
-                        640f,
-                        480f,
-                        0f,
-                        0f,
-                        1f,
-                        1f,
+                        0.0f,
+                        0.0f,
+                        640.0f,
+                        480.0f,
+                        0.0f,
+                        0.0f,
+                        1.0f,
+                        1.0f,
                         DeclManager.declManager.FindMaterial("_white")
                     )
                 }
@@ -2274,16 +2387,16 @@ object Session_local {
                             emptyDrawCount = 0
                             StartMenu()
                         }
-                        RenderSystem.renderSystem.SetColor4(0f, 0f, 0f, 1f)
+                        RenderSystem.renderSystem.SetColor4(0.0f, 0.0f, 0.0f, 1.0f)
                         RenderSystem.renderSystem.DrawStretchPic(
-                            0f,
-                            0f,
+                            0.0f,
+                            0.0f,
                             RenderSystem.SCREEN_WIDTH.toFloat(),
                             RenderSystem.SCREEN_HEIGHT.toFloat(),
-                            0f,
-                            0f,
-                            1f,
-                            1f,
+                            0.0f,
+                            0.0f,
+                            1.0f,
+                            1.0f,
                             DeclManager.declManager.FindMaterial("_white")
                         )
                     }
@@ -2402,15 +2515,15 @@ object Session_local {
                 count++
                 if (count / 3600 != (count - 1) / 3600) {
                     minuteEnd = win_shared.Sys_Milliseconds()
-                    sec = ((minuteEnd - minuteStart) / 1000.0).toFloat() //divide by double and roundup to float
+                    sec = ((minuteEnd - minuteStart) / 1000.0f).toFloat() //divide by double and roundup to float
                     minuteStart = minuteEnd
-                    Common.common.Printf("minute %d took %3.1f seconds\n", count / 3600, sec)
+                    Common.common.Printf("minute %d took %3.1.0f seconds\n", count / 3600, sec)
                     UpdateScreen()
                 }
             }
             val endTime = win_shared.Sys_Milliseconds()
-            sec = ((endTime - startTime) / 1000.0).toFloat()
-            Common.common.Printf("%d seconds of game, replayed in %5.1f seconds\n", count / 60, sec)
+            sec = ((endTime - startTime) / 1000.0f).toFloat()
+            Common.common.Printf("%d seconds of game, replayed in %5.1.0f seconds\n", count / 60, sec)
         }
 
         @Throws(idException::class)
@@ -2538,7 +2651,7 @@ object Session_local {
         }
 
         fun StopPlayingRenderDemo() {
-            if (TempDump.NOT(writeDemo)) {
+            if (writeDemo == null) {
                 Common.common.Printf("idSessionLocal::StopRecordingRenderDemo: not recording\n")
                 return
             }
@@ -2664,7 +2777,7 @@ object Session_local {
             val name = idStr(demoName)
             name.ExtractFileBase(aviDemoShortName)
             aviCaptureMode = true
-            aviDemoFrameCount = 0f
+            aviDemoFrameCount = 0.0f
             aviTicStart = 0
             sw.AVIOpen(Str.va("demos/%s/", aviDemoShortName), aviDemoShortName.toString())
         }
@@ -2700,12 +2813,12 @@ object Session_local {
             }
             var skipFrames = 0
             if (!aviCaptureMode && null == timeDemo && !singleFrameOnly) {
-                skipFrames = (latchedTicNumber - lastDemoTic) / Session_local.USERCMD_PER_DEMO_FRAME - 1
+                skipFrames = (latchedTicNumber - lastDemoTic) / USERCMD_PER_DEMO_FRAME - 1
                 // never skip too many frames, just let it go into slightly slow motion
                 if (skipFrames > 4) {
                     skipFrames = 4
                 }
-                lastDemoTic = latchedTicNumber - latchedTicNumber % Session_local.USERCMD_PER_DEMO_FRAME
+                lastDemoTic = latchedTicNumber - latchedTicNumber % USERCMD_PER_DEMO_FRAME
             } else {
                 // always advance a single frame with avidemo and timedemo
                 lastDemoTic = latchedTicNumber
@@ -2743,7 +2856,7 @@ object Session_local {
                     this.renderdemoVersion = renderdemoVersion._val
                     Common.common.Printf("reading a v%d render demo\n", renderdemoVersion._val)
                     // set the savegameVersion to current for render demo paths that share the savegame paths
-                    savegameVersion = Licensee.SAVEGAME_VERSION
+                    savegameVersion = SAVEGAME_VERSION
                     continue
                 }
                 Common.common.Error("Bad render demo token")
@@ -2781,7 +2894,7 @@ object Session_local {
                 } else {
                     cmd[0] = logCmd.cmd!!
                     cmd[0].ByteSwap()
-                    logCmd.consistencyHash = Lib.LittleLong(logCmd.consistencyHash)
+                    logCmd.consistencyHash = LittleLong(logCmd.consistencyHash)
                 }
             }
 
@@ -2812,11 +2925,11 @@ object Session_local {
             }
 
             // save the cmd for cmdDemo archiving
-            if (logIndex < Session_local.MAX_LOGGED_USERCMDS) {
+            if (logIndex < MAX_LOGGED_USERCMDS) {
                 loggedUsercmds[logIndex].cmd = cmd[0]
                 // save the consistencyHash for demo playback verification
                 loggedUsercmds[logIndex].consistencyHash = ret.consistencyHash
-                if (logIndex % 30 == 0 && statIndex < Session.MAX_LOGGED_STATS) {
+                if (logIndex % 30 == 0 && statIndex < MAX_LOGGED_STATS) {
                     loggedStats[statIndex].health = ret.health
                     loggedStats[statIndex].heartRate = ret.heartRate
                     loggedStats[statIndex].stamina = ret.stamina
@@ -2861,7 +2974,7 @@ object Session_local {
             // load / program a gui to stay up on the screen while loading
             val stripped = idStr(mapName).StripFileExtension().StripPath()
             val guiMap = Str.va(
-                "guis/map/%." + Lib.MAX_STRING_CHARS + "s.gui",
+                "guis/map/%." + MAX_STRING_CHARS + "s.gui",
                 stripped.toString()
             ) //char guiMap[ MAX_STRING_CHARS ];
             // give the gamecode a chance to override
@@ -2904,7 +3017,7 @@ object Session_local {
             val mapDecl = DeclManager.declManager.FindType(declType_t.DECL_MAPDEF, mapName, false)
             val mapDef = mapDecl as idDeclEntityDef?
             if (mapDef != null) {
-                return mapDef.dict.GetInt(Str.va("size%d", Lib.Max(0, Common.com_machineSpec.GetInteger())))
+                return mapDef.dict.GetInt(Str.va("size%d", Max(0, Common.com_machineSpec.GetInteger())))
             } else {
                 return if (Common.com_machineSpec.GetInteger() < 2) {
                     200 * 1024 * 1024
@@ -2995,7 +3108,7 @@ object Session_local {
             UnloadMap()
 
             // don't do the deferred caching if we are reloading the same map
-            if (fullMapName === currentMapName) {
+            if (fullMapName == currentMapName) {
                 reloadingSameMap = true
             } else {
                 reloadingSameMap = false
@@ -3231,19 +3344,19 @@ object Session_local {
         @Throws(idException::class)
         fun DispatchCommand(gui: idUserInterface?, menuCommand: String, doIngame: Boolean = false /*= true*/) {
             var gui = gui
-            if (TempDump.NOT(gui)) {
+            if (gui == null) {
                 gui = guiActive
             }
-            if (gui === guiMainMenu) {
+            if (gui == guiMainMenu) {
                 HandleMainMenuCommands(menuCommand)
                 return
-            } else if (gui === guiIntro) {
+            } else if (gui == guiIntro) {
                 HandleIntroMenuCommands(menuCommand)
-            } else if (gui === guiMsg) {
+            } else if (gui == guiMsg) {
                 HandleMsgCommands(menuCommand)
-            } else if (gui === guiTakeNotes) {
+            } else if (gui == guiTakeNotes) {
                 HandleNoteCommands(menuCommand)
-            } else if (gui === guiRestartMenu) {
+            } else if (gui == guiRestartMenu) {
                 HandleRestartMenuCommands(menuCommand)
             } else if (Game_local.game != null && guiActive != null && guiActive!!.State().GetBool("gameDraw")) {
                 val cmd = Game_local.game.HandleGuiCommands(menuCommand)
@@ -3364,21 +3477,21 @@ object Session_local {
                 val choice = guiActive!!.State().GetInt("loadgame_sel_0")
                 if (choice >= 0 && choice < loadGameList.size()) {
                     val material: Material.idMaterial?
-                    val saveName: idStr?
-                    val description: idStr?
+                    val saveName: idStr = idStr()
+                    val description: idStr = idStr()
                     var screenshot: String?
                     val src = idLexer(Lexer.LEXFL_NOERRORS or Lexer.LEXFL_NOSTRINGCONCAT)
                     if (src.LoadFile(Str.va("savegames/%s.txt", loadGameList[choice].toString()))) {
                         val tok = idToken()
                         src.ReadToken(tok)
-                        saveName = tok
+                        saveName.set(tok)
                         src.ReadToken(tok)
-                        description = tok
+                        description.set(tok)
                         src.ReadToken(tok)
                         screenshot = tok.toString()
                     } else {
-                        saveName = loadGameList[choice]
-                        description = loadGameList[choice]
+                        saveName.set(loadGameList[choice])
+                        description.set(loadGameList[choice])
                         screenshot = ""
                     }
                     if (screenshot.length == 0) {
@@ -3624,16 +3737,19 @@ object Session_local {
                                     CVarSystem.cvarSystem.SetCVarInteger("net_serverMaxClientRate", 8000)
                                     maxclients = 2
                                 }
+
                                 2 -> {
                                     // 256 kbits
                                     CVarSystem.cvarSystem.SetCVarInteger("net_serverMaxClientRate", 9500)
                                     maxclients = 3
                                 }
+
                                 3 -> {
                                     // 384 kbits
                                     CVarSystem.cvarSystem.SetCVarInteger("net_serverMaxClientRate", 10500)
                                     maxclients = 4
                                 }
+
                                 4 -> {
                                     // 512 and above..
                                     CVarSystem.cvarSystem.SetCVarInteger("net_serverMaxClientRate", 14000)
@@ -3642,22 +3758,22 @@ object Session_local {
                             }
                             if (n_clients > maxclients) {
                                 if (
-                                        MessageBox(
-                                            msgBoxType_t.MSG_OKCANCEL,
-                                            Str.va(
-                                                Common.common.GetLanguageDict().GetString("#str_04315"),
-                                                if (dedicated != 0) maxclients else Lib.Min(8, maxclients + 1)
-                                            ),
-                                            Common.common.GetLanguageDict().GetString("#str_04316"),
-                                            true,
-                                            "OK"
-                                        ).isNotEmpty()
+                                    MessageBox(
+                                        msgBoxType_t.MSG_OKCANCEL,
+                                        Str.va(
+                                            Common.common.GetLanguageDict().GetString("#str_04315"),
+                                            if (dedicated != 0) maxclients else Min(8, maxclients + 1)
+                                        ),
+                                        Common.common.GetLanguageDict().GetString("#str_04316"),
+                                        true,
+                                        "OK"
+                                    ).isNotEmpty()
                                 ) { //[0] == '\0') {
                                     continue
                                 }
                                 CVarSystem.cvarSystem.SetCVarInteger(
                                     "si_maxPlayers",
-                                    if (dedicated != 0) maxclients else Lib.Min(8, maxclients + 1)
+                                    if (dedicated != 0) maxclients else Min(8, maxclients + 1)
                                 )
                             }
                         }
@@ -3781,6 +3897,7 @@ object Session_local {
                                         Common.common.GetLanguageDict().GetString("#str_07231"),
                                         true
                                     )
+
                                 1 ->                                     // when you restart
                                     MessageBox(
                                         msgBoxType_t.MSG_OK,
@@ -3788,6 +3905,7 @@ object Session_local {
                                         Common.common.GetLanguageDict().GetString("#str_07231"),
                                         true
                                     )
+
                                 -1 -> {
                                     CVarSystem.cvarSystem.SetCVarBool("s_useEAXReverb", false)
                                     // disabled
@@ -3798,6 +3916,7 @@ object Session_local {
                                         true
                                     )
                                 }
+
                                 0 -> {
                                     CVarSystem.cvarSystem.SetCVarBool("s_useEAXReverb", false)
                                     // not available
@@ -4050,7 +4169,7 @@ object Session_local {
         }
 
         fun HandleMsgCommands(menuCommand: String) {
-            assert(guiActive === guiMsg)
+            assert(guiActive == guiMsg)
             // "stop" works even on first frame
             if (idStr.Icmp(menuCommand, "stop") == 0) {
                 // force hiding the current dialog
@@ -4156,7 +4275,7 @@ object Session_local {
                     workName.Append("/")
                     workName.Append(p)
                     val workNote = CInt(noteNumber._val)
-                    RenderSystem_init.R_ScreenshotFilename(workNote, workName.toString(), shotName)
+                    R_ScreenshotFilename(workNote, workName.toString(), shotName)
                     noteNum = shotName
                     noteNum.StripPath()
                     noteNum.StripFileExtension()
@@ -4272,18 +4391,16 @@ object Session_local {
         }
 
         fun UpdateMPLevelShot() {
-//            char[] screenshot = new char[MAX_STRING_CHARS];
             val screenshot = StringBuffer()
             FileSystem_h.fileSystem.FindMapScreenshot(
                 CVarSystem.cvarSystem.GetCVarString("si_map"),
                 screenshot,
-                Lib.MAX_STRING_CHARS
+                MAX_STRING_CHARS
             )
             guiMainMenu!!.SetStateString("current_levelshot", screenshot.toString())
         }
 
         fun SetSaveGameGuiVars() {
-            var i: Int
             var name: idStr = idStr()
             val fileList = idStrList()
             val fileTimes = idList<fileTIME_T>()
@@ -4292,8 +4409,7 @@ object Session_local {
             fileTimes.Clear()
             GetSaveGameList(fileList, fileTimes)
             loadGameList.setSize(fileList.size())
-            i = 0
-            while (i < fileList.size()) {
+            for (i in 0 until fileList.size()) {
                 loadGameList[i] = fileList[fileTimes[i].index]
                 val src = idLexer(Lexer.LEXFL_NOERRORS or Lexer.LEXFL_NOSTRINGCONCAT)
                 if (src.LoadFile(Str.va("savegames/%s.txt", loadGameList[i]))) {
@@ -4301,15 +4417,15 @@ object Session_local {
                     src.ReadToken(tok)
                     name.set(tok.toString())
                 } else {
-                    name = loadGameList[i]
+                    name.set(loadGameList[i])
                 }
                 name.Append("\t")
                 val date = sys_local.Sys_TimeStampToStr(fileTimes[i].timeStamp)
                 name.Append(date)
                 guiActive!!.SetStateString(Str.va("loadgame_item_%d", i), name.toString())
-                i++
             }
             guiActive!!.DeleteStateVar(Str.va("loadgame_item_%d", fileList.size()))
+
             guiActive!!.SetStateString("loadgame_sel_0", "-1")
             guiActive!!.SetStateString("loadgame_shot", "guis/assets/blankLevelShot")
         }
@@ -4403,7 +4519,7 @@ object Session_local {
                 Common.common.DPrintf("message box sanity check: !common.IsInitialized()\n")
                 return false
             }
-            if (TempDump.NOT(guiMsg)) {
+            if (guiMsg == null) {
                 return false
             }
             if (guiMsgRestore != null) {
@@ -4457,10 +4573,10 @@ object Session_local {
             val com_aviDemoHeight: idCVar = idCVar("com_aviDemoHeight", "256", CVarSystem.CVAR_SYSTEM, "")
             val com_aviDemoSamples: idCVar = idCVar("com_aviDemoSamples", "16", CVarSystem.CVAR_SYSTEM, "")
             val com_aviDemoTics: idCVar =
-                idCVar("com_aviDemoTics", "2", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER, "", 1f, 60f)
+                idCVar("com_aviDemoTics", "2", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER, "", 1.0f, 60.0f)
             val com_aviDemoWidth: idCVar = idCVar("com_aviDemoWidth", "256", CVarSystem.CVAR_SYSTEM, "")
             val com_fixedTic: idCVar =
-                idCVar("com_fixedTic", "0", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER, "", 0f, 10f)
+                idCVar("com_fixedTic", "0", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER, "", 0.0f, 10.0f)
             val com_guid: idCVar =
                 idCVar("com_guid", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_ROM, "")
             val com_minTics: idCVar = idCVar("com_minTics", "1", CVarSystem.CVAR_SYSTEM, "")
@@ -4483,6 +4599,16 @@ object Session_local {
                 CVarSystem.CVAR_GUI or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_ROM or CVarSystem.CVAR_INTEGER,
                 ""
             )
+
+            val com_numQuicksaves: idCVar = idCVar(
+                "com_numQuicksaves",
+                "4",
+                CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_INTEGER,
+                "number of quicksaves to keep before overwriting the oldest",
+                1.0f,
+                99.0f
+            )
+
 
             //
             const val ANGLE_GRAPH_HEIGHT = 128

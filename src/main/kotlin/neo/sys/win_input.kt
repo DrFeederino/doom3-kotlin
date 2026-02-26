@@ -3,19 +3,16 @@ package neo.sys
 import neo.TempDump.TODO_Exception
 import neo.framework.Common
 import neo.framework.KeyInput
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CInt
+import neo.idlib.idLib
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.win_local.Win32Vars_t
 import org.lwjgl.glfw.GLFW
 import java.awt.event.InputEvent
 import java.time.Instant
 
-/**
- *
- */
 object win_input {
     const val CHAR_FIRSTREPEAT = 200
     const val CHAR_REPEAT = 100
@@ -1779,9 +1776,11 @@ object win_input {
                 // ctrl and alt are handled here to get around windows sending ctrl and
                 // alt messages when the right-alt is pressed on non-US 102 keyboards.
             }
+
             KeyInput.K_CTRL, KeyInput.K_ALT, KeyInput.K_RIGHT_ALT -> win_main.Sys_QueEvent(
                 GetTickCount(), sysEventType_t.SE_KEY, ch[0], action, 0, null
             )
+
             else -> if (action == GLFW.GLFW_RELEASE && ch[0] > 31 && ch[0] != '~'.code && ch[0] != '`'.code && ch[0] < 128) win_main.Sys_QueEvent(
                 Instant.now().toEpochMilli(), sysEventType_t.SE_CHAR, ch[0], action, 0, null
             ) else win_main.Sys_QueEvent(Instant.now().toEpochMilli(), sysEventType_t.SE_KEY, ch[0], action, 0, null)

@@ -6,24 +6,21 @@ import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_Integer
 import neo.framework.File_h.idFile
 import neo.framework.KeyInput.idKeyInput
-import neo.idlib.Lib.idException
+import neo.idlib.idException
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
 import neo.sys.win_main
 import neo.sys.win_shared
 import java.nio.ByteBuffer
 
-/**
- *
- */
 class EventLoop {
     val com_journalFile: idCVar = idCVar(
         "com_journal",
         "0",
         CVarSystem.CVAR_INIT or CVarSystem.CVAR_SYSTEM,
         "1 = record journal, 2 = play back journal",
-        0f,
-        2f,
+        0.0f,
+        2.0f,
         ArgCompletion_Integer(0, 2)
     )
 
@@ -238,8 +235,8 @@ class EventLoop {
                 "0",
                 CVarSystem.CVAR_INIT or CVarSystem.CVAR_SYSTEM,
                 "1 = record journal, 2 = play back journal",
-                0f,
-                2f,
+                0.0f,
+                2.0f,
                 ArgCompletion_Integer(0, 2)
             )
             var printedWarning = false

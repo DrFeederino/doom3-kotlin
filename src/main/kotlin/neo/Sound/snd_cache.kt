@@ -4,18 +4,17 @@ import neo.Sound.snd_local.idSampleDecoder
 import neo.Sound.snd_local.waveformatex_s
 import neo.Sound.snd_system.idSoundSystemLocal
 import neo.Sound.snd_wavefile.idWaveFile
-import neo.TempDump
 import neo.framework.BuildDefines
 import neo.framework.Common
 import neo.framework.Common.MemInfo_t
 import neo.framework.DeclManager
 import neo.framework.FileSystem_h
 import neo.framework.File_h.idFile
-import neo.idlib.Lib
+import neo.idlib.Min
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Simd
+import neo.idlib.math.MIXBUFFER_SAMPLES
+import neo.idlib.math.idMath
 import org.lwjgl.BufferUtils
 import org.lwjgl.openal.AL10
 import java.nio.ByteBuffer
@@ -23,9 +22,6 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
 
-/**
- *
- */
 object snd_cache {
     //    static final boolean USE_SOUND_CACHE_ALLOCATOR = true;
     //    static final idDynamicBlockAlloc<Byte> soundCacheAllocator;
@@ -44,7 +40,7 @@ object snd_cache {
 
      ===================================================================================
      */
-    const val SCACHE_SIZE = Simd.MIXBUFFER_SAMPLES * 20 // 1/2 of a second (aroundabout)
+    const val SCACHE_SIZE = MIXBUFFER_SAMPLES * 20 // 1/2 of a second (aroundabout)
 
     class idSoundSample {
         var amplitudeData // precomputed min,max amplitude pairs
@@ -106,13 +102,13 @@ object snd_cache {
             objectInfo.nChannels = 1
             objectInfo.wBitsPerSample = 16
             objectInfo.nSamplesPerSec = 44100
-            objectSize = Simd.MIXBUFFER_SAMPLES * 2
+            objectSize = MIXBUFFER_SAMPLES * 2
             objectMemSize = objectSize * 2 //* sizeof(short);
             nonCacheData = BufferUtils.createByteBuffer(objectMemSize) //soundCacheAllocator.Alloc(objectMemSize);
             val ncd = nonCacheData!!.asShortBuffer()
             i = 0
-            while (i < Simd.MIXBUFFER_SAMPLES) {
-                v = sin((idMath.PI * 2 * i / 64).toDouble()).toFloat()
+            while (i < MIXBUFFER_SAMPLES) {
+                v = sin((idMath.PI * 2 * i / 64))
                 sample = (v * 0x4000).toInt().toShort()
                 ncd.put(i * 2 + 0, sample)
                 ncd.put(i * 2 + 1, sample)
@@ -130,7 +126,7 @@ object snd_cache {
                 AL10.alBufferData(
                     openalBuffer /*  <<TODO>>   */,
                     if (objectInfo.nChannels == 1) AL10.AL_FORMAT_MONO16 else AL10.AL_FORMAT_STEREO16,
-                    nonCacheData,
+                    nonCacheData!!,
                     objectInfo.nSamplesPerSec
                 )
                 if (AL10.alGetError() != AL10.AL_NO_ERROR) {
@@ -223,7 +219,7 @@ object snd_cache {
                         AL10.alBufferData(
                             openalBuffer,
                             if (objectInfo.nChannels == 1) AL10.AL_FORMAT_MONO16 else AL10.AL_FORMAT_STEREO16,
-                            nonCacheData,
+                            nonCacheData!!,
                             objectInfo.nSamplesPerSec
                         )
                         if (AL10.alGetError() != AL10.AL_NO_ERROR) {
@@ -245,7 +241,7 @@ object snd_cache {
                                 var max: Short = -32768
                                 var j: Int
                                 j = 0
-                                while (j < Lib.Min(objectSize - i, blockSize)) {
+                                while (j < Min(objectSize - i, blockSize)) {
                                     min = min(ncd[i + j].toInt(), min.toInt()).toShort()
                                     max = max(ncd[i + j].toInt(), max.toInt()).toShort()
                                     j++
@@ -335,7 +331,7 @@ object snd_cache {
                                     var max: Short = -32768
                                     var j: Int
                                     j = 0
-                                    while (j < Lib.Min(objectSize - i, blockSize)) {
+                                    while (j < Min(objectSize - i, blockSize)) {
                                         min = if (destData.getShort(i + j) < min) destData.getShort(i + j) else min
                                         max = if (destData.getShort(i + j) > max) destData.getShort(i + j) else max
                                         j++
@@ -454,10 +450,7 @@ object snd_cache {
         ): Boolean {
             var offset = offset
             offset = offset and -0x2
-            if (objectSize == 0 || offset < 0 || offset > objectSize * 2 /*(int) sizeof(short)*/ || TempDump.NOT(
-                    nonCacheData
-                )
-            ) {
+            if (objectSize == 0 || offset < 0 || offset > objectSize * 2 /*(int) sizeof(short)*/ || nonCacheData == null) {
                 return false
             }
             if (output != null) {

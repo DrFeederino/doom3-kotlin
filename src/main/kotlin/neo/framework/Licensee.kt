@@ -1,8 +1,5 @@
 package neo.framework
 
-/**
- *
- */
 object Licensee {
     const val ASYNC_PROTOCOL_MAJOR = 1
     const val BASE_GAMEDIR: String = "base"
@@ -38,7 +35,7 @@ object Licensee {
     const val NUM_SERVER_PORTS = 4
     const val PORT_SERVER = 27666
     const val RENDERDEMO_VERSION = 2
-    const val SAVEGAME_VERSION = 17
+    const val SAVEGAME_VERSION = 18
     const val SOURCE_CODE_BASE_FOLDER: String = "neo"
     const val WIN32_CONSOLE_CLASS: String = "DOOM 3 WinConsole"
     const val WIN32_FAKE_WINDOW_CLASS_NAME: String = "DOOM3_WGL_FAKE"

@@ -1,8 +1,5 @@
 package neo.Renderer
 
-/**
- *
- */
 object simplex {
     val NUM_SIMPLEX_CHARS: Int = 95
     val simplex /*[NUM_SIMPLEX_CHARS][112]*/: Array<IntArray> = arrayOf(

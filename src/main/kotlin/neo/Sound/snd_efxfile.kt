@@ -3,13 +3,9 @@ package neo.Sound
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
-import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List.idList
 import java.nio.ByteBuffer
 
-/**
- *
- */
 class snd_efxfile {
     class idSoundEffect //	~idSoundEffect() {
     //		if ( data && datasize ) {
@@ -179,7 +175,6 @@ class snd_efxfile {
 
         fun LoadFile(filename: String, OSPath: Boolean = false /*= false*/): Boolean {
             val src = idLexer(Lexer.LEXFL_NOSTRINGCONCAT)
-            var token: idToken
             src.LoadFile(filename, OSPath)
             if (!src.IsLoaded()) {
                 return false

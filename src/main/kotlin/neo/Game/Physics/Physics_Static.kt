@@ -1,7 +1,5 @@
 package neo.Game.Physics
 
-import neo.CM.CollisionModel.contactInfo_t
-import neo.CM.CollisionModel.trace_s
 import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.idClass
 import neo.Game.GameSys.SaveGame.idRestoreGame
@@ -12,18 +10,17 @@ import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Force.idForce
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Physics.Physics.impactInfo_s
-import neo.idlib.BV.Bounds
-import neo.idlib.BV.Bounds.idBounds
+import neo.cm.contactInfo_t
+import neo.cm.trace_s
+import neo.idlib.BV.bounds_zero
+import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsgDelta
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Quat.idCQuat
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.getVec3Origin
+import neo.idlib.math.idCQuat
+import neo.idlib.math.idRotation
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 class Physics_Static {
     /*
      ===============================================================================
@@ -33,8 +30,8 @@ class Physics_Static {
      ===============================================================================
      */
     class staticPState_s {
-        var axis: idMat3 = idMat3()
-        var localAxis: idMat3 = idMat3()
+        val axis: idMat3 = idMat3()
+        val localAxis: idMat3 = idMat3()
         val localOrigin: idVec3 = idVec3()
         val origin: idVec3 = idVec3()
     }
@@ -42,19 +39,15 @@ class Physics_Static {
     class idPhysics_Static : idPhysics() {
         protected var clipModel // collision model
                 : idClipModel? = null
-
-        //
         protected var current // physics state
                 : staticPState_s
 
-        //
         // master
         protected var hasMaster: Boolean
         protected var isOrientated: Boolean
         protected var self // entity using this physics object
                 : idEntity? = null
 
-        // ~idPhysics_Static();
         override fun _deconstructor() {
             if (self != null && self!!.GetPhysics() === this) {
                 self!!.SetPhysics(null)
@@ -67,7 +60,7 @@ class Physics_Static {
         }
 
         override fun Save(savefile: idSaveGame) {
-            savefile.WriteObject(self as idClass)
+            savefile.WriteObject(self as idClass?)
             savefile.WriteVec3(current.origin)
             savefile.WriteMat3(current.axis)
             savefile.WriteVec3(current.localOrigin)
@@ -138,7 +131,7 @@ class Physics_Static {
         override fun GetBounds(id: Int /*= -1*/): idBounds {
             return if (clipModel != null) {
                 clipModel!!.GetBounds()
-            } else Bounds.bounds_zero
+            } else bounds_zero
         }
 
         override fun GetAbsBounds(id: Int /*= -1*/): idBounds {
@@ -237,7 +230,7 @@ class Physics_Static {
             if (hasMaster) {
                 self!!.GetMasterPosition(masterOrigin, masterAxis)
                 current.localAxis.timesAssign(rotation.ToMat3())
-                current.localOrigin.set(current.origin - masterOrigin * masterAxis.Transpose())
+                current.localOrigin.set((current.origin - masterOrigin) * masterAxis.Transpose())
             } else {
                 current.localAxis.set(current.axis)
                 current.localOrigin.set(current.origin)
@@ -256,11 +249,11 @@ class Physics_Static {
         override fun SetLinearVelocity(newLinearVelocity: idVec3, id: Int /*= 0*/) {}
         override fun SetAngularVelocity(newAngularVelocity: idVec3, id: Int /*= 0*/) {}
         override fun GetLinearVelocity(id: Int /*= 0*/): idVec3 {
-            return Vector.getVec3Origin()
+            return getVec3Origin()
         }
 
         override fun GetAngularVelocity(id: Int /*= 0*/): idVec3 {
-            return Vector.getVec3Origin()
+            return getVec3Origin()
         }
 
         override fun SetGravity(newGravity: idVec3) {}
@@ -370,11 +363,11 @@ class Physics_Static {
 
         override fun SetPushed(deltaTime: Int) {}
         override fun GetPushedLinearVelocity(id: Int /*= 0*/): idVec3 {
-            return Vector.getVec3Origin()
+            return getVec3Origin()
         }
 
         override fun GetPushedAngularVelocity(id: Int /*= 0*/): idVec3 {
-            return Vector.getVec3Origin()
+            return getVec3Origin()
         }
 
         override fun SetMaster(master: idEntity?, orientated: Boolean /*= true*/) {
@@ -384,7 +377,7 @@ class Physics_Static {
                 if (!hasMaster) {
                     // transform from world space to master space
                     self!!.GetMasterPosition(masterOrigin, masterAxis)
-                    current.localOrigin.set(current.origin - masterOrigin * masterAxis.Transpose())
+                    current.localOrigin.set((current.origin - masterOrigin) * masterAxis.Transpose())
                     if (orientated) {
                         current.localAxis.set(current.axis * masterAxis.Transpose())
                     } else {
@@ -468,7 +461,7 @@ class Physics_Static {
 
         companion object {
             // CLASS_PROTOTYPE( idPhysics_Static );
-            private val gravity: idVec3 = idVec3(0f, 0f, -SysCvar.g_gravity.GetFloat())
+            private val gravity: idVec3 = idVec3(0.0f, 0.0f, -SysCvar.g_gravity.GetFloat())
             private val gravityNormal: idVec3 = idVec3(0, 0, -1)
             private val absBounds: idBounds = idBounds()
         }

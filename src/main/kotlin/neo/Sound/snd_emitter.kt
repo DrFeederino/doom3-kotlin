@@ -12,9 +12,9 @@ import neo.TempDump
 import neo.framework.Common
 import neo.framework.DemoFile.demoSystem_t
 import neo.framework.Session
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Simd
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.MIXBUFFER_SAMPLES
+import neo.idlib.math.idMath
+import neo.idlib.math.idVec3
 import neo.sys.win_main.Sys_EnterCriticalSection
 import neo.sys.win_main.Sys_LeaveCriticalSection
 import neo.sys.win_shared
@@ -24,9 +24,6 @@ import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
-/**
- *
- */
 object snd_emitter {
     //    typedef enum {
     const val PLAYBACK_ADVANCING = 1
@@ -56,18 +53,18 @@ object snd_emitter {
     class idSoundFade {
         var fadeEnd44kHz = 0
         var fadeEndVolume // in dB
-                = 0f
+                = 0.0f
         var fadeStart44kHz = 0
         var fadeStartVolume // in dB
-                = 0f
+                = 0.0f
 
         //
         //
         fun Clear() {
             fadeStart44kHz = 0
             fadeEnd44kHz = 0
-            fadeStartVolume = 0f
-            fadeEndVolume = 0f
+            fadeStartVolume = 0.0f
+            fadeEndVolume = 0.0f
         }
 
         fun FadeDbAt44kHz(current44kHz: Int): Float {
@@ -86,21 +83,13 @@ object snd_emitter {
     }
 
     open class SoundFX//            memset(continuitySamples, 0, sizeof(float) * 4);     //
-    //
     {
-        //
         protected var buffer: FloatArray = FloatArray(0)
-
-        //
         protected var channel = 0
         protected var continuitySamples: FloatArray = FloatArray(4)
         protected var initialized = false
         protected var maxlen = 0
-
-        //
-        protected var param = 0f
-
-        //	virtual				~SoundFX()										{ if ( buffer ) delete buffer; };
+        protected var param = 0.0f
         open fun Initialize() {}
         open fun ProcessSample(inArr: FloatArray, in_offset: Int, out: FloatArray, out_offset: Int) {}
         fun SetChannel(chan: Int) {
@@ -158,13 +147,13 @@ object snd_emitter {
     }
 
     class SoundFX_LowpassFast : SoundFX() {
-        var a1 = 0f
-        var a2 = 0f
-        var a3 = 0f
-        var b1 = 0f
-        var b2 = 0f
-        var freq = 0f
-        var res = 0f
+        var a1 = 0.0f
+        var a2 = 0.0f
+        var a3 = 0.0f
+        var b1 = 0.0f
+        var b2 = 0.0f
+        var freq = 0.0f
+        var res = 0.0f
 
         //
         //
@@ -175,7 +164,7 @@ object snd_emitter {
         }
 
 
-        fun SetParms(p1: Float = 0f /*= 0*/, p2: Float = 0f /*= 0*/, p3: Float = 0f /*= 0*/) {
+        fun SetParms(p1: Float = 0.0f /*= 0*/, p2: Float = 0.0f /*= 0*/, p3: Float = 0.0f /*= 0*/) {
             val c: Float
 
             // set the vars
@@ -228,19 +217,17 @@ object snd_emitter {
     }
 
     class FracTime {
-        var frac = 0f
+        var frac = 0.0f
         var time = 0
 
-        //
-        //
         fun Set(`val`: Int) {
             time = `val`
-            frac = 0f
+            frac = 0.0f
         }
 
         fun Increment(`val`: Float) {
             frac += `val`
-            while (frac >= 1f) {
+            while (frac >= 1) {
                 time++
                 frac--
             }
@@ -261,10 +248,10 @@ object snd_emitter {
         // functions
         fun GenerateSlowChannel(playPos: FracTime, sampleCount44k: Int, finalBuffer: FloatArray) {
             val sw = snd_system.soundSystemLocal.GetPlayingSoundWorld() as idSoundWorldLocal
-            val `in` = FloatArray(Simd.MIXBUFFER_SAMPLES + 3)
-            val out = FloatArray(Simd.MIXBUFFER_SAMPLES + 3)
-            val src = FloatArray(Simd.MIXBUFFER_SAMPLES + 3 - 2)
-            val spline = FloatArray(Simd.MIXBUFFER_SAMPLES + 3 - 2)
+            val `in` = FloatArray(MIXBUFFER_SAMPLES + 3)
+            val out = FloatArray(MIXBUFFER_SAMPLES + 3)
+            val src = FloatArray(MIXBUFFER_SAMPLES + 3 - 2)
+            val spline = FloatArray(MIXBUFFER_SAMPLES + 3 - 2)
             //            int src, spline;
             val slowmoSpeed: Float
             var i: Int
@@ -302,15 +289,15 @@ object snd_emitter {
 
             // lowpass filter
 //            float *in_p = in + 2, *out_p = out + 2;
-            val in_p1 = floatArrayOf(0f)
-            val in_p2 = floatArrayOf(0f)
-            val out_p1 = floatArrayOf(0f)
-            val out_p2 = floatArrayOf(0f)
+            val in_p1 = floatArrayOf(0.0f)
+            val in_p2 = floatArrayOf(0.0f)
+            val out_p1 = floatArrayOf(0.0f)
+            val out_p2 = floatArrayOf(0.0f)
             val numSamples = sampleCount44k shr 1
             lowpass.GetContinuitySamples(in_p1, in_p2, out_p1, out_p2)
-            lowpass.SetParms(slowmoSpeed * 15000, 1.2f, 9f)
-            System.arraycopy(src, 0, `in`, 2, Simd.MIXBUFFER_SAMPLES + 3 - 2)
-            System.arraycopy(spline, 0, out, 2, Simd.MIXBUFFER_SAMPLES + 3 - 2)
+            lowpass.SetParms(slowmoSpeed * 15000, 1.2f, 9.0f)
+            System.arraycopy(src, 0, `in`, 2, MIXBUFFER_SAMPLES + 3 - 2)
+            System.arraycopy(spline, 0, out, 2, MIXBUFFER_SAMPLES + 3 - 2)
             `in`[0] = in_p1[0] //FIXME:ugly block.
             `in`[1] = in_p2[0]
             out[0] = out_p1[0]
@@ -335,7 +322,7 @@ object snd_emitter {
 
         fun GetSlowmoSpeed(): Float {
             val sw = snd_system.soundSystemLocal.GetPlayingSoundWorld() as idSoundWorldLocal?
-            return sw?.slowmoSpeed ?: 0f
+            return sw?.slowmoSpeed ?: 0.0f
         }
 
         fun AttachSoundChannel(chan: idSoundChannel) {
@@ -387,7 +374,7 @@ object snd_emitter {
             return active
         }
 
-        fun GetCurrentPosition(): FracTime? {
+        fun GetCurrentPosition(): FracTime {
             return curPosition
         }
     }
@@ -398,10 +385,10 @@ object snd_emitter {
 
         //
         var disallowSlow = false
-        var diversity = 0f
+        var diversity = 0.0f
         var lastV: FloatArray = FloatArray(6) // last calculated volume for each speaker, so we can smoothly fade
         var lastVolume // last calculated volume based on distance
-                = 0f
+                = 0.0f
         var   /*ALuint*/lastopenalStreamingBuffer: IntBuffer = BufferUtils.createIntBuffer(3)
         var leadinSample // if not looped, this is the only sample
                 : idSoundSample? = null
@@ -492,7 +479,7 @@ object snd_emitter {
 
             // grab part of the leadin sample
             val leadin = leadinSample!!
-            if (TempDump.NOT(leadin) || sampleOffset44k < 0 || sampleCount44k <= 0) {
+            if (leadin == null || sampleOffset44k < 0 || sampleCount44k <= 0) {
 //		memset( dest_p, 0, sampleCount44k * sizeof( dest_p[0] ) );
 //                dest.clear();
                 return
@@ -586,10 +573,10 @@ object snd_emitter {
         // evaluation doesn't do common subexpression removal, we cache the
         // last generated value
         var ampTime = 0
-        var amplitude = 0f
+        var amplitude = 0.0f
         var channels: Array<idSoundChannel>
         var distance // in meters, this may be the straight-line distance, or
-                = 0f
+                = 0.0f
         var hasShakes = false
 
         //
@@ -603,9 +590,7 @@ object snd_emitter {
         //
         // the following are calculated in UpdateEmitter, and don't need to be archived
         var maxDistance // greatest of all playing channel distances
-                = 0f
-
-        //
+                = 0.0f
         val origin: idVec3
         var parms // default overrides for all channels
                 : snd_shader.soundShaderParms_t = snd_shader.soundShaderParms_t()
@@ -614,7 +599,7 @@ object snd_emitter {
 
         //						    // or a point through a portal chain
         var realDistance // in meters
-                = 0f
+                = 0.0f
         var   /*removeStatus_t*/removeStatus = 0
         var slowChannels: Array<idSlowChannel>
         var soundWorld // the world that holds this emitter
@@ -729,9 +714,9 @@ object snd_emitter {
             var start44kHz: Int
             start44kHz = if (soundWorld!!.fpa[0] != null) {
                 // if we are recording an AVI demo, don't use hardware time
-                soundWorld!!.lastAVI44kHz + Simd.MIXBUFFER_SAMPLES
+                soundWorld!!.lastAVI44kHz + MIXBUFFER_SAMPLES
             } else {
-                snd_system.soundSystemLocal.GetCurrent44kHzTime() + Simd.MIXBUFFER_SAMPLES
+                snd_system.soundSystemLocal.GetCurrent44kHzTime() + MIXBUFFER_SAMPLES
             }
 
             //
@@ -854,8 +839,8 @@ object snd_emitter {
                 val end = win_shared.Sys_Milliseconds()
                 Session.session.TimeHitch(end - start)
                 // recalculate start44kHz, because loading may have taken a fair amount of time
-                if (TempDump.NOT(soundWorld!!.fpa[0])) {
-                    start44kHz = snd_system.soundSystemLocal.GetCurrent44kHzTime() + Simd.MIXBUFFER_SAMPLES
+                if (soundWorld!!.fpa[0] == null) {
+                    start44kHz = snd_system.soundSystemLocal.GetCurrent44kHzTime() + MIXBUFFER_SAMPLES
                 }
             }
             if (idSoundSystemLocal.s_showStartSound.GetInteger() != 0) {
@@ -893,9 +878,8 @@ object snd_emitter {
 
             // adjust the start time based on diversity for looping sounds, so they don't all start
             // at the same point
-            if (chan.parms!!.soundShaderFlags and snd_shader.SSF_LOOPING != 0 && TempDump.NOT(
-                    chan.leadinSample!!.LengthIn44kHzSamples().toDouble()
-                )
+            if (chan.parms!!.soundShaderFlags and snd_shader.SSF_LOOPING != 0 &&
+                chan.leadinSample!!.LengthIn44kHzSamples() == 0
             ) {
                 chan.trigger44kHzTime -= (diversity * length).toInt()
                 chan.trigger44kHzTime =
@@ -1005,7 +989,7 @@ object snd_emitter {
             if (idSoundSystemLocal.s_showStartSound.GetInteger() != 0) {
                 Common.common.Printf("FadeSound(%d,%d,%f,%f )\n", index, channel, to, over)
             }
-            if (TempDump.NOT(soundWorld)) {
+            if (soundWorld == null) {
                 return
             }
             if (soundWorld!!.writeDemo != null) {
@@ -1019,9 +1003,9 @@ object snd_emitter {
             val start44kHz: Int
             start44kHz = if (soundWorld!!.fpa[0] != null) {
                 // if we are recording an AVI demo, don't use hardware time
-                soundWorld!!.lastAVI44kHz + Simd.MIXBUFFER_SAMPLES
+                soundWorld!!.lastAVI44kHz + MIXBUFFER_SAMPLES
             } else {
-                snd_system.soundSystemLocal.GetCurrent44kHzTime() + Simd.MIXBUFFER_SAMPLES
+                snd_system.soundSystemLocal.GetCurrent44kHzTime() + MIXBUFFER_SAMPLES
             }
             val length44kHz = snd_system.soundSystemLocal.MillisecondsToSamples((over * 1000).toInt())
             for (i in 0 until snd_local.SOUND_MAX_CHANNELS) {
@@ -1100,7 +1084,7 @@ object snd_emitter {
             playing = false
             hasShakes = false
             ampTime = 0 // last time someone queried
-            amplitude = 0f
+            amplitude = 0.0f
             maxDistance = 10.0f // meters
             spatializedOrigin.Zero()
 
@@ -1117,22 +1101,22 @@ object snd_emitter {
                 out[0] = base
                 return
             }
-            if (over.minDistance != 0f) {
+            if (over.minDistance != 0.0f) {
                 out[0].minDistance = over.minDistance
             } else {
                 out[0].minDistance = base.minDistance
             }
-            if (over.maxDistance != 0f) {
+            if (over.maxDistance != 0.0f) {
                 out[0].maxDistance = over.maxDistance
             } else {
                 out[0].maxDistance = base.maxDistance
             }
-            if (over.shakes != 0f) {
+            if (over.shakes != 0.0f) {
                 out[0].shakes = over.shakes
             } else {
                 out[0].shakes = base.shakes
             }
-            if (over.volume != 0f) {
+            if (over.volume != 0.0f) {
                 out[0].volume = over.volume
             } else {
                 out[0].volume = base.volume
@@ -1236,12 +1220,11 @@ object snd_emitter {
          */
         fun Spatialize(listenerPos: idVec3, listenerArea: Int, rw: idRenderWorld) {
             var i: Int
-            val hasActive = false
 
             //
             // work out the maximum distance of all the playing channels
             //
-            maxDistance = 0f
+            maxDistance = 0.0f
             i = 0
             while (i < snd_local.SOUND_MAX_CHANNELS) {
                 val chan = channels[i]

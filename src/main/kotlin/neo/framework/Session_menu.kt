@@ -3,9 +3,6 @@ package neo.framework
 import neo.framework.Session_local.fileTIME_T
 import neo.idlib.containers.List.cmp_t
 
-/**
- *
- */
 class Session_menu {
     /*
      ===============

@@ -8,9 +8,6 @@ import neo.idlib.containers.List.idList
 import neo.ui.ListGUI.idListGUI
 import neo.ui.UserInterface.idUserInterface
 
-/**
- *
- */
 class ListGUILocal {
     /*
      ===============================================================================
@@ -78,10 +75,6 @@ class ListGUILocal {
                 // will clear all the GUI variables and will set m_water back to 0
                 StateChanged()
             }
-        }
-
-        override fun Num(): Int {
-            return super.Num()
         }
 
         override fun GetSelection(

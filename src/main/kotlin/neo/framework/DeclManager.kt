@@ -18,15 +18,16 @@ import neo.framework.FileSystem_h.idFileList
 import neo.framework.File_h.idFile
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.CmdArgs
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
+import neo.idlib.MAX_STRING_CHARS
+import neo.idlib.Max
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
-import neo.idlib.containers.HashIndex.idHashIndex
 import neo.idlib.containers.List
-import neo.idlib.hashing.MD5
+import neo.idlib.containers.idHashIndex
+import neo.idlib.hashing.MD5_BlockChecksum
+import neo.idlib.idException
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
@@ -35,9 +36,6 @@ import java.nio.charset.StandardCharsets
 import java.util.logging.Level
 import java.util.logging.Logger
 
-/**
- *
- */
 class DeclManager {
 
 
@@ -553,7 +551,7 @@ class DeclManager {
         }
 
         override fun IsImplicit(): Boolean {
-            return sourceFile === declManagerLocal.GetImplicitDeclFile()
+            return sourceFile == declManagerLocal.GetImplicitDeclFile()
         }
 
         override fun IsValid(): Boolean {
@@ -612,7 +610,7 @@ class DeclManager {
             val buffer: ByteArray
             var file: idFile?
             Common.common.Printf("Writing '%s' to '%s'...\n", GetName(), GetFileName())
-            if (sourceFile === declManagerLocal.implicitDecls) {
+            if (sourceFile == declManagerLocal.implicitDecls) {
                 Common.common.Warning("Can't save implicit declaration %s.", GetName())
                 return false
             }
@@ -621,7 +619,7 @@ class DeclManager {
             oldFileLength = sourceFile!!.fileSize
             newFileLength = oldFileLength - sourceTextLength + textLength
             //            buffer = (char[]) Mem_Alloc(Max(newFileLength, oldFileLength));
-            buffer = ByteArray(Lib.Max(newFileLength, oldFileLength))
+            buffer = ByteArray(Max(newFileLength, oldFileLength))
 
             // read original file
             if (sourceFile!!.fileSize != 0) {
@@ -638,7 +636,7 @@ class DeclManager {
                 }
                 file.Read(ByteBuffer.wrap(buffer), oldFileLength)
                 FileSystem_h.fileSystem.CloseFile(file)
-                if (MD5.MD5_BlockChecksum(buffer, oldFileLength) != sourceFile!!.checksum.toString()) {
+                if (MD5_BlockChecksum(buffer, oldFileLength) != sourceFile!!.checksum.toString()) {
 //                    Mem_Free(buffer);
                     Common.common.Warning("The file %s has been modified outside of the engine.", GetFileName())
                     return false
@@ -673,7 +671,7 @@ class DeclManager {
 
             // set new file size, checksum and timestamp
             sourceFile!!.fileSize = newFileLength
-            sourceFile!!.checksum = BigInteger(MD5.MD5_BlockChecksum(buffer, newFileLength))
+            sourceFile!!.checksum = BigInteger(MD5_BlockChecksum(buffer, newFileLength))
             FileSystem_h.fileSystem.ReadFile(GetFileName(), null, sourceFile!!.timestamp)
 
             // free buffer
@@ -847,10 +845,9 @@ class DeclManager {
 
 //            Mem_Free(textSource);
             textSource = null
-            checksum = BigInteger(MD5.MD5_BlockChecksum(text, length))
+            checksum = BigInteger(MD5_BlockChecksum(text, length))
             if (GET_HUFFMAN_FREQUENCIES) {
                 for (i in 0 until length) {
-//		huffmanFrequencies[((const unsigned char *)text)[i]]++;
                     huffmanFrequencies[text[i].code and 0xff]++
                 }
             }
@@ -994,12 +991,12 @@ class DeclManager {
             run {
                 var decl = decls
                 while (decl != null) {
-                    decl!!.redefinedInReload = false
-                    decl = decl!!.nextInFile
+                    decl.redefinedInReload = false
+                    decl = decl.nextInFile
                 }
             }
             src.SetFlags(DECL_LEXER_FLAGS)
-            checksum = BigInteger(MD5.MD5_BlockChecksum(buffer[0]!!.array(), length))
+            checksum = BigInteger(MD5_BlockChecksum(buffer[0]!!.array(), length))
             fileSize = length
 
             // scan through, identifying each individual declaration
@@ -1122,13 +1119,13 @@ class DeclManager {
             // any defs that weren't redefinedInReload should now be defaulted
             var decl = decls
             while (decl != null) {
-                if (decl!!.redefinedInReload == false) {
-                    decl!!.MakeDefault()
-                    decl!!.sourceTextOffset = decl!!.sourceFile!!.fileSize
-                    decl!!.sourceTextLength = 0
-                    decl!!.sourceLine = decl!!.sourceFile!!.numLines
+                if (decl.redefinedInReload == false) {
+                    decl.MakeDefault()
+                    decl.sourceTextOffset = decl.sourceFile!!.fileSize
+                    decl.sourceTextLength = 0
+                    decl.sourceLine = decl.sourceFile!!.numLines
                 }
-                decl = decl!!.nextInFile
+                decl = decl.nextInFile
             }
             return checksum
         }
@@ -1572,7 +1569,7 @@ class DeclManager {
 //                }
 //            }
 //
-//            Lib.LittleRevBytes(checksumData, total * 2);
+//            LittleRevBytes(checksumData, total * 2);
 //            return MD5_BlockChecksum(checksumData, total * 2 /* sizeof(int)*/);
         }
 
@@ -1683,7 +1680,7 @@ class DeclManager {
         }
 
         @Throws(idException::class)
-        override fun DeclByIndex(type: declType_t, index: Int): idDecl? {
+        override fun DeclByIndex(type: declType_t, index: Int): idDecl {
             return DeclByIndex(type, index, true)
         }
 
@@ -1805,8 +1802,8 @@ class DeclManager {
             if (typeIndex < 0 || typeIndex >= declTypes.Num() || declTypes[typeIndex] == null) {
                 Common.common.FatalError("idDeclManager::CreateNewDecl: bad type: %d", typeIndex)
             }
-            val canonicalName = CharArray(Lib.MAX_STRING_CHARS)
-            MakeNameCanonical(name, canonicalName, Lib.MAX_STRING_CHARS)
+            val canonicalName = CharArray(MAX_STRING_CHARS)
+            MakeNameCanonical(name, canonicalName, MAX_STRING_CHARS)
             val fileName = idStr(_fileName)
             fileName.BackSlashesToSlashes()
 
@@ -1881,10 +1878,10 @@ class DeclManager {
 
         //BSM Added for the material editors rename capabilities
         override fun RenameDecl(type: declType_t, oldName: String, newName: String): Boolean {
-            val canonicalOldName = CharArray(Lib.MAX_STRING_CHARS)
-            MakeNameCanonical(oldName, canonicalOldName, Lib.MAX_STRING_CHARS)
-            val canonicalNewName = CharArray(Lib.MAX_STRING_CHARS)
-            MakeNameCanonical(newName, canonicalNewName, Lib.MAX_STRING_CHARS)
+            val canonicalOldName = CharArray(MAX_STRING_CHARS)
+            MakeNameCanonical(oldName, canonicalOldName, MAX_STRING_CHARS)
+            val canonicalNewName = CharArray(MAX_STRING_CHARS)
+            MakeNameCanonical(newName, canonicalNewName, MAX_STRING_CHARS)
             var decl: idDeclLocal? = null
 
             // make sure it already exists
@@ -2028,8 +2025,8 @@ class DeclManager {
             if (typeIndex < 0 || typeIndex >= declTypes.Num() || declTypes[typeIndex] == null) {
                 Common.common.FatalError("idDeclManager.FindTypeWithoutParsing: bad type: %d", typeIndex)
             }
-            val canonicalName = CharArray(Lib.MAX_STRING_CHARS)
-            MakeNameCanonical(name, canonicalName, Lib.MAX_STRING_CHARS)
+            val canonicalName = CharArray(MAX_STRING_CHARS)
+            MakeNameCanonical(name, canonicalName, MAX_STRING_CHARS)
 
             // see if it already exists
             hash = hashTables[typeIndex].GenerateKey(canonicalName, false)
@@ -2242,8 +2239,8 @@ class DeclManager {
                 "0",
                 CVarSystem.CVAR_SYSTEM,
                 "set to 1 to print parses, 2 to also print references",
-                0f,
-                2f,
+                0.0f,
+                2.0f,
                 ArgCompletion_Integer(0, 2)
             )
 
@@ -2298,6 +2295,7 @@ class DeclManager {
     class huffmanCode_s {
         var bits: LongArray = LongArray(8)
         var numBits = 0
+
         constructor()
         constructor(code: huffmanCode_s) {
             numBits = code.numBits
@@ -2570,7 +2568,6 @@ class DeclManager {
             compressed: ByteBuffer,
             maxCompressedSize: Int
         ): Int {
-            var i: Int = 0
             var j: Int = 0
             val msg = idBitMsg()
             totalUncompressedLength += textLength
@@ -2601,7 +2598,6 @@ class DeclManager {
             compressed: ByteBuffer,
             compressedSize: Int
         ): Int {
-            var i: Int
             var bit: Int
             val msg = idBitMsg()
             var node: huffmanNode_s

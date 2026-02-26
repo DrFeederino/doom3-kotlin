@@ -8,12 +8,13 @@ import neo.framework.DeclEntityDef.idDeclEntityDef
 import neo.framework.DeclManager.declType_t
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
+import neo.idlib.MAX_STRING_CHARS
+import neo.idlib.Min
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.List.cmp_t
 import neo.idlib.containers.List.idList
+import neo.idlib.idException
 import neo.sys.sys_public
 import neo.sys.sys_public.netadr_t
 import neo.sys.win_net
@@ -22,9 +23,6 @@ import neo.ui.ListGUI.idListGUI
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
 
-/**
- *
- */
 class ServerScan {
     /*
      ===============================================================================
@@ -244,7 +242,7 @@ class ServerScan {
             listGUI!!.Clear()
             GUIUpdateSelected()
             Common.common.DPrintf("NetScan with challenge %d\n", challenge)
-            while (cur_info < Lib.Min(net_servers.Num(), MAX_PINGREQUESTS)) {
+            while (cur_info < Min(net_servers.Num(), MAX_PINGREQUESTS)) {
                 val serv = net_servers[cur_info].adr
                 EmitGetInfo(serv)
                 net_servers[cur_info].time = win_shared.Sys_Milliseconds()
@@ -394,7 +392,7 @@ class ServerScan {
                 FileSystem_h.fileSystem.FindMapScreenshot(
                     get(i).serverInfo.GetString("si_map"),
                     screenshot,
-                    Lib.MAX_STRING_CHARS
+                    MAX_STRING_CHARS
                 )
                 m_pGUI!!.SetStateString("browser_levelshot", screenshot.toString())
                 m_pGUI!!.SetStateString("server_gameType", get(i).serverInfo.GetString("si_gameType"))
@@ -596,25 +594,30 @@ class ServerScan {
                         ret = if (serv1.ping < serv2.ping) -1 else if (serv1.ping > serv2.ping) 1 else 0
                         return ret
                     }
+
                     serverSort_t.SORT_SERVERNAME -> {
                         serv1.serverInfo.GetString("si_name", "", s1)
                         serv2.serverInfo.GetString("si_name", "", s2)
                         return s1.IcmpNoColor(s2)
                     }
+
                     serverSort_t.SORT_PLAYERS -> {
                         ret = if (serv1.clients < serv2.clients) -1 else if (serv1.clients > serv2.clients) 1 else 0
                         return ret
                     }
+
                     serverSort_t.SORT_GAMETYPE -> {
                         serv1.serverInfo.GetString("si_gameType", "", s1)
                         serv2.serverInfo.GetString("si_gameType", "", s2)
                         return s1.Icmp(s2)
                     }
+
                     serverSort_t.SORT_MAP -> {
                         serv1.serverInfo.GetString("si_mapName", "", s1)
                         serv2.serverInfo.GetString("si_mapName", "", s2)
                         return s1.Icmp(s2)
                     }
+
                     serverSort_t.SORT_GAME -> {
                         serv1.serverInfo.GetString("fs_game", "", s1)
                         serv2.serverInfo.GetString("fs_game", "", s2)

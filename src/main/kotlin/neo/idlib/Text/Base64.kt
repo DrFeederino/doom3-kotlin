@@ -1,13 +1,11 @@
 package neo.idlib.Text
 
 import neo.framework.File_h.idFile
-import neo.idlib.Lib
+import neo.idlib.IntForSixtets
+import neo.idlib.SixtetsForInt
 import neo.idlib.Text.Str.idStr
 import java.nio.ByteBuffer
 
-/**
- *
- */
 class Base64 {
     /*
      ===============================================================================
@@ -69,7 +67,7 @@ class Base64 {
                 ++i
                 if (size == 0 || i == 3) {
                     val out = ByteArray(4)
-                    Lib.Companion.SixtetsForInt(out, w)
+                    SixtetsForInt(out, w)
                     j = 0
                     while (j * 6 < i * 8) {
                         to[t_ptr++] = sixtet_to_base64[out[j].toInt()].code.toByte()
@@ -137,7 +135,7 @@ class Base64 {
                 ++i
                 ++f_ptr
                 if (from[f_ptr] == '\u0000'.code.toByte() || from[f_ptr] == '='.code.toByte() || i == 4) {
-                    w = Lib.Companion.IntForSixtets(`in`).toLong()
+                    w = IntForSixtets(`in`).toLong()
                     j = 0
                     while (j * 8 < i * 6) {
                         to[t_ptr++] = (w and 0xff).toByte()
@@ -155,7 +153,7 @@ class Base64 {
         //
         fun Decode(dest: Array<idStr>) { // decodes the binary content to an idStr (a bit dodgy, \0 and other non-ascii are possible in the decoded content)
             val buf = ByteArray(DecodeLength() + 1) // +1 for trailing \0
-            val out = Decode(buf)
+            Decode(buf)
             //            buf[out] = '\0';
             dest[0] = idStr(String(buf))
             //	delete[] buf;

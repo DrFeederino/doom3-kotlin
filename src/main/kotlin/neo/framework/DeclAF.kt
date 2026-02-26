@@ -4,7 +4,6 @@ import neo.Renderer.Material
 import neo.framework.DeclManager.idDecl
 import neo.framework.File_h.idFile
 import neo.framework.File_h.idFile_Memory
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token
@@ -13,16 +12,10 @@ import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.geometry.JointTransform.idJointMat
 import neo.idlib.geometry.TraceModel.traceModel_t
-import neo.idlib.math.Angles
-import neo.idlib.math.Angles.idAngles
+import neo.idlib.idException
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec3
 
-/**
- *
- */
 class DeclAF {
     /*
      ===============================================================================
@@ -137,6 +130,7 @@ class DeclAF {
                         vec.Zero()
                     }
                 }
+
                 idFVectorTypes.VEC_BONECENTER -> {
                     if (!GetJointTransform.run(model, frame, joint1, start, axis)) {
                         Common.common.Warning("invalid joint %s in bonecenter() in '%s'", joint1.toString(), fileName)
@@ -148,6 +142,7 @@ class DeclAF {
                     }
                     vec.set(start.plus(end).times(0.5f))
                 }
+
                 idFVectorTypes.VEC_BONEDIR -> {
                     if (!GetJointTransform.run(model, frame, joint1, start, axis)) {
                         Common.common.Warning("invalid joint %s in bonedir() in '%s'", joint1.toString(), fileName)
@@ -159,6 +154,7 @@ class DeclAF {
                     }
                     vec.set(end.minus(start))
                 }
+
                 else -> {
                     vec.Zero()
                 }
@@ -177,15 +173,19 @@ class DeclAF {
                 idFVectorTypes.VEC_COORDS -> {
                     f.WriteFloatString("( %f, %f, %f )", vec.x, vec.y, vec.z)
                 }
+
                 idFVectorTypes.VEC_JOINT -> {
                     f.WriteFloatString("joint( \"%s\" )", joint1.toString())
                 }
+
                 idFVectorTypes.VEC_BONECENTER -> {
                     f.WriteFloatString("bonecenter( \"%s\", \"%s\" )", joint1.toString(), joint2.toString())
                 }
+
                 idFVectorTypes.VEC_BONEDIR -> {
                     f.WriteFloatString("bonedir( \"%s\", \"%s\" )", joint1.toString(), joint2.toString())
                 }
+
                 else -> {}
             }
             return true
@@ -198,15 +198,19 @@ class DeclAF {
                     format = String.format("( %%.%df, %%.%df, %%.%df )", precision, precision, precision)
                     str.set(String.format(format, vec.x, vec.y, vec.z))
                 }
+
                 idFVectorTypes.VEC_JOINT -> {
                     str.set(String.format("joint( \"%s\" )", joint1.toString()))
                 }
+
                 idFVectorTypes.VEC_BONECENTER -> {
                     str.set(String.format("bonecenter( \"%s\", \"%s\" )", joint1.toString(), joint2.toString()))
                 }
+
                 idFVectorTypes.VEC_BONEDIR -> {
                     str.set(String.format("bonedir( \"%s\", \"%s\" )", joint1.toString(), joint2.toString()))
                 }
+
                 else -> {}
             }
             if (negate) {
@@ -240,18 +244,18 @@ class DeclAF {
 
     class idDeclAF_Body {
         val angles: idAngles = idAngles()
-        var angularFriction = 0f
+        var angularFriction = 0.0f
         var clipMask: CInt = CInt()
-        var contactFriction = 0f
+        var contactFriction = 0.0f
         var contactMotorDirection: idAFVector = idAFVector()
         val containedJoints: idStr = idStr()
         var contents: CInt = CInt()
-        var density = 0f
+        var density = 0.0f
         var frictionDirection: idAFVector = idAFVector()
         val inertiaScale: idMat3 = idMat3()
         var jointMod: declAFJointMod_t = declAFJointMod_t.DECLAF_JOINTMOD_AXIS
         val jointName: idStr = idStr()
-        var linearFriction = 0f
+        var linearFriction = 0.0f
         var modelType: traceModel_t = traceModel_t.TRM_BOX
         val name: idStr = idStr()
         var numSides = 0
@@ -259,7 +263,7 @@ class DeclAF {
         var selfCollision = false
         var v1: idAFVector = idAFVector()
         var v2: idAFVector = idAFVector()
-        var width = 0f
+        var width = 0.0f
 
         fun SetDefault(file: idDeclAF) {
             name.set("noname")
@@ -299,24 +303,20 @@ class DeclAF {
         var axis: idAFVector = idAFVector()
         val body1: idStr = idStr()
         val body2: idStr = idStr()
-        var compress = 0f
-        var damping = 0f
-        var friction = 0f
-
-        //
+        var compress = 0.0f
+        var damping = 0.0f
+        var friction = 0.0f
         var limit = 0
         var limitAngles: FloatArray = FloatArray(3)
         var limitAxis: idAFVector = idAFVector()
-        var maxLength = 0f
-        var minLength = 0f
+        var maxLength = 0.0f
+        var minLength = 0.0f
         val name: idStr = idStr()
-        var restLength = 0f
+        var restLength = 0.0f
         var shaft: Array<idAFVector> = arrayOf(idAFVector(), idAFVector())
-        var stretch = 0f
+        var stretch = 0.0f
         var type: declAFConstraintType_t = declAFConstraintType_t.DECLAF_CONSTRAINT_UNIVERSALJOINT
 
-        //
-        //
         fun SetDefault(file: idDeclAF) {
             name.set("noname")
             type = declAFConstraintType_t.DECLAF_CONSTRAINT_UNIVERSALJOINT
@@ -351,28 +351,28 @@ class DeclAF {
         val constraints: idList<idDeclAF_Constraint> = idList()
         var clipMask: CInt = CInt()
         var contents: CInt = CInt()
-        var defaultAngularFriction = 0f
-        var defaultConstraintFriction = 0f
-        var defaultContactFriction = 0f
-        var defaultLinearFriction = 0f
-        var maxMoveTime = 0f
-        var minMoveTime = 0f
+        var defaultAngularFriction = 0.0f
+        var defaultConstraintFriction = 0.0f
+        var defaultContactFriction = 0.0f
+        var defaultLinearFriction = 0.0f
+        var maxMoveTime = 0.0f
+        var minMoveTime = 0.0f
         val model: idStr = idStr()
         var modified = false
-        var noMoveRotation = 0f
-        var noMoveTime = 0f
-        var noMoveTranslation = 0f
+        var noMoveRotation = 0.0f
+        var noMoveTime = 0.0f
+        var noMoveTranslation = 0.0f
         var selfCollision = false
         val skin: idStr = idStr()
-        var suspendAcceleration: idVec2 = idVec2()
-        var suspendVelocity: idVec2 = idVec2()
-        var totalMass = 0f
+        val suspendAcceleration: idVec2 = idVec2()
+        val suspendVelocity: idVec2 = idVec2()
+        var totalMass = 0.0f
         override fun DefaultDefinition(): String {
             return """{
 	settings {
 		model ""
 		skin ""
-		friction 0.01, 0.01, 0.8, 0.5
+		friction 0.01, 0.01, 0.8, 0.5f
 		suspendSpeed 20, 30, 40, 60
 		noMoveTime 1
 		noMoveTranslation 10
@@ -389,7 +389,7 @@ class DeclAF {
 		mod orientation
 		model box( ( -10, -10, -10 ), ( 10, 10, 10 ) )
 		origin ( 0, 0, 0 )
-		density 0.2
+		density 0.2f
 		friction 0.01, 0.01, 0.8
 		contents corpse
 		clipMask solid, corpse
@@ -456,7 +456,7 @@ class DeclAF {
                 // check for multiple bodies with the same name
                 j = i + 1
                 while (j < bodies.Num()) {
-                    if (bodies[i].name === bodies[j].name) {
+                    if (bodies[i].name == bodies[j].name) {
                         src.Error("two bodies with the same name \"%s\"", bodies[i].name)
                     }
                     j++
@@ -469,7 +469,7 @@ class DeclAF {
                 // check for multiple constraints with the same name
                 j = i + 1
                 while (j < constraints.Num()) {
-                    if (constraints[i].name === constraints[j].name) {
+                    if (constraints[i].name == constraints[j].name) {
                         src.Error("two constraints with the same name \"%s\"", constraints[i].name)
                     }
                     j++
@@ -506,7 +506,7 @@ class DeclAF {
             defaultAngularFriction = 0.01f
             defaultContactFriction = 0.8f
             defaultConstraintFriction = 0.5f
-            totalMass = -1f
+            totalMass = -1.0f
             suspendVelocity.set(20.0f, 30.0f)
             suspendAcceleration.set(40.0f, 60.0f)
             noMoveTime = 1.0f
@@ -1273,6 +1273,7 @@ class DeclAF {
                     body.v2.Write(f)
                     f.WriteFloatString(" )\n")
                 }
+
                 traceModel_t.TRM_OCTAHEDRON -> {
                     f.WriteFloatString("\tmodel octahedron( ")
                     body.v1.Write(f)
@@ -1280,6 +1281,7 @@ class DeclAF {
                     body.v2.Write(f)
                     f.WriteFloatString(" )\n")
                 }
+
                 traceModel_t.TRM_DODECAHEDRON -> {
                     f.WriteFloatString("\tmodel dodecahedron( ")
                     body.v1.Write(f)
@@ -1287,6 +1289,7 @@ class DeclAF {
                     body.v2.Write(f)
                     f.WriteFloatString(" )\n")
                 }
+
                 traceModel_t.TRM_CYLINDER -> {
                     f.WriteFloatString("\tmodel cylinder( ")
                     body.v1.Write(f)
@@ -1294,6 +1297,7 @@ class DeclAF {
                     body.v2.Write(f)
                     f.WriteFloatString(", %d )\n", body.numSides)
                 }
+
                 traceModel_t.TRM_CONE -> {
                     f.WriteFloatString("\tmodel cone( ")
                     body.v1.Write(f)
@@ -1301,6 +1305,7 @@ class DeclAF {
                     body.v2.Write(f)
                     f.WriteFloatString(", %d )\n", body.numSides)
                 }
+
                 traceModel_t.TRM_BONE -> {
                     f.WriteFloatString("\tmodel bone( ")
                     body.v1.Write(f)
@@ -1308,12 +1313,13 @@ class DeclAF {
                     body.v2.Write(f)
                     f.WriteFloatString(", %f )\n", body.width)
                 }
+
                 else -> assert(false)
             }
             f.WriteFloatString("\torigin ")
             body.origin.Write(f)
             f.WriteFloatString("\n")
-            if (body.angles !== Angles.getAng_zero()) {
+            if (body.angles !== ang_zero) {
                 f.WriteFloatString("\tangles ( %f, %f, %f )\n", body.angles.pitch, body.angles.yaw, body.angles.roll)
             }
             f.WriteFloatString("\tdensity %f\n", body.density)
@@ -1326,7 +1332,7 @@ class DeclAF {
                     ic[2][0], ic[2][1], ic[2][2]
                 )
             }
-            if (body.linearFriction != -1f) {
+            if (body.linearFriction != -1.0f) {
                 f.WriteFloatString(
                     "\tfriction %f, %f, %f\n",
                     body.linearFriction,
@@ -1337,12 +1343,12 @@ class DeclAF {
             f.WriteFloatString("\tcontents %s\n", ContentsToString(body.contents._val, str))
             f.WriteFloatString("\tclipMask %s\n", ContentsToString(body.clipMask._val, str))
             f.WriteFloatString("\tselfCollision %d\n", body.selfCollision)
-            if (body.frictionDirection.ToVec3() !== Vector.getVec3Origin()) {
+            if (body.frictionDirection.ToVec3() != getVec3Origin()) {
                 f.WriteFloatString("\tfrictionDirection ")
                 body.frictionDirection.Write(f)
                 f.WriteFloatString("\n")
             }
-            if (body.contactMotorDirection.ToVec3() !== Vector.getVec3Origin()) {
+            if (body.contactMotorDirection.ToVec3() != getVec3Origin()) {
                 f.WriteFloatString("\tcontactMotorDirection ")
                 body.contactMotorDirection.Write(f)
                 f.WriteFloatString("\n")
@@ -1632,9 +1638,11 @@ class DeclAF {
                     declAFJointMod_t.DECLAF_JOINTMOD_AXIS -> {
                         return "orientation"
                     }
+
                     declAFJointMod_t.DECLAF_JOINTMOD_ORIGIN -> {
                         return "position"
                     }
+
                     declAFJointMod_t.DECLAF_JOINTMOD_BOTH -> {
                         return "both"
                     }

@@ -3,15 +3,14 @@ package neo.Renderer
 import neo.Renderer.Image.cubeFiles_t
 import neo.Renderer.Image.idImageManager
 import neo.Renderer.Image_program.R_LoadImageProgram
-import neo.TempDump.NOT
 import neo.TempDump.TODO_Exception
 import neo.TempDump.ctos
 import neo.framework.Common.Companion.common
 import neo.framework.FileSystem_h.FILE_NOT_FOUND_TIMESTAMP
 import neo.framework.FileSystem_h.fileSystem
 import neo.framework.File_h.idFile
-import neo.idlib.Lib.Companion.LittleLong
-import neo.idlib.Lib.Companion.LittleShort
+import neo.idlib.LittleLong
+import neo.idlib.LittleShort
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.snPrintf
 import org.lwjgl.BufferUtils
@@ -25,9 +24,6 @@ import java.util.logging.Level
 import java.util.logging.Logger
 import javax.imageio.ImageIO
 
-/**
- *
- */
 object Image_files {
     /*
      ================
@@ -94,7 +90,7 @@ object Image_files {
         val buffer: ByteBuffer
         var i: Int
         val bufferSize: Int = width * height * 4 + 18
-        val imgStart: Int = 18
+        val imgStart = 18
         buffer = ByteBuffer.allocate(bufferSize) // Mem_Alloc(bufferSize);
         //	memset( buffer, 0, 18 );
         buffer.put(2, 2.toByte()) // uncompressed type
@@ -147,9 +143,9 @@ object Image_files {
         val buf_p: ByteBuffer
         val buffer: Array<ByteBuffer?> = arrayOf(null)
         val length: Int
-        val bmpHeader: BMPHeader_t = BMPHeader_t()
+        val bmpHeader = BMPHeader_t()
         val bmpRGBA: ByteBuffer
-        if (NOT(width, height)) {
+        if (width == null || height == null) {
             fileSystem.ReadFile(name!!, null, timestamp)
             return null // just getting timestamp
         }
@@ -158,7 +154,7 @@ object Image_files {
         // load the file
         //
         length = fileSystem.ReadFile(name!!, buffer, timestamp)
-        if (NOT(*buffer)) {
+        if (buffer[0] == null) {
             return null
         }
         buf_p = buffer[0]!!.duplicate()
@@ -188,21 +184,21 @@ object Image_files {
             buf_p.position(buf_p.position() + 1024)
         }
         if (bmpHeader.id[0] != 'B' && bmpHeader.id[1] != 'M') {
-            common.Error("LoadBMP: only Windows-style BMP files supported (%s)\n", name!!)
+            common.Error("LoadBMP: only Windows-style BMP files supported (%s)\n", name)
         }
         if (bmpHeader.fileSize != length.toLong()) {
             common.Error(
                 "LoadBMP: header size does not match file size (%lu vs. %d) (%s)\n",
                 bmpHeader.fileSize,
                 length,
-                name!!
+                name
             )
         }
         if (bmpHeader.compression != 0L) {
-            common.Error("LoadBMP: only uncompressed BMP files supported (%s)\n", name!!)
+            common.Error("LoadBMP: only uncompressed BMP files supported (%s)\n", name)
         }
         if (bmpHeader.bitsPerPixel < 8) {
-            common.Error("LoadBMP: monochrome and 4-bit BMP files not supported (%s)\n", name!!)
+            common.Error("LoadBMP: monochrome and 4-bit BMP files not supported (%s)\n", name)
         }
         columns = bmpHeader.width.toInt()
         rows = bmpHeader.height.toInt()
@@ -274,7 +270,7 @@ object Image_files {
                     else -> common.Error(
                         "LoadBMP: illegal pixel_size '%d' in file '%s'\n",
                         bmpHeader.bitsPerPixel,
-                        name!!
+                        name
                     )
                 }
                 column++
@@ -316,7 +312,7 @@ object Image_files {
         val pix: ByteBuffer
         val xmax: Int
         val ymax: Int
-        if (NOT(*pic)) {
+        if (pic[0] == null) {
             fileSystem.ReadFile(filename, null, timestamp)
             return  // just getting timestamp
         }
@@ -327,7 +323,7 @@ object Image_files {
         // load the file
         //
         len = fileSystem.ReadFile(filename, raw, timestamp)
-        if (NOT(*raw)) {
+        if (raw[0] == null) {
             return
         }
 
@@ -402,23 +398,24 @@ object Image_files {
         var i: Int
         val c: Int
         var p: Int
-        if (NOT(width, height)) {
+        if (width == null || height == null) {
             fileSystem.ReadFile(filename, null, timestamp)
             return null // just getting timestamp
         }
         LoadPCX(filename, pic8, palette, width, height, timestamp)
-        if (NOT(pic8[0])) {
+        if (pic8[0] == null) {
             return null
         }
-        c = width!![0] * height!![0]
+        c = width[0] * height[0]
         pic = BufferUtils.createByteBuffer(4 * c) //(byte *)R_StaticAlloc(4 * c );
         i = 0
         while (i < c) {
+            val offset = i * 4
             p = pic8[0]!!.get(i).toInt()
-            pic.put(0, palette[0]!!.get(p * 3))
-            pic.put(1, palette[0]!!.get(p * 3 + 1))
-            pic.put(2, palette[0]!!.get(p * 3 + 2))
-            pic.put(3, 255.toByte())
+            pic.put(offset, palette[0]!!.get(p * 3))
+            pic.put(offset + 1, palette[0]!!.get(p * 3 + 1))
+            pic.put(offset + 2, palette[0]!!.get(p * 3 + 2))
+            pic.put(offset + 3, 255.toByte())
             i++
         }
 
@@ -443,9 +440,9 @@ object Image_files {
         var column: Int
         val buf_p: ByteBuffer?
         val buffer: Array<ByteBuffer?> = arrayOf(null)
-        val targa_header: TargaHeader = TargaHeader()
+        val targa_header = TargaHeader()
         val targa_rgba: ByteBuffer
-        if (NOT(width, height)) {
+        if (width == null || height == null) {
             fileSystem.ReadFile(name, null, timestamp)
             return null // just getting timestamp
         }
@@ -454,7 +451,7 @@ object Image_files {
         // load the file
         //
         fileSize = fileSystem.ReadFile(name, buffer, timestamp)
-        if (NOT(buffer[0])) {
+        if (buffer[0] == null) {
             return null
         }
         buf_p = buffer[0]
@@ -660,7 +657,7 @@ object Image_files {
             }
         }
         if ((targa_header.attributes.toInt() and (1 shl 5)) != 0) {            // image flp bit
-            Image_process.R_VerticalFlip(targa_rgba, width!![0], height!![0])
+            Image_process.R_VerticalFlip(targa_rgba, width[0], height[0])
         }
 
 //	fileSystem->FreeFile( buffer );
@@ -718,7 +715,7 @@ object Image_files {
             if (timestamp != null) {
                 timestamp[0] = f.Timestamp()
             }
-            if (NOT(width, height)) {
+            if (width == null || height == null) {
                 fileSystem.CloseFile(f)
                 return null // just getting timestamp
             }
@@ -788,9 +785,9 @@ object Image_files {
 //  }
 //  out = (byte *)R_StaticAlloc(cinfo.output_width*cinfo.output_height*4);
 //
-        val out: ByteArray = (buffer.getRaster().getDataBuffer() as DataBufferByte).getData()
-        width!![0] = buffer.getWidth() //cinfo.output_width;
-        height!![0] = buffer.getHeight() //cinfo.output_height;
+        val out: ByteArray = (buffer.raster.getDataBuffer() as DataBufferByte).getData()
+        width!![0] = buffer.width //cinfo.output_width;
+        height!![0] = buffer.height //cinfo.output_height;
         return ByteBuffer.wrap(out)
         //
 //  /* Step 6: while (scan lines remain to be read) */
@@ -880,7 +877,7 @@ object Image_files {
         timestamp: LongArray?,
         makePowerOf2: Boolean
     ): ByteBuffer? {
-        val name: idStr = idStr((cname)!!)
+        val name = idStr((cname)!!)
         var pic: ByteBuffer? = null
         if (timestamp != null) {
             timestamp[0] = -0x1
@@ -896,11 +893,11 @@ object Image_files {
             return null
         }
         name.ToLower()
-        val ext: idStr = idStr()
+        val ext = idStr()
         name.ExtractFileExtension(ext)
         if (ext.equals("tga")) {
             pic = LoadTGA(name.toString(), width, height, timestamp) // try tga first
-            if ((pic != null && pic.capacity() == 0) || (timestamp != null && timestamp[0] == -1L)) {
+            if ((pic == null) || (timestamp != null && timestamp[0] == FILE_NOT_FOUND_TIMESTAMP.toLong())) {
                 name.StripFileExtension()
                 name.DefaultFileExtension(".jpg")
                 pic = LoadJPG(name.toString(), width, height, timestamp)
@@ -940,10 +937,10 @@ object Image_files {
                 scaled_height = scaled_height shl 1
             }
             if (scaled_width != w || scaled_height != h) {
-                if (idImageManager.Companion.image_roundDown.GetBool() && scaled_width > w) {
+                if (idImageManager.image_roundDown.GetBool() && scaled_width > w) {
                     scaled_width = scaled_width shr 1
                 }
-                if (idImageManager.Companion.image_roundDown.GetBool() && scaled_height > h) {
+                if (idImageManager.image_roundDown.GetBool() && scaled_height > h) {
                     scaled_height = scaled_height shr 1
                 }
                 resampledBuffer = Image_process.R_ResampleTexture(pic, w, h, scaled_width, scaled_height)
@@ -983,10 +980,10 @@ object Image_files {
             arrayOf("_forward.tga", "_back.tga", "_left.tga", "_right.tga", "_up.tga", "_down.tga")
         val axisSides: Array<String> = arrayOf("_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga")
         val sides: Array<String>
-        val fullName: CharArray = CharArray(Image.MAX_IMAGE_NAME)
+        val fullName = CharArray(Image.MAX_IMAGE_NAME)
         val width: IntArray = intArrayOf(0)
         val height: IntArray = intArrayOf(0)
-        var size: Int = 0
+        var size = 0
         if (extensions == cubeFiles_t.CF_CAMERA) {
             sides = cameraSides
         } else {
@@ -1005,7 +1002,7 @@ object Image_files {
         i = 0
         while (i < 6) {
             snPrintf(fullName, fullName.size, "%s%s", (imgName)!!, sides[i])
-            val thisTime: LongArray = LongArray(1)
+            val thisTime = LongArray(1)
             if (null == pics) {
                 // just checking timestamps
                 R_LoadImageProgram(ctos(fullName), width, height, thisTime)
@@ -1136,7 +1133,7 @@ object Image_files {
 
      ========================================================================
      */
-    private class TargaHeader() {
+    private class TargaHeader {
         /*unsigned*/
         var colormap_index: Short = 0
         var colormap_length: Short = 0
@@ -1160,7 +1157,7 @@ object Image_files {
         var height: Short = 0
     }
 
-    private class BMPHeader_t() {
+    private class BMPHeader_t {
         /*unsigned*/
         var bitmapDataOffset: Long = 0
 

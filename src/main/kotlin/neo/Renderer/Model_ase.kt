@@ -6,15 +6,12 @@ import neo.framework.FileSystem_h.fileSystem
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Copynz
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec3.Companion.copyVec
+import neo.idlib.math.idVec2
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec3.Companion.copyVec
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
 
-/**
- *
- */
 object Model_ase {
     var ase: ase_t? = null
 
@@ -24,8 +21,8 @@ object Model_ase {
      =================
      */
     fun ASE_Load(fileName: String?): aseModel_s? {
-        val buf: Array<ByteBuffer?>? = arrayOf(null)
-        val timeStamp: LongArray = LongArray(1)
+        val buf: Array<ByteBuffer?> = arrayOf(null)
+        val timeStamp = LongArray(1)
         val ase: aseModel_s?
         fileSystem.ReadFile(fileName!!, buf, timeStamp)
         if (null == buf) {
@@ -47,7 +44,6 @@ object Model_ase {
         var j: Int
         var obj: aseObject_t?
         var mesh: aseMesh_t?
-        var material: aseMaterial_t?
         if (null == ase) {
             return
         }
@@ -140,7 +136,7 @@ object Model_ase {
     }
 
     fun ASE_GetToken(restOfLine: Boolean): Boolean {
-        var i: Int = 0
+        var i = 0
         ase!!.token = ""
         if (ase!!.buffer == null) {
             return false
@@ -172,7 +168,7 @@ object Model_ase {
      *
      */
     fun ASE_ParseBracedBlock(parser: ASE?) {
-        var indent: Int = 0
+        var indent = 0
         while (ASE_GetToken(false)) {
             if (("{" == ase!!.token)) {
                 indent++
@@ -192,7 +188,7 @@ object Model_ase {
     }
 
     fun ASE_SkipEnclosingBraces() {
-        var indent: Int = 0
+        var indent = 0
         while (ASE_GetToken(false)) {
             if (("{" == ase!!.token)) {
                 indent++
@@ -281,7 +277,7 @@ object Model_ase {
 
      ===============================================================================
      */
-    class aseFace_t() {
+    class aseFace_t {
         var tVertexNum: IntArray = IntArray(3)
         var vertexColors: Array<ByteArray?> = Array(3, { ByteArray(4) })
         val faceNormal: idVec3 = idVec3()
@@ -289,7 +285,7 @@ object Model_ase {
         val vertexNormals: Array<idVec3> = idVec3.generateArray(3)
     }
 
-    class aseMesh_t() {
+    class aseMesh_t {
         //
         val transform: Array<idVec3> = idVec3.generateArray(4) // applied to normals
         private val DBG_count: Int = DBG_counter++
@@ -306,26 +302,26 @@ object Model_ase {
         var numTVertexes: Int = 0
         var numVertexes: Int = 0
         var timeValue: Int = 0
-        var tvertexes: Array<idVec2?>? = null
-        var vertexes: Array<idVec3?>? = null
+        var tvertexes: Array<idVec2>? = null
+        var vertexes: Array<idVec3>? = null
 
         companion object {
             private var DBG_counter: Int = 1
         }
     }
 
-    class aseMaterial_t() {
+    class aseMaterial_t {
         val name: CharArray = CharArray(128)
-        var angle: Float = 0f // in clockwise radians
+        var angle: Float = 0.0f // in clockwise radians
 
         //        String name;
-        var uOffset: Float = 0f
-        var vOffset: Float = 0f // max lets you offset by material without changing texCoords
-        var uTiling: Float = 0f
-        var vTiling: Float = 0f // multiply tex coords by this
+        var uOffset: Float = 0.0f
+        var vOffset: Float = 0.0f // max lets you offset by material without changing texCoords
+        var uTiling: Float = 0.0f
+        var vTiling: Float = 0.0f // multiply tex coords by this
     }
 
-    class aseObject_t() {
+    class aseObject_t {
         val frames: idList<aseMesh_t>
         var materialRef: Int = 0
 
@@ -342,7 +338,7 @@ object Model_ase {
         }
     }
 
-    class aseModel_s() {
+    class aseModel_s {
         //	ID_TIME_T					timeStamp;
         val timeStamp: LongArray = longArrayOf(1)
         val materials: idList<aseMaterial_t?>
@@ -355,7 +351,7 @@ object Model_ase {
     }
 
     // working variables used during parsing
-    class ase_t() {
+    class ase_t {
         var buffer: CharBuffer? = null
         var curpos: Int = 0
         var currentFace: Int = 0
@@ -375,12 +371,12 @@ object Model_ase {
         var verbose: Boolean = false
     }
 
-    abstract class ASE() {
+    abstract class ASE {
         abstract fun run(token: String?)
     }
 
     class ASE_KeyMAP_DIFFUSE private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             val material: aseMaterial_t?
             when ("" + token) {
                 "*BITMAP" -> {
@@ -439,7 +435,7 @@ object Model_ase {
     }
 
     class ASE_KeyMATERIAL private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             run({
                 if (("*MAP_DIFFUSE" == token)) {
                     ASE_ParseBracedBlock(ASE_KeyMAP_DIFFUSE.instance)
@@ -454,7 +450,7 @@ object Model_ase {
     }
 
     class ASE_KeyMATERIAL_LIST private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             if (("*MATERIAL_COUNT" == token)) {
                 ASE_GetToken(false)
                 VERBOSE("..num materials: %s\n", ase!!.token)
@@ -464,8 +460,8 @@ object Model_ase {
 //                ase.currentMaterial = (aseMaterial_t) Mem_Alloc(sizeof(aseMaterial_t));
 //                memset(ase.currentMaterial, 0, sizeof(aseMaterial_t));
                 ase!!.currentMaterial = aseMaterial_t()
-                ase!!.currentMaterial!!.uTiling = 1f
-                ase!!.currentMaterial!!.vTiling = 1f
+                ase!!.currentMaterial!!.uTiling = 1.0f
+                ase!!.currentMaterial!!.vTiling = 1.0f
                 ase!!.model!!.materials.Append(ase!!.currentMaterial)
                 ASE_ParseBracedBlock(ASE_KeyMATERIAL.instance)
             }
@@ -477,7 +473,7 @@ object Model_ase {
     }
 
     class ASE_KeyNODE_TM private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             var i: Int
             val j: Int
             when ("" + token) {
@@ -501,18 +497,18 @@ object Model_ase {
     }
 
     class ASE_KeyMESH_VERTEX_LIST private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             run({
                 val pMesh: aseMesh_t? = ASE_GetCurrentMesh()
                 if (("*MESH_VERTEX" == token)) {
                     ASE_GetToken(false) // skip number
                     //pMesh.vertexes[ase.currentVertex] = new idVec3();
                     ASE_GetToken(false)
-                    pMesh!!.vertexes!![ase!!.currentVertex]!!.x = ase!!.token!!.toFloat()
+                    pMesh!!.vertexes!![ase!!.currentVertex].x = ase!!.token!!.toFloat()
                     ASE_GetToken(false)
-                    pMesh.vertexes!![ase!!.currentVertex]!!.y = ase!!.token!!.toFloat()
+                    pMesh.vertexes!![ase!!.currentVertex].y = ase!!.token!!.toFloat()
                     ASE_GetToken(false)
-                    pMesh.vertexes!![ase!!.currentVertex]!!.z = ase!!.token!!.toFloat()
+                    pMesh.vertexes!![ase!!.currentVertex].z = ase!!.token!!.toFloat()
                     ase!!.currentVertex++
                     if (ase!!.currentVertex > pMesh.numVertexes) {
                         Common.common.Error("ase.currentVertex >= pMesh.numVertexes")
@@ -529,7 +525,7 @@ object Model_ase {
     }
 
     class ASE_KeyMESH_FACE_LIST private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             val pMesh: aseMesh_t? = ASE_GetCurrentMesh()
             if (("*MESH_FACE" == token)) {
                 ASE_GetToken(false) // skip face number
@@ -571,7 +567,7 @@ object Model_ase {
     }
 
     class ASE_KeyTFACE_LIST private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             val pMesh: aseMesh_t? = ASE_GetCurrentMesh()
             if (("*MESH_TFACE" == token)) {
                 val a: Int
@@ -599,7 +595,7 @@ object Model_ase {
     }
 
     class ASE_KeyCFACE_LIST private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             val pMesh: aseMesh_t? = ASE_GetCurrentMesh()
             if (("*MESH_CFACE" == token)) {
                 ASE_GetToken(false)
@@ -628,7 +624,7 @@ object Model_ase {
     }
 
     class ASE_KeyMESH_TVERTLIST private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             val pMesh: aseMesh_t? = ASE_GetCurrentMesh()
             if (("*MESH_TVERT" == token)) {
 //		char u[80], v[80], w[80];
@@ -646,9 +642,9 @@ object Model_ase {
                 ASE_GetToken(false)
                 //		strcpy( w, ase.token );
                 w = ase!!.token
-                pMesh.tvertexes!![ase!!.currentVertex]!!.x = u!!.toFloat()
+                pMesh.tvertexes!![ase!!.currentVertex].x = u!!.toFloat()
                 // our OpenGL second texture axis is inverted from MAX's sense
-                pMesh.tvertexes!![ase!!.currentVertex]!!.y = 1.0f - v!!.toFloat()
+                pMesh.tvertexes!![ase!!.currentVertex].y = 1.0f - v!!.toFloat()
                 ase!!.currentVertex++
                 if (ase!!.currentVertex > pMesh.numTVertexes) {
                     Common.common.Error("ase.currentVertex > pMesh.numTVertexes")
@@ -664,13 +660,13 @@ object Model_ase {
     }
 
     class ASE_KeyMESH_CVERTLIST private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             val pMesh: aseMesh_t? = ASE_GetCurrentMesh()
             pMesh!!.colorsParsed = true
             if (("*MESH_VERTCOL" == token)) {
                 ASE_GetToken(false)
                 ASE_GetToken(false)
-                // atof can return 0.0 if it can't convert. Not really the case if java land
+                // atof can return 0.0f if it can't convert. Not really the case if java land
                 if (pMesh.cvertexes == null) {
                     pMesh.cvertexes = idVec3.generateArray(pMesh.numCVertexes)
                 }
@@ -695,10 +691,10 @@ object Model_ase {
     }
 
     class ASE_KeyMESH_NORMALS private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             val pMesh: aseMesh_t? = ASE_GetCurrentMesh()
             val f: aseFace_t?
-            val n: idVec3 = idVec3()
+            val n = idVec3()
             pMesh!!.normalsParsed = true
             if (("*MESH_FACENORMAL" == token)) {
                 val num: Int
@@ -750,13 +746,15 @@ object Model_ase {
                 n[1] = ase!!.token!!.toFloat()
                 ASE_GetToken(false)
                 n[2] = ase!!.token!!.toFloat()
-                f!!.vertexNormals[v]!![0] =
-                    (n[0] * pMesh.transform[0][0]) + (n[1] * pMesh.transform[1][0]) + (n[2] * pMesh.transform[2][0])
-                f.vertexNormals[v]!![0] =
-                    (n[0] * pMesh.transform[0][1]) + (n[1] * pMesh.transform[1][1]) + (n[2] * pMesh.transform[2][2])
-                f.vertexNormals[v]!![0] =
-                    (n[0] * pMesh.transform[0][2]) + (n[1] * pMesh.transform[1][2]) + (n[2] * pMesh.transform[2][1])
-                f.vertexNormals[v]!!.Normalize()
+
+                f!!.vertexNormals[v][0] =
+                    n[0] * pMesh.transform[0][0] + n[1] * pMesh.transform[1][0] + n[2] * pMesh.transform[2][0]
+                f.vertexNormals[v][1] =
+                    n[0] * pMesh.transform[0][1] + n[1] * pMesh.transform[1][1] + n[2] * pMesh.transform[2][1]
+                f.vertexNormals[v][2] =
+                    n[0] * pMesh.transform[0][2] + n[1] * pMesh.transform[1][2] + n[2] * pMesh.transform[2][2]
+
+                f.vertexNormals[v].Normalize()
             }
         }
 
@@ -766,7 +764,7 @@ object Model_ase {
     }
 
     class ASE_KeyMESH private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             val pMesh: aseMesh_t? = ASE_GetCurrentMesh()
             if (null != token) {
                 when (token) {
@@ -820,7 +818,7 @@ object Model_ase {
 
                     "*MESH_VERTEX_LIST" -> {
                         pMesh!!.vertexes =
-                            idVec3.generateArray(pMesh.numVertexes) as Array<idVec3?> // Mem_Alloc(pMesh.numVertexes);
+                            idVec3.generateArray(pMesh.numVertexes)// Mem_Alloc(pMesh.numVertexes);
                         ase!!.currentVertex = 0
                         VERBOSE((".....parsing MESH_VERTEX_LIST\n"))
                         ASE_ParseBracedBlock(ASE_KeyMESH_VERTEX_LIST.instance)
@@ -828,7 +826,7 @@ object Model_ase {
 
                     "*MESH_TVERTLIST" -> {
                         ase!!.currentVertex = 0
-                        pMesh!!.tvertexes = arrayOfNulls(pMesh.numTVertexes) // Mem_Alloc(pMesh.numTVertexes);
+                        pMesh!!.tvertexes = Array(pMesh.numTVertexes) { idVec2() }// Mem_Alloc(pMesh.numTVertexes);
                         VERBOSE((".....parsing MESH_TVERTLIST\n"))
                         ASE_ParseBracedBlock(ASE_KeyMESH_TVERTLIST.instance)
                     }
@@ -883,7 +881,7 @@ object Model_ase {
     }
 
     class ASE_KeyMESH_ANIMATION private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             val mesh: aseMesh_t
 
             // loads a single animation frame
@@ -907,7 +905,7 @@ object Model_ase {
     }
 
     class ASE_KeyGEOMOBJECT private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             val `object`: aseObject_t?
             `object` = ase!!.currentObject
             when ("" + token) {
@@ -926,7 +924,7 @@ object Model_ase {
                         ase!!.currentObject!!.mesh = aseMesh_t()
                         ase!!.currentMesh = ase!!.currentObject!!.mesh
                     })
-                    var i: Int = 0
+                    var i = 0
                     while (i < transform.size) {
                         ase!!.currentMesh!!.transform[i].set(transform[i])
                         i++
@@ -954,7 +952,7 @@ object Model_ase {
     }
 
     class ASE_KeyGROUP private constructor() : ASE() {
-        public override fun run(token: String?) {
+        override fun run(token: String?) {
             if (("*GEOMOBJECT" == token)) {
                 ASE_ParseGeomObject()
             }

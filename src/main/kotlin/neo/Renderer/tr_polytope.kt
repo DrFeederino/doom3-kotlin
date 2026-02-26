@@ -1,18 +1,13 @@
 package neo.Renderer
 
 import neo.Renderer.Model.srfTriangles_s
-import neo.Renderer.tr_polytope
-import neo.Renderer.tr_trisurf
 import neo.framework.Common
-import neo.idlib.Lib.idException
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Plane.ON_EPSILON
-import neo.idlib.math.Plane.idPlane
+import neo.idlib.idException
+import neo.idlib.math.ON_EPSILON
+import neo.idlib.math.idPlane
 
-/**
- *
- */
 object tr_polytope {
     val MAX_POLYTOPE_PLANES: Int = 6
 
@@ -29,11 +24,11 @@ object tr_polytope {
         var i: Int
         var j: Int
         val tri: srfTriangles_s
-        val planeWindings: Array<idFixedWinding?> = arrayOfNulls(tr_polytope.MAX_POLYTOPE_PLANES)
+        val planeWindings: Array<idFixedWinding?> = arrayOfNulls(MAX_POLYTOPE_PLANES)
         var numVerts: Int
         var numIndexes: Int
-        if (numPlanes > tr_polytope.MAX_POLYTOPE_PLANES) {
-            Common.common.Error("R_PolytopeSurface: more than %d planes", tr_polytope.MAX_POLYTOPE_PLANES)
+        if (numPlanes > MAX_POLYTOPE_PLANES) {
+            Common.common.Error("R_PolytopeSurface: more than %d planes", MAX_POLYTOPE_PLANES)
         }
         numVerts = 0
         numIndexes = 0
@@ -66,8 +61,8 @@ object tr_polytope {
 
         // allocate the surface
         tri = srfTriangles_s() //R_AllocStaticTriSurf();
-        tr_trisurf.R_AllocStaticTriSurfVerts(tri, numVerts)
-        tr_trisurf.R_AllocStaticTriSurfIndexes(tri, numIndexes)
+        R_AllocStaticTriSurfVerts(tri, numVerts)
+        R_AllocStaticTriSurfIndexes(tri, numIndexes)
 
         // copy the data from the windings
         i = 0
@@ -99,7 +94,7 @@ object tr_polytope {
             }
             i++
         }
-        tr_trisurf.R_BoundTriSurf(tri)
+        R_BoundTriSurf(tri)
         return tri
     }
 }

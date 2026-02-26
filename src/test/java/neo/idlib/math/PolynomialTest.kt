@@ -1,8 +1,5 @@
 package neo.idlib.math
 
-import neo.idlib.math.Complex.idComplex
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Polynomial.idPolynomial
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test

@@ -1,16 +1,14 @@
 package neo.Tools.Compilers.AAS
 
-import neo.TempDump
 import neo.framework.Common
 import neo.framework.DeclEntityDef.idDeclEntityDef
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.File_h.idFile
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BIT
+import neo.idlib.BV.idBounds
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
@@ -21,13 +19,11 @@ import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.PlaneSet.idPlaneSet
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.idException
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
 import java.nio.IntBuffer
 
-/**
- *
- */
 object AASFile {
     /*
      ===============================================================================
@@ -42,33 +38,33 @@ object AASFile {
     //
     // bits for different bboxes
     const val AREACONTENTS_BBOX_BIT = 24
-    val AREACONTENTS_CLUSTERPORTAL: Int = Lib.BIT(2) // area is a cluster portal
-    val AREACONTENTS_OBSTACLE: Int = Lib.BIT(3) // area contains (part of) a dynamic obstacle
+    val AREACONTENTS_CLUSTERPORTAL: Int = BIT(2) // area is a cluster portal
+    val AREACONTENTS_OBSTACLE: Int = BIT(3) // area contains (part of) a dynamic obstacle
 
     //
     // area contents flags
-    val AREACONTENTS_SOLID: Int = Lib.BIT(0) // solid, not a valid area
-    val AREACONTENTS_TELEPORTER: Int = Lib.BIT(4) // area contains (part of) a teleporter trigger
-    val AREACONTENTS_WATER: Int = Lib.BIT(1) // area contains water
-    val AREA_CROUCH: Int = Lib.BIT(5) // AI cannot walk but can only crouch in this area
+    val AREACONTENTS_SOLID: Int = BIT(0) // solid, not a valid area
+    val AREACONTENTS_TELEPORTER: Int = BIT(4) // area contains (part of) a teleporter trigger
+    val AREACONTENTS_WATER: Int = BIT(1) // area contains water
+    val AREA_CROUCH: Int = BIT(5) // AI cannot walk but can only crouch in this area
 
     //
     // area flags
-    val AREA_FLOOR: Int = Lib.BIT(0) // AI can stand on the floor in this area
-    val AREA_GAP: Int = Lib.BIT(1) // area has a gap
-    val AREA_LADDER: Int = Lib.BIT(3) // area contains one or more ladder faces
-    val AREA_LEDGE: Int = Lib.BIT(2) // if entered the AI bbox partly floats above a ledge
-    val AREA_LIQUID: Int = Lib.BIT(4) // area contains a liquid
-    val AREA_REACHABLE_FLY: Int = Lib.BIT(7) // area is reachable by flying
-    val AREA_REACHABLE_WALK: Int = Lib.BIT(6) // area is reachable by walking or swimming
-    val FACE_FLOOR: Int = Lib.BIT(2) // standing on floor when on this face
-    val FACE_LADDER: Int = Lib.BIT(1) // ladder surface
-    val FACE_LIQUID: Int = Lib.BIT(3) // face seperating two areas with liquid
-    val FACE_LIQUIDSURFACE: Int = Lib.BIT(4) // face seperating liquid and air
+    val AREA_FLOOR: Int = BIT(0) // AI can stand on the floor in this area
+    val AREA_GAP: Int = BIT(1) // area has a gap
+    val AREA_LADDER: Int = BIT(3) // area contains one or more ladder faces
+    val AREA_LEDGE: Int = BIT(2) // if entered the AI bbox partly floats above a ledge
+    val AREA_LIQUID: Int = BIT(4) // area contains a liquid
+    val AREA_REACHABLE_FLY: Int = BIT(7) // area is reachable by flying
+    val AREA_REACHABLE_WALK: Int = BIT(6) // area is reachable by walking or swimming
+    val FACE_FLOOR: Int = BIT(2) // standing on floor when on this face
+    val FACE_LADDER: Int = BIT(1) // ladder surface
+    val FACE_LIQUID: Int = BIT(3) // face seperating two areas with liquid
+    val FACE_LIQUIDSURFACE: Int = BIT(4) // face seperating liquid and air
 
     //
     // face flags
-    val FACE_SOLID: Int = Lib.BIT(0) // solid at the other side
+    val FACE_SOLID: Int = BIT(0) // solid at the other side
 
     //
     const val MAX_AAS_BOUNDING_BOXES = 4
@@ -76,24 +72,24 @@ object AASFile {
 
     //
     const val MAX_REACH_PER_AREA = 256
-    val TFL_AIR: Int = Lib.BIT(22) // travel through air
+    val TFL_AIR: Int = BIT(22) // travel through air
     const val TFL_BARRIERJUMP = 1 shl 4 //BIT(4); // jumping onto a barrier
-    val TFL_CROUCH: Int = Lib.BIT(2) // crouching
-    val TFL_ELEVATOR: Int = Lib.BIT(10) // travel by elevator
-    val TFL_FLY: Int = Lib.BIT(11) // fly
+    val TFL_CROUCH: Int = BIT(2) // crouching
+    val TFL_ELEVATOR: Int = BIT(10) // travel by elevator
+    val TFL_FLY: Int = BIT(11) // fly
 
     //
     // travel flags
-    val TFL_INVALID: Int = Lib.BIT(0) // not valid
+    val TFL_INVALID: Int = BIT(0) // not valid
     const val TFL_JUMP = 1 shl 5 //BIT(5);        // jumping
-    val TFL_LADDER: Int = Lib.BIT(6) // climbing a ladder
-    val TFL_SPECIAL: Int = Lib.BIT(12) // special
-    val TFL_SWIM: Int = Lib.BIT(7) // swimming
-    val TFL_TELEPORT: Int = Lib.BIT(9) // teleportation
-    val TFL_WALK: Int = Lib.BIT(1) // walking
+    val TFL_LADDER: Int = BIT(6) // climbing a ladder
+    val TFL_SPECIAL: Int = BIT(12) // special
+    val TFL_SWIM: Int = BIT(7) // swimming
+    val TFL_TELEPORT: Int = BIT(9) // teleportation
+    val TFL_WALK: Int = BIT(1) // walking
     const val TFL_WALKOFFLEDGE = 1 shl 3 //BIT(3);// walking of a ledge
-    val TFL_WATER: Int = Lib.BIT(21) // travel through water
-    val TFL_WATERJUMP: Int = Lib.BIT(8) // jump out of the water
+    val TFL_WATER: Int = BIT(21) // travel through water
+    val TFL_WATERJUMP: Int = BIT(8) // jump out of the water
 
     //
     /*
@@ -304,7 +300,7 @@ object AASFile {
 
         // output
         var fraction // fraction of trace completed
-                = 0f
+                = 0.0f
         var getOutOfSolid // trace out of solid if the trace starts in solid
                 : Int
         var lastAreaNum // number of last area the trace went through
@@ -612,7 +608,7 @@ object AASFile {
                     "use_aas",
                     null,
                     use_aas
-                ) && TempDump.NOT(fileExtension.Icmp(use_aas).toDouble())
+                ) && fileExtension.Icmp(use_aas) == 0
             ) {
                 if (decl.dict.GetVector("mins", null, bounds[0])) {
                     decl.dict.GetVector("maxs", null, bounds[1])
@@ -683,7 +679,7 @@ object AASFile {
         //
         //
         init {
-            boundingBoxes[0] = idBounds(idVec3(-16f, -16f, 0f), idVec3(16f, 16f, 72f))
+            boundingBoxes[0] = idBounds(idVec3(-16.0f, -16.0f, 0.0f), idVec3(16.0f, 16.0f, 72.0f))
             usePatches._val = (false)
             writeBrushMap._val = (false)
             playerFlood._val = (false)
@@ -692,20 +688,20 @@ object AASFile {
             allowFlyReachabilities._val = (false)
             fileExtension = idStr("aas48")
             // physics settings
-            gravity = idVec3(0f, 0f, -1066f)
+            gravity = idVec3(0.0f, 0.0f, -1066.0f)
             gravityDir = gravity
             gravityValue = gravityDir.Normalize()
             invGravityDir = -gravityDir
-            maxStepHeight._val = (14.0f)
-            maxBarrierHeight._val = (32.0f)
-            maxWaterJumpHeight._val = (20.0f)
-            maxFallHeight._val = (64.0f)
-            minFloorCos._val = (0.7f)
+            maxStepHeight._val = 14.0f
+            maxBarrierHeight._val = 32.0f
+            maxWaterJumpHeight._val = 20.0f
+            maxFallHeight._val = 64.0f
+            minFloorCos._val = 0.7f
             // fixed travel times
-            tt_barrierJump._val = (100)
-            tt_startCrouching._val = (100)
-            tt_waterJump._val = (100)
-            tt_startWalkOffLedge._val = (100)
+            tt_barrierJump._val = 100
+            tt_startCrouching._val = 100
+            tt_waterJump._val = 100
+            tt_startWalkOffLedge._val = 100
         }
     }
 

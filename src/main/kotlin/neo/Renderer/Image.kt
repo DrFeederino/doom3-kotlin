@@ -13,9 +13,7 @@ import neo.Renderer.Image_program.R_LoadImageProgram
 import neo.Renderer.Material.idMaterial
 import neo.Renderer.Material.textureFilter_t
 import neo.Renderer.Material.textureRepeat_t
-import neo.Renderer.tr_local.tmu_t
 import neo.TempDump.CPP_class
-import neo.TempDump.NOT
 import neo.TempDump.SERiAL
 import neo.TempDump.ctos
 import neo.TempDump.flatten
@@ -40,18 +38,18 @@ import neo.framework.FileSystem_h.fileSystem
 import neo.framework.File_h.idFile
 import neo.framework.Session
 import neo.idlib.CmdArgs
-import neo.idlib.Lib.Companion.LittleLong
-import neo.idlib.Lib.idException
+import neo.idlib.LittleLong
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.FormatNumber
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.va
 import neo.idlib.containers.CInt
-import neo.idlib.containers.HashIndex.idHashIndex
 import neo.idlib.containers.List.idList
+import neo.idlib.containers.idHashIndex
 import neo.idlib.containers.idStrList
-import neo.idlib.math.Math_h.idMath.Sqrt
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.idException
+import neo.idlib.math.idMath.Sqrt
+import neo.idlib.math.idVec3
 import neo.sys.win_shared.Sys_Milliseconds
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
@@ -60,9 +58,6 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
 
-/**
- *
- */
 object Image {
     //
     val MAX_IMAGE_NAME = 256
@@ -117,12 +112,8 @@ object Image {
 
     //
     enum class cubeFiles_t {
-        CF_2D,
-
-        // not a cube map
-        CF_NATIVE,
-
-        // _px, _nx, _py, etc, directly sent to GL
+        CF_2D, // not a cube map
+        CF_NATIVE, // _px, _nx, _py, etc, directly sent to GL
         CF_CAMERA // _forward, _back, etc, rotated and flipped as needed before sending to GL
     }
 
@@ -280,7 +271,7 @@ object Image {
         }
     }
 
-    abstract class GeneratorFunction() {
+    abstract class GeneratorFunction {
         abstract fun run(image: idImage)
     }
 
@@ -450,7 +441,7 @@ object Image {
         // May perform file loading if the image was not preloaded.
         // May start a background image read.
         fun Bind() {
-            if (tr_local.tr.logFile != null) {
+            if (tr.logFile != null) {
                 tr_backend.RB_LogComment("idImage::Bind( %s )\n", imgName.toString())
             }
 
@@ -486,17 +477,17 @@ object Image {
             }
 
             // bump our statistic counters
-            frameUsed = tr_local.backEnd!!.frameCount
+            frameUsed = backEnd!!.frameCount
             bindCount++
-            val tmu = tr_local.backEnd!!.glState.tmu[tr_local.backEnd!!.glState.currenttmu]
+            val tmu = backEnd!!.glState.tmu[backEnd!!.glState.currenttmu]
 
             // enable or disable apropriate texture modes
-            if (tmu!!.textureType != type && (tr_local.backEnd!!.glState.currenttmu < tr_local.glConfig.maxTextureUnits)) {
-                if (tmu!!.textureType == textureType_t.TT_CUBIC) {
+            if (tmu!!.textureType != type && (backEnd!!.glState.currenttmu < glConfig.maxTextureUnits)) {
+                if (tmu.textureType == textureType_t.TT_CUBIC) {
                     qgl.qglDisable(GL13.GL_TEXTURE_CUBE_MAP /*_EXT*/)
-                } else if (tmu!!.textureType == textureType_t.TT_3D) {
+                } else if (tmu.textureType == textureType_t.TT_3D) {
                     qgl.qglDisable(GL12.GL_TEXTURE_3D)
-                } else if (tmu!!.textureType == textureType_t.TT_2D) {
+                } else if (tmu.textureType == textureType_t.TT_2D) {
                     qgl.qglDisable(GL11.GL_TEXTURE_2D)
                 }
                 if (type == textureType_t.TT_CUBIC) {
@@ -506,26 +497,26 @@ object Image {
                 } else if (type == textureType_t.TT_2D) {
                     qgl.qglEnable(GL11.GL_TEXTURE_2D)
                 }
-                tmu!!.textureType = type
+                tmu.textureType = type
             }
 
             // bind the texture
             if (type == textureType_t.TT_2D) {
-                if (tmu!!.current2DMap != texNum) {
-                    tmu!!.current2DMap = texNum
+                if (tmu.current2DMap != texNum) {
+                    tmu.current2DMap = texNum
                     qgl.qglBindTexture(GL11.GL_TEXTURE_2D, texNum)
                     if (texNum == 25) {
                         println("Blaaaaaaasphemy!")
                     }
                 }
             } else if (type == textureType_t.TT_CUBIC) {
-                if (tmu!!.currentCubeMap != texNum) {
-                    tmu!!.currentCubeMap = texNum
+                if (tmu.currentCubeMap != texNum) {
+                    tmu.currentCubeMap = texNum
                     qgl.qglBindTexture(GL13.GL_TEXTURE_CUBE_MAP /*_EXT*/, texNum)
                 }
             } else if (type == textureType_t.TT_3D) {
-                if (tmu!!.current3DMap != texNum) {
-                    tmu!!.current3DMap = texNum
+                if (tmu.current3DMap != texNum) {
+                    tmu.current3DMap = texNum
                     qgl.qglBindTexture(GL12.GL_TEXTURE_3D, texNum)
                 }
             }
@@ -545,7 +536,7 @@ object Image {
          */
         // for use with fragment programs, doesn't change any enable2D/3D/cube states
         fun BindFragment() {
-            if (tr_local.tr.logFile != null) {
+            if (tr.logFile != null) {
                 tr_backend.RB_LogComment("idImage::BindFragment %s )\n", imgName.toString())
             }
 
@@ -581,7 +572,7 @@ object Image {
             }
 
             // bump our statistic counters
-            frameUsed = tr_local.backEnd!!.frameCount
+            frameUsed = backEnd!!.frameCount
             bindCount++
 
             // bind the texture
@@ -612,10 +603,10 @@ object Image {
             }
 
             // clear all the current binding caches, so the next bind will do a real one
-            for (i in 0 until tr_local.MAX_MULTITEXTURE_UNITS) {
-                tr_local.backEnd!!.glState.tmu[i]!!.current2DMap = -1
-                tr_local.backEnd!!.glState.tmu[i]!!.current3DMap = -1
-                tr_local.backEnd!!.glState.tmu[i]!!.currentCubeMap = -1
+            for (i in 0 until MAX_MULTITEXTURE_UNITS) {
+                backEnd!!.glState.tmu[i]!!.current2DMap = -1
+                backEnd!!.glState.tmu[i]!!.current3DMap = -1
+                backEnd!!.glState.tmu[i]!!.currentCubeMap = -1
             }
         }
 
@@ -674,7 +665,7 @@ object Image {
             // have filled in the parms.  We must have the values set, or
             // an image match from a shader before OpenGL starts would miss
             // the generated texture
-            if (!tr_local.glConfig.isInitialized) {
+            if (!glConfig.isInitialized) {
                 return
             }
 
@@ -682,8 +673,8 @@ object Image {
             preserveBorder = repeat == textureRepeat_t.TR_CLAMP_TO_ZERO
 
             // make sure it is a power of 2
-            scaled_width._val = Image_load.MakePowerOfTwo(width)
-            scaled_height._val = Image_load.MakePowerOfTwo(height)
+            scaled_width._val = MakePowerOfTwo(width)
+            scaled_height._val = MakePowerOfTwo(height)
             if (scaled_width._val != width || scaled_height._val != height) {
                 Common.common.Error("R_CreateImage: not a power of 2 image")
             }
@@ -801,7 +792,7 @@ object Image {
             if (depth == textureDepth_t.TD_BUMP && idImageManager.image_useNormalCompression.GetInteger() != 1) {
                 var i = 0
                 while (i < scaled_width._val * scaled_height._val * 4) {
-                    scaledBuffer!!.put(i + 3, scaledBuffer[i])
+                    scaledBuffer.put(i + 3, scaledBuffer[i])
                     scaledBuffer.put(i, 0.toByte())
                     i += 4
                 }
@@ -817,9 +808,9 @@ object Image {
                  }
                  }
                  */
-                UploadCompressedNormalMap(scaled_width._val, scaled_height._val, scaledBuffer!!.array(), 0)
+                UploadCompressedNormalMap(scaled_width._val, scaled_height._val, scaledBuffer.array(), 0)
             } else {
-                scaledBuffer!!.rewind()
+                scaledBuffer.rewind()
                 qgl.qglTexImage2D(
                     GL11.GL_TEXTURE_2D,
                     0,
@@ -880,7 +871,7 @@ object Image {
             SetImageFilterAndRepeat()
 
             // see if we messed anything up
-            RenderSystem_init.GL_CheckErrors()
+            GL_CheckErrors()
         }
 
         //
@@ -902,14 +893,14 @@ object Image {
             // have filled in the parms.  We must have the values set, or
             // an image match from a shader before OpenGL starts would miss
             // the generated texture
-            if (!tr_local.glConfig.isInitialized) {
+            if (!glConfig.isInitialized) {
                 return
             }
 
             // make sure it is a power of 2
-            scaled_width = Image_load.MakePowerOfTwo(width)
-            scaled_height = Image_load.MakePowerOfTwo(height)
-            scaled_depth = Image_load.MakePowerOfTwo(picDepth)
+            scaled_width = MakePowerOfTwo(width)
+            scaled_height = MakePowerOfTwo(height)
+            scaled_depth = MakePowerOfTwo(picDepth)
             if ((scaled_width != width) || (scaled_height != height) || (scaled_depth != picDepth)) {
                 Common.common.Error("R_Create3DImage: not a power of 2 image")
             }
@@ -1021,7 +1012,7 @@ object Image {
             }
 
             // see if we messed anything up
-            RenderSystem_init.GL_CheckErrors()
+            GL_CheckErrors()
         }
 
         /*
@@ -1051,10 +1042,10 @@ object Image {
             // have filled in the parms.  We must have the values set, or
             // an image match from a shader before OpenGL starts would miss
             // the generated texture
-            if (!tr_local.glConfig.isInitialized) {
+            if (!glConfig.isInitialized) {
                 return
             }
-            if (!tr_local.glConfig.cubeMapAvailable) {
+            if (!glConfig.cubeMapAvailable) {
                 return
             }
             height = size
@@ -1166,7 +1157,7 @@ object Image {
             }
 
             // see if we messed anything up
-            RenderSystem_init.GL_CheckErrors()
+            GL_CheckErrors()
         }
 
         //
@@ -1180,8 +1171,8 @@ object Image {
             // if the size isn't a power of 2, the image must be increased in size
             val potWidth = CInt()
             val potHeight = CInt()
-            potWidth._val = Image_load.MakePowerOfTwo(imageWidth._val)
-            potHeight._val = Image_load.MakePowerOfTwo(imageHeight._val)
+            potWidth._val = MakePowerOfTwo(imageWidth._val)
+            potHeight._val = MakePowerOfTwo(imageHeight._val)
             GetDownsize(imageWidth, imageHeight)
             GetDownsize(potWidth, potHeight)
             qgl.qglReadBuffer(GL11.GL_BACK)
@@ -1267,7 +1258,7 @@ object Image {
             qgl.qglTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR.toFloat())
             qgl.qglTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE.toFloat())
             qgl.qglTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE.toFloat())
-            tr_local.backEnd!!.c_copyFrameBuffer++
+            backEnd!!.c_copyFrameBuffer++
         }
 
         //
@@ -1284,8 +1275,8 @@ object Image {
             // if the size isn't a power of 2, the image must be increased in size
             val potWidth: Int
             val potHeight: Int
-            potWidth = Image_load.MakePowerOfTwo(imageWidth)
-            potHeight = Image_load.MakePowerOfTwo(imageHeight)
+            potWidth = MakePowerOfTwo(imageWidth)
+            potHeight = MakePowerOfTwo(imageHeight)
             if (uploadWidth._val != potWidth || uploadHeight._val != potHeight) {
                 uploadWidth._val = potWidth
                 uploadHeight._val = potHeight
@@ -1605,8 +1596,8 @@ object Image {
             // deal with a half mip resampling
             // This causes a 512*256 texture to sample down to
             // 256*128 on a voodoo3, even though it could be 256*256
-            while ((scaled_width._val > tr_local.glConfig.maxTextureSize
-                        || scaled_height._val > tr_local.glConfig.maxTextureSize)
+            while ((scaled_width._val > glConfig.maxTextureSize
+                        || scaled_height._val > glConfig.maxTextureSize)
             ) {
                 scaled_width.rightShift(1)
                 scaled_height.rightShift(1)
@@ -1707,7 +1698,7 @@ object Image {
 
                 else -> Common.common.FatalError("R_CreateImage: bad texture filter")
             }
-            if (tr_local.glConfig.anisotropicAvailable) {
+            if (glConfig.anisotropicAvailable) {
                 // only do aniso filtering on mip mapped images
                 if (filter == textureFilter_t.TF_DEFAULT) {
                     qgl.qglTexParameterf(
@@ -1719,11 +1710,11 @@ object Image {
                     qgl.qglTexParameterf(
                         GL11.GL_TEXTURE_2D,
                         EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT,
-                        1f
+                        1.0f
                     )
                 }
             }
-            if (tr_local.glConfig.textureLODBiasAvailable) {
+            if (glConfig.textureLODBiasAvailable) {
                 qgl.qglTexParameterf(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_LOD_BIAS, globalImages.textureLODBias)
             }
             when (repeat) {
@@ -1755,7 +1746,7 @@ object Image {
          ================
          */
         fun ShouldImageBePartialCached(): Boolean {
-            if (!tr_local.glConfig.textureCompressionAvailable) {
+            if (!glConfig.textureCompressionAvailable) {
                 return false
             }
             if (!idImageManager.image_useCache.GetBool()) {
@@ -1814,7 +1805,7 @@ object Image {
                     return
                 }
             }
-            if (!tr_local.glConfig.isInitialized) {
+            if (!glConfig.isInitialized) {
                 return
             }
             val filename0 = arrayOf<String?>(null)
@@ -1856,21 +1847,21 @@ object Image {
                     bitSize = 8
                 }
 
-                else -> if (Image_load.FormatIsDXT(internalFormat)) {
+                else -> if (FormatIsDXT(internalFormat)) {
                     altInternalFormat = internalFormat
                 } else {
                     Common.common.Warning("Unknown or unsupported format for %s", (filename)!!)
                     return
                 }
             }
-            if (idImageManager.image_useOffLineCompression.GetBool() && Image_load.FormatIsDXT(altInternalFormat)) {
+            if (idImageManager.image_useOffLineCompression.GetBool() && FormatIsDXT(altInternalFormat)) {
                 val outFile: String = fileSystem.RelativePathToOSPath(filename!!, "fs_basepath")
                 val inFile = idStr(outFile)
                 inFile.StripFileExtension()
                 inFile.SetFileExtension("tga")
                 var format: String? = null
                 if (depth == textureDepth_t.TD_BUMP) {
-                    format = "RXGB +red 0.0 +green 0.5 +blue 0.5"
+                    format = "RXGB +red 0.0f +green 0.5f +blue 0.5f"
                 } else {
                     when (altInternalFormat) {
                         EXTTextureCompressionS3TC.GL_COMPRESSED_RGB_S3TC_DXT1_EXT -> format = "DXT1"
@@ -1901,7 +1892,7 @@ object Image {
             if (isMonochrome[0]) {
                 header.dwFlags = header.dwFlags or DDSF_ID_MONOCHROME
             }
-            if (Image_load.FormatIsDXT(altInternalFormat)) {
+            if (FormatIsDXT(altInternalFormat)) {
                 // size (in bytes) of the compressed base image
                 header.dwFlags = header.dwFlags or DDSF_LINEARSIZE
                 header.dwPitchOrLinearSize = (((uploadWidth._val + 3) / 4) * ((uploadHeight._val + 3) / 4)
@@ -1919,7 +1910,7 @@ object Image {
             }
 
 //            header.ddspf.dwSize = sizeof(header.ddspf);
-            if (Image_load.FormatIsDXT(altInternalFormat)) {
+            if (FormatIsDXT(altInternalFormat)) {
                 header.ddspf!!.dwFlags = DDSF_FOURCC
                 when (altInternalFormat) {
                     EXTTextureCompressionS3TC.GL_COMPRESSED_RGB_S3TC_DXT1_EXT -> header.ddspf!!.dwFourCC =
@@ -1967,10 +1958,10 @@ object Image {
             }
             val f: idFile? = fileSystem.OpenFileWrite(filename!!)
             if (f == null) {
-                Common.common.Warning("Could not open %s trying to write precompressed image", (filename)!!)
+                Common.common.Warning("Could not open %s trying to write precompressed image", (filename))
                 return
             }
-            Common.common.Printf("Writing precompressed image: %s\n", (filename)!!)
+            Common.common.Printf("Writing precompressed image: %s\n", (filename))
             f.WriteString("DDS ") //, 4);
             f.Write(header.Write() /*, sizeof(header) */)
 
@@ -1984,7 +1975,7 @@ object Image {
             var data: ByteBuffer? = null
             for (level in 0 until numLevels) {
                 var size = 0
-                if (Image_load.FormatIsDXT(altInternalFormat)) {
+                if (FormatIsDXT(altInternalFormat)) {
                     size = (((uw + 3) / 4) * ((uh + 3) / 4)
                             * (if (altInternalFormat <= EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) 8 else 16))
                 } else {
@@ -1993,7 +1984,7 @@ object Image {
                 if (data == null) {
                     data = ByteBuffer.allocate(size) // R_StaticAlloc(size);
                 }
-                if (Image_load.FormatIsDXT(altInternalFormat)) {
+                if (FormatIsDXT(altInternalFormat)) {
                     qgl.qglGetCompressedTexImageARB(GL11.GL_TEXTURE_2D, level, data)
                 } else {
                     qgl.qglGetTexImage(GL11.GL_TEXTURE_2D, level, altInternalFormat, GL11.GL_UNSIGNED_BYTE, data)
@@ -2017,7 +2008,7 @@ object Image {
         }
 
         fun CheckPrecompressedImage(fullLoad: Boolean): Boolean {
-            if (!tr_local.glConfig.isInitialized || !tr_local.glConfig.textureCompressionAvailable) {
+            if (!glConfig.isInitialized || !glConfig.textureCompressionAvailable) {
                 return false
             }
             if (true) { // ( _D3XP had disabled ) - Allow grabbing of DDS's from original Doom pak files
@@ -2094,7 +2085,7 @@ object Image {
 
             // if we don't support color index textures, we must load the full image
             // should we just expand the 256 color image to 32 bit for upload?
-            if (((ddspf_dwFlags and DDSF_ID_INDEXCOLOR) != 0) && !tr_local.glConfig.sharedTexturePaletteAvailable) {
+            if (((ddspf_dwFlags and DDSF_ID_INDEXCOLOR) != 0) && !glConfig.sharedTexturePaletteAvailable) {
 //                R_StaticFree(daDta);
                 return false
             }
@@ -2210,7 +2201,7 @@ object Image {
             var offset = ddsFileHeader_t.BYTES + 4 // + sizeof(ddsFileHeader_t) + 4;
             for (i in 0 until numMipmaps) {
                 val size: Int
-                if (Image_load.FormatIsDXT(internalFormat)) {
+                if (FormatIsDXT(internalFormat)) {
                     size = (((uw + 3) / 4) * ((uh + 3) / 4)
                             * (if (internalFormat <= EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) 8 else 16))
                 } else {
@@ -2221,9 +2212,9 @@ object Image {
                 } else {
                     val imageData = BufferUtils.createByteBuffer(size)
                     imageData.put(data.array(), offset, size)
-                    imageData.order(ByteOrder.BIG_ENDIAN) //TODO: should ByteOrder be reverted? <data> uses LITTLE_ENDIAN.
+                    imageData.order(ByteOrder.LITTLE_ENDIAN) //TODO: should ByteOrder be reverted? <data> uses LITTLE_ENDIAN.
                     imageData.flip() //FUCKME: the lwjgl version of <glCompressedTexImage2DARB> uses bytebuffer.remaining() as size.
-                    if (Image_load.FormatIsDXT(internalFormat)) { //TODO: remove blocky crap!
+                    if (FormatIsDXT(internalFormat)) { //TODO: remove blocky crap!
                         qgl.qglCompressedTexImage2DARB(
                             GL11.GL_TEXTURE_2D,
                             i - skipMip,
@@ -2320,7 +2311,7 @@ object Image {
                 }
                 run {
                     val depth: Array<textureDepth_t> = arrayOf(this.depth)
-                    pic = Image_program.R_LoadImageProgram(imgName.toString(), width, height, timestamp, depth)
+                    pic = R_LoadImageProgram(imgName.toString(), width, height, timestamp, depth)
                     this.depth = depth.get(0)
                 }
                 if (pic == null) {
@@ -2345,8 +2336,8 @@ object Image {
                 // NOTE: takes about 10% of image load times (SD)
                 // may not be strictly necessary, but some code uses it, so let's leave it in
                 //imageHash = MD4_BlockChecksum(pic, width[0] * height[0] * 4);
-                GenerateImage(pic!!, width[0], height[0], filter, allowDownSize, repeat, depth)
-                timestamp = timestamp //why, because we rock!
+                GenerateImage(pic, width[0], height[0], filter, allowDownSize, repeat, depth)
+                //why, because we rock!
                 precompressedFile = false
 
 //                R_StaticFree(pic);
@@ -2470,9 +2461,9 @@ object Image {
             val row: Int
 
             // OpenGL's pixel packing rule
-            row = max(width.toDouble(), 4.0).toInt()
+            row = max(width.toFloat(), 4.0f).toInt()
             normals = ByteArray(row * height)
-            if (NOT(normals)) {
+            if (normals == null) {
                 Common.common.Error("R_UploadCompressedNormalMap: _alloca failed")
             }
             `in` = 0
@@ -2514,7 +2505,7 @@ object Image {
                     }
                 }
             }
-            if (tr_local.glConfig.sharedTexturePaletteAvailable) {
+            if (glConfig.sharedTexturePaletteAvailable) {
                 qgl.qglTexImage2D(
                     GL11.GL_TEXTURE_2D,
                     mipLevel,
@@ -2588,8 +2579,8 @@ object Image {
                     // allowing the values to be off by several units and
                     // still use the NV20 mono path
                     if (monochromeResult[0]) {
-                        if ((abs((scan[pos + 0] - scan[pos + 1]).toDouble()) > 16
-                                    || abs((scan[pos + 0] - scan[pos + 2]).toDouble()) > 16)
+                        if ((abs((scan[pos + 0] - scan[pos + 1]).toFloat()) > 16
+                                    || abs((scan[pos + 0] - scan[pos + 2]).toFloat()) > 16)
                         ) {
                             monochromeResult[0] = false
                         }
@@ -2613,10 +2604,10 @@ object Image {
 
             // catch normal maps first
             if (minimumDepth == textureDepth_t.TD_BUMP) {
-                if (idImageManager.image_useCompression.GetBool() && (idImageManager.image_useNormalCompression.GetInteger() == 1) && tr_local.glConfig.sharedTexturePaletteAvailable) {
+                if (idImageManager.image_useCompression.GetBool() && (idImageManager.image_useNormalCompression.GetInteger() == 1) && glConfig.sharedTexturePaletteAvailable) {
                     // image_useNormalCompression should only be set to 1 on nv_10 and nv_20 paths
                     return 0x80E5
-                } else return if (idImageManager.image_useCompression.GetBool() && (idImageManager.image_useNormalCompression.GetInteger() != 0) && tr_local.glConfig.textureCompressionAvailable) {
+                } else return if (idImageManager.image_useCompression.GetBool() && (idImageManager.image_useNormalCompression.GetInteger() != 0) && glConfig.textureCompressionAvailable) {
                     // image_useNormalCompression == 2 uses rxgb format which produces really good quality for medium settings
                     EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
                 } else {
@@ -2631,7 +2622,7 @@ object Image {
             }
             if (minimumDepth == textureDepth_t.TD_SPECULAR) {
                 // we are assuming that any alpha channel is unintentional
-                return if (tr_local.glConfig.textureCompressionAvailable) {
+                return if (glConfig.textureCompressionAvailable) {
                     EXTTextureCompressionS3TC.GL_COMPRESSED_RGB_S3TC_DXT1_EXT
                 } else {
                     GL11.GL_RGB5
@@ -2639,7 +2630,7 @@ object Image {
             }
             if (minimumDepth == textureDepth_t.TD_DIFFUSE) {
                 // we might intentionally have an alpha channel for alpha tested textures
-                if (tr_local.glConfig.textureCompressionAvailable) {
+                if (glConfig.textureCompressionAvailable) {
                     return if (!needAlpha) {
                         EXTTextureCompressionS3TC.GL_COMPRESSED_RGB_S3TC_DXT1_EXT
                     } else {
@@ -2668,15 +2659,15 @@ object Image {
                 if (minimumDepth == textureDepth_t.TD_HIGH_QUALITY) {
                     return GL11.GL_RGB8 // four bytes
                 }
-                return if (tr_local.glConfig.textureCompressionAvailable) {
+                return if (glConfig.textureCompressionAvailable) {
                     EXTTextureCompressionS3TC.GL_COMPRESSED_RGB_S3TC_DXT1_EXT // half byte
                 } else GL11.GL_RGB5
                 // two bytes
             }
 
             // cases with alpha
-            if (NOT(rgbaDiffer)) {
-                return if (minimumDepth != textureDepth_t.TD_HIGH_QUALITY && tr_local.glConfig.textureCompressionAvailable) {
+            if (rgbaDiffer == 0) {
+                return if (minimumDepth != textureDepth_t.TD_HIGH_QUALITY && glConfig.textureCompressionAvailable) {
                     EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT3_EXT // one byte
                 } else GL11.GL_INTENSITY8
                 // single byte for all channels
@@ -2693,10 +2684,10 @@ object Image {
             if (minimumDepth == textureDepth_t.TD_HIGH_QUALITY) {
                 return GL11.GL_RGBA8 // four bytes
             }
-            if (tr_local.glConfig.textureCompressionAvailable) {
+            if (glConfig.textureCompressionAvailable) {
                 return EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT3_EXT // one byte
             }
-            return if (NOT(rgbDiffer)) {
+            return if (rgbDiffer == 0) {
                 GL11.GL_LUMINANCE8_ALPHA8 // two bytes, max quality
             } else GL11.GL_RGBA4
             // two bytes
@@ -2719,7 +2710,7 @@ object Image {
             // this could conceivably produce a duplicated mapping, but we aren't going to worry about it
             i = 0
             while (i < imageProg.length) {
-                val s: kotlin.Char = imageProg[i]
+                val s: Char = imageProg[i]
                 if ((s == '/') || (s == '\\') || (s == '(')) {
                     if (depth < 4) {
                         ff[f] = '/'
@@ -2860,7 +2851,7 @@ object Image {
         }
     }
 
-    class idImageManager() {
+    class idImageManager {
         var accumImage: idImage? = null
         var alphaNotchImage: idImage? = null // 2x1 texture with just 1110 and 1111 with point sampling
         var alphaRampImage: idImage? = null // 0-255 in alpha, 255 in RGB
@@ -2906,8 +2897,8 @@ object Image {
         var specular2DTableImage: idImage? =
             null // 2D intensity texture with our specular function with variable specularity
         var specularTableImage: idImage? = null // 1D intensity texture with our specular function
-        var textureAnisotropy = 0f
-        var textureLODBias = 0f
+        var textureAnisotropy = 0.0f
+        var textureLODBias = 0.0f
         /*GLenum*/ var textureMaxFilter = 0
 
         //
@@ -3204,7 +3195,7 @@ object Image {
          */
         // The callback will be issued immediately, and later if images are reloaded or vid_restart
         // The callback function should call one of the idImage::Generate* functions to fill in the data
-        fun ImageFromFunction(_name: String?, generatorFunction: GeneratorFunction): idImage? {
+        fun ImageFromFunction(_name: String?, generatorFunction: GeneratorFunction): idImage {
             val name: idStr
             var image: idImage?
             val hash: Int
@@ -3291,7 +3282,7 @@ object Image {
             i = 0
             while (i < images.Num()) {
                 image = images[i]
-                if (image!!.frameUsed == tr_local.backEnd!!.frameCount) {
+                if (image!!.frameUsed == backEnd!!.frameCount) {
                     total += image.StorageSize()
                 }
                 i++
@@ -3335,16 +3326,16 @@ object Image {
         // disable the active texture unit
         fun BindNull() {
             val tmu: tmu_t
-            tmu = tr_local.backEnd!!.glState.tmu[tr_local.backEnd!!.glState.currenttmu]!!
+            tmu = backEnd!!.glState.tmu[backEnd!!.glState.currenttmu]!!
             tr_backend.RB_LogComment("BindNull()\n")
-            if (tmu!!.textureType == textureType_t.TT_CUBIC) {
+            if (tmu.textureType == textureType_t.TT_CUBIC) {
                 qgl.qglDisable(GL13.GL_TEXTURE_CUBE_MAP /*_EXT*/)
-            } else if (tmu!!.textureType == textureType_t.TT_3D) {
+            } else if (tmu.textureType == textureType_t.TT_3D) {
                 qgl.qglDisable(GL12.GL_TEXTURE_3D)
-            } else if (tmu!!.textureType == textureType_t.TT_2D) {
+            } else if (tmu.textureType == textureType_t.TT_2D) {
                 qgl.qglDisable(GL11.GL_TEXTURE_2D)
             }
-            tmu!!.textureType = textureType_t.TT_DISABLED
+            tmu.textureType = textureType_t.TT_DISABLED
         }
 
         /*
@@ -3486,7 +3477,7 @@ object Image {
                         "@echo Finished compressing %d of %d.  %.1f percent done.\n",
                         i + 1,
                         ddsNum,
-                        ((i + 1).toFloat() / ddsNum.toFloat()) * 100f
+                        ((i + 1).toFloat() / ddsNum.toFloat()) * 100.0f
                     )
                     i++
                 }
@@ -3615,8 +3606,8 @@ object Image {
                 f = (i + 1) / 8.5f
                 y = Sqrt(1.0f - f * f)
                 y = 1.0f - y
-                compressedToOriginal[7 - i] = 127 - (y * 127 + 0.5).toInt()
-                compressedToOriginal[8 + i] = 128 + (y * 127 + 0.5).toInt()
+                compressedToOriginal[7 - i] = 127 - (y * 127 + 0.5f).toInt()
+                compressedToOriginal[8 + i] = 128 + (y * 127 + 0.5f).toInt()
                 i++
             }
             i = 0
@@ -3648,13 +3639,13 @@ object Image {
 //			v.set(0,  ( i - 7.5 ) / 8);
 //			v.set(1,  ( j - 7.5 ) / 8);
 //
-//			t = 1.0 - ( v.get(0)*v.get(0) + v.get(1)*v.get(1) );
+//			t = 1.0f - ( v.get(0)*v.get(0) + v.get(1)*v.get(1) );
 //			if ( t < 0 ) {
 //				t = 0;
 //			}
 //			v.set(2,  idMath.Sqrt( t ));
 //
-//			temptable[(i*16+j)*3+0] = 128 + floor( 127 * v.get(0) + 0.5 );
+//			temptable[(i*16+j)*3+0] = 128 + floor( 127 * v.get(0) + 0.5f );
 //			temptable[(i*16+j)*3+1] = 128 + floor( 127 * v.get(1) );
 //			temptable[(i*16+j)*3+2] = 128 + floor( 127 * v.get(2) );
 //		}
@@ -3664,16 +3655,16 @@ object Image {
                 while (i < 16) {
                     j = 0
                     while (j < 16) {
-                        v[0] = (compressedToOriginal[i] - 127.5f) / 128f
-                        v[1] = (compressedToOriginal[j] - 127.5f) / 128f
+                        v[0] = (compressedToOriginal[i] - 127.5f) / 128.0f
+                        v[1] = (compressedToOriginal[j] - 127.5f) / 128.0f
                         t = 1.0f - (v[0] * v[0] + v[1] * v[1])
                         if (t < 0) {
-                            t = 0f
+                            t = 0.0f
                         }
                         v[2] = Sqrt(t)
-                        temptable[(i * 16 + j) * 3 + 0] = (128 + floor(127 * v[0] + 0.5)).toInt().toByte()
-                        temptable[(i * 16 + j) * 3 + 1] = (128 + floor((127 * v[1]).toDouble())).toInt().toByte()
-                        temptable[(i * 16 + j) * 3 + 2] = (128 + floor((127 * v[2]).toDouble())).toInt().toByte()
+                        temptable[(i * 16 + j) * 3 + 0] = (128 + floor(127 * v[0] + 0.5f)).toInt().toByte()
+                        temptable[(i * 16 + j) * 3 + 1] = (128 + floor((127 * v[1]))).toInt().toByte()
+                        temptable[(i * 16 + j) * 3 + 2] = (128 + floor((127 * v[2]))).toInt().toByte()
                         j++
                     }
                     i++
@@ -3684,7 +3675,7 @@ object Image {
             temptable[255 * 3 + 2] = 128.toByte()
             temptable[255 * 3 + 1] = temptable[255 * 3 + 2]
             temptable[255 * 3 + 0] = temptable[255 * 3 + 1]
-            if (!tr_local.glConfig.sharedTexturePaletteAvailable) {
+            if (!glConfig.sharedTexturePaletteAvailable) {
                 return
             }
             qgl.qglColorTableEXT(
@@ -3734,9 +3725,9 @@ object Image {
             textureMaxFilter = textureFilters[i].maximize
             textureAnisotropy = image_anisotropy.GetFloat()
             if (textureAnisotropy < 1) {
-                textureAnisotropy = 1f
-            } else if (textureAnisotropy > tr_local.glConfig.maxTextureAnisotropy) {
-                textureAnisotropy = tr_local.glConfig.maxTextureAnisotropy
+                textureAnisotropy = 1.0f
+            } else if (textureAnisotropy > glConfig.maxTextureAnisotropy) {
+                textureAnisotropy = glConfig.maxTextureAnisotropy
             }
             textureLODBias = image_lodbias.GetFloat()
 
@@ -3762,14 +3753,14 @@ object Image {
                     qgl.qglTexParameterf(texEnum, GL11.GL_TEXTURE_MIN_FILTER, globalImages.textureMinFilter.toFloat())
                     qgl.qglTexParameterf(texEnum, GL11.GL_TEXTURE_MAG_FILTER, globalImages.textureMaxFilter.toFloat())
                 }
-                if (tr_local.glConfig.anisotropicAvailable) {
+                if (glConfig.anisotropicAvailable) {
                     qgl.qglTexParameterf(
                         texEnum,
                         EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT,
                         globalImages.textureAnisotropy
                     )
                 }
-                if (tr_local.glConfig.textureLODBiasAvailable) {
+                if (glConfig.textureLODBiasAvailable) {
                     qgl.qglTexParameterf(texEnum, GL14.GL_TEXTURE_LOD_BIAS, globalImages.textureLODBias)
                 }
                 i++

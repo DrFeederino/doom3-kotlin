@@ -4,8 +4,6 @@ import neo.TempDump
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
 import neo.framework.File_h.idFile
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Parser.idParser
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
@@ -14,25 +12,22 @@ import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
-import neo.idlib.containers.HashIndex.idHashIndex
 import neo.idlib.containers.List.cmp_t
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.StrPool.idPoolStr
 import neo.idlib.containers.StrPool.idStrPool
+import neo.idlib.containers.idHashIndex
 import neo.idlib.hashing.CRC32
 import neo.idlib.hashing.CRC32.Companion.CRC32_FinishChecksum
 import neo.idlib.hashing.CRC32.Companion.CRC32_InitChecksum
-import neo.idlib.math.Angles.idAngles
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Random.idRandom
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idAngles
+import neo.idlib.math.idVec2
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import kotlin.math.sqrt
 
-/**
- *
- */
 class Dict_h {
     /**
      * ===============================================================================
@@ -236,7 +231,7 @@ class Dict_h {
             try {
                 i = 0
                 while (i < n) {
-                    args.set(i, other.args[i]) // TODO:check if clone() was necessary
+                    args[i] = other.args[i] // TODO:check if clone() was necessary
                     i++
                 }
             } catch (ex: CloneNotSupportedException) {
@@ -406,7 +401,7 @@ class Dict_h {
             Set(key, `val`.ToString())
         }
 
-        // these return default values of 0.0, 0 and false
+        // these return default values of 0.0f, 0 and false
 
         @Throws(idException::class)
         fun GetString(key: String?, defaultString: String?): String? {
@@ -603,9 +598,9 @@ class Dict_h {
                 defaultString = "1 0 0 0 1 0 0 0 1"
             }
             found = GetString(key, defaultString, s)
-            out.Zero()
+            out.Identity()
             val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
-            val halfSize = sqrt(sscanf.size.toDouble()).toInt()
+            val halfSize = sqrt(sscanf.size.toFloat()).toInt()
             var i = 0
             var index = 0
             while (i < halfSize) {
@@ -742,12 +737,12 @@ class Dict_h {
                 list[count++] = String(kv.GetValue().toString().toCharArray())
                 kv = MatchPrefix(prefix, kv)
             }
-            return list[random.RandomInt(count.toDouble())]
+            return list[random.RandomInt(count)]
         }
 
         @Throws(idException::class)
         fun WriteToFileHandle(f: idFile) {
-            val c: Int = Lib.LittleLong(args.Num())
+            val c: Int = LittleLong(args.Num())
             f.WriteInt(c) //, sizeof(c));
             for (i in 0 until args.Num()) {    // don't loop on the swapped count use the original
                 WriteString(args[i].GetKey().toString(), f)
@@ -764,7 +759,7 @@ class Dict_h {
 
 //            f.Read(c, sizeof(c));
             f.ReadInt(c)
-            c._val = (Lib.Companion.LittleLong(c._val))
+            c._val = (LittleLong(c._val))
             for (i in 0 until c._val) {
                 key = ReadString(f)
                 `val` = ReadString(f)
@@ -783,11 +778,11 @@ class Dict_h {
             CRC32_InitChecksum(ret)
             i = 0
             while (i < n) {
-                CRC32.CRC32_UpdateChecksum(ret, sorted.get(i).GetKey().c_str(), sorted.get(i).GetKey().Length())
+                CRC32.CRC32_UpdateChecksum(ret, sorted[i].GetKey().c_str(), sorted[i].GetKey().Length())
                 CRC32.CRC32_UpdateChecksum(
                     ret,
-                    sorted.get(i).GetValue().c_str(),
-                    sorted.get(i).GetValue().Length()
+                    sorted[i].GetValue().c_str(),
+                    sorted[i].GetValue().Length()
                 )
                 i++
             }
@@ -877,7 +872,7 @@ class Dict_h {
             @Throws(idException::class)
             fun WriteString(s: String, f: idFile) {
                 val len = s.length
-                if (len >= Lib.MAX_STRING_CHARS - 1) {
+                if (len >= MAX_STRING_CHARS - 1) {
                     idLib.common.Error("idDict::WriteToFileHandle: bad string")
                 }
                 f.WriteString(s) //, len + 1);
@@ -885,11 +880,11 @@ class Dict_h {
 
             @Throws(idException::class)
             fun ReadString(f: idFile): idStr {
-                val str = CharArray(Lib.MAX_STRING_CHARS)
+                val str = CharArray(MAX_STRING_CHARS)
                 val c = shortArrayOf(0)
                 var len: Int
                 len = 0
-                while (len < Lib.MAX_STRING_CHARS) {
+                while (len < MAX_STRING_CHARS) {
                     f.ReadChar(c) //, 1);
                     str[len] = Char(c[0].toInt())
                     if (str[len].code == 0) {
@@ -897,7 +892,7 @@ class Dict_h {
                     }
                     len++
                 }
-                if (len == Lib.MAX_STRING_CHARS) {
+                if (len == MAX_STRING_CHARS) {
                     idLib.common.Error("idDict::ReadFromFileHandle: bad string")
                 }
                 return idStr(str)

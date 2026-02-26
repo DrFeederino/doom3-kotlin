@@ -12,13 +12,13 @@ import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
 import neo.framework.UsercmdGen.USERCMD_MSEC
 import neo.idlib.CmdArgs
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
+import neo.idlib.MAX_STRING_CHARS
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.idStrList
+import neo.idlib.idException
+import neo.idlib.idLib
 import neo.sys.RC.CreateResourceIDs_f
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
@@ -34,7 +34,6 @@ import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.Paths
 import java.time.Instant
-import java.util.*
 import java.util.concurrent.ScheduledExecutorService
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -44,9 +43,6 @@ fun main(args: Array<String>) {
     win_main.main(args)
 }
 
-/**
- *
- */
 object win_main {
     //TODO: rename to plain "main" or something.
     const val DEBUG = true
@@ -84,7 +80,7 @@ object win_main {
     //            = 0;
     const val SET_THREAD_AFFINITY = false
     const val WIN98_BUILD_NUMBER = 1998
-    val sys_cmdline: StringBuilder = StringBuilder(Lib.MAX_STRING_CHARS)
+    val sys_cmdline: StringBuilder = StringBuilder(MAX_STRING_CHARS)
     val sys_showMallocs: idCVar = idCVar("sys_showMallocs", "0", CVarSystem.CVAR_SYSTEM, "")
     var   /*HANDLE*/hTimer: ScheduledExecutorService? = null
     var debug_current_alloc/*unsigned*/ = 0
@@ -190,7 +186,6 @@ object win_main {
      ==================
      */
     fun Sys_Sentry() {
-        val j = 0
     }
 
     /*
@@ -198,7 +193,7 @@ object win_main {
      Sys_GetThreadName
      ==================
      */
-    fun Sys_GetThreadName(index: IntArray?): String? {
+    fun Sys_GetThreadName(index: IntArray?): String {
         throw TODO_Exception()
         //	int id = GetCurrentThreadId();
 //	for( int i = 0; i < g_thread_count; i++ ) {
@@ -968,7 +963,7 @@ object win_main {
         //
         // CPU type
         //
-        if (TempDump.NOT(idStr.Icmp(Win32Vars_t.sys_cpustring.GetString()!!, "detect").toDouble())) {
+        if (idStr.Icmp(Win32Vars_t.sys_cpustring.GetString()!!, "detect") == 0) {
             val string: idStr
             Common.common.Printf("%1.0f MHz ", win_cpu.Sys_ClockTicksPerSecond() / 1000000.0f)
             win_local.win32.cpuid = win_cpu.Sys_GetCPUId()

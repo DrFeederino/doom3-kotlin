@@ -1,6 +1,5 @@
 package neo.Tools.Compilers.DMap
 
-import neo.TempDump
 import neo.Tools.Compilers.DMap.dmap.node_s
 import neo.Tools.Compilers.DMap.dmap.primitive_s
 import neo.Tools.Compilers.DMap.dmap.side_s
@@ -11,37 +10,27 @@ import neo.Tools.Compilers.DMap.map.FindFloatPlane
 import neo.framework.Common
 import neo.framework.FileSystem_h
 import neo.framework.File_h.idFile
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib
+import neo.idlib.BV.idBounds
+import neo.idlib.MAX_WORLD_COORD
+import neo.idlib.MIN_WORLD_COORD
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.VectorCopy
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 object ubrush {
     const val CLIP_EPSILON = 0.1f
 
-    //
     // if a brush just barely pokes onto the other side,
     // let it slide by without chopping
     const val PLANESIDE_EPSILON = 0.001
     const val PSIDE_BACK = 2
     const val PSIDE_FACING = 4
-
-    //
     const val PSIDE_FRONT = 1
     const val PSIDE_BOTH = PSIDE_FRONT or PSIDE_BACK
-
-    //
     var c_active_brushes = 0
-
-    //
     var c_nodes = 0
 
-    //0.1
     /*
      ================
      CountBrushList
@@ -137,7 +126,6 @@ object ubrush {
      */
     fun CopyBrush(brush: uBrush_t): uBrush_t {
         val newBrush: uBrush_t
-        var size: Int
         var i: Int
         //
 //        size = BrushSizeForSides(brush.numsides);
@@ -227,7 +215,7 @@ object ubrush {
         }
         i = 0
         while (i < 3) {
-            if (brush.bounds[0, i] < Lib.Companion.MIN_WORLD_COORD || brush.bounds[1, i] > Lib.Companion.MAX_WORLD_COORD || brush.bounds[0, i] >= brush.bounds[1, i]
+            if (brush.bounds[0, i] < MIN_WORLD_COORD || brush.bounds[1, i] > MAX_WORLD_COORD || brush.bounds[0, i] >= brush.bounds[1, i]
             ) {
                 return false
             }
@@ -266,7 +254,7 @@ object ubrush {
                     continue  // back side clipaway
                 }
                 plane = dmap.dmapGlobals.mapPlanes[brush.sides[j].planenum xor 1]
-                w = w.Clip(plane, 0f) //CLIP_EPSILON);
+                w = w.Clip(plane, 0.0f) //CLIP_EPSILON);
                 j++
             }
             if (side.winding != null) {
@@ -295,12 +283,12 @@ object ubrush {
         b.numsides = 6
         i = 0
         while (i < 3) {
-            plane[0] = plane.set(1, plane.set(2, 0f))
-            plane[i] = 1f
-            plane[3] = -bounds.get(1, i)
+            plane[0] = plane.set(1, plane.set(2, 0.0f))
+            plane[i] = 1.0f
+            plane[3] = -bounds[1, i]
             b.sides[i].planenum = FindFloatPlane(plane)
-            plane[i] = -1f
-            plane[3] = bounds.get(0, i)
+            plane[i] = -1.0f
+            plane[3] = bounds[0, i]
             b.sides[3 + i].planenum = FindFloatPlane(plane)
             i++
         }
@@ -322,7 +310,7 @@ object ubrush {
         var area: Float
         var volume: Float
         if (brush == null) {
-            return 0f
+            return 0.0f
         }
 
         // grab the first valid point as the corner
@@ -336,12 +324,12 @@ object ubrush {
             i++
         }
         if (w == null) {
-            return 0f
+            return 0.0f
         }
-        Vector.VectorCopy(w[0], corner)
+        VectorCopy(w[0], corner)
 
         // make tetrahedrons to all other faces
-        volume = 0f
+        volume = 0.0f
         while (i < brush.numsides) {
             w = brush.sides[i].winding
             if (w == null) {
@@ -519,7 +507,7 @@ object ubrush {
         var d: Float
         var max: Float
         var side: Int
-        max = 0f
+        max = 0.0f
         side = PSIDE_FRONT
         i = 0
         while (i < brush.numsides) {
@@ -569,7 +557,7 @@ object ubrush {
         val plane = dmap.dmapGlobals.mapPlanes[planenum]
 
         // check all points
-        d_back = 0f
+        d_back = 0.0f
         d_front = d_back
         i = 0
         while (i < brush.numsides) {
@@ -591,12 +579,12 @@ object ubrush {
             }
             i++
         }
-        if (d_front < 0.1) // PLANESIDE_EPSILON)
+        if (d_front < 0.1f) // PLANESIDE_EPSILON)
         {    // only on back
             back.set(CopyBrush(brush))
             return
         }
-        if (d_back > -0.1) // PLANESIDE_EPSILON)
+        if (d_back > -0.1f) // PLANESIDE_EPSILON)
         {    // only on front
             front.set(CopyBrush(brush))
             return
@@ -607,7 +595,7 @@ object ubrush {
         i = 0
         while (i < brush.numsides && w != null) {
             val plane2 = dmap.dmapGlobals.mapPlanes[brush.sides[i].planenum xor 1]
-            w = w.Clip(plane2, 0f) // PLANESIDE_EPSILON);
+            w = w.Clip(plane2, 0.0f) // PLANESIDE_EPSILON);
             i++
         }
         if (null == w || w.IsTiny()) {
@@ -648,10 +636,10 @@ object ubrush {
                 i++
                 continue
             }
-            w.Split(plane, 0f, cw[0], cw[1])
+            w.Split(plane, 0.0f, cw[0], cw[1])
             j = 0
             while (j < 2) {
-                if (TempDump.NOT(cw[j])) {
+                if (cw[j] == null) {
                     j++
                     continue
                 }
@@ -684,7 +672,7 @@ object ubrush {
             i++
         }
         if (!(b[0] != null && b[1] != null)) {
-            if (TempDump.NOT(b[0]) && TempDump.NOT(b[1])) {
+            if (b[0] == null && b[1] == null) {
                 Common.common.Printf("split removed brush\n")
             } else {
                 Common.common.Printf("split not on both sides\n")
@@ -720,7 +708,7 @@ object ubrush {
             i2 = 0
             while (i2 < 2) {
                 v1 = BrushVolume(b[i2])
-                if (v1 < 1.0) {
+                if (v1 < 1.0f) {
                     FreeBrush(b[i2]!!)
                     b[i2] = null
                     //			common.Printf ("tiny volume after clip\n");

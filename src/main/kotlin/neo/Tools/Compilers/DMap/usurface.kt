@@ -19,23 +19,15 @@ import neo.framework.Common
 import neo.idlib.Text.Str.idStr
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.Winding.idWinding
-import neo.idlib.math.Angles.idAngles
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec5
 import neo.sys.win_shared
 import kotlin.math.abs
 
-/**
- *
- */
 object usurface {
     //
     const val SNAP_FLOAT_TO_INT = 256
-    const val SNAP_INT_TO_FLOAT = 1.0 / SNAP_FLOAT_TO_INT
+    const val SNAP_INT_TO_FLOAT = 1.0f / SNAP_FLOAT_TO_INT
     const val TEXTURE_OFFSET_EQUAL_EPSILON = 0.005
     const val TEXTURE_VECTOR_EQUAL_EPSILON = 0.001
 
@@ -193,15 +185,15 @@ object usurface {
                 //#if 0
                 //				// round the xyz to a given precision
                 //				for ( k = 0 ; k < 3 ; k++ ) {
-                //					dv.xyz[k] = SNAP_INT_TO_FLOAT * floor( vec[k] * SNAP_FLOAT_TO_INT + 0.5 );
+                //					dv.xyz[k] = SNAP_INT_TO_FLOAT * floor( vec[k] * SNAP_FLOAT_TO_INT + 0.5f );
                 //				}
                 //#else
-                Vector.VectorCopy(vec, dv.xyz) //TODO:copy range?????
+                VectorCopy(vec, dv.xyz) //TODO:copy range?????
                 //#endif
 
                 // calculate texture s/t from brush primitive texture matrix
-                dv.st[0] = Vector.DotProduct(dv.xyz, s.texVec.v[0]) + s.texVec.v[0][3]
-                dv.st[1] = Vector.DotProduct(dv.xyz, s.texVec.v[1]) + s.texVec.v[1][3]
+                dv.st[0] = DotProduct(dv.xyz, s.texVec.v[0]) + s.texVec.v[0][3]
+                dv.st[1] = DotProduct(dv.xyz, s.texVec.v[1]) + s.texVec.v[1][3]
 
                 // copy normal
                 dv.normal.set(dmap.dmapGlobals.mapPlanes[s.planenum].Normal())
@@ -286,7 +278,7 @@ object usurface {
                 ClipSideByTree_r(w, side, node.children[1])
                 return
             }
-            w.Split(dmap.dmapGlobals.mapPlanes[node.planenum], Plane.ON_EPSILON, front, back)
+            w.Split(dmap.dmapGlobals.mapPlanes[node.planenum], ON_EPSILON, front, back)
             //		delete w;
             ClipSideByTree_r(front, side, node.children[0])
             ClipSideByTree_r(back, side, node.children[1])
@@ -318,7 +310,7 @@ object usurface {
      =====================
      */
     fun ClipSidesByTree(e: uEntity_t) {
-        var b: uBrush_t
+        var b: uBrush_t?
         var i: Int
         var w: idWinding
         var side: side_s?
@@ -326,8 +318,8 @@ object usurface {
         Common.common.Printf("----- ClipSidesByTree -----\n")
         prim = e.primitives
         while (prim != null) {
-            b = prim.brush as uBrush_t
-            if (TempDump.NOT(b)) {
+            b = prim.brush as uBrush_t?
+            if (b == null) {
                 // FIXME: other primitives!
                 prim = prim.next
                 continue
@@ -370,7 +362,7 @@ object usurface {
             return
         }
         if (node.planenum != dmap.PLANENUM_LEAF) {
-            w.Split(dmap.dmapGlobals.mapPlanes[node.planenum], Plane.ON_EPSILON, front, back)
+            w.Split(dmap.dmapGlobals.mapPlanes[node.planenum], ON_EPSILON, front, back)
             //		delete w;
             ClipTriIntoTree_r(front, originalTri, e, node.children[0])
             ClipTriIntoTree_r(back, originalTri, e, node.children[1])
@@ -421,7 +413,7 @@ object usurface {
             //			return CheckWindingInAreas_r( w, node.children[1] );
             //		}
             //#endif
-            w.Split(dmap.dmapGlobals.mapPlanes[node.planenum], Plane.ON_EPSILON, front, back)
+            w.Split(dmap.dmapGlobals.mapPlanes[node.planenum], ON_EPSILON, front, back)
             a1 = CheckWindingInAreas_r(front, node.children[0])
             //		delete front;
             a2 = CheckWindingInAreas_r(back, node.children[1])
@@ -482,7 +474,7 @@ object usurface {
                     return
                 }
             }
-            w.Split(dmap.dmapGlobals.mapPlanes[node.planenum], Plane.ON_EPSILON, front, back)
+            w.Split(dmap.dmapGlobals.mapPlanes[node.planenum], ON_EPSILON, front, back)
             PutWindingIntoAreas_r(e, front, side, node.children[0])
             //		if ( front ) {
             //			delete front;
@@ -556,7 +548,7 @@ object usurface {
      =====================
      */
     fun PutPrimitivesInAreas(e: uEntity_t) {
-        var b: uBrush_t
+        var b: uBrush_t?
         var i: Int
         var side: side_s?
         var prim: primitive_s?
@@ -571,8 +563,8 @@ object usurface {
         // and divide it into different areas
         prim = e.primitives
         while (prim != null) {
-            b = prim.brush as uBrush_t
-            if (TempDump.NOT(b)) {
+            b = prim.brush as uBrush_t?
+            if (b == null) {
                 // add curve triangles
                 tri = prim.tris
                 while (tri != null) {
@@ -587,7 +579,7 @@ object usurface {
             i = 0
             while (i < b.numsides) {
                 side = b.sides[i]
-                if (TempDump.NOT(side.visibleHull)) {
+                if (side.visibleHull == null) {
                     i++
                     continue
                 }
@@ -615,12 +607,12 @@ object usurface {
                 }
                 val model = ModelManager.renderModelManager.FindModel(modelName)!!
                 Common.common.Printf("inlining %s.\n", entity.mapEntity.epairs.GetString("name"))
-                var axis = idMat3()
+                val axis = idMat3()
                 // get the rotation matrix in either full form, or single angle form
                 if (!entity.mapEntity.epairs.GetMatrix("rotation", "1 0 0 0 1 0 0 0 1", axis)) {
                     val angle = entity.mapEntity.epairs.GetFloat("angle")
                     if (angle != 0.0f) {
-                        axis = idAngles(0.0f, angle, 0.0f).ToMat3()
+                        axis.set(idAngles(0.0f, angle, 0.0f).ToMat3())
                     } else {
                         axis.Identity()
                     }
@@ -685,7 +677,7 @@ object usurface {
         i = 0
         while (i < 6) {
             if (oldInside != null) {
-                oldInside.Split(light.def.frustum[i], 0f, outside[i]!!, inside)
+                oldInside.Split(light.def.frustum[i], 0.0f, outside[i]!!, inside)
                 oldInside = null
             } else {
                 outside[i] = null
@@ -695,7 +687,7 @@ object usurface {
             }
             i++
         }
-        if (TempDump.NOT(inside)) {
+        if (inside == null) {
             // the entire winding is outside this light
 
             // free the clipped fragments
@@ -782,7 +774,7 @@ object usurface {
 
         // if the light is no-shadows, don't add any surfaces
         // to the beam tree at all
-        if (!light.def.parms.noShadows
+        if (!light.def.parms.noShadows._val
             && light.def.lightShader!!.LightCastsShadows()
         ) {
             i = 0
@@ -827,7 +819,7 @@ object usurface {
 
                     // if we didn't get any out of this group, we don't
                     // need to create a new group in the shadower list
-                    if (TempDump.NOT(shadowers)) {
+                    if (shadowers == null) {
                         group = group.nextGroup
                         continue
                     }
@@ -843,7 +835,7 @@ object usurface {
                         }
                         check = check.nextGroup
                     }
-                    if (TempDump.NOT(check)) {
+                    if (check == null) {
 //                        check = (optimizeGroup_s) Mem_Alloc(sizeof(check));
                         check = group
                         check.triList = null
@@ -1013,7 +1005,7 @@ object usurface {
                 i++
             }
             end = win_shared.Sys_Milliseconds()
-            Common.common.Printf("%5.1f seconds for BuildLightShadows\n", (end - start) / 1000.0)
+            Common.common.Printf("%5.1f seconds for BuildLightShadows\n", (end - start) / 1000.0f)
         }
         if (!dmap.dmapGlobals.noLightCarve) {
             Common.common.Printf("----- CarveGroupsByLight -----\n")
@@ -1027,7 +1019,7 @@ object usurface {
                 i++
             }
             end = win_shared.Sys_Milliseconds()
-            Common.common.Printf("%5.1f seconds for CarveGroupsByLight\n", (end - start) / 1000.0)
+            Common.common.Printf("%5.1f seconds for CarveGroupsByLight\n", (end - start) / 1000.0f)
         }
     }
 }

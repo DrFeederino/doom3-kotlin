@@ -3,19 +3,16 @@ package neo.framework
 import neo.Renderer.ModelManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclManager.idDecl
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Angles.idAngles
+import neo.idlib.idException
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.getVec3Origin
+import neo.idlib.math.idAngles
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 class DeclFX {
     /*
      ===============================================================================
@@ -28,44 +25,36 @@ class DeclFX {
         FX_LIGHT, FX_PARTICLE, FX_DECAL, FX_MODEL, FX_SOUND, FX_SHAKE, FX_ATTACHLIGHT, FX_ATTACHENTITY, FX_LAUNCH, FX_SHOCKWAVE
     }
 
-    //
     // single fx structure
-    //
     class idFXSingleAction {
         val axis: idMat3 = idMat3()
         var bindParticles = false
-
-        //
         val data: idStr = idStr()
-
-        //
-        var delay = 0f
-        var duration = 0f
+        var delay = 0.0f
+        var duration = 0.0f
         var explicitAxis = false
-        var fadeInTime = 0f
-        var fadeOutTime = 0f
+        var fadeInTime = 0.0f
+        var fadeOutTime = 0.0f
         val fire: idStr = idStr()
-
-        //
         val lightColor: idVec3 = idVec3()
-        var lightRadius = 0f
+        var lightRadius = 0.0f
         val name: idStr = idStr()
         var noshadows = false
         val offset: idVec3 = idVec3()
         var particleTrackVelocity = false
-        var random1 = 0f
-        var random2 = 0f
-        var restart = 0f
-        var rotate = 0f
-        var shakeAmplitude = 0f
-        var shakeDistance = 0f
+        var random1 = 0.0f
+        var random2 = 0.0f
+        var restart = 0.0f
+        var rotate = 0.0f
+        var shakeAmplitude = 0.0f
+        var shakeDistance = 0.0f
         var shakeFalloff = false
         var shakeIgnoreMaster = false
-        var shakeImpulse = 0f
+        var shakeImpulse = 0.0f
         var shakeStarted = false
-        var shakeTime = 0f
+        var shakeTime = 0.0f
         var sibling = 0
-        var size = 0f
+        var size = 0.0f
 
         //
         var soundStarted = false
@@ -148,10 +137,12 @@ class DeclFX {
                         "FX_ATTACHLIGHT %s\n",
                         list.events[i].data.toString()
                     )
+
                     fx_enum.FX_ATTACHENTITY -> Common.common.Printf(
                         "FX_ATTACHENTITY %s\n",
                         list.events[i].data.toString()
                     )
+
                     fx_enum.FX_LAUNCH -> Common.common.Printf("FX_LAUNCH %s\n", list.events[i].data.toString())
                     fx_enum.FX_SHOCKWAVE -> Common.common.Printf(
                         "FX_SHOCKWAVE %s\n",
@@ -191,8 +182,8 @@ class DeclFX {
             FXAction.rotate = 0.0f
             FXAction.random1 = 0.0f
             FXAction.random2 = 0.0f
-            FXAction.lightColor.set(Vector.getVec3Origin())
-            FXAction.offset.set(Vector.getVec3Origin())
+            FXAction.lightColor.set(getVec3Origin())
+            FXAction.offset.set(getVec3Origin())
             FXAction.axis.set(idMat3.getMat3_identity())
             FXAction.bindParticles = false
             FXAction.explicitAxis = false

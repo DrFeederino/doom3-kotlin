@@ -2,8 +2,8 @@ package neo.Game
 
 import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.*
-import neo.Game.GameSys.Class.Companion.EV_Remove
-import neo.Game.GameSys.Class.Companion.EV_SafeRemove
+import neo.Game.GameSys.EV_Remove
+import neo.Game.GameSys.EV_SafeRemove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SysCvar
@@ -88,9 +88,8 @@ class WorldSpawn {
                         kv.GetValue(),
                         kv.GetKey()
                     )
-                    return
                 }
-                thread = idThread(func)
+                thread = idThread(func!!)
                 thread.DelayedStart(0)
                 kv = spawnArgs.MatchPrefix("call", kv)
             }

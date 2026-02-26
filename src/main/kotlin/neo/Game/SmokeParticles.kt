@@ -14,13 +14,11 @@ import neo.framework.UsercmdGen
 import neo.idlib.containers.List.idList
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Random.idRandom
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.idVec3
 import java.nio.ByteBuffer
 import java.util.*
+import kotlin.math.floor
 
-/**
- *
- */
 object SmokeParticles {
     val smokeParticle_SnapshotName: String = "_SmokeParticle_Snapshot_"
 
@@ -46,7 +44,7 @@ object SmokeParticles {
      ===============================================================================
      */
     class singleSmoke_t {
-        var axis: idMat3 = idMat3()
+        val axis: idMat3 = idMat3()
         var index // particle index in system, 0 <= index < stage->totalParticles
                 = 0
         var next: singleSmoke_t? = null
@@ -93,11 +91,11 @@ object SmokeParticles {
             activeStages.Clear()
             renderEntity = renderEntity_s() //memset( &renderEntity, 0, sizeof( renderEntity ) );
             renderEntity.bounds.Clear()
-            renderEntity.axis.set(idMat3.Companion.getMat3_identity())
-            renderEntity.shaderParms[RenderWorld.SHADERPARM_RED] = 1f
-            renderEntity.shaderParms[RenderWorld.SHADERPARM_GREEN] = 1f
-            renderEntity.shaderParms[RenderWorld.SHADERPARM_BLUE] = 1f
-            renderEntity.shaderParms[3] = 1f
+            renderEntity.axis.set(idMat3.getMat3_identity())
+            renderEntity.shaderParms[RenderWorld.SHADERPARM_RED] = 1.0f
+            renderEntity.shaderParms[RenderWorld.SHADERPARM_GREEN] = 1.0f
+            renderEntity.shaderParms[RenderWorld.SHADERPARM_BLUE] = 1.0f
+            renderEntity.shaderParms[3] = 1.0f
             renderEntity.hModel = ModelManager.renderModelManager.AllocModel()
             renderEntity.hModel!!.InitEmpty(smokeParticle_SnapshotName)
 
@@ -107,7 +105,7 @@ object SmokeParticles {
             // huge bounds, so it will be present in every world area
             renderEntity.bounds.AddPoint(idVec3(-100000, -100000, -100000))
             renderEntity.bounds.AddPoint(idVec3(100000, 100000, 100000))
-            renderEntity.callback = ModelCallback.Companion.getInstance()
+            renderEntity.callback = ModelCallback.getInstance()
             // add to renderer list
             renderEntityHandle = Game_local.gameRenderWorld!!.AddEntityDef(renderEntity)
             currentParticleTime = -1
@@ -189,12 +187,12 @@ object SmokeParticles {
                     }
                 } else {
                     nowCount =
-                        Math.floor((deltaMsec.toFloat() / finalParticleTime * stage.totalParticles).toDouble()).toInt()
+                        floor((deltaMsec.toFloat() / finalParticleTime * stage.totalParticles)).toInt()
                     if (nowCount >= stage.totalParticles) {
                         nowCount = stage.totalParticles - 1
                     }
                     prevCount =
-                        Math.floor(((deltaMsec - UsercmdGen.USERCMD_MSEC).toFloat() / finalParticleTime * stage.totalParticles).toDouble())
+                        floor(((deltaMsec - UsercmdGen.USERCMD_MSEC).toFloat() / finalParticleTime * stage.totalParticles))
                             .toInt()
                     if (prevCount < -1) {
                         prevCount = -1
@@ -210,7 +208,7 @@ object SmokeParticles {
                 }
 
                 // find an activeSmokeStage that matches this
-                var active: activeSmokeStage_t? = activeSmokeStage_t()
+                var active: activeSmokeStage_t? = null
                 var i: Int
                 i = 0
                 while (i < activeStages.Num()) {
@@ -243,7 +241,7 @@ object SmokeParticles {
                     freeSmokes = freeSmokes!!.next
                     numActiveSmokes++
                     newSmoke.index = prevCount
-                    newSmoke.axis = axis
+                    newSmoke.axis.set(axis)
                     newSmoke.origin.set(origin)
                     newSmoke.random = steppingRandom
                     newSmoke.privateStartTime = systemStartTime + prevCount * finalParticleTime / stage.totalParticles
@@ -341,14 +339,12 @@ object SmokeParticles {
                 tri.numVerts = quads * 4
 
                 // just always draw the particles
-                tri.bounds[0, 0] = tri.bounds.set(
-                    0, 1,
-                    tri.bounds.set(0, 2, -99999f)
-                )
-                tri.bounds[1, 0] = tri.bounds.set(
-                    1, 1,
-                    tri.bounds.set(1, 2, 99999f)
-                )
+                tri.bounds[0, 0] = -99999.0f
+                tri.bounds[0, 1] = -99999.0f
+                tri.bounds[0, 2] = -99999.0f
+                tri.bounds[1, 0] = 99999.0f
+                tri.bounds[1, 1] = 99999.0f
+                tri.bounds[1, 2] = 99999.0f
                 tri.numVerts = 0
                 last = null
                 smoke = active.smokes
@@ -384,7 +380,7 @@ object SmokeParticles {
                     smoke = next
                 }
                 if (tri.numVerts > quads * 4) {
-                    idGameLocal.Companion.Error("idSmokeParticles::UpdateRenderEntity: miscounted verts")
+                    idGameLocal.Error("idSmokeParticles::UpdateRenderEntity: miscounted verts")
                 }
                 if (tri.numVerts == 0) {
 

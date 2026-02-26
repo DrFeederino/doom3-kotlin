@@ -1,14 +1,14 @@
 package neo.Game.Script
 
-import neo.CM.CollisionModel.trace_s
 import neo.Game.AFEntity.idAFEntity_Base
 import neo.Game.Camera.idCamera
-import neo.Game.Entity
-import neo.Game.Entity.EV_Activate
-import neo.Game.Entity.EV_CacheSoundShader
+import neo.Game.EV_Activate
+import neo.Game.EV_CacheSoundShader
+import neo.Game.EV_SetShaderParm
 import neo.Game.Entity.idEntity
 import neo.Game.Entity.signalNum_t
 import neo.Game.GameSys.Class.*
+import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -24,114 +24,109 @@ import neo.Game.Script.Script_Program.function_t
 import neo.Renderer.RenderWorld
 import neo.TempDump.btoi
 import neo.TempDump.etoi
+import neo.cm.trace_s
 import neo.framework.CVarSystem.cvarSystem
 import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.CmdSystem.cmdSystem
 import neo.framework.DeclManager
 import neo.framework.UsercmdGen.USERCMD_HZ
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.CmdArgs
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Cmpn
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Math_h.DEG2RAD
-import neo.idlib.math.Math_h.MS2SEC
-import neo.idlib.math.Math_h.SEC2MS
-import neo.idlib.math.Math_h.idMath.Cos
-import neo.idlib.math.Math_h.idMath.Sin
-import neo.idlib.math.Math_h.idMath.Sqrt
-import neo.idlib.math.Vector.getVec3Origin
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.*
+import neo.idlib.math.idMath.Cos
+import neo.idlib.math.idMath.Sin
+import neo.idlib.math.idMath.Sqrt
 
-/**
- *
- */
+
+val EV_Thread_SetCallback = idEventDef("<script_setcallback>", null)
+val EV_Thread_Wait = idEventDef("wait", "f")
+val EV_Thread_WaitFrame = idEventDef("waitFrame")
+val EV_Thread_AngToForward = idEventDef("angToForward", "v", 'v')
+val EV_Thread_AngToRight = idEventDef("angToRight", "v", 'v')
+val EV_Thread_AngToUp = idEventDef("angToUp", "v", 'v')
+val EV_Thread_Assert = idEventDef("assert", "f")
+val EV_Thread_ClearPersistantArgs = idEventDef("clearPersistantArgs")
+val EV_Thread_ClearSignal = idEventDef("clearSignalThread", "de")
+val EV_Thread_CopySpawnArgs = idEventDef("copySpawnArgs", "e")
+val EV_Thread_Cosine = idEventDef("cos", "f", 'f')
+val EV_Thread_DebugArrow = idEventDef("debugArrow", "vvvdf")
+val EV_Thread_DebugBounds = idEventDef("debugBounds", "vvvf")
+val EV_Thread_DebugCircle = idEventDef("debugCircle", "vvvfdf")
+val EV_Thread_DebugLine = idEventDef("debugLine", "vvvf")
+val EV_Thread_DrawText = idEventDef("drawText", "svfvdf")
+val EV_Thread_Error = idEventDef("error", "s")
+val EV_Thread_Execute = idEventDef("<execute>", null)
+val EV_Thread_FadeIn = idEventDef("fadeIn", "vf")
+val EV_Thread_FadeOut = idEventDef("fadeOut", "vf")
+val EV_Thread_FadeTo = idEventDef("fadeTo", "vff")
+val EV_Thread_FirstPerson = idEventDef("firstPerson", null)
+val EV_Thread_GetCvar = idEventDef("getcvar", "s", 's')
+val EV_Thread_GetEntity = idEventDef("getEntity", "s", 'e')
+val EV_Thread_GetFrameTime = idEventDef("getFrameTime", null, 'f')
+val EV_Thread_GetPersistantFloat = idEventDef("getPersistantFloat", "s", 'f')
+val EV_Thread_GetPersistantString = idEventDef("getPersistantString", "s", 's')
+val EV_Thread_GetPersistantVector = idEventDef("getPersistantVector", "s", 'v')
+val EV_Thread_GetTicsPerSecond = idEventDef("getTicsPerSecond", null, 'f')
+val EV_Thread_GetTime = idEventDef("getTime", null, 'f')
+val EV_Thread_GetTraceBody = idEventDef("getTraceBody", null, 's')
+val EV_Thread_GetTraceEndPos = idEventDef("getTraceEndPos", null, 'v')
+val EV_Thread_GetTraceEntity = idEventDef("getTraceEntity", null, 'e')
+val EV_Thread_GetTraceFraction = idEventDef("getTraceFraction", null, 'f')
+val EV_Thread_GetTraceJoint = idEventDef("getTraceJoint", null, 's')
+val EV_Thread_GetTraceNormal = idEventDef("getTraceNormal", null, 'v')
+val EV_Thread_InfluenceActive = idEventDef("influenceActive", null, 'd')
+val EV_Thread_IsClient = idEventDef("isClient", null, 'f')
+val EV_Thread_IsMultiplayer = idEventDef("isMultiplayer", null, 'f')
+val EV_Thread_KillThread = idEventDef("killthread", "s")
+val EV_Thread_Normalize = idEventDef("vecNormalize", "v", 'v')
+val EV_Thread_OnSignal = idEventDef("onSignal", "des")
+val EV_Thread_Pause = idEventDef("pause", null)
+val EV_Thread_Print = idEventDef("print", "s")
+val EV_Thread_PrintLn = idEventDef("println", "s")
+val EV_Thread_RadiusDamage = idEventDef("radiusDamage", "vEEEsf")
+val EV_Thread_Random = idEventDef("random", "f", 'f')
+val EV_Thread_Say = idEventDef("say", "s")
+val EV_Thread_SetCamera = idEventDef("setCamera", "e")
+val EV_Thread_SetCvar = idEventDef("setcvar", "ss")
+val EV_Thread_SetPersistantArg = idEventDef("setPersistantArg", "ss")
+val EV_Thread_SetSpawnArg = idEventDef("setSpawnArg", "ss")
+val EV_Thread_SetThreadName = idEventDef("threadname", "s")
+val EV_Thread_Sine = idEventDef("sin", "f", 'f')
+val EV_Thread_Spawn = idEventDef("spawn", "s", 'e')
+val EV_Thread_SpawnFloat = idEventDef("SpawnFloat", "sf", 'f')
+val EV_Thread_SpawnString = idEventDef("SpawnString", "ss", 's')
+val EV_Thread_SpawnVector = idEventDef("SpawnVector", "sv", 'v')
+val EV_Thread_SquareRoot = idEventDef("sqrt", "f", 'f')
+val EV_Thread_StartMusic = idEventDef("music", "s")
+val EV_Thread_StrLeft = idEventDef("strLeft", "sd", 's')
+val EV_Thread_StrLen = idEventDef("strLength", "s", 'd')
+val EV_Thread_StrMid = idEventDef("strMid", "sdd", 's')
+val EV_Thread_StrRight = idEventDef("strRight", "sd", 's')
+val EV_Thread_StrSkip = idEventDef("strSkip", "sd", 's')
+val EV_Thread_StrToFloat = idEventDef("strToFloat", "s", 'f')
+
+//
+// script callable events
+val EV_Thread_TerminateThread = idEventDef("terminate", "d")
+val EV_Thread_Trace = idEventDef("trace", "vvvvde", 'f')
+val EV_Thread_TracePoint = idEventDef("tracePoint", "vvde", 'f')
+val EV_Thread_Trigger = idEventDef("trigger", "e")
+val EV_Thread_VecCrossProduct = idEventDef("CrossProduct", "vv", 'v')
+val EV_Thread_VecDotProduct = idEventDef("DotProduct", "vv", 'f')
+val EV_Thread_VecLength = idEventDef("vecLength", "v", 'f')
+val EV_Thread_VecToAngles = idEventDef("VecToAngles", "v", 'v')
+val EV_Thread_WaitFor = idEventDef("waitFor", "e")
+val EV_Thread_WaitForThread = idEventDef("waitForThread", "d")
+val EV_Thread_Warning = idEventDef("warning", "s")
+
 object Script_Thread {
-    val EV_Thread_SetCallback = idEventDef("<script_setcallback>", null)
-    val EV_Thread_Wait = idEventDef("wait", "f")
-    val EV_Thread_WaitFrame = idEventDef("waitFrame")
-    val EV_Thread_AngToForward = idEventDef("angToForward", "v", 'v')
-    val EV_Thread_AngToRight = idEventDef("angToRight", "v", 'v')
-    val EV_Thread_AngToUp = idEventDef("angToUp", "v", 'v')
-    val EV_Thread_Assert = idEventDef("assert", "f")
-    val EV_Thread_ClearPersistantArgs = idEventDef("clearPersistantArgs")
-    val EV_Thread_ClearSignal = idEventDef("clearSignalThread", "de")
-    val EV_Thread_CopySpawnArgs = idEventDef("copySpawnArgs", "e")
-    val EV_Thread_Cosine = idEventDef("cos", "f", 'f')
-    val EV_Thread_DebugArrow = idEventDef("debugArrow", "vvvdf")
-    val EV_Thread_DebugBounds = idEventDef("debugBounds", "vvvf")
-    val EV_Thread_DebugCircle = idEventDef("debugCircle", "vvvfdf")
-    val EV_Thread_DebugLine = idEventDef("debugLine", "vvvf")
-    val EV_Thread_DrawText = idEventDef("drawText", "svfvdf")
-    val EV_Thread_Error = idEventDef("error", "s")
-    val EV_Thread_Execute = idEventDef("<execute>", null)
-    val EV_Thread_FadeIn = idEventDef("fadeIn", "vf")
-    val EV_Thread_FadeOut = idEventDef("fadeOut", "vf")
-    val EV_Thread_FadeTo = idEventDef("fadeTo", "vff")
-    val EV_Thread_FirstPerson = idEventDef("firstPerson", null)
-    val EV_Thread_GetCvar = idEventDef("getcvar", "s", 's')
-    val EV_Thread_GetEntity = idEventDef("getEntity", "s", 'e')
-    val EV_Thread_GetFrameTime = idEventDef("getFrameTime", null, 'f')
-    val EV_Thread_GetPersistantFloat = idEventDef("getPersistantFloat", "s", 'f')
-    val EV_Thread_GetPersistantString = idEventDef("getPersistantString", "s", 's')
-    val EV_Thread_GetPersistantVector = idEventDef("getPersistantVector", "s", 'v')
-    val EV_Thread_GetTicsPerSecond = idEventDef("getTicsPerSecond", null, 'f')
-    val EV_Thread_GetTime = idEventDef("getTime", null, 'f')
-    val EV_Thread_GetTraceBody = idEventDef("getTraceBody", null, 's')
-    val EV_Thread_GetTraceEndPos = idEventDef("getTraceEndPos", null, 'v')
-    val EV_Thread_GetTraceEntity = idEventDef("getTraceEntity", null, 'e')
-    val EV_Thread_GetTraceFraction = idEventDef("getTraceFraction", null, 'f')
-    val EV_Thread_GetTraceJoint = idEventDef("getTraceJoint", null, 's')
-    val EV_Thread_GetTraceNormal = idEventDef("getTraceNormal", null, 'v')
-    val EV_Thread_InfluenceActive = idEventDef("influenceActive", null, 'd')
-    val EV_Thread_IsClient = idEventDef("isClient", null, 'f')
-    val EV_Thread_IsMultiplayer = idEventDef("isMultiplayer", null, 'f')
-    val EV_Thread_KillThread = idEventDef("killthread", "s")
-    val EV_Thread_Normalize = idEventDef("vecNormalize", "v", 'v')
-    val EV_Thread_OnSignal = idEventDef("onSignal", "des")
-    val EV_Thread_Pause = idEventDef("pause", null)
-    val EV_Thread_Print = idEventDef("print", "s")
-    val EV_Thread_PrintLn = idEventDef("println", "s")
-    val EV_Thread_RadiusDamage = idEventDef("radiusDamage", "vEEEsf")
-    val EV_Thread_Random = idEventDef("random", "f", 'f')
-    val EV_Thread_Say = idEventDef("say", "s")
-    val EV_Thread_SetCamera = idEventDef("setCamera", "e")
-    val EV_Thread_SetCvar = idEventDef("setcvar", "ss")
-    val EV_Thread_SetPersistantArg = idEventDef("setPersistantArg", "ss")
-    val EV_Thread_SetSpawnArg = idEventDef("setSpawnArg", "ss")
-    val EV_Thread_SetThreadName = idEventDef("threadname", "s")
-    val EV_Thread_Sine = idEventDef("sin", "f", 'f')
-    val EV_Thread_Spawn = idEventDef("spawn", "s", 'e')
-    val EV_Thread_SpawnFloat = idEventDef("SpawnFloat", "sf", 'f')
-    val EV_Thread_SpawnString = idEventDef("SpawnString", "ss", 's')
-    val EV_Thread_SpawnVector = idEventDef("SpawnVector", "sv", 'v')
-    val EV_Thread_SquareRoot = idEventDef("sqrt", "f", 'f')
-    val EV_Thread_StartMusic = idEventDef("music", "s")
-    val EV_Thread_StrLeft = idEventDef("strLeft", "sd", 's')
-    val EV_Thread_StrLen = idEventDef("strLength", "s", 'd')
-    val EV_Thread_StrMid = idEventDef("strMid", "sdd", 's')
-    val EV_Thread_StrRight = idEventDef("strRight", "sd", 's')
-    val EV_Thread_StrSkip = idEventDef("strSkip", "sd", 's')
-    val EV_Thread_StrToFloat = idEventDef("strToFloat", "s", 'f')
 
-    //
-    // script callable events
-    val EV_Thread_TerminateThread = idEventDef("terminate", "d")
-    val EV_Thread_Trace = idEventDef("trace", "vvvvde", 'f')
-    val EV_Thread_TracePoint = idEventDef("tracePoint", "vvde", 'f')
-    val EV_Thread_Trigger = idEventDef("trigger", "e")
-    val EV_Thread_VecCrossProduct = idEventDef("CrossProduct", "vv", 'v')
-    val EV_Thread_VecDotProduct = idEventDef("DotProduct", "vv", 'f')
-    val EV_Thread_VecLength = idEventDef("vecLength", "v", 'f')
-    val EV_Thread_VecToAngles = idEventDef("VecToAngles", "v", 'v')
-    val EV_Thread_WaitFor = idEventDef("waitFor", "e")
-    val EV_Thread_WaitForThread = idEventDef("waitForThread", "d")
-    val EV_Thread_Warning = idEventDef("warning", "s")
 
     class idThread : idClass {
         private var creationTime = 0
@@ -385,7 +380,7 @@ object Script_Thread {
             // We will check on restore that threadNum is still the same,
             // threads should have been restored in the same order.
             savefile.WriteInt(threadNum)
-            savefile.WriteObject(waitingForThread!!)
+            savefile.WriteObject(waitingForThread)
             savefile.WriteInt(waitingFor)
             savefile.WriteInt(waitingUntil)
             interpreter.Save(savefile)
@@ -551,7 +546,7 @@ object Script_Thread {
             if (done) {
                 End()
                 if (interpreter.terminateOnExit) {
-                    PostEventMS(neo.Game.GameSys.Class.EV_Remove, 0)
+                    PostEventMS(EV_Remove, 0)
                 }
             } else if (!manualControl) {
                 if (waitingUntil > lastExecuteTime) {
@@ -1025,7 +1020,7 @@ object Script_Thread {
                             t, colorA as idEventArg<idVec3>, alpha as idEventArg<Float>, time as idEventArg<Float>
                         )
                     })
-                eventCallbacks[Entity.EV_SetShaderParm] =
+                eventCallbacks[EV_SetShaderParm] =
                     (eventCallback_t2 { t: idThread, parmnumA: idEventArg<*>, value: idEventArg<*> ->
                         Event_SetShaderParm(
                             t, parmnumA as idEventArg<Int>, value as idEventArg<Float>
@@ -1537,15 +1532,15 @@ object Script_Thread {
             }
 
             private fun Event_Assert(t: idThread, value: idEventArg<Float>) {
-                assert(value.value != 0f)
+                assert(value.value != 0.0f)
             }
 
             private fun Event_Trigger(t: idThread, e: idEventArg<idEntity>) {
                 val ent: idEntity = e.value
                 if (ent != null) {
-                    ent.Signal(signalNum_t.SIG_TRIGGER);
-                    ent.ProcessEvent(EV_Activate, gameLocal.GetLocalPlayer());
-                    ent.TriggerGuis();
+                    ent.Signal(signalNum_t.SIG_TRIGGER)
+                    ent.ProcessEvent(EV_Activate, gameLocal.GetLocalPlayer())
+                    ent.TriggerGuis()
                 }
             }
 
@@ -1585,12 +1580,12 @@ object Script_Thread {
 
             //
             private fun Event_Spawn(t: idThread, classname: idEventArg<String>) {
-                var ent: Array<idEntity?> = arrayOfNulls(1);
+                var ent: Array<idEntity?> = arrayOfNulls(1)
 
-                t.spawnArgs!!.Set("classname", classname.value);
-                gameLocal.SpawnEntityDef(t.spawnArgs!!, ent);
-                ReturnEntity(ent[0]);
-                t.spawnArgs!!.Clear();
+                t.spawnArgs!!.Set("classname", classname.value)
+                gameLocal.SpawnEntityDef(t.spawnArgs!!, ent)
+                ReturnEntity(ent[0])
+                t.spawnArgs!!.Clear()
             }
 
             private fun Event_CopySpawnArgs(t: idThread, ent: idEventArg<idEntity>) {
@@ -1615,15 +1610,15 @@ object Script_Thread {
 
             //
             private fun Event_SpawnVector(t: idThread, key: idEventArg<String>, d: idEventArg<idVec3>) {
-                val result: idVec3 = idVec3();
-                val defaultvalue: idVec3 = idVec3(d.value);
+                val result: idVec3 = idVec3()
+                val defaultvalue: idVec3 = idVec3(d.value)
 
                 t.spawnArgs!!.GetVector(
                     key.value,
                     String.format("%f %f %f", defaultvalue.x, defaultvalue.y, defaultvalue.z),
                     result
-                );
-                ReturnVector(result);
+                )
+                ReturnVector(result)
             }
 
             private fun Event_SetPersistantArg(t: idThread, key: idEventArg<String>, value: idEventArg<String>) {
@@ -1738,11 +1733,8 @@ object Script_Thread {
                 return null
             }
 
-            val eventCallBacks: Map<idEventDef, eventCallback_t<*>>
-                get() = eventCallbacks
 
             fun Restart() {
-                var i: Int
                 val n: Int
 
                 // reset the threadIndex
@@ -1853,7 +1845,7 @@ object Script_Thread {
                 ReturnInt(if (value) 1 else 0)
             }
 
-            fun ReturnVector(vec: idVec3?) {
+            fun ReturnVector(vec: idVec3) {
                 gameLocal.program.ReturnVector(vec)
             }
 

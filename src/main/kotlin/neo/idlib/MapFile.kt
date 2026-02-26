@@ -2,8 +2,6 @@ package neo.idlib
 
 import neo.framework.File_h.idFile
 import neo.idlib.Dict_h.idDict
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str
@@ -12,18 +10,15 @@ import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List.idList
 import neo.idlib.geometry.DrawVert.idDrawVert
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idMath
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 
-/**
- *
- */
 object MapFile {
     /*
      ===============================================================================
@@ -55,28 +50,28 @@ object MapFile {
      =================
      */
     fun ComputeAxisBase(normal: idVec3, texS: idVec3, texT: idVec3) {
-        val RotY: Double
-        val RotZ: Double
+        val RotY: Float
+        val RotZ: Float
         val n = idVec3()
 
         // do some cleaning
         n[0] = if (abs(normal[0]) < 1e-6f) 0.0f else normal[0]
         n[1] = if (abs(normal[1]) < 1e-6f) 0.0f else normal[1]
         n[2] = if (abs(normal[2]) < 1e-6f) 0.0f else normal[2]
-        RotY = -atan2(n[2].toDouble(), idMath.Sqrt(n[1] * n[1] + n[0] * n[0]).toDouble())
-        RotZ = atan2(n[1].toDouble(), n[0].toDouble())
+        RotY = -atan2(n[2], idMath.Sqrt(n[1] * n[1] + n[0] * n[0]))
+        RotZ = atan2(n[1], n[0])
         // rotate (0,1,0) and (0,0,1) to compute texS and texT
-        texS[0] = -sin(RotZ).toFloat()
-        texS[1] = cos(RotZ).toFloat()
-        texS[2] = 0f
+        texS[0] = -sin(RotZ)
+        texS[1] = cos(RotZ)
+        texS[2] = 0.0f
         // the texT vector is along -Z ( T texture coorinates axis )
-        texT[0] = (-sin(RotY) * cos(RotZ)).toFloat()
-        texT[1] = (-sin(RotY) * sin(RotZ)).toFloat()
-        texT[2] = -cos(RotY).toFloat()
+        texT[0] = (-sin(RotY) * cos(RotZ))
+        texT[1] = (-sin(RotY) * sin(RotZ))
+        texT[2] = -cos(RotY)
     }
 
     private fun FloatCRC(f: Float): Long {
-        return Integer.toUnsignedLong(java.lang.Float.floatToIntBits(f))
+        return Integer.toUnsignedLong(f.toBits().toInt())
     }
 
     private fun StringCRC(str: String): Long {
@@ -237,8 +232,6 @@ object MapFile {
         }
 
         companion object {
-            //public							~idMapBrush( void ) { sides.DeleteContents( true ); }
-            //public	static idMapBrush *		Parse( idLexer &src, const idVec3 &origin, bool newFormat = true, float version = CURRENT_MAP_VERSION );
             @Throws(idException::class)
             fun Parse(src: idLexer, origin: idVec3, newFormat: Boolean, version: Float): idMapBrush? {
                 var i: Int
@@ -732,7 +725,11 @@ object MapFile {
             // write entity epairs
             i = 0
             while (i < epairs.GetNumKeyVals()) {
-                fp.WriteFloatString("\"%s\" \"%s\"\n", epairs.GetKeyVal(i)!!.GetKey(), epairs.GetKeyVal(i)!!.GetValue())
+                fp.WriteFloatString(
+                    "\"%s\" \"%s\"\n",
+                    epairs.GetKeyVal(i)!!.GetKey(),
+                    epairs.GetKeyVal(i)!!.GetValue()
+                )
                 i++
             }
             epairs.GetVector("origin", "0 0 0", origin)
@@ -873,7 +870,7 @@ object MapFile {
                         mapEnt.epairs.Set(key, value)
                         if (0 == idStr.Icmp(key, "origin")) {
                             // scanf into doubles, then assign, so it is idVec size independent
-                            v3 = 0f
+                            v3 = 0.0f
                             v2 = v3
                             v1 = v2
                             //                        sscanf(value, "%lf %lf %lf",  & v1,  & v2,  & v3);
@@ -998,7 +995,10 @@ object MapFile {
                                         k++
                                     }
                                 }
-                                idMapPrimitive.TYPE_PATCH -> {}
+
+                                idMapPrimitive.TYPE_PATCH -> {
+                                    (mapPrimitive as idMapPatch).SetMaterial(material.toString())
+                                }
                             }
                             j++
                         }

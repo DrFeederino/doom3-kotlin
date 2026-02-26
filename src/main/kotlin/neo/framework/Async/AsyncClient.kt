@@ -23,18 +23,19 @@ import neo.framework.Session.msgBoxType_t
 import neo.framework.UsercmdGen.usercmd_t
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.Dict_h.idDict
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
+import neo.idlib.MAX_STRING_CHARS
+import neo.idlib.Min
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.Measure_t
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.StrPool.idPoolStr
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.idException
+import neo.idlib.idLib
+import neo.idlib.math.INTSIGNBITSET
 import neo.idlib.math.Random.idRandom
+import neo.idlib.math.idMath
 import neo.sys.sys_public
 import neo.sys.sys_public.idPort
 import neo.sys.sys_public.netadr_t
@@ -47,9 +48,6 @@ import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.util.*
 
-/**
- *
- */
 object AsyncClient {
     const val EMPTY_RESEND_TIME = 500
     const val PREDICTION_FAST_ADJUST = 4
@@ -943,12 +941,14 @@ object AsyncClient {
                             Common.common.Printf("received empty message from server\n")
                         }
                     }
+
                     SERVER_UNRELIABLE.SERVER_UNRELIABLE_MESSAGE_PING -> {
                         if (idAsyncNetwork.verbose.GetInteger() == 2) {
                             Common.common.Printf("received ping message from server\n")
                         }
                         SendPingResponseToServer(msg.ReadLong())
                     }
+
                     SERVER_UNRELIABLE.SERVER_UNRELIABLE_MESSAGE_GAMEINIT -> {
                         serverGameFrame = msg.ReadLong()
                         serverGameTime = msg.ReadLong()
@@ -986,6 +986,7 @@ object AsyncClient {
                             Session.sessLocal.ExecuteMapChange()
                         }
                     }
+
                     SERVER_UNRELIABLE.SERVER_UNRELIABLE_MESSAGE_SNAPSHOT -> {
 
                         // if the snapshot is from a different game
@@ -1049,7 +1050,7 @@ object AsyncClient {
                         if (clientState == clientState_t.CS_CONNECTED) {
                             gameTimeResidual = 0
                             clientState = clientState_t.CS_INGAME
-                            assert(TempDump.NOT(Session.sessLocal.GetActiveMenu()))
+                            assert(Session.sessLocal.GetActiveMenu() == null)
                             if (idAsyncNetwork.verbose.GetInteger() != 0) {
                                 Common.common.Printf(
                                     "received first snapshot, gameInitId = %d, gameFrame %d gameTime %d\n",
@@ -1077,14 +1078,14 @@ object AsyncClient {
                         }
 
                         // adjust the client prediction time based on the snapshot time
-                        clientPrediction -= 1 - (Math_h.INTSIGNBITSET(aheadOfServer - idAsyncNetwork.clientPrediction.GetInteger()) shl 1)
+                        clientPrediction -= 1 - (INTSIGNBITSET(aheadOfServer - idAsyncNetwork.clientPrediction.GetInteger()) shl 1)
                         clientPrediction = idMath.ClampInt(
                             idAsyncNetwork.clientPrediction.GetInteger(),
                             idAsyncNetwork.clientMaxPrediction.GetInteger(),
                             clientPrediction
                         )
                         delta = gameTime - (snapshotGameTime + clientPrediction)
-                        clientPredictTime -= delta / PREDICTION_FAST_ADJUST + (1 - (Math_h.INTSIGNBITSET(
+                        clientPredictTime -= delta / PREDICTION_FAST_ADJUST + (1 - (INTSIGNBITSET(
                             delta
                         ) shl 1))
                         lastSnapshotTime = clientTime
@@ -1162,6 +1163,7 @@ object AsyncClient {
                             }
                             Game_local.game.SetUserInfo(clientNum, info, true, false)
                         }
+
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_SYNCEDCVARS -> {
                             val info: idDict = Session.sessLocal.mapSpawnData.syncedCVars
                             msg.ReadDeltaDict(info, info)
@@ -1170,16 +1172,18 @@ object AsyncClient {
                                 CVarSystem.cvarSystem.ResetFlaggedVariables(CVarSystem.CVAR_CHEAT)
                             }
                         }
+
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_PRINT -> {
-                            val string = CharArray(Lib.MAX_STRING_CHARS)
-                            msg.ReadString(string, Lib.MAX_STRING_CHARS)
+                            val string = CharArray(MAX_STRING_CHARS)
+                            msg.ReadString(string, MAX_STRING_CHARS)
                             Common.common.Printf("%s\n", string)
                         }
+
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_DISCONNECT -> {
                             var clientNum: Int
-                            val string = CharArray(Lib.MAX_STRING_CHARS)
+                            val string = CharArray(MAX_STRING_CHARS)
                             clientNum = msg.ReadLong()
-                            ReadLocalizedServerString(msg, string, Lib.MAX_STRING_CHARS)
+                            ReadLocalizedServerString(msg, string, MAX_STRING_CHARS)
                             if (clientNum == this.clientNum) {
                                 Session.session.Stop()
                                 Session.session.MessageBox(
@@ -1203,6 +1207,7 @@ object AsyncClient {
                                 Session.sessLocal.mapSpawnData.userInfo[clientNum].Clear()
                             }
                         }
+
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_APPLYSNAPSHOT -> {
                             var sequence: Int
                             sequence = msg.ReadLong()
@@ -1211,9 +1216,11 @@ object AsyncClient {
                                 Common.common.Error("couldn't apply snapshot %d", sequence)
                             }
                         }
+
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_PURE -> {
                             ProcessReliableMessagePure(msg)
                         }
+
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_RELOAD -> {
                             if (idAsyncNetwork.verbose.GetBool()) {
                                 Common.common.Printf("got MESSAGE_RELOAD from server\n")
@@ -1221,6 +1228,7 @@ object AsyncClient {
                             // simply reconnect, so that if the server restarts in pure mode we can get the right list and avoid spurious reloads
                             CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "reconnect\n")
                         }
+
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_ENTERGAME -> {
                             SendUserInfoToServer()
                             Game_local.game.SetUserInfo(
@@ -1246,8 +1254,8 @@ object AsyncClient {
 
         @Throws(idException::class)
         private fun ProcessChallengeResponseMessage(from: netadr_t, msg: idBitMsg) {
-            val serverGame = CharArray(Lib.MAX_STRING_CHARS)
-            val serverGameBase = CharArray(Lib.MAX_STRING_CHARS)
+            val serverGame = CharArray(MAX_STRING_CHARS)
+            val serverGameBase = CharArray(MAX_STRING_CHARS)
             val serverGameStr: String
             val serverGameBaseStr: String
             if (clientState != clientState_t.CS_CHALLENGING) {
@@ -1256,8 +1264,8 @@ object AsyncClient {
             }
             serverChallenge = msg.ReadLong()
             serverId = msg.ReadShort().toInt()
-            msg.ReadString(serverGameBase, Lib.MAX_STRING_CHARS)
-            msg.ReadString(serverGame, Lib.MAX_STRING_CHARS)
+            msg.ReadString(serverGameBase, MAX_STRING_CHARS)
+            msg.ReadString(serverGame, MAX_STRING_CHARS)
             serverGameStr = TempDump.ctos(serverGame)
             serverGameBaseStr = TempDump.ctos(serverGameBase)
 
@@ -1422,7 +1430,7 @@ object AsyncClient {
 
         @Throws(idException::class)
         private fun ProcessPrintMessage(from: netadr_t, msg: idBitMsg) {
-            val str = CharArray(Lib.MAX_STRING_CHARS)
+            val str = CharArray(MAX_STRING_CHARS)
             val opcode: Int
             var game_opcode = allowReply_t.ALLOW_YES.ordinal
             val retpass: String
@@ -1431,7 +1439,7 @@ object AsyncClient {
             if (opcode == SERVER_PRINT.SERVER_PRINT_GAMEDENY.ordinal) {
                 game_opcode = msg.ReadLong()
             }
-            ReadLocalizedServerString(msg, str, Lib.MAX_STRING_CHARS)
+            ReadLocalizedServerString(msg, str, MAX_STRING_CHARS)
             string = TempDump.ctos(str)
             Common.common.Printf("%s\n", string)
             guiNetMenu!!.SetStateString("status", string)
@@ -1493,7 +1501,7 @@ object AsyncClient {
         @Throws(idException::class)
         private fun ProcessAuthKeyMessage(from: netadr_t, msg: idBitMsg) {
             val authMsg: authKeyMsg_t
-            val read_string = CharArray(Lib.MAX_STRING_CHARS)
+            val read_string = CharArray(MAX_STRING_CHARS)
             var retkey: String
             val authBadStatus: authBadKeyStatus_t
             val key_index: Int
@@ -1517,6 +1525,7 @@ object AsyncClient {
                         idAsyncNetwork.BuildInvalidKeyMsg(auth_msg2, valid)
                         auth_msg = auth_msg2.toString()
                     }
+
                     authBadKeyStatus_t.AUTHKEY_BAD_BANNED -> {
                         key_index = msg.ReadByte().toInt()
                         auth_msg = Common.common.GetLanguageDict().GetString(Str.va("#str_0719%1d", 6 + key_index))
@@ -1524,6 +1533,7 @@ object AsyncClient {
                         auth_msg += Common.common.GetLanguageDict().GetString("#str_04304")
                         valid[key_index] = false
                     }
+
                     authBadKeyStatus_t.AUTHKEY_BAD_INUSE -> {
                         key_index = msg.ReadByte().toInt()
                         auth_msg = Common.common.GetLanguageDict().GetString(Str.va("#str_0719%1d", 8 + key_index))
@@ -1531,10 +1541,11 @@ object AsyncClient {
                         auth_msg += Common.common.GetLanguageDict().GetString("#str_04304")
                         valid[key_index] = false
                     }
+
                     authBadKeyStatus_t.AUTHKEY_BAD_MSG -> {
                         // a general message explaining why this key is denied
                         // no specific use for this atm. let's not clear the keys either
-                        msg.ReadString(read_string, Lib.MAX_STRING_CHARS)
+                        msg.ReadString(read_string, MAX_STRING_CHARS)
                         auth_msg = TempDump.ctos(read_string)
                     }
                 }
@@ -1578,7 +1589,7 @@ object AsyncClient {
                     Session.session.CDKeysAuthReply(false, auth_msg)
                 }
             } else {
-                msg.ReadString(read_string, Lib.MAX_STRING_CHARS)
+                msg.ReadString(read_string, MAX_STRING_CHARS)
                 CVarSystem.cvarSystem.SetCVarString("com_guid", TempDump.ctos(read_string))
                 Common.common.Printf("guid set to %s\n", read_string)
                 Session.session.CDKeysAuthReply(true, null)
@@ -1586,19 +1597,19 @@ object AsyncClient {
         }
 
         private fun ProcessVersionMessage(from: netadr_t, msg: idBitMsg) {
-            val string = CharArray(Lib.MAX_STRING_CHARS)
+            val string = CharArray(MAX_STRING_CHARS)
             if (updateState != clientUpdateState_t.UPDATE_SENT) {
                 Common.common.Printf("ProcessVersionMessage: version reply, != UPDATE_SENT\n")
                 return
             }
             Common.common.Printf("A new version is available\n")
-            msg.ReadString(string, Lib.MAX_STRING_CHARS)
+            msg.ReadString(string, MAX_STRING_CHARS)
             updateMSG.set(string)
             updateDirectDownload = msg.ReadByte().toInt() != 0
-            msg.ReadString(string, Lib.MAX_STRING_CHARS)
+            msg.ReadString(string, MAX_STRING_CHARS)
             updateURL = idStr(string)
             updateMime = dlMime_t.values()[msg.ReadByte().toInt()]
-            msg.ReadString(string, Lib.MAX_STRING_CHARS)
+            msg.ReadString(string, MAX_STRING_CHARS)
             updateFallback.set(string)
             updateState = clientUpdateState_t.UPDATE_READY
         }
@@ -1606,7 +1617,7 @@ object AsyncClient {
         @Throws(idException::class)
         private fun ConnectionlessMessage(from: netadr_t, msg: idBitMsg) {
             val str =
-                CharArray(Lib.MAX_STRING_CHARS * 2) // M. Quinn - Even Balance - PB packets can go beyond 1024
+                CharArray(MAX_STRING_CHARS * 2) // M. Quinn - Even Balance - PB packets can go beyond 1024
             val string: String
             msg.ReadString(str, str.size)
             string = TempDump.ctos(str)
@@ -1869,6 +1880,7 @@ object AsyncClient {
                     CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "reloadEngine")
                     return false
                 }
+
                 fsPureReply_t.PURE_MISSING -> {
                     var checkSums: String = ""
                     i = 0
@@ -1941,6 +1953,7 @@ object AsyncClient {
                     }
                     return false
                 }
+
                 fsPureReply_t.PURE_NODLL -> {
                     Common.common.Printf(
                         Common.common.GetLanguageDict().GetString("#str_07211"),
@@ -1949,6 +1962,7 @@ object AsyncClient {
                     CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "disconnect")
                     return false
                 }
+
                 else -> {}
             }
             return true
@@ -2200,7 +2214,7 @@ object AsyncClient {
                             remainlen = f.Tell()
                             f.Seek(0, fsOrigin_t.FS_SEEK_SET)
                             while (remainlen != 0) {
-                                readlen = Lib.Min(remainlen, CHUNK_SIZE)
+                                readlen = Min(remainlen, CHUNK_SIZE)
                                 retlen = f.Read(buf, readlen)
                                 if (retlen != readlen) {
                                     Common.common.FatalError(
@@ -2314,7 +2328,7 @@ object AsyncClient {
 
         @Throws(idException::class)
         private fun ProcessDownloadInfoMessage(from: netadr_t, msg: idBitMsg) {
-            val buf = CharArray(Lib.MAX_STRING_CHARS)
+            val buf = CharArray(MAX_STRING_CHARS)
             val srvDlRequest = msg.ReadLong()
             val infoType = msg.ReadByte()
             var pakDl: Int
@@ -2330,18 +2344,18 @@ object AsyncClient {
             // mark the dlRequest as dead now whatever how we process it
             dlRequest = -1
             if (infoType == SERVER_DL.SERVER_DL_REDIRECT.ordinal.toByte()) {
-                msg.ReadString(buf, Lib.MAX_STRING_CHARS)
+                msg.ReadString(buf, MAX_STRING_CHARS)
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "disconnect")
                 // "You are missing required pak files to connect to this server.\nThe server gave a web page though:\n%s\nDo you want to go there now?"
                 // "Missing required files"
                 if (
-                        Session.session.MessageBox(
-                            msgBoxType_t.MSG_YESNO,
-                            Str.va(Common.common.GetLanguageDict().GetString("#str_07217"), buf),
-                            Common.common.GetLanguageDict().GetString("#str_07218"),
-                            true,
-                            "yes"
-                        ).isNotEmpty()
+                    Session.session.MessageBox(
+                        msgBoxType_t.MSG_YESNO,
+                        Str.va(Common.common.GetLanguageDict().GetString("#str_07217"), buf),
+                        Common.common.GetLanguageDict().GetString("#str_07218"),
+                        true,
+                        "yes"
+                    ).isNotEmpty()
                 ) {
                     idLib.sys.OpenURL(TempDump.ctos(buf), true)
                 }
@@ -2361,9 +2375,9 @@ object AsyncClient {
                         if (pakIndex == 0) {
                             gotGame = true
                         }
-                        msg.ReadString(buf, Lib.MAX_STRING_CHARS)
+                        msg.ReadString(buf, MAX_STRING_CHARS)
                         entry.filename.set(buf)
-                        msg.ReadString(buf, Lib.MAX_STRING_CHARS)
+                        msg.ReadString(buf, MAX_STRING_CHARS)
                         entry.url.set(buf)
                         entry.size = msg.ReadLong()
                         // checksums are not transmitted, we read them from the dl request we sent
@@ -2377,7 +2391,7 @@ object AsyncClient {
                             entry.checksum
                         )
                     } else if (pakDl == SERVER_PAK.SERVER_PAK_NO.ordinal) {
-                        msg.ReadString(buf, Lib.MAX_STRING_CHARS)
+                        msg.ReadString(buf, MAX_STRING_CHARS)
                         entry.filename.set(buf)
                         entry.url.set("")
                         entry.size = 0
@@ -2436,15 +2450,15 @@ object AsyncClient {
                     asked = true
                     // "The server only offers to download some of the files required to connect ( %s ). Download anyway?"
                     // "Missing required files"
-                    if (TempDump.NOT(
-                            Session.session.MessageBox(
-                                msgBoxType_t.MSG_YESNO,
-                                Str.va(Common.common.GetLanguageDict().GetString("#str_07222"), sizeStr.toString()),
-                                Common.common.GetLanguageDict().GetString("#str_07218"),
-                                true,
-                                "yes"
-                            )
-                        )
+                    if (
+                        Session.session.MessageBox(
+                            msgBoxType_t.MSG_YESNO,
+                            Str.va(Common.common.GetLanguageDict().GetString("#str_07222"), sizeStr.toString()),
+                            Common.common.GetLanguageDict().GetString("#str_07218"),
+                            true,
+                            "yes"
+                        ).isNotEmpty()
+
                     ) { //TODO:check whether a NOT on the whole string is the same as an empty string
                         dlList.Clear()
                         return
@@ -2453,15 +2467,15 @@ object AsyncClient {
                 if (!asked && idAsyncNetwork.clientDownload.GetInteger() == 1) {
                     // "You need to download some files to connect to this server ( %s ), proceed?"
                     // "Missing required files"
-                    if (TempDump.NOT(
-                            Session.session.MessageBox(
-                                msgBoxType_t.MSG_YESNO,
-                                Str.va(Common.common.GetLanguageDict().GetString("#str_07224"), sizeStr.toString()),
-                                Common.common.GetLanguageDict().GetString("#str_07218"),
-                                true,
-                                "yes"
-                            )
-                        )
+                    if (
+                        Session.session.MessageBox(
+                            msgBoxType_t.MSG_YESNO,
+                            Str.va(Common.common.GetLanguageDict().GetString("#str_07224"), sizeStr.toString()),
+                            Common.common.GetLanguageDict().GetString("#str_07218"),
+                            true,
+                            "yes"
+                        ).isNotEmpty()
+
                     ) {
                         dlList.Clear()
                         return

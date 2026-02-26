@@ -1,7 +1,9 @@
 package neo.ui
 
 import neo.Renderer.Material.idMaterial
-import neo.Renderer.RenderSystem_init
+import neo.Renderer.glConfig
+import neo.Renderer.r_scaleMenusTo43
+import neo.Renderer.r_skipGuiShaders
 import neo.framework.Common
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
@@ -22,22 +24,22 @@ import neo.idlib.Text.Str.va
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.CBool
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.math.idVec4
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
+import neo.ui.DeviceContext.VIRTUAL_HEIGHT
+import neo.ui.DeviceContext.VIRTUAL_WIDTH
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.ListGUI.idListGUI
 import neo.ui.ListGUILocal.idListGUILocal
 import neo.ui.Rectangle.idRectangle
 import neo.ui.UserInterface.idUserInterface
 import neo.ui.UserInterface.idUserInterface.idUserInterfaceManager
+import neo.ui.Window.WIN_MENUGUI
 import neo.ui.Window.idWindow
 import neo.ui.Winvar.idWinStr
 import java.nio.ByteBuffer
 
-/**
- *
- */
 class UserInterfaceLocal {
     /*
      ===============================================================================
@@ -48,13 +50,12 @@ class UserInterfaceLocal {
      */
     class idUserInterfaceLocal : idUserInterface() {
         // friend class idUserInterfaceManagerLocal;
+        private var virtualAspectRatio = 0.0f
         private val activateStr = idStr()
         private var active = false
         private var bindHandler: idWindow? = null
-
-        //
-        private var cursorX = 0f
-        private var cursorY = 0f
+        private var cursorX = 0.0f
+        private var cursorY = 0.0f
         var desktop: idWindow? = null
         var interactive = false
         private var loading = false
@@ -137,6 +138,8 @@ class UserInterfaceLocal {
                 desktop!!.backColor.set(idVec4(0.0f, 0.0f, 0.0f, 1.0f))
                 desktop!!.SetupFromState()
                 Common.common.Warning("Couldn't load gui: '%s'", qpath)
+                loading = false
+                return false
             }
             interactive = desktop!!.Interactive()
             if (UserInterface.uiManagerLocal.guis.Find(this) == null) {
@@ -149,21 +152,72 @@ class UserInterfaceLocal {
         override fun HandleEvent(event: sysEvent_s, _time: Int, updateVisuals: CBool?): String? {
             time = _time
             //            System.out.println(System.nanoTime()+"HandleEvent time="+_time+" "+Common.com_ticNumber);
-            if (bindHandler != null && event.evType === sysEventType_t.SE_KEY && event.evValue2 == 1) {
+            if (bindHandler != null && event.evType == sysEventType_t.SE_KEY && event.evValue2 == 1) {
                 val ret = bindHandler!!.HandleEvent(event, updateVisuals)
                 bindHandler = null
                 return ret
             }
-            if (event.evType === sysEventType_t.SE_MOUSE) {
-                cursorX += event.evValue.toFloat()
-                cursorY += event.evValue2.toFloat()
+
+            if (event.evType == sysEventType_t.SE_MOUSE || event.evType == sysEventType_t.SE_MOUSE_ABS) {
+                if (desktop != null || (desktop!!.GetFlags() and WIN_MENUGUI) != 0) {
+                    // DG: this is a fullscreen GUI, scale the mousedelta added to cursorX/Y
+                    //     by 640/w, because the GUI pretends that everything is 640x480
+                    //     even if the actual resolution is higher => mouse moved too fast
+                    var w = glConfig.winWidth
+                    var h = glConfig.winHeight
+                    if (w <= 0.0f || h <= 0.0f) {
+                        w = VIRTUAL_WIDTH.toFloat()
+                        h = VIRTUAL_HEIGHT.toFloat()
+                    }
+                    val realW = w
+                    val realH = h
+
+                    if (IsUserInterfaceScaledTo43(this)) {
+                        // in case we're scaling menus to 4:3, we need to take that into account
+                        // when scaling the mouse events.
+                        // no, we can't just call uiManagerLocal.dc.GetFixScaleForMenu() or sth like that,
+                        // because when we're here dc.SetMenuScaleFix(true) is not active and it'd just return (1, 1)!
+                        var aspectRatio = w / h
+                        virtualAspectRatio = (VIRTUAL_WIDTH.toFloat()) / (VIRTUAL_HEIGHT.toFloat()) // 4:3
+                        if (aspectRatio > 1.4f) {
+                            // widescreen (4:3 is 1.333 3:2 is 1.5, 16:10 is 1.6, 16:9 is 1.7778)
+                            // => we need to modify cursorX scaling, by modifying w
+                            w *= virtualAspectRatio / aspectRatio
+                        } else if (aspectRatio < 1.24f) {
+                            // portrait-mode, "thinner" than 5:4 (which is 1.25)
+                            // => we need to scale cursorY via h
+                            h *= aspectRatio / virtualAspectRatio
+                        }
+                    }
+
+                    if (event.evType == sysEventType_t.SE_MOUSE) {
+                        cursorX += event.evValue * ((VIRTUAL_WIDTH).toFloat() / w)
+                        cursorY += event.evValue2 * ((VIRTUAL_HEIGHT).toFloat() / h)
+                    } else { // SE_MOUSE_ABS
+                        // Note: In case of scaling to 4:3, w and h are already scaled down
+                        //       to the 4:3 size that fits into the real resolution.
+                        //       Otherwise xOffset/yOffset will just be 0
+                        var xOffset = (realW - w) * 0.5f
+                        var yOffset = (realH - h) * 0.5f
+                        // offset the mouse coordinates into 4:3 area and scale down to 640x480
+                        // yes, result could be negative, doesn't matter, code below checks that anyway
+                        cursorX = (event.evValue - xOffset) * ((VIRTUAL_WIDTH).toFloat() / w)
+                        cursorY = (event.evValue2 - yOffset) * ((VIRTUAL_HEIGHT).toFloat() / h)
+                    }
+                } else {
+                    // not a fullscreen GUI but some ingame thing - no scaling needed
+                    cursorX += event.evValue
+                    cursorY += event.evValue2
+                }
+
                 if (cursorX < 0) {
-                    cursorX = 0f
+                    cursorX = 0.0f
                 }
                 if (cursorY < 0) {
-                    cursorY = 0f
+                    cursorY = 0.0f
                 }
             }
+
             return if (desktop != null) {
                 desktop!!.HandleEvent(event, updateVisuals)
             } else ""
@@ -174,25 +228,56 @@ class UserInterfaceLocal {
         }
 
         override fun Redraw(_time: Int) {
-            if (RenderSystem_init.r_skipGuiShaders!!.GetInteger() > 5) {
+            if (r_skipGuiShaders.GetInteger() > 5) {
                 return
             }
             if (!loading && desktop != null) {
                 time = _time
                 UserInterface.uiManagerLocal.dc.PushClipRect(UserInterface.uiManagerLocal.screenRect)
-                desktop!!.Redraw(0f, 0f)
+                desktop!!.Redraw(0.0f, 0.0f)
                 UserInterface.uiManagerLocal.dc.PopClipRect()
+            }
+        }
+
+        fun IsUserInterfaceScaledTo43(ui: idUserInterface?): Boolean {
+            if (ui == null) {
+                // assert( 0 && "why do you call this without a ui?!" );
+                return false
+            }
+
+            val uiLocal = ui as? idUserInterfaceLocal
+            if (uiLocal == null) {
+                return false
+            }
+
+            val win = uiLocal.GetDesktop()
+            if (win == null) {
+                return false
+            }
+
+            val winFlags = win.GetFlags()
+            return if ((winFlags and WIN_MENUGUI) == 0 || !r_scaleMenusTo43.GetBool()) {
+                // if the window is no fullscreen menu (but an ingame menu or noninteractive like the HUD)
+                // or scaling menus to 4:3 by default (r_scaleMenusTo43) is disabled,
+                // they only get scaled if they explicitly requested it with "scaleto43 1"
+                (winFlags and Window.WIN_SCALETO43) != 0
+            } else {
+                // if it's a fullscreen menu and r_scaleMenusTo43 is enabled,
+                // they get scaled to 4:3 unless they explicitly disable it with "scaleto43 0"
+                (winFlags and Window.WIN_NO_SCALETO43) == 0
             }
         }
 
         override fun DrawCursor() {
             val cursorX = floatArrayOf(cursorX)
             val cursorY = floatArrayOf(cursorY)
-            if (null == desktop || desktop!!.GetFlags() and Window.WIN_MENUGUI != 0) {
+            if (null == desktop || desktop!!.GetFlags() and WIN_MENUGUI != 0) {
                 UserInterface.uiManagerLocal.dc.DrawCursor(cursorX, cursorY, 32.0f)
             } else {
                 UserInterface.uiManagerLocal.dc.DrawCursor(cursorX, cursorY, 64.0f)
             }
+            this.cursorX = cursorX[0]
+            this.cursorY = cursorY[0]
         }
 
         override fun State(): idDict {
@@ -478,8 +563,8 @@ class UserInterfaceLocal {
             return returnCmd
         }
 
-        override fun GetStateboolean(varName: String?, defaultString: String?): Boolean {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+        override fun GetStateboolean(varName: String?, defaultString: String): Boolean {
+            return state.GetBool(varName, defaultString)
         }
 
         override fun oSet(FindGui: idUserInterface?) {
@@ -516,7 +601,7 @@ class UserInterfaceLocal {
         //
         //
         override fun Init() {
-            screenRect.set(idRectangle(0f, 0f, 640f, 480f))
+            screenRect.set(idRectangle(0.0f, 0.0f, 640.0f, 480.0f))
             dc.Init()
         }
 
@@ -548,7 +633,7 @@ class UserInterfaceLocal {
         override fun BeginLevelLoad() {
             val c = guis.Num()
             for (i in 0 until c) {
-                if (guis[i]!!.GetDesktop()!!.GetFlags() and Window.WIN_MENUGUI == 0) {
+                if (guis[i]!!.GetDesktop()!!.GetFlags() and WIN_MENUGUI == 0) {
                     guis[i]!!.ClearRefs()
                     /*
                      delete guis[ i ];
@@ -571,7 +656,7 @@ class UserInterfaceLocal {
                     for (j in 0 until DeclManager.declManager.GetNumDecls(declType_t.DECL_MATERIAL)) {
                         val material =
                             DeclManager.declManager.DeclByIndex(declType_t.DECL_MATERIAL, j, false) as idMaterial?
-                        if (material!!.GlobalGui() === guis[i]) {
+                        if (material!!.GlobalGui() == guis[i]) {
                             remove = false
                             break
                         }
@@ -609,7 +694,7 @@ class UserInterfaceLocal {
             var copies = 0
             var unique = 0
             for (i in 0 until c) {
-                val gui = guis[i]
+                guis[i]
                 val isUnique = guis[i]!!.interactive
                 if (isUnique) {
                     unique++
@@ -653,7 +738,7 @@ class UserInterfaceLocal {
             if (gui != null) {
                 val c = guis.Num()
                 for (i in 0 until c) {
-                    if (guis[i] === gui) {
+                    if (guis[i] == gui) {
 //				delete guis[i];
                         guis.RemoveIndex(i)
                         return

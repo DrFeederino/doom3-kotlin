@@ -29,14 +29,12 @@ import neo.framework.FileSystem_h.idFileList
 import neo.framework.File_h.idFile
 import neo.framework.File_h.idFile_Memory
 import neo.framework.KeyInput.idKeyInput
+import neo.idlib.BIT
 import neo.idlib.CmdArgs
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idDict.ListKeys_f
 import neo.idlib.Dict_h.idDict.ListValues_f
 import neo.idlib.LangDict.idLangDict
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
 import neo.idlib.MapFile.idMapFile
 import neo.idlib.Text.Base64.idBase64
 import neo.idlib.Text.Lexer
@@ -46,9 +44,10 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.idStrList
-import neo.idlib.math.Simd.idSIMD
-import neo.idlib.math.Simd.idSIMD.Test_f
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.idException
+import neo.idlib.idLib
+import neo.idlib.math.idSIMD
+import neo.idlib.math.idVec4
 import neo.sys.*
 import neo.sys.win_main.Sys_GenerateEvents
 import neo.sys.win_main.Sys_Shutdown
@@ -59,9 +58,6 @@ import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
-/**
- *
- */
 class Common {
 
 
@@ -324,9 +320,8 @@ class Common {
 
                 // override cvars from command line
                 StartupVariable(null, false)
-                if (TempDump.NOT(
-                        idAsyncNetwork.serverDedicated.GetInteger().toDouble()
-                    ) && win_main.Sys_AlreadyRunning()
+                if (
+                    idAsyncNetwork.serverDedicated.GetInteger() == 0 && win_main.Sys_AlreadyRunning()
                 ) {
                     win_main.Sys_Quit()
                 }
@@ -377,7 +372,7 @@ class Common {
             ShutdownGame(false)
 
 //            // shut down non-portable system services
-            Sys_Shutdown();
+            Sys_Shutdown()
 //
             // shut down the console
             console.Shutdown()
@@ -447,7 +442,7 @@ class Common {
         override fun Frame() {
             try {
                 // pump all the events
-                Sys_GenerateEvents();
+                Sys_GenerateEvents()
 //
                 // write config file if anything changed
                 WriteConfiguration()
@@ -511,7 +506,7 @@ class Common {
 
         @Throws(idException::class)
         override fun GUIFrame(execCmd: Boolean, network: Boolean) {
-            win_main.Sys_GenerateEvents()
+            Sys_GenerateEvents()
             EventLoop.eventLoop.RunEventLoop(execCmd) // and execute any commands
             com_frameTime = com_ticNumber * UsercmdGen.USERCMD_MSEC
             if (network) {
@@ -880,7 +875,6 @@ class Common {
          ==================
          */
         override fun Warning(fmt: String, vararg args: Any) {
-//	va_list		argptr;
             val msg = arrayOf<String>("") //[MAX_PRINT_MSG_SIZE];
 
 //	va_start( argptr, fmt );
@@ -1350,9 +1344,9 @@ class Common {
             out.Empty()
             var k: Int
             var ch: Char
-            val slash: Char = '\\'
-            val tab: Char = 't'
-            val nl: Char = 'n'
+            val slash = '\\'
+            val tab = 't'
+            val nl = 'n'
             val src =
                 idLexer(Lexer.LEXFL_NOFATALERRORS or Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT)
             if (FileSystem_h.fileSystem.ReadFile(fileName, buffer) > 0) {
@@ -1498,7 +1492,7 @@ class Common {
         @Throws(idException::class)
         fun SetMachineSpec() {
             val cpuid_t = win_main.Sys_GetProcessorId()
-            val ghz = win_cpu.Sys_ClockTicksPerSecond() * 0.000000001f
+            val ghz = win_cpu.Sys_ClockTicksPerSecond() * 0.000000001
             val cores = Runtime.getRuntime().availableProcessors()
             val vidRam = 512 // Sys_GetVideoRam();
             val sysRam = win_shared.Sys_GetSystemRam()
@@ -1514,7 +1508,7 @@ class Common {
             )
             val cpuGhz = if (cpuid_t and sys_public.CPUID_AMD != 0) 1.9 else 2.19
             val cpuGhzPart2 = if (cpuid_t and sys_public.CPUID_AMD != 0) 1.1 else 1.25
-            if (ghz >= 2.75f && vidRam >= 512 && sysRam >= 1024 && !oldCard[0]) { //TODO:try to make this shit work.
+            if (ghz >= 2.75 && vidRam >= 512 && sysRam >= 1024 && !oldCard[0]) { //TODO:try to make this shit work.
                 Printf("This system qualifies for Ultra quality!\n")
                 com_machineSpec.SetInteger(3)
             } else if (ghz >= cpuGhz && vidRam >= 256 && sysRam >= 512 && !oldCard[0]) {
@@ -1731,12 +1725,6 @@ class Common {
                 ListValues_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
                 "lists all values used by dictionaries"
-            )
-            CmdSystem.cmdSystem.AddCommand(
-                "testSIMD",
-                Test_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
-                "test SIMD code"
             )
 
             // localization
@@ -2019,24 +2007,24 @@ class Common {
             // critical data structures
 //            Sys_EnterCriticalSection()
 //            try {
-                val stat =
-                    com_asyncStats[com_ticNumber and MAX_ASYNC_STATS - 1] //memset( stat, 0, sizeof( *stat ) );
-                stat.milliseconds = win_shared.Sys_Milliseconds()
-                stat.deltaMsec =
-                    stat.milliseconds - com_asyncStats[com_ticNumber - 1 and MAX_ASYNC_STATS - 1].milliseconds
-                if (UsercmdGen.usercmdGen != null && com_asyncInput.GetBool()) {
-                    UsercmdGen.usercmdGen.UsercmdInterrupt()
-                }
-                when (com_asyncSound.GetInteger()) {
-                    1 -> snd_system.soundSystem.AsyncUpdate(stat.milliseconds)
-                    3 -> snd_system.soundSystem.AsyncUpdateWrite(stat.milliseconds)
-                }
+            val stat =
+                com_asyncStats[com_ticNumber and MAX_ASYNC_STATS - 1] //memset( stat, 0, sizeof( *stat ) );
+            stat.milliseconds = win_shared.Sys_Milliseconds()
+            stat.deltaMsec =
+                stat.milliseconds - com_asyncStats[com_ticNumber - 1 and MAX_ASYNC_STATS - 1].milliseconds
+            if (UsercmdGen.usercmdGen != null && com_asyncInput.GetBool()) {
+                UsercmdGen.usercmdGen.UsercmdInterrupt()
+            }
+            when (com_asyncSound.GetInteger()) {
+                1 -> snd_system.soundSystem.AsyncUpdate(stat.milliseconds)
+                3 -> snd_system.soundSystem.AsyncUpdateWrite(stat.milliseconds)
+            }
 
-                // we update com_ticNumber after all the background tasks
-                // have completed their work for this tic
-                com_ticNumber++
-                //                System.out.println(System.nanoTime()+"com_ticNumber=" + com_ticNumber);
-                stat.timeConsumed = win_shared.Sys_Milliseconds() - stat.milliseconds
+            // we update com_ticNumber after all the background tasks
+            // have completed their work for this tic
+            com_ticNumber++
+            //                System.out.println(System.nanoTime()+"com_ticNumber=" + com_ticNumber);
+            stat.timeConsumed = win_shared.Sys_Milliseconds() - stat.milliseconds
 //            } finally {
 //                Sys_LeaveCriticalSection()
 //            }
@@ -2135,14 +2123,14 @@ class Common {
                 RenderSystem.renderSystem.GetScreenHeight()
             )
             RenderSystem.renderSystem.DrawStretchPic(
-                0f,
-                0f,
+                0.0f,
+                0.0f,
                 RenderSystem.SCREEN_WIDTH.toFloat(),
                 RenderSystem.SCREEN_HEIGHT.toFloat(),
-                0f,
-                0f,
-                1f,
-                1f,
+                0.0f,
+                0.0f,
+                1.0f,
+                1.0f,
                 DeclManager.declManager.FindMaterial("splashScreen")
             )
             val len = msg.length
@@ -2168,7 +2156,7 @@ class Common {
             }
         }
 
-        internal inner class asyncStats_t {
+        internal class asyncStats_t {
             var clientPacketsReceived = 0
             var deltaMsec // should always be 16
                     = 0
@@ -2516,7 +2504,7 @@ class Common {
             start = EventLoop.eventLoop.Milliseconds()
             while (true) {
                 now = EventLoop.eventLoop.Milliseconds()
-                if ((now - start) * 0.001f > s) {
+                if ((now - start) * 0.001 > s) {
                     break
                 }
             }
@@ -2545,7 +2533,6 @@ class Common {
                 //                return;
             }
 
-//	* ( int * ) 0 = 0x12345678;//not needed for java
         }
 
         companion object {
@@ -3164,20 +3151,20 @@ class Common {
         //
         //#ifdef _WIN32
         val DMAP_MSGID: String = "DMAPOutput"
-        val EDITOR_AAS: Int = Lib.BIT(11)
-        val EDITOR_AF: Int = Lib.BIT(8)
-        val EDITOR_DEBUGGER: Int = Lib.BIT(3)
-        val EDITOR_DECL: Int = Lib.BIT(7)
+        val EDITOR_AAS: Int = BIT(11)
+        val EDITOR_AF: Int = BIT(8)
+        val EDITOR_DEBUGGER: Int = BIT(3)
+        val EDITOR_DECL: Int = BIT(7)
 
 
-        val EDITOR_GUI: Int = Lib.BIT(2)
-        val EDITOR_LIGHT: Int = Lib.BIT(5)
-        val EDITOR_MATERIAL: Int = Lib.BIT(12)
-        val EDITOR_PARTICLE: Int = Lib.BIT(9)
-        val EDITOR_PDA: Int = Lib.BIT(10)
-        val EDITOR_RADIANT: Int = Lib.BIT(1)
-        val EDITOR_SCRIPT: Int = Lib.BIT(4)
-        val EDITOR_SOUND: Int = Lib.BIT(6)
+        val EDITOR_GUI: Int = BIT(2)
+        val EDITOR_LIGHT: Int = BIT(5)
+        val EDITOR_MATERIAL: Int = BIT(12)
+        val EDITOR_PARTICLE: Int = BIT(9)
+        val EDITOR_PDA: Int = BIT(10)
+        val EDITOR_RADIANT: Int = BIT(1)
+        val EDITOR_SCRIPT: Int = BIT(4)
+        val EDITOR_SOUND: Int = BIT(6)
 
         //
         //
@@ -3204,19 +3191,19 @@ class Common {
             "com_asyncSound",
             "2",
             CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ROM,
-            Companion.ASYNCSOUND_INFO
+            ASYNCSOUND_INFO
         ) else if (BuildDefines.__linux__) idCVar(
             "com_asyncSound",
             "3",
             CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ROM,
-            Companion.ASYNCSOUND_INFO
+            ASYNCSOUND_INFO
         ) else idCVar(
             "com_asyncSound",
             "1",
             CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM,
-            Companion.ASYNCSOUND_INFO,
-            0f,
-            1f
+            ASYNCSOUND_INFO,
+            0.0f,
+            1.0f
         )
 
 
@@ -3239,8 +3226,8 @@ class Common {
             "0",
             CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_NOCHEAT,
             "1 = buffer log, 2 = flush after each print",
-            0f,
-            2f,
+            0.0f,
+            2.0f,
             ArgCompletion_Integer(0, 2)
         )
         val com_logFileName: idCVar = idCVar(
@@ -3333,8 +3320,8 @@ class Common {
             "0",
             CVarSystem.CVAR_SYSTEM,
             "print time with each console print, 1 = msec, 2 = sec",
-            0f,
-            2f,
+            0.0f,
+            2.0f,
             ArgCompletion_Integer(0, 2)
         )
         val com_updateLoadSize: idCVar = idCVar(

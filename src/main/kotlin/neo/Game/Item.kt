@@ -1,33 +1,36 @@
 package neo.Game
 
-import neo.CM.CollisionModel
-import neo.CM.CollisionModel.trace_s
-import neo.CM.CollisionModel_local
 import neo.Game.Entity.idAnimatedEntity
 import neo.Game.Entity.idEntity
 import neo.Game.FX.idEntityFx
 import neo.Game.GameSys.Class.*
-import neo.Game.GameSys.Class.Companion.EV_Remove
+import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local.Companion.gameRenderWorld
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics_RigidBody.idPhysics_RigidBody
 import neo.Game.Player.idPlayer
 import neo.Renderer.Material
-import neo.Renderer.RenderSystem
+import neo.Renderer.RenderSystem.SCREEN_HEIGHT
+import neo.Renderer.RenderSystem.SCREEN_WIDTH
+import neo.Renderer.RenderSystem.renderSystem
 import neo.Renderer.RenderWorld.deferredEntityCallback_t
 import neo.Renderer.RenderWorld.renderEntity_s
 import neo.Renderer.RenderWorld.renderView_s
 import neo.TempDump
+import neo.cm.CM_CLIP_EPSILON
+import neo.cm.collisionModelManager
+import neo.cm.trace_s
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
 import neo.framework.DeclSkin.idDeclSkin
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.BitMsg.idBitMsgDelta
 import neo.idlib.Dict_h.idDict
@@ -38,26 +41,26 @@ import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List
 import neo.idlib.geometry.TraceModel.idTraceModel
-import neo.idlib.math.Angles.idAngles
-import neo.idlib.math.Math_h.idMath
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Vector.getVec3Origin
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.getVec3Origin
+import neo.idlib.math.idAngles
+import neo.idlib.math.idMath
+import neo.idlib.math.idVec3
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.math.ceil
 import kotlin.math.cos
 
-/**
- *
- */
+
+val EV_CamShot: idEventDef = idEventDef("<camshot>")
+val EV_DropToFloor: idEventDef = idEventDef("<dropToFloor>")
+val EV_GetPlayerPos: idEventDef = idEventDef("<getplayerpos>")
+val EV_HideObjective: idEventDef = idEventDef("<hideobjective>", "e")
+val EV_RespawnFx: idEventDef = idEventDef("<respawnFx>")
+val EV_RespawnItem: idEventDef = idEventDef("respawn")
+
+
 object Item {
-    val EV_CamShot: idEventDef = idEventDef("<camshot>")
-    val EV_DropToFloor: idEventDef = idEventDef("<dropToFloor>")
-    val EV_GetPlayerPos: idEventDef = idEventDef("<getplayerpos>")
-    val EV_HideObjective: idEventDef = idEventDef("<hideobjective>", "e")
-    val EV_RespawnFx: idEventDef = idEventDef("<respawnFx>")
-    val EV_RespawnItem: idEventDef = idEventDef("respawn")
 
     /*
      ===============================================================================
@@ -86,14 +89,14 @@ object Item {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
                 eventCallbacks[EV_DropToFloor] =
                     eventCallback_t0<idItem> { obj: idItem -> obj.Event_DropToFloor() }
-                eventCallbacks[Entity.EV_Touch] =
+                eventCallbacks[EV_Touch] =
                     eventCallback_t2<idItem> { obj: idItem, _other: idEventArg<*>?, trace: idEventArg<*>? ->
                         obj.Event_Touch(
                             _other as idEventArg<idEntity>,
                             trace as idEventArg<trace_s>
                         )
                     }
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idItem> { obj: idItem, _activator: idEventArg<*>? -> obj.Event_Trigger(_activator as idEventArg<idEntity>) }
                 eventCallbacks[EV_RespawnItem] =
                     eventCallback_t0<idItem> { obj: idItem -> obj.Event_Respawn() }
@@ -134,7 +137,7 @@ object Item {
         override fun Restore(savefile: idRestoreGame) {
             savefile.ReadVec3(orgOrigin)
             spin = savefile.ReadBool()
-            spin = savefile.ReadBool()
+            pulse = savefile.ReadBool()
             canPickUp = savefile.ReadBool()
             savefile.ReadMaterial(shellMaterial!!)
             inView = savefile.ReadBool()
@@ -166,10 +169,10 @@ object Item {
             giveTo = spawnArgs.GetString("owner")
             if (giveTo.length != 0) {
                 ent = Game_local.gameLocal.FindEntity(giveTo)
-                if (TempDump.NOT(ent)) {
+                if (ent == null) {
                     idGameLocal.Error("Item couldn't find owner '%s'", giveTo)
                 }
-                PostEventMS(Entity.EV_Touch, 0, ent, null)
+                PostEventMS(EV_Touch, 0, ent, null)
             }
             if (spawnArgs.GetBool("spin") || Game_local.gameLocal.isMultiplayer) {
                 spin = true
@@ -230,7 +233,7 @@ object Item {
 
             // add the highlight shell
             if (itemShellHandle != -1) {
-                Game_local.gameRenderWorld!!.FreeEntityDef(itemShellHandle)
+                gameRenderWorld!!.FreeEntityDef(itemShellHandle)
                 itemShellHandle = -1
             }
             var respawn = spawnArgs.GetFloat("respawn")
@@ -239,7 +242,7 @@ object Item {
             if (Game_local.gameLocal.isMultiplayer && respawn == 0.0f) {
                 respawn = 20.0f
             }
-            if (respawn != 0f && !dropped && !no_respawn) {
+            if (respawn != 0.0f && !dropped && !no_respawn) {
                 val sfx = spawnArgs.GetString("fxRespawn")
                 if (sfx != null && !sfx.isEmpty()) {
                     PostEventSec(EV_RespawnFx, respawn - 0.5f)
@@ -265,9 +268,9 @@ object Item {
                     ang.pitch = ang.roll
                     ang.yaw = (Game_local.gameLocal.time and 4095) * 360.0f / -4096.0f
                     SetAngles(ang)
-                    val scale = 0.005f + entityNumber * 0.00001f
+                    val scale = 0.005 + entityNumber * 0.00001
                     org.set(orgOrigin)
-                    org.z += (4.0f + cos(((Game_local.gameLocal.time + 2000) * scale).toDouble()) * 4.0f).toFloat()
+                    org.z += (4.0f + cos(((Game_local.gameLocal.time + 2000) * scale).toFloat()) * 4.0f)
                     SetOrigin(org)
                 }
             }
@@ -287,9 +290,9 @@ object Item {
                 shell.entityNum = entityNumber
                 shell.customShader = shellMaterial
                 if (itemShellHandle == -1) {
-                    itemShellHandle = Game_local.gameRenderWorld!!.AddEntityDef(shell)
+                    itemShellHandle = gameRenderWorld!!.AddEntityDef(shell)
                 } else {
-                    Game_local.gameRenderWorld!!.UpdateEntityDef(itemShellHandle, shell)
+                    gameRenderWorld!!.UpdateEntityDef(itemShellHandle, shell)
                 }
             }
         }
@@ -313,19 +316,22 @@ object Item {
 
                     // remove the highlight shell
                     if (itemShellHandle != -1) {
-                        Game_local.gameRenderWorld!!.FreeEntityDef(itemShellHandle)
+                        gameRenderWorld!!.FreeEntityDef(itemShellHandle)
                         itemShellHandle = -1
                     }
                     true
                 }
+
                 EVENT_RESPAWN -> {
                     Event_Respawn()
                     true
                 }
+
                 EVENT_RESPAWNFX -> {
                     Event_RespawnFx()
                     true
                 }
+
                 else -> {
                     super.ClientReceiveEvent(event, time, msg)
                 }
@@ -353,7 +359,7 @@ object Item {
             lastRenderViewTime = renderView.time
 
             // check for glow highlighting if near the center of the view
-            val dir = idVec3(renderEntity!!.origin.minus(renderView.vieworg))
+            val dir = idVec3(renderEntity.origin.minus(renderView.vieworg))
             dir.Normalize()
             val d = dir.times(renderView.viewaxis[0])
 
@@ -371,25 +377,25 @@ object Item {
             } else {
                 if (inView) {
                     inView = false
-                    lastCycle = ceil(cycle.toDouble()).toInt()
+                    lastCycle = ceil(cycle).toInt()
                 }
             }
 
             // fade down after the last pulse finishes
             if (!inView && cycle > lastCycle) {
-                renderEntity!!.shaderParms[4] = 0.0f
+                renderEntity.shaderParms[4] = 0.0f
             } else {
                 // pulse up in 1/4 second
                 cycle -= cycle.toInt().toFloat()
                 if (cycle < 0.1f) {
-                    renderEntity!!.shaderParms[4] = cycle * 10.0f
+                    renderEntity.shaderParms[4] = cycle * 10.0f
                 } else if (cycle < 0.2f) {
-                    renderEntity!!.shaderParms[4] = 1.0f
+                    renderEntity.shaderParms[4] = 1.0f
                 } else if (cycle < 0.3f) {
-                    renderEntity!!.shaderParms[4] = 1.0f - (cycle - 0.2f) * 10.0f
+                    renderEntity.shaderParms[4] = 1.0f - (cycle - 0.2f) * 10.0f
                 } else {
                     // stay off between pulses
-                    renderEntity!!.shaderParms[4] = 0.0f
+                    renderEntity.shaderParms[4] = 0.0f
                 }
             }
 
@@ -458,7 +464,7 @@ object Item {
             }
             val sfx = spawnArgs.GetString("fxRespawn")
             if (sfx != "" && !sfx.isEmpty()) {
-                idEntityFx.StartFx(sfx, getVec3Origin(), idMat3.getMat3_zero(), this, true)
+                idEntityFx.StartFx(sfx, null, null, this, true)
             }
         }
 
@@ -478,7 +484,7 @@ object Item {
                 if (null == ent) {
                     idGameLocal.Error("obj.ModelCallback: callback with NULL game entity")
                 }
-                return ent.UpdateRenderEntity(e!!, v)
+                return ent.UpdateRenderEntity(e, v)
             }
 
             override fun AllocBuffer(): ByteBuffer {
@@ -573,7 +579,7 @@ object Item {
 
             init {
                 eventCallbacks.putAll(idItem.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idObjective> { obj: idObjective, activator: idEventArg<*>? ->
                         obj.Event_Trigger(activator as idEventArg<idEntity>)
                     }
@@ -646,12 +652,12 @@ object Item {
         private fun Event_HideObjective(e: idEventArg<idEntity>) {
             val player = Game_local.gameLocal.GetLocalPlayer()
             if (player != null) {
-                val v = idVec3(player.GetPhysics().GetOrigin().minus(playerPos))
+                val v = player.GetPhysics().GetOrigin() - playerPos
                 if (v.Length() > 64.0f) {
                     player.HideObjective()
                     PostEventMS(EV_Remove, 0)
                 } else {
-                    PostEventMS(EV_HideObjective, 100f, player)
+                    PostEventMS(EV_HideObjective, 100.0f, player)
                 }
             }
         }
@@ -660,7 +666,7 @@ object Item {
             val player = Game_local.gameLocal.GetLocalPlayer()
             if (player != null) {
                 playerPos.set(player.GetPhysics().GetOrigin())
-                PostEventMS(EV_HideObjective, 100f, player)
+                PostEventMS(EV_HideObjective, 100.0f, player)
             }
         }
 
@@ -675,13 +681,14 @@ object Item {
                 val ent = Game_local.gameLocal.FindEntity(camName[0]!!)
                 if (ent != null && ent.cameraTarget != null) {
                     val view = ent.cameraTarget!!.GetRenderView()
-                    view!!.width = RenderSystem.SCREEN_WIDTH
-                    view!!.height = RenderSystem.SCREEN_HEIGHT
+                    val fullView = renderView_s(view!!)
+                    fullView.width = SCREEN_WIDTH
+                    fullView.height = SCREEN_HEIGHT
                     // draw a view to a texture
-                    RenderSystem.renderSystem.CropRenderSize(256, 256, true)
-                    Game_local.gameRenderWorld!!.RenderScene(view)
-                    RenderSystem.renderSystem.CaptureRenderToFile(shotName.toString())
-                    RenderSystem.renderSystem.UnCrop()
+                    renderSystem.CropRenderSize(256, 256, true)
+                    gameRenderWorld!!.RenderScene(fullView)
+                    renderSystem.CaptureRenderToFile(shotName.toString())
+                    renderSystem.UnCrop()
                 }
             }
         }
@@ -769,7 +776,7 @@ object Item {
                 var key: String
                 var key2: String
                 val origin = idVec3()
-                var axis: idMat3 = idMat3()
+                val axis = idMat3()
                 val angles = idAngles()
                 val skin: idDeclSkin?
                 var   /*jointHandle_t*/joint: Int
@@ -787,7 +794,7 @@ object Item {
                             ), "Rotation"
                         ) != 0
                     ) {
-                        key = kv.GetKey().toString() + 4
+                        key = kv.GetKey().toString().substring(4)
                         key2 = key
                         key += "Joint"
                         key2 += "Offset"
@@ -801,7 +808,7 @@ object Item {
                                 ent.name
                             )
                             origin.set(ent.GetPhysics().GetOrigin())
-                            axis = ent.GetPhysics().GetAxis()
+                            axis.set(ent.GetPhysics().GetAxis())
                         }
                         if (!SysCvar.g_dropItemRotation.GetString().isNullOrEmpty()) {
                             angles.Zero()
@@ -811,11 +818,11 @@ object Item {
                             angles.yaw = sscanf.nextFloat()
                             angles.roll = sscanf.nextFloat()
                         } else {
-                            key = kv.GetKey().toString() + 4
+                            key = kv.GetKey().toString().substring(4)
                             key += "Rotation"
                             ent.spawnArgs.GetAngles(key, "0 0 0", angles)
                         }
-                        axis = angles.ToMat3().times(axis)
+                        axis.set(angles.ToMat3().times(axis))
                         origin.plusAssign(ent.spawnArgs.GetVector(key2, "0 0 0"))
                         item = DropItem(kv.GetValue().toString(), origin, axis, getVec3Origin(), 0, 0)
                         if (list != null && item != null) {
@@ -860,7 +867,7 @@ object Item {
                     item[0]!!.GetPhysics().SetLinearVelocity(velocity)
                     item[0]!!.UpdateVisuals()
                     if (activateDelay != 0) {
-                        item[0]!!.PostEventMS(Entity.EV_Activate, activateDelay.toFloat(), item[0])
+                        item[0]!!.PostEventMS(EV_Activate, activateDelay.toFloat(), item[0])
                     }
                     if (0 == removeDelay) {
                         removeDelay = 5 * 60 * 1000
@@ -879,7 +886,7 @@ object Item {
                 eventCallbacks.putAll(idItem.getEventCallBacks())
                 eventCallbacks[EV_DropToFloor] =
                     eventCallback_t0<idMoveableItem> { obj: idMoveableItem -> obj.Event_DropToFloor() }
-                eventCallbacks[AFEntity.EV_Gib] =
+                eventCallbacks[EV_Gib] =
                     eventCallback_t1<idMoveableItem> { obj: idMoveableItem, damageDefName: idEventArg<*>? ->
                         obj.Event_Gib(damageDefName as idEventArg<String>)
                     }
@@ -924,7 +931,7 @@ object Item {
             val clipModelName = idStr()
 
             // create a trigger for item pickup
-            spawnArgs.GetFloat("triggersize", "16.0", tsize)
+            spawnArgs.GetFloat("triggersize", "16.0f", tsize)
             trigger = idClipModel(idTraceModel(idBounds(getVec3Origin()).Expand(tsize._val)))
             trigger!!.Link(Game_local.gameLocal.clip, this, 0, GetPhysics().GetOrigin(), GetPhysics().GetAxis())
             trigger!!.SetContents(Material.CONTENTS_TRIGGER)
@@ -936,18 +943,18 @@ object Item {
             }
 
             // load the trace model
-            if (!CollisionModel_local.collisionModelManager.TrmFromModel(clipModelName, trm)) {
+            if (!collisionModelManager.TrmFromModel(clipModelName, trm)) {
                 idGameLocal.Error("idMoveableItem '%s': cannot load collision model %s", name, clipModelName)
                 return
             }
 
             // if the model should be shrinked
             if (spawnArgs.GetBool("clipshrink")) {
-                trm.Shrink(CollisionModel.CM_CLIP_EPSILON)
+                trm.Shrink(CM_CLIP_EPSILON)
             }
 
             // get rigid body properties
-            spawnArgs.GetFloat("density", "0.5", density)
+            spawnArgs.GetFloat("density", "0.5f", density)
             density._val = (idMath.ClampFloat(0.001f, 1000.0f, density._val))
             spawnArgs.GetFloat("friction", "0.05", friction)
             friction._val = (idMath.ClampFloat(0.0f, 1.0f, friction._val))
@@ -1101,7 +1108,7 @@ object Item {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idItemRemover> { obj: idItemRemover, _activator: idEventArg<*>? ->
                         obj.Event_Trigger(_activator as idEventArg<idEntity>)
                     }
@@ -1147,7 +1154,7 @@ object Item {
 
             init {
                 eventCallbacks.putAll(idItemRemover.getEventCallBacks())
-                eventCallbacks[Entity.EV_Activate] =
+                eventCallbacks[EV_Activate] =
                     eventCallback_t1<idObjectiveComplete> { obj: idObjectiveComplete, activator: idEventArg<*>? ->
                         obj.Event_Trigger(activator as idEventArg<idEntity>)
                     }
@@ -1185,9 +1192,9 @@ object Item {
                 if (spawnArgs.GetString("inv_objective", null) != null) {
                     if (player.hud != null) {
                         player.hud!!.SetStateString("objective", "2")
-                        player.hud!!.SetStateString("objectivetext", spawnArgs.GetString("objectivetext")!!)
-                        player.hud!!.SetStateString("objectivetitle", spawnArgs.GetString("objectivetitle")!!)
-                        player.CompleteObjective(spawnArgs.GetString("objectivetitle")!!)
+                        player.hud!!.SetStateString("objectivetext", spawnArgs.GetString("objectivetext"))
+                        player.hud!!.SetStateString("objectivetitle", spawnArgs.GetString("objectivetitle"))
+                        player.CompleteObjective(spawnArgs.GetString("objectivetitle"))
                         PostEventMS(EV_GetPlayerPos, 2000)
                     }
                 }
@@ -1197,22 +1204,22 @@ object Item {
         private fun Event_HideObjective(e: idEventArg<idEntity>) {
             val player = Game_local.gameLocal.GetLocalPlayer()
             if (player != null) {
-                playerPos.set(player.GetPhysics().GetOrigin())
-                PostEventMS(EV_HideObjective, 100f, player)
+                val v = player.GetPhysics().GetOrigin()
+                v.minusAssign(playerPos)
+                if (v.Length() > 64.0f) {
+                    player.hud!!.HandleNamedEvent("closeObjective")
+                    PostEventMS(EV_Remove, 0)
+                } else {
+                    PostEventMS(EV_HideObjective, 100.0f, player)
+                }
             }
         }
 
         private fun Event_GetPlayerPos() {
             val player = Game_local.gameLocal.GetLocalPlayer()
             if (player != null) {
-                val v = idVec3(player.GetPhysics().GetOrigin())
-                v.minusAssign(playerPos)
-                if (v.Length() > 64.0f) {
-                    player.hud!!.HandleNamedEvent("closeObjective")
-                    PostEventMS(EV_Remove, 0)
-                } else {
-                    PostEventMS(EV_HideObjective, 100f, player)
-                }
+                playerPos.set(player.GetPhysics().GetOrigin())
+                PostEventMS(EV_HideObjective, 100.0f, player)
             }
         }
 

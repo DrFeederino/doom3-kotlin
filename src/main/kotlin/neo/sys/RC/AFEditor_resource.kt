@@ -1,8 +1,5 @@
 package neo.sys.RC
 
-/**
- *
- */
 object AFEditor_resource {
     const val IDC_AF_VIEW_AF = 212
     const val IDC_AF_VIEW_LINES = 214

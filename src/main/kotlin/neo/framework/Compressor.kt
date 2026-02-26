@@ -2,16 +2,14 @@ package neo.framework
 
 import neo.framework.File_h.fsOrigin_t
 import neo.framework.File_h.idFile
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
-import neo.idlib.containers.HashIndex.idHashIndex
+import neo.idlib.Max
+import neo.idlib.Min
+import neo.idlib.containers.idHashIndex
+import neo.idlib.idException
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.experimental.or
 
-/**
- *
- */
 object Compressor {
     const val AC_HIGH_INIT = 0xffff
     const val AC_LOW_INIT = 0x0000
@@ -41,7 +39,6 @@ object Compressor {
      ===============================================================================
      */
     abstract class idCompressor : idFile() {
-        //
         // initialization
         abstract fun Init(f: idFile, compress: Boolean, wordLength: Int)
         abstract fun FinishCompress()
@@ -334,7 +331,7 @@ object Compressor {
             while (numBits != 0) {
                 if (writeBit == 0) {
                     if (writeByte >= writeLength) {
-                        if (writeData === buffer) {
+                        if (writeData == buffer) {
                             file.Write(buffer, writeByte)
                             writeByte = 0
                         } else {
@@ -353,7 +350,7 @@ object Compressor {
                 if (put > numBits) {
                     put = numBits
                 }
-                fraction = value and (1 shl put) - 1
+                fraction = value and ((1 shl put) - 1)
                 run {
                     val pos = writeByte - 1
                     val `val` = writeData!!.getInt(pos) or fraction shl writeBit
@@ -382,7 +379,7 @@ object Compressor {
             while (valueBits < numBits) {
                 if (readBit == 0) {
                     if (readByte >= readLength) {
-                        if (readData === buffer) {
+                        if (readData == buffer) {
                             readLength = file.Read(buffer)
                             readByte = 0
                         } else {
@@ -753,7 +750,6 @@ object Compressor {
             return (unCompressedSize - compressedSize) * 100.0f / unCompressedSize
         }
 
-        //
         override fun Write(inData: ByteBuffer, inLength: Int): Int {
             var i: Int
             var ch: Int
@@ -859,7 +855,7 @@ object Compressor {
                 tnode.right = null
                 tnode.left = tnode.right
                 if (lhead!!.parent != null) {
-                    if (lhead!!.parent!!.left === lhead) { /* lhead is guaranteed to by the NYT */
+                    if (lhead!!.parent!!.left == lhead) { /* lhead is guaranteed to by the NYT */
                         lhead!!.parent!!.left = tnode2
                     } else {
                         lhead!!.parent!!.right = tnode2
@@ -1007,7 +1003,7 @@ object Compressor {
             par1 = node1.parent
             par2 = node2.parent
             if (par1 != null) {
-                if (par1.left === node1) {
+                if (par1.left == node1) {
                     par1.left = node2
                 } else {
                     par1.right = node2
@@ -1016,7 +1012,7 @@ object Compressor {
                 tree = node2
             }
             if (par2 != null) {
-                if (par2.left === node2) {
+                if (par2.left == node2) {
                     par2.left = node1
                 } else {
                     par2.right = node1
@@ -1043,10 +1039,10 @@ object Compressor {
             par1 = node1.prev
             node1.prev = node2.prev
             node2.prev = par1
-            if (node1.next === node1) {
+            if (node1.next == node1) {
                 node1.next = node2
             }
-            if (node2.next === node2) {
+            if (node2.next == node2) {
                 node2.next = node1
             }
             if (node1.next != null) {
@@ -1091,9 +1087,9 @@ object Compressor {
             }
             if (node.parent != null) {
                 Increment(node.parent as huffmanNode_t?)
-                if (node.prev === node.parent) {
+                if (node.prev == node.parent) {
                     Swaplist(node, node.parent as huffmanNode_t)
-                    if (node.head === node) {
+                    if (node.head == node) {
                         node.head = node.parent
                     }
                 }
@@ -1112,7 +1108,7 @@ object Compressor {
                 Send(node.parent as huffmanNode_t, node, fout)
             }
             if (child != null) {
-                if (node.right === child) {
+                if (node.right == child) {
                     Add_bit(1, fout)
                 } else {
                     Add_bit(0, fout)
@@ -1383,7 +1379,7 @@ object Compressor {
                 RemoveSymbolFromStream(symbol)
                 symbolBit = AC_WORD_LENGTH
             }
-            getbit = symbolBuffer shr AC_WORD_LENGTH - symbolBit and 1
+            getbit = symbolBuffer shr AC_WORD_LENGTH - symbolBit and 0x1
             symbolBit--
             return getbit
         }
@@ -1396,21 +1392,21 @@ object Compressor {
             }
         }
 
-        private open inner class acProbs_s {
+        private open class acProbs_s {
             var high: Long = 0
             var low: Long = 0
         }
 
         //
-        private inner class acProbs_t : acProbs_s()
-        private open inner class acSymbol_s {
+        private class acProbs_t : acProbs_s()
+        private open class acSymbol_s {
             var high: Long = 0
             var low: Long = 0
             var position = 0
         }
 
         //
-        private inner class acSymbol_t : acSymbol_s()
+        private class acSymbol_t : acSymbol_s()
     }
 
     /*
@@ -1533,7 +1529,7 @@ object Compressor {
             val maxBits: Int
             wordOffset[0] = startWord
             numWords[0] = minMatchWords - 1
-            bottom = Lib.Companion.Max(0, startWord - ((1 shl offsetBits) - 1))
+            bottom = Max(0, startWord - ((1 shl offsetBits) - 1))
             maxBits = (blockSize shl 3) - startWord * wordLength
             hash = startValue and LZSS_HASH_MASK
             i = hashTable[hash]
@@ -1543,7 +1539,7 @@ object Compressor {
                     i * wordLength,
                     block,
                     startWord * wordLength,
-                    Lib.Companion.Min(maxBits, (startWord - i) * wordLength)
+                    Min(maxBits, (startWord - i) * wordLength)
                 )
                 if (n > numWords[0] * wordLength) {
                     numWords[0] = n / wordLength
@@ -1657,7 +1653,7 @@ object Compressor {
                     startWord++
                 }
             }
-            blockSize = Lib.Companion.Min(writeByte, LZSS_BLOCK_SIZE)
+            blockSize = Min(writeByte, LZSS_BLOCK_SIZE)
         }
     }
 
@@ -1739,7 +1735,7 @@ object Compressor {
                     startWord++
                 }
             }
-            blockSize = Lib.Companion.Min(writeByte, LZSS_BLOCK_SIZE)
+            blockSize = Min(writeByte, LZSS_BLOCK_SIZE)
         }
     }
 
@@ -1987,10 +1983,10 @@ object Compressor {
                     code
                 }
             }
-            blockSize = Lib.Companion.Min(writeByte, LZW_BLOCK_SIZE)
+            blockSize = Min(writeByte, LZW_BLOCK_SIZE)
         }
 
-        protected inner class LZWDictionary {
+        protected class LZWDictionary {
             var k = 0
             var w = 0
         }

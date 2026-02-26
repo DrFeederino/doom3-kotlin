@@ -1,33 +1,23 @@
 package neo.Renderer
 
 import neo.Renderer.Material.idMaterial
-import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.Renderer.VertexCache
 import neo.Renderer.VertexCache.vertCache_s
-import neo.Renderer.tr_local
-import neo.Renderer.tr_local.viewDef_s
 import neo.TempDump.SERiAL
 import neo.framework.DemoFile.idDemoFile
-import neo.idlib.BV.Bounds.idBounds
-import neo.idlib.Lib.idException
+import neo.idlib.BV.idBounds
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.List.idList
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.JointTransform.idJointQuat
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec4
+import neo.idlib.idException
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
+import neo.idlib.math.idVec4
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
-import java.nio.*
-import java.util.function.IntFunction
-import java.util.function.Supplier
-import java.util.stream.Stream
+import java.nio.ByteBuffer
 
-/**
- *
- */
 object Model {
     //typedef enum {
     val INVALID_JOINT: Int = -1
@@ -100,7 +90,7 @@ object Model {
     }
 
     // this is used for calculating unsmoothed normals and tangents for deformed models
-    class dominantTri_s() {
+    class dominantTri_s {
         val normalizationScale: FloatArray = FloatArray(3)
         var  /*glIndex_t*/v2: Int = 0
         var v3: Int = 0
@@ -127,7 +117,7 @@ object Model {
     }
 
     class shadowCache_s {
-        var xyz: idVec4 = idVec4() // we use homogenous coordinate tricks
+        val xyz: idVec4 = idVec4() // we use homogenous coordinate tricks
 
         constructor()
         internal constructor(Position: ByteBuffer?) {
@@ -151,9 +141,9 @@ object Model {
     }
 
     // our only drawing geometry type
-    class srfTriangles_s() {
+    class srfTriangles_s {
         val DBG_count: Int = DBG_counter++
-        var bounds: idBounds = idBounds() // for culling
+        val bounds: idBounds = idBounds() // for culling
         var facePlanes // [numIndexes/3] plane equations
                 : Array<idPlane?>? = null
         var indexes // indexes, allocated with special allocator
@@ -171,7 +161,7 @@ object Model {
                 : IntArray? = null
         var tangentsCalculated: Boolean = false // set when the vertex tangents have been calculated
         var verts // vertices, allocated with special allocator
-                : Array<idDrawVert?>? = null
+                : Array<idDrawVert>? = null
         var ambientCache: vertCache_s? = null // idDrawVert
         var ambientSurface: srfTriangles_s? =
             null // for light interactions, point back at the original surface that generated
@@ -206,7 +196,7 @@ object Model {
         var silEdges // silhouette edges
                 : Array<silEdge_t?>? = null
 
-        public override fun toString(): String {
+        override fun toString(): String {
             return ("srfTriangles_s{" +
                     "DBG_count=" + DBG_count +
                     ", bounds=" + bounds +
@@ -247,7 +237,7 @@ object Model {
         }
     }
 
-    internal class idTriList() : idList<srfTriangles_s?>()
+    internal class idTriList : idList<srfTriangles_s?>()
     class modelSurface_s {
         var geometry: srfTriangles_s? = null
         var id: Int = 0
@@ -264,14 +254,14 @@ object Model {
     }
 
     //} jointHandle_t;
-    class idMD5Joint() {
+    class idMD5Joint {
         var name: idStr? = null
         var parent: idMD5Joint? = null
     }
 
     // the init methods may be called again on an already created model when
     // a reloadModels is issued
-    abstract class idRenderModel() : SERiAL {
+    abstract class idRenderModel : SERiAL {
         protected val DBG_count: Int = DBG_counter++
 
         // public abstract						~idRenderModel() {};

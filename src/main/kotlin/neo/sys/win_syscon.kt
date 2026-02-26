@@ -1,6 +1,5 @@
 package neo.sys
 
-import neo.TempDump
 import neo.framework.Common
 import neo.framework.EditField.idEditField
 import neo.framework.Licensee
@@ -17,9 +16,6 @@ import java.util.logging.Level
 import java.util.logging.Logger
 import javax.swing.*
 
-/**
- *
- */
 object win_syscon {
     const val CLEAR_ID = 3
     const val COMMAND_HISTORY = 64
@@ -533,7 +529,7 @@ object win_syscon {
      */
     fun Sys_ShowConsole(visLevel: Int, quitOnClose: Boolean) {
         s_wcd.setQuitOnClose(quitOnClose)
-        if (TempDump.NOT(s_wcd.hWnd)) {
+        if (s_wcd.hWnd == null) {
             return
         }
         when (visLevel) {
@@ -544,11 +540,13 @@ object win_syscon {
                 s_wcd.hwndBuffer!!.verticalScrollBar.value =
                     0xffff //SendMessage(s_wcd.hwndBuffer, EM_LINESCROLL, 0, 0xffff);
             }
+
             2 -> {
                 s_wcd.textArea!!.text = s_wcd.buffer.toString()
                 s_wcd.hWnd!!.isVisible = true
                 s_wcd.hWnd!!.state = JFrame.ICONIFIED //ShowWindow( s_wcd.hWnd, SW_MINIMIZE );
             }
+
             else -> win_main.Sys_Error("Invalid visLevel %d sent to Sys_ShowConsole\n", visLevel)
         }
     }
@@ -645,7 +643,7 @@ object win_syscon {
      */
     fun Win_SetErrorText(buf: String) {
         idStr.Copynz(s_wcd.errorString, buf)
-        if (TempDump.NOT(s_wcd.hwndErrorBox)) {
+        if (s_wcd.hwndErrorBox == null) {
             s_wcd.hwndErrorBox = JTextField("static")
             s_wcd.hwndErrorBox!!.isEditable = false
             s_wcd.hwndErrorBox!!.setLocation(6, 5)

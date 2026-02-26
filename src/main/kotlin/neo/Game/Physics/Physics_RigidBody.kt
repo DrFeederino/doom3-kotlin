@@ -1,38 +1,31 @@
 package neo.Game.Physics
 
-import neo.CM.CollisionModel.contactInfo_t
-import neo.CM.CollisionModel.trace_s
-import neo.CM.CollisionModel_local
-import neo.Game.*
+import neo.Game.Entity
 import neo.Game.Entity.idEntity
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics.impactInfo_s
 import neo.Game.Physics.Physics_Base.idPhysics_Base
+import neo.cm.collisionModelManager
+import neo.cm.contactInfo_t
+import neo.cm.trace_s
 import neo.framework.UsercmdGen
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsgDelta
-import neo.idlib.Lib
 import neo.idlib.Text.Str
 import neo.idlib.Timer.idTimer
+import neo.idlib.colorCyan
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.math.*
-import neo.idlib.math.Math_h.idMath
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Ode.*
-import neo.idlib.math.Quat.idCQuat
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector.idVec3
-import neo.idlib.math.Vector.idVec6
 import java.nio.FloatBuffer
 
-/**
- *
- */
 object Physics_RigidBody {
     const val RB_FORCE_MAX = 1e20f
     val RB_FORCE_EXPONENT_BITS = idMath.BitsForInteger(idMath.BitsForFloat(RB_FORCE_MAX)) + 1
@@ -41,8 +34,7 @@ object Physics_RigidBody {
     const val RB_MOMENTUM_MAX = 1e20f
     val RB_MOMENTUM_EXPONENT_BITS = idMath.BitsForInteger(idMath.BitsForFloat(RB_MOMENTUM_MAX)) + 1
     const val RB_MOMENTUM_TOTAL_BITS = 16
-    val RB_MOMENTUM_MANTISSA_BITS =
-        RB_MOMENTUM_TOTAL_BITS - 1 - RB_MOMENTUM_EXPONENT_BITS
+    val RB_MOMENTUM_MANTISSA_BITS = RB_MOMENTUM_TOTAL_BITS - 1 - RB_MOMENTUM_EXPONENT_BITS
 
     /*
      ===================================================================================
@@ -54,11 +46,10 @@ object Physics_RigidBody {
 
      ===================================================================================
      */
-    const val RB_VELOCITY_MAX = 16000f
+    const val RB_VELOCITY_MAX = 16000.0f
     val RB_VELOCITY_EXPONENT_BITS = idMath.BitsForInteger(idMath.BitsForFloat(RB_VELOCITY_MAX)) + 1
     const val RB_VELOCITY_TOTAL_BITS = 16
-    val RB_VELOCITY_MANTISSA_BITS =
-        RB_VELOCITY_TOTAL_BITS - 1 - RB_VELOCITY_EXPONENT_BITS
+    val RB_VELOCITY_MANTISSA_BITS = RB_VELOCITY_TOTAL_BITS - 1 - RB_VELOCITY_EXPONENT_BITS
 
     //
     const val STOP_SPEED = 10.0f
@@ -121,7 +112,7 @@ object Physics_RigidBody {
                 : idVec3
         val linearMomentum // translational momentum relative to center of mass
                 : idVec3
-        var orientation // orientation of trace model
+        val orientation // orientation of trace model
                 : idMat3
         val position // position of trace model
                 : idVec3
@@ -134,19 +125,26 @@ object Physics_RigidBody {
         }
 
         constructor(state: FloatArray) : this() {
-            fromFloats(state)
+            fromFloatArr(state)
         }
 
-        fun toFloats(): FloatArray {
+        fun copy(): rigidBodyIState_s {
+            val c = rigidBodyIState_s()
+            c.position.set(position)
+            c.orientation.set(orientation)
+            c.linearMomentum.set(linearMomentum)
+            c.angularMomentum.set(angularMomentum)
+            return c
+        }
+
+        fun toFloatArr(): FloatArray {
             val buffer = FloatBuffer.allocate(BYTES / java.lang.Float.BYTES)
-            buffer.put(position.ToFloatPtr())
-                .put(orientation.ToFloatPtr())
-                .put(linearMomentum.ToFloatPtr())
+            buffer.put(position.ToFloatPtr()).put(orientation.ToFloatPtr()).put(linearMomentum.ToFloatPtr())
                 .put(angularMomentum.ToFloatPtr())
             return buffer.array()
         }
 
-        fun fromFloats(state: FloatArray) {
+        fun fromFloatArr(state: FloatArray) {
             val b = FloatBuffer.wrap(state)
             if (b.hasRemaining()) {
                 position.set(idVec3(b.get(), b.get(), b.get()))
@@ -154,9 +152,7 @@ object Physics_RigidBody {
             if (b.hasRemaining()) {
                 orientation.set(
                     idMat3(
-                        b.get(), b.get(), b.get(),
-                        b.get(), b.get(), b.get(),
-                        b.get(), b.get(), b.get()
+                        b.get(), b.get(), b.get(), b.get(), b.get(), b.get(), b.get(), b.get(), b.get()
                     )
                 )
             }
@@ -169,37 +165,33 @@ object Physics_RigidBody {
         }
 
         companion object {
-            val BYTES: Int = (idVec3.BYTES
-                    + idMat3.BYTES
-                    + idVec3.BYTES
-                    + idVec3.BYTES)
+            val BYTES: Int = (idVec3.BYTES + idMat3.BYTES + idVec3.BYTES + idVec3.BYTES)
         }
     }
 
     class rigidBodyPState_s {
-        var atRest // set when simulation is suspended
-                = 0
-        val externalForce // external force relative to center of mass
-                : idVec3
-        val externalTorque // external torque relative to center of mass
-                : idVec3
-        var i // state used for integration
-                : rigidBodyIState_s = rigidBodyIState_s()
-        var lastTimeStep // length of last time step
-                = 0f
-        var localAxis // axis relative to master
-                : idMat3
-        val localOrigin // origin relative to master
-                : idVec3
-        var pushVelocity // push velocity
-                : idVec6
+        var atRest = 0// set when simulation is suspended
+        val externalForce: idVec3 = idVec3() // external force relative to center of mass
 
-        constructor() {
-            localOrigin = idVec3()
-            localAxis = idMat3()
-            pushVelocity = idVec6()
-            externalForce = idVec3()
-            externalTorque = idVec3()
+        // external torque relative to center of mass
+        val externalTorque: idVec3 = idVec3()
+        var i: rigidBodyIState_s = rigidBodyIState_s()// state used for integration
+        var lastTimeStep = 0.0f// length of last time step
+        val localAxis: idMat3 = idMat3()// axis relative to master
+        val localOrigin: idVec3 = idVec3()// origin relative to master
+        val pushVelocity: idVec6 = idVec6() // push velocity
+
+        fun copy(): rigidBodyPState_s {
+            val c = rigidBodyPState_s()
+            c.atRest = atRest
+            c.externalForce.set(externalForce)
+            c.externalTorque.set(externalTorque)
+            c.i = i.copy()
+            c.lastTimeStep = lastTimeStep
+            c.localAxis.set(localAxis)
+            c.localOrigin.set(localOrigin)
+            c.pushVelocity.set(pushVelocity)
+            return c
         }
     }
 
@@ -216,43 +208,37 @@ object Physics_RigidBody {
         private val inertiaTensor // mass distribution
                 : idMat3
 
-        //
         private val integrator // integrator
                 : idODE
         private var angularFriction // rotational friction
-                = 0f
+                = 0.0f
         private var bouncyness // bouncyness
-                = 0f
+                = 0.0f
         private var clipModel // clip model used for collision detection
                 : idClipModel?
         private var contactFriction // friction with contact surfaces
-                = 0f
+                = 0.0f
 
         // state of the rigid body
         private var current: rigidBodyPState_s = rigidBodyPState_s()
         private var dropToFloor // true if dropping to the floor and putting to rest
                 : Boolean
 
-        //
         // master
         private var hasMaster: Boolean
-        private var inverseInertiaTensor // inverse inertia tensor
-                : idMat3
+        private val inverseInertiaTensor: idMat3 = idMat3() // inverse inertia tensor
         private var inverseMass // 1 / mass
                 : Float
         private var isOrientated: Boolean
 
-        //
         // rigid body properties
         private var linearFriction // translational friction
-                = 0f
+                = 0.0f
 
-        //
         // derived properties
         private var mass // mass of body
                 : Float
 
-        //
         //
         private var noContact // if true do not determine contacts and no contact friction
                 : Boolean
@@ -262,12 +248,10 @@ object Physics_RigidBody {
         private var testSolid // true if testing for solid when dropping to the floor
                 = false
 
-        // ~idPhysics_RigidBody();
         override fun _deconstructor() {
             if (clipModel != null) {
                 idClipModel.delete(clipModel!!)
             }
-            //            delete integrator;
             super._deconstructor()
         }
 
@@ -374,10 +358,11 @@ object Physics_RigidBody {
             this.mass = mass._val
 
             // check whether or not the clip model has valid mass properties
-            if (mass._val <= 0.0f || Math_h.FLOAT_IS_NAN(mass._val)) {
+            if (mass._val <= 0.0f || FLOAT_IS_NAN(mass._val)) {
                 Game_local.gameLocal.Warning(
                     "idPhysics_RigidBody::SetClipModel: invalid mass for entity '%s' type '%s'",
-                    self!!.name, self!!.GetType().name
+                    self!!.name,
+                    self!!.GetType().name
                 )
                 mass._val = 1.0f
                 centerOfMass.Zero()
@@ -385,32 +370,28 @@ object Physics_RigidBody {
             }
 
             // check whether or not the inertia tensor is balanced
-            minIndex = Math_h.Min3Index(inertiaTensor[0, 0], inertiaTensor[1, 1], inertiaTensor[2, 2])
+            minIndex = Min3Index(inertiaTensor[0, 0], inertiaTensor[1, 1], inertiaTensor[2, 2])
             inertiaScale.Identity()
             inertiaScale.set(0, 0, inertiaTensor[0, 0] / inertiaTensor[minIndex, minIndex])
             inertiaScale.set(1, 1, inertiaTensor[1, 1] / inertiaTensor[minIndex, minIndex])
             inertiaScale.set(2, 2, inertiaTensor[2, 2] / inertiaTensor[minIndex, minIndex])
-            if (inertiaScale[0, 0] > MAX_INERTIA_SCALE || inertiaScale[1, 1] > MAX_INERTIA_SCALE || inertiaScale[2, 2] > MAX_INERTIA_SCALE
-            ) {
+            if (inertiaScale[0, 0] > MAX_INERTIA_SCALE || inertiaScale[1, 1] > MAX_INERTIA_SCALE || inertiaScale[2, 2] > MAX_INERTIA_SCALE) {
                 Game_local.gameLocal.DWarning(
                     "idPhysics_RigidBody::SetClipModel: unbalanced inertia tensor for entity '%s' type '%s'",
-                    self!!.name, self!!.GetType().name
+                    self!!.name,
+                    self!!.GetType().name
                 )
                 val min = inertiaTensor[minIndex, minIndex] * MAX_INERTIA_SCALE
                 inertiaScale.set(
-                    (minIndex + 1) % 3,
-                    (minIndex + 1) % 3,
-                    min / inertiaTensor[(minIndex + 1) % 3, (minIndex + 1) % 3]
+                    (minIndex + 1) % 3, (minIndex + 1) % 3, min / inertiaTensor[(minIndex + 1) % 3, (minIndex + 1) % 3]
                 )
                 inertiaScale.set(
-                    (minIndex + 2) % 3,
-                    (minIndex + 2) % 3,
-                    min / inertiaTensor[(minIndex + 2) % 3, (minIndex + 2) % 3]
+                    (minIndex + 2) % 3, (minIndex + 2) % 3, min / inertiaTensor[(minIndex + 2) % 3, (minIndex + 2) % 3]
                 )
                 inertiaTensor.timesAssign(inertiaScale)
             }
             inverseMass = 1.0f / mass._val
-            inverseInertiaTensor = inertiaTensor.Inverse().times(1.0f / 6.0f)
+            inverseInertiaTensor.set(inertiaTensor.Inverse().times(1.0f / 6.0f))
             current.i.linearMomentum.Zero()
             current.i.angularMomentum.Zero()
         }
@@ -426,7 +407,7 @@ object Physics_RigidBody {
         override fun SetMass(mass: Float, id: Int /*= -1*/) {
             assert(mass > 0.0f)
             inertiaTensor.timesAssign(mass / this.mass)
-            inverseInertiaTensor = inertiaTensor.Inverse().times(1.0f / 6.0f)
+            inverseInertiaTensor.set(inertiaTensor.Inverse().times(1.0f / 6.0f))
             this.mass = mass
             inverseMass = 1.0f / mass
         }
@@ -467,35 +448,27 @@ object Physics_RigidBody {
             val ent: idEntity?
             val oldOrigin = idVec3(current.i.position)
             val masterOrigin = idVec3()
-            val oldAxis: idMat3
+            val oldAxis = idMat3()
             val masterAxis = idMat3()
             val timeStep: Float
-            val collided: Boolean
+            var collided = false
             var cameToRest = false
-            timeStep = Math_h.MS2SEC(timeStepMSec.toFloat())
+            timeStep = MS2SEC(timeStepMSec.toFloat())
             current.lastTimeStep = timeStep
             if (hasMaster) {
-                oldAxis = idMat3(current.i.orientation)
+                oldAxis.set(current.i.orientation)
                 self!!.GetMasterPosition(masterOrigin, masterAxis)
-                current.i.position.set(masterOrigin.plus(current.localOrigin.times(masterAxis)))
+                current.i.position.set(masterOrigin + current.localOrigin * masterAxis)
                 if (isOrientated) {
-                    current.i.orientation.set(current.localAxis.times(masterAxis))
+                    current.i.orientation.set(current.localAxis * masterAxis)
                 } else {
                     current.i.orientation.set(current.localAxis)
                 }
                 clipModel!!.Link(
-                    Game_local.gameLocal.clip,
-                    self,
-                    clipModel!!.GetId(),
-                    current.i.position,
-                    current.i.orientation
+                    Game_local.gameLocal.clip, self, clipModel!!.GetId(), current.i.position, current.i.orientation
                 )
-                current.i.linearMomentum.set(current.i.position.minus(oldOrigin).div(timeStep).times(mass))
-                current.i.angularMomentum.set(
-                    inertiaTensor.times(
-                        current.i.orientation.times(oldAxis.Transpose()).ToAngularVelocity().div(timeStep)
-                    )
-                )
+                current.i.linearMomentum.set(((current.i.position - oldOrigin) / timeStep) * mass)
+                current.i.angularMomentum.set(inertiaTensor * ((current.i.orientation * oldAxis.Transpose()).ToAngularVelocity() / timeStep))
                 current.externalForce.Zero()
                 current.externalTorque.Zero()
                 return current.i.position != oldOrigin || current.i.orientation != oldAxis
@@ -522,7 +495,7 @@ object Physics_RigidBody {
 //	current.i.linearMomentum -= current.pushVelocity.SubVec3( 0 ) * mass;
 //	current.i.angularMomentum -= current.pushVelocity.SubVec3( 1 ) * inertiaTensor;
             clipModel!!.Unlink()
-            next = current
+            next = current.copy()
 
             // calculate next position and orientation
             Integrate(timeStep, next)
@@ -547,11 +520,7 @@ object Physics_RigidBody {
 
             // update the position of the clip model
             clipModel!!.Link(
-                Game_local.gameLocal.clip,
-                self,
-                clipModel!!.GetId(),
-                current.i.position,
-                current.i.orientation
+                Game_local.gameLocal.clip, self, clipModel!!.GetId(), current.i.position, current.i.orientation
             )
             DebugDraw()
             if (!noContact) {
@@ -596,7 +565,9 @@ object Physics_RigidBody {
             if (IsOutsideWorld()) {
                 Game_local.gameLocal.Warning(
                     "rigid body moved outside world bounds for entity '%s' type '%s' at (%s)",
-                    self!!.name, self!!.GetType().name, current.i.position.ToString(0)
+                    self!!.name,
+                    self!!.GetType().name,
+                    current.i.position.ToString(0)
                 )
                 Rest()
             }
@@ -606,7 +577,8 @@ object Physics_RigidBody {
                     Game_local.gameLocal.Printf(
                         "%12s: t %1.4f cd %1.4f\n",
                         self!!.name,
-                        timer_total.Milliseconds(), timer_collision.Milliseconds()
+                        timer_total.Milliseconds(),
+                        timer_collision.Milliseconds()
                     )
                     lastTimerReset = 0
                 } else if (SysCvar.rb_showTimings.GetInteger() == 2) {
@@ -702,17 +674,13 @@ object Physics_RigidBody {
         }
 
         override fun SaveState() {
-            saved = current
+            saved = current.copy()
         }
 
         override fun RestoreState() {
-            current = saved
+            current = saved.copy()
             clipModel!!.Link(
-                Game_local.gameLocal.clip,
-                self,
-                clipModel!!.GetId(),
-                current.i.position,
-                current.i.orientation
+                Game_local.gameLocal.clip, self, clipModel!!.GetId(), current.i.position, current.i.orientation
             )
             EvaluateContacts()
         }
@@ -728,11 +696,7 @@ object Physics_RigidBody {
                 current.i.position.set(newOrigin)
             }
             clipModel!!.Link(
-                Game_local.gameLocal.clip,
-                self,
-                clipModel!!.GetId(),
-                current.i.position,
-                clipModel!!.GetAxis()
+                Game_local.gameLocal.clip, self, clipModel!!.GetId(), current.i.position, clipModel!!.GetAxis()
             )
             Activate()
         }
@@ -748,11 +712,7 @@ object Physics_RigidBody {
                 current.i.orientation.set(newAxis)
             }
             clipModel!!.Link(
-                Game_local.gameLocal.clip,
-                self,
-                clipModel!!.GetId(),
-                clipModel!!.GetOrigin(),
-                current.i.orientation
+                Game_local.gameLocal.clip, self, clipModel!!.GetId(), clipModel!!.GetOrigin(), current.i.orientation
             )
             Activate()
         }
@@ -761,11 +721,7 @@ object Physics_RigidBody {
             current.localOrigin.plusAssign(translation)
             current.i.position.plusAssign(translation)
             clipModel!!.Link(
-                Game_local.gameLocal.clip,
-                self,
-                clipModel!!.GetId(),
-                current.i.position,
-                clipModel!!.GetAxis()
+                Game_local.gameLocal.clip, self, clipModel!!.GetId(), current.i.position, clipModel!!.GetAxis()
             )
             Activate()
         }
@@ -784,11 +740,7 @@ object Physics_RigidBody {
                 current.localOrigin.set(current.i.position)
             }
             clipModel!!.Link(
-                Game_local.gameLocal.clip,
-                self,
-                clipModel!!.GetId(),
-                current.i.position,
-                current.i.orientation
+                Game_local.gameLocal.clip, self, clipModel!!.GetId(), current.i.position, current.i.orientation
             )
             Activate()
         }
@@ -827,13 +779,25 @@ object Physics_RigidBody {
         override fun ClipTranslation(results: trace_s, translation: idVec3, model: idClipModel?) {
             if (model != null) {
                 Game_local.gameLocal.clip.TranslationModel(
-                    results, clipModel!!.GetOrigin(), clipModel!!.GetOrigin().plus(translation),
-                    clipModel, clipModel!!.GetAxis(), clipMask, model.Handle(), model.GetOrigin(), model.GetAxis()
+                    results,
+                    clipModel!!.GetOrigin(),
+                    clipModel!!.GetOrigin().plus(translation),
+                    clipModel,
+                    clipModel!!.GetAxis(),
+                    clipMask,
+                    model.Handle(),
+                    model.GetOrigin(),
+                    model.GetAxis()
                 )
             } else {
                 Game_local.gameLocal.clip.Translation(
-                    results, clipModel!!.GetOrigin(), clipModel!!.GetOrigin().plus(translation),
-                    clipModel, clipModel!!.GetAxis(), clipMask, self
+                    results,
+                    clipModel!!.GetOrigin(),
+                    clipModel!!.GetOrigin().plus(translation),
+                    clipModel,
+                    clipModel!!.GetAxis(),
+                    clipMask,
+                    self
                 )
             }
         }
@@ -841,13 +805,19 @@ object Physics_RigidBody {
         override fun ClipRotation(results: trace_s, rotation: idRotation, model: idClipModel?) {
             if (model != null) {
                 Game_local.gameLocal.clip.RotationModel(
-                    results, clipModel!!.GetOrigin(), rotation,
-                    clipModel, clipModel!!.GetAxis(), clipMask, model.Handle(), model.GetOrigin(), model.GetAxis()
+                    results,
+                    clipModel!!.GetOrigin(),
+                    rotation,
+                    clipModel,
+                    clipModel!!.GetAxis(),
+                    clipMask,
+                    model.Handle(),
+                    model.GetOrigin(),
+                    model.GetAxis()
                 )
             } else {
                 Game_local.gameLocal.clip.Rotation(
-                    results, clipModel!!.GetOrigin(), rotation,
-                    clipModel, clipModel!!.GetAxis(), clipMask, self
+                    results, clipModel!!.GetOrigin(), rotation, clipModel, clipModel!!.GetAxis(), clipMask, self
                 )
             }
         }
@@ -855,8 +825,13 @@ object Physics_RigidBody {
         override fun ClipContents(model: idClipModel?): Int {
             return if (model != null) {
                 Game_local.gameLocal.clip.ContentsModel(
-                    clipModel!!.GetOrigin(), clipModel, clipModel!!.GetAxis(), -1,
-                    model.Handle(), model.GetOrigin(), model.GetAxis()
+                    clipModel!!.GetOrigin(),
+                    clipModel,
+                    clipModel!!.GetAxis(),
+                    -1,
+                    model.Handle(),
+                    model.GetOrigin(),
+                    model.GetAxis()
                 )
             } else {
                 Game_local.gameLocal.clip.Contents(clipModel!!.GetOrigin(), clipModel, clipModel!!.GetAxis(), -1, null)
@@ -877,11 +852,7 @@ object Physics_RigidBody {
 
         override fun LinkClip() {
             clipModel!!.Link(
-                Game_local.gameLocal.clip,
-                self,
-                clipModel!!.GetId(),
-                current.i.position,
-                current.i.orientation
+                Game_local.gameLocal.clip, self, clipModel!!.GetId(), current.i.position, current.i.orientation
             )
         }
 
@@ -896,8 +867,15 @@ object Physics_RigidBody {
             dir.SubVec3_Normalize(1)
             val contactz = contacts.getList(Array<contactInfo_t>::class.java) as Array<contactInfo_t>
             num = Game_local.gameLocal.clip.Contacts(
-                contactz, 10, clipModel!!.GetOrigin(),
-                dir, Physics.CONTACT_EPSILON, clipModel, clipModel!!.GetAxis(), clipMask, self
+                contactz,
+                10,
+                clipModel!!.GetOrigin(),
+                dir,
+                Physics.CONTACT_EPSILON,
+                clipModel,
+                clipModel!!.GetAxis(),
+                clipMask,
+                self
             )
             for (i in 0 until num) {
                 contacts[i] = contactz[i]
@@ -913,12 +891,10 @@ object Physics_RigidBody {
 
             // velocity with which the af is pushed
             current.pushVelocity.SubVec3_oPluSet(
-                0,
-                current.i.position.minus(saved.i.position).div(deltaTime * idMath.M_MS2SEC)
+                0, current.i.position.minus(saved.i.position).div(deltaTime * idMath.M_MS2SEC)
             )
             current.pushVelocity.SubVec3_oPluSet(
-                1,
-                rotation.GetVec().times(-Math_h.DEG2RAD(rotation.GetAngle())).div(deltaTime * idMath.M_MS2SEC)
+                1, rotation.GetVec().times(-DEG2RAD(rotation.GetAngle())).div(deltaTime * idMath.M_MS2SEC)
             )
         }
 
@@ -968,34 +944,22 @@ object Physics_RigidBody {
             msg.WriteFloat(quat.y)
             msg.WriteFloat(quat.z)
             msg.WriteFloat(
-                current.i.linearMomentum[0],
-                RB_MOMENTUM_EXPONENT_BITS,
-                RB_MOMENTUM_MANTISSA_BITS
+                current.i.linearMomentum[0], RB_MOMENTUM_EXPONENT_BITS, RB_MOMENTUM_MANTISSA_BITS
             )
             msg.WriteFloat(
-                current.i.linearMomentum[1],
-                RB_MOMENTUM_EXPONENT_BITS,
-                RB_MOMENTUM_MANTISSA_BITS
+                current.i.linearMomentum[1], RB_MOMENTUM_EXPONENT_BITS, RB_MOMENTUM_MANTISSA_BITS
             )
             msg.WriteFloat(
-                current.i.linearMomentum[2],
-                RB_MOMENTUM_EXPONENT_BITS,
-                RB_MOMENTUM_MANTISSA_BITS
+                current.i.linearMomentum[2], RB_MOMENTUM_EXPONENT_BITS, RB_MOMENTUM_MANTISSA_BITS
             )
             msg.WriteFloat(
-                current.i.angularMomentum[0],
-                RB_MOMENTUM_EXPONENT_BITS,
-                RB_MOMENTUM_MANTISSA_BITS
+                current.i.angularMomentum[0], RB_MOMENTUM_EXPONENT_BITS, RB_MOMENTUM_MANTISSA_BITS
             )
             msg.WriteFloat(
-                current.i.angularMomentum[1],
-                RB_MOMENTUM_EXPONENT_BITS,
-                RB_MOMENTUM_MANTISSA_BITS
+                current.i.angularMomentum[1], RB_MOMENTUM_EXPONENT_BITS, RB_MOMENTUM_MANTISSA_BITS
             )
             msg.WriteFloat(
-                current.i.angularMomentum[2],
-                RB_MOMENTUM_EXPONENT_BITS,
-                RB_MOMENTUM_MANTISSA_BITS
+                current.i.angularMomentum[2], RB_MOMENTUM_EXPONENT_BITS, RB_MOMENTUM_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(current.i.position[0], current.localOrigin[0])
             msg.WriteDeltaFloat(current.i.position[1], current.localOrigin[1])
@@ -1004,58 +968,31 @@ object Physics_RigidBody {
             msg.WriteDeltaFloat(quat.y, localQuat.y)
             msg.WriteDeltaFloat(quat.z, localQuat.z)
             msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity[0],
-                RB_VELOCITY_EXPONENT_BITS,
-                RB_VELOCITY_MANTISSA_BITS
+                0.0f, current.pushVelocity[0], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity[1],
-                RB_VELOCITY_EXPONENT_BITS,
-                RB_VELOCITY_MANTISSA_BITS
+                0.0f, current.pushVelocity[1], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.pushVelocity[2],
-                RB_VELOCITY_EXPONENT_BITS,
-                RB_VELOCITY_MANTISSA_BITS
+                0.0f, current.pushVelocity[2], RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.externalForce[0],
-                RB_FORCE_EXPONENT_BITS,
-                RB_FORCE_MANTISSA_BITS
+                0.0f, current.externalForce[0], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.externalForce[1],
-                RB_FORCE_EXPONENT_BITS,
-                RB_FORCE_MANTISSA_BITS
+                0.0f, current.externalForce[1], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.externalForce[2],
-                RB_FORCE_EXPONENT_BITS,
-                RB_FORCE_MANTISSA_BITS
+                0.0f, current.externalForce[2], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.externalTorque[0],
-                RB_FORCE_EXPONENT_BITS,
-                RB_FORCE_MANTISSA_BITS
+                0.0f, current.externalTorque[0], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.externalTorque[1],
-                RB_FORCE_EXPONENT_BITS,
-                RB_FORCE_MANTISSA_BITS
+                0.0f, current.externalTorque[1], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS
             )
             msg.WriteDeltaFloat(
-                0.0f,
-                current.externalTorque[2],
-                RB_FORCE_EXPONENT_BITS,
-                RB_FORCE_MANTISSA_BITS
+                0.0f, current.externalTorque[2], RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS
             )
         }
 
@@ -1082,59 +1019,37 @@ object Physics_RigidBody {
             localQuat.y = msg.ReadDeltaFloat(quat.y)
             localQuat.z = msg.ReadDeltaFloat(quat.z)
             current.pushVelocity[0] = msg.ReadDeltaFloat(
-                0.0f,
-                RB_VELOCITY_EXPONENT_BITS,
-                RB_VELOCITY_MANTISSA_BITS
+                0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS
             )
             current.pushVelocity[1] = msg.ReadDeltaFloat(
-                0.0f,
-                RB_VELOCITY_EXPONENT_BITS,
-                RB_VELOCITY_MANTISSA_BITS
+                0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS
             )
             current.pushVelocity[2] = msg.ReadDeltaFloat(
-                0.0f,
-                RB_VELOCITY_EXPONENT_BITS,
-                RB_VELOCITY_MANTISSA_BITS
+                0.0f, RB_VELOCITY_EXPONENT_BITS, RB_VELOCITY_MANTISSA_BITS
             )
             current.externalForce[0] = msg.ReadDeltaFloat(
-                0.0f,
-                RB_FORCE_EXPONENT_BITS,
-                RB_FORCE_MANTISSA_BITS
+                0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS
             )
             current.externalForce[1] = msg.ReadDeltaFloat(
-                0.0f,
-                RB_FORCE_EXPONENT_BITS,
-                RB_FORCE_MANTISSA_BITS
+                0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS
             )
             current.externalForce[2] = msg.ReadDeltaFloat(
-                0.0f,
-                RB_FORCE_EXPONENT_BITS,
-                RB_FORCE_MANTISSA_BITS
+                0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS
             )
             current.externalTorque[0] = msg.ReadDeltaFloat(
-                0.0f,
-                RB_FORCE_EXPONENT_BITS,
-                RB_FORCE_MANTISSA_BITS
+                0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS
             )
             current.externalTorque[1] = msg.ReadDeltaFloat(
-                0.0f,
-                RB_FORCE_EXPONENT_BITS,
-                RB_FORCE_MANTISSA_BITS
+                0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS
             )
             current.externalTorque[2] = msg.ReadDeltaFloat(
-                0.0f,
-                RB_FORCE_EXPONENT_BITS,
-                RB_FORCE_MANTISSA_BITS
+                0.0f, RB_FORCE_EXPONENT_BITS, RB_FORCE_MANTISSA_BITS
             )
             current.i.orientation.set(quat.ToMat3())
             current.localAxis.set(localQuat.ToMat3())
             if (clipModel != null) {
                 clipModel?.Link(
-                    Game_local.gameLocal.clip,
-                    self,
-                    clipModel!!.GetId(),
-                    current.i.position,
-                    current.i.orientation
+                    Game_local.gameLocal.clip, self, clipModel!!.GetId(), current.i.position, current.i.orientation
                 )
             }
         }
@@ -1150,9 +1065,9 @@ object Physics_RigidBody {
             val position = idVec3(current.i.position)
             current.i.position.plusAssign(centerOfMass.times(current.i.orientation))
             current.i.orientation.TransposeSelf()
-            val newState = next.i.toFloats()
-            integrator.Evaluate(current.i.toFloats(), newState, 0f, deltaTime)
-            next.i.fromFloats(newState)
+            val newState = next.i.toFloatArr()
+            integrator.Evaluate(current.i.toFloatArr(), newState, 0.0f, deltaTime)
+            next.i.fromFloatArr(newState)
             next.i.orientation.OrthoNormalizeSelf()
 
             // apply gravity
@@ -1177,14 +1092,10 @@ object Physics_RigidBody {
             val axis = idMat3()
             val rotation: idRotation
             var collided = false
-            var startsolid: Boolean = false
+            var startsolid = false
             if (TEST_COLLISION_DETECTION) {
                 if (Game_local.gameLocal.clip.Contents(
-                        current.i.position,
-                        clipModel,
-                        current.i.orientation,
-                        clipMask,
-                        self
+                        current.i.position, clipModel, current.i.orientation, clipMask, self
                     ) != 0
                 ) {
                     startsolid = true
@@ -1215,15 +1126,10 @@ object Physics_RigidBody {
             }
             if (TEST_COLLISION_DETECTION) {
                 if (Game_local.gameLocal.clip.Contents(
-                        next.i.position,
-                        clipModel,
-                        next.i.orientation,
-                        clipMask,
-                        self
+                        next.i.position, clipModel, next.i.orientation, clipMask, self
                     ) != 0
                 ) {
                     if (!startsolid) {
-                        val bah = 1
                     }
                 }
             }
@@ -1277,7 +1183,7 @@ object Physics_RigidBody {
             }
             impulseDenominator = inverseMass + inverseWorldInertiaTensor.times(r.Cross(collision.c.normal)).Cross(r)
                 .times(collision.c.normal)
-            if (info.invMass != 0f) {
+            if (info.invMass != 0.0f) {
                 impulseDenominator += info.invMass + info.invInertiaTensor.times(info.position.Cross(collision.c.normal))
                     .Cross(info.position).times(collision.c.normal)
             }
@@ -1288,7 +1194,7 @@ object Physics_RigidBody {
             current.i.angularMomentum.plusAssign(r.Cross(impulse))
 
             // if no movement at all don't blow up
-            if (collision.fraction < 0.0001f) {
+            if (collision.fraction < 0.0001) {
                 current.i.linearMomentum.timesAssign(0.5f)
                 current.i.angularMomentum.timesAssign(0.5f)
             }
@@ -1369,16 +1275,14 @@ object Physics_RigidBody {
             if (testSolid) {
                 testSolid = false
                 if (Game_local.gameLocal.clip.Contents(
-                        current.i.position,
-                        clipModel,
-                        current.i.orientation,
-                        clipMask,
-                        self
+                        current.i.position, clipModel, current.i.orientation, clipMask, self
                     ) != 0
                 ) {
                     Game_local.gameLocal.DWarning(
                         "rigid body in solid for entity '%s' type '%s' at (%s)",
-                        self!!.name, self!!.GetType().name, current.i.position.ToString(0)
+                        self!!.name,
+                        self!!.GetType().name,
+                        current.i.position.ToString(0)
                     )
                     Rest()
                     dropToFloor = false
@@ -1388,15 +1292,9 @@ object Physics_RigidBody {
 
 
             // put the body on the floor
-            down.set(current.i.position.plus(gravityNormal.times(128.0f)))
+            down.set(current.i.position + gravityNormal * 128.0f)
             Game_local.gameLocal.clip.Translation(
-                tr,
-                current.i.position,
-                down,
-                clipModel,
-                current.i.orientation,
-                clipMask,
-                self
+                tr, current.i.position, down, clipModel, current.i.orientation, clipMask, self
             )
             current.i.position.set(tr.endpos)
             clipModel!!.Link(Game_local.gameLocal.clip, self, clipModel!!.GetId(), tr.endpos, current.i.orientation)
@@ -1408,7 +1306,9 @@ object Physics_RigidBody {
                 if (!TestIfAtRest()) {
                     Game_local.gameLocal.DWarning(
                         "rigid body not at rest for entity '%s' type '%s' at (%s)",
-                        self!!.name, self!!.GetType().name, current.i.position.ToString(0)
+                        self!!.name,
+                        self!!.GetType().name,
+                        current.i.position.ToString(0)
                     )
                 }
                 Rest()
@@ -1416,7 +1316,9 @@ object Physics_RigidBody {
             } else if (IsOutsideWorld()) {
                 Game_local.gameLocal.Warning(
                     "rigid body outside world bounds for entity '%s' type '%s' at (%s)",
-                    self!!.name, self!!.GetType().name, current.i.position.ToString(0)
+                    self!!.name,
+                    self!!.GetType().name,
+                    current.i.position.ToString(0)
                 )
                 Rest()
                 dropToFloor = false
@@ -1460,7 +1362,7 @@ object Physics_RigidBody {
             normal.Normalize()
 
             // if on a too steep surface
-            if (normal.times(gravityNormal) > -0.7f) {
+            if (normal.times(gravityNormal) > -0.7) {
                 return false
             }
 
@@ -1493,7 +1395,7 @@ object Physics_RigidBody {
             point.minusAssign(gravityNormal.times(point.times(gravityNormal)))
 
             // if the point is not inside the winding
-            if (!contactWinding.PointInside(gravityNormal, point, 0f)) {
+            if (!contactWinding.PointInside(gravityNormal, point, 0.0f)) {
                 return false
             }
 
@@ -1519,7 +1421,10 @@ object Physics_RigidBody {
             av.set(inverseWorldInertiaTensor.times(current.i.angularMomentum))
 
             // if too much rotational velocity
-            return av.LengthSqr() <= STOP_SPEED
+            if (av.LengthSqr() > STOP_SPEED) {
+                return false
+            }
+            return true
         }
 
         private fun Rest() {
@@ -1531,12 +1436,8 @@ object Physics_RigidBody {
 
         private fun DebugDraw() {
             if (SysCvar.rb_showBodies.GetBool() || SysCvar.rb_showActive.GetBool() && current.atRest < 0) {
-                CollisionModel_local.collisionModelManager.DrawModel(
-                    clipModel!!.Handle(),
-                    clipModel!!.GetOrigin(),
-                    clipModel!!.GetAxis(),
-                    Vector.getVec3Origin(),
-                    0.0f
+                collisionModelManager.DrawModel(
+                    clipModel!!.Handle(), clipModel!!.GetOrigin(), clipModel!!.GetAxis(), getVec3Origin(), 0.0f
                 )
             }
             if (SysCvar.rb_showMass.GetBool()) {
@@ -1544,7 +1445,7 @@ object Physics_RigidBody {
                     Str.va("\n%1.2f", mass),
                     current.i.position,
                     0.08f,
-                    Lib.colorCyan,
+                    colorCyan,
                     Game_local.gameLocal.GetLocalPlayer()!!.viewAngles.ToMat3(),
                     1
                 )
@@ -1554,13 +1455,19 @@ object Physics_RigidBody {
                 Game_local.gameRenderWorld!!.DrawText(
                     Str.va(
                         "\n\n\n( %.1f %.1f %.1f )\n( %.1f %.1f %.1f )\n( %.1f %.1f %.1f )",
-                        I[0].x, I[0].y, I[0].z,
-                        I[1].x, I[1].y, I[1].z,
-                        I[2].x, I[2].y, I[2].z
+                        I[0].x,
+                        I[0].y,
+                        I[0].z,
+                        I[1].x,
+                        I[1].y,
+                        I[1].z,
+                        I[2].x,
+                        I[2].y,
+                        I[2].z
                     ),
                     current.i.position,
                     0.05f,
-                    Lib.colorCyan,
+                    colorCyan,
                     Game_local.gameLocal.GetLocalPlayer()!!.viewAngles.ToMat3(),
                     1
                 )
@@ -1570,25 +1477,20 @@ object Physics_RigidBody {
             }
         }
 
-        private class rigidBodyDerivatives_s constructor(derivatives: FloatArray) {
-            var angularMatrix: idMat3 = idMat3()
+        private class rigidBodyDerivatives_s(derivatives: FloatArray) {
+            val angularMatrix: idMat3 = idMat3()
             val force: idVec3 = idVec3()
             val linearVelocity: idVec3 = idVec3()
             val torque: idVec3 = idVec3()
             fun toFloats(): FloatArray {
                 val buffer = FloatBuffer.allocate(BYTES / java.lang.Float.BYTES)
-                buffer.put(linearVelocity.ToFloatPtr())
-                    .put(angularMatrix.ToFloatPtr())
-                    .put(force.ToFloatPtr())
+                buffer.put(linearVelocity.ToFloatPtr()).put(angularMatrix.ToFloatPtr()).put(force.ToFloatPtr())
                     .put(torque.ToFloatPtr())
                 return buffer.array()
             }
 
             companion object {
-                val BYTES: Int = idVec3.BYTES +
-                        idMat3.BYTES +
-                        idVec3.BYTES +
-                        idVec3.BYTES
+                val BYTES: Int = idVec3.BYTES + idMat3.BYTES + idVec3.BYTES + idVec3.BYTES
             }
 
             init {
@@ -1597,10 +1499,10 @@ object Physics_RigidBody {
                     linearVelocity.set(idVec3(b.get(), b.get(), b.get()))
                 }
                 if (b.hasRemaining()) {
-                    angularMatrix = idMat3(
-                        b.get(), b.get(), b.get(),
-                        b.get(), b.get(), b.get(),
-                        b.get(), b.get(), b.get()
+                    angularMatrix.set(
+                        idMat3(
+                            b.get(), b.get(), b.get(), b.get(), b.get(), b.get(), b.get(), b.get(), b.get()
+                        )
                     )
                 }
                 if (b.hasRemaining()) {
@@ -1612,7 +1514,7 @@ object Physics_RigidBody {
             }
         }
 
-        /*friend*/   class RigidBodyDerivatives constructor() : deriveFunction_t() {
+        /*friend*/   class RigidBodyDerivatives : deriveFunction_t() {
             override fun run(t: Float, clientData: Any, state: FloatArray, derivatives: FloatArray) {
                 val p = clientData as idPhysics_RigidBody
                 val s = rigidBodyIState_s(state) //TODO:from float array to object
@@ -1620,12 +1522,11 @@ object Physics_RigidBody {
                 val d = rigidBodyDerivatives_s(derivatives)
                 val angularVelocity = idVec3()
                 val inverseWorldInertiaTensor: idMat3
-                inverseWorldInertiaTensor =
-                    s.orientation.times(p.inverseInertiaTensor.times(s.orientation.Transpose()))
+                inverseWorldInertiaTensor = s.orientation.times(p.inverseInertiaTensor.times(s.orientation.Transpose()))
                 angularVelocity.set(inverseWorldInertiaTensor.times(s.angularMomentum))
                 // derivatives
                 d.linearVelocity.set(s.linearMomentum.times(p.inverseMass))
-                d.angularMatrix = idMat3.SkewSymmetric(angularVelocity).times(s.orientation)
+                d.angularMatrix.set(idMat3.SkewSymmetric(angularVelocity).times(s.orientation))
                 d.force.set(s.linearMomentum.times(-p.linearFriction).plus(p.current.externalForce))
                 d.torque.set(s.angularMomentum.times(-p.angularFriction).plus(p.current.externalTorque))
                 System.arraycopy(d.toFloats(), 0, derivatives, 0, derivatives.size)
@@ -1662,7 +1563,7 @@ object Physics_RigidBody {
             inverseMass = 1.0f
             centerOfMass = idVec3()
             inertiaTensor = idMat3.getMat3_identity()
-            inverseInertiaTensor = idMat3.getMat3_identity()
+            inverseInertiaTensor.set(idMat3.getMat3_identity())
 
             // use the least expensive euler integrator
             integrator =

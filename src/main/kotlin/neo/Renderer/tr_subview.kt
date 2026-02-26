@@ -5,20 +5,14 @@ import neo.Renderer.Material.idMaterial
 import neo.Renderer.Material.shaderStage_t
 import neo.Renderer.Material.textureStage_t
 import neo.Renderer.Model.srfTriangles_s
-import neo.Renderer.tr_local.drawSurf_s
-import neo.Renderer.tr_local.idScreenRect
-import neo.Renderer.tr_local.viewDef_s
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.Plane.idPlane
-import neo.idlib.math.Vector.getVec3Origin
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.getVec3Origin
+import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
 
-/**
- *
- */
 object tr_subview {
     /*
      =================
@@ -27,8 +21,8 @@ object tr_subview {
      */
     fun R_MirrorPoint(`in`: idVec3, surface: orientation_t, camera: orientation_t, out: idVec3) {
         var i: Int
-        val local: idVec3 = idVec3()
-        val transformed: idVec3 = idVec3()
+        val local = idVec3()
+        val transformed = idVec3()
         var d: Float
         local.set(`in`.minus(surface.origin))
         transformed.set(getVec3Origin())
@@ -92,14 +86,14 @@ object tr_subview {
     fun R_PreciseCullSurface(drawSurf: drawSurf_s, ndcBounds: idBounds): Boolean {
         val tri: srfTriangles_s
         val numTriangles: Int
-        val clip: idPlane = idPlane()
-        val eye: idPlane = idPlane()
+        val clip = idPlane()
+        val eye = idPlane()
         var i: Int
         var j: Int
         var pointOr: Int
         var pointAnd: Int
-        val localView: idVec3 = idVec3()
-        val w: idFixedWinding = idFixedWinding()
+        val localView = idVec3()
+        val w = idFixedWinding()
         tri = drawSurf.geo!!
         pointOr = 0
         pointAnd = 0.inv()
@@ -113,7 +107,7 @@ object tr_subview {
             var pointFlags: Int
             tr_main.R_TransformModelToClip(
                 tri.verts!![i]!!.xyz, drawSurf.space!!.modelViewMatrix,
-                tr_local.tr.viewDef!!.projectionMatrix, eye, clip
+                tr.viewDef!!.projectionMatrix, eye, clip
             )
             pointFlags = 0
             j = 0
@@ -137,14 +131,14 @@ object tr_subview {
 
         // backface and frustum cull
         numTriangles = tri.numIndexes / 3
-        tr_main.R_GlobalPointToLocal(drawSurf.space!!.modelMatrix, tr_local.tr.viewDef!!.renderView.vieworg, localView)
+        tr_main.R_GlobalPointToLocal(drawSurf.space!!.modelMatrix, tr.viewDef!!.renderView.vieworg, localView)
         i = 0
         while (i < tri.numIndexes) {
-            val dir: idVec3 = idVec3()
-            val normal: idVec3 = idVec3()
+            val dir = idVec3()
+            val normal = idVec3()
             var dot: Float
-            val d1: idVec3 = idVec3()
-            val d2: idVec3 = idVec3()
+            val d1 = idVec3()
+            val d2 = idVec3()
             val v1: idVec3 = tri.verts!![tri.indexes!![i]]!!.xyz
             val v2: idVec3 = tri.verts!![tri.indexes!![i + 1]]!!.xyz
             val v3: idVec3 = tri.verts!![tri.indexes!![i + 2]]!!.xyz
@@ -152,7 +146,7 @@ object tr_subview {
             // this is a hack, because R_GlobalPointToLocal doesn't work with the non-normalized
             // axis that we get from the gui view transform.  It doesn't hurt anything, because
             // we know that all gui generated surfaces are front facing
-            if (tr_local.tr.guiRecursionLevel == 0) {
+            if (tr.guiRecursionLevel == 0) {
                 // we don't care that it isn't normalized,
                 // all we want is the sign
                 d1.set(v2.minus(v1))
@@ -178,14 +172,14 @@ object tr_subview {
             w[0].s = w[0].t
             j = 0
             while (j < 4) {
-                if (!w.ClipInPlace(tr_local.tr.viewDef!!.frustum[j].unaryMinus(), 0.1f)) {
+                if (!w.ClipInPlace(tr.viewDef!!.frustum[j].unaryMinus(), 0.1f)) {
                     break
                 }
                 j++
             }
             j = 0
             while (j < w.GetNumPoints()) {
-                val screen: idVec3 = idVec3()
+                val screen = idVec3()
                 tr_main.R_GlobalToNormalizedDeviceCoordinates(w[j].ToVec3(), screen)
                 ndcBounds.AddPoint(screen)
                 j++
@@ -204,13 +198,13 @@ object tr_subview {
      */
     fun R_MirrorViewBySurface(drawSurf: drawSurf_s): viewDef_s {
         val parms: viewDef_s
-        val surface: orientation_t = orientation_t()
-        val camera: orientation_t = orientation_t()
-        val originalPlane: idPlane = idPlane()
-        val plane: idPlane = idPlane()
+        val surface = orientation_t()
+        val camera = orientation_t()
+        val originalPlane = idPlane()
+        val plane = idPlane()
 
         // copy the viewport size from the original
-        parms = viewDef_s(tr_local.tr.viewDef!!) //        parms = (viewDef_s) R_FrameAlloc(sizeof(parms));
+        parms = viewDef_s(tr.viewDef!!) //        parms = (viewDef_s) R_FrameAlloc(sizeof(parms));
         parms.renderView.viewID = 0 // clear to allow player bodies to show up, and suppress view weapons
         parms.isSubview = true
         parms.isMirror = true
@@ -228,28 +222,28 @@ object tr_subview {
         camera.axis[2] = surface.axis[2]
 
         // set the mirrored origin and axis
-        R_MirrorPoint(tr_local.tr.viewDef!!.renderView.vieworg, surface, camera, parms.renderView.vieworg)
+        R_MirrorPoint(tr.viewDef!!.renderView.vieworg, surface, camera, parms.renderView.vieworg)
         R_MirrorVector(
-            tr_local.tr.viewDef!!.renderView.viewaxis[0],
+            tr.viewDef!!.renderView.viewaxis[0],
             surface,
             camera,
             parms.renderView.viewaxis[0]
         )
         R_MirrorVector(
-            tr_local.tr.viewDef!!.renderView.viewaxis[1],
+            tr.viewDef!!.renderView.viewaxis[1],
             surface,
             camera,
             parms.renderView.viewaxis[1]
         )
         R_MirrorVector(
-            tr_local.tr.viewDef!!.renderView.viewaxis[2],
+            tr.viewDef!!.renderView.viewaxis[2],
             surface,
             camera,
             parms.renderView.viewaxis[2]
         )
 
         // make the view origin 16 units away from the center of the surface
-        val viewOrigin: idVec3 = idVec3((drawSurf.geo!!.bounds[0].plus(drawSurf.geo!!.bounds[1])).times(0.5f))
+        val viewOrigin = idVec3((drawSurf.geo!!.bounds[0].plus(drawSurf.geo!!.bounds[1])).times(0.5f))
         viewOrigin.plusAssign(originalPlane.Normal().times(16))
         parms.initialViewAreaOrigin.set(tr_main.R_LocalPointToGlobal(drawSurf.space!!.modelMatrix, viewOrigin))
 
@@ -273,7 +267,7 @@ object tr_subview {
 
         // copy the viewport size from the original
 //	parms = (viewDef_s )R_FrameAlloc( sizeof( parms ) );
-        parms = tr_local.tr.viewDef!!
+        parms = tr.viewDef!!
         parms.renderView.viewID = 0 // clear to allow player bodies to show up, and suppress view weapons
         parms.isSubview = true
         parms.isXraySubview = true
@@ -289,7 +283,7 @@ object tr_subview {
         val parms: viewDef_s
 
         // remote views can be reused in a single frame
-        if (stage.dynamicFrameCount == tr_local.tr.frameCount) {
+        if (stage.dynamicFrameCount == tr.frameCount) {
             return
         }
 
@@ -300,35 +294,35 @@ object tr_subview {
 
         // copy the viewport size from the original
 //	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
-        parms = tr_local.tr.viewDef!!
+        parms = tr.viewDef!!
         parms.isSubview = true
         parms.isMirror = false
         parms.renderView = surf.space!!.entityDef!!.parms.remoteRenderView!!
         parms.renderView.viewID = 0 // clear to allow player bodies to show up, and suppress view weapons
         parms.initialViewAreaOrigin.set(parms.renderView.vieworg)
-        tr_local.tr.CropRenderSize(stage.width, stage.height, true)
+        tr.CropRenderSize(stage.width, stage.height, true)
         parms.renderView.x = 0
         parms.renderView.y = 0
         parms.renderView.width = RenderSystem.SCREEN_WIDTH
         parms.renderView.height = RenderSystem.SCREEN_HEIGHT
-        tr_local.tr.RenderViewToViewport(parms.renderView, parms.viewport)
+        tr.RenderViewToViewport(parms.renderView, parms.viewport)
         parms.scissor.x1 = 0
         parms.scissor.y1 = 0
         parms.scissor.x2 = parms.viewport.x2 - parms.viewport.x1
         parms.scissor.y2 = parms.viewport.y2 - parms.viewport.y1
-        parms.superView = tr_local.tr.viewDef
+        parms.superView = tr.viewDef
         parms.subviewSurface = surf
 
         // generate render commands for it
         tr_main.R_RenderView(parms)
 
         // copy this rendering to the image
-        stage.dynamicFrameCount = tr_local.tr.frameCount
+        stage.dynamicFrameCount = tr.frameCount
         if (null == stage.image!![0]) {
             stage.image[0] = Image.globalImages.scratchImage
         }
-        tr_local.tr.CaptureRenderToImage(stage.image[0]!!.imgName.toString())
-        tr_local.tr.UnCrop()
+        tr.CaptureRenderToImage(stage.image[0]!!.imgName.toString())
+        tr.UnCrop()
     }
 
     /*
@@ -340,7 +334,7 @@ object tr_subview {
         val parms: viewDef_s?
 
         // remote views can be reused in a single frame
-        if (stage.dynamicFrameCount == tr_local.tr.frameCount) {
+        if (stage.dynamicFrameCount == tr.frameCount) {
             return
         }
 
@@ -349,30 +343,30 @@ object tr_subview {
         if (null == parms) {
             return
         }
-        tr_local.tr.CropRenderSize(stage.width, stage.height, true)
+        tr.CropRenderSize(stage.width, stage.height, true)
         parms.renderView.x = 0
         parms.renderView.y = 0
         parms.renderView.width = RenderSystem.SCREEN_WIDTH
         parms.renderView.height = RenderSystem.SCREEN_HEIGHT
-        tr_local.tr.RenderViewToViewport(parms.renderView, parms.viewport)
+        tr.RenderViewToViewport(parms.renderView, parms.viewport)
         parms.scissor.x1 = 0
         parms.scissor.y1 = 0
         parms.scissor.x2 = parms.viewport.x2 - parms.viewport.x1
         parms.scissor.y2 = parms.viewport.y2 - parms.viewport.y1
-        parms.superView = tr_local.tr.viewDef
+        parms.superView = tr.viewDef
         parms.subviewSurface = surf
 
         // triangle culling order changes with mirroring
-        parms.isMirror = (parms.isMirror xor tr_local.tr.viewDef!!.isMirror)
+        parms.isMirror = (parms.isMirror xor tr.viewDef!!.isMirror)
 
         // generate render commands for it
         tr_main.R_RenderView(parms)
 
         // copy this rendering to the image
-        stage.dynamicFrameCount = tr_local.tr.frameCount
+        stage.dynamicFrameCount = tr.frameCount
         stage.image!![0] = Image.globalImages.scratchImage
-        tr_local.tr.CaptureRenderToImage(stage.image[0]!!.imgName.toString())
-        tr_local.tr.UnCrop()
+        tr.CaptureRenderToImage(stage.image[0]!!.imgName.toString())
+        tr.UnCrop()
     }
 
     /*
@@ -384,7 +378,7 @@ object tr_subview {
         val parms: viewDef_s?
 
         // remote views can be reused in a single frame
-        if (stage.dynamicFrameCount == tr_local.tr.frameCount) {
+        if (stage.dynamicFrameCount == tr.frameCount) {
             return
         }
 
@@ -393,30 +387,30 @@ object tr_subview {
         if (null == parms) {
             return
         }
-        tr_local.tr.CropRenderSize(stage.width, stage.height, true)
+        tr.CropRenderSize(stage.width, stage.height, true)
         parms.renderView.x = 0
         parms.renderView.y = 0
         parms.renderView.width = RenderSystem.SCREEN_WIDTH
         parms.renderView.height = RenderSystem.SCREEN_HEIGHT
-        tr_local.tr.RenderViewToViewport(parms.renderView, parms.viewport)
+        tr.RenderViewToViewport(parms.renderView, parms.viewport)
         parms.scissor.x1 = 0
         parms.scissor.y1 = 0
         parms.scissor.x2 = parms.viewport.x2 - parms.viewport.x1
         parms.scissor.y2 = parms.viewport.y2 - parms.viewport.y1
-        parms.superView = tr_local.tr.viewDef
+        parms.superView = tr.viewDef
         parms.subviewSurface = surf
 
         // triangle culling order changes with mirroring
-        parms.isMirror = (parms.isMirror xor tr_local.tr.viewDef!!.isMirror) // != 0 );
+        parms.isMirror = (parms.isMirror xor tr.viewDef!!.isMirror) // != 0 );
 
         // generate render commands for it
         tr_main.R_RenderView(parms)
 
         // copy this rendering to the image
-        stage.dynamicFrameCount = tr_local.tr.frameCount
+        stage.dynamicFrameCount = tr.frameCount
         stage.image!![0] = Image.globalImages.scratchImage2
-        tr_local.tr.CaptureRenderToImage(stage.image[0]!!.imgName.toString())
-        tr_local.tr.UnCrop()
+        tr.CaptureRenderToImage(stage.image[0]!!.imgName.toString())
+        tr.UnCrop()
     }
 
     /*
@@ -425,12 +419,12 @@ object tr_subview {
      ==================
      */
     fun R_GenerateSurfaceSubview(drawSurf: drawSurf_s): Boolean {
-        val ndcBounds: idBounds = idBounds()
+        val ndcBounds = idBounds()
         var parms: viewDef_s?
         val shader: idMaterial
 
         // for testing the performance hit
-        if (RenderSystem_init.r_skipSubviews!!.GetBool()) {
+        if (r_skipSubviews!!.GetBool()) {
             return false
         }
         if (R_PreciseCullSurface(drawSurf, ndcBounds)) {
@@ -440,7 +434,7 @@ object tr_subview {
 
         // never recurse through a subview surface that we are
         // already seeing through
-        parms = tr_local.tr.viewDef
+        parms = tr.viewDef
         while (parms != null) {
             if ((parms.subviewSurface != null
                         ) && (parms.subviewSurface!!.geo === drawSurf.geo
@@ -455,8 +449,8 @@ object tr_subview {
         }
 
         // crop the scissor bounds based on the precise cull
-        val scissor: idScreenRect = idScreenRect()
-        val v: idScreenRect = tr_local.tr.viewDef!!.viewport
+        val scissor = idScreenRect()
+        val v: idScreenRect = tr.viewDef!!.viewport
         scissor.x1 = v.x1 + ((v.x2 - v.x1 + 1) * 0.5f * (ndcBounds[0, 0] + 1.0f)).toInt()
         scissor.y1 = v.y1 + ((v.y2 - v.y1 + 1) * 0.5f * (ndcBounds[0, 1] + 1.0f)).toInt()
         scissor.x2 = v.x1 + ((v.x2 - v.x1 + 1) * 0.5f * (ndcBounds[1, 0] + 1.0f)).toInt()
@@ -464,11 +458,40 @@ object tr_subview {
 
         // nudge a bit for safety
         scissor.Expand()
-        scissor.Intersect(tr_local.tr.viewDef!!.scissor)
+        scissor.Intersect(tr.viewDef!!.scissor)
+
         if (scissor.IsEmpty()) {
             // cropped out
             return false
         }
+
+        // DG: r_lockSurfaces needs special treatment
+        if (r_lockSurfaces.GetBool() && tr.viewDef == tr.primaryView) {
+            // we need the scissor for the "real" viewDef (actual camera position etc)
+            // so mirrors don't "float around" when looking around with r_lockSurfaces enabled
+            // So do the same calculation as before, but with real viewDef (but don't replace
+            // calculation above, so the whole mirror or whatever is skipped if not visible in
+            // locked view!)
+            val origViewDef = tr.viewDef
+            tr.viewDef = tr.lockSurfacesRealViewDef
+            R_PreciseCullSurface(drawSurf, ndcBounds)
+            val origScissor = idScreenRect(scissor)
+            val v2 = tr.viewDef!!.viewport
+            scissor.x1 = v2.x1 + ((v2.x2 - v2.x1 + 1) * 0.5f * (ndcBounds[0, 0] + 1.0f)).toInt()
+            scissor.y1 = v2.y1 + ((v2.y2 - v2.y1 + 1) * 0.5f * (ndcBounds[0, 1] + 1.0f)).toInt()
+            scissor.x2 = v2.x1 + ((v2.x2 - v2.x1 + 1) * 0.5f * (ndcBounds[1, 0] + 1.0f)).toInt()
+            scissor.y2 = v2.y1 + ((v2.y2 - v2.y1 + 1) * 0.5f * (ndcBounds[1, 1] + 1.0f)).toInt()
+            // nudge a bit for safety
+            scissor.Expand()
+            scissor.Intersect(tr.viewDef!!.scissor)
+            // TBH I'm not 100% happy with how this is handled - you won't get reliable information
+            // on what's rendered in a mirror this way. Intersecting with the orig. scissor looks "best".
+            // For handling this "properly" we'd need the whole "locked viewDef vs real viewDef" thing
+            // for every subview (instead of just once for the primaryView) which would be a lot of
+            // work for a corner case...
+            scissor.Intersect(origScissor)
+            tr.viewDef = origViewDef
+        } // DG end
 
         // see what kind of subview we are making
         if (shader.GetSort() != Material.SS_SUBVIEW.toFloat()) {
@@ -502,11 +525,11 @@ object tr_subview {
             return false
         }
         parms.scissor = scissor
-        parms.superView = tr_local.tr.viewDef
+        parms.superView = tr.viewDef
         parms.subviewSurface = drawSurf
 
         // triangle culling order changes with mirroring
-        parms.isMirror = (parms.isMirror xor tr_local.tr.viewDef!!.isMirror) // != 0 );
+        parms.isMirror = (parms.isMirror xor tr.viewDef!!.isMirror) // != 0 );
 
         // generate render commands for it
         tr_main.R_RenderView(parms)
@@ -532,7 +555,7 @@ object tr_subview {
         var shader: idMaterial?
 
         // for testing the performance hit
-        if (RenderSystem_init.r_skipSubviews!!.GetBool()) {
+        if (r_skipSubviews!!.GetBool()) {
             return false
         }
         subviews = false
@@ -540,8 +563,8 @@ object tr_subview {
         // scan the surfaces until we either find a subview, or determine
         // there are no more subview surfaces.
         i = 0
-        while (i < tr_local.tr.viewDef!!.numDrawSurfs) {
-            drawSurf = tr_local.tr.viewDef!!.drawSurfs[i]
+        while (i < tr.viewDef!!.numDrawSurfs) {
+            drawSurf = tr.viewDef!!.drawSurfs[i]
             shader = drawSurf.material
             if (null == shader || !shader.HasSubview()) {
                 i++
@@ -555,8 +578,8 @@ object tr_subview {
         return subviews
     }
 
-    class orientation_t() {
-        var axis: idMat3 = idMat3()
+    class orientation_t {
+        val axis: idMat3 = idMat3()
         val origin: idVec3 = idVec3()
     }
 }

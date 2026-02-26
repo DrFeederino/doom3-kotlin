@@ -3,12 +3,9 @@ package neo.Tools.Compilers.DMap
 import neo.Tools.Compilers.DMap.dmap.optimizeGroup_s
 import neo.Tools.Compilers.DMap.optimize.optVertex_s
 import neo.framework.Common
-import neo.idlib.BV.Bounds.idBounds
+import neo.idlib.BV.idBounds
 import neo.idlib.geometry.DrawVert.idDrawVert
 
-/**
- *
- */
 object optimize_gcc {
     //
     const val MAX_OPT_VERTEXES = 0x10000
@@ -57,7 +54,7 @@ object optimize_gcc {
         vert.v = v
         vert.pv[0] = x
         vert.pv[1] = y
-        vert.pv[2] = 0f
+        vert.pv[2] = 0.0f
         optBounds.AddPoint(vert.pv)
         return vert
     }

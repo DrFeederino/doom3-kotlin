@@ -2,20 +2,15 @@ package neo.idlib
 
 import neo.TempDump
 import neo.framework.Common
-import neo.idlib.Lib.idException
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
-import neo.idlib.containers.HashIndex.idHashIndex
 import neo.idlib.containers.List.idList
+import neo.idlib.containers.idHashIndex
 import java.nio.ByteBuffer
 
-/**
- *
- */
 class LangDict {
     /*
      ===============================================================================
@@ -220,7 +215,7 @@ class LangDict {
             }
             var work: idStr?
             for (j in 0 until c) {
-                work = args[j].key
+                work = idStr(args[j].key)
                 work.StripLeading(Common.STRTABLE_ID)
                 val test = work.toString().toInt()
                 if (test > id) {

@@ -1,11 +1,8 @@
 package neo.idlib.Text
 
 import neo.idlib.Text.Str.idStr
-import neo.idlib.math.Math_h.idMath
+import neo.idlib.math.idMath
 
-/**
- *
- */
 object Token {
     const val TT_BINARY = 0x00010 // binary number
     const val TT_DECIMAL = 0x00002 // decimal number
@@ -86,7 +83,7 @@ object Token {
             if (type != TT_NUMBER) {
                 return 0.0f
             }
-            if (0 == subtype and TT_VALUESVALID) {
+            if (0 == (subtype and TT_VALUESVALID)) {
                 NumberValue()
             }
             return floatValue
@@ -123,13 +120,9 @@ object Token {
 
         //
         fun NumberValue() {                // calculate values for a TT_NUMBER
-            var i: Int
-            var pow: Int
             var c: Int
-            val div: Boolean
             val p: CharArray
             var pIndex = 0
-            var m: Float
             assert(type == TT_NUMBER)
             p = c_str()
             floatValue = 0.0f
@@ -139,7 +132,7 @@ object Token {
                 if (subtype and (TT_INFINITE or TT_INDEFINITE or TT_NAN) != 0) {
                     if (subtype and TT_INFINITE != 0) {            // 1.#INF
                         val inf = 0x7f800000
-                        floatValue = inf.toFloat() //TODO:WHY THE DOUBLE CAST?
+                        floatValue = inf.toFloat()
                     } else if (subtype and TT_INDEFINITE != 0) {    // 1.#IND
                         val ind = -0x400000
                         floatValue = ind.toFloat()
@@ -197,7 +190,7 @@ object Token {
                     } else {
                         (p[pIndex] - '0')
                     }
-                    p[pIndex]++
+                    pIndex++
                 }
                 floatValue = intValue.toFloat()
             } else if (subtype and TT_BINARY != 0) {

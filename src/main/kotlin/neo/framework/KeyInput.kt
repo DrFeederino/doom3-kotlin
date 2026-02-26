@@ -6,15 +6,12 @@ import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.File_h.idFile
 import neo.idlib.CmdArgs
-import neo.idlib.Lib
-import neo.idlib.Lib.idException
+import neo.idlib.MAX_STRING_CHARS
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
+import neo.idlib.idException
 import neo.sys.win_input
 
-/**
- *
- */
 object KeyInput {
     /*
      ===============================================================================
@@ -387,7 +384,7 @@ object KeyInput {
          returns the localized name of the key for the binding
          ============
          */
-        private val keyName: CharArray = CharArray(Lib.MAX_STRING_CHARS)
+        private val keyName: CharArray = CharArray(MAX_STRING_CHARS)
 
         @Throws(idException::class)
         fun Init() {
@@ -586,6 +583,7 @@ object KeyInput {
                             when (kn.keynum) {
                                 K_ENTER, K_BACKSPACE, K_ALT, K_INS, K_PRINT_SCR -> Common.common.GetLanguageDict()
                                     .GetString(kn.strId)
+
                                 else -> Common.common.GetLanguageDict().GetString(kn.strId)
                             }
                         } else {
@@ -700,7 +698,7 @@ object KeyInput {
                         if (keyName[0] != '\u0000') {
                             idStr.Append(
                                 keyName,
-                                Lib.MAX_STRING_CHARS,
+                                MAX_STRING_CHARS,
                                 Common.common.GetLanguageDict().GetString("#str_07183")
                             )
                         }

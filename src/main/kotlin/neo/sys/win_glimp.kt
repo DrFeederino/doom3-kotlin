@@ -1,22 +1,21 @@
 package neo.sys
 
-import neo.Renderer.RenderSystem_init
-import neo.Renderer.tr_local
+import neo.Renderer.r_logFile
+import neo.Renderer.tr
 import neo.TempDump
 import neo.framework.Common.Companion.common
 import neo.framework.FileSystem_h
 import neo.framework.UsercmdGen
-import neo.idlib.Lib.idLib
 import neo.idlib.Text.Str.idStr
+import neo.idlib.idLib
+import org.lwjgl.PointerBuffer
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
 import org.lwjgl.glfw.GLFWGammaRamp
-import org.lwjgl.glfw.GLFWImage
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.system.MemoryUtil
 import java.io.IOException
-import java.nio.ByteBuffer
 import java.nio.ShortBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.Paths
@@ -32,12 +31,13 @@ object win_glimp {
     private var initialFrames = 0
     private var isEnabled = false
     private val d3_ico_resource = win_glimp.javaClass.classLoader.getResourceAsStream("neo/sys/RC/res/doom.ico")
-    private val d3_icon = GLFWImage.Buffer(ByteBuffer.wrap(d3_ico_resource.readAllBytes()))
+
+    //    private val d3_icon = GLFWImage.Buffer(ByteBuffer.wrap(d3_ico_resource.readAllBytes()))
     var gammaOrigError = false
     var gammaOrigSet = false
-    val gammaOrigRed: UShortArray = UShortArray(256)
-    val gammaOrigGreen: UShortArray = UShortArray(256)
-    val gammaOrigBlue: UShortArray = UShortArray(256)
+    var gammaOrigRed: ShortArray = ShortArray(256)
+    var gammaOrigGreen: ShortArray = ShortArray(256)
+    var gammaOrigBlue: ShortArray = ShortArray(256)
 
 
     /*
@@ -114,6 +114,7 @@ object win_glimp {
                         if (depthbits == 24) depthbits = 16 else if (depthbits == 16) depthbits = 8
                         if (stencilbits == 24) stencilbits = 16 else if (stencilbits == 16) stencilbits = 8
                     }
+
                     3 -> if (stencilbits == 24) stencilbits = 16 else if (stencilbits == 16) stencilbits = 8
                 }
             }
@@ -181,22 +182,46 @@ object win_glimp {
     // If the desired mode can't be set satisfactorily, false will be returned.
     // The renderer will then reset the glimpParms to "safe mode" of 640x480
     // fullscreen and try again.  If that also fails, the error will be fatal.
-    fun GLimp_SetGamma(red: UShortArray, green: UShortArray, blue: UShortArray) {
+    fun GLimp_SetGamma(red: ShortArray, green: ShortArray, blue: ShortArray) {
         if (window == 0L) {
             common.Warning("GLimp_SetGamma called without window")
             return
         }
 
+        val gammaRamp = glfwGetGammaRamp(window)
+
         if (!gammaOrigSet) {
-            gammaOrigSet = true;
-//            if ( glfwGetGammaRamp( window) == -1 ) {
-//                gammaOrigError = true;
-//                common.Warning( "Failed to get Gamma Ramp: %d\n", glfwGetError() glGetError() );
-//                }
+            gammaOrigSet = true
+            if (gammaRamp == null) {
+                gammaOrigError = true
+                common.Warning("Failed to get Gamma Ramp: %s\n", glfwGetError(PointerBuffer.allocateDirect(1024)))
+            }
+        }
+
+        if (gammaRamp != null) {
+            gammaOrigRed = gammaRamp.red().toArray()
+            gammaOrigGreen = gammaRamp.green().toArray()
+            gammaOrigBlue = gammaRamp.blue().toArray()
+
+            gammaRamp.red(ShortBuffer.wrap(red))
+                .green(ShortBuffer.wrap(green))
+                .blue(ShortBuffer.wrap(blue))
+
+            if (glfwSetGammaRamp(window, gammaRamp) == null) {
+                common.Warning("Couldn't set gamma ramp: %s", glfwGetError(PointerBuffer.allocateDirect(1024)))
+            }
         }
 
     }
 
+    fun ShortBuffer.toArray(): ShortArray {
+        val shortArray = ShortArray(this.capacity())
+        for (i in 0 until capacity()) {
+            shortArray[i] = this[i]
+        }
+
+        return shortArray
+    }
     /*
      ===================
      GLimp_Shutdown
@@ -223,9 +248,9 @@ object win_glimp {
 
         if (gammaOrigSet) {
             val gammaRamp = GLFWGammaRamp.create()
-            gammaRamp.red(ShortBuffer.wrap(gammaOrigRed.toShortArray()))
-            gammaRamp.green(ShortBuffer.wrap(gammaOrigGreen.toShortArray()))
-            gammaRamp.blue(ShortBuffer.wrap(gammaOrigBlue.toShortArray()))
+            gammaRamp.red(ShortBuffer.wrap(gammaOrigRed))
+            gammaRamp.green(ShortBuffer.wrap(gammaOrigGreen))
+            gammaRamp.blue(ShortBuffer.wrap(gammaOrigBlue))
             glfwSetGammaRamp(window, gammaRamp)
         }
     }
@@ -254,14 +279,14 @@ object win_glimp {
             // return if we're already active
             if (isEnabled && enable) {
                 // decrement log counter and stop if it has reached 0
-                RenderSystem_init.r_logFile!!.SetInteger(RenderSystem_init.r_logFile!!.GetInteger() - 1)
-                if (RenderSystem_init.r_logFile!!.GetInteger() != 0) {
+                r_logFile!!.SetInteger(r_logFile!!.GetInteger() - 1)
+                if (r_logFile!!.GetInteger() != 0) {
                     return
                 }
                 idLib.common.Printf("closing logfile '%s' after %d frames.\n", ospath, initialFrames)
                 enable = false
-                tr_local.tr.logFile!!.close()
-                tr_local.tr.logFile = null
+                tr.logFile!!.close()
+                tr.logFile = null
             }
 
             // return if we're already disabled
@@ -270,13 +295,13 @@ object win_glimp {
             }
             isEnabled = enable
             if (enable) {
-                if (TempDump.NOT(tr_local.tr.logFile)) {
+                if (tr.logFile == null) {
 //			struct tm		*newtime;
 //			ID_TIME_T			aclock;
                     var qpath = ""
                     var i: Int
                     val path: String
-                    initialFrames = RenderSystem_init.r_logFile!!.GetInteger()
+                    initialFrames = r_logFile!!.GetInteger()
 
                     // scan for an unused filename
                     i = 0
@@ -288,14 +313,14 @@ object win_glimp {
                         i++
                     }
                     path = FileSystem_h.fileSystem.RelativePathToOSPath(qpath, "fs_savepath")
-                    idStr.Companion.Copynz(ospath, path)
-                    tr_local.tr.logFile = FileChannel.open(Paths.get(ospath.toString()), TempDump.fopenOptions("wt"))
+                    idStr.Copynz(ospath, path)
+                    tr.logFile = FileChannel.open(Paths.get(ospath.toString()), TempDump.fopenOptions("wt"))
 
                     // write the time out to the top of the file
 //			time( &aclock );
 //			newtime = localtime( &aclock );
-                    tr_local.tr.logFile!!.write(TempDump.atobb(String.format("// %s", Date())))
-                    tr_local.tr.logFile!!.write(
+                    tr.logFile!!.write(TempDump.atobb(String.format("// %s", Date())))
+                    tr.logFile!!.write(
                         TempDump.atobb(
                             String.format(
                                 "// %s\n\n",
@@ -318,12 +343,12 @@ object win_glimp {
 
 
     fun GLimp_ActivateContext() {
-        common.DPrintf("TODO: GLimp_DeactivateContext\n");
+        common.DPrintf("TODO: GLimp_DeactivateContext\n")
     }
 
 
     fun GLimp_SetScreenParms(parms: glimpParms_t) {
-        common.DPrintf("TODO: GLimp_SetScreenParms\n");
+        common.DPrintf("TODO: GLimp_SetScreenParms\n")
     }
 
     /*

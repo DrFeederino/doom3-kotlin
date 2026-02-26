@@ -1,6 +1,5 @@
 package neo.Game.GameSys
 
-import neo.CM.CollisionModel.trace_s
 import neo.Game.AFEntity.idAFEntity_ClawFourFingers
 import neo.Game.AFEntity.idAFEntity_Generic
 import neo.Game.AFEntity.idAFEntity_WithAttachedHead
@@ -10,7 +9,7 @@ import neo.Game.AI.AI_Vagary.idAI_Vagary
 import neo.Game.BrittleFracture.idBrittleFracture
 import neo.Game.Camera.idCameraAnim
 import neo.Game.Camera.idCameraView
-import neo.Game.Entity.EV_Activate
+import neo.Game.EV_Activate
 import neo.Game.Entity.idAnimatedEntity
 import neo.Game.Entity.idEntity
 import neo.Game.FX.idEntityFx
@@ -104,27 +103,24 @@ import neo.Game.Trigger.idTrigger_Multi
 import neo.Game.Trigger.idTrigger_Timer
 import neo.Game.Trigger.idTrigger_Touch
 import neo.Game.WorldSpawn.idWorldspawn
-import neo.TempDump
 import neo.TempDump.TODO_Exception
+import neo.cm.trace_s
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.idlib.CmdArgs
-import neo.idlib.Lib.idException
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.Hierarchy.idHierarchy
 import neo.idlib.containers.List.idList
-import neo.idlib.math.Math_h
-import neo.idlib.math.Math_h.idMath
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.idException
+import neo.idlib.math.SEC2MS
+import neo.idlib.math.idMath
+import neo.idlib.math.idVec3
 import java.lang.Class
 
-/**
- *
- */
+val EV_Remove: idEventDef = idEventDef("<immediateremove>", null)
+val EV_SafeRemove: idEventDef = idEventDef("remove", null)
+
 class Class {
     companion object {
-        val EV_Remove: idEventDef = idEventDef("<immediateremove>", null)
-        val EV_SafeRemove: idEventDef = idEventDef("remove", null)
-
         var classHierarchy: idHierarchy<idTypeInfo> = idHierarchy()
         var eventCallbackMemory = 0
 
@@ -134,7 +130,7 @@ class Class {
 
 
     fun interface eventCallback_t<out T : idClass> {
-        open fun accept(t: @UnsafeVariance T, vararg args: idEventArg<*>)
+        fun accept(t: @UnsafeVariance T, vararg args: idEventArg<*>)
     }
 
     fun interface eventCallback_t0<out T : idClass> : eventCallback_t<T> {
@@ -142,7 +138,7 @@ class Class {
             accept(t)
         }
 
-        open fun accept(e: @UnsafeVariance T)
+        fun accept(e: @UnsafeVariance T)
     }
 
     fun interface eventCallback_t1<out T : idClass> : eventCallback_t<T> {
@@ -150,7 +146,7 @@ class Class {
             accept(t, args[0])
         }
 
-        open fun accept(t: @UnsafeVariance T, a: idEventArg<*>)
+        fun accept(t: @UnsafeVariance T, a: idEventArg<*>)
     }
 
     fun interface eventCallback_t2<out T : idClass> : eventCallback_t<T> {
@@ -158,7 +154,7 @@ class Class {
             accept(t, args[0], args[1])
         }
 
-        open fun accept(t: @UnsafeVariance T, a: idEventArg<*>, b: idEventArg<*>)
+        fun accept(t: @UnsafeVariance T, a: idEventArg<*>, b: idEventArg<*>)
     }
 
     fun interface eventCallback_t3<out T : idClass> : eventCallback_t<T> {
@@ -174,7 +170,7 @@ class Class {
             accept(t, args[0], args[1], args[2], args[3])
         }
 
-        open fun accept(t: @UnsafeVariance T, a: idEventArg<*>, b: idEventArg<*>, c: idEventArg<*>, d: idEventArg<*>)
+        fun accept(t: @UnsafeVariance T, a: idEventArg<*>, b: idEventArg<*>, c: idEventArg<*>, d: idEventArg<*>)
     }
 
     fun interface eventCallback_t5<out T : idClass> : eventCallback_t<T> {
@@ -182,7 +178,7 @@ class Class {
             accept(t, args[0], args[1], args[2], args[3], args[4])
         }
 
-        open fun accept(
+        fun accept(
             t: @UnsafeVariance T,
             a: idEventArg<*>,
             b: idEventArg<*>,
@@ -197,7 +193,7 @@ class Class {
             accept(t, args[0], args[1], args[2], args[3], args[4], args[5])
         }
 
-        open fun accept(
+        fun accept(
             t: @UnsafeVariance T,
             a: idEventArg<*>,
             b: idEventArg<*>,
@@ -229,8 +225,6 @@ class Class {
         var type = 0
         var value: T
 
-        //
-        //
         private constructor(data: T) {
             type =
                 if (data is Int) Event.D_EVENT_INTEGER.code
@@ -334,7 +328,7 @@ class Class {
     //
     //class idSaveGame;
     //class idRestoreGame;
-    abstract class idClass() /*<nameOfClass>*/ {
+    abstract class idClass /*<nameOfClass>*/ {
         companion object {
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = run {
                 val map = HashMap<idEventDef, eventCallback_t<*>>()
@@ -552,7 +546,7 @@ class Class {
             // #ifdef ID_REDIRECT_NEWDELETE
             // #define new ID_DEBUG_NEW
             // #endif
-            fun CreateInstance(name: String?): idClass? {
+            fun CreateInstance(name: String?): idClass {
 //            idTypeInfo type;
 //            idClass obj;
 //
@@ -635,7 +629,7 @@ class Class {
          Returns the text classname of the superclass.
          ================
          */
-        fun GetSuperclass(): String? {
+        fun GetSuperclass(): String {
             throw TODO_Exception()
             //            java.lang.Class/*idTypeInfo*/ cls;
 //
@@ -802,21 +796,21 @@ class Class {
         }
 
         fun PostEventSec(ev: idEventDef, time: Float): Boolean {
-            return PostEventArgs(ev, Math_h.SEC2MS(time).toInt(), 0)
+            return PostEventArgs(ev, SEC2MS(time).toInt(), 0)
         }
 
         fun PostEventSec(ev: idEventDef, time: Float, arg1: idEventArg<*>?): Boolean {
-            return PostEventArgs(ev, Math_h.SEC2MS(time).toInt(), 1, arg1)
+            return PostEventArgs(ev, SEC2MS(time).toInt(), 1, arg1)
         }
 
         fun PostEventSec(ev: idEventDef, time: Float, arg1: Any?): Boolean {
-            return PostEventArgs(ev, Math_h.SEC2MS(time).toInt(), 1, idEventArg.toArg<Any?>(arg1))
+            return PostEventArgs(ev, SEC2MS(time).toInt(), 1, idEventArg.toArg<Any?>(arg1))
         }
 
         fun PostEventSec(ev: idEventDef, time: Float, arg1: Any?, arg2: Any?): Boolean {
             return PostEventArgs(
                 ev,
-                Math_h.SEC2MS(time).toInt(),
+                SEC2MS(time).toInt(),
                 2,
                 idEventArg.toArg<Any?>(arg1),
                 idEventArg.toArg<Any?>(arg2)
@@ -826,7 +820,7 @@ class Class {
         fun PostEventSec(ev: idEventDef, time: Float, arg1: Any?, arg2: Any?, arg3: Any?): Boolean {
             return PostEventArgs(
                 ev,
-                Math_h.SEC2MS(time).toInt(),
+                SEC2MS(time).toInt(),
                 3,
                 idEventArg.toArg<Any?>(arg1),
                 idEventArg.toArg<Any?>(arg2),
@@ -837,7 +831,7 @@ class Class {
         fun PostEventSec(ev: idEventDef, time: Float, arg1: Any?, arg2: Any?, arg3: Any?, arg4: Any?): Boolean {
             return PostEventArgs(
                 ev,
-                Math_h.SEC2MS(time).toInt(),
+                SEC2MS(time).toInt(),
                 4,
                 idEventArg.toArg<Any?>(arg1),
                 idEventArg.toArg<Any?>(arg2),
@@ -857,7 +851,7 @@ class Class {
         ): Boolean {
             return PostEventArgs(
                 ev,
-                Math_h.SEC2MS(time).toInt(),
+                SEC2MS(time).toInt(),
                 5,
                 idEventArg.toArg<Any?>(arg1),
                 idEventArg.toArg<Any?>(arg2),
@@ -879,7 +873,7 @@ class Class {
         ): Boolean {
             return PostEventArgs(
                 ev,
-                Math_h.SEC2MS(time).toInt(),
+                SEC2MS(time).toInt(),
                 6,
                 idEventArg.toArg<Any?>(arg1),
                 idEventArg.toArg<Any?>(arg2),
@@ -903,7 +897,7 @@ class Class {
         ): Boolean {
             return PostEventArgs(
                 ev,
-                Math_h.SEC2MS(time).toInt(),
+                SEC2MS(time).toInt(),
                 7,
                 idEventArg.toArg<Any?>(arg1),
                 idEventArg.toArg<Any?>(arg2),
@@ -929,7 +923,7 @@ class Class {
         ): Boolean {
             return PostEventArgs(
                 ev,
-                Math_h.SEC2MS(time).toInt(),
+                SEC2MS(time).toInt(),
                 8,
                 idEventArg.toArg<Any?>(arg1),
                 idEventArg.toArg<Any?>(arg2),
@@ -1065,7 +1059,7 @@ class Class {
             val callback: eventCallback_t<*>?
 
             assert(ev != null)
-            assert(idEvent.initialized)
+            assert(Event.initialized)
 
             if (SysCvar.g_debugTriggers.GetBool() && ev === EV_Activate && this is idEntity) {
                 val name: String
@@ -1080,7 +1074,7 @@ class Class {
             }
 
             num = ev!!.GetEventNum()
-            callback = getEventCallBack(ev!!) //callback = c.eventMap[num];
+            callback = getEventCallBack(ev) //callback = c.eventMap[num];
 
             if (callback == null) {
                 // we don't respond to this event, so ignore it
@@ -1107,13 +1101,13 @@ class Class {
 //// #else
             assert(D_EVENT_MAXARGS == 8)
 
-            when (ev!!.GetNumArgs()) {
+            when (ev.GetNumArgs()) {
                 0, 1, 2, 3, 4, 5, 6, 7, 8 -> ////		typedef void ( idClass.*eventCallback_8_t )( const int, const int, const int, const int, const int, const int, const int, const int );
 ////		( this.*( eventCallback_8_t )callback )( data[ 0 ], data[ 1 ], data[ 2 ], data[ 3 ], data[ 4 ], data[ 5 ], data[ 6 ], data[ 7 ] );
 //                    callback.run(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
                     callback.accept(this, *data as Array<out idEventArg<*>>)
 
-                else -> Game_local.gameLocal.Warning("Invalid formatspec on event '%s'", ev!!.GetName())
+                else -> Game_local.gameLocal.Warning("Invalid formatspec on event '%s'", ev.GetName())
             }
 
 // #endif
@@ -1168,16 +1162,16 @@ class Class {
         }
 
         private fun PostEventArgs(ev: idEventDef, time: Int, numargs: Int, vararg args: idEventArg<*>?): Boolean {
-            val c: java.lang.Class<*>
+            val c: Class<*>
             val event: idEvent
             assert(ev != null)
-            if (!idEvent.initialized) {
+            if (!Event.initialized) {
                 return false
             }
 
             //TODO:disabled for medicinal reasons
             c = this.javaClass
-            if (TempDump.NOT(getEventCallBack(ev))) {
+            if (getEventCallBack(ev) == null) {
                 // we don't respond to this event, so ignore it
                 return false
             }
@@ -1199,11 +1193,9 @@ class Class {
         }
 
         private fun ProcessEventArgs(ev: idEventDef, numargs: Int, vararg args: idEventArg<*>?): Boolean {
-            var c: idTypeInfo
-            var num: Int
             //val data = Array<idEventArg<*>>(Event.D_EVENT_MAXARGS) { idEventArg() }
             assert(ev != null)
-            assert(idEvent.initialized)
+            assert(Event.initialized)
             val data: Array<idEventArg<*>?> = arrayOfNulls(D_EVENT_MAXARGS)
             //TODO:same as PostEventArgs
 //            c = GetType();
@@ -1364,7 +1356,7 @@ class Class {
             }
 
             // if we're not adding any new event callbacks, we can just use our superclass's table
-            if ((null == eventCallbacks || TempDump.NOT(eventCallbacks[0].event)) && zuper != null) {
+            if ((null == eventCallbacks || eventCallbacks[0].event == null) && zuper != null) {
                 eventMap = zuper!!.eventMap
                 return
             }
@@ -1452,7 +1444,7 @@ class Class {
         }
 
         fun RespondsTo(ev: idEventDef): Boolean {
-            assert(idEvent.initialized)
+            assert(Event.initialized)
             // we don't respond to this event
             return null != eventMap!![ev.GetEventNum()]
         }
@@ -1478,7 +1470,7 @@ class Class {
             // Check if any subclasses were initialized before their superclass
             type = typelist
             while (type != null) {
-                if (type.zuper == null && TempDump.NOT(idStr.Cmp(type.superclass, this.classname).toDouble())
+                if (type.zuper == null && idStr.Cmp(type.superclass, this.classname) == 0
                     && idStr.Cmp(type.classname, "idClass") != 0
                 ) {
                     type.zuper = this

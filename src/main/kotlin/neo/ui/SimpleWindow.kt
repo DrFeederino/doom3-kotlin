@@ -5,15 +5,15 @@ import neo.Renderer.Material.idMaterial
 import neo.TempDump.itob
 import neo.framework.DeclManager
 import neo.framework.File_h.idFile
-import neo.idlib.Lib
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
+import neo.idlib.colorBlack
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Matrix.idMat3.Companion.getMat3_identity
-import neo.idlib.math.Rotation.idRotation
-import neo.idlib.math.Vector.getVec3Origin
-import neo.idlib.math.Vector.idVec2
-import neo.idlib.math.Vector.idVec3
+import neo.idlib.math.getVec3Origin
+import neo.idlib.math.idRotation
+import neo.idlib.math.idVec2
+import neo.idlib.math.idVec3
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.Rectangle.idRectangle
 import neo.ui.UserInterfaceLocal.idUserInterfaceLocal
@@ -26,9 +26,6 @@ import neo.ui.Winvar.idWinStr
 import neo.ui.Winvar.idWinVar
 import neo.ui.Winvar.idWinVec4
 
-/**
- *
- */
 class SimpleWindow {
     class drawWin_t {
         val DBG_index: Int
@@ -49,19 +46,19 @@ class SimpleWindow {
 
         //
         var name: idStr
-        protected var backColor = idWinVec4()
+        var backColor = idWinVec4()
         protected var backGroundName = idWinBackground()
 
         //
         protected var background: idMaterial?
-        protected var borderColor = idWinVec4()
+        var borderColor = idWinVec4()
         protected var borderSize: Float
         protected val clientRect = idRectangle() // client area
         protected var dc: idDeviceContext?
         protected val drawRect = idRectangle() // overall rect
         protected var flags: Int
         protected var fontNum: Int
-        protected var foreColor = idWinVec4()
+        var foreColor = idWinVec4()
         protected var gui: idUserInterfaceLocal?
 
         //
@@ -69,12 +66,12 @@ class SimpleWindow {
 
         //
         protected var mParent: idWindow?
-        protected var matColor = idWinVec4()
+        var matColor = idWinVec4()
         protected var matScalex: Float
         protected var matScaley: Float
-        protected var origin: idVec2
-        protected var rect = idWinRectangle() // overall rect
-        protected var rotate: idWinFloat? = idWinFloat()
+        protected val origin: idVec2
+        var rect = idWinRectangle() // overall rect
+        var rotate: idWinFloat? = idWinFloat()
         protected var shear = Winvar.idWinVec2()
 
         //
@@ -83,7 +80,7 @@ class SimpleWindow {
         protected var textAlignx: Float
         protected var textAligny: Float
         protected val textRect = idRectangle()
-        protected var textScale = idWinFloat()
+        var textScale = idWinFloat()
         protected var textShadow: Int
         protected var visible = idWinBool()
 
@@ -175,7 +172,7 @@ class SimpleWindow {
             if (!visible.data) {
                 return
             }
-            CalcClientRect(0f, 0f)
+            CalcClientRect(0.0f, 0.0f)
             dc!!.SetFont(fontNum)
             drawRect.Offset(x, y)
             clientRect.Offset(x, y)
@@ -196,7 +193,7 @@ class SimpleWindow {
                     shadowText,
                     textScale.data,
                     textAlign,
-                    Lib.colorBlack,
+                    colorBlack,
                     shadowRect,
                     !itob(flags and Window.WIN_NOWRAP),
                     -1
@@ -387,18 +384,18 @@ class SimpleWindow {
             drawRect.x += xofs
             drawRect.y += yofs
             clientRect.set(drawRect)
-            if (rect.h() > 0.0 && rect.w() > 0.0) {
-                if (flags and Window.WIN_BORDER != 0 && borderSize != 0f) {
+            if (rect.h() > 0.0f && rect.w() > 0.0f) {
+                if (flags and Window.WIN_BORDER != 0 && borderSize != 0.0f) {
                     clientRect.x += borderSize
                     clientRect.y += borderSize
                     clientRect.w -= borderSize
                     clientRect.h -= borderSize
                 }
                 textRect.set(clientRect)
-                textRect.x += 2.0.toFloat()
-                textRect.w -= 2.0.toFloat()
-                textRect.y += 2.0.toFloat()
-                textRect.h -= 2.0.toFloat()
+                textRect.x += 2.0f
+                textRect.w -= 2.0f
+                textRect.y += 2.0f
+                textRect.h -= 2.0f
                 textRect.x += textAlignx
                 textRect.y += textAligny
             }
@@ -407,13 +404,13 @@ class SimpleWindow {
 
         protected fun SetupTransforms(x: Float, y: Float) {
             trans.Identity()
-            org.set(origin.x + x, origin.y + y, 0f)
-            if (rotate != null && rotate!!.data != 0f) {
+            org.set(origin.x + x, origin.y + y, 0.0f)
+            if (rotate != null && rotate!!.data != 0.0f) {
                 rot.Set(org, vec, rotate!!.data)
-                trans = rot.ToMat3()
+                trans.set(rot.ToMat3())
             }
             smat.Identity()
-            if (shear.x() != 0f || shear.y() != 0f) {
+            if (shear.x() != 0.0f || shear.y() != 0.0f) {
                 smat.set(0, 1, shear.x())
                 smat.set(1, 0, shear.y())
                 trans.timesAssign(smat)
@@ -454,7 +451,7 @@ class SimpleWindow {
 
         protected fun DrawBorderAndCaption(drawRect: idRectangle) {
             if (flags and Window.WIN_BORDER != 0) {
-                if (borderSize != 0f) {
+                if (borderSize != 0.0f) {
                     dc!!.DrawRect(drawRect.x, drawRect.y, drawRect.w, drawRect.h, borderSize, borderColor.data)
                 }
             }
@@ -473,7 +470,7 @@ class SimpleWindow {
             private var DBG_countersOfCreation = 0
 
             //
-            private var trans = idMat3()
+            private val trans = idMat3()
         }
     }
 }
