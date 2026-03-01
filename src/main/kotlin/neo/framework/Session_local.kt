@@ -1016,15 +1016,15 @@ object Session_local {
         }
 
         override fun MessageBox(type: msgBoxType_t, message: String): String {
-            throw UnsupportedOperationException("Not supported yet.")
+            return MessageBox(type, message, null, false, null, null, false) ?: ""
         }
 
         override fun MessageBox(type: msgBoxType_t, message: String, title: String): String {
-            throw UnsupportedOperationException("Not supported yet.")
+            return MessageBox(type, message, title, false, null, null, false) ?: ""
         }
 
         override fun MessageBox(type: msgBoxType_t, message: String, title: String?, wait: Boolean): String {
-            throw UnsupportedOperationException("Not supported yet.")
+            return MessageBox(type, message, title, wait, null, null, false) ?: ""
         }
 
         override fun MessageBox(
@@ -1034,7 +1034,7 @@ object Session_local {
             wait: Boolean,
             fire_yes: String
         ): String {
-            throw UnsupportedOperationException("Not supported yet.")
+            return MessageBox(type, message, title, wait, fire_yes, null, false) ?: ""
         }
 
         override fun MessageBox(
@@ -1045,7 +1045,7 @@ object Session_local {
             fire_yes: String,
             fire_no: String
         ): String {
-            throw UnsupportedOperationException("Not supported yet.")
+            return MessageBox(type, message, title, wait, fire_yes, fire_no, false) ?: ""
         }
 
         override fun MessageBox(
