@@ -632,6 +632,5 @@ object tr_shadowbounds {
         }
     }
 
-    class MySegments : MyArray<idVec4>(36) {
-    }
+    class MySegments : MyArray<idVec4>(36)
 }

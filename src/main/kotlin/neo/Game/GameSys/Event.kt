@@ -1,25 +1,16 @@
 package neo.Game.GameSys
 
 import neo.Game.*
-import neo.Game.AFEntity.idAFEntity_ClawFourFingers
-import neo.Game.AFEntity.idAFEntity_Generic
-import neo.Game.AFEntity.idAFEntity_Gibbable
-import neo.Game.AFEntity.idAFEntity_WithAttachedHead
-import neo.Game.AI.AI
 import neo.Game.AI.AI_Vagary
 import neo.Game.AI.AI_Vagary.idAI_Vagary
+import neo.Game.AI.idAI
+import neo.Game.AI.idCombatNode
 import neo.Game.Animation.Anim_Testmodel.idTestModel
-import neo.Game.FX.idTeleporter
 import neo.Game.GameSys.Class.idClass
 import neo.Game.GameSys.Class.idEventArg
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local.idGameLocal
-import neo.Game.Item.idItem
-import neo.Game.Item.idItemRemover
-import neo.Game.Item.idMoveableItem
-import neo.Game.Item.idObjective
-import neo.Game.Item.idObjectiveComplete
 import neo.Game.Light.idLight
 import neo.Game.Misc.idActivator
 import neo.Game.Misc.idAnimated
@@ -636,20 +627,20 @@ object Event {
              */
             fun initCallbacks() {
                 idClass.getEventCallBacks()
-                Entity.idEntity.getEventCallBacks()
-                Actor.idActor.getEventCallBacks()
-                AFEntity.idAFEntity_Base.getEventCallBacks()
-                AI.idAI.getEventCallBacks()
-                Moveable.idMoveable.getEventCallBacks()
+                idEntity.getEventCallBacks()
+                idActor.getEventCallBacks()
+                idAFEntity_Base.getEventCallBacks()
+                idAI.getEventCallBacks()
+                idMoveable.getEventCallBacks()
                 idAFEntity_ClawFourFingers.getEventCallBacks()
                 idAFEntity_WithAttachedHead.getEventCallBacks()
                 idAFEntity_Generic.getEventCallBacks()
                 idAFEntity_Gibbable.getEventCallBacks()
                 BrittleFracture.idBrittleFracture.getEventCallBacks()
-                Camera.idCameraView.getEventCallBacks()
-                Camera.idCameraAnim.getEventCallBacks()
-                Entity.idAnimatedEntity.getEventCallBacks()
-                FX.idEntityFx.getEventCallBacks()
+                idCameraView.getEventCallBacks()
+                idCameraAnim.getEventCallBacks()
+                idAnimatedEntity.getEventCallBacks()
+                idEntityFx.getEventCallBacks()
                 idTeleporter.getEventCallBacks()
                 idItem.getEventCallBacks()
                 idObjective.getEventCallBacks()
@@ -661,7 +652,7 @@ object Event {
                 idActivator.getEventCallBacks()
                 idPathCorner.getEventCallBacks()
                 idTestModel.getEventCallBacks()
-                AI.idCombatNode.getEventCallBacks()
+                idCombatNode.getEventCallBacks()
                 idAI_Vagary.getEventCallBacks()
                 idWorldspawn.getEventCallBacks()
                 Weapon.idWeapon.getEventCallBacks()
@@ -932,14 +923,7 @@ object Event {
     //
     init {
 //preload AI_Events' idEventDefs(473).
-        val actor = Actor
-        val entity = AFEntity
-        val ai = AI
         val vagary = AI_Vagary
-        val camera = Camera
-        val entity1 = Entity
-        val fx = FX
-        val item = Item
         val light = Light
         val misc = Misc
         val moveable = Moveable

@@ -8,8 +8,6 @@
 
 package neo.Game.Physics
 
-import neo.Game.Entity
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.idClass
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -19,6 +17,8 @@ import neo.Game.Game_local.idGameLocal
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics.impactInfo_s
 import neo.Game.Physics.Physics_Base.idPhysics_Base
+import neo.Game.TH_PHYSICS
+import neo.Game.idEntity
 import neo.cm.collisionModelManager
 import neo.cm.contactInfo_t
 import neo.cm.trace_s
@@ -5630,7 +5630,7 @@ object Physics_AF {
             }
             current.atRest = -1
             current.noMoveTime = 0.0f
-            self!!.BecomeActive(Entity.TH_PHYSICS)
+            self!!.BecomeActive(TH_PHYSICS)
         }
 
         /*
@@ -7304,7 +7304,7 @@ object Physics_AF {
                 bodies[i].current.externalForce.Zero()
                 i++
             }
-            self!!.BecomeInactive(Entity.TH_PHYSICS)
+            self!!.BecomeInactive(TH_PHYSICS)
         }
 
         private fun AddPushVelocity(pushVelocity: idVec6) {

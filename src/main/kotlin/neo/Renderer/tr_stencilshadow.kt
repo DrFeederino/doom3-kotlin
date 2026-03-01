@@ -375,7 +375,6 @@ object tr_stencilshadow {
         val sides = IntArray(MAX_CLIPPED_POINTS)
         val counts = IntArray(3)
         var dot: Float
-        var i: Int = 0
         val mid = idVec3()
 
         val inClip = clipTris[inNum]

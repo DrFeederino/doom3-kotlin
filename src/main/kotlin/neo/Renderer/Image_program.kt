@@ -287,7 +287,8 @@ object Image_program {
                 c = width!![0] * height!![0] * 4
                 i = 0
                 while (i < c) {
-                    pic[0]!!.put(i + 3,
+                    pic[0]!!.put(
+                        i + 3,
                         (((pic[0]!!.get(i).toInt() and 0xFF) + (pic[0]!!.get(i + 1)
                             .toInt() and 0xFF) + (pic[0]!!.get(i + 2).toInt() and 0xFF)) / 3).toByte()
                     )

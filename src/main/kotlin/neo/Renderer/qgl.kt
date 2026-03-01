@@ -41,6 +41,7 @@ object qgl {
     val qGL_FALSE: Boolean = false
     val qGL_TRUE: Boolean = true
     private val GL_DEBUG: Boolean = false
+
     init {
         if (GL_DEBUG) qglEnable(GL43.GL_DEBUG_OUTPUT)
     }

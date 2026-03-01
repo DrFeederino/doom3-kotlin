@@ -1,19 +1,12 @@
 package neo.Game.Script
 
-import neo.Game.AFEntity.idAFEntity_Base
-import neo.Game.Camera.idCamera
-import neo.Game.EV_Activate
-import neo.Game.EV_CacheSoundShader
-import neo.Game.EV_SetShaderParm
-import neo.Game.Entity.idEntity
-import neo.Game.Entity.signalNum_t
+import neo.Game.*
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
-import neo.Game.Game_local
 import neo.Game.Game_local.Companion.gameLocal
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Game_local.idGameLocal.Companion.Error

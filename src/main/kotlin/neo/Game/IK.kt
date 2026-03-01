@@ -1,8 +1,7 @@
 package neo.Game
 
 import neo.Game.Animation.Anim.jointModTransform_t
-import neo.Game.Animation.Anim_Blend.idAnimator
-import neo.Game.Entity.idEntity
+import neo.Game.Animation.idAnimator
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
@@ -1074,7 +1073,6 @@ object IK /*ea*/ {
         override fun Init(self: idEntity?, anim: String, modelOffset: idVec3): Boolean {
             var i: Int
             var jointName: String
-            idTraceModel()
             val dir = idVec3()
             val handOrigin = idVec3()
             val elbowOrigin = idVec3()

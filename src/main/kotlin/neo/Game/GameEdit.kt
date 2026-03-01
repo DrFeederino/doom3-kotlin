@@ -18,9 +18,7 @@
 
 package neo.Game
 
-import neo.Game.AFEntity.idAFEntity_Base
-import neo.Game.AI.AI.idAI
-import neo.Game.Entity.idEntity
+import neo.Game.AI.idAI
 import neo.Game.Game.idGameEdit
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.idEntityPtr
@@ -72,11 +70,10 @@ object GameEdit {
     private fun sscanf(key: idStr, pattern: String): Int {
         var pattern = pattern
         var a = -1
-        val result: String
         pattern = pattern.replace("%d".toRegex(), "\\d+")
         var scanner = Scanner(key.toString())
-        result = scanner.findInLine(Pattern.compile(pattern))
-        if (result.isNotEmpty()) {
+        val result: String? = scanner.findInLine(Pattern.compile(pattern))
+        if (result != null && result.isNotEmpty()) {
             scanner = Scanner(result)
             scanner.findInLine("bind")
             a = scanner.nextInt()
@@ -102,10 +99,10 @@ object GameEdit {
 
         override fun Present() {
             // don't present to the renderer if the entity hasn't changed
-            if (0 == thinkFlags and Entity.TH_UPDATEVISUALS) {
+            if (0 == thinkFlags and TH_UPDATEVISUALS) {
                 return
             }
-            BecomeInactive(Entity.TH_UPDATEVISUALS)
+            BecomeInactive(TH_UPDATEVISUALS)
             val origin = GetPhysics().GetOrigin()
             val axis = GetPhysics().GetAxis()
             Game_local.gameRenderWorld!!.DebugArrow(
@@ -118,7 +115,7 @@ object GameEdit {
         }
 
         override fun Think() {
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 drag.Evaluate(Game_local.gameLocal.time)
             }
             Present()
@@ -233,7 +230,7 @@ object GameEdit {
                                 || phys is idPhysics_RigidBody
                                 || phys is idPhysics_Monster
                             ) {
-                                cursor!!.BecomeActive(Entity.TH_THINK)
+                                cursor!!.BecomeActive(TH_THINK)
                             }
                         }
                     }
@@ -380,7 +377,7 @@ object GameEdit {
         private fun StopDrag() {
             dragEnt.oSet(null)
             if (cursor != null) {
-                cursor!!.BecomeInactive(Entity.TH_THINK)
+                cursor!!.BecomeInactive(TH_THINK)
             }
         }
 

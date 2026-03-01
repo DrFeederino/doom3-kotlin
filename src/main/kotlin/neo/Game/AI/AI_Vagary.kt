@@ -18,8 +18,6 @@
 
 package neo.Game.AI
 
-import neo.Game.AI.AI.idAI
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SysCvar
@@ -27,6 +25,7 @@ import neo.Game.Game_local
 import neo.Game.Moveable.idMoveable
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Script.Script_Thread.idThread
+import neo.Game.idEntity
 import neo.idlib.BV.idBounds
 import neo.idlib.MAX_WORLD_SIZE
 import neo.idlib.math.idVec3

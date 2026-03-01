@@ -17,7 +17,7 @@
  */
 
 package neo.Game
-import neo.Game.Entity.idEntity
+
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Player.idPlayer

@@ -8,13 +8,13 @@
 
 package neo.Game.Physics
 
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.eventCallback_t
 import neo.Game.GameSys.Class.idClass
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Physics.Clip.idClipModel
+import neo.Game.idEntity
 import neo.cm.contactInfo_t
 import neo.cm.trace_s
 import neo.framework.UsercmdGen

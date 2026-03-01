@@ -5,7 +5,6 @@
  */
 package neo.Game.Script
 
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
@@ -19,6 +18,7 @@ import neo.Game.Script.Script_Program.idVarDef.initialized_t
 import neo.Game.Script.Script_Program.idVarDefName
 import neo.Game.Script.Script_Program.statement_s
 import neo.Game.Script.Script_Thread.idThread
+import neo.Game.idEntity
 import neo.framework.FileSystem_h.fileSystem
 import neo.framework.FileSystem_h.fsMode_t
 import neo.framework.File_h.idFile

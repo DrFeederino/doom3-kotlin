@@ -8,13 +8,13 @@
 
 package neo.Game.Physics
 
-import neo.Game.Entity
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics_Base.idPhysics_Base
+import neo.Game.TH_PHYSICS
+import neo.Game.idEntity
 import neo.cm.trace_s
 import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsgDelta
@@ -42,35 +42,35 @@ object Physics_Parametric {
         savefile.WriteVec3(state.localOrigin)
         savefile.WriteAngles(state.localAngles)
         savefile.WriteInt(state.linearExtrapolation.GetExtrapolationType())
-        savefile.WriteFloat(state.linearExtrapolation.GetStartTime().toFloat())
-        savefile.WriteFloat(state.linearExtrapolation.GetDuration().toFloat())
+        savefile.WriteFloat(state.linearExtrapolation.GetStartTime())
+        savefile.WriteFloat(state.linearExtrapolation.GetDuration())
         savefile.WriteVec3(state.linearExtrapolation.GetStartValue()!!)
         savefile.WriteVec3(state.linearExtrapolation.GetBaseSpeed()!!)
         savefile.WriteVec3(state.linearExtrapolation.GetSpeed()!!)
         savefile.WriteInt(state.angularExtrapolation.GetExtrapolationType())
-        savefile.WriteFloat(state.angularExtrapolation.GetStartTime().toFloat())
-        savefile.WriteFloat(state.angularExtrapolation.GetDuration().toFloat())
+        savefile.WriteFloat(state.angularExtrapolation.GetStartTime())
+        savefile.WriteFloat(state.angularExtrapolation.GetDuration())
         savefile.WriteAngles(state.angularExtrapolation.GetStartValue()!!)
         savefile.WriteAngles(state.angularExtrapolation.GetBaseSpeed()!!)
         savefile.WriteAngles(state.angularExtrapolation.GetSpeed()!!)
-        savefile.WriteFloat(state.linearInterpolation.GetStartTime().toFloat())
-        savefile.WriteFloat(state.linearInterpolation.GetAcceleration().toFloat())
-        savefile.WriteFloat(state.linearInterpolation.GetDeceleration().toFloat())
-        savefile.WriteFloat(state.linearInterpolation.GetDuration().toFloat())
+        savefile.WriteFloat(state.linearInterpolation.GetStartTime())
+        savefile.WriteFloat(state.linearInterpolation.GetAcceleration())
+        savefile.WriteFloat(state.linearInterpolation.GetDeceleration())
+        savefile.WriteFloat(state.linearInterpolation.GetDuration())
         savefile.WriteVec3(state.linearInterpolation.GetStartValue())
         savefile.WriteVec3(state.linearInterpolation.GetEndValue())
-        savefile.WriteFloat(state.angularInterpolation.GetStartTime().toFloat())
-        savefile.WriteFloat(state.angularInterpolation.GetAcceleration().toFloat())
-        savefile.WriteFloat(state.angularInterpolation.GetDeceleration().toFloat())
-        savefile.WriteFloat(state.angularInterpolation.GetDuration().toFloat())
+        savefile.WriteFloat(state.angularInterpolation.GetStartTime())
+        savefile.WriteFloat(state.angularInterpolation.GetAcceleration())
+        savefile.WriteFloat(state.angularInterpolation.GetDeceleration())
+        savefile.WriteFloat(state.angularInterpolation.GetDuration())
         savefile.WriteAngles(state.angularInterpolation.GetStartValue())
         savefile.WriteAngles(state.angularInterpolation.GetEndValue())
 
         // spline is handled by owner
-        savefile.WriteFloat(state.splineInterpolate.GetStartTime().toFloat())
-        savefile.WriteFloat(state.splineInterpolate.GetAcceleration().toFloat())
-        savefile.WriteFloat(state.splineInterpolate.GetDuration().toFloat())
-        savefile.WriteFloat(state.splineInterpolate.GetDeceleration().toFloat())
+        savefile.WriteFloat(state.splineInterpolate.GetStartTime())
+        savefile.WriteFloat(state.splineInterpolate.GetAcceleration())
+        savefile.WriteFloat(state.splineInterpolate.GetDuration())
+        savefile.WriteFloat(state.splineInterpolate.GetDeceleration())
         savefile.WriteFloat(state.splineInterpolate.GetStartValue())
         savefile.WriteFloat(state.splineInterpolate.GetEndValue())
     }
@@ -600,7 +600,7 @@ object Physics_Parametric {
 
         override fun Activate() {
             current.atRest = -1
-            self!!.BecomeActive(Entity.TH_PHYSICS)
+            self!!.BecomeActive(TH_PHYSICS)
         }
 
         override fun IsAtRest(): Boolean {
@@ -984,7 +984,7 @@ object Physics_Parametric {
 
         private fun Rest() {
             current.atRest = Game_local.gameLocal.time
-            self!!.BecomeInactive(Entity.TH_PHYSICS)
+            self!!.BecomeInactive(TH_PHYSICS)
         }
 
         companion object {

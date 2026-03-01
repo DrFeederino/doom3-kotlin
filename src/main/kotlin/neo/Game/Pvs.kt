@@ -17,6 +17,7 @@
  */
 
 package neo.Game
+
 import neo.Game.Game_local.idGameLocal
 import neo.Renderer.RenderWorld.exitPortal_t
 import neo.Renderer.RenderWorld.portalConnection_t

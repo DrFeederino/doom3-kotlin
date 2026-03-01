@@ -1018,7 +1018,7 @@ internal class idCompiler {
          Creates a def for a relative jump from one code location to another
          ============
          */
-    private fun JumpDef(jumpfrom: Int, jumpto: Int): idVarDef? {
+    private fun JumpDef(jumpfrom: Int, jumpto: Int): idVarDef {
         return JumpConstant(jumpto - jumpfrom)
     }
 
@@ -1029,7 +1029,7 @@ internal class idCompiler {
          Creates a def for a relative jump from current code location
          ============
          */
-    private fun JumpTo(jumpto: Int): idVarDef? {
+    private fun JumpTo(jumpto: Int): idVarDef {
         return JumpDef(Game_local.gameLocal.program.NumStatements(), jumpto)
     }
 
@@ -1040,7 +1040,7 @@ internal class idCompiler {
          Creates a def for a relative jump from code location to current code location
          ============
          */
-    private fun JumpFrom(jumpfrom: Int): idVarDef? {
+    private fun JumpFrom(jumpfrom: Int): idVarDef {
         return JumpDef(jumpfrom, Game_local.gameLocal.program.NumStatements())
     }
 
@@ -1051,7 +1051,7 @@ internal class idCompiler {
          Looks for a preexisting constant
          ============
          */
-    private fun ParseImmediate(): idVarDef? {
+    private fun ParseImmediate(): idVarDef {
         blaaaa++
         val def: idVarDef = GetImmediate(immediateType, immediate, token.toString())
         NextToken()

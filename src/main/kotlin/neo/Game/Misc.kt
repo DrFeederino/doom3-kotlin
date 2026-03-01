@@ -17,15 +17,10 @@
  */
 
 package neo.Game
-import neo.Game.AFEntity.idAFEntity_Gibbable
-import neo.Game.AI.AI.idAI
+
 import neo.Game.AI.AI_RandomPath
-import neo.Game.Actor.idActor
+import neo.Game.AI.idAI
 import neo.Game.Animation.Anim
-import neo.Game.Camera.idCamera
-import neo.Game.Entity.TH_THINK
-import neo.Game.Entity.TH_UPDATEVISUALS
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
@@ -1769,7 +1764,7 @@ object Misc {
                 restart = false
             } else if (smoke != null) {
                 smokeTime = Game_local.gameLocal.time
-                BecomeActive(Entity.TH_UPDATEPARTICLES)
+                BecomeActive(TH_UPDATEPARTICLES)
                 restart = true
             }
             GetPhysics().SetContents(0)
@@ -1797,7 +1792,7 @@ object Misc {
             if (CheckDormant() || smoke == null || smokeTime == -1) {
                 return
             }
-            if ((thinkFlags and Entity.TH_UPDATEPARTICLES) != 0 && !IsHidden()) {
+            if ((thinkFlags and TH_UPDATEPARTICLES) != 0 && !IsHidden()) {
                 if (!Game_local.gameLocal.smokeParticles!!.EmitSmoke(
                         smoke,
                         smokeTime,
@@ -1810,18 +1805,18 @@ object Misc {
                         smokeTime = Game_local.gameLocal.time
                     } else {
                         smokeTime = 0
-                        BecomeInactive(Entity.TH_UPDATEPARTICLES)
+                        BecomeInactive(TH_UPDATEPARTICLES)
                     }
                 }
             }
         }
 
         fun Event_Activate(activator: idEventArg<idEntity>) {
-            if ((thinkFlags and Entity.TH_UPDATEPARTICLES) != 0) {
+            if ((thinkFlags and TH_UPDATEPARTICLES) != 0) {
                 restart = false
                 return
             } else {
-                BecomeActive(Entity.TH_UPDATEPARTICLES)
+                BecomeActive(TH_UPDATEPARTICLES)
                 restart = true
                 smokeTime = Game_local.gameLocal.time
             }
@@ -1948,7 +1943,7 @@ object Misc {
                     }
                 }
             } else {
-                BecomeInactive(Entity.TH_ALL)
+                BecomeInactive(TH_ALL)
             }
         }
 

@@ -18,18 +18,11 @@
 
 package neo.Game
 
-import neo.Game.AFEntity.idAFAttachment
-import neo.Game.AFEntity.idAFEntity_Vehicle
 import neo.Game.AI.AAS.idAAS
-import neo.Game.AI.AI.idAI
-import neo.Game.AI.AI.talkState_t
-import neo.Game.Actor.idActor
+import neo.Game.AI.idAI
+import neo.Game.AI.talkState_t
 import neo.Game.Animation.Anim
 import neo.Game.Animation.Anim.jointModTransform_t
-import neo.Game.Camera.idCamera
-import neo.Game.Entity.idEntity
-import neo.Game.Entity.signalNum_t
-import neo.Game.FX.idEntityFx
 import neo.Game.GameEdit.idDragEntity
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
@@ -38,7 +31,6 @@ import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.*
-import neo.Game.Item.idItem
 import neo.Game.MultiplayerGame.gameType_t
 import neo.Game.MultiplayerGame.idMultiplayerGame
 import neo.Game.Physics.Clip.idClipModel
@@ -1837,7 +1829,7 @@ object Player {
                 LinkCombat()
                 playerView.CalculateShake()
             }
-            if (0 == thinkFlags and Entity.TH_THINK) {
+            if (0 == thinkFlags and TH_THINK) {
                 Game_local.gameLocal.Printf("player %d not thinking\n", entityNumber)
             }
             if (SysCvar.g_showEnemies.GetBool()) {
@@ -2646,7 +2638,7 @@ object Player {
                 forceRespawn = false
             }
             privateCameraView = null
-            BecomeActive(Entity.TH_THINK)
+            BecomeActive(TH_THINK)
 
             // run a client frame to drop exactly to the floor,
             // initialize animations and other things
@@ -3290,7 +3282,7 @@ object Player {
                     af.Rest()
 
                     // physics is turned off by calling af.Rest()
-                    BecomeActive(Entity.TH_PHYSICS)
+                    BecomeActive(TH_PHYSICS)
                 }
             }
             lastDamageDef = damageDef.Index()
@@ -6991,7 +6983,7 @@ object Player {
             physicsObj.SetPlayerInput(usercmd, viewAngles)
 
             // FIXME: physics gets disabled somehow
-            BecomeActive(Entity.TH_PHYSICS)
+            BecomeActive(TH_PHYSICS)
             RunPhysics()
 
             // update our last valid AAS location for the AI

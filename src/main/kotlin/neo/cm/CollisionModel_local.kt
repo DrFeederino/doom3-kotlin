@@ -51,7 +51,6 @@ import neo.idlib.containers.idHashIndex
 import neo.idlib.geometry.Surface_Patch.idSurface_Patch
 import neo.idlib.geometry.TraceModel
 import neo.idlib.geometry.TraceModel.idTraceModel
-import neo.idlib.geometry.TraceModel.traceModelEdge_t
 import neo.idlib.geometry.TraceModel.traceModelPoly_t
 import neo.idlib.geometry.TraceModel.traceModel_t
 import neo.idlib.geometry.Winding
@@ -2157,7 +2156,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (d <= 0.0) {
                 return false
             }
-            sqrtd = kotlin.math.sqrt(d)
+            sqrtd = sqrt(d)
             q = if (b > 0.0) {
                 -b + sqrtd
             } else {
@@ -2277,7 +2276,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (d <= 0.0) {
                 return false
             }
-            sqrtd = kotlin.math.sqrt(d)
+            sqrtd = sqrt(d)
             q = if (b > 0.0) {
                 -b + sqrtd
             } else {
@@ -2548,7 +2547,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (d <= 0.0) {
                 return false
             }
-            sqrtd = kotlin.math.sqrt(d)
+            sqrtd = sqrt(d)
             q = if (b > 0.0) {
                 -b + sqrtd
             } else {
@@ -2633,7 +2632,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (d <= 0.0) {
                 return false
             }
-            sqrtd = kotlin.math.sqrt(d)
+            sqrtd = sqrt(d)
             q = if (b > 0.0) {
                 -b + sqrtd
             } else {

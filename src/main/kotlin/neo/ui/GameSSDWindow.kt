@@ -510,7 +510,7 @@ object GameSSDWindow {
                 return null
             }
 
-            fun GetSpecificAsteroid(id: Int): SSDAsteroid? {
+            fun GetSpecificAsteroid(id: Int): SSDAsteroid {
                 return asteroidPool[id]
             }
 
@@ -590,7 +590,7 @@ object GameSSDWindow {
                 return null
             }
 
-            fun GetSpecificAstronaut(id: Int): SSDAstronaut? {
+            fun GetSpecificAstronaut(id: Int): SSDAstronaut {
                 return astronautPool[id]
             }
 
@@ -759,7 +759,7 @@ object GameSSDWindow {
                 return null
             }
 
-            fun GetSpecificExplosion(id: Int): SSDExplosion? {
+            fun GetSpecificExplosion(id: Int): SSDExplosion {
                 return explosionPool[id]
             }
 
@@ -904,7 +904,7 @@ object GameSSDWindow {
                 return null
             }
 
-            fun GetSpecificPoints(id: Int): SSDPoints? {
+            fun GetSpecificPoints(id: Int): SSDPoints {
                 return pointsPool[id]
             }
 
@@ -1023,7 +1023,7 @@ object GameSSDWindow {
                 return null
             }
 
-            fun GetSpecificProjectile(id: Int): SSDProjectile? {
+            fun GetSpecificProjectile(id: Int): SSDProjectile {
                 return projectilePool[id]
             }
 
@@ -1207,7 +1207,7 @@ object GameSSDWindow {
                 return null
             }
 
-            fun GetSpecificPowerup(id: Int): SSDPowerup? {
+            fun GetSpecificPowerup(id: Int): SSDPowerup {
                 return powerupPool[id]
             }
 

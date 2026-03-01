@@ -252,7 +252,7 @@ class GuiModel {
             viewDef.worldSpace.modelViewMatrix[15] = 1.0f
             viewDef.maxDrawSurfs = surfaces.Num()
             viewDef.drawSurfs =
-                drawSurf_s.generateArray(viewDef.maxDrawSurfs);
+                drawSurf_s.generateArray(viewDef.maxDrawSurfs)
             viewDef.numDrawSurfs = 0
             val oldViewDef = tr.viewDef
             tr.viewDef = viewDef

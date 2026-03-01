@@ -1,6 +1,6 @@
 package neo.idlib.math
 
-import neo.Game.Animation.Anim_Blend.idAnimBlend
+import neo.Game.Animation.idAnimBlend
 import neo.Renderer.Model.dominantTri_s
 import neo.Renderer.Model.shadowCache_s
 import neo.TempDump

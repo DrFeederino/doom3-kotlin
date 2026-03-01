@@ -1,8 +1,6 @@
 package neo.Game
 
-import neo.Game.Animation.Anim_Blend.idDeclModelDef
-import neo.Game.Entity.idEntity
-import neo.Game.FX.idEntityFx
+import neo.Game.Animation.idDeclModelDef
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
@@ -270,9 +268,9 @@ object Moveable {
         }
 
         override fun Think() {
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 if (!FollowInitialSplinePath()) {
-                    BecomeInactive(Entity.TH_THINK)
+                    BecomeInactive(TH_THINK)
                 }
             }
             super.Think()
@@ -400,7 +398,7 @@ object Moveable {
                 initialSplineDir.set(initialSpline!!.GetCurrentFirstDerivative(startTime.toFloat()))
                 initialSplineDir.timesAssign(physicsObj.GetAxis().Transpose())
                 initialSplineDir.Normalize()
-                BecomeActive(Entity.TH_THINK)
+                BecomeActive(TH_THINK)
             }
         }
 
@@ -647,9 +645,9 @@ object Moveable {
         }
 
         override fun Think() {
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 if (!FollowInitialSplinePath()) {
-                    BecomeInactive(Entity.TH_THINK)
+                    BecomeInactive(TH_THINK)
                 }
             }
             BarrelThink()
@@ -801,7 +799,7 @@ object Moveable {
                 }
             }
             if (!Game_local.gameLocal.isClient && state != explode_state_t.BURNING && state != explode_state_t.EXPLODING) {
-                BecomeInactive(Entity.TH_THINK)
+                BecomeInactive(TH_THINK)
                 return
             }
             if (particleModelDefHandle >= 0) {
@@ -964,7 +962,7 @@ object Moveable {
                     }
                     particleModelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(particleRenderEntity)
                     if (burn) {
-                        BecomeActive(Entity.TH_THINK)
+                        BecomeActive(TH_THINK)
                     }
                     particleTime = Game_local.gameLocal.realClientTime
                 }
@@ -991,7 +989,7 @@ object Moveable {
             light.shaderParms[RenderWorld.SHADERPARM_ALPHA] = 2.0f
             lightDefHandle = Game_local.gameRenderWorld!!.AddLightDef(light)
             lightTime = Game_local.gameLocal.realClientTime
-            BecomeActive(Entity.TH_THINK)
+            BecomeActive(TH_THINK)
         }
 
         private fun ExplodingEffects() {

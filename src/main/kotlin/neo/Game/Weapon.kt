@@ -1,12 +1,7 @@
 package neo.Game
 
-import neo.Game.AFEntity.idAFAttachment
-import neo.Game.AI.AI.idAI
-import neo.Game.Actor.idActor
+import neo.Game.AI.idAI
 import neo.Game.Animation.Anim
-import neo.Game.Entity.idAnimatedEntity
-import neo.Game.Entity.idEntity
-import neo.Game.Entity.signalNum_t
 import neo.Game.Game.refSound_t
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.Event.idEventDef
@@ -14,7 +9,6 @@ import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.*
-import neo.Game.Item.idMoveableItem
 import neo.Game.MultiplayerGame.gameType_t
 import neo.Game.Player.idPlayer
 import neo.Game.Projectile.idDebris

@@ -429,8 +429,7 @@ object Material {
         var width: Int = 0
         var height: Int = 0
 
-        constructor() {
-        }
+        constructor()
 
         private constructor(texture: textureStage_t) {
             cinematic[0] = texture.cinematic[0] //pointer

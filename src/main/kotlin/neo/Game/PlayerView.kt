@@ -686,7 +686,7 @@ object PlayerView {
                     player!!.GetInfluenceEntity()!!.GetPhysics().GetOrigin().minus(player!!.GetPhysics().GetOrigin())
                         .Length()
                 if (player!!.GetInfluenceRadius() != 0.0f && distance < player!!.GetInfluenceRadius()) {
-                    pct = distance / player!!.GetInfluenceRadius();//TODO:wtf?
+                    pct = distance / player!!.GetInfluenceRadius()//TODO:wtf?
                     pct = 1.0f - idMath.ClampFloat(0.0f, 1.0f, pct)
                 }
             }

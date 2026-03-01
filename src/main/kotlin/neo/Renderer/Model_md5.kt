@@ -83,6 +83,7 @@ object Model_md5 {
         var surfaceNum: Int = 0
         val texCoords: idList<idVec2> = idList()
         private var weightIndex: IntArray? = null
+
         @Throws(idException::class)
         fun ParseMesh(parser: idLexer, numJoints: Int, joints: Array<idJointMat?>) {
             val token = idToken()

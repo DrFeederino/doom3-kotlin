@@ -1,16 +1,10 @@
 package neo.Game.GameSys
 
 import neo.Game.*
-import neo.Game.AFEntity.idAFEntity_Base
-import neo.Game.AFEntity.idAFEntity_Generic
-import neo.Game.AFEntity.idAFEntity_WithAttachedHead
-import neo.Game.AI.AI.idAI
+import neo.Game.AI.idAI
 import neo.Game.Animation.Anim.idAnimManager
-import neo.Game.Animation.Anim_Blend.idAnimator
 import neo.Game.Animation.Anim_Import.idModelExport
-import neo.Game.Entity.idEntity
-import neo.Game.Entity.signalNum_t
-import neo.Game.FX.idEntityFx
+import neo.Game.Animation.idAnimator
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Light.idLight
 import neo.Game.Moveable.idMoveable

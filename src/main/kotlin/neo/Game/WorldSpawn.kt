@@ -1,6 +1,5 @@
 package neo.Game
 
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.EV_SafeRemove

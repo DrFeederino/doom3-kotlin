@@ -18,8 +18,6 @@
 
 package neo.Game
 
-import neo.Game.Entity.idEntity
-import neo.Game.FX.idEntityFx
 import neo.Game.GameSys.Class.eventCallback_t
 import neo.Game.GameSys.Class.eventCallback_t0
 import neo.Game.GameSys.Event.idEventDef
@@ -137,7 +135,7 @@ object SecurityCamera {
             angle = GetPhysics().GetAxis().ToAngles().yaw
             StartSweep()
             SetAlertMode(SCANNING)
-            BecomeActive(Entity.TH_THINK)
+            BecomeActive(TH_THINK)
             if (health != 0) {
                 fl.takedamage = true
             }
@@ -206,19 +204,19 @@ object SecurityCamera {
         override fun Think() {
             val pct: Float
             val travel: Float
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 if (SysCvar.g_showEntityInfo.GetBool()) {
                     DrawFov()
                 }
                 if (health <= 0) {
-                    BecomeInactive(Entity.TH_THINK)
+                    BecomeInactive(TH_THINK)
                     return
                 }
             }
 
             // run physics
             RunPhysics()
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 if (CanSeePlayer()) {
                     if (alertMode == SCANNING) {
                         val sightTime: Float
@@ -311,10 +309,10 @@ object SecurityCamera {
          */
         override fun Present() {
             // don't present to the renderer if the entity hasn't changed
-            if (0 == thinkFlags and Entity.TH_UPDATEVISUALS) {
+            if (0 == thinkFlags and TH_UPDATEVISUALS) {
                 return
             }
-            BecomeInactive(Entity.TH_UPDATEVISUALS)
+            BecomeInactive(TH_UPDATEVISUALS)
 
             // camera target for remote render views
             if (cameraTarget != null) {
@@ -338,7 +336,7 @@ object SecurityCamera {
             val speed: Int
             sweeping = true
             sweepStart = Game_local.gameLocal.time.toFloat()
-            speed = SEC2MS(SweepSpeed()).toInt()
+            speed = SEC2MS(SweepSpeed())
             sweepEnd = sweepStart + speed
             PostEventMS(EV_SecurityCam_Pause, speed)
             StartSound("snd_moving", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)

@@ -8,13 +8,13 @@
 
 package neo.Game.Physics
 
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local
 import neo.Game.Physics.Physics.impactInfo_s
 import neo.Game.Physics.Physics_Actor.idPhysics_Actor
+import neo.Game.idEntity
 import neo.Renderer.Material
 import neo.TempDump
 import neo.cm.contactInfo_t

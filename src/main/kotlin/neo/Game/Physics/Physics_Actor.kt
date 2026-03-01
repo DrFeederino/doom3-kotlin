@@ -8,7 +8,6 @@
 
 package neo.Game.Physics
 
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -16,6 +15,7 @@ import neo.Game.Game_local
 import neo.Game.Game_local.idEntityPtr
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics_Base.idPhysics_Base
+import neo.Game.idEntity
 import neo.cm.trace_s
 import neo.idlib.BV.idBounds
 import neo.idlib.math.Matrix.idMat3

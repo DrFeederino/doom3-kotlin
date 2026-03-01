@@ -113,6 +113,7 @@ object Model_lwo {
     const val ID_FUNC = 'F'.code shl 24 or ('U'.code shl 16) or ('N'.code shl 8) or 'C'.code
     const val ID_GAMM = 'G'.code shl 24 or ('A'.code shl 16) or ('M'.code shl 8) or 'M'.code
     const val ID_GLOS = 'G'.code shl 24 or ('L'.code shl 16) or ('O'.code shl 8) or 'S'.code
+
     /* gradient */
     const val ID_GRAD = 'G'.code shl 24 or ('R'.code shl 16) or ('A'.code shl 8) or 'D'.code
     const val ID_GREN = 'G'.code shl 24 or ('R'.code shl 16) or ('E'.code shl 8) or 'N'.code
@@ -125,12 +126,14 @@ object Model_lwo {
     const val ID_IFLT = 'I'.code shl 24 or ('F'.code shl 16) or ('L'.code shl 8) or 'T'.code
     const val ID_IKEY = 'I'.code shl 24 or ('K'.code shl 16) or ('E'.code shl 8) or 'Y'.code
     const val ID_IMAG = 'I'.code shl 24 or ('M'.code shl 16) or ('A'.code shl 8) or 'G'.code
+
     /* image map */
     const val ID_IMAP = 'I'.code shl 24 or ('M'.code shl 16) or ('A'.code shl 8) or 'P'.code
     const val ID_INAM = 'I'.code shl 24 or ('N'.code shl 16) or ('A'.code shl 8) or 'M'.code
     const val ID_ISEQ = 'I'.code shl 24 or ('S'.code shl 16) or ('E'.code shl 8) or 'Q'.code
     const val ID_ITPS = 'I'.code shl 24 or ('T'.code shl 16) or ('P'.code shl 8) or 'S'.code
     const val ID_KEY = 'K'.code shl 24 or ('E'.code shl 16) or ('Y'.code shl 8) or ' '.code
+
     /* top-level chunks */
     const val ID_LAYR = 'L'.code shl 24 or ('A'.code shl 16) or ('Y'.code shl 8) or 'R'.code
     const val ID_LINE = 'L'.code shl 24 or ('I'.code shl 16) or ('N'.code shl 8) or 'E'.code
@@ -152,8 +155,10 @@ object Model_lwo {
     const val ID_PNTS = 'P'.code shl 24 or ('N'.code shl 16) or ('T'.code shl 8) or 'S'.code
     const val ID_POLS = 'P'.code shl 24 or ('O'.code shl 16) or ('L'.code shl 8) or 'S'.code
     const val ID_POST = 'P'.code shl 24 or ('O'.code shl 16) or ('S'.code shl 8) or 'T'.code
+
     /* envelopes */
     const val ID_PRE = 'P'.code shl 24 or ('R'.code shl 16) or ('E'.code shl 8) or ' '.code
+
     /* procedural */
     const val ID_PROC = 'P'.code shl 24 or ('R'.code shl 16) or ('O'.code shl 8) or 'C'.code
     const val ID_PROJ = 'P'.code shl 24 or ('R'.code shl 16) or ('O'.code shl 8) or 'J'.code
@@ -166,6 +171,7 @@ object Model_lwo {
     const val ID_ROTA = 'R'.code shl 24 or ('O'.code shl 16) or ('T'.code shl 8) or 'A'.code
     const val ID_RSAN = 'R'.code shl 24 or ('S'.code shl 16) or ('A'.code shl 8) or 'N'.code
     const val ID_SATR = 'S'.code shl 24 or ('A'.code shl 16) or ('T'.code shl 8) or 'R'.code
+
     /* shader */
     const val ID_SHDR = 'S'.code shl 24 or ('H'.code shl 16) or ('D'.code shl 8) or 'R'.code
     const val ID_SHRP = 'S'.code shl 24 or ('H'.code shl 16) or ('R'.code shl 8) or 'P'.code
@@ -178,6 +184,7 @@ object Model_lwo {
     const val ID_STCC = 'S'.code shl 24 or ('T'.code shl 16) or ('C'.code shl 8) or 'C'.code
     const val ID_STCK = 'S'.code shl 24 or ('T'.code shl 16) or ('C'.code shl 8) or 'K'.code
     const val ID_STEP = 'S'.code shl 24 or ('T'.code shl 16) or ('E'.code shl 8) or 'P'.code
+
     /* clips */
     const val ID_STIL = 'S'.code shl 24 or ('T'.code shl 16) or ('I'.code shl 8) or 'L'.code
     const val ID_SURF = 'S'.code shl 24 or ('U'.code shl 16) or ('R'.code shl 8) or 'F'.code
@@ -187,11 +194,13 @@ object Model_lwo {
     const val ID_TEXT = 'T'.code shl 24 or ('E'.code shl 16) or ('X'.code shl 8) or 'T'.code
     const val ID_TIME = 'T'.code shl 24 or ('I'.code shl 16) or ('M'.code shl 8) or 'E'.code
     const val ID_TIMG = 'T'.code shl 24 or ('I'.code shl 16) or ('M'.code shl 8) or 'G'.code
+
     /* texture coordinates */
     const val ID_TMAP = 'T'.code shl 24 or ('M'.code shl 16) or ('A'.code shl 8) or 'P'.code
     const val ID_TRAN = 'T'.code shl 24 or ('R'.code shl 16) or ('A'.code shl 8) or 'N'.code
     const val ID_TRNL = 'T'.code shl 24 or ('R'.code shl 16) or ('N'.code shl 8) or 'L'.code
     const val ID_TROP = 'T'.code shl 24 or ('R'.code shl 16) or ('O'.code shl 8) or 'P'.code
+
     /* texture layer */
     const val ID_TYPE = 'T'.code shl 24 or ('Y'.code shl 16) or ('P'.code shl 8) or 'E'.code
     const val ID_VALU = 'V'.code shl 24 or ('A'.code shl 16) or ('L'.code shl 8) or 'U'.code
@@ -4233,7 +4242,7 @@ object Model_lwo {
         var start = 0.0f
     }
 
-    class lwTexture() : lwNode() {
+    class lwTexture : lwNode() {
 
         var axis: Int = 0
         var chan: Long = 0

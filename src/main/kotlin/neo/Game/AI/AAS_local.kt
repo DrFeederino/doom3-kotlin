@@ -26,7 +26,6 @@ import neo.Game.AI.AAS.idAASCallback
 import neo.Game.AI.AAS_routing.idRoutingCache
 import neo.Game.AI.AAS_routing.idRoutingObstacle
 import neo.Game.AI.AAS_routing.idRoutingUpdate
-import neo.Game.AI.AI.idAASFindCover
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local
 import neo.Game.Game_local.idGameLocal
@@ -374,16 +373,16 @@ class AAS_local {
             var j: Int
             var k: Int
             var numSequences: Int
-            val sequenceFirst: Array<AI_pathing.wallEdge_s>
-            val sequenceLast: Array<AI_pathing.wallEdge_s>
-            val wallEdges: Array<AI_pathing.wallEdge_s>
-            var wallEdge: AI_pathing.wallEdge_s?
-            wallEdges = Array(numEdges) { AI_pathing.wallEdge_s() }
-            sequenceFirst = Array(numEdges) { AI_pathing.wallEdge_s() }
-            sequenceLast = Array(numEdges) { AI_pathing.wallEdge_s() }
+            val sequenceFirst: Array<wallEdge_s>
+            val sequenceLast: Array<wallEdge_s>
+            val wallEdges: Array<wallEdge_s>
+            var wallEdge: wallEdge_s?
+            wallEdges = Array(numEdges) { wallEdge_s() }
+            sequenceFirst = Array(numEdges) { wallEdge_s() }
+            sequenceLast = Array(numEdges) { wallEdge_s() }
             i = 0
             while (i < numEdges) {
-                wallEdges[i] = AI_pathing.wallEdge_s()
+                wallEdges[i] = wallEdge_s()
                 wallEdges[i].edgeNum = edges[i]
                 GetEdgeVertexNumbers(edges[i], wallEdges[i].verts)
                 wallEdges[i].next = null

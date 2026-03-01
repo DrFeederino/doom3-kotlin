@@ -18,16 +18,12 @@
 
 package neo.Game
 
-import neo.Game.AFEntity.idAFEntity_Base
-import neo.Game.AFEntity.idAFEntity_Generic
-import neo.Game.AFEntity.jointTransformData_t
+import neo.Game.Animation.ANIM_GetModelDefFromEntityDef
 import neo.Game.Animation.Anim
 import neo.Game.Animation.Anim.frameBlend_t
 import neo.Game.Animation.Anim.idMD5Anim
-import neo.Game.Animation.Anim_Blend
-import neo.Game.Animation.Anim_Blend.idAnim
-import neo.Game.Animation.Anim_Blend.idDeclModelDef
-import neo.Game.Entity.idEntity
+import neo.Game.Animation.idAnim
+import neo.Game.Animation.idDeclModelDef
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Player.idPlayer
@@ -512,7 +508,7 @@ object Game {
             while (i < RenderWorld.MAX_RENDERENTITY_GUI) {
                 temp = args.GetString(if (i == 0) "gui" else Str.va("gui%d", i + 1))
                 if (temp.isNotEmpty()) {
-                    renderEntity.gui[i] = Entity.AddRenderGui(temp, args)
+                    renderEntity.gui[i] = AddRenderGui(temp, args)
                 }
                 i++
             }
@@ -579,7 +575,7 @@ object Game {
             if (null == args) {
                 return getVec3Origin()
             }
-            modelDef = Anim_Blend.ANIM_GetModelDefFromEntityDef(args)
+            modelDef = ANIM_GetModelDefFromEntityDef(args)
             return if (null == modelDef) {
                 getVec3Origin()
             } else modelDef.GetVisualOffset()
@@ -788,7 +784,7 @@ object Game {
             //	memset( &ent, 0, sizeof( ent ) );
             ent.bounds.Clear()
             ent.suppressSurfaceInViewID = 0
-            modelDef = Anim_Blend.ANIM_GetModelDefFromEntityDef(args)
+            modelDef = ANIM_GetModelDefFromEntityDef(args)
             if (modelDef != null) {
                 animNum = modelDef.GetAnim(animName[0])
                 if (0 == animNum) {
@@ -873,7 +869,7 @@ object Game {
             ent = Game_local.gameLocal.SpawnEntityType(idAFEntity_Generic::class.java, args) as idAFEntity_Generic
 
             // always update this entity
-            ent.BecomeActive(Entity.TH_THINK)
+            ent.BecomeActive(TH_THINK)
             ent.KeepRunningPhysics()
             ent.fl.forcePhysicsUpdate = true
             player.dragEntity.SetSelected(ent)
@@ -973,7 +969,7 @@ object Game {
             defArgs = Game_local.gameLocal.FindEntityDefDict(classname)
 
             // get the articulated figure
-            afName = AFEntity.GetArgString(args, defArgs, "articulatedFigure")
+            afName = GetArgString(args, defArgs, "articulatedFigure")
             af = TempDump.dynamic_cast(
                 idDeclAF::class.java,
                 DeclManager.declManager.FindType(declType_t.DECL_AF, afName)!!
@@ -983,7 +979,7 @@ object Game {
             }
 
             // get the md5 model
-            modelName = AFEntity.GetArgString(args, defArgs, "model")
+            modelName = GetArgString(args, defArgs, "model")
             modelDef = TempDump.dynamic_cast(
                 idDeclModelDef::class.java,
                 DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, modelName, false)!!
@@ -1043,7 +1039,7 @@ object Game {
             // finish the AF positions
             data.ent = ent
             data.joints = MD5joints
-            af.Finish(AFEntity.GetJointTransform.INSTANCE, ent.joints as Array<idJointMat>, data)
+            af.Finish(GetJointTransform.INSTANCE, ent.joints as Array<idJointMat>, data)
 
             // get the initial origin and axis for each AF body
             i = 0

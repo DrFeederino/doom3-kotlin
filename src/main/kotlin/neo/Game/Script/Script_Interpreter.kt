@@ -1,6 +1,5 @@
 package neo.Game.Script
 
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.idEventArg
 import neo.Game.GameSys.Class.idEventArg.Companion.toArg
 import neo.Game.GameSys.Event.idEventDef
@@ -16,6 +15,7 @@ import neo.Game.Script.Script_Program.idVarDef.initialized_t
 import neo.Game.Script.Script_Program.statement_s
 import neo.Game.Script.Script_Program.varEval_s
 import neo.Game.Script.Script_Thread.idThread
+import neo.Game.idEntity
 import neo.TempDump.btoi
 import neo.TempDump.btos
 import neo.TempDump.ctos

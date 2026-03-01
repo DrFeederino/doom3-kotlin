@@ -17,8 +17,7 @@
  */
 
 package neo.Game
-import neo.Game.Entity.idEntity
-import neo.Game.Entity.signalNum_t
+
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
@@ -1645,7 +1644,7 @@ object Mover {
             }
             lastTouchTime = 0
             state = elevatorState_t.INIT
-            BecomeActive(Entity.TH_THINK or Entity.TH_PHYSICS)
+            BecomeActive(TH_THINK or TH_PHYSICS)
             PostEventMS(EV_Mover_InitGuiTargets, 0)
             controlsDisabled = false
         }
@@ -1811,7 +1810,7 @@ object Mover {
                 return
             }
             lastTouchTime = Game_local.gameLocal.time
-            if ((thinkFlags and Entity.TH_PHYSICS) != 0) {
+            if ((thinkFlags and TH_PHYSICS) != 0) {
                 return
             }
             val triggerFloor = spawnArgs.GetInt("triggerFloor")
@@ -3161,7 +3160,7 @@ object Mover {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
             super.Think()
-            if ((thinkFlags and Entity.TH_PHYSICS) != 0) {
+            if ((thinkFlags and TH_PHYSICS) != 0) {
                 // update trigger position
                 if (GetMasterPosition(masterOrigin, masterAxis)) {
                     if (trigger != null) {
@@ -3829,7 +3828,7 @@ object Mover {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
             super.Think()
-            if ((thinkFlags and Entity.TH_PHYSICS) != 0) {
+            if ((thinkFlags and TH_PHYSICS) != 0) {
                 // update trigger position
                 if (GetMasterPosition(masterOrigin, masterAxis)) {
                     if (trigger != null) {

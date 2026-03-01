@@ -13,6 +13,7 @@ import neo.idlib.Dict_h.idDict
 import neo.idlib.Text.Parser.idParser
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
+import neo.idlib.geometry.JointTransform.idJointMat
 import neo.idlib.math.*
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.SimpleWindow.drawWin_t
@@ -21,7 +22,6 @@ import neo.ui.Window.idWindow
 import neo.ui.Winvar.idWinBool
 import neo.ui.Winvar.idWinStr
 import neo.ui.Winvar.idWinVec4
-import neo.idlib.geometry.JointTransform.idJointMat
 import kotlin.math.atan
 
 class RenderWindow {

@@ -11,7 +11,6 @@ import neo.idlib.LittleLong
 import neo.idlib.LittleRevBytes
 import neo.idlib.LittleShort
 import neo.idlib.Text.Str.idStr
-import neo.idlib.math.SIMDProcessor
 import neo.sys.sys_public
 import neo.sys.win_main
 import org.lwjgl.BufferUtils

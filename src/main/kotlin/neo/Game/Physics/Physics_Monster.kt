@@ -8,15 +8,15 @@
 
 package neo.Game.Physics
 
-import neo.Game.Actor.idActor
-import neo.Game.Entity
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local
 import neo.Game.Physics.Physics.impactInfo_s
 import neo.Game.Physics.Physics_Actor.idPhysics_Actor
+import neo.Game.TH_PHYSICS
+import neo.Game.idActor
+import neo.Game.idEntity
 import neo.TempDump
 import neo.cm.trace_s
 import neo.idlib.BitMsg.idBitMsgDelta
@@ -156,7 +156,7 @@ object Physics_Monster {
             fly = savefile.ReadBool()
             useVelocityMove = savefile.ReadBool()
             noImpact = savefile.ReadBool()
-            moveResult = monsterMoveResult_t.values()[savefile.ReadInt()]
+            moveResult = monsterMoveResult_t.entries.toTypedArray()[savefile.ReadInt()]
             savefile.ReadObject( /*reinterpret_cast<idClass *&>*/blockingEntity)
         }
 
@@ -336,13 +336,13 @@ object Physics_Monster {
 
         override fun Activate() {
             current.atRest = -1
-            self!!.BecomeActive(Entity.TH_PHYSICS)
+            self!!.BecomeActive(TH_PHYSICS)
         }
 
         override fun PutToRest() {
             current.atRest = Game_local.gameLocal.time
             current.velocity.Zero()
-            self!!.BecomeInactive(Entity.TH_PHYSICS)
+            self!!.BecomeInactive(TH_PHYSICS)
         }
 
         override fun IsAtRest(): Boolean {
@@ -731,7 +731,7 @@ object Physics_Monster {
         private fun Rest() {
             current.atRest = Game_local.gameLocal.time
             current.velocity.Zero()
-            self!!.BecomeInactive(Entity.TH_PHYSICS)
+            self!!.BecomeInactive(TH_PHYSICS)
         }
 
         init {

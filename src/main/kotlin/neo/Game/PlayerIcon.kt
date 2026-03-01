@@ -17,6 +17,7 @@
  */
 
 package neo.Game
+
 import neo.Game.Player.idPlayer
 import neo.Renderer.Model
 import neo.Renderer.ModelManager

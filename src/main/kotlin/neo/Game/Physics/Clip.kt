@@ -18,12 +18,12 @@
 
 package neo.Game.Physics
 
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local
 import neo.Game.Game_local.idGameLocal
+import neo.Game.idEntity
 import neo.Renderer.Material
 import neo.Renderer.Model
 import neo.Renderer.RenderWorld.modelTrace_s

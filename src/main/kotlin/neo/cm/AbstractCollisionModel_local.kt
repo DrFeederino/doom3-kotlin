@@ -256,6 +256,7 @@ abstract class AbstractCollisionModel_local {
         val bounds: idBounds = idBounds() // model bounds
         var contents = 0 // all contents of the model ored together
         var isConvex = false // set if model is convex
+
         // model geometry
         var maxVertices = 0 // size of vertex array
         var numVertices = 0 // number of vertices
@@ -264,6 +265,7 @@ abstract class AbstractCollisionModel_local {
         var numEdges = 0 // number of edges
         var edges: Array<cm_edge_s>? = null // array with all edges used by the model
         var node: cm_node_s? = null // first node of spatial subdivision
+
         // blocks with allocated memory
         var nodeBlocks: cm_nodeBlock_s? = null // list with blocks of nodes
         var polygonRefBlocks: cm_polygonRefBlock_s? = null // list with blocks of polygon references

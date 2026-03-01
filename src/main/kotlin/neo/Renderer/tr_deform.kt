@@ -458,9 +458,9 @@ object tr_deform {
 
         // find the plane
         if (!plane.FromPoints(
-            tri.verts!![tri.indexes!![0]]!!.xyz,
-            tri.verts!![tri.indexes!![1]]!!.xyz,
-            tri.verts!![tri.indexes!![2]]!!.xyz
+                tri.verts!![tri.indexes!![0]]!!.xyz,
+                tri.verts!![tri.indexes!![1]]!!.xyz,
+                tri.verts!![tri.indexes!![2]]!!.xyz
             )
         ) {
             Common.common.Warning("R_FlareDeform: plane.FromPoints failed")

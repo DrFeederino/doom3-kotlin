@@ -36,14 +36,6 @@ class DeclAF {
         abstract fun run(
             model: Any,
             frame: Array<idJointMat>,
-            jointName: String,
-            origin: idVec3,
-            axis: idMat3
-        ): Boolean
-
-        abstract fun run(
-            model: Any,
-            frame: Array<idJointMat>,
             jointName: idStr,
             origin: idVec3,
             axis: idMat3

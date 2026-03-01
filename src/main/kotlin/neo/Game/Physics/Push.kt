@@ -8,14 +8,8 @@
 
 package neo.Game.Physics
 
-import neo.Game.AFEntity.idAFEntity_Base
-import neo.Game.Actor.idActor
-import neo.Game.EV_Explode
-import neo.Game.EV_Gib
-import neo.Game.Entity.idEntity
-import neo.Game.Game_local
+import neo.Game.*
 import neo.Game.Game_local.idGameLocal
-import neo.Game.Item.idMoveableItem
 import neo.Game.Moveable.idMoveable
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics.idPhysics

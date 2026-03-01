@@ -8,8 +8,6 @@
 
 package neo.Game.Physics
 
-import neo.Game.Entity
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
@@ -17,6 +15,8 @@ import neo.Game.Game_local
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics.impactInfo_s
 import neo.Game.Physics.Physics_Base.idPhysics_Base
+import neo.Game.TH_PHYSICS
+import neo.Game.idEntity
 import neo.cm.collisionModelManager
 import neo.cm.contactInfo_t
 import neo.cm.trace_s
@@ -655,7 +655,7 @@ object Physics_RigidBody {
 
         override fun Activate() {
             current.atRest = -1
-            self!!.BecomeActive(Entity.TH_PHYSICS)
+            self!!.BecomeActive(TH_PHYSICS)
         }
 
         /*
@@ -1439,7 +1439,7 @@ object Physics_RigidBody {
             current.atRest = Game_local.gameLocal.time
             current.i.linearMomentum.Zero()
             current.i.angularMomentum.Zero()
-            self!!.BecomeInactive(Entity.TH_PHYSICS)
+            self!!.BecomeInactive(TH_PHYSICS)
         }
 
         private fun DebugDraw() {

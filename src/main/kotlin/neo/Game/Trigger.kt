@@ -1,6 +1,5 @@
 package neo.Game
 
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
@@ -1090,12 +1089,12 @@ object Trigger {
             // remove the collision model from the physics object
             GetPhysics().SetClipModel(null, 1.0f)
             if (spawnArgs.GetBool("start_on")) {
-                BecomeActive(Entity.TH_THINK)
+                BecomeActive(TH_THINK)
             }
         }
 
         override fun Think() {
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 TouchEntities()
             }
             idEntity_Think()
@@ -1110,11 +1109,11 @@ object Trigger {
         }
 
         override fun Enable() {
-            BecomeActive(Entity.TH_THINK)
+            BecomeActive(TH_THINK)
         }
 
         override fun Disable() {
-            BecomeInactive(Entity.TH_THINK)
+            BecomeInactive(TH_THINK)
         }
 
         fun TouchEntities() {
@@ -1159,10 +1158,10 @@ object Trigger {
         }
 
         private fun Event_Trigger(activator: idEventArg<idEntity?>) {
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
-                BecomeInactive(Entity.TH_THINK)
+            if ((thinkFlags and TH_THINK) != 0) {
+                BecomeInactive(TH_THINK)
             } else {
-                BecomeActive(Entity.TH_THINK)
+                BecomeActive(TH_THINK)
             }
         }
 

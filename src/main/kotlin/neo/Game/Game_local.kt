@@ -1,21 +1,11 @@
 package neo.Game
 
-import neo.Game.AFEntity.idAFAttachment
-import neo.Game.AFEntity.idAFEntity_Generic
+import neo.Game.AI.*
 import neo.Game.AI.AAS.idAAS
-import neo.Game.AI.AI
-import neo.Game.AI.AI.idAI
-import neo.Game.AI.AI.idCombatNode
-import neo.Game.AI.AI.obstaclePath_s
-import neo.Game.AI.AI.predictedPath_s
-import neo.Game.Actor.idActor
 import neo.Game.Animation.Anim.idAnimManager
-import neo.Game.Animation.Anim_Blend.idDeclModelDef
 import neo.Game.Animation.Anim_Testmodel.idTestModel
 import neo.Game.Animation.Anim_Testmodel.idTestModel.*
-import neo.Game.Camera.idCamera
-import neo.Game.Entity.idEntity
-import neo.Game.FX.idEntityFx
+import neo.Game.Animation.idDeclModelDef
 import neo.Game.Game.allowReply_t
 import neo.Game.Game.escReply_t
 import neo.Game.Game.gameExport_t
@@ -1481,13 +1471,9 @@ class Game_local {
                             ent = activeEntities.Next()
                             while (ent != null) {
                                 ent.Think()
-                                if (num == 117) {
-                                    DBG_RunFrame++
-                                }
                                 num++
                                 ent = ent.activeNode.Next()
                             }
-                            //                            System.out.println("~~" + num);
                         }
                     }
 
@@ -1670,7 +1656,7 @@ class Game_local {
 
         override fun ServerClientConnect(clientNum: Int, guid: String?) {
             // make sure no parasite entity is left
-            if (entities.size > clientNum) {
+            if (entities[clientNum] != null) {
                 Common.common.DPrintf("ServerClientConnect: remove old player entity\n")
                 //		delete entities[ clientNum ];
                 entities[clientNum] = null
@@ -2148,6 +2134,7 @@ class Game_local {
                     if (!entPtr.SetSpawnId(spawnId)) {
                         return
                     }
+                    entPtr.GetEntity()?._deconstructor()
                 }
 
                 GAME_RELIABLE_MESSAGE_CHAT, GAME_RELIABLE_MESSAGE_TCHAT -> {
@@ -2306,7 +2293,7 @@ class Game_local {
             // run prediction on all entities from the last snapshot
             ent = snapshotEntities.Next()
             while (ent != null) {
-                ent.thinkFlags = ent.thinkFlags or Entity.TH_PHYSICS
+                ent.thinkFlags = ent.thinkFlags or TH_PHYSICS
                 ent.ClientPredictionThink()
                 ent = ent.snapshotNode.Next()
             }
@@ -2927,7 +2914,6 @@ class Game_local {
             setDefaults: Boolean = true /*= true*/
         ): Boolean {
             val classname = arrayOfNulls<String>(1)
-            DBG_SpawnEntityDef++
             val spawn = arrayOfNulls<String>(1)
             var error = ""
             val name = arrayOfNulls<String>(1)
@@ -3135,7 +3121,7 @@ class Game_local {
                 // hide all the player models
                 i = 0
                 while (i < numClients) {
-                    if (entities.size > i) {
+                    if (entities[i] != null) {
                         client = entities[i] as idPlayer
                         client.EnterCinematic()
                     }
@@ -3643,6 +3629,8 @@ class Game_local {
             inflictorScale: Float,
             quake: Boolean
         ) {
+            var inflictor = inflictor
+            var ignore = ignore
             var i: Int
             val numListedClipModels: Int
             var clipModel: idClipModel
@@ -3658,10 +3646,10 @@ class Game_local {
             // get all clip models touching the bounds
             numListedClipModels = clip.ClipModelsTouchingBounds(bounds, -1, clipModelList, MAX_GENTITIES)
             if (inflictor != null && inflictor is idAFAttachment) {
-                inflictor.oSet(inflictor.GetBody())
+                inflictor = inflictor.GetBody()
             }
             if (ignore != null && ignore is idAFAttachment) {
-                ignore.oSet((ignore as idAFAttachment).GetBody())
+                ignore = ignore.GetBody()
             }
 
             // apply impact to all the clip models through their associated physics objects
@@ -3729,7 +3717,7 @@ class Game_local {
             val center = idVec3()
             val impulse = idVec3()
             trm = clipModel.GetTraceModel()
-            if (null == trm) { //|| 1 ) {//TODO:wtf?
+            if (null == trm || true) {
                 impulse.set(clipModel.GetAbsBounds().GetCenter().minus(origin))
                 impulse.Normalize()
                 impulse.z += 1.0f
@@ -3995,7 +3983,6 @@ class Game_local {
         }
 
         fun SpreadLocations() {
-            DBG_SpreadLocations++
             var ent: idEntity?
 
             // allocate the area table
@@ -4939,7 +4926,7 @@ class Game_local {
                             velocity,
                             1000,
                             100,
-                            AI.SE_ENTER_OBSTACLE or AI.SE_BLOCKED or AI.SE_ENTER_LEDGE_AREA,
+                            SE_ENTER_OBSTACLE or SE_BLOCKED or SE_ENTER_LEDGE_AREA,
                             path
                         )
                     }
@@ -5693,7 +5680,7 @@ class Game_local {
                     if (lastSnapshot != null) {
                         lastSnapshot.next = snapshot.next
                     } else {
-                        clientSnapshots[clientNum] = snapshot.next!!
+                        clientSnapshots[clientNum] = snapshot.next
                     }
                     //                    snapshotAllocator.Free(snapshot);
                 } else {
@@ -5727,7 +5714,7 @@ class Game_local {
                     if (lastSnapshot != null) {
                         lastSnapshot.next = nextSnapshot
                     } else {
-                        clientSnapshots[clientNum] = nextSnapshot!!
+                        clientSnapshots[clientNum] = nextSnapshot
                     }
                     //                    snapshotAllocator.Free(snapshot);
                     return true
@@ -6102,7 +6089,10 @@ class Game_local {
 
         override fun GetBestGameType(map: String, gametype: String, buf: CharArray /*[MAX_STRING_CHARS ]*/) {
 //	strncpy( buf, gametype, MAX_STRING_CHARS );
-            System.arraycopy(gametype.toCharArray(), 0, buf, 0, MAX_STRING_CHARS)
+            val src = gametype.toCharArray()
+            val len = minOf(src.size, MAX_STRING_CHARS - 1)
+            System.arraycopy(src, 0, buf, 0, len)
+            buf[len] = '\u0000'
             buf[MAX_STRING_CHARS - 1] = '\u0000'
         }
 
@@ -6128,7 +6118,7 @@ class Game_local {
 //	}
             val tokens: Array<String> = `in`.split(";").toTypedArray()
             for (token in tokens) {
-                out.add(token)
+                out.add(token.lowercase())
             }
         }
 
@@ -6279,26 +6269,7 @@ class Game_local {
                 idVec3(-1.0f, -1.0f, 0.0f),
                 idVec3(1.0f, -1.0f, 0.0f)
             )
-            private var DBG_RunFrame = 0
 
-            /*
-         ===================
-         idGameLocal::SpawnEntityDef
-
-         Finds the spawn function for the entity and calls it,
-         returning false if not found
-         ===================
-         */
-            private var DBG_SpawnEntityDef = 0
-
-            /*
-         ======================
-         idGameLocal::SpreadLocations
-
-         Now that everything has been spawned, associate areas with location entities
-         ======================
-         */
-            private var DBG_SpreadLocations = 0
             fun Error(fmt: String, vararg args: Any?) {
 //	va_list		argptr;
                 val text = StringBuilder(MAX_STRING_CHARS)

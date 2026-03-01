@@ -1,13 +1,13 @@
 package neo.Game.GameSys
 
-import neo.Game.Animation.Anim_Blend.idDeclModelDef
-import neo.Game.Entity.idEntity
+import neo.Game.Animation.idDeclModelDef
 import neo.Game.Game.refSound_t
 import neo.Game.GameSys.Class.idClass
 import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.Game_local
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Physics.Clip.idClipModel
+import neo.Game.idEntity
 import neo.Renderer.Material
 import neo.Renderer.Model.idRenderModel
 import neo.Renderer.ModelManager

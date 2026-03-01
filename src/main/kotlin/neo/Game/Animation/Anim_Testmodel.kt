@@ -1,22 +1,14 @@
 package neo.Game.Animation
 
-import neo.Game.Actor.copyJoints_t
+import neo.Game.*
 import neo.Game.Animation.Anim.jointModTransform_t
-import neo.Game.Animation.Anim_Blend.idAnim
-import neo.Game.Animation.Anim_Blend.idAnimator
 import neo.Game.Animation.Anim_Import.idModelExport
-import neo.Game.EV_FootstepLeft
-import neo.Game.EV_FootstepRight
-import neo.Game.Entity
-import neo.Game.Entity.idAnimatedEntity
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
-import neo.Game.Game_local
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Game_local.idEntityPtr
 import neo.Game.Physics.Physics_Parametric.idPhysics_Parametric
@@ -213,7 +205,7 @@ class Anim_Testmodel {
                 GetPhysics().GetOrigin().ToString(),
                 GetPhysics().GetAxis().ToAngles().ToString()
             )
-            BecomeActive(Entity.TH_THINK)
+            BecomeActive(TH_THINK)
         }
 
         /*
@@ -454,7 +446,7 @@ class Anim_Testmodel {
             val axis = idMat3()
             val ang = idAngles()
             var i: Int
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 if (anim != 0 && Game_local.gameLocal.testmodel == this && mode != SysCvar.g_testModelAnimate.GetInteger()) {
                     StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
                     if (head.GetEntity() != null) {

@@ -1,6 +1,5 @@
 package neo.Game
 
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
@@ -351,7 +350,7 @@ object Light {
 
         override fun Think() {
             val color: idVec4 = idVec4()
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 if (fadeEnd > 0) {
                     if (Game_local.gameLocal.time < fadeEnd) {
                         color.Lerp(
@@ -362,7 +361,7 @@ object Light {
                     } else {
                         color.set(fadeTo)
                         fadeEnd = 0
-                        BecomeInactive(Entity.TH_THINK)
+                        BecomeInactive(TH_THINK)
                     }
                     SetColor(color)
                 }
@@ -386,7 +385,7 @@ object Light {
 
         override fun Present() {
             // don't present to the renderer if the entity hasn't changed
-            if (0 == thinkFlags and Entity.TH_UPDATEVISUALS) {
+            if (0 == thinkFlags and TH_UPDATEVISUALS) {
                 return
             }
 
@@ -504,7 +503,7 @@ object Light {
                 soundWasPlaying = false
             }
             SetLightLevel()
-            BecomeActive(Entity.TH_UPDATEVISUALS)
+            BecomeActive(TH_UPDATEVISUALS)
         }
 
         fun Off() {
@@ -515,7 +514,7 @@ object Light {
                 soundWasPlaying = true
             }
             SetLightLevel()
-            BecomeActive(Entity.TH_UPDATEVISUALS)
+            BecomeActive(TH_UPDATEVISUALS)
         }
 
         fun Fade(to: idVec4, fadeTime: Float) {
@@ -523,7 +522,7 @@ object Light {
             fadeTo.set(to)
             fadeStart = Game_local.gameLocal.time
             fadeEnd = (Game_local.gameLocal.time + SEC2MS(fadeTime)).toInt()
-            BecomeActive(Entity.TH_THINK)
+            BecomeActive(TH_THINK)
         }
 
         fun FadeOut(time: Float) {

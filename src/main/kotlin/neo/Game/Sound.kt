@@ -1,6 +1,5 @@
 package neo.Game
 
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
@@ -178,7 +177,7 @@ object Sound {
             soundVol = 0.0f
             lastSoundVol = 0.0f
             if (shakeRotate != ang_zero || shakeTranslate != getVec3_zero()) {
-                BecomeActive(Entity.TH_THINK)
+                BecomeActive(TH_THINK)
             }
             if (!refSound.waitfortrigger && wait > 0.0f) {
                 timerOn = true
@@ -196,7 +195,7 @@ object Sound {
             RunPhysics()
 
             // clear out our update visuals think flag since we never call Present
-            BecomeInactive(Entity.TH_UPDATEVISUALS)
+            BecomeInactive(TH_UPDATEVISUALS)
         }
 
 

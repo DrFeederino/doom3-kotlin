@@ -31,14 +31,11 @@ import neo.idlib.math.Random.idRandom
 import neo.sys.win_main.Sys_EnterCriticalSection
 import neo.sys.win_main.Sys_LeaveCriticalSection
 import org.lwjgl.BufferUtils
-import org.lwjgl.openal.AL
 import org.lwjgl.openal.AL10
 import org.lwjgl.openal.AL11.alSource3i
-import org.lwjgl.openal.ALCapabilities
 import org.lwjgl.openal.EXTEfx
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
-
 import kotlin.math.atan
 import kotlin.math.min
 

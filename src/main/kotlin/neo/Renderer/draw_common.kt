@@ -12,6 +12,8 @@ Original source: neo/renderer/draw_common.cpp
 */
 
 package neo.Renderer
+
+import neo.Renderer.Material.cullType_t
 import neo.Renderer.Material.idMaterial
 import neo.Renderer.Material.materialCoverage_t
 import neo.Renderer.Material.shaderStage_t
@@ -40,13 +42,15 @@ import neo.idlib.math.idPlane
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
 import org.lwjgl.BufferUtils
-import org.lwjgl.opengl.*
+import org.lwjgl.opengl.ARBFragmentProgram
+import org.lwjgl.opengl.ARBTextureEnvCombine
 import org.lwjgl.opengl.ARBVertexProgram.GL_VERTEX_PROGRAM_ARB
+import org.lwjgl.opengl.EXTDepthBoundsTest
 import org.lwjgl.opengl.GL11.*
+import org.lwjgl.opengl.GL13
 import org.lwjgl.opengl.GL20C.glStencilOpSeparate
 import java.util.*
 import kotlin.math.abs
-import neo.Renderer.Material.cullType_t
 
 object draw_common {
     /*

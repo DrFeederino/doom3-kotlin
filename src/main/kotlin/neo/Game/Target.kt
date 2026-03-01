@@ -1,6 +1,5 @@
 package neo.Game
 
-import neo.Game.Entity.idEntity
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
@@ -9,7 +8,6 @@ import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Game_local.idGameLocal
-import neo.Game.Item.idItem
 import neo.Game.Light.idLight
 import neo.Game.Misc.idStaticEntity
 import neo.Game.Mover.idDoor
@@ -296,25 +294,25 @@ object Target {
 
         override fun Think() {
             val player: idPlayer?
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 player = Game_local.gameLocal.GetLocalPlayer()
                 if (player != null && (player.oldButtons.inv() and UsercmdGen.BUTTON_ATTACK) != 0 && (player.usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) != 0) {
                     player.usercmd.buttons = player.usercmd.buttons and UsercmdGen.BUTTON_ATTACK.inv().toByte()
-                    BecomeInactive(Entity.TH_THINK)
+                    BecomeInactive(TH_THINK)
                     ActivateTargets(player)
                 }
             } else {
-                BecomeInactive(Entity.TH_ALL)
+                BecomeInactive(TH_ALL)
             }
         }
 
         private fun Event_Activate(activator: idEventArg<idEntity>) {
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
-                BecomeInactive(Entity.TH_THINK)
+            if ((thinkFlags and TH_THINK) != 0) {
+                BecomeInactive(TH_THINK)
             } else {
                 // always allow during cinematics
                 cinematic = true
-                BecomeActive(Entity.TH_THINK)
+                BecomeActive(TH_THINK)
             }
         }
 
@@ -519,11 +517,11 @@ object Target {
             val color: idVec4 = idVec4()
             val fadeTo = idVec4()
             val frac: Float
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 GetColor(fadeTo)
                 if (Game_local.gameLocal.time >= fadeEnd) {
                     color.set(fadeTo)
-                    BecomeInactive(Entity.TH_THINK)
+                    BecomeInactive(TH_THINK)
                 } else {
                     frac = ((Game_local.gameLocal.time - fadeStart) / (fadeEnd - fadeStart)).toFloat()
                     color.Lerp(fadeFrom, fadeTo, frac)
@@ -537,7 +535,7 @@ object Target {
                     i++
                 }
             } else {
-                BecomeInactive(Entity.TH_ALL)
+                BecomeInactive(TH_ALL)
             }
         }
 
@@ -550,7 +548,7 @@ object Target {
 
             // always allow during cinematics
             cinematic = true
-            BecomeActive(Entity.TH_THINK)
+            BecomeActive(TH_THINK)
 
 //	ent = this;
             i = 0
@@ -1051,7 +1049,7 @@ object Target {
                     player.DefaultFov(),
                     fov
                 )
-                BecomeActive(Entity.TH_THINK)
+                BecomeActive(TH_THINK)
             }
             i = 0
             while (i < genericList.Num()) {
@@ -1349,17 +1347,17 @@ object Target {
         }
 
         override fun Think() {
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 val player = Game_local.gameLocal.GetLocalPlayer()!!
                 player.SetInfluenceFov(fovSetting.GetCurrentValue(Game_local.gameLocal.time.toFloat()))
                 if (fovSetting.IsDone(Game_local.gameLocal.time.toFloat())) {
                     if (!spawnArgs.GetBool("leaveFOV")) {
                         player.SetInfluenceFov(0.0f)
                     }
-                    BecomeInactive(Entity.TH_THINK)
+                    BecomeInactive(TH_THINK)
                 }
             } else {
-                BecomeInactive(Entity.TH_ALL)
+                BecomeInactive(TH_ALL)
             }
         }
 
@@ -1498,15 +1496,15 @@ object Target {
         }
 
         override fun Think() {
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 val player = Game_local.gameLocal.GetLocalPlayer()!!
                 player.SetInfluenceFov(fovSetting.GetCurrentValue(Game_local.gameLocal.time.toFloat()).toFloat())
                 if (fovSetting.IsDone(Game_local.gameLocal.time.toFloat())) {
                     player.SetInfluenceFov(0.0f)
-                    BecomeInactive(Entity.TH_THINK)
+                    BecomeInactive(TH_THINK)
                 }
             } else {
-                BecomeInactive(Entity.TH_ALL)
+                BecomeInactive(TH_ALL)
             }
         }
 
@@ -1518,7 +1516,7 @@ object Target {
                 Game_local.gameLocal.time.toFloat(), SEC2MS(spawnArgs.GetFloat("time")).toFloat(), (player?.DefaultFov()
                     ?: SysCvar.g_fov.GetFloat()).toInt(), spawnArgs.GetFloat("fov").toInt()
             )
-            BecomeActive(Entity.TH_THINK)
+            BecomeActive(TH_THINK)
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {

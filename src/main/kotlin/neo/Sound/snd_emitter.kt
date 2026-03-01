@@ -84,8 +84,7 @@ object snd_emitter {
         }
     }
 
-    open class SoundFX
-    {
+    open class SoundFX {
         protected var buffer: FloatArray = FloatArray(0)
         protected var channel = 0
         protected var continuitySamples: FloatArray = FloatArray(4)

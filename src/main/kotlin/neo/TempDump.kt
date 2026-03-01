@@ -1,6 +1,6 @@
 package neo
 
-import neo.Game.Entity.idEntity
+import neo.Game.idEntity
 import neo.Renderer.Material
 import neo.Renderer.Material.idMaterial
 import neo.Renderer.Model.idRenderModel

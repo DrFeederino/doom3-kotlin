@@ -468,12 +468,12 @@ val r_useCarmacksReverse = idCVar(
     "r_useCarmacksReverse",
     "1",
     CVAR_RENDERER or CVAR_ARCHIVE or CVAR_BOOL, "Use Z-Fail (Carmack's Reverse) when rendering shadows"
-);
+)
 val r_useStencilOpSeparate = idCVar(
     "r_useStencilOpSeparate",
     "1",
     CVAR_RENDERER or CVAR_ARCHIVE or CVAR_BOOL, "Use glStencilOpSeparate() (if available) when rendering shadows"
-);
+)
 
 
 val r_shadowPolygonOffset = idCVar(

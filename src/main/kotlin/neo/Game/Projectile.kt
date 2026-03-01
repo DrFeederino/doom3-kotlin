@@ -18,10 +18,7 @@
 
 package neo.Game
 
-import neo.Game.AFEntity.idAFAttachment
-import neo.Game.AI.AI.idAI
-import neo.Game.Actor.idActor
-import neo.Game.Entity.idEntity
+import neo.Game.AI.idAI
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
@@ -531,7 +528,7 @@ object Projectile {
         }
 
         override fun Think() {
-            if ((thinkFlags and Entity.TH_THINK) != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 if (thrust != 0.0f && Game_local.gameLocal.time < thrust_end) {
                     // evaluate force
                     thruster.SetForce(GetPhysics().GetAxis()[0] * thrust)
@@ -826,7 +823,7 @@ object Projectile {
                 light_fadetime = spawnArgs.GetFloat("explode_light_fadetime", "0.5f")
                 lightStartTime = Game_local.gameLocal.time
                 lightEndTime = (Game_local.gameLocal.time + SEC2MS(light_fadetime)).toInt()
-                BecomeActive(Entity.TH_THINK)
+                BecomeActive(TH_THINK)
             }
             fl.takedamage = false
             physicsObj.SetContents(0)

@@ -18,8 +18,6 @@
 
 package neo.Game
 
-import neo.Game.Entity.idEntity
-import neo.Game.FX.idEntityFx
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
@@ -338,10 +336,10 @@ object BrittleFracture {
         override fun Present() {
 
             // don't present to the renderer if the entity hasn't changed
-            if (0 == (thinkFlags and Entity.TH_UPDATEVISUALS)) {
+            if (0 == (thinkFlags and TH_UPDATEVISUALS)) {
                 return
             }
-            BecomeInactive(Entity.TH_UPDATEVISUALS)
+            BecomeInactive(TH_UPDATEVISUALS)
             renderEntity!!.bounds.set(bounds)
             renderEntity!!.origin.Zero()
             renderEntity!!.axis.Identity()
@@ -386,7 +384,7 @@ object BrittleFracture {
                 PostEventMS(EV_Remove, 0)
                 return
             }
-            if ((thinkFlags and Entity.TH_PHYSICS) != 0) {
+            if ((thinkFlags and TH_PHYSICS) != 0) {
                 startTime = Game_local.gameLocal.previousTime
                 endTime = Game_local.gameLocal.time
 
@@ -405,9 +403,9 @@ object BrittleFracture {
                     i++
                 }
                 if (atRest) {
-                    BecomeInactive(Entity.TH_PHYSICS)
+                    BecomeInactive(TH_PHYSICS)
                 } else {
-                    BecomeActive(Entity.TH_PHYSICS)
+                    BecomeActive(TH_PHYSICS)
                 }
             }
             if (!atRest || bounds.IsCleared()) {
@@ -419,9 +417,9 @@ object BrittleFracture {
                 }
             }
             if (fading) {
-                BecomeActive(Entity.TH_UPDATEVISUALS or Entity.TH_THINK)
+                BecomeActive(TH_UPDATEVISUALS or TH_THINK)
             } else {
-                BecomeInactive(Entity.TH_THINK)
+                BecomeInactive(TH_THINK)
             }
             RunPhysics()
             Present()
@@ -556,7 +554,7 @@ object BrittleFracture {
                 }
                 i++
             }
-            BecomeActive(Entity.TH_UPDATEVISUALS)
+            BecomeActive(TH_UPDATEVISUALS)
         }
 
         fun IsBroken(): Boolean {
@@ -888,7 +886,7 @@ object BrittleFracture {
             shard.physicsObj.ApplyImpulse(0, origin, dir.times(impulse * linearVelocityScale))
             shard.physicsObj.SetAngularVelocity(dir.Cross(dir2).times(f * angularVelocityScale))
             shard.clipModel!!.SetId(clipModelId)
-            BecomeActive(Entity.TH_PHYSICS)
+            BecomeActive(TH_PHYSICS)
         }
 
         private fun Shatter(point: idVec3, impulse: idVec3, time: Int) {

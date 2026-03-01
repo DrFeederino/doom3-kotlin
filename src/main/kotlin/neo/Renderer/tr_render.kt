@@ -34,6 +34,7 @@ import neo.Renderer.Material.stageLighting_t
 import neo.Renderer.Material.texgen_t
 import neo.Renderer.Material.textureStage_t
 import neo.Renderer.Model.srfTriangles_s
+import neo.Renderer.RenderWorld.renderView_s
 import neo.Renderer.qgl.qglClear
 import neo.Renderer.qgl.qglClearStencil
 import neo.Renderer.qgl.qglDisable
@@ -45,16 +46,13 @@ import neo.Renderer.qgl.qglStencilMask
 import neo.Renderer.qgl.qglViewport
 import neo.Renderer.tr_backend.GL_Cull
 import neo.Renderer.tr_backend.GL_State
-import neo.Renderer.RenderWorld.renderView_s
 import neo.Renderer.tr_main.myGlMultMatrix
 import neo.TempDump.btoi
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.math.idPlane
-import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
 import neo.sys.win_glimp.GLimp_ActivateContext
 import neo.sys.win_glimp.GLimp_DeactivateContext
-import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL13
 
@@ -85,7 +83,7 @@ object tr_render {
                 backEnd!!.pc.c_drawRefVertexes += tri.numVerts
             }
         }
-        qgl.qglBegin(GL11.GL_TRIANGLES)
+        qgl.qglBegin(GL_TRIANGLES)
         for (i in 0 until tri.numIndexes) {
             qgl.qglTexCoord2fv(tri.verts!![tri.indexes!![i]]!!.st.ToFloatPtr())
             qgl.qglVertex3fv(tri.verts!![tri.indexes!![i]]!!.xyz.ToFloatPtr())
@@ -113,7 +111,7 @@ object tr_render {
         val count: Int = if (r_singleTriangle.GetBool()) 3 else tri.numIndexes
         if (tri.indexCache != null && r_useIndexBuffers!!.GetBool()) {
             qgl.qglDrawElements(
-                GL11.GL_TRIANGLES,
+                GL_TRIANGLES,
                 count,
                 Model.GL_INDEX_TYPE,
                 VertexCache.vertexCache.Position(tri.indexCache)
@@ -123,7 +121,7 @@ object tr_render {
             if (r_useIndexBuffers.GetBool()) {
                 VertexCache.vertexCache.UnbindIndex()
             }
-            qgl.qglDrawElements(GL11.GL_TRIANGLES, count, Model.GL_INDEX_TYPE, tri.indexes)
+            qgl.qglDrawElements(GL_TRIANGLES, count, Model.GL_INDEX_TYPE, tri.indexes)
         }
     }
 
@@ -140,7 +138,7 @@ object tr_render {
         backEnd!!.pc.c_shadowVertexes += tri.numVerts
         if (tri.indexCache != null && r_useIndexBuffers!!.GetBool()) {
             qgl.qglDrawElements(
-                GL11.GL_TRIANGLES,
+                GL_TRIANGLES,
                 if (r_singleTriangle!!.GetBool()) 3 else numIndexes,
                 Model.GL_INDEX_TYPE,
                 VertexCache.vertexCache.Position(tri.indexCache)
@@ -151,7 +149,7 @@ object tr_render {
                 VertexCache.vertexCache.UnbindIndex()
             }
             qgl.qglDrawElements(
-                GL11.GL_TRIANGLES,
+                GL_TRIANGLES,
                 if (r_singleTriangle!!.GetBool()) 3 else numIndexes,
                 Model.GL_INDEX_TYPE,
                 tri.indexes
@@ -173,8 +171,8 @@ object tr_render {
         }
         val ac =
             idDrawVert(VertexCache.vertexCache.Position(tri.ambientCache))
-        qgl.qglVertexPointer(3, GL11.GL_FLOAT, idDrawVert.BYTES, ac.xyzOffset().toLong())
-        qgl.qglTexCoordPointer(2, GL11.GL_FLOAT, idDrawVert.BYTES, ac.stOffset().toLong())
+        qgl.qglVertexPointer(3, GL_FLOAT, idDrawVert.BYTES, ac.xyzOffset().toLong())
+        qgl.qglTexCoordPointer(2, GL_FLOAT, idDrawVert.BYTES, ac.stOffset().toLong())
         RB_DrawElementsWithCounters(tri)
     }
 
@@ -188,9 +186,9 @@ object tr_render {
         val matrix = FloatArray(16)
         System.arraycopy(backEnd!!.viewDef!!.projectionMatrix, 0, matrix, 0, matrix.size)
         matrix[14] *= 0.25f
-        qgl.qglMatrixMode(GL11.GL_PROJECTION)
-        qgl.qglLoadMatrixf(matrix)
-        qgl.qglMatrixMode(GL11.GL_MODELVIEW)
+        qglMatrixMode(GL_PROJECTION)
+        qglLoadMatrixf(matrix)
+        qglMatrixMode(GL_MODELVIEW)
     }
 
     /*
@@ -203,9 +201,9 @@ object tr_render {
         val matrix = FloatArray(16)
         System.arraycopy(backEnd!!.viewDef!!.projectionMatrix, 0, matrix, 0, matrix.size)
         matrix[14] -= depth
-        qgl.qglMatrixMode(GL11.GL_PROJECTION)
-        qgl.qglLoadMatrixf(matrix)
-        qgl.qglMatrixMode(GL11.GL_MODELVIEW)
+        qglMatrixMode(GL_PROJECTION)
+        qglLoadMatrixf(matrix)
+        qglMatrixMode(GL_MODELVIEW)
     }
 
     /*
@@ -215,9 +213,9 @@ object tr_render {
      */
     fun RB_LeaveDepthHack() {
         qgl.qglDepthRange(0.0f, 1.0f)
-        qgl.qglMatrixMode(GL11.GL_PROJECTION)
-        qgl.qglLoadMatrixf(backEnd!!.viewDef!!.projectionMatrix)
-        qgl.qglMatrixMode(GL11.GL_MODELVIEW)
+        qglMatrixMode(GL_PROJECTION)
+        qglLoadMatrixf(backEnd!!.viewDef!!.projectionMatrix)
+        qglMatrixMode(GL_MODELVIEW)
     }
 
     /*
@@ -240,7 +238,7 @@ object tr_render {
 
             // change the matrix if needed
             if (drawSurf.space !== backEnd!!.currentSpace) {
-                qgl.qglLoadMatrixf(drawSurf.space!!.modelViewMatrix)
+                qglLoadMatrixf(drawSurf.space!!.modelViewMatrix)
             }
             if (drawSurf.space!!.weaponDepthHack) {
                 RB_EnterWeaponDepthHack()
@@ -252,7 +250,7 @@ object tr_render {
             // change the scissor if needed
             if (r_useScissor!!.GetBool() && !backEnd!!.currentScissor!!.Equals(drawSurf.scissorRect!!)) {
                 backEnd!!.currentScissor = drawSurf.scissorRect
-                qgl.qglScissor(
+                qglScissor(
                     backEnd!!.viewDef!!.viewport.x1 + backEnd!!.currentScissor!!.x1,
                     backEnd!!.viewDef!!.viewport.y1 + backEnd!!.currentScissor!!.y1,
                     backEnd!!.currentScissor!!.x2 + 1 - backEnd!!.currentScissor!!.x1,
@@ -278,7 +276,7 @@ object tr_render {
 
             // change the matrix if needed
             if (drawSurf.space !== backEnd!!.currentSpace) {
-                qgl.qglLoadMatrixf(drawSurf.space!!.modelViewMatrix)
+                qglLoadMatrixf(drawSurf.space!!.modelViewMatrix)
             }
             if (drawSurf.space!!.weaponDepthHack) {
                 RB_EnterWeaponDepthHack()
@@ -290,7 +288,7 @@ object tr_render {
             // change the scissor if needed
             if (r_useScissor!!.GetBool() && !backEnd!!.currentScissor!!.Equals(drawSurf.scissorRect!!)) {
                 backEnd!!.currentScissor = idScreenRect(drawSurf.scissorRect!!)
-                qgl.qglScissor(
+                qglScissor(
                     backEnd!!.viewDef!!.viewport.x1 + backEnd!!.currentScissor!!.x1,
                     backEnd!!.viewDef!!.viewport.y1 + backEnd!!.currentScissor!!.y1,
                     backEnd!!.currentScissor!!.x2 + 1 - backEnd!!.currentScissor!!.x1,
@@ -344,9 +342,9 @@ object tr_render {
     fun RB_LoadShaderTextureMatrix(shaderRegisters: FloatArray?, texture: textureStage_t?) {
         val matrix = FloatArray(16)
         RB_GetShaderTextureMatrix(shaderRegisters!!, texture!!, matrix)
-        qgl.qglMatrixMode(GL11.GL_TEXTURE)
-        qgl.qglLoadMatrixf(matrix)
-        qgl.qglMatrixMode(GL11.GL_MODELVIEW)
+        qglMatrixMode(GL_TEXTURE)
+        qglLoadMatrixf(matrix)
+        qglMatrixMode(GL_MODELVIEW)
     }
 
     fun RB_BindVariableStageImage(texture: textureStage_t, shaderRegisters: FloatArray?) {
@@ -388,27 +386,27 @@ object tr_render {
         if (texture.texgen == texgen_t.TG_DIFFUSE_CUBE) {
             val vert =
                 idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
-            qgl.qglTexCoordPointer(3, GL11.GL_FLOAT, idDrawVert.BYTES, vert.normal.ToFloatPtr())
+            qgl.qglTexCoordPointer(3, GL_FLOAT, idDrawVert.BYTES, vert.normal.ToFloatPtr())
         }
         if (texture.texgen == texgen_t.TG_SKYBOX_CUBE || texture.texgen == texgen_t.TG_WOBBLESKY_CUBE) {
-            qgl.qglTexCoordPointer(3, GL11.GL_FLOAT, 0, VertexCache.vertexCache.Position(surf.dynamicTexCoords))
+            qgl.qglTexCoordPointer(3, GL_FLOAT, 0, VertexCache.vertexCache.Position(surf.dynamicTexCoords))
         }
         if (texture.texgen == texgen_t.TG_REFLECT_CUBE) {
-            qgl.qglEnable(GL11.GL_TEXTURE_GEN_S)
-            qgl.qglEnable(GL11.GL_TEXTURE_GEN_T)
-            qgl.qglEnable(GL11.GL_TEXTURE_GEN_R)
-            qgl.qglTexGenf(GL11.GL_S, GL11.GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP.toFloat())
-            qgl.qglTexGenf(GL11.GL_T, GL11.GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP.toFloat())
-            qgl.qglTexGenf(GL11.GL_R, GL11.GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP.toFloat())
-            qgl.qglEnableClientState(GL11.GL_NORMAL_ARRAY)
+            qglEnable(GL_TEXTURE_GEN_S)
+            qglEnable(GL_TEXTURE_GEN_T)
+            qglEnable(GL_TEXTURE_GEN_R)
+            qgl.qglTexGenf(GL_S, GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP.toFloat())
+            qgl.qglTexGenf(GL_T, GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP.toFloat())
+            qgl.qglTexGenf(GL_R, GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP.toFloat())
+            qgl.qglEnableClientState(GL_NORMAL_ARRAY)
             val vert =
                 idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
-            qgl.qglNormalPointer(GL11.GL_FLOAT, idDrawVert.BYTES, vert.normalOffset().toLong())
-            qgl.qglMatrixMode(GL11.GL_TEXTURE)
+            qgl.qglNormalPointer(GL_FLOAT, idDrawVert.BYTES, vert.normalOffset().toLong())
+            qglMatrixMode(GL_TEXTURE)
             val mat = FloatArray(16)
             tr_main.R_TransposeGLMatrix(backEnd!!.viewDef!!.worldSpace.modelViewMatrix, mat)
-            qgl.qglLoadMatrixf(mat)
-            qgl.qglMatrixMode(GL11.GL_MODELVIEW)
+            qglLoadMatrixf(mat)
+            qglMatrixMode(GL_MODELVIEW)
         }
 
         // matrix
@@ -430,27 +428,27 @@ object tr_render {
                 idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
             qgl.qglTexCoordPointer(
                 2,
-                GL11.GL_FLOAT,
+                GL_FLOAT,
                 idDrawVert.BYTES,
                 vert.st.ToFloatPtr()
             )
         }
         if (texture.texgen == texgen_t.TG_REFLECT_CUBE) {
-            qgl.qglDisable(GL11.GL_TEXTURE_GEN_S)
-            qgl.qglDisable(GL11.GL_TEXTURE_GEN_T)
-            qgl.qglDisable(GL11.GL_TEXTURE_GEN_R)
-            qgl.qglTexGenf(GL11.GL_S, GL11.GL_TEXTURE_GEN_MODE, GL11.GL_OBJECT_LINEAR.toFloat())
-            qgl.qglTexGenf(GL11.GL_T, GL11.GL_TEXTURE_GEN_MODE, GL11.GL_OBJECT_LINEAR.toFloat())
-            qgl.qglTexGenf(GL11.GL_R, GL11.GL_TEXTURE_GEN_MODE, GL11.GL_OBJECT_LINEAR.toFloat())
-            qgl.qglDisableClientState(GL11.GL_NORMAL_ARRAY)
-            qgl.qglMatrixMode(GL11.GL_TEXTURE)
+            qglDisable(GL_TEXTURE_GEN_S)
+            qglDisable(GL_TEXTURE_GEN_T)
+            qglDisable(GL_TEXTURE_GEN_R)
+            qgl.qglTexGenf(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR.toFloat())
+            qgl.qglTexGenf(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR.toFloat())
+            qgl.qglTexGenf(GL_R, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR.toFloat())
+            qgl.qglDisableClientState(GL_NORMAL_ARRAY)
+            qglMatrixMode(GL_TEXTURE)
             qgl.qglLoadIdentity()
-            qgl.qglMatrixMode(GL11.GL_MODELVIEW)
+            qglMatrixMode(GL_MODELVIEW)
         }
         if (texture.hasMatrix) {
-            qgl.qglMatrixMode(GL11.GL_TEXTURE)
+            qglMatrixMode(GL_TEXTURE)
             qgl.qglLoadIdentity()
-            qgl.qglMatrixMode(GL11.GL_MODELVIEW)
+            qglMatrixMode(GL_MODELVIEW)
         }
     }
 
@@ -707,13 +705,13 @@ object tr_render {
         // change the matrix and light projection vectors if needed
         if (surf.space !== backEnd!!.currentSpace) {
             backEnd!!.currentSpace = surf.space
-            qgl.qglLoadMatrixf(surf.space!!.modelViewMatrix)
+            qglLoadMatrixf(surf.space!!.modelViewMatrix)
         }
 
         // change the scissor if needed
         if (r_useScissor!!.GetBool() && !backEnd!!.currentScissor!!.Equals(surf.scissorRect!!)) {
             backEnd!!.currentScissor = surf.scissorRect
-            qgl.qglScissor(
+            qglScissor(
                 backEnd!!.viewDef!!.viewport.x1 + backEnd!!.currentScissor!!.x1,
                 backEnd!!.viewDef!!.viewport.y1 + backEnd!!.currentScissor!!.y1,
                 backEnd!!.currentScissor!!.x2 + 1 - backEnd!!.currentScissor!!.x1,

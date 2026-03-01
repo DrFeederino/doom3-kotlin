@@ -360,7 +360,7 @@ object VertexCache {
             throw Deprecation_Exception()
         }
 
-        fun Alloc(data: IntArray?, size: Int, indexBuffer: Boolean): vertCache_s? {
+        fun Alloc(data: IntArray?, size: Int, indexBuffer: Boolean): vertCache_s {
             val byteData: ByteBuffer = BufferUtils.createByteBuffer(size)
             byteData.asIntBuffer().put(data)
             return Alloc(byteData, size, indexBuffer)
@@ -513,15 +513,15 @@ object VertexCache {
             return block
         }
 
-        fun AllocFrameTemp(data: Array<idDrawVert>, size: Int): vertCache_s? {
+        fun AllocFrameTemp(data: Array<idDrawVert>, size: Int): vertCache_s {
             return AllocFrameTemp(toByteBuffer((data)!!), size)
         }
 
-        fun AllocFrameTemp(data: Array<idVec3>, size: Int): vertCache_s? {
+        fun AllocFrameTemp(data: Array<idVec3>, size: Int): vertCache_s {
             return AllocFrameTemp(idVec3.toByteBuffer(data!!), size)
         }
 
-        fun AllocFrameTemp(data: Array<idVec4>, size: Int): vertCache_s? {
+        fun AllocFrameTemp(data: Array<idVec4>, size: Int): vertCache_s {
             return AllocFrameTemp(idVec4.toByteBuffer(data), size)
         }
 

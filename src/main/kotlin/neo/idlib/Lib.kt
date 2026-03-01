@@ -1,7 +1,7 @@
 package neo.idlib
 
-import neo.Game.Entity.idEntity.entityFlags_s
 import neo.Game.Projectile.idProjectile.projectileFlags_s
+import neo.Game.idEntity.entityFlags_s
 import neo.TempDump
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVarSystem

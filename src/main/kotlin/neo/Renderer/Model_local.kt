@@ -1404,7 +1404,7 @@ object Model_local {
             } else {
                 Common.common.Warning("ConvertLWOToModelSurfaces: model '%s' has bad or missing uv data", name)
                 numTVertexes = 1
-                tvList = Array(numTVertexes) { idVec2() };
+                tvList = Array(numTVertexes) { idVec2() }
             }
 
             // It seems like the tools our artists are using often generate
@@ -1412,7 +1412,7 @@ object Model_local {
             // note that we really should combine the surfaces with common materials
             // before doing this operation, because we can miss a slop combination
             // if they are in different surfaces
-            vRemap = IntArray(layer.point.count);
+            vRemap = IntArray(layer.point.count)
             if (fastLoad) {
                 // renderbump doesn't care about vertex count
                 j = 0
@@ -1435,7 +1435,7 @@ object Model_local {
                     j++
                 }
             }
-            tvRemap = IntArray(numTVertexes);
+            tvRemap = IntArray(numTVertexes)
             if (fastLoad) {
                 // renderbump doesn't care about vertex count
                 j = 0
@@ -1479,7 +1479,7 @@ object Model_local {
 
                 // we will have a hash chain based on the xyz values
                 mvHash =
-                    arrayOfNulls(layer.point.count);
+                    arrayOfNulls(layer.point.count)
 
                 // allocate triangle surface
                 tri = R_AllocStaticTriSurf()
@@ -1801,7 +1801,7 @@ object Model_local {
                         j++
                     }
                 }
-                tvRemap = IntArray(mesh.numTVertexes);
+                tvRemap = IntArray(mesh.numTVertexes)
                 if (fastLoad) {
                     // renderbump doesn't care about vertex count
                     j = 0
@@ -1830,11 +1830,11 @@ object Model_local {
                 // there are, because MA tracks them separately but we need them unified
                 // the maximum possible number of combined vertexes is the number of indexes
                 mvTable =
-                    arrayOfNulls(mesh.numFaces * 3);
+                    arrayOfNulls(mesh.numFaces * 3)
 
                 // we will have a hash chain based on the xyz values
                 mvHash =
-                    arrayOfNulls(mesh.numVertexes);
+                    arrayOfNulls(mesh.numVertexes)
 
                 // allocate triangle surface
                 tri = R_AllocStaticTriSurf()
@@ -1996,7 +1996,7 @@ object Model_local {
             var materialRef = 0
             var surf: lwSurface? = obj.surf
             while (surf != null) {
-                val mat = aseMaterial_t();
+                val mat = aseMaterial_t()
                 System.arraycopy(surf.name!!.toCharArray(), 0, mat.name, 0, surf.name!!.length)
                 mat.vTiling = 1.0f
                 mat.uTiling = mat.vTiling
@@ -2005,16 +2005,16 @@ object Model_local {
                 mat.angle = mat.uOffset
                 ase.materials.Append(mat)
                 val layer: lwLayer? = obj.layer
-                val `object` = aseObject_t();
+                val `object` = aseObject_t()
                 `object`.materialRef = materialRef++
                 val mesh: aseMesh_t = `object`.mesh
                 ase.objects.Append(`object`)
                 mesh!!.numFaces = layer!!.polygon.count
                 mesh.numTVFaces = mesh.numFaces
-                mesh.faces = arrayOfNulls(mesh.numFaces);
+                mesh.faces = arrayOfNulls(mesh.numFaces)
                 mesh.numVertexes = layer.point.count
                 mesh.vertexes =
-                    idVec3.generateArray(mesh.numVertexes);
+                    idVec3.generateArray(mesh.numVertexes)
 
                 // vertex positions
                 if (layer.point.count <= 0) {
@@ -2061,7 +2061,7 @@ object Model_local {
                     Common.common.Warning("ConvertLWOToASE: model '%s' has bad or missing uv data", (fileName)!!)
                     mesh.numTVertexes = 1
                     mesh.tvertexes =
-                        Array(mesh.numTVertexes) { idVec2() };
+                        Array(mesh.numTVertexes) { idVec2() }
                 }
                 mesh.normalsParsed = true
                 mesh.colorsParsed = true // because we are falling back to the surface color
@@ -2144,7 +2144,7 @@ object Model_local {
                 mesh.numFaces = faceIndex
                 mesh.numTVFaces = faceIndex
                 val newFaces: Array<aseFace_t?> =
-                    arrayOfNulls(mesh.numFaces);
+                    arrayOfNulls(mesh.numFaces)
                 for (i in 0 until mesh.numFaces) {
                     newFaces[i] = mesh.faces!![i]
                 }

@@ -400,6 +400,7 @@ object Image {
         var uploadHeight: CInt
         var uploadDepth // after power of two, downsample, and MAX_TEXTURE_SIZE
                 : CInt
+
         //
         constructor() {
             texNum = TEXTURE_NOT_LOADED
