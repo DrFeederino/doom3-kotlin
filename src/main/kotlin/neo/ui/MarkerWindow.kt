@@ -232,7 +232,7 @@ class MarkerWindow {
                                 loggedStats[i].stamina = 0
                             }
                             if (loggedStats[i].heartRate < 0) {
-                                loggedStats[i].heartRate = 0.0f
+                                loggedStats[i].heartRate = 0
                             }
                             if (loggedStats[i].combat < 0) {
                                 loggedStats[i].combat = 0

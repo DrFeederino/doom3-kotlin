@@ -546,7 +546,8 @@ class Common {
             // the number of msec per tic can be varies with the timescale cvar
             val timescale = com_timescale.GetFloat()
             if (timescale != 1.0f) {
-                ticMsec /= timescale.toInt()
+                ticMsec =
+                    (ticMsec / timescale).toInt() // FIX: C++ does float division then truncates, not toInt() first
                 if (ticMsec < 1) {
                     ticMsec = 1
                 }
@@ -750,7 +751,7 @@ class Common {
             if (rd_buffer != null) {
                 if (msg[0].length + rd_buffer!!.length > rd_buffersize - 1) {
                     rd_flush!!.run(rd_buffer.toString())
-                    //			*rd_buffer = 0;
+                    rd_buffer!!.setLength(0) // FIX: C++ clears buffer after flush (*rd_buffer = 0)
                 }
                 //		strcat( rd_buffer, msg );
                 rd_buffer!!.append(msg[0])
@@ -2005,15 +2006,15 @@ class Common {
             if (UsercmdGen.usercmdGen != null && com_asyncInput.GetBool()) {
                 UsercmdGen.usercmdGen.UsercmdInterrupt()
             }
+            // FIX: Cases 1,3 both call AsyncUpdateWrite (dhewm3 fall-through); case 2 calls AsyncUpdate
             when (com_asyncSound.GetInteger()) {
-                1 -> snd_system.soundSystem.AsyncUpdate(stat.milliseconds)
-                3 -> snd_system.soundSystem.AsyncUpdateWrite(stat.milliseconds)
+                1, 3 -> snd_system.soundSystem.AsyncUpdateWrite(stat.milliseconds)
+                2 -> snd_system.soundSystem.AsyncUpdate(stat.milliseconds)
             }
 
             // we update com_ticNumber after all the background tasks
             // have completed their work for this tic
             com_ticNumber++
-            //                System.out.println(System.nanoTime()+"com_ticNumber=" + com_ticNumber);
             stat.timeConsumed = win_shared.Sys_Milliseconds() - stat.milliseconds
 //            } finally {
 //                Sys_LeaveCriticalSection()
@@ -2992,7 +2993,8 @@ class Common {
                              idStr out = va("%s,%s,%s,%s\r\n", static classname.c_str(), kv.GetKey().c_str(), kv.GetValue().c_str(), file.c_str());
                              localizeFile.Write( out.c_str(), out.Length() );
                              }*/
-                            val   /*static*/className = ent.epairs.GetString("static classname")
+                            val className =
+                                ent.epairs.GetString("classname") // FIX: was "static classname" — translation artifact
 
                             //Hack: for info_location
                             var hasLocation = false
@@ -3193,7 +3195,7 @@ class Common {
             CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM,
             ASYNCSOUND_INFO,
             0.0f,
-            1.0f
+            3.0f // FIX: was 1.0f — dhewm3 allows values 0-3
         )
 
 
@@ -3438,7 +3440,7 @@ class Common {
         }
 
         fun TestMapVal(str: String): Boolean {
-            return str.contains("#str_")
+            return !str.contains("#str_") // FIX: was inverted — should return true when NOT localized
         }
 
         //#endif
@@ -3461,9 +3463,16 @@ class Common {
             }
 
             //Contains /
-            return if (testVal.Find("/") != -1) {
-                false
-            } else excludeList.Find(testVal) == 0
+            if (testVal.Find("/") != -1) {
+                return false
+            }
+
+            // FIX: C++ Find() returns pointer, truthy=found → return false. Was: == 0 (only matched index 0)
+            if (excludeList.Find(testVal) != null) {
+                return false
+            }
+
+            return true
         }
 
         fun TestGuiParm(parm: idStr, value: idStr, excludeList: idStrList): Boolean {

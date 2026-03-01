@@ -128,7 +128,7 @@ object Game {
         var consistencyHash // used to check for network game divergence
                 = 0
         var health = 0
-        var heartRate = 0.0f
+        var heartRate = 0
         var sessionCommand: CharArray =
             CharArray(MAX_STRING_CHARS) // "map", "disconnect", "victory", etc
         var stamina = 0

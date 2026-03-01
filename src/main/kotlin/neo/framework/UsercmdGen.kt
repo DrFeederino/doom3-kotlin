@@ -1,3 +1,39 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/framework/UsercmdGen.h, neo/framework/UsercmdGen.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms.
+You should have received a copy of these additional terms immediately following
+the terms and conditions of the GNU General Public License which accompanied
+the Doom 3 Source Code.  If not, please request a copy in writing from
+id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms,
+you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120,
+Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.framework
 
 import neo.TempDump
@@ -486,7 +522,7 @@ object UsercmdGen {
                 // async code to overflow the buffers
                 //common.Printf( "warning: idUsercmdGenLocal::TicCmd ticNumber <= com_ticNumber - MAX_BUFFERED_USERCMD\n" );
             }
-            return buffered[ticNumber and (MAX_BUFFERED_USERCMD - 1)]!!
+            return buffered[ticNumber and (MAX_BUFFERED_USERCMD - 1)]
         }
 
         override fun InhibitUsercmd(subsystem: inhibit_t, inhibit: Boolean) {
@@ -558,8 +594,9 @@ object UsercmdGen {
         }
 
         override fun MouseState(x: IntArray, y: IntArray, button: IntArray, down: BooleanArray) {
-//            x[0] = continuousMouseX;
-//            y[0] = continuousMouseY;
+            // FIX: x/y assignments were commented out, but C++ sets all four output parameters
+            x[0] = continuousMouseX.toInt()
+            y[0] = continuousMouseY.toInt()
             button[0] = mouseButton
             down[0] = mouseDown
         }
@@ -981,8 +1018,9 @@ object UsercmdGen {
                 val dwTimeStamp = Instant.now().toEpochMilli()
 
                 // mouse wheel actions are impulses, without a specific up / down
-                var wheelValue = yoffset.toInt() //(int) polled_didod[n].dwData ) / WHEEL_DELTA;
                 val key = if (yoffset < 0) KeyInput.K_MWHEELDOWN else KeyInput.K_MWHEELUP
+                // FIX: C++ uses abs(value) before the loop; without it, negative scroll never fires
+                var wheelValue = abs(yoffset.toInt())
                 while (wheelValue-- > 0) {
                     Key(key, true)
                     Key(key, false)

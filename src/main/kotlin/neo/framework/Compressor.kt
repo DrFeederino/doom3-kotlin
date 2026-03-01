@@ -1,3 +1,28 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/framework/Compressor.cpp, neo/framework/Compressor.h
+ *
+ * Doom 3 GPL Source Code
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ *
+ * This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
+ */
 package neo.framework
 
 import neo.framework.File_h.fsOrigin_t
@@ -234,7 +259,7 @@ object Compressor {
             if (compress == false) {
                 return
             }
-            if (writeByte != 0) { //TODO:wtf?
+            if (writeByte != 0) {
                 file.Write(buffer, writeByte)
             }
             writeLength = 0
@@ -322,10 +347,8 @@ object Compressor {
             if (writeBit == 0 && numBits == 8 && writeByte < writeLength) {
                 writeByte++
                 writeTotalBytes++
-                writeData!!.putInt(
-                    writeByte - 1,
-                    value
-                ) //TODO:check if inputs should be cast to bytes or stores.toInt() in this case (4 bytes)
+                // FIX: C++ writes a single byte; was incorrectly using putInt (writes 4 bytes)
+                writeData!!.put(writeByte - 1, value.toByte())
                 return
             }
             while (numBits != 0) {
@@ -342,7 +365,8 @@ object Compressor {
                             return
                         }
                     }
-                    writeData!!.putInt(writeByte, 0)
+                    // FIX: C++ zeroes a single byte; was using putInt (overwrites 4 bytes)
+                    writeData!!.put(writeByte, 0.toByte())
                     writeByte++
                     writeTotalBytes++
                 }
@@ -351,11 +375,10 @@ object Compressor {
                     put = numBits
                 }
                 fraction = value and ((1 shl put) - 1)
-                run {
-                    val pos = writeByte - 1
-                    val `val` = writeData!!.getInt(pos) or fraction shl writeBit
-                    writeData!!.putInt(pos, `val`)
-                }
+                // FIX: C++ does single-byte OR: writeData[pos] |= fraction << writeBit
+                // was incorrectly using getInt/putInt (reads/writes 4 bytes)
+                val pos = writeByte - 1
+                writeData!!.put(pos, ((writeData!!.get(pos).toInt() and 0xFF) or (fraction shl writeBit)).toByte())
                 numBits -= put
                 value = value shr put
                 writeBit = writeBit + put and 7
@@ -374,7 +397,8 @@ object Compressor {
             if (readBit == 0 && numBits == 8 && readByte < readLength) {
                 readByte++
                 readTotalBytes++
-                return readData!!.getInt(readByte - 1)
+                // FIX: C++ returns a single unsigned byte; was incorrectly using getInt (reads 4 bytes)
+                return readData!!.get(readByte - 1).toInt() and 0xFF
             }
             while (valueBits < numBits) {
                 if (readBit == 0) {
@@ -455,7 +479,14 @@ object Compressor {
                 var remain = bitsRemain shr 3
 
                 // Compare the middle bytes as ints
-                while (remain >= 4 && src1[p1].toInt() == src2[p2].toInt()) {
+                // FIX: C++ compares 4 bytes at once via *(const int*)p1 == *(const int*)p2
+                // Original Kotlin compared only 1 byte (src1[p1]) but skipped 4, missing mismatches
+                while (remain >= 4
+                    && src1[p1] == src2[p2]
+                    && src1[p1 + 1] == src2[p2 + 1]
+                    && src1[p1 + 2] == src2[p2 + 2]
+                    && src1[p1 + 3] == src2[p2 + 3]
+                ) {
                     p1 += 4
                     p2 += 4
                     remain -= 4
@@ -665,15 +696,19 @@ object Compressor {
 
         //
         private var compressedSize = 0
-        private var freelist: Array<huffmanNode_t> = Array(1) { huffmanNode_t() }
+
+        // FIX: freelist was Array<huffmanNode_t> — should be NodeSlot? to model C++ huffmanNode_t** freelist
+        private var freelist: NodeSlot? = null
         private var lhead: huffmanNode_t? = null
         private val loc: Array<huffmanNode_t?> = arrayOfNulls<huffmanNode_t?>(HMAX + 1)
         private var ltail: huffmanNode_t? = null
 
         //
         private val nodeList: Array<huffmanNode_t> = Array(768) { huffmanNode_t() }
-        private val nodePtrs: Array<huffmanNode_t> = Array(768) { huffmanNode_t() }
-        private val seq = ByteBuffer.allocate(65536) //TODO:allocateDirect?
+
+        // FIX: nodePtrs was Array<huffmanNode_t> — should be Array<NodeSlot> to model C++ huffmanNode_t* nodePtrs[768]
+        private val nodePtrs: Array<NodeSlot> = Array(768) { NodeSlot() }
+        private val seq = ByteBuffer.allocate(65536)
 
         //
         private var tree: huffmanNode_t? = null
@@ -697,12 +732,15 @@ object Compressor {
                 loc[i] = null
                 i++
             }
-            freelist = emptyArray()
+            // FIX: C++ sets freelist = NULL; was emptyArray() which is never null
+            freelist = null
             i = 0
             while (i < 768) {
-
-//		memset( &nodeList[i], 0, sizeof(huffmanNode_t) );
-                //nodePtrs[i] = null
+                // FIX: C++ does memset(&nodeList[i], 0, sizeof(huffmanNode_t)) and nodePtrs[i] = NULL
+                // The Kotlin loop body was empty — breaks on second Init call
+                nodeList[i].reset()
+                nodePtrs[i].node = null
+                nodePtrs[i].nextFree = null
                 i++
             }
             if (compress) {
@@ -758,7 +796,8 @@ object Compressor {
             }
             i = 0
             while (i < inLength) {
-                ch = inData.getInt(i)
+                // FIX: C++ reads a single byte ch = ((const byte*)inData)[i]; was using getInt (reads 4 bytes)
+                ch = inData.get(i).toInt() and 0xFF
                 Transmit(ch, seq) // Transmit symbol
                 AddRef(ch.toByte()) // Do update
                 val b = bloc shr 3
@@ -801,8 +840,9 @@ object Compressor {
                         j++
                     }
                 }
-                outData.putInt(i, ch[0]) // Write symbol
-                AddRef(ch[0] as Byte) // Increment node
+                // FIX: C++ writes a single byte: ((byte*)outData)[i] = ch; was using putInt (writes 4 bytes)
+                outData.put(i, ch[0].toByte()) // Write symbol
+                AddRef(ch[0].toByte()) // Increment node
                 i++
             }
             compressedSize = bloc shr 3
@@ -810,10 +850,14 @@ object Compressor {
             return i
         }
 
+        // FIX: Rewritten to use NodeSlot for head pointer-pointer semantics
         private fun AddRef(ch: Byte) {
-            val tnode: huffmanNode_t?
-            val tnode2: huffmanNode_t?
-            if (loc[ch.toInt()] == null) { /* if this is the first transmission of this node */
+            val tnode: huffmanNode_t
+            val tnode2: huffmanNode_t
+            // FIX: ch.toInt() sign-extends for bytes > 127 (e.g. 0xFF -> -1), causing AIOOBE.
+            // C++ uses unsigned char (0-255); mask with 0xFF to simulate unsigned.
+            val chIdx = ch.toInt() and 0xFF
+            if (loc[chIdx] == null) { /* if this is the first transmission of this node */
                 tnode = nodeList[blocNode++]
                 tnode2 = nodeList[blocNode++]
                 tnode2.symbol = INTERNAL_NODE
@@ -825,15 +869,15 @@ object Compressor {
                         tnode2.head = lhead!!.next!!.head
                     } else {
                         tnode2.head = Get_ppnode()
-                        tnode2.head = tnode2
+                        tnode2.head!!.node = tnode2  // C++: *tnode2->head = tnode2
                     }
                 } else {
                     tnode2.head = Get_ppnode()
-                    tnode2.head = tnode2
+                    tnode2.head!!.node = tnode2  // C++: *tnode2->head = tnode2
                 }
                 lhead!!.next = tnode2
                 tnode2.prev = lhead
-                tnode.symbol = ch.toInt()
+                tnode.symbol = chIdx
                 tnode.weight = 1
                 tnode.next = lhead!!.next
                 if (lhead!!.next != null) {
@@ -843,12 +887,12 @@ object Compressor {
                     } else {
                         /* this should never happen */
                         tnode.head = Get_ppnode()
-                        tnode.head = tnode2
+                        tnode.head!!.node = tnode2  // C++: *tnode->head = tnode2
                     }
                 } else {
                     /* this should never happen */
                     tnode.head = Get_ppnode()
-                    tnode.head = tnode
+                    tnode.head!!.node = tnode  // C++: *tnode->head = tnode
                 }
                 lhead!!.next = tnode
                 tnode.prev = lhead
@@ -868,10 +912,10 @@ object Compressor {
                 tnode2.parent = lhead!!.parent
                 tnode.parent = tnode2
                 lhead!!.parent = tnode.parent
-                loc[ch.toInt()] = tnode
+                loc[chIdx] = tnode
                 Increment(tnode2.parent as huffmanNode_t?)
             } else {
-                Increment(loc[ch.toInt()])
+                Increment(loc[chIdx])
             }
         }
 
@@ -908,11 +952,11 @@ object Compressor {
                 Transmit(NYT, fout)
                 i = 7
                 while (i >= 0) {
-                    Add_bit((ch shr i and 0x1).toChar().code, fout)
+                    Add_bit(ch shr i and 0x1, fout)
                     i--
                 }
             } else {
-                Send(loc[ch]!!, null, fout) //ITS NOT NULL DUMB KOTLIN!!!
+                Send(loc[ch]!!, null, fout)
             }
         }
 
@@ -947,9 +991,11 @@ object Compressor {
             val pos = bloc shr 3
             val `val` = bit shl (bloc and 7)
             if (bloc and 7 == 0) {
-                fout.putInt(pos, 0)
+                // FIX: C++ zeroes a single byte; was using putInt (overwrites 4 bytes)
+                fout.put(pos, 0.toByte())
             }
-            fout.putInt(pos, `val`)
+            // FIX: C++ does single-byte OR; was using putInt (overwrites 4 bytes)
+            fout.put(pos, (fout.get(pos).toInt() and 0xFF or `val`).toByte())
             bloc++
         }
 
@@ -974,20 +1020,23 @@ object Compressor {
             return t
         }
 
-        private fun Get_ppnode(): huffmanNode_t {
-            val tppnode: huffmanNode_t
-            return if (null == freelist) {
+        // FIX: Rewritten to use NodeSlot — models C++ huffmanNode_t** Get_ppnode()
+        private fun Get_ppnode(): NodeSlot {
+            return if (freelist == null) {
                 nodePtrs[blocPtrs++]
             } else {
-                tppnode = freelist[0]
-                //                freelist = /*(huffmanNode_t **)**/tppnode;
-                tppnode
+                val slot = freelist!!
+                freelist = slot.nextFree
+                slot.nextFree = null
+                slot
             }
         }
 
-        private fun Free_ppnode(ppnode: Array<huffmanNode_t>) {
-            ppnode[0] =  /*(huffmanNode_t *)*/freelist[0] //TODO:fix
-            freelist = ppnode
+        // FIX: Rewritten to use NodeSlot — models C++ void Free_ppnode(huffmanNode_t** ppnode)
+        private fun Free_ppnode(slot: NodeSlot) {
+            slot.node = null
+            slot.nextFree = freelist
+            freelist = slot
         }
 
         /*
@@ -1059,38 +1108,38 @@ object Compressor {
             }
         }
 
+        // FIX: Rewritten to use NodeSlot — matches C++ pointer-pointer dereference semantics
         private fun Increment(node: huffmanNode_t?) {
             val lnode: huffmanNode_t?
             if (null == node) {
                 return
             }
             if (node.next != null && node.next!!.weight == node.weight) {
-                lnode = node.head as huffmanNode_t?
+                lnode = node.head!!.node as huffmanNode_t?  // C++: lnode = *node->head
                 if (lnode !== node.parent) {
                     Swap(lnode!!, node)
                 }
                 Swaplist(lnode!!, node)
             }
             if (node.prev != null && node.prev!!.weight == node.weight) {
-                node.head = node.prev
+                node.head!!.node = node.prev as huffmanNode_t?  // C++: *node->head = node->prev
             } else {
-                val temp = Array(1) { huffmanNode_t() }
-                Free_ppnode(temp)
-                node.head = temp[0]
+                node.head!!.node = null       // C++: *node->head = NULL
+                Free_ppnode(node.head!!)       // C++: Free_ppnode(node->head)
             }
             node.weight++
             if (node.next != null && node.next!!.weight == node.weight) {
                 node.head = node.next!!.head
             } else {
                 node.head = Get_ppnode()
-                node.head = node
+                node.head!!.node = node       // C++: *node->head = node
             }
             if (node.parent != null) {
                 Increment(node.parent as huffmanNode_t?)
                 if (node.prev == node.parent) {
                     Swaplist(node, node.parent as huffmanNode_t)
-                    if (node.head == node) {
-                        node.head = node.parent
+                    if (node.head!!.node == node) {  // C++: if (*node->head == node)
+                        node.head!!.node = node.parent as huffmanNode_t?  // C++: *node->head = node->parent
                     }
                 }
             }
@@ -1206,8 +1255,8 @@ object Compressor {
                     InitProbabilities()
                     j = 0
                     while (j < AC_NUM_BITS) {
-                        code = code shl 1
-                        code = code or ReadBits(1)
+                        // FIX: mask code to 16 bits (C++ unsigned short)
+                        code = ((code shl 1) or ReadBits(1)) and 0xFFFF
                         j++
                     }
                 }
@@ -1296,8 +1345,9 @@ object Compressor {
 
             // rescale high and low for the new symbol.
             range = high - low + 1
-            high = (low + range * symbol.high / scale - 1).toInt()
-            low = (low + range * symbol.low / scale).toInt()
+            // FIX: C++ uses unsigned short — must mask to 16 bits to prevent overflow
+            high = (low + (range.toLong() * symbol.high / scale - 1).toInt()) and 0xFFFF
+            low = (low + (range.toLong() * symbol.low / scale).toInt()) and 0xFFFF
             while (true) {
                 if (high and AC_MSB_MASK == low and AC_MSB_MASK) {
                     // the high digits of low and high have converged, and can be written to the stream
@@ -1315,9 +1365,9 @@ object Compressor {
                     UpdateProbabilities(symbol)
                     return
                 }
-                low = low shl 1
-                high = high shl 1
-                high = high or 1
+                // FIX: mask to 16 bits after shift (C++ unsigned short auto-truncates)
+                low = (low shl 1) and 0xFFFF
+                high = ((high shl 1) or 1) and 0xFFFF
             }
         }
 
@@ -1337,8 +1387,9 @@ object Compressor {
         private fun RemoveSymbolFromStream(symbol: acSymbol_t) {
             val range: Long
             range = (high - low).toLong() + 1
-            high = low + (range * symbol.high / scale - 1).toInt()
-            low = low + (range * symbol.low / scale).toInt()
+            // FIX: C++ uses unsigned short — must mask to 16 bits
+            high = (low + (range * symbol.high / scale - 1).toInt()) and 0xFFFF
+            low = (low + (range * symbol.low / scale).toInt()) and 0xFFFF
             while (true) {
                 if (high and AC_MSB_MASK == low and AC_MSB_MASK) {
                 } else if (low and AC_MSB2_MASK == AC_MSB2_MASK && high and AC_MSB2_MASK == 0) {
@@ -1349,11 +1400,10 @@ object Compressor {
                     UpdateProbabilities(symbol)
                     return
                 }
-                low = low shl 1
-                high = high shl 1
-                high = high or 1
-                code = code shl 1
-                code = code or ReadBits(1)
+                // FIX: mask to 16 bits after shift (C++ unsigned short auto-truncates)
+                low = (low shl 1) and 0xFFFF
+                high = ((high shl 1) or 1) and 0xFFFF
+                code = ((code shl 1) or ReadBits(1)) and 0xFFFF
             }
         }
 
@@ -1474,8 +1524,9 @@ object Compressor {
             while (i < inLength) {
                 n = LZSS_BLOCK_SIZE - blockSize
                 if (inLength - i >= n) {
-//			memcpy( block + blockSize, ((const byte *)inData) + i, n );
-                    inData.get(block, i, n)
+                    // FIX: inData.get(block, i, n) reads from ByteBuffer.position() into block[i], not block[blockSize].
+                    // C++: memcpy(block + blockSize, inData + i, n)  -- use arraycopy like the else-branch.
+                    System.arraycopy(inData.array(), i, block, blockSize, n)
                     blockSize = LZSS_BLOCK_SIZE
                     CompressBlock()
                     blockSize = 0
@@ -1944,9 +1995,11 @@ object Compressor {
                 chain[i++] = dictionary[code].k.toByte()
                 code = dictionary[code].w
             } while (code >= 0)
-            firstChar = chain[--i].toInt()
+            // FIX: chain[] is a signed ByteArray in Kotlin; must mask with 0xFF to treat as unsigned (as C++ does).
+            // C++ `byte` is unsigned char, so chain[i] is always 0-255 there.
+            firstChar = chain[--i].toInt() and 0xFF
             while (i >= 0) {
-                WriteBits(chain[i].toInt(), 8)
+                WriteBits(chain[i].toInt() and 0xFF, 8)
                 i--
             }
             return firstChar
@@ -2000,18 +2053,34 @@ object Compressor {
         }
     }
 
+    // FIX: C++ uses huffmanNode_t** (pointer-to-pointer) for the head field.
+    // Multiple nodes can share the same slot, enabling shared mutation.
+    // This wrapper class simulates that indirection in Kotlin.
+    internal class NodeSlot {
+        var node: huffmanNode_t? = null
+        var nextFree: NodeSlot? = null  // used for freelist chaining
+    }
+
     internal open class nodetype {
-        var head // highest ranked node in block
-                : nodetype? = null
+        var head: NodeSlot? = null       // highest ranked node in block (C++: huffmanNode_t **)
         var left: nodetype? = null
         var right: nodetype? = null
-        var parent // tree structure
-                : nodetype? = null
+        var parent: nodetype? = null     // tree structure
         var next: nodetype? = null
-        var prev // doubly-linked list
-                : nodetype? = null
+        var prev: nodetype? = null       // doubly-linked list
         var symbol = 0
         var weight = 0
+
+        fun reset() {
+            head = null
+            left = null
+            right = null
+            parent = null
+            next = null
+            prev = null
+            symbol = 0
+            weight = 0
+        }
     }
 
     internal class huffmanNode_t : nodetype()

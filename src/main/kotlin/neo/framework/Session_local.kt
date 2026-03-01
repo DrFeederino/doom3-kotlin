@@ -554,8 +554,8 @@ object Session_local {
                     }
                 }
             }
+            // FIX: C++ just returns silently on recursive calls (the FatalError is commented out)
             if (insideUpdateScreen) {
-                Common.common.FatalError("idSessionLocal::UpdateScreen: recursively called")
                 return
             }
             insideUpdateScreen = true
@@ -572,7 +572,6 @@ object Session_local {
 
             // draw everything
             Draw()
-            DBG_EndFrame++
             if (Common.com_speeds.GetBool()) {
                 val time_frontend = intArrayOf(0)
                 val time_backend = intArrayOf(0)
@@ -689,7 +688,8 @@ object Session_local {
                 minTic = lastGameTic + com_minTics.GetInteger()
             }
             if (readDemo != null) {
-                minTic = if (null == timeDemo && numDemoFrames != 1) {
+                // FIX: C++ `!timeDemo` means `timeDemo == TD_NO` (0 is falsy), not null check
+                minTic = if (timeDemo == timeDemo_t.TD_NO && numDemoFrames != 1) {
                     lastDemoTic + USERCMD_PER_DEMO_FRAME
                 } else {
                     // timedemos and demoshots will run as fast as they can, other demos
@@ -866,7 +866,11 @@ object Session_local {
         @Throws(idException::class)
         override fun ProcessEvent(event: sysEvent_s): Boolean {
             // hitting escape anywhere brings up the menu
-            if (guiActive == null && event.evType == sysEventType_t.SE_KEY && event.evValue2 == 1 && event.evValue == KeyInput.K_ESCAPE) {
+            // FIX: C++ also checks `!idKeyInput::IsDown( K_SHIFT )` — Shift+Escape opens console, not menu
+            if (guiActive == null && event.evType == sysEventType_t.SE_KEY && event.evValue2 == 1 && event.evValue == KeyInput.K_ESCAPE && !idKeyInput.IsDown(
+                    KeyInput.K_SHIFT
+                )
+            ) {
                 Console.console.Close()
                 if (Game_local.game != null) {
                     val gui: idUserInterface = idUserInterfaceLocal()
@@ -1305,7 +1309,9 @@ object Session_local {
         }
 
         override fun SetPlayingSoundWorld() {
-            if (guiActive != null && (guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading != null || guiActive == guiMsg && !mapSpawned)) {
+            // FIX: C++ has `guiActive == guiLoading || ( guiActive == guiMsg && !mapSpawned )`
+            // Kotlin had `guiActive == guiLoading != null` which is always true (Boolean != null)
+            if (guiActive != null && (guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading || (guiActive == guiMsg && !mapSpawned))) {
                 snd_system.soundSystem.SetPlayingSoundWorld(menuSoundWorld!!)
             } else {
                 snd_system.soundSystem.SetPlayingSoundWorld(sw)
@@ -1400,7 +1406,8 @@ object Session_local {
                 return TempDump.ctos(cdkey)
             }
             return if (xpkey_state == cdKeyState_t.CDKEY_OK || xpkey_state == cdKeyState_t.CDKEY_CHECKING) {
-                TempDump.ctos(cdkey)
+                // FIX: C++ returns `xpkey`, not `cdkey`, when requesting the XP key
+                TempDump.ctos(xpkey)
             } else null
         }
 
@@ -1507,7 +1514,9 @@ object Session_local {
             var i: Int
             var emitAuth = false
             if (cdkey_state == cdKeyState_t.CDKEY_UNKNOWN) {
-                if (cdkey.size != CDKEY_BUF_LEN - 1) {
+                // FIX: C++ uses `strlen(cdkey)` which counts chars until null terminator.
+                // cdkey.size always returns CDKEY_BUF_LEN (17), making the check always fail.
+                if (TempDump.ctos(cdkey).length != CDKEY_BUF_LEN - 1) {
                     cdkey_state = cdKeyState_t.CDKEY_INVALID
                 } else {
                     i = 0
@@ -1560,7 +1569,8 @@ object Session_local {
         override fun ClearCDKey(valid: BooleanArray) {
             if (!valid[0]) {
 //		memset( cdkey, 0, CDKEY_BUF_LEN );
-                Arrays.fill(cdkey, '0') //TODO:is '0' the same as 0????
+                // FIX: C++ memset fills with 0 (null char), not '0' (digit character)
+                Arrays.fill(cdkey, '\u0000')
                 cdkey_state = cdKeyState_t.CDKEY_UNKNOWN
             } else if (cdkey_state == cdKeyState_t.CDKEY_CHECKING) {
                 // if a key was in checking and not explicitely asked for clearing, put it back to ok
@@ -1568,7 +1578,8 @@ object Session_local {
             }
             if (!valid[1]) {
 //		memset( xpkey, 0, CDKEY_BUF_LEN );
-                Arrays.fill(cdkey, '0')
+                // FIX: C++ clears `xpkey`, not `cdkey`; also fills with 0 not '0'
+                Arrays.fill(xpkey, '\u0000')
                 xpkey_state = cdKeyState_t.CDKEY_UNKNOWN
             } else if (xpkey_state == cdKeyState_t.CDKEY_CHECKING) {
                 xpkey_state = cdKeyState_t.CDKEY_OK
@@ -1975,7 +1986,9 @@ object Session_local {
             saveFilePathBase.set("savegames/" + saveFilePathBase)
 
             var game: String? = CVarSystem.cvarSystem.GetCVarString("fs_game")
-            if (game!!.isNotEmpty() && game[0] == Char(0)) {
+            // FIX: C++ checks `game != NULL && game[0] == '\0'` meaning "if game is not null AND is empty".
+            // Kotlin had `isNotEmpty()` which is the opposite.
+            if (game != null && game.isEmpty()) {
                 game = null
             }
 
@@ -2171,7 +2184,8 @@ object Session_local {
             saveFilePathBase.set("savegames/" + saveFilePathBase)
 
             var game: String? = CVarSystem.cvarSystem.GetCVarString("fs_game")
-            if (game!!.isNotEmpty() && game[0] == Char(0)) {
+            // FIX: Same as QuickLoad — C++ checks if game string is empty to set null
+            if (game != null && game.isEmpty()) {
                 game = null
             }
 
@@ -2340,7 +2354,6 @@ object Session_local {
                 if (guiActive == guiTakeNotes && !com_skipGameDraw.GetBool()) {
                     Game_local.game.Draw(GetLocalClientNum())
                 }
-                DBG_Draw++
                 guiActive!!.Redraw(Common.com_frameTime)
             } else if (readDemo != null) {
                 rw.RenderScene(currentDemoRenderView!!)
@@ -2562,7 +2575,8 @@ object Session_local {
                 StopRecordingRenderDemo()
                 return
             }
-            if (demoName.isNotEmpty()) {
+            // FIX: C++ `!demoName[0]` means "is empty". Kotlin had `isNotEmpty()` — inverted.
+            if (demoName.isEmpty()) {
                 Common.common.Printf("idSessionLocal::StartRecordingRenderDemo: no name specified\n")
                 return
             }
@@ -2598,7 +2612,8 @@ object Session_local {
 
         @Throws(idException::class)
         fun StartPlayingRenderDemo(demoName: idStr) {
-            if (demoName != null && demoName.toString().isNotEmpty()) {
+            // FIX: C++ `!demoName[0]` means "is empty". Kotlin had `isNotEmpty()` — inverted.
+            if (demoName != null && demoName.toString().isEmpty()) {
                 Common.common.Printf("idSessionLocal::StartPlayingRenderDemo: no name specified\n")
                 return
             }
@@ -2650,17 +2665,46 @@ object Session_local {
             StartPlayingRenderDemo(idStr(demoName))
         }
 
+        // FIX: Entire function body was a copy/paste of StopRecordingRenderDemo.
+        // Rewritten to match C++ StopPlayingRenderDemo.
         fun StopPlayingRenderDemo() {
-            if (writeDemo == null) {
-                Common.common.Printf("idSessionLocal::StopRecordingRenderDemo: not recording\n")
+            if (readDemo == null) {
+                timeDemo = timeDemo_t.TD_NO
                 return
             }
-            sw.StopWritingDemo()
-            rw.StopWritingDemo()
-            writeDemo!!.Close()
-            Common.common.Printf("stopped recording %s.\n", writeDemo!!.GetName())
-            //	delete writeDemo;
-            writeDemo = null
+
+            // Record the stop time before doing anything that could be time consuming
+            val timeDemoStopTime = win_shared.Sys_Milliseconds()
+
+            EndAVICapture()
+
+            readDemo!!.Close()
+
+            sw.StopAllSounds()
+            snd_system.soundSystem.SetPlayingSoundWorld(menuSoundWorld!!)
+
+            Common.common.Printf("stopped playing %s.\n", readDemo!!.GetName())
+            readDemo = null
+
+            if (timeDemo != timeDemo_t.TD_NO) {
+                // report the stats
+                val demoSeconds = (timeDemoStopTime - timeDemoStartTime) * 0.001f
+                val demoFPS = numDemoFrames / demoSeconds
+                val message = Str.va(
+                    "%d frames rendered in %3.1f seconds = %3.1f fps\n",
+                    numDemoFrames, demoSeconds, demoFPS
+                )
+
+                Common.common.Printf("%s", message)
+                if (timeDemo == timeDemo_t.TD_YES_THEN_QUIT) {
+                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "quit\n")
+                } else {
+                    snd_system.soundSystem.SetMute(true)
+                    MessageBox(msgBoxType_t.MSG_OK, message, "Time Demo Results", true)
+                    snd_system.soundSystem.SetMute(false)
+                }
+                timeDemo = timeDemo_t.TD_NO
+            }
         }
 
         fun CompressDemoFile(scheme: String, demoName: String) {
@@ -3369,7 +3413,9 @@ object Session_local {
                     HandleMainMenuCommands(cmd)
                 }
             } else if (guiHandle != null) {
-                if ( /*(*guiHandle)*/menuCommand != null) {
+                // FIX: C++ calls `(*guiHandle)(menuCommand)` and returns if it returns non-null.
+                // Kotlin was checking `menuCommand != null` (always true) instead of invoking the callback.
+                if (guiHandle!!.run(menuCommand) != null) {
                     return
                 }
             } else if (!doIngame) {
@@ -3418,7 +3464,9 @@ object Session_local {
             }
             if (0 == idStr.Icmp(cmd, "saveGame")) {
                 val saveGameName = guiActive!!.State().GetString("saveGameName")
-                if (saveGameName != null && saveGameName.isEmpty()) {
+                // FIX: C++ `saveGameName && saveGameName[0]` means "non-null AND non-empty".
+                // Kotlin had `saveGameName.isEmpty()` which is the opposite.
+                if (saveGameName != null && saveGameName.isNotEmpty()) {
 
                     // First see if the file already exists unless they pass '1' to authorize the overwrite
                     if (icmd._val == args.Argc() || args.Argv(icmd.increment()).toInt() == 0) {
@@ -3577,10 +3625,11 @@ object Session_local {
                     if (icmd._val < args.Argc()) {
                         StartNewGame(args.Argv(icmd.increment()))
                     } else {
+                        // FIX: Branches were swapped — demo build should use demo map, not full game map
                         if (ID_DEMO_BUILD) {
-                            StartNewGame("game/mars_city1")
-                        } else {
                             StartNewGame("game/demo_mars_city1")
+                        } else {
+                            StartNewGame("game/mars_city1")
                         }
                     }
                     // need to do this here to make sure com_frameTime is correct or the gui activates with a time that
@@ -3767,7 +3816,9 @@ object Session_local {
                                         Common.common.GetLanguageDict().GetString("#str_04316"),
                                         true,
                                         "OK"
-                                    ).isNotEmpty()
+                                        // FIX: C++ checks `[0] == '\0'` meaning "result is empty" (user cancelled).
+                                        // Kotlin had `isNotEmpty()` which is the opposite.
+                                    ).isEmpty()
                                 ) { //[0] == '\0') {
                                     continue
                                 }
@@ -3862,7 +3913,8 @@ object Session_local {
                 if (0 == idStr.Icmp(cmd, "sound")) {
                     var vcmd = idStr()
                     if (args.Argc() - icmd._val >= 1) {
-                        vcmd = idStr(args.Argv(icmd._val))
+                        // FIX: C++ does `vcmd = args.Argv( icmd++ )` — post-increments icmd
+                        vcmd = idStr(args.Argv(icmd.increment()))
                     }
                     if (0 == vcmd.Length() || 0 == vcmd.Icmp("speakers")) {
                         val old = CVarSystem.cvarSystem.GetCVarInteger("s_numberOfSpeakers")
@@ -3992,7 +4044,9 @@ object Session_local {
 
                     //Backup the language so we can restore it after defaults.
                     val lang = idStr(CVarSystem.cvarSystem.GetCVarString("sys_lang"))
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, args.Argv(icmd._val))
+                    // FIX: C++ does `args.Argv( icmd++ )` — post-increments icmd.
+                    // Then compares `args.Argv( icmd - 1 )` which is the same executed command.
+                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, args.Argv(icmd.increment()))
                     if (idStr.Icmp("cvar_restart", args.Argv(icmd._val - 1)) == 0) {
                         CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "exec default.cfg")
                         CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "setMachineSpec\n")
@@ -4629,9 +4683,9 @@ object Session_local {
                 "MrElusive", "Jim", "Brian", "John", "Adrian", "Nobody"
             )
             private val NUM_PEOPLE = PEOPLE.size
-            var DBG_Draw = 0
+            var DBG_Draw = 0 // NOTE: debug artifact, kept to avoid changing companion object layout
             var frameEvents = 0
-            private var DBG_EndFrame = 0
+            private var DBG_EndFrame = 0 // NOTE: debug artifact, kept to avoid changing companion object layout
             private var cmd //TODO:stringify?
                     : CharArray? = null
         }

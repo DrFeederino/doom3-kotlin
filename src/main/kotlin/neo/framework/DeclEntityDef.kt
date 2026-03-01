@@ -1,3 +1,28 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/framework/DeclEntityDef.h
+ *                  neo/framework/DeclEntityDef.cpp
+ *
+ * Doom 3 GPL Source Code
+ * This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package neo.framework
 
 import neo.Game.Game_local
@@ -21,12 +46,32 @@ class DeclEntityDef {
      */
     class idDeclEntityDef : idDecl() {
         var dict: idDict = idDict()
+
+        /*
+         =================
+         idDeclEntityDef::Size
+         =================
+         */
+        // NOTE: The C++ version overrides Size() to return sizeof(idDeclEntityDef) + dict.Allocated().
+        // In the Kotlin architecture, idDecl does not expose Size() as an overridable method —
+        // Size() is defined on idDeclBase and implemented by idDeclLocal, which does not delegate
+        // to the idDecl subclass. This means dict.Allocated() is never included in the reported
+        // size. This is a structural limitation of the Kotlin port's decl architecture.
+
+        /*
+         ================
+         idDeclEntityDef::DefaultDefinition
+         ================
+         */
         override fun DefaultDefinition(): String {
-            return """{
-	"DEFAULTED"	"1"
-}"""
+            return "{\n\t\"DEFAULTED\"\t\"1\"\n}"
         }
 
+        /*
+         ================
+         idDeclEntityDef::Parse
+         ================
+         */
         @Throws(idException::class)
         override fun Parse(text: String, textLength: Int): Boolean {
             val src = idLexer()
@@ -63,21 +108,20 @@ class DeclEntityDef {
 
             // "inherit" keys will cause all values from another entityDef to be copied into this one
             // if they don't conflict.  We can't have circular recursions, because each entityDef will
-            // never be parsed mroe than once
+            // never be parsed more than once
+
             // find all of the dicts first, because copying inherited values will modify the dict
             val defList = idList<idDeclEntityDef>()
             while (true) {
-                val kv: idKeyValue?
-                kv = dict.MatchPrefix("inherit", null)
+                val kv: idKeyValue? = dict.MatchPrefix("inherit", null)
                 if (null == kv) {
                     break
                 }
-                val copy =  /*static_cast<const idDeclEntityDef *>*/
-                    DeclManager.declManager.FindType(
-                        declType_t.DECL_ENTITYDEF,
-                        kv.GetValue(),
-                        false
-                    ) as idDeclEntityDef?
+                val copy = DeclManager.declManager.FindType(
+                    declType_t.DECL_ENTITYDEF,
+                    kv.GetValue(),
+                    false
+                ) as idDeclEntityDef?
                 if (null == copy) {
                     src.Warning("Unknown entityDef '%s' inherited by '%s'", kv.GetValue(), GetName())
                 } else {
@@ -95,12 +139,20 @@ class DeclEntityDef {
 
             // precache all referenced media
             // do this as long as we arent in modview
+            // NOTE: Kotlin infix `and` has higher precedence than `==`, so this parses as:
+            //   0 == (com_editors and (EDITOR_RADIANT or EDITOR_AAS))
+            // which correctly matches C++: !(com_editors & (EDITOR_RADIANT|EDITOR_AAS))
             if (0 == Common.com_editors and (Common.EDITOR_RADIANT or Common.EDITOR_AAS)) {
                 Game_local.game.CacheDictionaryMedia(dict)
             }
             return true
         }
 
+        /*
+         ================
+         idDeclEntityDef::FreeData
+         ================
+         */
         override fun FreeData() {
             dict.Clear()
         }

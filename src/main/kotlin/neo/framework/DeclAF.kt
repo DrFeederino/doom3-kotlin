@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/framework/DeclAF.h, neo/framework/DeclAF.cpp
+ *
+ * Doom 3 GPL Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ */
+
 package neo.framework
 
 import neo.Renderer.Material
@@ -39,11 +52,10 @@ class DeclAF {
             jointName: idStr,
             origin: idVec3,
             axis: idMat3
-        ): Boolean //TODO:phase out overload
+        ): Boolean
     }
 
     class idAFVector {
-        private val DBG_count = DBG_counter++
         var joint1: idStr
         var joint2: idStr
         var idAFVectorType: idFVectorTypes = idFVectorTypes.VEC_COORDS
@@ -206,7 +218,7 @@ class DeclAF {
                 else -> {}
             }
             if (negate) {
-                str.set("-$str") //TODO:don't set= idStr reference
+                str.set("-$str")
             }
             return str.toString()
         }
@@ -217,12 +229,6 @@ class DeclAF {
 
         enum class idFVectorTypes {
             VEC_COORDS, VEC_JOINT, VEC_BONECENTER, VEC_BONEDIR
-        } //public	idVec3 &				ToVec3( void ) { return vec; }
-
-        companion object {
-            //
-            //
-            private var DBG_counter = 0
         }
 
         init {
@@ -278,8 +284,10 @@ class DeclAF {
             linearFriction = file.defaultLinearFriction
             angularFriction = file.defaultAngularFriction
             contactFriction = file.defaultContactFriction
-            contents = file.contents
-            clipMask = file.clipMask
+            // FIX: copy integer value, not the CInt reference — otherwise body.contents and
+            // file.contents would alias the same CInt object, corrupting file state on ParseContents
+            contents._val = file.contents._val
+            clipMask._val = file.clipMask._val
             selfCollision = file.selfCollision
             frictionDirection = idAFVector()
             contactMotorDirection = idAFVector()
@@ -364,7 +372,7 @@ class DeclAF {
 	settings {
 		model ""
 		skin ""
-		friction 0.01, 0.01, 0.8, 0.5f
+		friction 0.01, 0.01, 0.8, 0.5
 		suspendSpeed 20, 30, 40, 60
 		noMoveTime 1
 		noMoveTranslation 10
@@ -381,7 +389,7 @@ class DeclAF {
 		mod orientation
 		model box( ( -10, -10, -10 ), ( 10, 10, 10 ) )
 		origin ( 0, 0, 0 )
-		density 0.2f
+		density 0.2
 		friction 0.01, 0.01, 0.8
 		contents corpse
 		clipMask solid, corpse
@@ -392,7 +400,11 @@ class DeclAF {
 """
         }
 
-        // 
+        /*
+         ================
+         idDeclAF::Parse
+         ================
+         */
         @Throws(idException::class)
         override fun Parse(text: String, textLength: Int): Boolean {
             var i: Int
@@ -543,7 +555,11 @@ class DeclAF {
             }
         }
 
-        // 
+        /*
+         ================
+         idDeclAF::Save
+         ================
+         */
         @Throws(idException::class)
         fun Save(): Boolean {
             RebuildTextSource()
@@ -589,7 +605,6 @@ class DeclAF {
             }
         }
 
-        // 
         /*
          ================
          idDeclAF::DeleteBody
@@ -603,7 +618,6 @@ class DeclAF {
             i = 0
             while (i < bodies.Num()) {
                 if (bodies[i].name.Icmp(name) == 0) {
-//			delete bodies.oGet(i);
                     bodies.RemoveIndex(i)
                     break
                 }
@@ -614,7 +628,6 @@ class DeclAF {
                 if (constraints[i].body1.Icmp(name) == 0
                     || constraints[i].body2.Icmp(name) == 0
                 ) {
-//			delete constraints.oGet(i);
                     constraints.RemoveIndex(i)
                     i--
                 }
@@ -630,7 +643,11 @@ class DeclAF {
             constraints.Append(constraint)
         }
 
-        // 
+        /*
+         ================
+         idDeclAF::RenameConstraint
+         ================
+         */
         fun RenameConstraint(oldName: String, newName: String) {
             var i: Int
             i = 0
@@ -648,7 +665,6 @@ class DeclAF {
             i = 0
             while (i < constraints.Num()) {
                 if (constraints[i].name.Icmp(name) == 0) {
-//			delete constraints.oGet(i);
                     constraints.RemoveIndex(i)
                     return
                 }
@@ -676,8 +692,8 @@ class DeclAF {
             var hasJoint = false
             val token = idToken()
             val angles = idAFVector()
-            val body: idDeclAF_Body // = new idDeclAF_Body();
-            body = idDeclAF_Body() // instead of bodies.Alloc()
+            val body: idDeclAF_Body
+            body = idDeclAF_Body()
             bodies.Append(body)
             body.SetDefault(this)
             if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
@@ -771,7 +787,7 @@ class DeclAF {
                         src.Error("custom models not yet implemented")
                         return false
                     } else {
-                        src.Error("unkown model type %s", token.toString())
+                        src.Error("unknown model type %s", token.toString())
                         return false
                     }
                 } else if (0 == token.Icmp("origin")) {
@@ -846,9 +862,9 @@ class DeclAF {
         private fun ParseFixed(src: idLexer): Boolean {
             val token = idToken()
             val constraint: idDeclAF_Constraint
-            constraint = idDeclAF_Constraint()//constraints.Alloc()
+            constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
-            constraint.SetDefault(this) //TODO:make sure this order is correct.
+            constraint.SetDefault(this)
             if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
                 || !src.ExpectTokenString("{")
             ) {
@@ -876,8 +892,8 @@ class DeclAF {
         @Throws(idException::class)
         private fun ParseBallAndSocketJoint(src: idLexer): Boolean {
             val token = idToken()
-            val constraint: idDeclAF_Constraint //= new idDeclAF_Constraint();
-            constraint = idDeclAF_Constraint() // instead of constraints.Alloc() stuff
+            val constraint: idDeclAF_Constraint
+            constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
             if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
@@ -951,7 +967,7 @@ class DeclAF {
         @Throws(idException::class)
         private fun ParseUniversalJoint(src: idLexer): Boolean {
             val token = idToken()
-            val constraint: idDeclAF_Constraint // = new idDeclAF_Constraint;
+            val constraint: idDeclAF_Constraint
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
@@ -1024,9 +1040,9 @@ class DeclAF {
         @Throws(idException::class)
         private fun ParseHinge(src: idLexer): Boolean {
             val token = idToken()
-            val constraint: idDeclAF_Constraint // = new idDeclAF_Constraint;
+            val constraint: idDeclAF_Constraint
             constraint = idDeclAF_Constraint()
-            constraints.Append(constraint)// constraints.Alloc()
+            constraints.Append(constraint)
             constraint.SetDefault(this)
             if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
                 || !src.ExpectTokenString("{")
@@ -1080,9 +1096,9 @@ class DeclAF {
         @Throws(idException::class)
         private fun ParseSlider(src: idLexer): Boolean {
             val token = idToken()
-            val constraint: idDeclAF_Constraint // = new idDeclAF_Constraint;
+            val constraint: idDeclAF_Constraint
             constraint = idDeclAF_Constraint()
-            constraints.Append(constraint) //constraints.Alloc()
+            constraints.Append(constraint)
             constraint.SetDefault(this)
             if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
                 || !src.ExpectTokenString("{")
@@ -1119,9 +1135,9 @@ class DeclAF {
         @Throws(idException::class)
         private fun ParseSpring(src: idLexer): Boolean {
             val token = idToken()
-            val constraint: idDeclAF_Constraint // = new idDeclAF_Constraint;
+            val constraint: idDeclAF_Constraint
             constraint = idDeclAF_Constraint()
-            constraints.Append(constraint)//constraints.Alloc()
+            constraints.Append(constraint)
             constraint.SetDefault(this)
             if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
                 || !src.ExpectTokenString("{")
@@ -1251,7 +1267,11 @@ class DeclAF {
             return true
         }
 
-        //
+        /*
+         ================
+         idDeclAF::WriteBody
+         ================
+         */
         private fun WriteBody(f: idFile, body: idDeclAF_Body): Boolean {
             val str = idStr()
             f.WriteFloatString("\nbody \"%s\" {\n", body.name.toString())
@@ -1311,7 +1331,9 @@ class DeclAF {
             f.WriteFloatString("\torigin ")
             body.origin.Write(f)
             f.WriteFloatString("\n")
-            if (body.angles !== ang_zero) {
+            // FIX: use structural equality (!=) not referential (!==); !== is always true since
+            // body.angles and ang_zero are always distinct objects, causing angles to be written even when zero
+            if (body.angles != ang_zero) {
                 f.WriteFloatString("\tangles ( %f, %f, %f )\n", body.angles.pitch, body.angles.yaw, body.angles.roll)
             }
             f.WriteFloatString("\tdensity %f\n", body.density)
@@ -1334,7 +1356,10 @@ class DeclAF {
             }
             f.WriteFloatString("\tcontents %s\n", ContentsToString(body.contents._val, str))
             f.WriteFloatString("\tclipMask %s\n", ContentsToString(body.clipMask._val, str))
-            f.WriteFloatString("\tselfCollision %d\n", body.selfCollision)
+            // FIX: Boolean is not a Number in Kotlin/JVM — FS_WriteFloatString casts %d args
+            // via (arg as Number).toLong(), which throws ClassCastException for Boolean.
+            // C++ implicitly promotes bool to int for variadic args; Kotlin needs explicit conversion.
+            f.WriteFloatString("\tselfCollision %d\n", if (body.selfCollision) 1 else 0)
             if (body.frictionDirection.ToVec3() != getVec3Origin()) {
                 f.WriteFloatString("\tfrictionDirection ")
                 body.frictionDirection.Write(f)
@@ -1502,12 +1527,17 @@ class DeclAF {
             f.WriteFloatString("\ttotalMass %f\n", totalMass)
             f.WriteFloatString("\tcontents %s\n", ContentsToString(contents._val, str))
             f.WriteFloatString("\tclipMask %s\n", ContentsToString(clipMask._val, str))
-            f.WriteFloatString("\tselfCollision %d\n", selfCollision)
+            // FIX: Boolean → Int for %d format (see WriteBody fix for explanation)
+            f.WriteFloatString("\tselfCollision %d\n", if (selfCollision) 1 else 0)
             f.WriteFloatString("}\n")
             return true
         }
 
-        //
+        /*
+         ================
+         idDeclAF::RebuildTextSource
+         ================
+         */
         private fun RebuildTextSource(): Boolean {
             var i: Int
             val f = idFile_Memory()
@@ -1544,8 +1574,11 @@ class DeclAF {
         }
 
         companion object {
-            //public virtual					~idDeclAF( void );
-            // 
+            /*
+             ================
+             idDeclAF::ContentsFromString
+             ================
+             */
             @Throws(idException::class)
             fun ContentsFromString(str: String): Int {
                 var c: Int
@@ -1624,7 +1657,11 @@ class DeclAF {
                 } else declAFJointMod_t.DECLAF_JOINTMOD_AXIS
             }
 
-            //public virtual void			FreeData( void );
+            /*
+             ================
+             idDeclAF::JointModToString
+             ================
+             */
             fun JointModToString(jointMod: declAFJointMod_t): String {
                 when (jointMod) {
                     declAFJointMod_t.DECLAF_JOINTMOD_AXIS -> {
@@ -1643,8 +1680,6 @@ class DeclAF {
             }
         }
 
-        //
-        //
         init {
             FreeData()
         }

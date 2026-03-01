@@ -1,3 +1,29 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/framework/Console.cpp, neo/framework/Console.h
+ *
+ * Doom 3 GPL Source Code
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ *
+ * This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package neo.framework
 
 import neo.Renderer.Material
@@ -23,6 +49,7 @@ import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
 import neo.sys.win_input
 import neo.sys.win_shared
+import java.nio.ByteBuffer
 import kotlin.experimental.and
 
 class Console {
@@ -61,6 +88,8 @@ class Console {
         abstract fun Close()
         abstract fun Draw(forceFullScreen: Boolean)
         abstract fun Print(text: String)
+        abstract fun SaveHistory()
+        abstract fun LoadHistory()
     }
 
     // the console will query the cvar and command systems for
@@ -78,15 +107,6 @@ class Console {
             //
             private val con_speed: idCVar =
                 idCVar("con_speed", "3", CVarSystem.CVAR_SYSTEM, "speed at which the console moves up and down")
-
-            /*
-         ================
-         DrawNotify
-
-         Draws the last few lines of output transparently over the game top
-         ================
-         */
-            var drawNotifyTotal = 0
 
             init {
                 con_noPrint = idCVar(
@@ -196,10 +216,11 @@ class Console {
         @Throws(idException::class)
         override fun ProcessEvent(event: sysEvent_s, forceAccept: Boolean): Boolean {
             var consoleKey: Boolean
+            // FIX: Added shift+esc as an additional console-open trigger (dhewm3 feature)
             consoleKey =
-                event.evType == sysEventType_t.SE_KEY && (event.evValue == win_input.Sys_GetConsoleKey(false).code || event.evValue == win_input.Sys_GetConsoleKey(
-                    true
-                ).code)
+                event.evType == sysEventType_t.SE_KEY && (event.evValue == win_input.Sys_GetConsoleKey(false).code
+                        || event.evValue == win_input.Sys_GetConsoleKey(true).code
+                        || (event.evValue == KeyInput.K_ESCAPE && idKeyInput.IsDown(KeyInput.K_SHIFT)))
             if (ID_CONSOLE_LOCK) {
                 // If the console's not already down, and we have it turned off, check for ctrl+alt
                 if (!keyCatching && !Common.com_allowConsole.GetBool()) {
@@ -220,13 +241,14 @@ class Console {
                 // a down event will toggle the destination lines
                 if (keyCatching) {
                     Close()
-                    win_input.Sys_GrabMouseCursor(true)
                     CVarSystem.cvarSystem.SetCVarBool("ui_chat", false)
                 } else {
                     consoleField.Clear()
                     keyCatching = true
-                    if (idKeyInput.IsDown(KeyInput.K_SHIFT)) {
+                    // FIX: shift+esc should open at 0.5f (same as normal open); only plain shift opens at 0.2f
+                    if (idKeyInput.IsDown(KeyInput.K_SHIFT) && event.evValue != KeyInput.K_ESCAPE) {
                         // if the shift key is down, don't open the console as much
+                        // (except when shift+esc was used — that should open at full 0.5)
                         SetDisplayFraction(0.2f)
                     } else {
                         SetDisplayFraction(0.5f)
@@ -324,9 +346,10 @@ class Console {
                 // if we should wrap to the new line
                 if (c > ' '.code && (x == 0 || text[y * LINE_WIDTH + x - 1] <= ' '.code)) {
                     // count word length
+                    // FIX: Added missing break — without it, word wrapping never triggers
                     l = 0
-                    while (l < LINE_WIDTH && l < txt.length) {
-                        if (txt[l] <= ' ') {
+                    while (l < LINE_WIDTH) {
+                        if (txt_p + l >= txt.length || txt[txt_p + l] <= ' ') {
                             break
                         }
                         l++
@@ -400,9 +423,10 @@ class Console {
                 }
             }
 
-//            if (com_showFPS.GetBool()) {
-            y = SCR_DrawFPS(0.0f)
-            //            }
+            // FIX: Restored com_showFPS guard — FPS counter should only show when the cvar is set
+            if (Common.com_showFPS.GetBool()) {
+                y = SCR_DrawFPS(0.0f)
+            }
             if (Common.com_showMemoryUsage.GetBool()) {
                 y = SCR_DrawMemoryUsage(y)
             }
@@ -475,7 +499,9 @@ class Console {
                 buffer[x + 1] = '\r'
                 buffer[x + 2] = '\n'
                 buffer[x + 3] = Char(0)
-                f.WriteString(buffer)
+                // FIX: C++ uses f->Write(buffer, strlen(buffer)) for raw output;
+                // WriteString adds a 4-byte length prefix which corrupts the dump file
+                f.Write(ByteBuffer.wrap(String(buffer, 0, x + 3).toByteArray()))
                 l++
             }
             FileSystem_h.fileSystem.CloseFile(f)
@@ -491,6 +517,45 @@ class Console {
                 i++
             }
             Bottom() // go to end
+        }
+
+        /*
+         ================
+         idConsoleLocal.SaveHistory
+         ================
+         */
+        override fun SaveHistory() {
+            val f: idFile = FileSystem_h.fileSystem.OpenFileWrite("consolehistory.dat") ?: return
+            for (i in 0 until COMMAND_HISTORY) {
+                // make sure the history is in the right order
+                val line = (nextHistoryLine + i) % COMMAND_HISTORY
+                val s = TempDump.ctos(historyEditLines[line].GetBuffer())
+                if (s.isNotEmpty()) {
+                    f.WriteString(s)
+                }
+            }
+            FileSystem_h.fileSystem.CloseFile(f)
+        }
+
+        /*
+         ================
+         idConsoleLocal.LoadHistory
+         ================
+         */
+        override fun LoadHistory() {
+            val f: idFile = FileSystem_h.fileSystem.OpenFileRead("consolehistory.dat") ?: return
+            historyLine = 0
+            val tmp = idStr()
+            for (i in 0 until COMMAND_HISTORY) {
+                if (f.Tell() >= f.Length()) {
+                    break // EOF reached
+                }
+                f.ReadString(tmp)
+                historyEditLines[i].SetBuffer(tmp.toString())
+                ++historyLine
+            }
+            nextHistoryLine = historyLine
+            FileSystem_h.fileSystem.CloseFile(f)
         }
 
         /*
@@ -522,11 +587,18 @@ class Console {
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, buffer) // valid command
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "\n")
 
-                // copy line to history buffer
-                historyEditLines[nextHistoryLine % COMMAND_HISTORY] = consoleField
-                nextHistoryLine++
+                // copy line to history buffer, if it isn't the same as the last command
+                // FIX: Use SetBuffer to copy content, not reference assignment (C++ operator= copies values)
+                val lastHistoryBuffer =
+                    TempDump.ctos(historyEditLines[(nextHistoryLine + COMMAND_HISTORY - 1) % COMMAND_HISTORY].GetBuffer())
+                if (idStr.Cmp(buffer, lastHistoryBuffer) != 0) {
+                    historyEditLines[nextHistoryLine % COMMAND_HISTORY].SetBuffer(TempDump.ctos(consoleField.GetBuffer()))
+                    nextHistoryLine++
+                }
                 historyLine = nextHistoryLine
-                consoleField = idEditField()
+                // clear the next line from old garbage, else the oldest history entry turns up when pressing DOWN
+                historyEditLines[nextHistoryLine % COMMAND_HISTORY].Clear()
+                consoleField.Clear()
                 consoleField.SetWidthInChars(LINE_WIDTH)
                 Session.session.UpdateScreen() // force an update, because the command
                 // may take some time
@@ -540,23 +612,26 @@ class Console {
             }
 
             // command history (ctrl-p ctrl-n for unix style)
+            // FIX: C++ uses tolower(key) — must match both 'p'/'P' and 'n'/'N'
             if (key == KeyInput.K_UPARROW
-                || key == 'p'.code && idKeyInput.IsDown(KeyInput.K_CTRL)
+                || (key == 'p'.code || key == 'P'.code) && idKeyInput.IsDown(KeyInput.K_CTRL)
             ) {
                 if (nextHistoryLine - historyLine < COMMAND_HISTORY && historyLine > 0) {
                     historyLine--
                 }
-                consoleField = historyEditLines[historyLine % COMMAND_HISTORY]
+                // FIX: Copy content instead of aliasing reference (C++ operator= copies values)
+                consoleField.SetBuffer(TempDump.ctos(historyEditLines[historyLine % COMMAND_HISTORY].GetBuffer()))
                 return
             }
             if (key == KeyInput.K_DOWNARROW
-                || key == 'n'.code && idKeyInput.IsDown(KeyInput.K_CTRL)
+                || (key == 'n'.code || key == 'N'.code) && idKeyInput.IsDown(KeyInput.K_CTRL)
             ) {
                 if (historyLine == nextHistoryLine) {
                     return
                 }
                 historyLine++
-                consoleField = historyEditLines[historyLine % COMMAND_HISTORY]
+                // FIX: Copy content instead of aliasing reference (C++ operator= copies values)
+                consoleField.SetBuffer(TempDump.ctos(historyEditLines[historyLine % COMMAND_HISTORY].GetBuffer()))
                 return
             }
 
@@ -695,7 +770,6 @@ class Console {
             var i: Int
             var time: Int
             var currentColor: Int
-            drawNotifyTotal++
             if (con_noPrint.GetBool()) {
                 return
             }
@@ -753,7 +827,10 @@ class Console {
          */
         private fun DrawSolidConsole(frac: Float) {
             var i: Int
-            var x: Int
+            // FIX: Must initialize x — C++ leaves it uninitialized (UB) but Kotlin requires
+            // definite assignment. Initialized to 0 so the `if (x == 0) row--` check works
+            // correctly when the arrow-drawing loop doesn't execute (display == current).
+            var x: Int = 0
             var y: Float
             var rows: Int
             var text_p: Int
@@ -903,7 +980,7 @@ class Console {
             if (idKeyInput.IsDown(KeyInput.K_PGDN)) {
                 PageDown()
                 nextKeyEvent = CONSOLE_REPEAT
-                //                return;
+                return
             }
         }
 

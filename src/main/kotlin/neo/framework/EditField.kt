@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/framework/EditField.cpp, neo/framework/EditField.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
 package neo.framework
 
 import neo.Renderer.Material
@@ -40,7 +57,11 @@ object EditField {
         private var scroll = 0
         private var widthInChars = 0
 
-        //public					~idEditField();
+        /*
+         ===============
+         idEditField::Clear
+         ===============
+         */
         fun Clear() {
             buffer[0] = Char(0)
             cursor = 0
@@ -64,7 +85,7 @@ object EditField {
         }
 
         fun ClearAutoComplete() {
-            if (autoComplete.length > 0 && autoComplete.length <= TempDump.ctos(buffer).length) {
+            if (autoComplete.length > 0 && autoComplete.length <= TempDump.strLen(buffer)) {
                 buffer[autoComplete.length] = '\u0000'
                 if (cursor > autoComplete.length) {
                     cursor = autoComplete.length
@@ -118,7 +139,7 @@ object EditField {
                     CmdSystem.cmdSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), findMatches)
                     CVarSystem.cvarSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), findMatches)
                     autoComplete = globalAutoComplete
-                    idStr.snPrintf(buffer, buffer.size, "%s", autoComplete.currentMatch)
+                    idStr.snPrintf(buffer, buffer.size, "%s", TempDump.ctos(autoComplete.currentMatch))
                     if (autoComplete.matchCount == 0) {
                         // no argument matches
                         idStr.Append(buffer, buffer.size, " ")
@@ -145,7 +166,7 @@ object EditField {
                 CmdSystem.cmdSystem.CommandCompletion(printMatches)
                 CmdSystem.cmdSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), printMatches)
                 CVarSystem.cvarSystem.CommandCompletion(PrintCvarMatches.getInstance())
-                CmdSystem.cmdSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), printMatches)
+                CVarSystem.cvarSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), printMatches)
             } else if (autoComplete.matchCount != 1) {
 
                 // get the next match and show instead
@@ -158,11 +179,11 @@ object EditField {
                 CmdSystem.cmdSystem.CommandCompletion(findIndexMatch)
                 CmdSystem.cmdSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), findIndexMatch)
                 CVarSystem.cvarSystem.CommandCompletion(findIndexMatch)
-                CmdSystem.cmdSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), findIndexMatch)
+                CVarSystem.cvarSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), findIndexMatch)
                 autoComplete = globalAutoComplete
 
                 // and print it
-                idStr.snPrintf(buffer, buffer.size, TempDump.ctos(autoComplete.currentMatch))
+                idStr.snPrintf(buffer, buffer.size, "%s", TempDump.ctos(autoComplete.currentMatch))
                 if (autoComplete.length > TempDump.strLen(buffer)) {
                     autoComplete.length = TempDump.strLen(buffer)
                 }
@@ -206,7 +227,7 @@ object EditField {
             //
             // ignore any other non printable chars
             //
-            if (ch < 32 || ch > 125) {
+            if (ch < 32) {
                 return
             }
             if (idKeyInput.GetOverstrikeMode()) {
@@ -323,7 +344,9 @@ object EditField {
             }
 
             // clear autocompletion buffer on normal key input
-            if (key != KeyInput.K_CAPSLOCK && key != KeyInput.K_ALT && key != KeyInput.K_CTRL && key != KeyInput.K_SHIFT) {
+            if (key != KeyInput.K_CAPSLOCK && key != KeyInput.K_ALT && key != KeyInput.K_CTRL && key != KeyInput.K_SHIFT
+                && key != KeyInput.K_RIGHT_CTRL && key != KeyInput.K_RIGHT_SHIFT
+            ) {
                 ClearAutoComplete()
             }
         }
@@ -344,8 +367,6 @@ object EditField {
                 CharEvent(cbd[i].code)
                 i++
             }
-
-//            Heap.Mem_Free(cbd);
         }
 
         fun GetBuffer(): CharArray {
@@ -414,9 +435,10 @@ object EditField {
             }
 
             // Move the cursor back to account for color codes
+            val strString = TempDump.ctos(str)
             var i = 0
             while (i < cursor) {
-                if (idStr.IsColor(TempDump.ctos(str[i]))) { //TODO:check
+                if (i < strString.length - 1 && idStr.IsColor(strString.substring(i))) {
                     i++
                     prestep += 2
                 }
@@ -434,7 +456,6 @@ object EditField {
         //
         //
         init {
-            autoComplete = autoComplete_s()
             Clear()
         }
     }

@@ -856,13 +856,13 @@ object SaveGame {
             }
         }
 
-        fun ReadFX(fx: idDeclFX) {
+        fun ReadFX(): idDeclFX? {
             val name = idStr()
             ReadString(name)
             if (0 == name.Length()) {
-                fx.oSet(null)
+                return null
             } else {
-                fx.oSet(DeclManager.declManager.FindType(declType_t.DECL_FX, name) as idDeclFX)
+                return DeclManager.declManager.FindType(declType_t.DECL_FX, name) as idDeclFX?
             }
         }
 

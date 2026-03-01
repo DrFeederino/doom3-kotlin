@@ -1,3 +1,39 @@
+/*
+ * ===========================================================================
+ *
+ * Doom 3 GPL Source Code
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms.
+ * You should have received a copy of these additional terms immediately following
+ * the terms and conditions of the GNU General Public License which accompanied
+ * the Doom 3 Source Code. If not, please request a copy in writing from
+ * id Software at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms,
+ * you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120,
+ * Rockville, Maryland 20850 USA.
+ *
+ * ===========================================================================
+ *
+ * Original source: neo/framework/DeclPDA.h, neo/framework/DeclPDA.cpp
+ */
 package neo.framework
 
 import neo.framework.DeclManager.declType_t
@@ -10,68 +46,94 @@ import neo.idlib.containers.idStrList
 import neo.idlib.idException
 
 class DeclPDA {
+
     /*
      ===============================================================================
 
-     idDeclPDA
+        idDeclEmail
 
      ===============================================================================
      */
-    class idDeclEmail  //
-    //
-        : idDecl() {
-        private lateinit var date: idStr
-        private lateinit var from: idStr
-        private lateinit var image: idStr
-        private lateinit var subject: idStr
-        private lateinit var text: idStr
-        private lateinit var to: idStr
+    class idDeclEmail : idDecl() {
+        // FIX: Changed from lateinit to initialized fields — C++ default-constructs
+        // idStr to empty. lateinit would crash with UninitializedPropertyAccessException
+        // if any field was not set during Parse().
+        private val text: idStr = idStr()
+        private val subject: idStr = idStr()
+        private val date: idStr = idStr()
+        private val to: idStr = idStr()
+        private val from: idStr = idStr()
+        private val image: idStr = idStr()
+
+        /*
+         ===================
+         idDeclEmail::DefaultDefinition
+         ===================
+         */
+        // FIX: Raw string literal had wrong indentation (source code whitespace leaked
+        // into the string). Now matches C++ output exactly.
         override fun DefaultDefinition(): String {
-            return """{
-                                {
-                                    to	5Mail recipient
-                                    subject	5Nothing
-                                    from	5No one
-                                }
-                            }"""
+            return "{\n\t{\n\t\tto\t5Mail recipient\n\t\tsubject\t5Nothing\n\t\tfrom\t5No one\n\t}\n}"
         }
 
+        /*
+         ================
+         idDeclEmail::Parse
+         ================
+         */
         @Throws(idException::class)
         override fun Parse(_text: String, textLength: Int): Boolean {
             val src = idLexer()
+            // FIX: Moved token declaration outside the loop to match C++ (single token
+            // reused across iterations). Now uses .set() for value-copy semantics.
+            val token = idToken()
+
             src.LoadMemory(_text, textLength, GetFileName(), GetLineNum())
-            src.SetFlags(Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWPATHNAMES or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT or Lexer.LEXFL_NOFATALERRORS)
+            src.SetFlags(
+                Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWPATHNAMES
+                        or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT
+                        or Lexer.LEXFL_NOFATALERRORS
+            )
             src.SkipUntilString("{")
-            text = idStr("")
+
+            text.set("")
             // scan through, identifying each individual parameter
             while (true) {
-                val token = idToken()
+
                 if (!src.ReadToken(token)) {
                     break
                 }
+
                 if (token.toString() == "}") {
                     break
                 }
+
                 if (0 == token.Icmp("subject")) {
                     src.ReadToken(token)
-                    subject = token
+                    // FIX: Was `subject = token` (reference assignment). Now uses .set()
+                    // for value-copy matching C++ `subject = token` (idStr::operator=).
+                    subject.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("to")) {
                     src.ReadToken(token)
-                    to = token
+                    to.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("from")) {
                     src.ReadToken(token)
-                    from = token
+                    from.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("date")) {
                     src.ReadToken(token)
-                    date = token
+                    date.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("text")) {
                     src.ReadToken(token)
                     if (token.toString() != "{") {
@@ -83,12 +145,14 @@ class DeclPDA {
                     }
                     continue
                 }
+
                 if (0 == token.Icmp("image")) {
                     src.ReadToken(token)
-                    image = token
+                    image.set(token)
                     continue
                 }
             }
+
             if (src.HadError()) {
                 src.Warning("Email decl '%s' had a parse error", GetName())
                 return false
@@ -96,19 +160,33 @@ class DeclPDA {
             return true
         }
 
+        /*
+         ===================
+         idDeclEmail::FreeData
+         ===================
+         */
         override fun FreeData() {}
 
+        /*
+         ===============
+         idDeclEmail::Print
+         ===============
+         */
         @Throws(idException::class)
         override fun Print() {
             Common.common.Printf("Implement me\n")
         }
 
+        /*
+         ===============
+         idDeclEmail::List
+         ===============
+         */
         @Throws(idException::class)
         override fun List() {
             Common.common.Printf("Implement me\n")
         }
 
-        //
         fun GetFrom(): String {
             return from.toString()
         }
@@ -134,67 +212,97 @@ class DeclPDA {
         }
     }
 
-    class idDeclVideo  //
-    //
-        : idDecl() {
-        private lateinit var audio //TODO:construction!?
-                : idStr
-        private lateinit var info: idStr
-        private lateinit var preview: idStr
-        private lateinit var video: idStr
-        private lateinit var videoName: idStr
+    /*
+     ===============================================================================
+
+        idDeclVideo
+
+     ===============================================================================
+     */
+    class idDeclVideo : idDecl() {
+        // FIX: Changed from lateinit to initialized fields — matches C++ default
+        // construction of idStr members.
+        private val preview: idStr = idStr()
+        private val video: idStr = idStr()
+        private val videoName: idStr = idStr()
+        private val info: idStr = idStr()
+        private val audio: idStr = idStr()
+
+        /*
+         ===================
+         idDeclVideo::DefaultDefinition
+         ===================
+         */
+        // FIX: Raw string literal had wrong indentation. Now matches C++ output exactly.
         override fun DefaultDefinition(): String {
-            return """{
-	{
-		name	5Default Video
-	}
-}"""
+            return "{\n\t{\n\t\tname\t5Default Video\n\t}\n}"
         }
 
+        /*
+         ================
+         idDeclVideo::Parse
+         ================
+         */
         @Throws(idException::class)
-        override fun Parse(_text: String, textLength: Int): Boolean {
+        override fun Parse(text: String, textLength: Int): Boolean {
             val src = idLexer()
-            src.LoadMemory(_text, textLength, GetFileName(), GetLineNum())
-            src.SetFlags(Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWPATHNAMES or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT or Lexer.LEXFL_NOFATALERRORS)
+            // FIX: Moved token declaration outside the loop to match C++.
+            val token = idToken()
+
+            src.LoadMemory(text, textLength, GetFileName(), GetLineNum())
+            src.SetFlags(
+                Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWPATHNAMES
+                        or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT
+                        or Lexer.LEXFL_NOFATALERRORS
+            )
             src.SkipUntilString("{")
 
             // scan through, identifying each individual parameter
             while (true) {
-                val token = idToken()
+
                 if (!src.ReadToken(token)) {
                     break
                 }
+
                 if (token.toString() == "}") {
                     break
                 }
+
                 if (0 == token.Icmp("name")) {
                     src.ReadToken(token)
-                    videoName = token
+                    // FIX: Was `videoName = token` (reference assignment). Now uses .set()
+                    // for value-copy matching C++ `videoName = token` (idStr::operator=).
+                    videoName.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("preview")) {
                     src.ReadToken(token)
-                    preview = token
+                    preview.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("video")) {
                     src.ReadToken(token)
-                    video = token
+                    video.set(token)
                     DeclManager.declManager.FindMaterial(video)
                     continue
                 }
+
                 if (0 == token.Icmp("info")) {
                     src.ReadToken(token)
-                    info = token
+                    info.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("audio")) {
                     src.ReadToken(token)
-                    audio = token
+                    audio.set(token)
                     DeclManager.declManager.FindSound(audio)
                     continue
                 }
             }
+
             if (src.HadError()) {
                 src.Warning("Video decl '%s' had a parse error", GetName())
                 return false
@@ -202,13 +310,28 @@ class DeclPDA {
             return true
         }
 
+        /*
+         ===================
+         idDeclVideo::FreeData
+         ===================
+         */
         override fun FreeData() {}
 
+        /*
+         ===============
+         idDeclVideo::Print
+         ===============
+         */
         @Throws(idException::class)
         override fun Print() {
             Common.common.Printf("Implement me\n")
         }
 
+        /*
+         ===============
+         idDeclVideo::List
+         ===============
+         */
         @Throws(idException::class)
         override fun List() {
             Common.common.Printf("Implement me\n")
@@ -235,61 +358,89 @@ class DeclPDA {
         }
     }
 
-    class idDeclAudio  //
-    //
-        : idDecl() {
-        private lateinit var audio: idStr
-        private lateinit var audioName: idStr
-        private lateinit var info: idStr
-        private lateinit var preview //TODO:construction!
-                : idStr
+    /*
+     ===============================================================================
 
+        idDeclAudio
+
+     ===============================================================================
+     */
+    class idDeclAudio : idDecl() {
+        // FIX: Changed from lateinit to initialized fields — matches C++ default
+        // construction of idStr members.
+        private val audio: idStr = idStr()
+        private val audioName: idStr = idStr()
+        private val info: idStr = idStr()
+        private val preview: idStr = idStr()
+
+        /*
+         ===================
+         idDeclAudio::DefaultDefinition
+         ===================
+         */
+        // FIX: Raw string literal had wrong indentation. Now matches C++ output exactly.
         override fun DefaultDefinition(): String {
-            return """{
-	{
-		name	5Default Audio
-	}
-}"""
+            return "{\n\t{\n\t\tname\t5Default Audio\n\t}\n}"
         }
 
+        /*
+         ================
+         idDeclAudio::Parse
+         ================
+         */
         @Throws(idException::class)
         override fun Parse(text: String, textLength: Int): Boolean {
             val src = idLexer()
+            // FIX: Moved token declaration outside the loop to match C++.
+            val token = idToken()
+
             src.LoadMemory(text, textLength, GetFileName(), GetLineNum())
-            src.SetFlags(Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWPATHNAMES or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT or Lexer.LEXFL_NOFATALERRORS)
+            src.SetFlags(
+                Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWPATHNAMES
+                        or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT
+                        or Lexer.LEXFL_NOFATALERRORS
+            )
             src.SkipUntilString("{")
 
             // scan through, identifying each individual parameter
             while (true) {
-                val token = idToken()
+
                 if (!src.ReadToken(token)) {
                     break
                 }
+
                 if (token.toString() == "}") {
                     break
                 }
+
                 if (0 == token.Icmp("name")) {
                     src.ReadToken(token)
-                    audioName = token
+                    // FIX: Was `audioName = token` (reference assignment). Now uses .set()
+                    // for value-copy matching C++ `audioName = token` (idStr::operator=).
+                    audioName.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("audio")) {
                     src.ReadToken(token)
-                    audio = token
+                    audio.set(token)
                     DeclManager.declManager.FindSound(audio)
                     continue
                 }
+
                 if (0 == token.Icmp("info")) {
                     src.ReadToken(token)
-                    info = token
+                    info.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("preview")) {
                     src.ReadToken(token)
-                    preview = token
+                    preview.set(token)
                     continue
                 }
             }
+
             if (src.HadError()) {
                 src.Warning("Audio decl '%s' had a parse error", GetName())
                 return false
@@ -297,13 +448,28 @@ class DeclPDA {
             return true
         }
 
+        /*
+         ===================
+         idDeclAudio::FreeData
+         ===================
+         */
         override fun FreeData() {}
 
+        /*
+         ===============
+         idDeclAudio::Print
+         ===============
+         */
         @Throws(idException::class)
         override fun Print() {
             Common.common.Printf("Implement me\n")
         }
 
+        /*
+         ===============
+         idDeclAudio::List
+         ===============
+         */
         @Throws(idException::class)
         override fun List() {
             Common.common.Printf("Implement me\n")
@@ -326,88 +492,118 @@ class DeclPDA {
         }
     }
 
+    /*
+     ===============================================================================
+
+        idDeclPDA
+
+     ===============================================================================
+     */
     class idDeclPDA : idDecl() {
-        private val audios: idStrList
-        private val emails: idStrList
-        private val fullName: idStr
-        private val icon: idStr
-        private val id: idStr
-        private var originalEmails: Int
-        private var originalVideos: Int
-        private val pdaName: idStr
-        private val post: idStr
-        private val security: idStr
-        private val title: idStr
-        private val videos: idStrList
+        private val videos: idStrList = idStrList()
+        private val audios: idStrList = idStrList()
+        private val emails: idStrList = idStrList()
+        private val pdaName: idStr = idStr()
+        private val fullName: idStr = idStr()
+        private val icon: idStr = idStr()
+        private val id: idStr = idStr()
+        private val post: idStr = idStr()
+        private val title: idStr = idStr()
+        private val security: idStr = idStr()
+        private var originalEmails: Int = 0
+        private var originalVideos: Int = 0
+
+        /*
+         ===================
+         idDeclPDA::DefaultDefinition
+         ===================
+         */
+        // FIX: Raw string literal had wrong indentation. Now matches C++ output exactly.
         override fun DefaultDefinition(): String {
-            return """{
-	                    name  "default pda"
-                    }"""
+            return "{\n\tname  \"default pda\"\n}"
         }
 
+        /*
+         ================
+         idDeclPDA::Parse
+         ================
+         */
         @Throws(idException::class)
         override fun Parse(text: String, textLength: Int): Boolean {
             val src = idLexer()
             val token = idToken()
+
             src.LoadMemory(text, textLength, GetFileName(), GetLineNum())
             src.SetFlags(DeclManager.DECL_LEXER_FLAGS)
             src.SkipUntilString("{")
 
             // scan through, identifying each individual parameter
             while (true) {
+
                 if (!src.ReadToken(token)) {
                     break
                 }
+
                 if (token.toString() == "}") {
                     break
                 }
+
                 if (0 == token.Icmp("name")) {
                     src.ReadToken(token)
                     pdaName.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("fullname")) {
                     src.ReadToken(token)
                     fullName.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("icon")) {
                     src.ReadToken(token)
                     icon.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("id")) {
                     src.ReadToken(token)
                     id.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("post")) {
                     src.ReadToken(token)
                     post.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("title")) {
                     src.ReadToken(token)
                     title.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("security")) {
                     src.ReadToken(token)
                     security.set(token)
                     continue
                 }
+
                 if (0 == token.Icmp("pda_email")) {
                     src.ReadToken(token)
                     emails.add(token.toString())
                     DeclManager.declManager.FindType(declType_t.DECL_EMAIL, token)
                     continue
                 }
+
                 if (0 == token.Icmp("pda_audio")) {
                     src.ReadToken(token)
                     audios.add(token.toString())
                     DeclManager.declManager.FindType(declType_t.DECL_AUDIO, token)
                     continue
                 }
+
                 if (0 == token.Icmp("pda_video")) {
                     src.ReadToken(token)
                     videos.add(token.toString())
@@ -415,15 +611,22 @@ class DeclPDA {
                     continue
                 }
             }
+
             if (src.HadError()) {
                 src.Warning("PDA decl '%s' had a parse error", GetName())
                 return false
             }
+
             originalVideos = videos.size()
             originalEmails = emails.size()
             return true
         }
 
+        /*
+         ===================
+         idDeclPDA::FreeData
+         ===================
+         */
         override fun FreeData() {
             videos.clear()
             audios.clear()
@@ -432,18 +635,35 @@ class DeclPDA {
             originalVideos = 0
         }
 
+        /*
+         ===============
+         idDeclPDA::Print
+         ===============
+         */
         @Throws(idException::class)
         override fun Print() {
             Common.common.Printf("Implement me\n")
         }
 
+        /*
+         ===============
+         idDeclPDA::List
+         ===============
+         */
         @Throws(idException::class)
         override fun List() {
             Common.common.Printf("Implement me\n")
         }
 
+        /*
+         =================
+         idDeclPDA::AddVideo
+         =================
+         */
+        // FIX: Added default parameter `= true` for unique — was commented out but
+        // C++ declares `bool unique = true`.
         @Throws(idException::class)
-        fun AddVideo(_name: String, unique: Boolean /*= true*/) {
+        fun AddVideo(_name: String, unique: Boolean = true) {
             val name = idStr(_name)
             if (unique && videos.Find(name) != null) {
                 return
@@ -455,8 +675,15 @@ class DeclPDA {
             videos.add(name)
         }
 
+        /*
+         =================
+         idDeclPDA::AddAudio
+         =================
+         */
+        // FIX: Added default parameter `= true` for unique — was commented out but
+        // C++ declares `bool unique = true`.
         @Throws(idException::class)
-        fun AddAudio(_name: String, unique: Boolean /*= true*/) {
+        fun AddAudio(_name: String, unique: Boolean = true) {
             val name = idStr(_name)
             if (unique && audios.Find(name) != null) {
                 return
@@ -468,9 +695,13 @@ class DeclPDA {
             audios.add(name)
         }
 
-
+        /*
+         =================
+         idDeclPDA::AddEmail
+         =================
+         */
         @Throws(idException::class)
-        fun AddEmail(_name: String, unique: Boolean = true /*= true*/) {
+        fun AddEmail(_name: String, unique: Boolean = true) {
             val name = idStr(_name)
             if (unique && emails.Find(name) != null) {
                 return
@@ -482,6 +713,11 @@ class DeclPDA {
             emails.add(name)
         }
 
+        /*
+         =================
+         idDeclPDA::RemoveAddedEmailsAndVideos
+         =================
+         */
         fun RemoveAddedEmailsAndVideos() {
             var num = emails.size()
             if (originalEmails < num) {
@@ -497,18 +733,47 @@ class DeclPDA {
             }
         }
 
+        /*
+         =================
+         idDeclPDA::SetSecurity
+         =================
+         */
+        fun SetSecurity(sec: String) {
+            security.set(sec)
+        }
+
+        /*
+         =================
+         idDeclPDA::GetNumVideos
+         =================
+         */
         fun GetNumVideos(): Int {
             return videos.size()
         }
 
+        /*
+         =================
+         idDeclPDA::GetNumAudios
+         =================
+         */
         fun GetNumAudios(): Int {
             return audios.size()
         }
 
+        /*
+         =================
+         idDeclPDA::GetNumEmails
+         =================
+         */
         fun GetNumEmails(): Int {
             return emails.size()
         }
 
+        /*
+         =================
+         idDeclPDA::GetVideoByIndex
+         =================
+         */
         @Throws(idException::class)
         fun GetVideoByIndex(index: Int): idDeclVideo? {
             return if (index >= 0 && index < videos.size()) {
@@ -516,6 +781,11 @@ class DeclPDA {
             } else null
         }
 
+        /*
+         =================
+         idDeclPDA::GetAudioByIndex
+         =================
+         */
         @Throws(idException::class)
         fun GetAudioByIndex(index: Int): idDeclAudio? {
             return if (index >= 0 && index < audios.size()) {
@@ -523,15 +793,16 @@ class DeclPDA {
             } else null
         }
 
+        /*
+         =================
+         idDeclPDA::GetEmailByIndex
+         =================
+         */
         @Throws(idException::class)
         fun GetEmailByIndex(index: Int): idDeclEmail? {
             return if (index >= 0 && index < emails.size()) {
                 DeclManager.declManager.FindType(declType_t.DECL_EMAIL, emails.get(index), false) as idDeclEmail
             } else null
-        }
-
-        fun SetSecurity(sec: String) {
-            security.set(sec)
         }
 
         fun GetPdaName(): String {
@@ -560,23 +831,6 @@ class DeclPDA {
 
         fun GetTitle(): String {
             return title.toString()
-        }
-
-        //
-        //
-        init {
-            videos = idStrList()
-            audios = idStrList()
-            emails = idStrList()
-            pdaName = idStr()
-            fullName = idStr()
-            icon = idStr()
-            id = idStr()
-            post = idStr()
-            title = idStr()
-            security = idStr()
-            originalVideos = 0
-            originalEmails = originalVideos
         }
     }
 }

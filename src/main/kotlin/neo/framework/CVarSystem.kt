@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/framework/CVarSystem.h, neo/framework/CVarSystem.cpp
+ *
+ * Doom 3 GPL Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
 package neo.framework
 
 import neo.Game.GameSys.SysCvar
@@ -228,11 +245,13 @@ object CVarSystem {
         }
 
         // Always use one of the following constructors.
+        // FIX: C++ has valueCompletion as a local parameter defaulting to NULL. The bool check sets the
+        // local, then passes it to Init. The old Kotlin code modified the member then passed null to Init,
+        // discarding the boolean auto-completion.
         constructor(name: String, value: String, flags: Int, description: String) {
-            if (null == valueCompletion && flags and CVAR_BOOL != 0) {
-                valueCompletion = ArgCompletion_Boolean.getInstance()
-            }
-            Init(name, value, flags, description, 1.0f, -1.0f, null, null)
+            val vc: CmdSystem.argCompletion_t? =
+                if (flags and CVAR_BOOL != 0) ArgCompletion_Boolean.getInstance() else null
+            Init(name, value, flags, description, 1.0f, -1.0f, null, vc)
         }
 
         constructor(
@@ -356,7 +375,8 @@ object CVarSystem {
         }
 
         fun GetBool(): Boolean {
-            return !"0".equals(value, ignoreCase = true)
+            // FIX: C++ uses internalVar->integerValue != 0, not string comparison on this.value
+            return internalVar!!.integerValue != 0
         }
 
         fun GetInteger(): Int {
@@ -555,7 +575,10 @@ object CVarSystem {
         val valueString // value
                 : idStr = idStr()
 
-        constructor(newName: String, newValue: String, newFlags: Int) : super(newName, newValue, newFlags, "") {
+        // FIX: C++ implicitly calls the default idCVar() constructor here, NOT the 4-arg constructor.
+        // Calling super(name, value, flags, "") invoked Init() which registered the cvar with the system
+        // during construction, causing double registration when SetInternal also adds it to the hash.
+        constructor(newName: String, newValue: String, newFlags: Int) : super() {
             nameString.set(newName)
             name = newName
             valueString.set(newValue)
@@ -664,7 +687,8 @@ object CVarSystem {
             // only allow one non-empty reset string without a warning
             if (resetString.Length() == 0) {
                 resetString.set(cvar.GetString()!!)
-            } else if (cvar.GetString() != null && resetString.Cmp(cvar.GetString()!!) != 0) {
+                // FIX: C++ checks cvar->GetString()[0] which is a non-empty string check, not a null check.
+            } else if (cvar.GetString()?.isNotEmpty() == true && resetString.Cmp(cvar.GetString()!!) != 0) {
                 idLib.common.Warning(
                     "cvar \"%s\" given initial values: \"%s\" and \"%s\"\n", nameString, resetString, cvar.GetString()!!
                 )
@@ -677,7 +701,9 @@ object CVarSystem {
                 integerValue = if (TempDump.atoi(value!!) != 0) 1 else 0
                 floatValue = integerValue.toFloat()
                 if (idStr.Icmp(value!!, "0") != 0 && idStr.Icmp(value!!, "1") != 0) {
-                    valueString.set((integerValue != 0).toString())
+                    // FIX: C++ idStr(bool) produces "1"/"0". Kotlin Boolean.toString() produces "true"/"false"
+                    // which would break on config save/reload since atoi("true") returns 0.
+                    valueString.set(if (integerValue != 0) "1" else "0")
                     value = valueString.toString()
                 }
             } else if (flags and CVAR_INTEGER != 0) {
@@ -691,7 +717,8 @@ object CVarSystem {
                         clamped = true
                     }
                 }
-                if (clamped || !idStr.IsNumeric(value!!) || FindChar(value!!, '.') != 0) {
+                // FIX: FindChar returns -1 when not found (like indexOf). C++ checks != -1. Was != 0 which made -1 (not found) truthy and 0 (dot at start) falsy — both wrong.
+                if (clamped || !idStr.IsNumeric(value!!) || FindChar(value!!, '.') != -1) {
                     valueString.set(integerValue.toString())
                     value = valueString.toString()
                 }
@@ -813,7 +840,7 @@ object CVarSystem {
 
         @Throws(idException::class)
         override fun InternalSetInteger(newValue: Int) {
-            Set(newValue.toString(), true, false) //TODO:parse to string instead.
+            Set(newValue.toString(), true, false)
         }
 
         @Throws(idException::class)
@@ -907,7 +934,9 @@ object CVarSystem {
         }
 
         override fun SetCVarBool(name: String, value: Boolean, flags: Int) {
-            SetInternal(name, "" + value, flags)
+            // FIX: C++ uses idStr(bool) which produces "1"/"0". Kotlin "" + bool produces "true"/"false"
+            // which atoi() can't parse, causing boolean cvars to always read as false.
+            SetInternal(name, if (value) "1" else "0", flags)
         }
 
         //public	 void			SetCVarInteger( final String name, const int value/*, int flags = 0*/ );
@@ -1332,8 +1361,8 @@ object CVarSystem {
                         //			delete cvar;
                         localCVarSystem.cvars.RemoveIndex(i)
                         localCVarSystem.cvarHash.RemoveIndex(hash, i)
-                        i--
-                        i++
+                        // NOTE: In C++ this was i--; continue; inside a for-loop where the loop update does i++.
+                        // In Kotlin's while-loop, just continue re-examines the same index (now holding the next element).
                         continue
                     }
                     cvar.Reset()

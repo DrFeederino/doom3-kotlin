@@ -16,10 +16,8 @@ import neo.framework.DeclSkin.idDeclSkin
 import neo.framework.DeclTable.idDeclTable
 import neo.framework.FileSystem_h.idFileList
 import neo.framework.File_h.idFile
+import neo.idlib.*
 import neo.idlib.BitMsg.idBitMsg
-import neo.idlib.CmdArgs
-import neo.idlib.MAX_STRING_CHARS
-import neo.idlib.Max
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
@@ -27,7 +25,6 @@ import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List
 import neo.idlib.containers.idHashIndex
 import neo.idlib.hashing.MD5_BlockChecksum
-import neo.idlib.idException
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
@@ -249,6 +246,10 @@ class DeclManager {
             return base!!.DefaultDefinition()
         }
 
+        open fun Size(): Long {
+            return base!!.Size()
+        }
+
         // The manager will have already parsed past the type, name and opening brace.
         // All necessary media will be touched before return.
         // The manager will have called FreeData() before issuing a Parse().
@@ -336,8 +337,10 @@ class DeclManager {
         abstract fun FindType(type: declType_t, name: String?, makeDefault: Boolean /*= true*/): idDecl?
 
 
+        // FIX: name.toString() on null idStr returned the string "null" instead of null.
+        // C++ passes the const char* directly (NULL stays NULL).
         fun FindType(type: declType_t, name: idStr?, makeDefault: Boolean = true): idDecl? {
-            return FindType(type, name.toString(), makeDefault)
+            return FindType(type, name?.toString(), makeDefault)
         }
 
         fun FindType(type: declType_t, name: String): idDecl? {
@@ -502,7 +505,7 @@ class DeclManager {
     }
 
     internal class idDeclLocal : idDeclBase() {
-        private var checksum // checksum of the decl text
+        var checksum // checksum of the decl text
                 : BigInteger = BigInteger.ZERO
         private var compressedLength // compressed length
                 : Int
@@ -644,10 +647,12 @@ class DeclManager {
             }
 
             // insert new text
-            val declText: CharArray //= new char[textLength + 1];
             val declString = arrayOf("")
             GetText(declString)
-            declText = declString[0].toCharArray()
+            // FIX: C++ works with char* throughout (char and byte are the same in C++).
+            // Was: declText as CharArray, then System.arraycopy(CharArray -> ByteArray) which throws
+            // ArrayStoreException at runtime. Convert to bytes using ISO-8859-1 (1:1 char->byte mapping).
+            val declBytes = declString[0].toByteArray(StandardCharsets.ISO_8859_1)
             //	memmove( buffer + sourceTextOffset + textLength, buffer + sourceTextOffset + sourceTextLength, oldFileLength - sourceTextOffset - sourceTextLength );
             System.arraycopy(
                 buffer,
@@ -657,7 +662,7 @@ class DeclManager {
                 oldFileLength - sourceTextOffset - sourceTextLength
             )
             //	memcpy( buffer + sourceTextOffset, declText, textLength );
-            System.arraycopy(declText, 0, buffer, sourceTextOffset, textLength)
+            System.arraycopy(declBytes, 0, buffer, sourceTextOffset, textLength)
 
             // write out new file
             file = FileSystem_h.fileSystem.OpenFileWrite(GetFileName(), "fs_devpath")
@@ -764,7 +769,6 @@ class DeclManager {
         fun AllocateSelf() {
             if (null == self) {
                 try {
-                    DBG_AllocateSelf++
                     self = declManagerLocal.GetDeclType(TempDump.etoi(type))!!.allocator.newInstance()
                     self!!.base = this
                 } catch (ex: InstantiationException) {
@@ -868,7 +872,6 @@ class DeclManager {
         }
 
         companion object {
-            private var DBG_AllocateSelf = 0
             private var recursionLevel = 0
         }
 
@@ -903,17 +906,6 @@ class DeclManager {
 
         //
         /*ID_TIME_T*/  var timestamp: LongArray = LongArray(1)
-
-        //
-        //
-        /*
-         ================
-         idDeclFile::LoadAndParse
-
-         This is used during both the initial load, and any reloads
-         ================
-         */
-        var c_savedMemory = 0
 
         constructor() {
             fileName = idStr("<implicit file>")
@@ -1139,8 +1131,11 @@ class DeclManager {
                 : BigInteger = BigInteger.ZERO
         private val declFolders: List.idList<idDeclFolder>
         val declTypes: List.idList<idDeclType?> = List.idList()
-        val implicitDecls // this holds all the decls that were created because explicit
-                : idDeclFile? = null
+
+        // FIX: C++ implicitDecls is a value member (not a pointer), always initialized by its default
+        //      constructor. Was incorrectly null, causing sourceFile assignments and IsImplicit() to be wrong on reload.
+        val implicitDecls: idDeclFile =
+            idDeclFile() // holds decls that were created because explicit text definitions were not found
         var indent // for MediaPrint
                 = 0
         private var insideLevelLoad = false
@@ -1409,11 +1404,7 @@ class DeclManager {
             }
 
             // free decl files
-
-            // free decl files
             loadedFiles.DeleteContents(true)
-
-            // free the decl types and folders
 
             // free the decl types and folders
             declTypes.DeleteContents(true)
@@ -1508,10 +1499,7 @@ class DeclManager {
             // load and parse decl files
             i = 0
             while (i < fileList.GetNumFiles()) {
-                val startTime = System.currentTimeMillis()
                 fileName = idStr(declFolder.folder.toString() + "/" + fileList.GetFile(i))
-                // check whether this file has already been loaded
-
                 // check whether this file has already been loaded
                 j = 0
                 while (j < loadedFiles.Num()) {
@@ -1527,51 +1515,51 @@ class DeclManager {
                     loadedFiles.Append(df)
                 }
                 df.LoadAndParse()
-                var endTime = (System.currentTimeMillis() - startTime)
-                println("Material took $endTime ms\n")
                 i++
             }
             FileSystem_h.fileSystem.FreeFileList(fileList)
         }
 
         override fun GetChecksum(): BigInteger {
-            throw UnsupportedOperationException()
-            //            int i, j, total, num;
-//            BigInteger[] checksumData;
-//
-//            // get the total number of decls
-//            total = 0;
-//            for (i = 0; i < DECL_MAX_TYPES.ordinal(); i++) {
-//                total += linearLists[i].Num();
-//            }
-//
-//            checksumData = new BigInteger[total * 2];
-//
-//            total = 0;
-//            for (i = 0; i < DECL_MAX_TYPES.ordinal(); i++) {
-//                declType_t type = declType_t.values()[i];
-//
-//                // FIXME: not particularly pretty but PDAs and associated decls are localized and should not be checksummed
-//                if (type == DECL_PDA || type == DECL_VIDEO || type == DECL_AUDIO || type == DECL_EMAIL) {
-//                    continue;
-//                }
-//
-//                num = linearLists[i].Num();
-//                for (j = 0; j < num; j++) {
-//                    idDeclLocal decl = linearLists[i].get(j);
-//
-//                    if (decl.sourceFile == implicitDecls) {
-//                        continue;
-//                    }
-//
-//                    checksumData[total * 2 + 0] = total;
-//                    checksumData[total * 2 + 1] = decl.checksum;
-//                    total++;
-//                }
-//            }
-//
-//            LittleRevBytes(checksumData, total * 2);
-//            return MD5_BlockChecksum(checksumData, total * 2 /* sizeof(int)*/);
+            var total: Int
+
+            // get the total number of decls
+            total = 0
+            for (i in 0 until declType_t.DECL_MAX_TYPES.ordinal) {
+                total += linearLists[i].Num()
+            }
+
+            val checksumData = ByteBuffer.allocate(total * 2 * 4)
+            checksumData.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+
+            total = 0
+            for (i in 0 until declType_t.DECL_MAX_TYPES.ordinal) {
+                val type = declType_t.entries[i]
+
+                // FIXME: not particularly pretty but PDAs and associated decls are localized and should not be checksummed
+                if (type == declType_t.DECL_PDA || type == declType_t.DECL_VIDEO
+                    || type == declType_t.DECL_AUDIO || type == declType_t.DECL_EMAIL
+                ) {
+                    continue
+                }
+
+                val num = linearLists[i].Num()
+                for (j in 0 until num) {
+                    val decl = linearLists[i][j]
+
+                    if (decl.sourceFile === implicitDecls) {
+                        continue
+                    }
+
+                    checksumData.putInt(total * 2 * 4, total)
+                    checksumData.putInt(total * 2 * 4 + 4, decl.checksum.toInt())
+                    total++
+                }
+            }
+
+            val data = checksumData.array().copyOf(total * 2 * 4)
+            LittleRevBytes(data, total * 2)
+            return BigInteger(MD5_BlockChecksum(data, total * 2 * 4))
         }
 
         override fun GetNumDeclTypes(): Int {
@@ -1591,7 +1579,8 @@ class DeclManager {
             var i: Int
             i = 0
             while (i < declTypes.Num()) {
-                if (declTypes[i] != null && declTypes[i]!!.typeName.toString() == typeName) {
+                // FIX: C++ uses Icmp() (case-insensitive). Was using == (case-sensitive).
+                if (declTypes[i] != null && declTypes[i]!!.typeName.Icmp(typeName) == 0) {
                     return declTypes[i]!!.type
                 }
                 i++
@@ -1604,8 +1593,6 @@ class DeclManager {
             var name = name
             val decl: idDeclLocal?
 
-//            TempDump.printCallStack("--------------"+ DEBUG_FindType);
-            DEBUG_FindType++
             if (name == null || name.isEmpty()) {
                 name = "_emptyName"
                 //common.Warning( "idDeclManager::FindType: empty %s name", GetDeclType( (int)type ).typeName.c_str() );
@@ -1705,8 +1692,9 @@ class DeclManager {
         override fun ListType(args: CmdArgs.idCmdArgs, type: declType_t) {
             val all: Boolean
             val ever: Boolean
-            all = args.Argv(1) == "all"
-            ever = args.Argv(1) == "ever"
+            // FIX: C++ uses !idStr::Icmp() (case-insensitive). Was == (case-sensitive).
+            all = args.Argv(1).equals("all", ignoreCase = true)
+            ever = args.Argv(1).equals("ever", ignoreCase = true)
             Common.common.Printf("--------------------\n")
             var printed = 0
             val count = linearLists[type.ordinal].Num()
@@ -1786,8 +1774,6 @@ class DeclManager {
             } else {
                 Common.common.Printf("Never referenced.\n")
             }
-
-            // allow type-specific data to be printed
 
             // allow type-specific data to be printed
             if (decl.self != null) {
@@ -2059,9 +2045,6 @@ class DeclManager {
 
             // add it to the linear list and hash table
             decl.index = linearLists[typeIndex].Num()
-
-            // add it to the linear list and hash table
-            decl.index = linearLists[typeIndex].Num()
             hashTables[typeIndex].Add(hash, linearLists[typeIndex].Append(decl))
 
             return decl
@@ -2071,7 +2054,7 @@ class DeclManager {
             return declTypes[type]
         }
 
-        fun GetImplicitDeclFile(): idDeclFile? {
+        fun GetImplicitDeclFile(): idDeclFile {
             return implicitDecls
         }
 
@@ -2103,7 +2086,8 @@ class DeclManager {
                     while (j < num) {
                         size += declManagerLocal.linearLists[i][j].Size().toInt()
                         if (declManagerLocal.linearLists[i][j].self != null) {
-                            size += 4
+                            // FIX: C++ adds self->Size() (virtual, gives subclass size). Was += 4 (C++ pointer size, wrong).
+                            size += declManagerLocal.linearLists[i][j].self!!.Size().toInt()
                         }
                         j++
                     }
@@ -2245,14 +2229,6 @@ class DeclManager {
                 ArgCompletion_Integer(0, 2)
             )
 
-            /*
-             =================
-             idDeclManagerLocal::FindType
-
-             External users will always cause the decl to be parsed before returning
-             =================
-             */
-            var DEBUG_FindType = 0
             fun MakeNameCanonical(name: String, result: CharArray, maxLength: Int) { //TODO:maxlength???
                 var i: Int
                 var lastDot: Int
@@ -2569,19 +2545,22 @@ class DeclManager {
             compressed: ByteBuffer,
             maxCompressedSize: Int
         ): Int {
-            var j: Int = 0
+            // FIX: C++ declares j inside the outer for, with the inner for resetting j=0 per character.
+            //      Was: var j: Int = 0 outside the loop — j accumulated across characters, corrupting
+            //      Huffman output for any character whose code required more than one 32-bit word.
             val msg = idBitMsg()
             totalUncompressedLength += textLength
             msg.Init(compressed, maxCompressedSize)
             msg.BeginWriting()
             for (i in 0 until textLength) {
-                val code: huffmanCode_s = huffmanCodes[text[i].code]
-                while (j < code.numBits shr 5) {
+                // NOTE: C++ casts to (unsigned char) — and 0xFF ensures we stay in 0..255 range.
+                val code: huffmanCode_s = huffmanCodes[text[i].code and 0xFF]
+                val fullWords = code.numBits shr 5
+                for (j in 0 until fullWords) {
                     msg.WriteBits(code.bits[j].toInt(), 32)
-                    j++
                 }
                 if (code.numBits and 31 != 0) {
-                    msg.WriteBits(code.bits[j].toInt(), code.numBits and 31)
+                    msg.WriteBits(code.bits[fullWords].toInt(), code.numBits and 31)
                 }
             }
             totalCompressedLength += msg.GetSize()

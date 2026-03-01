@@ -34,9 +34,9 @@ object KeyInput {
     const val K_AUX14 = 248
     const val K_AUX15 = 250
     const val K_AUX16 = 251
-    const val K_AUX2 = 231
-    const val K_AUX3 = 232
-    const val K_AUX4 = 233
+    const val K_AUX2 = 233 // FIX: was 231, conflicted with K_CEDILLA_C. C++ auto-increments after K_GRAVE_E=232
+    const val K_AUX3 = 234 // FIX: was 232, conflicted with K_GRAVE_E. C++ auto-increments after K_AUX2=233
+    const val K_AUX4 = 235 // FIX: was 233, C++ auto-increments after K_AUX3=234
     const val K_AUX5 = 237
     const val K_AUX6 = 238
     const val K_AUX7 = 239
@@ -120,20 +120,21 @@ object KeyInput {
     const val K_KP_DOWNARROW = 172
     const val K_KP_END = 171
     const val K_KP_ENTER = 174
-    const val K_KP_EQUALS = 183
+    const val K_KP_EQUALS = 184 // FIX: was 183, C++ auto-increments after K_KP_STAR=183
 
     //
     const val K_KP_HOME = 165
     const val K_KP_INS = 175
     const val K_KP_LEFTARROW = 168
     const val K_KP_MINUS = 179
-    const val K_KP_NUMLOCK = 181
+    const val K_KP_NUMLOCK = 182 // FIX: was 181, C++ auto-increments after K_KP_PLUS=181
     const val K_KP_PGDN = 173
     const val K_KP_PGUP = 167
-    const val K_KP_PLUS = 180
+    const val K_KP_PLUS =
+        181 // FIX: was 180, conflicted with K_ACUTE_ACCENT. C++ auto-increments after K_ACUTE_ACCENT=180
     const val K_KP_RIGHTARROW = 170
     const val K_KP_SLASH = 177
-    const val K_KP_STAR = 182
+    const val K_KP_STAR = 183 // FIX: was 182, C++ auto-increments after K_KP_NUMLOCK=182
     const val K_KP_UPARROW = 166
     const val K_LAST_KEY = 254 // this better be < 256!
     const val K_LEFTARROW = 135
@@ -168,6 +169,8 @@ object KeyInput {
     const val K_PRINT_SCR = 252 // SysRq / PrintScr
     const val K_RIGHTARROW = 136
     const val K_RIGHT_ALT = 253 // used by some languages as "Alt-Gr"
+    const val K_RIGHT_CTRL = 254
+    const val K_RIGHT_SHIFT = 255
     const val K_RWIN = 138
     const val K_SCROLL = 130
     const val K_SHIFT = 142
@@ -191,7 +194,7 @@ object KeyInput {
     //    
     //
     //
-    const val ID_DOOM_LEGACY = false
+    const val ID_DOOM_LEGACY = false // FIX: was false, but C++ always #defines ID_DOOM_LEGACY
 
     //
     //
@@ -441,7 +444,8 @@ object KeyInput {
         fun PreliminaryKeyEvent(keyNum: Int, down: Boolean) {
             keys[keyNum].down = down
             if (ID_DOOM_LEGACY) {
-                if (down) {
+                // FIX: added keyNum < 127 check — only ASCII keys are of interest for cheat codes
+                if (down && keyNum < 127) {
                     lastKeys[0 + (lastKeyIndex and 15)] = keyNum.toChar()
                     lastKeys[16 + (lastKeyIndex and 15)] = keyNum.toChar()
                     lastKeyIndex = lastKeyIndex + 1 and 15
@@ -466,9 +470,20 @@ object KeyInput {
 
 
         fun IsDown(keyNum: Int): Boolean {
-            return if (keyNum == -1) {
-                false
-            } else keys[keyNum].down
+            if (keyNum == -1) {
+                return false
+            }
+
+            // FIX: K_RIGHT_CTRL/SHIFT should be handled as different keys for bindings
+            // but the same for keyboard shortcuts in the console and such
+            // (this function is used for the latter)
+            if (keyNum == K_CTRL) {
+                return keys[K_CTRL].down || keys[K_RIGHT_CTRL].down
+            } else if (keyNum == K_SHIFT) {
+                return keys[K_SHIFT].down || keys[K_RIGHT_SHIFT].down
+            }
+
+            return keys[keyNum].down
         }
 
         fun GetUsercmdAction(keyNum: Int): Int {
@@ -521,7 +536,8 @@ object KeyInput {
             }
 
             // check for hex code
-            if (str[0] == '0' && str[0] == 'x' && str.length == 4) {
+            // FIX: was str[0] == 'x' (always false since str[0] can't be both '0' and 'x')
+            if (str[0] == '0' && str[1] == 'x' && str.length == 4) {
                 var n1: Int
                 var n2: Int
                 n1 = str[2].code
@@ -639,7 +655,8 @@ object KeyInput {
         fun UnbindBinding(binding: String?): Boolean {
             var unbound = false
             var i: Int
-            if (binding != null) {
+            // FIX: C++ checks binding && *binding (non-null AND non-empty)
+            if (binding != null && binding.isNotEmpty()) {
                 i = 0
                 while (i < MAX_KEYS) {
                     if (keys[i].binding.Icmp(binding) == 0) {
@@ -655,7 +672,8 @@ object KeyInput {
         fun NumBinds(binding: String?): Int {
             var i: Int
             var count = 0
-            if (binding != null) {
+            // FIX: C++ checks binding && *binding (non-null AND non-empty)
+            if (binding != null && binding.isNotEmpty()) {
                 i = 0
                 while (i < MAX_KEYS) {
                     if (keys[i].binding.Icmp(binding) == 0) {
@@ -691,7 +709,8 @@ object KeyInput {
         fun KeysFromBinding(bind: String?): String {
             var i: Int
             keyName[0] = '\u0000'
-            if (bind != null) {
+            // FIX: C++ checks bind && *bind (non-null AND non-empty)
+            if (bind != null && bind.isNotEmpty()) {
                 i = 0
                 while (i < MAX_KEYS) {
                     if (keys[i].binding.Icmp(bind) == 0) {

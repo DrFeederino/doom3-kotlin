@@ -570,7 +570,8 @@ class AAS_local {
                 }
                 // get the portal routing cache
                 portalCache = GetPortalRoutingCache(goalClusterNum, goalAreaNum, travelFlags)
-                reach[0] = GetAreaReachability(areaNum, portalCache.reachabilities[-clusterNum].toInt())
+                // FIX: mask with 0xFF to prevent byte sign extension (C++ uses unsigned char)
+                reach[0] = GetAreaReachability(areaNum, portalCache.reachabilities[-clusterNum].toInt() and 0xFF)
                 travelTime._val = (portalCache.travelTimes[-clusterNum] + AreaTravelTime(
                     areaNum, origin, reach[0]!!.start
                 ))
@@ -592,7 +593,8 @@ class AAS_local {
                 clusterCache = GetAreaRoutingCache(clusterNum, goalAreaNum, travelFlags)
                 clusterAreaNum = ClusterAreaNum(clusterNum, areaNum)
                 if (clusterCache!!.travelTimes[clusterAreaNum] != 0) {
-                    bestReach = GetAreaReachability(areaNum, clusterCache.reachabilities[clusterAreaNum].toInt())
+                    bestReach =
+                        GetAreaReachability(areaNum, clusterCache.reachabilities[clusterAreaNum].toInt() and 0xFF)
                     bestTime =
                         clusterCache.travelTimes[clusterAreaNum] + AreaTravelTime(areaNum, origin, bestReach!!.start)
                 } else {
@@ -640,10 +642,13 @@ class AAS_local {
                     i++
                     continue
                 }
-                r = GetAreaReachability(areaNum, areaCache.reachabilities[clusterAreaNum].toInt())
+                r = GetAreaReachability(areaNum, areaCache.reachabilities[clusterAreaNum].toInt() and 0xFF)
                 if (clusterCache != null) {
                     // if the next reachability from the portal leads back into the cluster
-                    nextr = GetAreaReachability(portal.areaNum.toInt(), portalCache.reachabilities[portalNum].toInt())
+                    nextr = GetAreaReachability(
+                        portal.areaNum.toInt(),
+                        portalCache.reachabilities[portalNum].toInt() and 0xFF
+                    )
                     if (file!!.GetArea(nextr!!.toAreaNum.toInt()).cluster < 0 || file!!.GetArea(nextr.toAreaNum.toInt()).cluster.toInt() == clusterNum) {
                         i++
                         continue
@@ -915,7 +920,9 @@ class AAS_local {
                     }
 
                     // direction orthogonal to gravity
-                    dir.set(endPos.minus(p.minus(dir)))
+                    // FIX: Was endPos.minus(p.minus(dir)) which computes endPos-(p-dir) = endPos-p+dir
+                    // C++ original: dir = endPos - p - dir (left-to-right: (endPos-p)-dir)
+                    dir.set(endPos.minus(p).minus(dir))
                     if (dir.LengthSqr() > Square(0.2f)) {
                         reach = reach.next
                         continue
@@ -1500,14 +1507,13 @@ class AAS_local {
                 areaCacheIndexSize += file!!.GetCluster(i).numReachableAreas
                 i++
             }
+            // FIX: Was Array(GetNumClusters) { Array(totalSize) { idRoutingCache(...) } } which:
+            //   (a) gave every cluster the total areaCacheIndexSize instead of per-cluster numReachableAreas
+            //   (b) initialized with live idRoutingCache objects instead of null (C++ Mem_ClearedAlloc zeroes all pointers)
+            //   (c) read portalCacheIndexSize before it was assigned (still 0 at this point)
+            // This corrupted the routing cache linked list during DeleteClusterCache.
             areaCacheIndex =
-                Array(file!!.GetNumClusters()) { Array(areaCacheIndexSize) { idRoutingCache(portalCacheIndexSize) } } // Mem_ClearedAlloc(file.GetNumClusters() /* sizeof( idRoutingCache ** )*/ + areaCacheIndexSize /* sizeof( idRoutingCache *)*/);
-            //	bytePtr = ((byte *)areaCacheIndex) + file.GetNumClusters() * sizeof( idRoutingCache ** );
-//            bytePtr = file.GetNumClusters();
-//            for (i = 0; i < file.GetNumClusters(); i++) {
-//                areaCacheIndex[i] = new idRoutingCache[bytePtr];
-//                bytePtr += file.GetCluster(i).numReachableAreas /* sizeof( idRoutingCache * )*/;
-//            }
+                Array(file!!.GetNumClusters()) { i -> arrayOfNulls<idRoutingCache>(file!!.GetCluster(i).numReachableAreas) }
             portalCacheIndexSize = file!!.GetNumAreas()
             portalCacheIndex =
                 arrayOfNulls(portalCacheIndexSize) // Mem_ClearedAlloc(portalCacheIndexSize /* sizeof( idRoutingCache * )*/);

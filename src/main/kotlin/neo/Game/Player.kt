@@ -120,7 +120,7 @@ object Player {
     //
     val ASYNC_PLAYER_INV_AMMO_BITS = idMath.BitsForInteger(999) // 9 bits to cover the range [0, 999]
     const val ASYNC_PLAYER_INV_CLIP_BITS = -7 // -7 bits to cover the range [-1, 60]
-    const val BASE_HEARTRATE = 70.0f // default
+    const val BASE_HEARTRATE = 70 // default
 
     //
     // powerups - the "type" in item .def must match
@@ -128,7 +128,7 @@ object Player {
     const val BERSERK = 0
 
     //
-    const val DEAD_HEARTRATE = 0.0f // fall to as you die
+    const val DEAD_HEARTRATE = 0 // fall to as you die
     const val DEATH_VOLUME = 15 // volume at death
     const val DMG_VOLUME = 5 // volume when taking damage
     const val DYING_HEARTRATE = 30 // used for volumen calc when dying/dead
@@ -168,7 +168,7 @@ object Player {
     const val LAND_DEFLECT_TIME = 150
     const val LAND_RETURN_TIME = 300
     const val LOWHEALTH_HEARTRATE_ADJ = 20 //
-    const val MAX_HEARTRATE = 130.0f // maximum
+    const val MAX_HEARTRATE = 130 // maximum
     const val MAX_INVENTORY_ITEMS = 20
     const val MAX_PDAS = 64
     const val MAX_PDA_ITEMS = 128
@@ -1254,7 +1254,7 @@ object Player {
         var heartInfo: idInterpolate<Float>
 
         //
-        var heartRate: Float
+        var heartRate: Int
 
         //
         //
@@ -1876,7 +1876,7 @@ object Player {
             savefile.WriteInt(weapon_soulcube)
             savefile.WriteInt(weapon_pda)
             savefile.WriteInt(weapon_fists)
-            savefile.WriteFloat(heartRate)
+            savefile.WriteInt(heartRate)
             savefile.WriteFloat(heartInfo.GetStartTime())
             savefile.WriteFloat(heartInfo.GetDuration())
             savefile.WriteFloat(heartInfo.GetStartValue())
@@ -2061,7 +2061,7 @@ object Player {
             weapon_soulcube = savefile.ReadInt()
             weapon_pda = savefile.ReadInt()
             weapon_fists = savefile.ReadInt()
-            heartRate = savefile.ReadFloat()
+            heartRate = savefile.ReadInt()
             savefile.ReadFloat(set)
             heartInfo.SetStartTime(set._val)
             savefile.ReadFloat(set)
@@ -4681,8 +4681,8 @@ object Player {
          it is audible or -10db and scales to 8db on the last few beats
          ==============
          */
-        fun AdjustHeartRate(target: Float, timeInSecs: Float, delay: Float, force: Boolean) {
-            if (heartInfo.GetEndValue() == target) {
+        fun AdjustHeartRate(target: Int, timeInSecs: Float, delay: Float, force: Boolean) {
+            if (heartInfo.GetEndValue() == target.toFloat()) {
                 return
             }
             if (AI_DEAD.underscore()!! && !force) {
@@ -4693,7 +4693,7 @@ object Player {
                 (Game_local.gameLocal.time + delay * 1000).toInt().toFloat(),
                 (timeInSecs * 1000).toInt().toFloat(),
                 0.0f + heartRate,
-                target
+                target.toFloat()
             )
         }
 
@@ -4701,10 +4701,10 @@ object Player {
             val base =
                 idMath.FtoiFast(BASE_HEARTRATE + LOWHEALTH_HEARTRATE_ADJ - health.toFloat() / 100 * LOWHEALTH_HEARTRATE_ADJ)
             if (PowerUpActive(ADRENALINE)) {
-                heartRate = 135.0f
+                heartRate = 135
             } else {
-                heartRate = idMath.FtoiFast(heartInfo.GetCurrentValue(Game_local.gameLocal.time.toFloat())).toFloat()
-                val currentRate = GetBaseHeartRate().toFloat()
+                heartRate = idMath.FtoiFast(heartInfo.GetCurrentValue(Game_local.gameLocal.time.toFloat()))
+                val currentRate = GetBaseHeartRate()
                 if (health >= 0 && Game_local.gameLocal.time > lastHeartAdjust + 2500) {
                     AdjustHeartRate(currentRate, 2.5f, 0.0f, false)
                 }
@@ -4716,10 +4716,10 @@ object Player {
                 val zeroVol = ZERO_VOLUME
                 var pct = 0.0f
                 if (heartRate > BASE_HEARTRATE && health > 0) {
-                    pct = (heartRate - base) / (MAX_HEARTRATE - base)
+                    pct = (heartRate - base).toFloat() / (MAX_HEARTRATE - base)
                     pct *= dmgVol.toFloat() - zeroVol.toFloat()
                 } else if (health <= 0) {
-                    pct = (heartRate - DYING_HEARTRATE) / (BASE_HEARTRATE - DYING_HEARTRATE)
+                    pct = (heartRate - DYING_HEARTRATE).toFloat() / (BASE_HEARTRATE - DYING_HEARTRATE)
                     if (pct > 1.0f) {
                         pct = 1.0f
                     } else if (pct < 0) {

@@ -1751,7 +1751,10 @@ open class idAI : idActor() {
         savefile.ReadVec3(projectileGravity)
         projectile.Restore(savefile)
         savefile.ReadString(attack)
-        savefile.ReadSoundShader(chat_snd!!)
+        // FIX: chat_snd may be null; create temp object for ReadSoundShader which requires non-null
+        val tempSoundShader = idSoundShader()
+        savefile.ReadSoundShader(tempSoundShader)
+        chat_snd = tempSoundShader
         chat_min = savefile.ReadInt()
         chat_max = savefile.ReadInt()
         chat_time = savefile.ReadInt()
@@ -1788,7 +1791,10 @@ open class idAI : idActor() {
         particles.SetNum(num)
         i = 0
         while (i < particles.Num()) {
-            savefile.ReadParticle(particles[i].particle!!)
+            // FIX: particle may be null; create temp object for ReadParticle which requires non-null
+            val tempParticle = idDeclParticle()
+            savefile.ReadParticle(tempParticle)
+            particles[i].particle = tempParticle
             particles[i].time = savefile.ReadInt()
             particles[i].joint = savefile.ReadJoint()
             i++
@@ -2127,8 +2133,9 @@ open class idAI : idActor() {
         spawnArgs.GetString("use_aas", null, use_aas)
         aas = Game_local.gameLocal.GetAAS(use_aas.toString())
         if (aas != null) {
-            val settings = aas!!.GetSettings()!!
-            aas = if (settings != null) {
+            // FIX: GetSettings() returns nullable; was using !! which would NPE when settings is null
+            val settings = aas!!.GetSettings()
+            if (settings != null) {
                 if (!ValidForBounds(settings, physicsObj.GetBounds())) {
                     idGameLocal.Error("%s cannot use use_aas %s\n", name, use_aas)
                 }
@@ -2136,7 +2143,7 @@ open class idAI : idActor() {
                 physicsObj.SetMaxStepHeight(height)
                 return
             } else {
-                null
+                aas = null
             }
         }
         Game_local.gameLocal.Printf("WARNING: %s has no AAS file\n", name)
@@ -2760,7 +2767,10 @@ open class idAI : idActor() {
         val moveResult: monsterMoveResult_t?
         val newDest = idVec3()
         val oldOrigin = idVec3(physicsObj.GetOrigin())
-        val oldAxis = viewAxis
+        // FIX: Was `val oldAxis = viewAxis` which copies the reference, not the value.
+        // Turn() modifies viewAxis in-place via .set(), so oldAxis and viewAxis would be
+        // the same object, causing GetMoveDelta to receive identical matrices.
+        val oldAxis = idMat3(viewAxis)
         AI_BLOCKED.underscore(false)
         if (TempDump.etoi(move.moveCommand) < TempDump.etoi(moveCommand_t.NUM_NONMOVING_COMMANDS)) {
             move.lastMoveOrigin.Zero()
@@ -4970,7 +4980,8 @@ open class idAI : idActor() {
         bounds[1][2] = myBounds[1][2] + 4.0f
         bounds.TranslateSelf(org)
         val enemyOrg = idVec3(enemyEnt.GetPhysics().GetOrigin())
-        val enemyBounds = enemyEnt.GetPhysics().GetBounds()
+        // FIX: Was direct reference alias; TranslateSelf would corrupt the physics bounds in-place
+        val enemyBounds = idBounds(enemyEnt.GetPhysics().GetBounds())
         enemyBounds.TranslateSelf(enemyOrg)
         if (SysCvar.ai_debugMove.GetBool()) {
             Game_local.gameRenderWorld!!.DebugBounds(
@@ -5302,7 +5313,10 @@ open class idAI : idActor() {
         } else {
             focusPos.set(focusEnt.GetPhysics().GetOrigin())
         }
-        currentFocusPos.set(currentFocusPos.plus(focusPos.minus(currentFocusPos)).times(eyeFocusRate))
+        // FIX: Was currentFocusPos.plus(focusPos.minus(currentFocusPos)).times(eyeFocusRate)
+        // which chains left-to-right: (currentFocusPos + (focusPos - currentFocusPos)) * rate = focusPos * rate
+        // C++ original: currentFocusPos + (focusPos - currentFocusPos) * eyeFocusRate (standard lerp)
+        currentFocusPos.set(currentFocusPos.plus(focusPos.minus(currentFocusPos).times(eyeFocusRate)))
         // determine yaw from origin instead of from focus joint since joint may be offset, which can cause us to bounce between two angles
         dir.set(focusPos.minus(orientationJointPos))
         newLookAng.yaw = idMath.AngleNormalize180(dir.ToYaw() - orientationJointYaw)
@@ -5710,7 +5724,9 @@ open class idAI : idActor() {
         val axis = idMat3()
         if (null == projectileDef) {
             Game_local.gameLocal.Warning("%s (%s) doesn't have a projectile specified", name, GetEntityDefName())
+            // FIX: Was missing return; C++ uses `return idThread::ReturnEntity(NULL)` to exit early
             idThread.ReturnEntity(null)
+            return
         }
         GetMuzzle(jointname, muzzle, axis)
         CreateProjectile(muzzle, viewAxis[0].times(physicsObj.GetGravityAxis()))

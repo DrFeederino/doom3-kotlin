@@ -1,3 +1,17 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/framework/DeclParticle.h
+ *                  neo/framework/DeclParticle.cpp
+ *
+ * Doom 3 GPL Source Code
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ */
 package neo.framework
 
 import neo.Renderer.Material
@@ -436,17 +450,19 @@ object DeclParticle {
             val width = 1.0f / animationFrames
             val frac = g.animationFrameFrac
             val iFrac = 1.0f - frac
+            // FIX: color bytes are stored as signed (Kotlin Byte), but C++ uses unsigned char (0-255).
+            // Must mask with 0xFF before multiplying to avoid sign-extension producing negative results.
             for (i in 0 until numVerts) {
                 verts[numVerts + i].set(verts[i])
                 verts[numVerts + i].st.x += width
-                verts[numVerts + i].color[0] = (verts[numVerts + i].color[0] * frac).toInt().toByte()
-                verts[numVerts + i].color[1] = (verts[numVerts + i].color[1] * frac).toInt().toByte()
-                verts[numVerts + i].color[2] = (verts[numVerts + i].color[2] * frac).toInt().toByte()
-                verts[numVerts + i].color[3] = (verts[numVerts + i].color[3] * frac).toInt().toByte()
-                verts[i].color[0] = (verts[i].color[0] * iFrac).toInt().toByte()
-                verts[i].color[1] = (verts[i].color[1] * iFrac).toInt().toByte()
-                verts[i].color[2] = (verts[i].color[2] * iFrac).toInt().toByte()
-                verts[i].color[3] = (verts[i].color[3] * iFrac).toInt().toByte()
+                verts[numVerts + i].color[0] = ((verts[numVerts + i].color[0].toInt() and 0xFF) * frac).toInt().toByte()
+                verts[numVerts + i].color[1] = ((verts[numVerts + i].color[1].toInt() and 0xFF) * frac).toInt().toByte()
+                verts[numVerts + i].color[2] = ((verts[numVerts + i].color[2].toInt() and 0xFF) * frac).toInt().toByte()
+                verts[numVerts + i].color[3] = ((verts[numVerts + i].color[3].toInt() and 0xFF) * frac).toInt().toByte()
+                verts[i].color[0] = ((verts[i].color[0].toInt() and 0xFF) * iFrac).toInt().toByte()
+                verts[i].color[1] = ((verts[i].color[1].toInt() and 0xFF) * iFrac).toInt().toByte()
+                verts[i].color[2] = ((verts[i].color[2].toInt() and 0xFF) * iFrac).toInt().toByte()
+                verts[i].color[3] = ((verts[i].color[3].toInt() and 0xFF) * iFrac).toInt().toByte()
             }
             return numVerts * 2
         }
@@ -602,7 +618,8 @@ object DeclParticle {
                         origin[0] = c1._val * c2._val
                         origin[1] = s1._val * c2._val
                         origin[2] = -s2._val
-                        origin.times(customPathParms[2])
+                        // FIX: was origin.times(customPathParms[2]) which returns a new vector and discards it; must modify in-place
+                        origin.timesAssign(customPathParms[2])
                     }
 
                     prtCustomPth_t.PPATH_ORBIT -> {
@@ -889,7 +906,11 @@ object DeclParticle {
             directionParms[1] = src.directionParms[1]
             directionParms[2] = src.directionParms[2]
             directionParms[3] = src.directionParms[3]
-            speed = src.speed
+            // FIX: was 'speed = src.speed' (reference copy, causes aliasing between stages)
+            // C++ operator= copies the struct by value; replicate field-by-field
+            speed.from = src.speed.from
+            speed.to = src.speed.to
+            speed.table = src.speed.table
             gravity = src.gravity
             worldGravity = src.worldGravity
             randomDistribution = src.randomDistribution
@@ -907,14 +928,22 @@ object DeclParticle {
             animationFrames = src.animationFrames
             animationRate = src.animationRate
             initialAngle = src.initialAngle
-            rotationSpeed = src.rotationSpeed
+            // FIX: was 'rotationSpeed = src.rotationSpeed' (reference copy)
+            rotationSpeed.from = src.rotationSpeed.from
+            rotationSpeed.to = src.rotationSpeed.to
+            rotationSpeed.table = src.rotationSpeed.table
             orientation = src.orientation
             orientationParms[0] = src.orientationParms[0]
             orientationParms[1] = src.orientationParms[1]
             orientationParms[2] = src.orientationParms[2]
             orientationParms[3] = src.orientationParms[3]
-            size = src.size
-            aspect = src.aspect
+            // FIX: was 'size = src.size' / 'aspect = src.aspect' (reference copies)
+            size.from = src.size.from
+            size.to = src.size.to
+            size.table = src.size.table
+            aspect.from = src.aspect.from
+            aspect.to = src.aspect.to
+            aspect.table = src.aspect.table
             color.set(src.color)
             fadeColor.set(src.fadeColor)
             fadeInFraction = src.fadeInFraction
@@ -985,11 +1014,12 @@ object DeclParticle {
 
         val stages: idList<idParticleStage> = idList()
         override fun DefaultDefinition(): String {
+            // NOTE: original C++ uses "1.0" (not "1.0f") — match exactly
             return """{
 	{
 		material	_default
 		count	20
-		time		1.0f
+		time		1.0
 	}
 }"""
         }

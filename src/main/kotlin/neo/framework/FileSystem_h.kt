@@ -702,7 +702,8 @@ object FileSystem_h {
 
     internal class excludePathPrefixAndExtension : pureExclusionFunc_t() {
         override fun run(excl: pureExclusion_s, l: Int, name: idStr): Boolean {
-            return l > excl.extLen && 0 == idStr.Icmp(
+            // FIX: C++ checks `l > excl.nameLen`, not `l > excl.extLen`
+            return l > excl.nameLen && 0 == idStr.Icmp(
                 name.toString().substring(l - excl.extLen),
                 excl.ext!!
             ) && 0 == name.IcmpPrefixPath(excl.name!!)
@@ -1353,9 +1354,9 @@ object FileSystem_h {
             while (ofs < path.Length()) {
                 if (path[ofs] == sys_public.PATHSEPERATOR_CHAR) {
                     // create the directory
-                    path[ofs] = '0'
-                    win_main.Sys_Mkdir(path)
-                    path[ofs] = sys_public.PATHSEPERATOR_CHAR
+                    // FIX: C++ uses null-termination (*ofs = 0) which doesn't work in Kotlin strings.
+                    // Use substring to pass only the path up to this separator.
+                    win_main.Sys_Mkdir(idStr(path.toString().substring(0, ofs)))
                 }
                 ofs++
             }
@@ -1758,7 +1759,9 @@ object FileSystem_h {
             var pack: pack_t?
             restartChecksums.Clear()
             i = 0
-            while (i < pureChecksums.size) {
+            // FIX: C++ uses `while ( pureChecksums[ i ] )` (0-terminated sentinel),
+            // not `while (i < pureChecksums.size)` which processes the entire array
+            while (i < pureChecksums.size && pureChecksums[i] != 0) {
                 pack = GetPackForChecksum(pureChecksums[i], true)
                 if (null == pack) {
                     idLib.common.FatalError(
@@ -2300,7 +2303,8 @@ object FileSystem_h {
                 idLib.common.FatalError("Filesystem call made without initialization\n")
             }
             path = CVarSystem.cvarSystem.GetCVarString(basePath)
-            if (!path.isEmpty()) {
+            // FIX: C++ checks `if ( !path[0] )` meaning "if path is empty", not "if path is NOT empty"
+            if (path.isEmpty()) {
                 path = fs_savepath.GetString()!!
             }
             OSpath = BuildOSPath(path, gameFolder.toString(), filename)
@@ -2768,7 +2772,8 @@ object FileSystem_h {
 
         override fun FindFile(path: String, scheduleAddons: Boolean): findFile_t {
             val pak = arrayOfNulls<pack_t?>(1)
-            OpenFileReadFlags(
+            // FIX: Capture the returned file so it can be closed (resource leak)
+            val f = OpenFileReadFlags(
                 path,
                 FSFLAG_SEARCH_DIRS or FSFLAG_SEARCH_PAKS or FSFLAG_SEARCH_ADDONS,
                 pak
@@ -2776,6 +2781,7 @@ object FileSystem_h {
                 ?: return findFile_t.FIND_NO
             if (null == pak[0]) {
                 // found in FS, not even in paks
+                CloseFile(f)
                 return findFile_t.FIND_YES
             }
             // marking addons for inclusion on reload - may need to do that even when already in the search path
@@ -2783,11 +2789,10 @@ object FileSystem_h {
                 addonChecksums.Append(pak[0]!!.checksum)
             }
             // an addon that's not on search list yet? that will require a restart
+            CloseFile(f)
             return if (pak[0]!!.addon && !pak[0]!!.addon_search) {
-//		delete f;
                 findFile_t.FIND_ADDON
             } else findFile_t.FIND_YES
-            //	delete f;
         }
 
         /*
@@ -4018,8 +4023,10 @@ object FileSystem_h {
             hashindex = 0
             while (hashindex < FILE_HASH_SIZE) {
                 abrt = false
-                pak.buildBuffer[hashindex] = pak.hashTable[hashindex]!!
-                file = pak.buildBuffer[hashindex]
+                // FIX: C++ just assigns `file = pak->hashTable[hashindex]` (a local pointer).
+                // The Kotlin code was doing `pak.buildBuffer[hashindex] = pak.hashTable[hashindex]!!`
+                // which crashes with NPE when hashTable entry is null (most entries are null).
+                file = pak.hashTable[hashindex]
                 while (file != null) {
                     abrt = true
                     l = file.name.Length()
@@ -4084,7 +4091,9 @@ object FileSystem_h {
 //			delete info;
                     return null
                 }
-                if (token.toString() != "}") {
+                // FIX: C++ `!token.Icmp("}")` returns true when token IS "}".
+                // Kotlin had `!= "}"` which is the opposite — breaks immediately on non-"}" tokens.
+                if (token.toString() == "}") {
                     break
                 }
                 if (token.type != Token.TT_STRING) {
@@ -4094,8 +4103,11 @@ object FileSystem_h {
                 }
                 var checksum: Int
 
-//		if ( sscanf( token.c_str(), "0x%x", checksum ) != 1 && sscanf( token.c_str(), "%x", checksum ) != 1 ) {
-                if (String.format("%x", token).toInt().also { checksum = it } != 0) {
+                // FIX: C++ uses sscanf with "%x" format to parse hex checksums.
+                // Kotlin had `String.format("%x", token).toInt()` which is nonsensical.
+                try {
+                    checksum = java.lang.Long.decode(token.toString()).toInt()
+                } catch (e: NumberFormatException) {
                     src.Warning("Could not parse checksum '%s'", token.toString())
                     //			delete info;
                     return null
@@ -4126,7 +4138,8 @@ object FileSystem_h {
                     if (!src.ReadToken(token)) {
                         break
                     }
-                    if (token.toString() != "}") {
+                    // FIX: Same inverted comparison as above — C++ `!token.Icmp("}")` means equal
+                    if (token.toString() == "}") {
                         break
                     }
                     if (token.type != Token.TT_STRING) {

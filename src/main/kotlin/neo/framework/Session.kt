@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/framework/Session.h, neo/framework/Session.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
 package neo.framework
 
 import neo.Game.Game_local
@@ -33,7 +58,9 @@ class Session {
         // attempt to force uninitialized stack memory bugs
         val bytes = 4000000
         val buf = ByteArray(bytes)
-        val fill = (Math.random().toInt() and 255).toByte()
+        // FIX: Math.random() returns [0.0, 1.0), toInt() truncates to 0, so fill was always 0.
+        // C++ uses rand()&255 which produces a random byte value.
+        val fill = ((Math.random() * 256).toInt() and 255).toByte()
         for (i in 0 until bytes) {
             buf[i] = fill
         }
@@ -46,10 +73,11 @@ class Session {
     //
     // needed by the gui system for the load game menu
     class logStats_t : SERiAL {
-        var combat = 0
+        // FIX: C++ declares all fields as short. heartRate was incorrectly Float (0.0f).
         var health = 0
-        var heartRate = 0.0f
+        var heartRate = 0
         var stamina = 0
+        var combat = 0
 
         override fun AllocBuffer(): ByteBuffer {
             throw TODO_Exception()
@@ -222,7 +250,7 @@ class Session {
         abstract fun WriteCDKey()
 
         // returns NULL for if xp is true and xp key is not valid or not present
-        abstract fun GetCDKey(xp: Boolean): String? //TODO:string pointer?
+        abstract fun GetCDKey(xp: Boolean): String?
 
         // check keys for validity when typed in by the user ( with checksum verification )
         // store the new set of keys if they are found valid
@@ -391,7 +419,7 @@ class Session {
             CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "disconnect")
             string = String.format("dmap maps/%s.map", map)
             CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, string)
-            string = String.format("devmap %s", map) //TODO:can this shit format char*?
+            string = String.format("devmap %s", map)
             CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, string)
         }
 
@@ -678,11 +706,16 @@ class Session {
      Session_AVIGame_f
      ================
      */
+    // NOTE: C++ Session_AVIGame_f simply passes args.Argv(1) as const char* to AVIGame().
+    // The Kotlin AVIGame() in Session_local.kt takes Array<String> to simulate pointer
+    // write-back for the generated filename. The args.set(Argv[0]) call after AVIGame
+    // modifies args, which the C++ original does NOT do. This is an over-engineered
+    // workaround that should be simplified when Session_local.kt is reviewed.
     internal class Session_AVIGame_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
             val Argv = arrayOf(args!!.Argv(1))
             val empty = Argv[0].isEmpty()
-            sessLocal.AVIGame(Argv) //TODO:back reference
+            sessLocal.AVIGame(Argv)
             if (empty) {
                 args.set(Argv[0])
             }
@@ -803,6 +836,8 @@ class Session {
      Session_EndOfDemo_f
      ================
      */
+    // NOTE: Kotlin-only, no C++ counterpart. This command does not exist in dhewm3.
+    // Appears to be a custom addition for demo version support.
     internal class Session_EndOfDemo_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
             sessLocal.Stop()
@@ -897,10 +932,10 @@ class Session {
         @Throws(idException::class)
         override fun run(args: CmdArgs.idCmdArgs?) {
             if (args!!.Argc() < 2 || idStr.Icmp(args.Argv(1), "quick") == 0) {
-                val saveName = Common.common.GetLanguageDict().GetString("#str_07178")
-                if (sessLocal.SaveGame(saveName)) {
-                    Common.common.Printf("%s\n", saveName)
-                }
+                // FIX: C++ calls sessLocal.QuickSave() which handles save rotation
+                // via com_numQuicksaves. The original Kotlin called SaveGame directly
+                // with a hardcoded name, losing the rotation logic.
+                sessLocal.QuickSave()
             } else {
                 if (sessLocal.SaveGame(args.Argv(1))) {
                     Common.common.Printf("Saved %s\n", args.Argv(1))
@@ -1003,29 +1038,11 @@ class Session {
      */
 
         val session: idSession = sessLocal
-        var PREVIEW_HEIGHT = 298
-        var PREVIEW_WIDTH = 398
-
-        //
-        //
-        //
-        ////    idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
-        //idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
-        //idCVar	idSessionLocal::com_showTics( "com_showTics", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
-        //idCVar	idSessionLocal::com_fixedTic( "com_fixedTic", "0", CVAR_SYSTEM | CVAR_INTEGER, "", 0, 10 );
-        //idCVar	idSessionLocal::com_showDemo( "com_showDemo", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
-        //idCVar	idSessionLocal::com_skipGameDraw( "com_skipGameDraw", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
-        //idCVar	idSessionLocal::com_aviDemoSamples( "com_aviDemoSamples", "16", CVAR_SYSTEM, "" );
-        //idCVar	idSessionLocal::com_aviDemoWidth( "com_aviDemoWidth", "256", CVAR_SYSTEM, "" );
-        //idCVar	idSessionLocal::com_aviDemoHeight( "com_aviDemoHeight", "256", CVAR_SYSTEM, "" );
-        //idCVar	idSessionLocal::com_aviDemoTics( "com_aviDemoTics", "2", CVAR_SYSTEM | CVAR_INTEGER, "", 1, 60 );
-        //idCVar	idSessionLocal::com_wipeSeconds( "com_wipeSeconds", "1", CVAR_SYSTEM, "" );
-        //idCVar	idSessionLocal::com_guid( "com_guid", "", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_ROM, "" );
-        //
-        //
         // these must be kept up to date with window Levelshot in guis/mainmenu.gui
-        var PREVIEW_X = 211
-        var PREVIEW_Y = 31
+        const val PREVIEW_X = 211
+        const val PREVIEW_Y = 31
+        const val PREVIEW_WIDTH = 398
+        const val PREVIEW_HEIGHT = 298
 
         /*
      ===================
@@ -1041,7 +1058,7 @@ class Session {
      */
         fun FindUnusedFileName(format: String): String {
             var i: Int
-            var filename = "" //=new char[1024];
+            var filename = ""
             i = 0
             while (i < 999) {
                 filename = String.format(format, i)
