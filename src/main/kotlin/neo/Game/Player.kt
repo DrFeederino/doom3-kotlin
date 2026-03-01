@@ -776,7 +776,7 @@ object Player {
 
             // weapons are stored as a number for persistant data, but as strings in the entityDef
             weapons = dict.GetInt("weapon_bits", "0")
-            if (BuildDefines.ID_DEMO_BUILD) {
+            if (ID_DEMO_BUILD) {
                 Give(owner, dict, "weapon", dict.GetString("weapon"), null, false)
             } else {
                 if (SysCvar.g_skill.GetInteger() >= 3) {
@@ -1627,7 +1627,7 @@ object Player {
                 } else {
                     SysCvar.g_damageScale.SetFloat(1.0f)
                     SysCvar.g_armorProtection.SetFloat(if (SysCvar.g_skill.GetInteger() < 2) 0.4f else 0.2f)
-                    if (BuildDefines.ID_DEMO_BUILD) {
+                    if (ID_DEMO_BUILD) {
                         if (SysCvar.g_skill.GetInteger() == 3) {
                             healthTake = true
                             nextHealthTake = Game_local.gameLocal.time + SysCvar.g_healthTakeTime.GetInteger() * 1000
@@ -7087,7 +7087,7 @@ object Player {
                 nextHealthPulse = Game_local.gameLocal.time + HEALTHPULSE_TIME
                 healthPulse = true
             }
-            if (BuildDefines.ID_DEMO_BUILD) {
+            if (ID_DEMO_BUILD) {
                 if (!Game_local.gameLocal.inCinematic && influenceActive == 0 && SysCvar.g_skill.GetInteger() == 3 && Game_local.gameLocal.time > nextHealthTake && !AI_DEAD.underscore()!! && health > SysCvar.g_healthTakeLimit.GetInteger()) {
                     assert(
                         !Game_local.gameLocal.isClient // healthPool never be set on client

@@ -200,7 +200,7 @@ class Console {
                 event.evType == sysEventType_t.SE_KEY && (event.evValue == win_input.Sys_GetConsoleKey(false).code || event.evValue == win_input.Sys_GetConsoleKey(
                     true
                 ).code)
-            if (BuildDefines.ID_CONSOLE_LOCK) {
+            if (ID_CONSOLE_LOCK) {
                 // If the console's not already down, and we have it turned off, check for ctrl+alt
                 if (!keyCatching && !Common.com_allowConsole.GetBool()) {
                     if (!idKeyInput.IsDown(KeyInput.K_CTRL) || !idKeyInput.IsDown(KeyInput.K_ALT)) {
@@ -298,7 +298,7 @@ class Console {
             var l: Int
             var color: Int
             var txt_p = 0
-            if (BuildDefines.ID_ALLOW_TOOLS) {
+            if (ID_ALLOW_TOOLS) {
                 edit_public.RadiantPrint(txt)
                 if (Common.com_editors and Common.EDITOR_MATERIAL != 0) {
                     edit_public.MaterialEditorPrintConsole(txt)
@@ -801,7 +801,7 @@ class Console {
 
             // draw the version number
             RenderSystem.renderSystem.SetColor(idStr.ColorForIndex(Str.C_COLOR_CYAN))
-            val version = Str.va("%s.%d", Licensee.ENGINE_VERSION, BuildVersion.BUILD_NUMBER).toCharArray()
+            val version = Str.va("%s.%d", Licensee.ENGINE_VERSION, BUILD_NUMBER).toCharArray()
             i = version.size
             x = 0
             while (x < i) {

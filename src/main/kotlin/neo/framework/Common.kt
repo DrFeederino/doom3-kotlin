@@ -207,7 +207,7 @@ class Common {
             string = String.format(
                 "%s.%d%s %s %s",
                 Licensee.ENGINE_VERSION,
-                BuildVersion.BUILD_NUMBER,
+                BUILD_NUMBER,
                 BUILD_DEBUG,
                 sys_public.BUILD_STRING,
                 SysCvar.__DATE__ /*, __TIME__*/
@@ -338,7 +338,7 @@ class Common {
                 InitGame()
 
                 // don't add startup commands if no CD key is present
-                if (BuildDefines.ID_ENFORCE_KEY && (!Session.session.CDKeysAreValid(false) || !AddStartupCommands())
+                if (ID_ENFORCE_KEY && (!Session.session.CDKeysAreValid(false) || !AddStartupCommands())
                     || !AddStartupCommands()
                 ) {
 
@@ -349,7 +349,7 @@ class Common {
 
                 // print all warnings queued during initialization
                 PrintWarnings()
-                if (BuildDefines.ID_DEDICATED) {
+                if (ID_DEDICATED) {
                     Printf("\nType 'help' for dedicated server info.\n\n")
                 }
 
@@ -404,7 +404,7 @@ class Common {
         }
 
         override fun Quit() {
-            if (BuildDefines.ID_ALLOW_TOOLS) {
+            if (ID_ALLOW_TOOLS) {
                 if (com_editors and EDITOR_RADIANT != 0) {
                     edit_public.RadiantInit()
                     return
@@ -605,7 +605,7 @@ class Common {
         }
 
         override fun InitTool(toolFlag_t: Int, dict: idDict) {
-            if (BuildDefines.ID_ALLOW_TOOLS) {
+            if (ID_ALLOW_TOOLS) {
                 if (toolFlag_t and EDITOR_SOUND != 0) {
                     edit_public.SoundEditorInit(dict)
                 } else if (toolFlag_t and EDITOR_LIGHT != 0) {
@@ -1202,7 +1202,7 @@ class Common {
 
             // init async network
             idAsyncNetwork.Init()
-            if (BuildDefines.ID_DEDICATED) {
+            if (ID_DEDICATED) {
                 idAsyncNetwork.server.InitPort()
                 cvarSystem.SetCVarBool("s_noSound", true)
             } else {
@@ -1560,7 +1560,7 @@ class Common {
                 CmdSystem.CMD_FL_SYSTEM,
                 "execs the appropriate config files and sets cvars based on com_machineSpec"
             )
-            if (!BuildDefines.ID_DEMO_BUILD && !BuildDefines.ID_DEDICATED) {
+            if (!ID_DEMO_BUILD && !ID_DEDICATED) {
                 // compilers
                 CmdSystem.cmdSystem.AddCommand(
                     "dmap",
@@ -1611,7 +1611,7 @@ class Common {
                     "encodes a roq file"
                 )
             }
-            if (BuildDefines.ID_ALLOW_TOOLS) {
+            if (ID_ALLOW_TOOLS) {
                 // editors
                 CmdSystem.cmdSystem.AddCommand(
                     "editor",
@@ -1764,7 +1764,7 @@ class Common {
                 CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
                 "finishes the build process"
             )
-            if (BuildDefines.ID_DEDICATED) {
+            if (ID_DEDICATED) {
                 CmdSystem.cmdSystem.AddCommand("help", Com_Help_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "shows help")
             }
         }
@@ -1979,7 +1979,7 @@ class Common {
                 }
                 warningFile.ForceFlush()
                 FileSystem_h.fileSystem.CloseFile(warningFile)
-                if (BuildDefines._WIN32 && !BuildDefines._DEBUG) {
+                if (_WIN32 && !_DEBUG) {
                     val osPath: String?
                     osPath = FileSystem_h.fileSystem.RelativePathToOSPath("warnings.txt", "fs_savepath")
                     try {
@@ -3177,12 +3177,12 @@ class Common {
         )
 
         //
-        val com_asyncSound: idCVar = if (BuildDefines.MACOS_X) idCVar(
+        val com_asyncSound: idCVar = if (MACOS_X) idCVar(
             "com_asyncSound",
             "2",
             CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ROM,
             ASYNCSOUND_INFO
-        ) else if (BuildDefines.__linux__) idCVar(
+        ) else if (__linux__) idCVar(
             "com_asyncSound",
             "3",
             CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ROM,
@@ -3328,7 +3328,7 @@ class Common {
             CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_NOCHEAT or CVarSystem.CVAR_ARCHIVE,
             "holds the last amount of detected video ram"
         )
-        val BUILD_DEBUG: String = if (BuildDefines._DEBUG) "-debug" else ""
+        val BUILD_DEBUG: String = if (_DEBUG) "-debug" else ""
         const val ID_WRITE_VERSION = false
         const val MAX_PRINT_MSG_SIZE = 4096
         const val MAX_WARNING_LIST = 256

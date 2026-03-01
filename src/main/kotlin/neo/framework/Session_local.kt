@@ -385,7 +385,7 @@ object Session_local {
                 CmdSystem.CMD_FL_SYSTEM,
                 "disconnects from a game"
             )
-            if (BuildDefines.ID_DEMO_BUILD) {
+            if (ID_DEMO_BUILD) {
                 CmdSystem.cmdSystem.AddCommand(
                     "endOfDemo",
                     Session_EndOfDemo_f.getInstance(),
@@ -457,7 +457,7 @@ object Session_local {
             menuSoundWorld = snd_system.soundSystem.AllocSoundWorld(rw)
 
             // we have a single instance of the main menu
-            guiMainMenu = if (BuildDefines.ID_DEMO_BUILD) { //#ifndef
+            guiMainMenu = if (ID_DEMO_BUILD) { //#ifndef
                 UserInterface.uiManager.FindGui("guis/demo_mainmenu.gui", true, false, true)
             } else {
                 UserInterface.uiManager.FindGui("guis/mainmenu.gui", true, false, true)
@@ -547,7 +547,7 @@ object Session_local {
         }
 
         override fun UpdateScreen(outOfSequence: Boolean) {
-            if (BuildDefines._WIN32) {
+            if (_WIN32) {
                 if (Common.com_editors != 0) {
                     if (!win_main.Sys_IsWindowVisible()) {
                         return
@@ -706,7 +706,7 @@ object Session_local {
             }
 
             // FIXME: deserves a cleanup and abstraction
-            if (BuildDefines._WIN32 || BuildDefines._MACOSX) {
+            if (_WIN32 || _MACOSX) {
                 // Spin in place if needed.  The game should yield the cpu if
                 // it is running over 60 hz, because there is fundamentally
                 // nothing useful for it to do.
@@ -1674,11 +1674,11 @@ object Session_local {
 
 
         fun StartNewGame(mapName: String, devmap: Boolean = false /*= false*/) {
-            if (BuildDefines.ID_DEDICATED) {
+            if (ID_DEDICATED) {
                 Common.common.Printf("Dedicated servers cannot start singleplayer games.\n")
                 return
             } else {
-                if (BuildDefines.ID_ENFORCE_KEY) {
+                if (ID_ENFORCE_KEY) {
                     // strict check. don't let a game start without a definitive answer
                     if (!CDKeysAreValid(true)) {
                         var prompt = true
@@ -1774,7 +1774,7 @@ object Session_local {
                 return
             }
             while (Common.com_ticNumber < wipeStopTic) {
-                if (BuildDefines.ID_CONSOLE_LOCK) {
+                if (ID_CONSOLE_LOCK) {
                     emptyDrawCount = 0
                 }
                 Common.common.Async()
@@ -2247,7 +2247,7 @@ object Session_local {
             guiMsgRestore = null
             msgIgnoreButtons = false
             bytesNeededForMapLoad = 0
-            if (BuildDefines.ID_CONSOLE_LOCK) {
+            if (ID_CONSOLE_LOCK) {
                 emptyDrawCount = 0
             }
             ClearWipe()
@@ -2375,7 +2375,7 @@ object Session_local {
                     RenderSystem.renderSystem.WriteDemoPics()
                 }
             } else {
-                if (BuildDefines.ID_CONSOLE_LOCK) {
+                if (ID_CONSOLE_LOCK) {
                     if (Common.com_allowConsole.GetBool()) {
                         Console.console.Draw(true)
                     } else {
@@ -2406,7 +2406,7 @@ object Session_local {
                 }
                 fullConsole = true
             }
-            if (BuildDefines.ID_CONSOLE_LOCK) {
+            if (ID_CONSOLE_LOCK) {
                 if (!fullConsole && emptyDrawCount != 0) {
                     Common.common.DPrintf("idSession: %d empty frame draws\n", emptyDrawCount)
                     emptyDrawCount = 0
@@ -3577,7 +3577,7 @@ object Session_local {
                     if (icmd._val < args.Argc()) {
                         StartNewGame(args.Argv(icmd.increment()))
                     } else {
-                        if (BuildDefines.ID_DEMO_BUILD) {
+                        if (ID_DEMO_BUILD) {
                             StartNewGame("game/mars_city1")
                         } else {
                             StartNewGame("game/demo_mars_city1")
@@ -3868,7 +3868,7 @@ object Session_local {
                         val old = CVarSystem.cvarSystem.GetCVarInteger("s_numberOfSpeakers")
                         CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "s_restart\n")
                         if (old != CVarSystem.cvarSystem.GetCVarInteger("s_numberOfSpeakers")) {
-                            if (BuildDefines._WIN32) {
+                            if (_WIN32) {
                                 MessageBox(
                                     msgBoxType_t.MSG_OK,
                                     Common.common.GetLanguageDict().GetString("#str_04142"),
@@ -4034,7 +4034,7 @@ object Session_local {
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "checkKeys")) {
-                    if (BuildDefines.ID_ENFORCE_KEY) {
+                    if (ID_ENFORCE_KEY) {
                         // not a strict check so you silently auth in the background without bugging the user
                         if (!Session.session.CDKeysAreValid(false)) {
                             CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "promptKey force")
@@ -4448,7 +4448,7 @@ object Session_local {
                 guiMainMenu!!.SetStateString("inGame", "0")
             }
             SetCDKeyGuiVars()
-            if (BuildDefines.ID_DEMO_BUILD) {
+            if (ID_DEMO_BUILD) {
                 guiMainMenu!!.SetStateString("nightmare", "0")
             } else {
                 guiMainMenu!!.SetStateString(
@@ -4461,7 +4461,7 @@ object Session_local {
             // Mods Menu
             SetModsMenuGuiVars()
             guiMsg!!.SetStateString("visible_hasxp", if (FileSystem_h.fileSystem.HasD3XP()) "1" else "0")
-            if (BuildDefines.__linux__) {
+            if (__linux__) {
                 guiMainMenu!!.SetStateString("driver_prompt", "1")
             } else {
                 guiMainMenu!!.SetStateString("driver_prompt", "0")

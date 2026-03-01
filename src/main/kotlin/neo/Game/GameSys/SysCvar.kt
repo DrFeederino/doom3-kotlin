@@ -2,7 +2,7 @@ package neo.Game.GameSys
 
 import neo.Game.Game_local
 import neo.Game.MultiplayerGame
-import neo.framework.BuildVersion
+import neo.framework.BUILD_NUMBER
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.idCmdSystem.*
@@ -21,7 +21,7 @@ class SysCvar {
             string = String.format(
                 "%s.%d%s %s %s",
                 Licensee.ENGINE_VERSION,
-                BuildVersion.BUILD_NUMBER,
+                BUILD_NUMBER,
                 BUILD_DEBUG,
                 sys_public.BUILD_STRING,
                 __DATE__ /*, __TIME__*/

@@ -347,7 +347,7 @@ class AsyncNetwork {
                 masters[2].cVar = master2
                 masters[3].cVar = master3
                 masters[4].cVar = master4
-                if (!BuildDefines.ID_DEMO_BUILD) { //#ifndef
+                if (!ID_DEMO_BUILD) { //#ifndef
                     cmdSystem.AddCommand(
                         "spawnServer",
                         SpawnServer_f.instance,
@@ -756,7 +756,7 @@ class AsyncNetwork {
         }
 
         init {
-            if (BuildDefines.ID_DEDICATED) { // dedicated executable can only have a value of 1 for net_serverDedicated
+            if (ID_DEDICATED) { // dedicated executable can only have a value of 1 for net_serverDedicated
                 serverDedicated = idCVar(
                     "net_serverDedicated",
                     "1",

@@ -1327,7 +1327,7 @@ object AsyncServer {
             } else {
                 msg.WriteBits(1, 1)
             }
-            if (BuildDefines.ID_CLIENTINFO_TAGS) {
+            if (ID_CLIENTINFO_TAGS) {
                 msg.WriteLong(Session.sessLocal.mapSpawnData.userInfo[userInfoNum].Checksum().toInt())
                 Common.common.DPrintf(
                     "broadcast for client %d: 0x%x\n",
@@ -1362,7 +1362,7 @@ object AsyncServer {
             msg.WriteByte(SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_CLIENTINFO.ordinal.toByte())
             msg.WriteByte(userInfoNum.toByte())
             msg.WriteBits(0, 1)
-            if (BuildDefines.ID_CLIENTINFO_TAGS) {
+            if (ID_CLIENTINFO_TAGS) {
                 msg.WriteLong(0)
                 Common.common.DPrintf("user info %d to client %d: null base\n", userInfoNum, clientNum)
             }

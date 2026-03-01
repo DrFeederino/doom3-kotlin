@@ -635,7 +635,7 @@ object MultiplayerGame {
                 i++
             }
             mainGui.StateChanged(Game_local.gameLocal.time)
-            if (BuildDefines.__linux__) {
+            if (__linux__) {
                 // replacing the oh-so-useful s_reverse with sound backend prompt
                 mainGui.SetStateString("driver_prompt", "1")
             } else {
@@ -3212,7 +3212,7 @@ object MultiplayerGame {
                         // don't do any respawns while we are in end game delay though
                         if (0 == fragLimitTimeout) {
                             if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM || p.IsLeader()) {
-                                if (BuildDefines._DEBUG) {
+                                if (_DEBUG) {
                                     assert(
                                         Game_local.gameLocal.gameType != gameType_t.GAME_TOURNEY || p.entityNumber == currentTourneyPlayer[0] || p.entityNumber == currentTourneyPlayer[1]
                                     )

@@ -9,12 +9,12 @@ import neo.Tools.Compilers.AAS.AASBuild.RunAAS_f
 import neo.Tools.Compilers.DMap.optimize.optVertex_s
 import neo.Tools.Compilers.DMap.tritjunction.hashVert_s
 import neo.cm.collisionModelManager
-import neo.framework.BuildDefines
 import neo.framework.CmdSystem
 import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
 import neo.framework.FileSystem_h
+import neo.framework._WIN32
 import neo.idlib.BV.idBounds
 import neo.idlib.CmdArgs
 import neo.idlib.MapFile.idMapEntity
@@ -288,7 +288,7 @@ object dmap {
                 noAAS = true
                 idLib.common.Printf("noAAS = true\n")
             } else if (idStr.Icmp(s, "editorOutput") == 0) {
-                if (BuildDefines._WIN32) {
+                if (_WIN32) {
                     Common.com_outputMsg = true
                 }
             } else {
@@ -365,7 +365,7 @@ object dmap {
 
         // clear the map plane list
         dmapGlobals.mapPlanes.Clear()
-        if (BuildDefines._WIN32) {
+        if (_WIN32) {
             throw TODO_Exception()
             //            if (com_outputMsg && com_hwndMsg != 0) {
 //                long msg = RegisterWindowMessage(DMAP_DONE);

@@ -875,7 +875,7 @@ object FileSystem_h {
             idLib.common.StartupVariable("fs_copyfiles", false)
             idLib.common.StartupVariable("fs_restrict", false)
             idLib.common.StartupVariable("fs_searchAddons", false)
-            if (!BuildDefines.ID_ALLOW_D3XP) {
+            if (!ID_ALLOW_D3XP) {
                 if (fs_game.GetString() != null && 0 == idStr.Icmp(fs_game.GetString()!!, "d3xp")) {
                     fs_game.SetString(null)
                 }
@@ -893,7 +893,7 @@ object FileSystem_h {
                 fs_cdpath.SetString(win_main.Sys_DefaultCDPath())
             }
             if (fs_devpath.GetString()!!.isEmpty()) {
-                if (BuildDefines.WIN32) {
+                if (WIN32) {
                     fs_devpath.SetString(
                         if (fs_cdpath.GetString()!!.isNotEmpty()) fs_cdpath.GetString() else fs_basepath.GetString()
                     )
@@ -1200,7 +1200,7 @@ object FileSystem_h {
             // "//Purgatory/purgatory/doom/base/models/mapobjects/bitch/hologirl.tga"
             // which won't match any of our drive letter based search paths
             var ignoreWarning = false
-            if (BuildDefines.ID_DEMO_BUILD) {
+            if (ID_DEMO_BUILD) {
                 base = OSPath.indexOf(Licensee.BASE_GAMEDIR)
                 var tempStr = OSPath
                 tempStr = tempStr.lowercase(Locale.getDefault())
@@ -1343,7 +1343,7 @@ object FileSystem_h {
             // make absolutely sure that it can't back up the path
             // FIXME: what about c: ?
             if (OSPath.contains("..") || OSPath.contains("::")) {
-                if (BuildDefines._DEBUG) {
+                if (_DEBUG) {
                     idLib.common.DPrintf("refusing to create relative path \"%s\"\n", OSPath)
                 }
                 return
@@ -1673,7 +1673,7 @@ object FileSystem_h {
                 return fsPureReply_t.PURE_NODLL
             }
             assert(gameDLLChecksum != 0)
-            if (BuildDefines.ID_FAKE_PURE) {
+            if (ID_FAKE_PURE) {
                 gamePakChecksum = _gamePakChecksum
             }
             if (_gamePakChecksum != gamePakChecksum) {
@@ -3706,7 +3706,7 @@ object FileSystem_h {
          ===================
          */
         private fun SetRestrictions() {
-            if (BuildDefines.ID_DEMO_BUILD) {
+            if (ID_DEMO_BUILD) {
                 idLib.common.Printf("\nRunning in restricted demo mode.\n\n")
                 // make sure that the pak file has the header checksum we expect
                 var search: searchpath_s?
@@ -3739,7 +3739,7 @@ object FileSystem_h {
                 path.endsWith(".so") ||
                 path.endsWith(".dylib") ||
                 path.endsWith(".scriptcfg") ||  // configuration script, such as map cycle
-                BuildDefines.ID_PURE_ALLOWDDS && path.endsWith("dds")
+                ID_PURE_ALLOWDDS && path.endsWith("dds")
             ) {
                 // note: cd and xp keys, as well as config.spec are opened through an explicit OS path and don't hit this
                 return true
@@ -4572,7 +4572,7 @@ object FileSystem_h {
                 idCVar("fs_basepath", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INIT, "")
             private val fs_caseSensitiveOS: idCVar = idCVar(
                 "fs_caseSensitiveOS",
-                if (BuildDefines.WIN32) "0" else "1",
+                if (WIN32) "0" else "1",
                 CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_BOOL,
                 ""
             )

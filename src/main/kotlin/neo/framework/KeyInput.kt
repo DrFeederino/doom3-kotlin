@@ -579,7 +579,7 @@ object KeyInput {
                     return if (!localized || kn.strId!![0] != '#') {
                         kn.name
                     } else {
-                        if (BuildDefines.MACOS_X) {
+                        if (MACOS_X) {
                             when (kn.keynum) {
                                 K_ENTER, K_BACKSPACE, K_ALT, K_INS, K_PRINT_SCR -> Common.common.GetLanguageDict()
                                     .GetString(kn.strId)

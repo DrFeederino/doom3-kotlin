@@ -47,7 +47,6 @@ import neo.TempDump.atof
 import neo.TempDump.btoi
 import neo.TempDump.ctos
 import neo.TempDump.itob
-import neo.framework.BuildDefines._WIN32
 import neo.framework.CVarSystem.CVAR_ARCHIVE
 import neo.framework.CVarSystem.CVAR_BOOL
 import neo.framework.CVarSystem.CVAR_CHEAT
@@ -69,6 +68,7 @@ import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.FileSystem_h.fileSystem
 import neo.framework.Session
+import neo.framework._WIN32
 import neo.idlib.CmdArgs
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.FindText

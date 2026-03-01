@@ -19,13 +19,10 @@
 package neo.sys
 
 import neo.TempDump
-import neo.framework.BuildDefines
-import neo.framework.CVarSystem
+import neo.framework.*
 import neo.framework.CVarSystem.idCVar
-import neo.framework.CmdSystem
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_String
 import neo.framework.Common.Companion.common
-import neo.framework.KeyInput
 import neo.idlib.Text.Str.idStr
 import neo.idlib.idException
 import neo.sys.sys_public.idSys
@@ -161,9 +158,9 @@ class sys_local {
         override fun DLL_GetFileName(baseName: String, dllName: Array<String>, maxLength: Int) {
             // NOTE: Differs from C++ — C++ uses BUILD_LIBRARY_SUFFIX macro at compile time.
             // Kotlin uses runtime platform detection instead.
-            if (BuildDefines._WIN32) {
+            if (_WIN32) {
                 idStr.snPrintf(dllName, maxLength, "%s" + sys_public.CPUSTRING + ".dll", baseName)
-            } else if (BuildDefines.__linux__) {
+            } else if (__linux__) {
                 idStr.snPrintf(dllName, maxLength, "%s" + sys_public.CPUSTRING + ".so", baseName)
             } else {
                 throw idException("OS define is required")

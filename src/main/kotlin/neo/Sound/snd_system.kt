@@ -15,7 +15,6 @@ import neo.Sound.snd_world.s_stats
 import neo.Sound.sound.idSoundSystem
 import neo.Sound.sound.idSoundWorld
 import neo.Sound.sound.soundDecoderInfo_t
-import neo.framework.BuildDefines
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem
@@ -24,6 +23,7 @@ import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_Integer
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_SoundName
 import neo.framework.Common
 import neo.framework.Common.MemInfo_t
+import neo.framework.ID_DEDICATED
 import neo.idlib.CmdArgs
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.List.idList
@@ -239,7 +239,7 @@ class snd_system {
             var useOpenAL = false
 
             init {
-                if (BuildDefines.ID_DEDICATED) {
+                if (ID_DEDICATED) {
                     s_noSound = idCVar(
                         "s_noSound",
                         "1",

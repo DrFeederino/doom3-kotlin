@@ -1007,7 +1007,7 @@ class Game_local {
                 // save game bugs.
                 saveGameFile.ForceFlush()
             }
-            savegame.WriteBuildNumber(BuildVersion.BUILD_NUMBER)
+            savegame.WriteBuildNumber(BUILD_NUMBER)
 
             // go through all entities and threads and add them to the object list
             i = 0
@@ -1368,7 +1368,7 @@ class Game_local {
             val ret = gameReturn_t()
             val player: idPlayer?
             var view: renderView_s?
-            if (BuildDefines._DEBUG) {
+            if (_DEBUG) {
                 assert(!isMultiplayer || !isClient)
             }
             player = GetLocalPlayer()
@@ -2856,7 +2856,7 @@ class Game_local {
             bIsClientReadSnapshot: Boolean /*= false*/
         ): idEntity? {
             var obj: idClass?
-            if (BuildDefines._DEBUG) {
+            if (_DEBUG) {
                 assert(!isClient || bIsClientReadSnapshot)
             }
             if (!classdef.IsType(idEntity::class.java)) {
@@ -4388,7 +4388,7 @@ class Game_local {
                 spawnArgs.GetBool("not_hard", "0", result)
             }
             var name: String?
-            if (!BuildDefines.ID_DEMO_BUILD) { //#ifndef
+            if (!ID_DEMO_BUILD) { //#ifndef
                 if (SysCvar.g_skill.GetInteger() == 3) {
                     name = spawnArgs.GetString("classname")
                     if (idStr.Icmp(name, "item_medkit") == 0 || idStr.Icmp(
@@ -5438,7 +5438,7 @@ class Game_local {
                 CmdSystem.CMD_FL_GAME or CmdSystem.CMD_FL_CHEAT,
                 "causes a game error"
             )
-            if (!BuildDefines.ID_DEMO_BUILD) { //#ifndef
+            if (!ID_DEMO_BUILD) { //#ifndef
                 CmdSystem.cmdSystem.AddCommand(
                     "disasmScript",
                     Cmd_DisasmScript_f.getInstance(),

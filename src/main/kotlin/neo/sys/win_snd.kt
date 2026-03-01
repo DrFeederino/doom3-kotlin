@@ -27,8 +27,8 @@ import neo.Sound.snd_local
 import neo.Sound.snd_local.idAudioHardware
 import neo.Sound.snd_system.idSoundSystemLocal
 import neo.TempDump.TODO_Exception
-import neo.framework.BuildDefines
 import neo.framework.Common
+import neo.framework.ID_OPENAL
 import neo.idlib.math.MIXBUFFER_SAMPLES
 import org.lwjgl.openal.ALC
 import java.util.logging.Level
@@ -41,7 +41,7 @@ object win_snd {
      ===============
      */
     fun Sys_LoadOpenAL(): Boolean {
-        return if (BuildDefines.ID_OPENAL) {
+        return if (ID_OPENAL) {
             try {
                 ALC.create()
             } catch (ex: UnsatisfiedLinkError) {

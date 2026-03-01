@@ -26,12 +26,12 @@ import neo.TempDump
 import neo.TempDump.TODO_Exception
 import neo.Tools.edit_public
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
-import neo.framework.BuildDefines
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
+import neo.framework.ID_ALLOW_TOOLS
 import neo.framework.UsercmdGen.USERCMD_MSEC
 import neo.idlib.CmdArgs
 import neo.idlib.MAX_STRING_CHARS
@@ -1579,7 +1579,7 @@ object win_main {
 
             Win_Frame()
 
-            if (BuildDefines.ID_ALLOW_TOOLS) {
+            if (ID_ALLOW_TOOLS) {
                 if (Common.com_editors != 0) {
                     if (Common.com_editors and Common.EDITOR_GUI != 0) {
                         // GUI editor

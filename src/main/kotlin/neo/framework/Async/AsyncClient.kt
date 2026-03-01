@@ -909,8 +909,12 @@ object AsyncClient {
             snapshotGameTime = serverGameTime
             gameTime = snapshotGameTime
             gameTimeResidual = 0
-            //	memset( userCmds, 0, sizeof( userCmds ) );
-            Arrays.fill(userCmds, 0)
+            // FIX: Arrays.fill(userCmds, 0) was a type error - Array<Array<usercmd_t>> cannot be filled with Int
+            for (i in 0 until AsyncNetwork.MAX_USERCMD_BACKUP) {
+                for (j in 0 until AsyncNetwork.MAX_ASYNC_CLIENTS) {
+                    userCmds[i][j] = usercmd_t()
+                }
+            }
             for (i in 0 until AsyncNetwork.MAX_ASYNC_CLIENTS) {
                 Session.sessLocal.mapSpawnData.userInfo[i].Clear()
             }
@@ -933,8 +937,10 @@ object AsyncClient {
             var last: usercmd_t?
             val pureWait: Boolean
             serverGameInitId = msg.ReadLong()
-            if (msg.ReadByte() < SERVER_UNRELIABLE.values().size) {
-                val id = SERVER_UNRELIABLE.values()[msg.ReadByte().toInt()]
+            // FIX: was reading msg.ReadByte() twice - once in condition, once for value
+            val idByte = msg.ReadByte().toInt()
+            if (idByte < SERVER_UNRELIABLE.values().size) {
+                val id = SERVER_UNRELIABLE.values()[idByte]
                 when (id) {
                     SERVER_UNRELIABLE.SERVER_UNRELIABLE_MESSAGE_EMPTY -> {
                         if (idAsyncNetwork.verbose.GetInteger() != 0) {
@@ -1108,7 +1114,8 @@ object AsyncClient {
                 }
             } else {
 //		default: {
-                Common.common.Printf("unknown unreliable server message %d\n", msg.ReadByte())
+                // FIX: was calling msg.ReadByte() again instead of using already-read value
+                Common.common.Printf("unknown unreliable server message %d\n", idByte)
                 //			break;
             }
         }
@@ -1120,15 +1127,17 @@ object AsyncClient {
             var id: SERVER_RELIABLE
             msg.Init(msgBuf, msgBuf.capacity())
             while (channel.GetReliableMessage(msg)) {
-                if (msg.ReadByte() < SERVER_RELIABLE.values().size) {
-                    id = SERVER_RELIABLE.values()[msg.ReadByte().toInt()]
+                // FIX: was reading msg.ReadByte() twice - once in condition, once for value
+                val idByte = msg.ReadByte().toInt()
+                if (idByte < SERVER_RELIABLE.values().size) {
+                    id = SERVER_RELIABLE.values()[idByte]
                     when (id) {
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_CLIENTINFO -> {
                             var clientNum: Int
                             clientNum = msg.ReadByte().toInt()
                             val info = idDict(Session.sessLocal.mapSpawnData.userInfo[clientNum])
                             val haveBase = msg.ReadBits(1) != 0
-                            if (BuildDefines.ID_CLIENTINFO_TAGS) {
+                            if (ID_CLIENTINFO_TAGS) {
                                 val checksum = info.Checksum()
                                 val srv_checksum = msg.ReadLong()
                                 if (checksum != srv_checksum.toLong()) {
@@ -1417,7 +1426,8 @@ object AsyncClient {
                 i = msg.ReadByte().toInt()
             }
             serverInfo.OSMask = msg.ReadLong()
-            index = if (serverList.InfoResponse(serverInfo) != 0) 1 else 0
+            // FIX: was converting InfoResponse return to boolean (0 or 1) - should preserve raw index value
+            index = serverList.InfoResponse(serverInfo)
             Common.common.Printf(
                 "%d: server %s - protocol %d.%d - %s\n",
                 index,
@@ -1765,7 +1775,7 @@ object AsyncClient {
                 msg.WriteShort(MsgChannel.CONNECTIONLESS_MESSAGE_ID.toShort())
                 msg.WriteString("connect")
                 msg.WriteLong(AsyncNetwork.ASYNC_PROTOCOL_VERSION)
-                if (BuildDefines.ID_FAKE_PURE) {
+                if (ID_FAKE_PURE) {
                     // fake win32 OS - might need to adapt depending on the case
                     msg.WriteShort(0)
                 } else {
@@ -2450,6 +2460,7 @@ object AsyncClient {
                     asked = true
                     // "The server only offers to download some of the files required to connect ( %s ). Download anyway?"
                     // "Missing required files"
+                    // FIX: was .isNotEmpty() (inverted) - C++ checks !...[0] meaning "if user said No"
                     if (
                         Session.session.MessageBox(
                             msgBoxType_t.MSG_YESNO,
@@ -2457,9 +2468,9 @@ object AsyncClient {
                             Common.common.GetLanguageDict().GetString("#str_07218"),
                             true,
                             "yes"
-                        ).isNotEmpty()
+                        ).isEmpty()
 
-                    ) { //TODO:check whether a NOT on the whole string is the same as an empty string
+                    ) {
                         dlList.Clear()
                         return
                     }
@@ -2467,6 +2478,7 @@ object AsyncClient {
                 if (!asked && idAsyncNetwork.clientDownload.GetInteger() == 1) {
                     // "You need to download some files to connect to this server ( %s ), proceed?"
                     // "Missing required files"
+                    // FIX: was .isNotEmpty() (inverted) - C++ checks !...[0] meaning "if user said No"
                     if (
                         Session.session.MessageBox(
                             msgBoxType_t.MSG_YESNO,
@@ -2474,7 +2486,7 @@ object AsyncClient {
                             Common.common.GetLanguageDict().GetString("#str_07218"),
                             true,
                             "yes"
-                        ).isNotEmpty()
+                        ).isEmpty()
 
                     ) {
                         dlList.Clear()
@@ -2506,8 +2518,8 @@ object AsyncClient {
             if (TempDump.memcmp(dlChecksums, 1, checksums, 0, count) || gamePakChecksum != dlChecksums[0]) {
                 val newreq = idRandom()
                 dlChecksums[0] = gamePakChecksum
-                //                memcpy(dlChecksums + 1, checksums, sizeof(int) * MAX_PURE_PAKS);
-                TempDump.memcmp(dlChecksums, 1, checksums, 0, FileSystem_h.MAX_PURE_PAKS)
+                // FIX: was calling memcmp (comparison) instead of arraycopy (memcpy)
+                System.arraycopy(checksums, 0, dlChecksums, 1, count)
                 newreq.SetSeed(win_shared.Sys_Milliseconds())
                 dlRequest = newreq.RandomInt()
                 dlCount = count + if (gamePakChecksum != 0) 1 else 0

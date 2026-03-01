@@ -27,12 +27,12 @@ import neo.Sound.snd_shader.idSoundShader
 import neo.TempDump
 import neo.cm.collisionModelManager
 import neo.cm.trace_s
-import neo.framework.BuildDefines
 import neo.framework.DeclEntityDef.idDeclEntityDef
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
 import neo.framework.DeclSkin.idDeclSkin
+import neo.framework.ID_DEMO_BUILD
 import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.BitMsg.idBitMsgDelta
@@ -683,7 +683,7 @@ object Weapon {
             WEAPON_RELOAD.LinkTo(scriptObject, "WEAPON_RELOAD")
             WEAPON_NETRELOAD.LinkTo(scriptObject, "WEAPON_NETRELOAD")
             WEAPON_NETENDRELOAD.LinkTo(scriptObject, "WEAPON_NETENDRELOAD")
-            if (!BuildDefines.ID_DEMO_BUILD) {
+            if (!ID_DEMO_BUILD) {
                 WEAPON_NETFIRING.LinkTo(scriptObject, "WEAPON_NETFIRING")
             }
             WEAPON_RAISEWEAPON.LinkTo(scriptObject, "WEAPON_RAISEWEAPON")
@@ -1152,7 +1152,7 @@ object Weapon {
             WEAPON_RELOAD.LinkTo(scriptObject, "WEAPON_RELOAD")
             WEAPON_NETRELOAD.LinkTo(scriptObject, "WEAPON_NETRELOAD")
             WEAPON_NETENDRELOAD.LinkTo(scriptObject, "WEAPON_NETENDRELOAD")
-            if (!BuildDefines.ID_DEMO_BUILD) WEAPON_NETFIRING.LinkTo(scriptObject, "WEAPON_NETFIRING")
+            if (!ID_DEMO_BUILD) WEAPON_NETFIRING.LinkTo(scriptObject, "WEAPON_NETFIRING")
             WEAPON_RAISEWEAPON.LinkTo(scriptObject, "WEAPON_RAISEWEAPON")
             WEAPON_LOWERWEAPON.LinkTo(scriptObject, "WEAPON_LOWERWEAPON")
             spawnArgs.set(weaponDef!!.dict)

@@ -21,7 +21,8 @@ import neo.TempDump.TODO_Exception
 import neo.cm.contactInfo_t
 import neo.cm.contactType_t
 import neo.cm.trace_s
-import neo.framework.BuildVersion
+import neo.framework.BUILD_NUMBER
+
 import neo.framework.DeclFX.idDeclFX
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
@@ -531,7 +532,7 @@ object SaveGame {
         }
 
         fun WriteBuildNumber(value: Int) {
-            file.WriteInt(BuildVersion.BUILD_NUMBER)
+            file.WriteInt(BUILD_NUMBER)
         }
 
         private fun CallSave_r(cls: idTypeInfo, obj: idClass?) {
