@@ -135,6 +135,14 @@ open class idItem : idEntity() {
     private var pulse = false
     private var shellMaterial: Material.idMaterial?
     private var spin = false
+    override fun _deconstructor() {
+        // remove the highlight shell
+        if (itemShellHandle != -1) {
+            gameRenderWorld!!.FreeEntityDef(itemShellHandle)
+        }
+        super._deconstructor()
+    }
+
     override fun Save(savefile: idSaveGame) {
         savefile.WriteVec3(orgOrigin)
         savefile.WriteBool(spin)
@@ -1226,8 +1234,7 @@ class idObjectiveComplete : idItemRemover() {
     private fun Event_HideObjective(e: idEventArg<idEntity>) {
         val player = Game_local.gameLocal.GetLocalPlayer()
         if (player != null) {
-            val v = player.GetPhysics().GetOrigin()
-            v.minusAssign(playerPos)
+            val v = player.GetPhysics().GetOrigin() - playerPos
             if (v.Length() > 64.0f) {
                 player.hud!!.HandleNamedEvent("closeObjective")
                 PostEventMS(EV_Remove, 0)

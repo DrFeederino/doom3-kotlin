@@ -988,12 +988,10 @@ class DeclManager {
             }
 
             // mark all the defs that were from the last reload of this file
-            run {
-                var decl = decls
-                while (decl != null) {
-                    decl.redefinedInReload = false
-                    decl = decl.nextInFile
-                }
+            var decl = decls
+            while (decl != null) {
+                decl.redefinedInReload = false
+                decl = decl.nextInFile
             }
             src.SetFlags(DECL_LEXER_FLAGS)
             checksum = BigInteger(MD5_BlockChecksum(buffer[0]!!.array(), length))
@@ -1117,7 +1115,7 @@ class DeclManager {
 
 //            Mem_Free(buffer);
             // any defs that weren't redefinedInReload should now be defaulted
-            var decl = decls
+            decl = decls
             while (decl != null) {
                 if (decl.redefinedInReload == false) {
                     decl.MakeDefault()
@@ -1510,6 +1508,7 @@ class DeclManager {
             // load and parse decl files
             i = 0
             while (i < fileList.GetNumFiles()) {
+                val startTime = System.currentTimeMillis()
                 fileName = idStr(declFolder.folder.toString() + "/" + fileList.GetFile(i))
                 // check whether this file has already been loaded
 
@@ -1528,6 +1527,8 @@ class DeclManager {
                     loadedFiles.Append(df)
                 }
                 df.LoadAndParse()
+                var endTime = (System.currentTimeMillis() - startTime)
+                println("Material took $endTime ms\n")
                 i++
             }
             FileSystem_h.fileSystem.FreeFileList(fileList)

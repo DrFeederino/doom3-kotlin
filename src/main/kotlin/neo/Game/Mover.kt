@@ -3219,7 +3219,13 @@ object Mover {
                         slaveDoor.SetAASAreaState(false)
                     }
                     slave.GetPhysics().GetClipModel()!!.Disable()
-                    slave.Hide()
+                    // C++ uses slave->idMover_Binary::Hide() (static dispatch to idEntity::Hide)
+                    // Kotlin slave.Hide() would virtual-dispatch to idDoor::Hide() causing infinite recursion
+                    if (!slave.IsHidden()) {
+                        slave.fl.hidden = true
+                        slave.FreeModelDef()
+                        slave.UpdateVisuals()
+                    }
                     slave = slave.GetActivateChain()
                 }
             }
@@ -3254,7 +3260,12 @@ object Mover {
                         slaveDoor.SetAASAreaState(IsLocked() != 0 || IsNoTouch())
                     }
                     slave.GetPhysics().GetClipModel()!!.Enable()
-                    slave.Show()
+                    // C++ uses slave->idMover_Binary::Show() (static dispatch to idEntity::Show)
+                    // Kotlin slave.Show() would virtual-dispatch to idDoor::Show() causing infinite recursion
+                    if (slave.IsHidden()) {
+                        slave.fl.hidden = false
+                        slave.UpdateVisuals()
+                    }
                     slave = slave.GetActivateChain()
                 }
             }

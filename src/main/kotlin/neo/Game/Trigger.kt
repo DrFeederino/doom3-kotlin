@@ -812,7 +812,7 @@ object Trigger {
             val activator = _activator.value
             // if on, turn it off
             if (on) {
-                if (offName.Length() != 0 && offName.Icmp(activator!!.GetName()) != 0) {
+                if (offName.Length() != 0 && offName.Icmp(activator.GetName()) != 0) {
                     return
                 }
                 on = false
@@ -1083,6 +1083,7 @@ object Trigger {
 
         private var clipModel: idClipModel? = null
         override fun Spawn() {
+            super.Spawn()
             // get the clip model
             clipModel = idClipModel(GetPhysics().GetClipModel()!!)
 

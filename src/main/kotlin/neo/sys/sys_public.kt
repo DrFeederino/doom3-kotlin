@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/sys/sys_public.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.sys
 
 import neo.TempDump
@@ -218,7 +236,7 @@ object sys_public {
         override fun hashCode(): Int {
             var result = Arrays.hashCode(ip)
             result = 31 * result + port
-            result = 31 * result + if (type != null) type.hashCode() else 0
+            result = 31 * result + type.hashCode()
             return result
         }
     }
@@ -281,7 +299,9 @@ object sys_public {
                 }
 
                 if (net_forceDrop.GetInteger() > 0) {
-                    if (Random().nextInt() < net_forceDrop.GetInteger() * RAND_MAX / 100) {
+                    // FIX: Random().nextInt() returns full Int range, not 0..RAND_MAX like C++ rand().
+                    // Use nextInt(100) for a clean percentage check matching original C++ semantics.
+                    if (Random().nextInt(100) < net_forceDrop.GetInteger()) {
                         continue
                     }
                 }
@@ -343,7 +363,8 @@ object sys_public {
             bytesWritten += size
 
             if (net_forceDrop.GetInteger() > 0) {
-                if (Random().nextInt() < net_forceDrop.GetInteger() * RAND_MAX / 100) {
+                // FIX: Use nextInt(100) for clean percentage check matching C++ rand() semantics.
+                if (Random().nextInt(100) < net_forceDrop.GetInteger()) {
                     return
                 }
             }
@@ -351,7 +372,8 @@ object sys_public {
             if (net_forceLatency.GetInteger() > 0 || (udpPorts[bound_to.port] != null && udpPorts[bound_to.port].sendFirst != null)) {
                 assert(size <= MAX_UDP_MSG_SIZE)
                 var msg: win_net.udpMsg_s? = udpPorts[bound_to.port].Alloc()
-                System.arraycopy(msg!!.data, 0, data, 0, size)
+                // FIX: Was reversed — C++ is memcpy(msg->data, data, size), copying FROM data INTO msg.
+                System.arraycopy(data.array(), 0, msg!!.data, 0, size)
                 msg.size = size
                 msg.address = to
                 msg.time = Sys_Milliseconds()

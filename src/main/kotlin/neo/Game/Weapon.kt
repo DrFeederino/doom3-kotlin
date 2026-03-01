@@ -1081,7 +1081,7 @@ object Weapon {
             }
 
             // the world muzzle flash is the same, just positioned differently
-            worldMuzzleFlash = muzzleFlash
+            worldMuzzleFlash = renderLight_s(muzzleFlash)
             worldMuzzleFlash.suppressLightInViewID._val = owner!!.entityNumber + 1
             worldMuzzleFlash.allowLightInViewID._val = 0
             worldMuzzleFlash.lightId._val = LIGHTID_WORLD_MUZZLE_FLASH + owner!!.entityNumber
@@ -1668,7 +1668,7 @@ object Weapon {
             // hide offset is for dropping the gun when approaching a GUI or NPC
             // This is simpler to manage than doing the weapon put-away animation
             if (Game_local.gameLocal.time - hideStartTime < hideTime) {
-                var frac: Float = ((Game_local.gameLocal.time - hideStartTime) / hideTime).toFloat()
+                var frac: Float = (Game_local.gameLocal.time - hideStartTime).toFloat() / hideTime.toFloat()
                 if (hideStart < hideEnd) {
                     frac = 1.0f - frac
                     frac = 1.0f - frac * frac
@@ -2110,7 +2110,7 @@ object Weapon {
             if (time > muzzle_kick_maxtime) {
                 time = muzzle_kick_maxtime
             }
-            amount = (time / muzzle_kick_maxtime).toFloat()
+            amount = time.toFloat() / muzzle_kick_maxtime.toFloat()
             ang = muzzle_kick_angles.times(amount)
             offset.set(muzzle_kick_offset.times(amount))
             origin.set(origin.minus(axis.times(offset)))
@@ -2129,7 +2129,7 @@ object Weapon {
             var s = 1.0f
             var l = 0.0f
             if (la < nozzleFxFade) {
-                s = (la / nozzleFxFade).toFloat()
+                s = la.toFloat() / nozzleFxFade.toFloat()
                 l = 1.0f - s
             }
             renderEntity!!.shaderParms[5] = s
@@ -2839,7 +2839,7 @@ object Weapon {
                         }
                     }
                 }
-                if (hitSound.isEmpty()) {
+                if (hitSound.isNotEmpty()) {
                     val snd = DeclManager.declManager.FindSound(hitSound)
                     StartSoundShader(snd, gameSoundChannel_t.SND_CHANNEL_BODY2.ordinal, 0, true)
                 }

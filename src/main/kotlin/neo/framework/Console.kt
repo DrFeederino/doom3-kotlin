@@ -22,7 +22,6 @@ import neo.idlib.math.idVec4
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
 import neo.sys.win_input
-import neo.sys.win_main
 import neo.sys.win_shared
 import kotlin.experimental.and
 
@@ -90,21 +89,12 @@ class Console {
             var drawNotifyTotal = 0
 
             init {
-                if (win_main.DEBUG) {
-                    con_noPrint = idCVar(
-                        "con_noPrint",
-                        "0",
-                        CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_NOCHEAT,
-                        "print on the console but not onscreen when console is pulled up"
-                    )
-                } else {
-                    con_noPrint = idCVar(
-                        "con_noPrint",
-                        "1",
-                        CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_NOCHEAT,
-                        "print on the console but not onscreen when console is pulled up"
-                    )
-                }
+                con_noPrint = idCVar(
+                    "con_noPrint",
+                    "1",
+                    CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_NOCHEAT,
+                    "print on the console but not onscreen when console is pulled up"
+                )
             }
         }
 

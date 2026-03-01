@@ -1281,10 +1281,6 @@ class Common {
             // unload the game dll
             UnloadGameDLL()
 
-            // dump warnings to "warnings.txt"
-            if (win_main.DEBUG) {
-                DumpWarnings()
-            }
             // only shut down the log file after all output is done
             CloseLogFile()
 

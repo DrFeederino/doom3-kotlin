@@ -5,6 +5,7 @@ import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.EV_SafeRemove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
+import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Script.Script_Program.function_t
@@ -94,7 +95,7 @@ class WorldSpawn {
             }
         }
 
-        fun Save(savefile: idRestoreGame) {}
+        override fun Save(savefile: idSaveGame) {}
         override fun Restore(savefile: idRestoreGame) {
             assert(Game_local.gameLocal.world == this)
             SysCvar.g_gravity.SetFloat(spawnArgs.GetFloat("gravity", Str.va("%f", Game_local.DEFAULT_GRAVITY)))
@@ -110,11 +111,11 @@ class WorldSpawn {
         }
 
         override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {

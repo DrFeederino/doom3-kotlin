@@ -772,6 +772,15 @@ object Moveable {
             particleTime = savefile.ReadInt()
             lightTime = savefile.ReadInt()
             time = savefile.ReadFloat()
+
+            // DG: enforce getting fresh handle, else this may be tied to an unrelated light!
+            if (lightDefHandle != -1) {
+                lightDefHandle = Game_local.gameRenderWorld!!.AddLightDef(light)
+            }
+            // DG: same for render entity
+            if (particleModelDefHandle != -1) {
+                particleModelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(particleRenderEntity)
+            }
         }
 
         override fun Think() {

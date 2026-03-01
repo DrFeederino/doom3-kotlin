@@ -1,3 +1,25 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/sys/win32/win_syscon.cpp
+ *
+ * NOTE: Differs from C++ — The original C++ uses Win32 GUI controls (HWND,
+ * CreateWindow, etc.) for the system console. This Kotlin port uses Swing
+ * (JFrame, JTextArea, JButton, JScrollPane, etc.).
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.sys
 
 import neo.framework.Common
@@ -605,6 +627,7 @@ object win_syscon {
             } else if (msg[i] == '\r') {
                 buffer.insert(b + 0, '\r')
                 buffer.insert(b + 1, '\n')
+                b += 2 // FIX: Was missing b increment — C++ increments b by 2 in all newline cases
             } else if (msg[i] == '\n') {
                 buffer.insert(b + 0, '\r')
                 buffer.insert(b + 1, '\n')

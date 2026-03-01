@@ -7,7 +7,6 @@ import java.util.logging.Logger
 import javax.imageio.ImageIO
 
 object doom_resource {
-    const val IDB_BITMAP_LOGO = 4000
     var IDI_ICON1: Image? = null
 
     init {

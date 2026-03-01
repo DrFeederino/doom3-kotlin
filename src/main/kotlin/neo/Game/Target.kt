@@ -523,7 +523,7 @@ object Target {
                     color.set(fadeTo)
                     BecomeInactive(TH_THINK)
                 } else {
-                    frac = ((Game_local.gameLocal.time - fadeStart) / (fadeEnd - fadeStart)).toFloat()
+                    frac = (Game_local.gameLocal.time - fadeStart).toFloat() / (fadeEnd - fadeStart).toFloat()
                     color.Lerp(fadeFrom, fadeTo, frac)
                 }
 
@@ -1255,7 +1255,6 @@ object Target {
             val listedEntities: Int
             val entityList = arrayOfNulls<idEntity>(Game_local.MAX_GENTITIES)
 
-            spawnArgs.GetBool("effect_demonic")
             var lights = spawnArgs.GetBool("effect_lights")
             var sounds = spawnArgs.GetBool("effect_sounds")
             var guis = spawnArgs.GetBool("effect_guis")
@@ -1278,7 +1277,7 @@ object Target {
                 listedEntities = targets.Num()
                 i = 0
                 while (i < listedEntities) {
-                    entityList[i] = targets[i].GetEntity()!!
+                    entityList[i] = targets[i].GetEntity()
                     i++
                 }
             } else {
@@ -2019,7 +2018,6 @@ object Target {
         private fun Event_RestoreVolume() {
             val fadeTime = spawnArgs.GetFloat("fadeTime")
             val fadeDB = spawnArgs.GetFloat("fadeDB")
-            spawnArgs.GetInt("fadeClass")
             // restore volume
             Game_local.gameSoundWorld!!.FadeSoundClasses(0, fadeDB, fadeTime)
         }

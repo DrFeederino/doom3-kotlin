@@ -2124,9 +2124,12 @@ object Misc {
         companion object {
             // CLASS_PROTOTYPE( idBeam );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+            fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
+                return eventCallbacks
+            }
 
             init {
-                eventCallbacks.putAll(getEventCallBacks())
+                eventCallbacks.putAll(idEntity.getEventCallBacks())
                 eventCallbacks[EV_PostSpawn] =
                     eventCallback_t0<idBeam> { obj: idBeam -> obj.Event_MatchTarget() }
                 eventCallbacks[EV_Activate] =
@@ -2254,6 +2257,10 @@ object Misc {
 
         override fun CreateInstance(): idClass {
             throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+        }
+
+        override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
+            return eventCallbacks[event]
         }
 
         //

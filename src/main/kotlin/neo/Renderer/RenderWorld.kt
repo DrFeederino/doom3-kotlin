@@ -640,6 +640,7 @@ object RenderWorld {
             cramZNear = renderView.cramZNear
             forceUpdate = renderView.forceUpdate
             time = renderView.time
+            renderView.shaderParms.copyInto(shaderParms)
             globalMaterial = renderView.globalMaterial
         }
 

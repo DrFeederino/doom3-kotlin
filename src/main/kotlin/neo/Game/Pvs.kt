@@ -116,7 +116,6 @@ object Pvs {
         private var areaPVS: ByteArray? = null
         private var areaQueue: IntArray? = null
         private var areaVisBytes = 0
-        private var areaVisLongs = 0
         private var connectedAreas: BooleanArray? = null
 
         // current PVS for a specific source possibly taking portal states (open/closed) into account
@@ -126,7 +125,6 @@ object Pvs {
 
         // used to create PVS
         private var portalVisBytes = 0
-        private var portalVisLongs = 0
         private var pvsAreas: Array<pvsArea_t?>? = null
 
         //
@@ -144,14 +142,12 @@ object Pvs {
             connectedAreas = BooleanArray(numAreas)
             areaQueue = IntArray(numAreas)
             areaVisBytes = numAreas + 31 and 31.inv() shr 3
-            areaVisLongs = areaVisBytes / java.lang.Long.BYTES
 
             areaPVS = ByteArray(numAreas * areaVisBytes) //	memset( areaPVS, 0xFF, numAreas * areaVisBytes );
             Arrays.fill(areaPVS, 0, numAreas * areaVisBytes, 0xFF.toByte())
 
             numPortals = GetPortalCount()
             portalVisBytes = numPortals + 31 and 31.inv() shr 3
-            portalVisLongs = portalVisBytes / java.lang.Long.BYTES
 
             for (i in 0 until MAX_CURRENT_PVS) {
                 currentPVS[i].handle.i = -1
@@ -277,8 +273,6 @@ object Pvs {
             var j: Int
             /*unsigned*/
             var h: Int
-            var vis: LongArray?
-            var pvs: LongArray?
             val handle: pvsHandle_t
             h = 0
             i = 0
@@ -312,12 +306,11 @@ object Pvs {
                 i = 1
                 while (i < numSourceAreas) {
                     assert(sourceAreas[i] >= 0 && sourceAreas[i] < numAreas)
-                    val vOffset = sourceAreas[i] * areaVisBytes / java.lang.Long.BYTES
-                    vis = TempDump.reinterpret_cast_long_array(areaPVS!!)
-                    pvs = TempDump.reinterpret_cast_long_array(currentPVS[handle.i].pvs!!)
+                    val vOffset = sourceAreas[i] * areaVisBytes
                     j = 0
-                    while (j < areaVisLongs) {
-                        pvs[j] = pvs[j] or vis[j + vOffset]
+                    while (j < areaVisBytes) {
+                        currentPVS[handle.i].pvs!![j] =
+                            (currentPVS[handle.i].pvs!![j].toInt() or areaPVS!![j + vOffset].toInt()).toByte()
                         j++
                     }
                     i++
@@ -359,21 +352,18 @@ object Pvs {
 
         fun MergeCurrentPVS(pvs1: pvsHandle_t, pvs2: pvsHandle_t): pvsHandle_t {
             var i: Int
-            val pvs1Ptr: LongArray?
-            val pvs2Ptr: LongArray?
-            val ptr: LongArray?
             val handle: pvsHandle_t?
             if (pvs1.i < 0 || pvs1.i >= MAX_CURRENT_PVS || pvs1.h != currentPVS[pvs1.i].handle.h || pvs2.i < 0 || pvs2.i >= MAX_CURRENT_PVS || pvs2.h != currentPVS[pvs2.i].handle.h
             ) {
                 idGameLocal.Error("idPVS::MergeCurrentPVS: invalid handle")
             }
             handle = AllocCurrentPVS(pvs1.h xor pvs2.h)
-            ptr = TempDump.reinterpret_cast_long_array(currentPVS[handle.i].pvs!!)
-            pvs1Ptr = TempDump.reinterpret_cast_long_array(currentPVS[pvs1.i].pvs!!)
-            pvs2Ptr = TempDump.reinterpret_cast_long_array(currentPVS[pvs2.i].pvs!!)
+            val ptrArr = currentPVS[handle.i].pvs!!
+            val pvs1Arr = currentPVS[pvs1.i].pvs!!
+            val pvs2Arr = currentPVS[pvs2.i].pvs!!
             i = 0
-            while (i < areaVisLongs) {
-                ptr[i] = pvs1Ptr[i] or pvs2Ptr[i]
+            while (i < areaVisBytes) {
+                ptrArr[i] = (pvs1Arr[i].toInt() or pvs2Arr[i].toInt()).toByte()
                 i++
             }
             return handle
@@ -669,7 +659,6 @@ object Pvs {
             var portal: exitPortal_t?
             var area: pvsArea_t?
             var p: pvsPortal_t?
-            val portalPtrs: Array<pvsPortal_t?>
             if (0 == numPortals) {
                 return
             }
@@ -677,15 +666,15 @@ object Pvs {
             pvsAreas = arrayOfNulls(numAreas)
             //	memset( pvsAreas, 0, numAreas * sizeof( *pvsAreas ) );
             cp = 0
-            portalPtrs = arrayOfNulls(numPortals)
             i = 0
             while (i < numAreas) {
 
                 pvsAreas!![i] = pvsArea_t()
                 area = pvsAreas!![i]
                 area!!.bounds.Clear()
-                //                area.portals = portalPtrs + cp;
                 n = Game_local.gameRenderWorld!!.NumPortalsInArea(i)
+                // each area gets its own portal pointer array (C++ used portalPtrs + cp offset)
+                val areaPortalPtrs: Array<pvsPortal_t?> = arrayOfNulls(n)
                 j = 0
                 while (j < n) {
                     portal = Game_local.gameRenderWorld!!.GetPortal(i, j)
@@ -702,11 +691,11 @@ object Pvs {
                     p.plane.set(p.plane.unaryMinus())
                     // no PVS calculated for this portal yet
                     p.done = false
-                    portalPtrs[area.numPortals++] = p
+                    areaPortalPtrs[area.numPortals++] = p
                     area.bounds.timesAssign(p.bounds)
                     j++
                 }
-                area.portals = portalPtrs
+                area.portals = areaPortalPtrs
                 i++
             }
         }
@@ -896,17 +885,11 @@ object Pvs {
             var i: Int
             var j: Int
             var n: Int
-            var m: Long
             var p: pvsPortal_t
             val area: pvsArea_t?
             var stack: pvsStack_t?
             var passage: pvsPassage_t?
-            var sourceVis: LongArray?
-            var passageVis: LongArray?
-            var portalVis: LongArray?
-            var mightSee: LongArray?
-            var prevMightSee: LongArray?
-            var more: Long
+            var more: Int
             area = pvsAreas!![portal.areaNum]!!
             stack = prevStack.next
             // if no next stack entry allocated
@@ -941,43 +924,43 @@ object Pvs {
                 // mark the portal as visible
                 source.vis!![n shr 3] = (source.vis!![n shr 3].toInt() or (1 shl (n and 7))).toByte()
 
-                // get pointers to vis data
-                prevMightSee = TempDump.reinterpret_cast_long_array(prevStack.mightSee!!)
-                passageVis = TempDump.reinterpret_cast_long_array(passage.canSee!!)
-                sourceVis = TempDump.reinterpret_cast_long_array(source.vis!!)
-                mightSee = TempDump.reinterpret_cast_long_array(stack.mightSee!!)
+                // get byte arrays for direct operations
+                val prevMightSeeArr = prevStack.mightSee!!
+                val passageVisArr = passage.canSee!!
+                val sourceVisArr = source.vis!!
+                val mightSeeArr = stack.mightSee!!
                 more = 0
                 // use the portal PVS if it has been calculated
                 if (p.done) {
-                    portalVis = TempDump.reinterpret_cast_long_array(p.vis!!)
+                    val portalVisArr = p.vis!!
                     j = 0
-                    while (j < portalVisLongs) {
+                    while (j < portalVisBytes) {
 
                         // get new PVS which is decreased by going through this passage
-                        m = prevMightSee[j] and passageVis[j] and portalVis[j]
+                        val mByte = prevMightSeeArr[j].toInt() and passageVisArr[j].toInt() and portalVisArr[j].toInt()
                         // check if anything might be visible through this passage that wasn't yet visible
-                        more = more or (m and sourceVis[j].inv())
+                        more = more or (mByte and sourceVisArr[j].toInt().inv())
                         // store new PVS
-                        mightSee[j] = m
+                        mightSeeArr[j] = mByte.toByte()
                         j++
                     }
                 } else {
                     // the p.mightSee is implicitely stored in the passageVis
                     j = 0
-                    while (j < portalVisLongs) {
+                    while (j < portalVisBytes) {
 
                         // get new PVS which is decreased by going through this passage
-                        m = prevMightSee[j] and passageVis[j]
+                        val mByte = prevMightSeeArr[j].toInt() and passageVisArr[j].toInt()
                         // check if anything might be visible through this passage that wasn't yet visible
-                        more = more or (m and sourceVis[j].inv())
+                        more = more or (mByte and sourceVisArr[j].toInt().inv())
                         // store new PVS
-                        mightSee[j] = m
+                        mightSeeArr[j] = mByte.toByte()
                         j++
                     }
                 }
 
                 // if nothing more can be seen
-                if (0L == more) {
+                if (0 == more) {
                     i++
                     continue
                 }
@@ -1328,8 +1311,6 @@ object Pvs {
             var k: Int
             var areaNum: Int
             var totalVisibleAreas: Int
-            var p1: LongArray?
-            var p2: LongArray?
             var pvs: Int
             var portalPVS: ByteArray
             var area: pvsArea_t?
@@ -1354,11 +1335,11 @@ object Pvs {
                 // store the PVS of all portals in this area at the first portal
                 j = 1
                 while (j < area.numPortals) {
-                    p1 = TempDump.reinterpret_cast_long_array(area.portals!![0]!!.vis!!)
-                    p2 = TempDump.reinterpret_cast_long_array(area.portals!![j]!!.vis!!)
+                    val vis0 = area.portals!![0]!!.vis!!
+                    val visJ = area.portals!![j]!!.vis!!
                     k = 0
-                    while (k < portalVisLongs) {
-                        p1[k] = p1[k] or p2[k]
+                    while (k < portalVisBytes) {
+                        vis0[k] = (vis0[k].toInt() or visJ[k].toInt()).toByte()
                         k++
                     }
                     j++

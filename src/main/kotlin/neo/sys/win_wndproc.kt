@@ -1,3 +1,25 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: no direct C++ counterpart (Win32 message pump was in win_main.cpp)
+ *
+ * NOTE: This file contains scan code tables and a MapKey function from the
+ * original Win32 WndProc. These are dead code in the GLFW-based port —
+ * input mapping is handled by IN_DIMapKey in win_input.kt.
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.sys
 
 import neo.framework.KeyInput

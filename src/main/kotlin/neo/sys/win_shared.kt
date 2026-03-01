@@ -1,7 +1,27 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/sys/win32/win_shared.cpp
+ *
+ * NOTE: Differs from C++ — C++ uses Win32 API (timeGetTime, GlobalMemoryStatus,
+ * VirtualLock/Unlock). Kotlin uses Java standard library equivalents.
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.sys
 
 import com.sun.management.OperatingSystemMXBean
-import neo.TempDump.TODO_Exception
 import java.io.File
 import java.lang.management.ManagementFactory
 import java.time.Instant
@@ -57,19 +77,15 @@ object win_shared {
      Sys_LockMemory
      ================
      */
+    // NOTE: Differs from C++ — C++ uses VirtualLock to prevent pages from being
+    // swapped to disk. JVM manages memory internally; no equivalent operation.
     fun Sys_LockMemory(ptr: Any, bytes: Int): Boolean {
-        throw TODO_Exception()
-        //	return ( VirtualLock( ptr, (SIZE_T)bytes ) != FALSE );
+        return true
     }
 
-    /*
-     ================
-     Sys_UnlockMemory
-     ================
-     */
+    // NOTE: Differs from C++ — C++ uses VirtualUnlock. No JVM equivalent.
     fun Sys_UnlockMemory(ptr: Any, bytes: Int): Boolean {
-        throw TODO_Exception()
-        //	return ( VirtualUnlock( ptr, (SIZE_T)bytes ) != FALSE );
+        return true
     }
 
 

@@ -1,28 +1,42 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/sys/sys_local.cpp, neo/sys/sys_local.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.sys
 
 import neo.TempDump
-import neo.TempDump.TODO_Exception
 import neo.framework.BuildDefines
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
+import neo.framework.CmdSystem
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_String
+import neo.framework.Common.Companion.common
 import neo.framework.KeyInput
 import neo.idlib.Text.Str.idStr
 import neo.idlib.idException
 import neo.sys.sys_public.idSys
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
+import java.awt.Desktop
+import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.*
 
 class sys_local {
-
-    /*
-     =================
-     Sys_TimeStampToStr
-     =================
-     */
-
 
     /*
      ==============================================================
@@ -33,6 +47,7 @@ class sys_local {
      */
     class idSysLocal : idSys() {
         private val startTime: Long = System.currentTimeMillis()
+
         override fun DebugPrintf(fmt: String, vararg arg: Any) {
             win_main.Sys_DebugVPrintf(fmt, *arg)
         }
@@ -41,10 +56,20 @@ class sys_local {
             win_main.Sys_DebugVPrintf(fmt, *arg)
         }
 
+        /*
+         ================
+         idSysLocal::GetMilliseconds
+         ================
+         */
         override fun GetMilliseconds(): Long {
             return (System.currentTimeMillis() - startTime)
         }
 
+        /*
+         ================
+         idSysLocal::GetProcessorId
+         ================
+         */
         override fun GetProcessorId(): Int {
             return win_main.Sys_GetProcessorId()
         }
@@ -61,10 +86,20 @@ class sys_local {
             return win_cpu.Sys_FPU_StackIsEmpty()
         }
 
+        /*
+         ================
+         idSysLocal::FPU_SetFTZ
+         ================
+         */
         override fun FPU_SetFTZ(enable: Boolean) {
             win_cpu.Sys_FPU_SetFTZ(enable)
         }
 
+        /*
+         ================
+         idSysLocal::FPU_SetDAZ
+         ================
+         */
         override fun FPU_SetDAZ(enable: Boolean) {
             win_cpu.Sys_FPU_SetDAZ(enable)
         }
@@ -73,40 +108,73 @@ class sys_local {
             win_cpu.Sys_FPU_EnableExceptions(exceptions)
         }
 
+        /*
+         ================
+         idSysLocal::LockMemory
+         ================
+         */
         override fun LockMemory(ptr: Any, bytes: Int): Boolean {
             return win_shared.Sys_LockMemory(ptr, bytes)
         }
 
+        /*
+         ================
+         idSysLocal::UnlockMemory
+         ================
+         */
         override fun UnlockMemory(ptr: Any, bytes: Int): Boolean {
             return win_shared.Sys_UnlockMemory(ptr, bytes)
         }
 
+        /*
+         ================
+         idSysLocal::DLL_Load
+         ================
+         */
         override fun DLL_Load(dllName: String): Int {
             return win_main.Sys_DLL_Load(dllName)
         }
 
+        /*
+         ================
+         idSysLocal::DLL_GetProcAddress
+         ================
+         */
         override fun DLL_GetProcAddress(dllHandle: Int, procName: String): Any {
             return win_main.Sys_DLL_GetProcAddress(dllHandle, procName)
         }
 
+        /*
+         ================
+         idSysLocal::DLL_Unload
+         ================
+         */
         override fun DLL_Unload(dllHandle: Int) {
             win_main.Sys_DLL_Unload(dllHandle)
         }
 
+        /*
+         ================
+         idSysLocal::DLL_GetFileName
+         ================
+         */
         override fun DLL_GetFileName(baseName: String, dllName: Array<String>, maxLength: Int) {
+            // NOTE: Differs from C++ — C++ uses BUILD_LIBRARY_SUFFIX macro at compile time.
+            // Kotlin uses runtime platform detection instead.
             if (BuildDefines._WIN32) {
                 idStr.snPrintf(dllName, maxLength, "%s" + sys_public.CPUSTRING + ".dll", baseName)
             } else if (BuildDefines.__linux__) {
                 idStr.snPrintf(dllName, maxLength, "%s" + sys_public.CPUSTRING + ".so", baseName)
-                // #elif defined( MACOS_X )
-                // idStr::snPrintf( dllName, maxLength, "%s" ".dylib", baseName );
             } else {
-// #error OS define is required
                 throw idException("OS define is required")
-                // #endif
             }
         }
 
+        /*
+         ================
+         idSysLocal::GenerateMouseButtonEvent
+         ================
+         */
         override fun GenerateMouseButtonEvent(button: Int, down: Boolean): sysEvent_s {
             val ev = sysEvent_s()
             ev.evType = sysEventType_t.SE_KEY
@@ -117,6 +185,11 @@ class sys_local {
             return ev
         }
 
+        /*
+         ================
+         idSysLocal::GenerateMouseMoveEvent
+         ================
+         */
         override fun GenerateMouseMoveEvent(deltax: Int, deltay: Int): sysEvent_s {
             val ev = sysEvent_s()
             ev.evType = sysEventType_t.SE_MOUSE
@@ -127,52 +200,57 @@ class sys_local {
             return ev
         }
 
+        /*
+         ================
+         idSysLocal::OpenURL
+         // NOTE: Differs from C++ — C++ uses Win32 ShellExecute.
+         // Kotlin uses java.awt.Desktop.browse() as the LWJGL/JVM equivalent.
+         ================
+         */
         override fun OpenURL(url: String, doExit: Boolean) {
-            throw TODO_Exception()
-            //            HWND wnd;
-//
-//            if (doexit_spamguard) {
-//                common.DPrintf("OpenURL: already in an exit sequence, ignoring %s\n", url);
-//                return;
-//            }
-//
-//            common.Printf("Open URL: %s\n", url);
-//
-//            if (!ShellExecute(null, "open", url, null, null, SW_RESTORE)) {
-//                common.Error("Could not open url: '%s' ", url);
-//                return;
-//            }
-//
-//            wnd = GetForegroundWindow();
-//            if (wnd) {
-//                ShowWindow(wnd, SW_MAXIMIZE);
-//            }
-//
-//            if (doExit) {
-//                doexit_spamguard = true;
-//                cmdSystem.BufferCommandText(CMD_EXEC_APPEND, "quit\n");
-//            }
+            if (doexit_spamguard) {
+                common.DPrintf("OpenURL: already in an exit sequence, ignoring %s\n", url)
+                return
+            }
+
+            common.Printf("Open URL: %s\n", url)
+
+            try {
+                if (Desktop.isDesktopSupported()) {
+                    Desktop.getDesktop().browse(URI(url))
+                } else {
+                    common.Error("Could not open url: '%s' ", url)
+                    return
+                }
+            } catch (e: Exception) {
+                common.Error("Could not open url: '%s' ", url)
+                return
+            }
+
+            if (doExit) {
+                doexit_spamguard = true
+                CmdSystem.cmdSystem.BufferCommandText(CmdSystem.cmdExecution_t.CMD_EXEC_APPEND, "quit\n")
+            }
         }
 
+        /*
+         ================
+         idSysLocal::StartProcess
+         // NOTE: Differs from C++ — C++ uses Win32 CreateProcess.
+         // Kotlin uses ProcessBuilder as the JVM equivalent.
+         ================
+         */
         override fun StartProcess(exePath: String, doExit: Boolean) {
-            throw TODO_Exception()
-            //            char[] szPathOrig = new char[_MAX_PATH];
-//            STARTUPINFO si;
-//            PROCESS_INFORMATION pi;
-//
-//            ZeroMemory(si, sizeof(si));
-//            si.cb = sizeof(si);
-//
-//            strncpy(szPathOrig, exePath, _MAX_PATH);
-//
-//            if (!CreateProcess(null, szPathOrig, null, null, FALSE, 0, null, null, si, pi)) {
-//                common.Error("Could not start process: '%s' ", szPathOrig);
-//                return;
-//            }
-//
-//            if (doExit) {
-//                cmdSystem.BufferCommandText(CMD_EXEC_APPEND, "quit\n");
-//            }
+            try {
+                ProcessBuilder(exePath).start()
+            } catch (e: Exception) {
+                common.Error("Could not start process: '%s' ", exePath)
+                return
+            }
+
+            if (doExit) {
+                CmdSystem.cmdSystem.BufferCommandText(CmdSystem.cmdExecution_t.CMD_EXEC_APPEND, "quit\n")
+            }
         }
 
         companion object {
@@ -181,8 +259,7 @@ class sys_local {
     }
 
     companion object {
-        var timeString //= new char[MAX_STRING_CHARS];
-                : String? = null
+        var timeString: String? = null
         var sysLocal: idSysLocal = idSysLocal()
         val sysLanguageNames: Array<String?> = arrayOf(
             "english", "spanish", "italian", "german", "french", "russian",
@@ -197,51 +274,25 @@ class sys_local {
             ArgCompletion_String(sysLanguageNames)
         )
 
-        fun Sys_TimeStampToStr(   /*ID_TIME_T*/timeStamp: Long): String {
-//        timeString[0] = '\0';
-
-//        tm time = localtime(timeStamp);
-            val time = Date()
+        /*
+         =================
+         Sys_TimeStampToStr
+         =================
+         */
+        fun Sys_TimeStampToStr(/*ID_TIME_T*/ timeStamp: Long): String {
+            // FIX: Was ignoring timeStamp parameter and using current time (Date()).
+            // C++ uses localtime(&timeStamp) which converts the passed timestamp.
+            // ID_TIME_T is time_t (seconds since epoch), so multiply by 1000 for Java ms.
+            val time = Date(timeStamp * 1000)
             val out: String
             val lang = idStr(CVarSystem.cvarSystem.GetCVarString("sys_lang"))
             out = if (lang.Icmp("english") == 0) {
                 // english gets "month/day/year  hour:min" + "am" or "pm"
                 SimpleDateFormat("MM/dd/yyyy\thh:mmaa").format(time).lowercase(Locale.getDefault())
-                //            out.oSet(va("%02d", time.tm_mon + 1));
-//            out.oPluSet("/");
-//            out.oPluSet(va("%02d", time.tm_mday));
-//            out.oPluSet("/");
-//            out.oPluSet(va("%d", time.tm_year + 1900));
-//            out.oPluSet("\t");
-//            if (time.tm_hour > 12) {
-//                out.oPluSet(va("%02d", time.tm_hour - 12));
-//            } else if (time.tm_hour == 0) {
-//                out.oPluSet("12");
-//            } else {
-//                out.oPluSet(va("%02d", time.tm_hour));
-//            }
-//            out.oPluSet(":");
-//            out.oPluSet(va("%02d", time.tm_min));
-//            if (time.tm_hour >= 12) {
-//                out.oPluSet("pm");
-//            } else {
-//                out.oPluSet("am");
-//            }
             } else {
                 // europeans get "day/month/year  24hour:min"
                 SimpleDateFormat("dd/MM/yyyy\tHH:mm").format(time)
-                //            out.oSet(va("%02d", time.tm_mday));
-//            out.oPluSet("/");
-//            out.oPluSet(va("%02d", time.tm_mon + 1));
-//            out.oPluSet("/");
-//            out.oPluSet(va("%d", time.tm_year + 1900));
-//            out.oPluSet("\t");
-//            out.oPluSet(va("%02d", time.tm_hour));
-//            out.oPluSet(":");
-//            out.oPluSet(va("%02d", time.tm_min));
             }
-            //        idStr.Copynz(timeString, out, sizeof(timeString));
-//
             return out.also { timeString = it }
         }
     }

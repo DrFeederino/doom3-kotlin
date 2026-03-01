@@ -179,12 +179,12 @@ object MultiplayerGame {
                 = 0
 
         //
-        private var playerState: Array<mpPlayerState_s> = Array(1) { mpPlayerState_s() }
+        private var playerState: Array<mpPlayerState_s> = Array(Game_local.MAX_CLIENTS) { mpPlayerState_s() }
 
         //
         private var pureReady // defaults to false, set to true once server game is running with pure checksums
                 = false
-        private lateinit var rankedPlayers: Array<idPlayer>
+        private var rankedPlayers: Array<idPlayer> = arrayOfNulls<idPlayer>(Game_local.MAX_CLIENTS) as Array<idPlayer>
 
         //
         // guis
@@ -883,7 +883,7 @@ object MultiplayerGame {
                     continue
                 } else if (0 == idStr.Icmp(cmd, "MAPScan")) {
                     val gametype = Game_local.gameLocal.serverInfo.GetString("si_gameType")
-                    if (gametype == null || !gametype.isEmpty() || idStr.Icmp(
+                    if (gametype == null || gametype.isEmpty() || idStr.Icmp(
                             gametype,
                             "singleplayer"
                         ) == 0
@@ -2107,7 +2107,7 @@ object MultiplayerGame {
             idStr.snPrintf(
                 data,
                 len,
-                "team=%d score=%ld tks=%ld",
+                "team=%d score=%d tks=%d",
                 team,
                 playerState[clientNum].fragCount,
                 playerState[clientNum].teamFragCount

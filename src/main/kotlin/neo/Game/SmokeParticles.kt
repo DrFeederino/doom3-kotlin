@@ -243,7 +243,7 @@ object SmokeParticles {
                     newSmoke.index = prevCount
                     newSmoke.axis.set(axis)
                     newSmoke.origin.set(origin)
-                    newSmoke.random = steppingRandom
+                    newSmoke.random = idRandom(steppingRandom)
                     newSmoke.privateStartTime = systemStartTime + prevCount * finalParticleTime / stage.totalParticles
                     newSmoke.next = active!!.smokes
                     active.smokes = newSmoke

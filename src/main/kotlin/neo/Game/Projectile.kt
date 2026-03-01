@@ -562,7 +562,7 @@ object Projectile {
                 renderLight.axis.set(GetPhysics().GetAxis())
                 if (lightDefHandle != -1) {
                     if (lightEndTime > 0 && Game_local.gameLocal.time <= lightEndTime + Game_local.gameLocal.GetMSec()) {
-                        val color = idVec3(0, 0, 0) //TODO:superfluous
+                        val color = idVec3(0, 0, 0)
                         if (Game_local.gameLocal.time < lightEndTime) {
                             val frac: Float =
                                 ((Game_local.gameLocal.time - lightStartTime).toFloat() / (lightEndTime - lightStartTime).toFloat())

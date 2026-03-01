@@ -1,3 +1,25 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/sys/win32/win_main.cpp
+ *
+ * NOTE: Differs from C++ — The original C++ uses Win32 API (WinMain, message pump,
+ * GetModuleFileName, etc.) and SDL for the main loop. This Kotlin port uses GLFW/LWJGL
+ * for windowing and standard Java APIs for OS interactions.
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.sys
 
 import neo.TempDump
@@ -19,10 +41,10 @@ import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.idStrList
 import neo.idlib.idException
 import neo.idlib.idLib
-import neo.sys.RC.CreateResourceIDs_f
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
 import neo.sys.win_local.Win32Vars_t
+import org.lwjgl.glfw.GLFW.*
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
@@ -45,7 +67,6 @@ fun main(args: Array<String>) {
 
 object win_main {
     //TODO: rename to plain "main" or something.
-    const val DEBUG = true
     const val MAXPRINTMSG = 4096
     const val MAX_QUED_EVENTS = 256
     const val MASK_QUED_EVENTS = MAX_QUED_EVENTS - 1
@@ -258,10 +279,10 @@ object win_main {
      ==================
      */
 
+    // NOTE: Differs from C++ — C++ uses Win32 SetEvent on a semaphore.
+    // JVM equivalent would be a CountDownLatch or Semaphore, but the background
+    // download system that uses this is not fully implemented. Implemented as no-op.
     fun Sys_TriggerEvent(index: Int = sys_public.TRIGGER_EVENT_ZERO) {
-        throw TODO_Exception()
-        //	assert( index == 0 );
-//	SetEvent( win32.backgroundDownloadSemaphore );
     }
 
     /*
@@ -387,14 +408,9 @@ object win_main {
      Sys_DebugVPrintf
      ==============
      */
+    // NOTE: Differs from C++ — C++ takes a va_list; in Kotlin varargs and va_list are equivalent.
     fun Sys_DebugVPrintf(fmt: String, vararg arg: Any) {
-        throw TODO_Exception()
-        //	char msg[MAXPRINTMSG];
-//
-//	idStr::vsnPrintf( msg, MAXPRINTMSG-1, fmt, arg );
-//	msg[ sizeof(msg)-1 ] = '\0';
-//
-//	OutputDebugString( msg );
+        System.out.printf(fmt, *arg)
     }
 
     /*
@@ -418,9 +434,14 @@ object win_main {
      Sys_ShowWindow
      ==============
      */
+    // NOTE: Differs from C++ — C++ uses Win32 ShowWindow. Kotlin uses GLFW.
     fun Sys_ShowWindow(show: Boolean) {
-        throw TODO_Exception()
-        //	::ShowWindow( win32.hWnd, show ? SW_SHOW : SW_HIDE );
+        if (win_glimp.window == 0L) return
+        if (show) {
+            glfwShowWindow(win_glimp.window)
+        } else {
+            glfwHideWindow(win_glimp.window)
+        }
     }
 
     /*
@@ -428,9 +449,10 @@ object win_main {
      Sys_IsWindowVisible
      ==============
      */
+    // NOTE: Differs from C++ — C++ uses Win32 IsWindowVisible. Kotlin uses GLFW.
     fun Sys_IsWindowVisible(): Boolean {
-        throw TODO_Exception()
-        //	return ( ::IsWindowVisible( win32.hWnd ) != 0 );
+        if (win_glimp.window == 0L) return false
+        return glfwGetWindowAttrib(win_glimp.window, GLFW_VISIBLE) == GLFW_TRUE
     }
 
     /*
@@ -503,11 +525,9 @@ object win_main {
      Sys_EXEPath
      ==============
      */
+    // NOTE: Differs from C++ — C++ uses Win32 GetModuleFileName. Kotlin uses Java system properties.
     fun Sys_EXEPath(): String {
-        throw TODO_Exception()
-        //	static char exe[ MAX_OSPATH ];
-//	GetModuleFileName( NULL, exe, sizeof( exe ) - 1 );
-//	return exe;
+        return System.getProperty("user.dir")
     }
 
     /*
@@ -703,14 +723,15 @@ object win_main {
      */
     fun Sys_QueEvent(time: Long, type: sysEventType_t, value: Int, value2: Int, ptrLength: Int, ptr: ByteBuffer?) {
         val ev: sysEvent_s
-        eventQue[eventHead and MASK_QUED_EVENTS] = sysEvent_s()
-        ev = eventQue[eventHead and MASK_QUED_EVENTS]
+        // FIX: Check overflow BEFORE replacing the slot, so old event data can be freed
         if (eventHead - eventTail >= MAX_QUED_EVENTS) {
             Common.common.Printf("Sys_QueEvent: overflow\n")
             // we are discarding an event, but don't leak memory
-            ev.evPtr?.clear() //Mem_Free( ev->evPtr );
+            eventQue[eventHead and MASK_QUED_EVENTS].evPtr?.clear()
             eventTail++
         }
+        eventQue[eventHead and MASK_QUED_EVENTS] = sysEvent_s()
+        ev = eventQue[eventHead and MASK_QUED_EVENTS]
         eventHead++
         ev.evType = type
         ev.evValue = value
@@ -890,17 +911,7 @@ object win_main {
             CmdSystem.CMD_FL_SYSTEM,
             "restarts the input system"
         )
-        if (DEBUG) {
-            CmdSystem.cmdSystem.AddCommand(
-                "createResourceIDs",
-                CreateResourceIDs_f.INSTANCE,
-                CmdSystem.CMD_FL_TOOL,
-                "assigns resource IDs in _resouce.h files"
-            )
-        }
-        // #if 0
-//	 cmdSystem.AddCommand( "setAsyncSound", Sys_SetAsyncSound_f, CMD_FL_SYSTEM, "set the async sound option" );
-// #endif
+
 
         //
         // Windows user name
@@ -1069,8 +1080,7 @@ object win_main {
      */
 
     fun Sys_GetProcessorString(): String {
-        throw TODO_Exception()
-        //	return win32.sys_cpustring.GetString();
+        return Win32Vars_t.sys_cpustring.GetString()!!
     }
 
     //=======================================================================
@@ -1551,7 +1561,8 @@ object win_main {
 //
         // Launch the script debugger
 //        if ( strstr( lpCmdLine, "+debugger" ) ) {
-        if (sys_cmdline.indexOf("+debugger") == 0) {
+        // FIX: Was == 0 (only matches at start of string). C++ strstr() checks anywhere.
+        if (sys_cmdline.indexOf("+debugger") >= 0) {
             // DebuggerClientInit( lpCmdLine );
             win_syscon.Sys_ShowConsole(1, true)
             return  //0;
@@ -1567,13 +1578,7 @@ object win_main {
             }
 
             Win_Frame()
-            if (DEBUG) {
-                Sys_MemFrame()
-            }
-            //
-//            // set exceptions, even if some crappy syscall changes them!
-//            Sys_FPU_EnableExceptions(TEST_FPU_EXCEPTIONS);
-//
+
             if (BuildDefines.ID_ALLOW_TOOLS) {
                 if (Common.com_editors != 0) {
                     if (Common.com_editors and Common.EDITOR_GUI != 0) {

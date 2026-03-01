@@ -3759,14 +3759,13 @@ object Player {
             val angles: idAngles
             val axis = idMat3()
             val bounds: idBounds
-            angles = viewAngles
+            angles = idAngles(viewAngles)
             GetViewPos(origin, axis)
             if (angle != 0.0f) {
-                if (angles.pitch > 45.0f) {
-                    angles.pitch = 45.0f // don't go too far overhead
-                } else {
-                    angles.pitch = 0.0f
-                }
+                angles.pitch = 0.0f
+            }
+            if (angles.pitch > 45.0f) {
+                angles.pitch = 45.0f // don't go too far overhead
             }
             focusPoint.set(origin.plus(angles.ToForward().times(THIRD_PERSON_FOCUS_DISTANCE)))
             focusPoint.z += height
@@ -6330,7 +6329,7 @@ object Player {
             val weaponAngleOffsetMax = CFloat()
             weapon.GetEntity()!!
                 .GetWeaponAngleOffsets(weaponAngleOffsetAverages, weaponAngleOffsetScale, weaponAngleOffsetMax)
-            av = current
+            av = idAngles(current)
 
             // calcualte this so the wrap arounds work properly
             for (j in 1 until weaponAngleOffsetAverages._val) {
@@ -6712,7 +6711,7 @@ object Player {
             SetAngles(idAngles(0.0f, viewAngles.yaw, 0.0f))
 
             // save in the log for analyzing weapon angle offsets
-            loggedViewAngles[Game_local.gameLocal.framenum and NUM_LOGGED_VIEW_ANGLES - 1] = viewAngles
+            loggedViewAngles[Game_local.gameLocal.framenum and NUM_LOGGED_VIEW_ANGLES - 1].set(viewAngles)
         }
 
         private fun EvaluateControls() {
@@ -7962,7 +7961,7 @@ object Player {
             legsYaw = 0.0f
             legsForward = true
             oldViewYaw = 0.0f
-            viewBobAngles = ang_zero
+            viewBobAngles = idAngles()
             viewBob = getVec3_zero()
             landChange = 0
             landTime = 0
@@ -8022,7 +8021,7 @@ object Player {
             smoothedFrame = 0
             smoothedOriginUpdated = false
             smoothedOrigin = getVec3_zero()
-            smoothedAngles = ang_zero
+            smoothedAngles = idAngles()
             fl.networkSync = true
             latchedTeam = -1
             doingDeathSkin = false
