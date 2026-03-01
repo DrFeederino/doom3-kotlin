@@ -539,7 +539,8 @@ object MsgChannel {
             val size = CInt()
             val result: Boolean
             result = reliableReceive.Get(msg.GetData()!!.array(), size)
-            msg.SetSize(msg.GetData()!!.capacity()) //TODO:phase out size and length fields.
+            // FIX: was setting size to buffer capacity, ignoring actual message size from Get()
+            msg.SetSize(size._val)
             msg.BeginReading()
             return result
         }
@@ -560,13 +561,9 @@ object MsgChannel {
             tmp.WriteLong(reliableReceive.GetLast())
 
             // write reliable messages
-            reliableSend.CopyToBuffer(
-                Arrays.copyOfRange(
-                    tmp.GetData()!!.array(),
-                    tmp.GetSize(),
-                    tmp.GetData()!!.capacity()
-                )
-            )
+            // FIX: was using Arrays.copyOfRange which creates a disconnected copy -
+            // reliable data was written to a temp array and discarded
+            reliableSend.CopyToBuffer(tmp.GetData()!!.array(), tmp.GetSize())
             tmp.SetSize(tmp.GetSize() + reliableSend.GetTotalSize())
             tmp.WriteShort(0)
 
@@ -763,15 +760,15 @@ object MsgChannel {
             return last
         }
 
-        fun CopyToBuffer(buf: ByteArray) {
+        fun CopyToBuffer(buf: ByteArray, offset: Int = 0) {
             if (startIndex <= endIndex) {
 //		memcpy( buf, buffer + startIndex, endIndex - startIndex );
-                System.arraycopy(buffer, startIndex, buf, 0, endIndex - startIndex)
+                System.arraycopy(buffer, startIndex, buf, offset, endIndex - startIndex)
             } else {
 //		memcpy( buf, buffer + startIndex, sizeof( buffer ) - startIndex );
-                System.arraycopy(buffer, startIndex, buf, 0, buffer.size - startIndex)
+                System.arraycopy(buffer, startIndex, buf, offset, buffer.size - startIndex)
                 //		memcpy( buf + sizeof( buffer ) - startIndex, buffer, endIndex );
-                System.arraycopy(buffer, 0, buf, buffer.size - startIndex, endIndex)
+                System.arraycopy(buffer, 0, buf, offset + buffer.size - startIndex, endIndex)
             }
         }
 
@@ -791,8 +788,10 @@ object MsgChannel {
             WriteByte((s shr 8 and 255).toByte())
         }
 
+        // FIX: ReadByte().toInt() sign-extends (0xFF -> -1 -> 0xFFFFFFFF).
+        // Must mask with 0xFF to match C++ unsigned byte behavior.
         private fun ReadShort(): Int {
-            return ReadByte().toInt() or (ReadByte().toInt() shl 8)
+            return (ReadByte().toInt() and 0xFF) or ((ReadByte().toInt() and 0xFF) shl 8)
         }
 
         private fun WriteLong(l: Int) {
@@ -802,8 +801,12 @@ object MsgChannel {
             WriteByte((l shr 24 and 255).toByte())
         }
 
+        // FIX: Same byte sign extension issue as ReadShort
         private fun ReadLong(): Int {
-            return ReadByte().toInt() or (ReadByte().toInt() shl 8) or (ReadByte().toInt() shl 16) or (ReadByte().toInt() shl 24)
+            return (ReadByte().toInt() and 0xFF) or
+                    ((ReadByte().toInt() and 0xFF) shl 8) or
+                    ((ReadByte().toInt() and 0xFF) shl 16) or
+                    ((ReadByte().toInt() and 0xFF) shl 24)
         }
 
         private fun WriteData(data: ByteArray, size: Int) {

@@ -355,9 +355,10 @@ class AsyncNetwork {
                         "spawns a server",
                         ArgCompletion_MapName.getInstance()
                     )
+                    // FIX: was using Game_local.idGameLocal.NextMap_f - should use local NextMap_f per C++ original
                     cmdSystem.AddCommand(
                         "nextMap",
-                        Game_local.idGameLocal.NextMap_f.getInstance(),
+                        NextMap_f.instance,
                         CmdSystem.CMD_FL_SYSTEM,
                         "loads the next map on the server"
                     )
@@ -490,9 +491,23 @@ class AsyncNetwork {
             fun DuplicateUsercmd(
                 previousUserCmd: usercmd_t, currentUserCmd: usercmd_t, frame: Int, time: Int
             ): Boolean {
-                var currentUserCmd = currentUserCmd
                 if (currentUserCmd.gameTime <= previousUserCmd.gameTime) {
-                    currentUserCmd = previousUserCmd
+                    // FIX: was reassigning local var reference instead of copying fields.
+                    // C++ operator= copies all fields; Kotlin reference reassignment just changes the pointer.
+                    currentUserCmd.gameFrame = previousUserCmd.gameFrame
+                    currentUserCmd.gameTime = previousUserCmd.gameTime
+                    currentUserCmd.buttons = previousUserCmd.buttons
+                    currentUserCmd.forwardmove = previousUserCmd.forwardmove
+                    currentUserCmd.rightmove = previousUserCmd.rightmove
+                    currentUserCmd.upmove = previousUserCmd.upmove
+                    currentUserCmd.impulse = previousUserCmd.impulse
+                    currentUserCmd.flags = previousUserCmd.flags
+                    currentUserCmd.mx = previousUserCmd.mx
+                    currentUserCmd.my = previousUserCmd.my
+                    currentUserCmd.sequence = previousUserCmd.sequence
+                    currentUserCmd.duplicateCount = previousUserCmd.duplicateCount
+                    System.arraycopy(previousUserCmd.angles, 0, currentUserCmd.angles, 0, 3)
+
                     currentUserCmd.gameFrame = frame
                     currentUserCmd.gameTime = time
                     currentUserCmd.duplicateCount++

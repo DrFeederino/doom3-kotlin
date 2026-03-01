@@ -1,3 +1,24 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/framework/CmdSystem.h, neo/framework/CmdSystem.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package neo.framework
 
 import neo.TempDump.void_callback
@@ -14,54 +35,36 @@ import neo.idlib.idException
 import neo.idlib.idLib
 import java.nio.ByteBuffer
 
+/*
+===============================================================================
+
+    Console command execution and command text buffering.
+
+    Any number of commands can be added in a frame from several different
+    sources. Most commands come from either key bindings or console line input,
+    but entire text files can be execed.
+
+    Command execution takes a null terminated string, breaks it into tokens,
+    then searches for a command or variable that matches the first token.
+
+===============================================================================
+*/
+
 object CmdSystem {
-    /*
-     ===============================================================================
 
-     Console command execution and command text buffering.
-
-     Any number of commands can be added in a frame from several different
-     sources. Most commands come from either key bindings or console line input,
-     but entire text files can be execed.
-
-     Command execution takes a null terminated string, breaks it into tokens,
-     then searches for a command or variable that matches the first token.
-
-     ===============================================================================
-     */
     // command flags
-    //typedef enum {
     const val CMD_FL_ALL: Long = -1
+    val CMD_FL_CHEAT: Long = BIT(0).toLong()    // command is considered a cheat
+    val CMD_FL_SYSTEM: Long = BIT(1).toLong()   // system command
+    val CMD_FL_RENDERER: Long = BIT(2).toLong() // renderer command
+    val CMD_FL_SOUND: Long = BIT(3).toLong()    // sound command
+    val CMD_FL_GAME: Long = BIT(4).toLong()     // game command
+    val CMD_FL_TOOL: Long = BIT(5).toLong()     // tool command
 
-
-    val CMD_FL_CHEAT: Long = BIT(0) // command is considered a cheat
-        .toLong()
-
-
-    val CMD_FL_GAME: Long = BIT(4) // game command
-        .toLong()
-
-
-    val CMD_FL_RENDERER: Long = BIT(2) // renderer command
-        .toLong()
-
-
-    val CMD_FL_SOUND: Long = BIT(3) // sound command
-        .toLong()
-
-
-    val CMD_FL_SYSTEM: Long = BIT(1) // system command
-        .toLong()
-
-
-    val CMD_FL_TOOL: Long = BIT(5) // tool command
-        .toLong()
     private var cmdSystemLocal: idCmdSystemLocal = idCmdSystemLocal()
-
-
     var cmdSystem: idCmdSystem = cmdSystemLocal
 
-    //} cmdFlags_t;
+    // NOTE: Kotlin-only, no C++ counterpart — utility for injection
     fun setCmdSystems(cmdSystem: idCmdSystem) {
         cmdSystemLocal = cmdSystem as idCmdSystemLocal
         CmdSystem.cmdSystem = cmdSystemLocal
@@ -69,28 +72,34 @@ object CmdSystem {
 
     // parameters for command buffer stuffing
     enum class cmdExecution_t {
-        CMD_EXEC_NOW,  // don't return until completed
-        CMD_EXEC_INSERT,  // insert at current position, but don't run yet
-        CMD_EXEC_APPEND // add to end of the command buffer (normal case)
+        CMD_EXEC_NOW,       // don't return until completed
+        CMD_EXEC_INSERT,    // insert at current position, but don't run yet
+        CMD_EXEC_APPEND     // add to end of the command buffer (normal case)
     }
 
     // command function
     abstract class cmdFunction_t {
         @Throws(idException::class)
-        abstract fun run(args: CmdArgs.idCmdArgs??)
+        abstract fun run(args: CmdArgs.idCmdArgs?)
     }
 
     // argument completion function
     abstract class argCompletion_t {
-        //typedef void (*argCompletion_t)( final idCmdArgs args, void_callback<String> callback );
         @Throws(idException::class)
         abstract fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>)
         fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>, type: Int) {}
     }
 
+    /*
+    ===============================================================================
+
+        idCmdSystem
+
+    ===============================================================================
+    */
     abstract class idCmdSystem {
         //
-        //public	virtual				~idCmdSystem( void ) {}
+        // virtual ~idCmdSystem( void ) {}
         //
         @Throws(idException::class)
         abstract fun Init()
@@ -111,7 +120,7 @@ object CmdSystem {
             cmdName: String,
             function: cmdFunction_t,
             flags: Long,
-            description: String /*, argCompletion_t argCompletion = NULL*/
+            description: String
         ) {
             AddCommand(cmdName, function, flags, description, null)
         }
@@ -189,7 +198,6 @@ object CmdSystem {
             }
         }
 
-        //	template<final String *strings>
         class ArgCompletion_String(private val listDeclStrings: Array<String?>) : argCompletion_t() {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
@@ -199,7 +207,6 @@ object CmdSystem {
             }
         }
 
-        //	template<int type>
         class ArgCompletion_Decl(private val type: declType_t) : argCompletion_t() {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
@@ -239,22 +246,13 @@ object CmdSystem {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
                 cmdSystem.ArgCompletion_FolderExtension(
-                    args,
-                    callback,
-                    "models/",
-                    false,
-                    ".lwo",
-                    ".ase",
-                    ".md5mesh",
-                    ".ma",
-                    null
+                    args, callback, "models/", false,
+                    ".lwo", ".ase", ".md5mesh", ".ma", null
                 )
             }
 
             companion object {
                 private val instance: argCompletion_t = ArgCompletion_ModelName()
-
-
                 fun getInstance(): argCompletion_t {
                     return instance
                 }
@@ -279,22 +277,13 @@ object CmdSystem {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
                 cmdSystem.ArgCompletion_FolderExtension(
-                    args,
-                    callback,
-                    "/",
-                    false,
-                    ".tga",
-                    ".dds",
-                    ".jpg",
-                    ".pcx",
-                    null
+                    args, callback, "/", false,
+                    ".tga", ".dds", ".jpg", ".pcx", null
                 )
             }
 
             companion object {
                 private val instance: argCompletion_t = ArgCompletion_ImageName()
-
-
                 fun getInstance(): argCompletion_t {
                     return instance
                 }
@@ -309,8 +298,6 @@ object CmdSystem {
 
             companion object {
                 private val instance: argCompletion_t = ArgCompletion_VideoName()
-
-
                 fun getInstance(): argCompletion_t {
                     return instance
                 }
@@ -361,68 +348,56 @@ object CmdSystem {
     }
 
     /*
-     ===============================================================================
+    ===============================================================================
 
-     idCmdSystemLocal
+        idCmdSystemLocal
 
-     ===============================================================================
-     */
+    ===============================================================================
+    */
+
     class commandDef_s {
-        var argCompletion: argCompletion_t? = null
-        var description: String = ""
-        var flags: Long = 0
-        var function: cmdFunction_t? = null
-        var name: String = ""
         var next: commandDef_s? = null
-        private fun set(last: commandDef_s) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        var name: String = ""
+        var function: cmdFunction_t? = null
+        var argCompletion: argCompletion_t? = null
+        var flags: Long = 0
+        var description: String = ""
     }
 
     internal class idCmdSystemLocal : idCmdSystem() {
-        //
-        private var commands: commandDef_s? = null
-        private val completionParms: idStrList
-        private val completionString: idStr
 
-        // a command stored to be executed after a reloadEngine and all associated commands have been processed
-        private var postReload: CmdArgs.idCmdArgs?
+        private var commands: commandDef_s? = null
+
+        private var wait: Int = 0
+        private var textLength: Int = 0
         private var textBuf: ByteArray = ByteArray(MAX_CMD_BUFFER)
-        private var textLength = 0
+
+        private val completionString: idStr = idStr()
+        private val completionParms: idStrList = idStrList()
 
         // piggybacks on the text buffer, avoids tokenize again and screwing it up
-        private val tokenizedCmds: idList<CmdArgs.idCmdArgs?>
+        private val tokenizedCmds: idList<CmdArgs.idCmdArgs?> = idList()
 
-        //
-        //
-        //
-        private var wait = 0
+        // a command stored to be executed after a reloadEngine and all associated commands have been processed
+        private var postReload: CmdArgs.idCmdArgs = CmdArgs.idCmdArgs()
 
+        /*
+        ============
+        idCmdSystemLocal::Init
+        ============
+        */
         @Throws(idException::class)
         override fun Init() {
-            AddCommand(
-                "listCmds",
-                List_f.getInstance(),
-                CMD_FL_SYSTEM,
-                "lists commands"
-            )
+            AddCommand("listCmds", List_f.getInstance(), CMD_FL_SYSTEM, "lists commands")
             AddCommand("listSystemCmds", SystemList_f.getInstance(), CMD_FL_SYSTEM, "lists system commands")
-            AddCommand(
-                "listRendererCmds",
-                RendererList_f.getInstance(),
-                CMD_FL_SYSTEM,
-                "lists renderer commands"
-            )
+            AddCommand("listRendererCmds", RendererList_f.getInstance(), CMD_FL_SYSTEM, "lists renderer commands")
             AddCommand("listSoundCmds", SoundList_f.getInstance(), CMD_FL_SYSTEM, "lists sound commands")
             AddCommand("listGameCmds", GameList_f.getInstance(), CMD_FL_SYSTEM, "lists game commands")
             AddCommand("listToolCmds", ToolList_f.getInstance(), CMD_FL_SYSTEM, "lists tool commands")
             AddCommand(
-                "exec",
-                Exec_f.getInstance(),
-                CMD_FL_SYSTEM,
-                "executes a config file",
+                "exec", Exec_f.getInstance(), CMD_FL_SYSTEM, "executes a config file",
                 ArgCompletion_ConfigName.getInstance()
-            ) //TODO:extend argCompletion_t
+            )
             AddCommand(
                 "vstr",
                 Vstr_f.getInstance(),
@@ -437,26 +412,30 @@ object CmdSystem {
                 CMD_FL_SYSTEM,
                 "delays remaining buffered commands one or more frames"
             )
+
             completionString.set("*")
             textLength = 0
         }
 
+        /*
+        ============
+        idCmdSystemLocal::Shutdown
+        ============
+        */
         override fun Shutdown() {
-
-//            for (cmd = commands; cmd != null; cmd = commands) {
-//                commands = commands.next;
-//                cmd.name = cmd.description = null;
-////                Mem_Free(cmd.name);
-////                Mem_Free(cmd.description);
-////		delete cmd;
-//            }
+            // In C++ this frees each command node; in Kotlin the GC handles it
             commands = null
             completionString.Clear()
             completionParms.clear()
             tokenizedCmds.Clear()
-            postReload!!.Clear()
+            postReload.Clear()
         }
 
+        /*
+        ============
+        idCmdSystemLocal::AddCommand
+        ============
+        */
         @Throws(idException::class)
         override fun AddCommand(
             cmdName: String,
@@ -465,10 +444,8 @@ object CmdSystem {
             description: String,
             argCompletion: argCompletion_t?
         ) {
-            var cmd: commandDef_s?
-
             // fail if the command already exists
-            cmd = commands
+            var cmd = commands
             while (cmd != null) {
                 if (idStr.Cmp(cmdName, cmd.name) == 0) {
                     if (function !== cmd.function) {
@@ -478,63 +455,92 @@ object CmdSystem {
                 }
                 cmd = cmd.next
             }
+
             cmd = commandDef_s()
-            cmd.name = cmdName //Mem_CopyString(cmdName);
+            cmd.name = cmdName
             cmd.function = function
             cmd.argCompletion = argCompletion
             cmd.flags = flags
-            cmd.description = description //Mem_CopyString(description);
+            cmd.description = description
             cmd.next = commands
             commands = cmd
         }
 
+        /*
+        ============
+        idCmdSystemLocal::RemoveCommand
+        ============
+        */
         override fun RemoveCommand(cmdName: String) {
             var cmd: commandDef_s?
             var last: commandDef_s?
             last = commands.also { cmd = it }
             while (cmd != null) {
-                if (idStr.Cmp(cmdName, cmd.name) == 0) {
-                    if (cmd == commands) { //first iteration.
-                        commands = cmd.next //TODO:BOINTER. edit: check if this equals **last;
-                    } else { //set last.next to last.next.next,
-                        //where last.next is the current cmd. so basically setting overwriting the current node.
-                        last!!.next = cmd.next
+                if (idStr.Cmp(cmdName, cmd!!.name) == 0) {
+                    if (cmd == commands) {
+                        commands = cmd!!.next
+                    } else {
+                        last!!.next = cmd!!.next
                     }
                     return
                 }
                 last = cmd
+                cmd = cmd!!.next
+            }
+        }
+
+        /*
+        ============
+        idCmdSystemLocal::RemoveFlaggedCommands
+        ============
+        */
+        // FIX: Original code did not check flags and did not remove commands from the linked list.
+        // Now properly implements the C++ double-pointer traversal: removes matching commands from the list.
+        override fun RemoveFlaggedCommands(flags: Int) {
+            var prev: commandDef_s? = null
+            var cmd = commands
+            while (cmd != null) {
+                if (cmd.flags and flags.toLong() != 0L) {
+                    // Remove this command from the linked list
+                    if (prev == null) {
+                        commands = cmd.next
+                    } else {
+                        prev.next = cmd.next
+                    }
+                    // Don't advance prev — it still points to the node before the next one
+                    cmd = if (prev == null) commands else prev.next
+                    continue
+                }
+                prev = cmd
                 cmd = cmd.next
             }
         }
 
-        override fun RemoveFlaggedCommands(flags: Int) {
-            var cmd = commands
-            while (cmd != null) {
-                val next = cmd.next
-                cmd.description = ""
-                cmd.name = ""
-                cmd.function = null
-                cmd.argCompletion = null
-                cmd = next
-            }
-        }
-
+        /*
+        ============
+        idCmdSystemLocal::CommandCompletion
+        ============
+        */
         @Throws(idException::class)
         override fun CommandCompletion(callback: void_callback<String>) {
-            var cmd: commandDef_s?
-            cmd = commands
+            var cmd = commands
             while (cmd != null) {
                 callback.run(cmd.name)
                 cmd = cmd.next
             }
         }
 
+        /*
+        ============
+        idCmdSystemLocal::ArgCompletion
+        ============
+        */
         @Throws(idException::class)
         override fun ArgCompletion(cmdString: String, callback: void_callback<String>) {
-            var cmd: commandDef_s?
             val args = CmdArgs.idCmdArgs()
             args.TokenizeString(cmdString, false)
-            cmd = commands
+
+            var cmd = commands
             while (cmd != null) {
                 if (null == cmd.argCompletion) {
                     cmd = cmd.next
@@ -548,36 +554,42 @@ object CmdSystem {
             }
         }
 
+        /*
+        ============
+        idCmdSystemLocal::BufferCommandText
+        ============
+        */
         @Throws(idException::class)
         override fun BufferCommandText(exec: cmdExecution_t, text: String) {
             when (exec) {
                 cmdExecution_t.CMD_EXEC_NOW -> {
                     ExecuteCommandText(text)
                 }
-
                 cmdExecution_t.CMD_EXEC_INSERT -> {
                     InsertCommandText(text)
                 }
-
                 cmdExecution_t.CMD_EXEC_APPEND -> {
                     AppendCommandText(text)
                 }
-
                 else -> {
                     idLib.common.FatalError("idCmdSystemLocal::BufferCommandText: bad exec type")
                 }
             }
         }
 
+        /*
+        ============
+        idCmdSystemLocal::ExecuteCommandBuffer
+        ============
+        */
         @Throws(idException::class)
         override fun ExecuteCommandBuffer() {
             var i: Int
-            var text: CharArray? = null
-            var txt: String
             var quotes: Int
             var args: CmdArgs.idCmdArgs? = CmdArgs.idCmdArgs()
+
             while (textLength != 0) {
-                DBG_ExecuteCommandBuffer++
+
                 if (wait != 0) {
                     // skip out while text still remains in buffer, leaving it for next frame
                     wait--
@@ -585,7 +597,7 @@ object CmdSystem {
                 }
 
                 // find a \n or ; line break
-                text = String(textBuf).toCharArray() //TODO:??
+                val text = String(textBuf, 0, textLength)
                 quotes = 0
                 i = 0
                 while (i < textLength) {
@@ -601,9 +613,8 @@ object CmdSystem {
                     i++
                 }
 
-//                text[i] = 0;
-                val bla = String(text)
-                txt = bla.substring(0, i) //do not use ctos!
+                val txt = text.substring(0, i)
+
                 if (0 == idStr.Cmp(txt, "_execTokenized")) {
                     args = tokenizedCmds[0]
                     tokenizedCmds.RemoveIndex(0)
@@ -617,11 +628,9 @@ object CmdSystem {
                 if (i == textLength) {
                     textLength = 0
                 } else {
-                    val textBuf2 = textBuf
                     i++
                     textLength -= i
-                    textBuf = ByteArray(textBuf.size) //memmove(text, text + i, textLength);
-                    System.arraycopy(textBuf2, i, textBuf, 0, textLength)
+                    System.arraycopy(textBuf, i, textBuf, 0, textLength)
                 }
 
                 // execute the command line that we have already tokenized
@@ -629,6 +638,11 @@ object CmdSystem {
             }
         }
 
+        /*
+        ============
+        idCmdSystemLocal::ArgCompletion_FolderExtension
+        ============
+        */
         @Throws(idException::class)
         override fun ArgCompletion_FolderExtension(
             args: CmdArgs.idCmdArgs?,
@@ -639,17 +653,19 @@ object CmdSystem {
         ) {
             var i: Int
             var string: String?
-            //            String extension;
-//            va_list argPtr;
+
             string = args!!.Argv(0)
             string += " "
             string += args.Argv(1)
+
             if (completionString.Icmp(string) != 0) {
                 val parm: idStr
                 val path = idStr()
                 var names: idFileList?
+
                 completionString.set(string)
                 completionParms.clear()
+
                 parm = idStr(args.Argv(1))
                 parm.ExtractFilePath(path)
                 if (stripFolder || path.Length() == 0) {
@@ -674,9 +690,9 @@ object CmdSystem {
                 FileSystem_h.fileSystem.FreeFileList(names)
 
                 // list files
-//                va_start(argPtr, stripFolder);
-//                for (extension = va_arg(argPtr, String); extension != null; extension = va_arg(argPtr, String)) {
+                // FIX: C++ uses NULL sentinel to terminate va_list; filter out null entries
                 for (extension in objects) {
+                    if (extension == null) break
                     names = FileSystem_h.fileSystem.ListFiles(path.toString(), extension.toString(), true, true)
                     i = 0
                     while (i < names.GetNumFiles()) {
@@ -692,7 +708,6 @@ object CmdSystem {
                     }
                     FileSystem_h.fileSystem.FreeFileList(names)
                 }
-                //                va_end(argPtr);
             }
             i = 0
             while (i < completionParms.size()) {
@@ -701,61 +716,72 @@ object CmdSystem {
             }
         }
 
+        /*
+        ============
+        idCmdSystemLocal::ArgCompletion_DeclName
+        ============
+        */
         @Throws(idException::class)
         override fun ArgCompletion_DeclName(args: CmdArgs.idCmdArgs?, callback: void_callback<String>, type: Int) {
-            var i: Int
-            val num: Int
             if (DeclManager.declManager == null) {
                 return
             }
-            num = DeclManager.declManager.GetNumDecls(declType_t.values()[type])
-            i = 0
+            val num = DeclManager.declManager.GetNumDecls(declType_t.values()[type])
+            var i = 0
             while (i < num) {
                 callback.run(
                     args!!.Argv(0) + " " + DeclManager.declManager.DeclByIndex(
-                        declType_t.values()[type],
-                        i,
-                        false
+                        declType_t.values()[type], i, false
                     )!!.GetName()
                 )
                 i++
             }
         }
 
+        /*
+        ============
+        idCmdSystemLocal::BufferCommandArgs
+        ============
+        */
         @Throws(idException::class)
         override fun BufferCommandArgs(exec: cmdExecution_t, args: CmdArgs.idCmdArgs?) {
             when (exec) {
                 cmdExecution_t.CMD_EXEC_NOW -> {
                     ExecuteTokenizedString(args)
                 }
-
                 cmdExecution_t.CMD_EXEC_APPEND -> {
                     AppendCommandText("_execTokenized\n")
                     tokenizedCmds.Append(args)
                 }
-
                 else -> {
                     idLib.common.FatalError("idCmdSystemLocal::BufferCommandArgs: bad exec type")
                 }
             }
         }
 
+        /*
+        ============
+        idCmdSystemLocal::SetupReloadEngine
+        ============
+        */
         @Throws(idException::class)
         override fun SetupReloadEngine(args: CmdArgs.idCmdArgs?) {
             BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "reloadEngine\n")
-            postReload = args
+            postReload = args ?: CmdArgs.idCmdArgs()
         }
 
-        //
-        //
-        //
+        /*
+        ============
+        idCmdSystemLocal::PostReloadEngine
+        ============
+        */
         @Throws(idException::class)
         override fun PostReloadEngine(): Boolean {
-            if (0 == postReload!!.Argc()) {
+            if (0 == postReload.Argc()) {
                 return false
             }
             BufferCommandArgs(cmdExecution_t.CMD_EXEC_APPEND, postReload)
-            postReload!!.Clear()
+            postReload.Clear()
             return true
         }
 
@@ -767,6 +793,11 @@ object CmdSystem {
             return commands
         }
 
+        /*
+        ============
+        idCmdSystemLocal::ExecuteTokenizedString
+        ============
+        */
         @Throws(idException::class)
         private fun ExecuteTokenizedString(args: CmdArgs.idCmdArgs?) {
             var cmd: commandDef_s?
@@ -774,123 +805,118 @@ object CmdSystem {
 
             // execute the command line
             if (0 == args!!.Argc()) {
-                return  // no tokens
-            }
-            if (args.Argv(0) == "bla1") {
-                args.set("map game/alphalabs1") //HACKME::11
+                return // no tokens
             }
 
             // check registered command functions
             prev = commands.also { cmd = it }
             while (cmd != null) {
 
-//                cmd = prev;
-                if (idStr.Icmp(args.Argv(0), cmd.name) == 0) {
+                if (idStr.Icmp(args.Argv(0), cmd!!.name) == 0) {
                     // rearrange the links so that the command will be
                     // near the head of the list next time it is used
-                    if (cmd !== commands) { //no re-arranging necessary for first element.
-                        prev!!.next = cmd.next
-                        cmd.next = commands
+                    if (cmd !== commands) {
+                        prev!!.next = cmd!!.next
+                        cmd!!.next = commands
                         commands = cmd
                     }
-                    if (cmd.flags and (CMD_FL_CHEAT or CMD_FL_TOOL) != 0L && Session.session != null && Session.session.IsMultiplayer() && !CVarSystem.cvarSystem.GetCVarBool(
-                            "net_allowCheats"
-                        )
+
+                    if (cmd!!.flags and (CMD_FL_CHEAT or CMD_FL_TOOL) != 0L
+                        && Session.session != null && Session.session.IsMultiplayer()
+                        && !CVarSystem.cvarSystem.GetCVarBool("net_allowCheats")
                     ) {
-                        idLib.common.Printf("Command '%s' not valid in multiplayer mode.\n", cmd.name)
+                        idLib.common.Printf("Command '%s' not valid in multiplayer mode.\n", cmd!!.name)
                         return
                     }
                     // perform the action
-                    if (null == cmd.function) {
+                    if (null == cmd!!.function) {
                         break
                     } else {
-                        cmd.function!!.run(args)
+                        cmd!!.function!!.run(args)
                     }
                     return
                 }
                 prev = cmd
-                cmd = cmd.next
+                cmd = cmd!!.next
             }
 
             // check cvars
             if (CVarSystem.cvarSystem.Command(args)) {
                 return
             }
+
             idLib.common.Printf("Unknown command '%s'\n", args.Argv(0))
         }
 
         /*
-         ============
-         idCmdSystemLocal::ExecuteCommandText
+        ============
+        idCmdSystemLocal::ExecuteCommandText
 
-         Tokenizes, then executes.
-         ============
-         */
+        Tokenizes, then executes.
+        ============
+        */
         @Throws(idException::class)
         private fun ExecuteCommandText(text: String) {
             ExecuteTokenizedString(CmdArgs.idCmdArgs(text, false))
         }
 
         /*
-         ============
-         idCmdSystemLocal::InsertCommandText
+        ============
+        idCmdSystemLocal::InsertCommandText
 
-         Adds command text immediately after the current command
-         Adds a \n to the text
-         ============
-         */
+        Adds command text immediately after the current command
+        Adds a \n to the text
+        ============
+        */
         @Throws(idException::class)
         private fun InsertCommandText(text: String) {
-            val len: Int
-            var i: Int
-            len = text.length + 1
+            val len: Int = text.length + 1
+
             if (len + textLength > textBuf.size) {
                 idLib.common.Printf("idCmdSystemLocal::InsertText: buffer overflow\n")
                 return
             }
 
             // move the existing command text
-            i = textLength - 1
+            var i = textLength - 1
             while (i >= 0) {
                 textBuf[i + len] = textBuf[i]
                 i--
             }
 
             // copy the new text in
-//            memcpy(textBuf, text, len - 1);
             System.arraycopy(text.toByteArray(), 0, textBuf, 0, len - 1)
 
             // add a \n
             textBuf[len - 1] = '\n'.code.toByte()
+
             textLength += len
         }
 
         /*
-         ============
-         idCmdSystemLocal::AppendCommandText
+        ============
+        idCmdSystemLocal::AppendCommandText
 
-         Adds command text at the end of the buffer, does NOT add a final \n
-         ============
-         */
+        Adds command text at the end of the buffer, does NOT add a final \n
+        ============
+        */
         @Throws(idException::class)
         private fun AppendCommandText(text: String) {
-            val l: Int
-            l = text.length
+            val l: Int = text.length
+
             if (textLength + l >= textBuf.size) {
                 idLib.common.Printf("idCmdSystemLocal::AppendText: buffer overflow\n")
                 return
             }
-            //	memcpy( textBuf + textLength, text, l );
-            System.arraycopy(
-                text.toByteArray(),
-                0,
-                textBuf,
-                textLength,
-                l
-            ) //TODO:check 1 at the end. EDIT: it was an L ya blind fool!
+            System.arraycopy(text.toByteArray(), 0, textBuf, textLength, l)
             textLength += l
         }
 
+        /*
+        ============
+        idCmdSystemLocal::List_f
+        ============
+        */
         private class List_f private constructor() : cmdFunction_t() {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?) {
@@ -905,6 +931,11 @@ object CmdSystem {
             }
         }
 
+        /*
+        ============
+        idCmdSystemLocal::SystemList_f
+        ============
+        */
         private class SystemList_f private constructor() : cmdFunction_t() {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?) {
@@ -919,6 +950,11 @@ object CmdSystem {
             }
         }
 
+        /*
+        ============
+        idCmdSystemLocal::RendererList_f
+        ============
+        */
         private class RendererList_f private constructor() : cmdFunction_t() {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?) {
@@ -933,6 +969,11 @@ object CmdSystem {
             }
         }
 
+        /*
+        ============
+        idCmdSystemLocal::SoundList_f
+        ============
+        */
         private class SoundList_f private constructor() : cmdFunction_t() {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?) {
@@ -947,6 +988,11 @@ object CmdSystem {
             }
         }
 
+        /*
+        ============
+        idCmdSystemLocal::GameList_f
+        ============
+        */
         private class GameList_f private constructor() : cmdFunction_t() {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?) {
@@ -961,6 +1007,11 @@ object CmdSystem {
             }
         }
 
+        /*
+        ============
+        idCmdSystemLocal::ToolList_f
+        ============
+        */
         private class ToolList_f private constructor() : cmdFunction_t() {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?) {
@@ -975,25 +1026,30 @@ object CmdSystem {
             }
         }
 
-        //private	static void				Exec_f( const idCmdArgs &args );
+        /*
+        ===============
+        idCmdSystemLocal::Exec_f
+        ===============
+        */
         private class Exec_f private constructor() : cmdFunction_t() {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?) {
                 val f = arrayOfNulls<ByteBuffer>(1)
-                val len: Int
-                val filename: idStr
+
                 if (args!!.Argc() != 2) {
                     idLib.common.Printf("exec <filename> : execute a script file\n")
                     return
                 }
-                filename = idStr(args.Argv(1))
+
+                val filename = idStr(args.Argv(1))
                 filename.DefaultFileExtension(".cfg")
-                len = FileSystem_h.fileSystem.ReadFile(filename.toString(),  /*reinterpret_cast<void **>*/f, null)
+                FileSystem_h.fileSystem.ReadFile(filename.toString(), f, null)
                 if (null == f[0]) {
                     idLib.common.Printf("couldn't exec %s\n", args.Argv(1))
                     return
                 }
                 idLib.common.Printf("execing %s\n", args.Argv(1))
+
                 cmdSystemLocal.BufferCommandText(cmdExecution_t.CMD_EXEC_INSERT, String(f[0]!!.array()))
                 FileSystem_h.fileSystem.FreeFile(f)
             }
@@ -1007,21 +1063,21 @@ object CmdSystem {
         }
 
         /*
-         ===============
-         idCmdSystemLocal::Vstr_f
+        ===============
+        idCmdSystemLocal::Vstr_f
 
-         Inserts the current value of a cvar as command text
-         ===============
-         */
+        Inserts the current value of a cvar as command text
+        ===============
+        */
         private class Vstr_f private constructor() : cmdFunction_t() {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?) {
-                val v: String?
                 if (args!!.Argc() != 2) {
                     idLib.common.Printf("vstr <variablename> : execute a variable command\n")
                     return
                 }
-                v = CVarSystem.cvarSystem.GetCVarString(args.Argv(1))
+
+                val v = CVarSystem.cvarSystem.GetCVarString(args.Argv(1))
                 cmdSystemLocal.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, Str.va("%s\n", v))
             }
 
@@ -1034,17 +1090,16 @@ object CmdSystem {
         }
 
         /*
-         ===============
-         idCmdSystemLocal::Echo_f
+        ===============
+        idCmdSystemLocal::Echo_f
 
-         Just prints the rest of the line to the console
-         ===============
-         */
+        Just prints the rest of the line to the console
+        ===============
+        */
         private class Echo_f private constructor() : cmdFunction_t() {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?) {
-                var i: Int
-                i = 1
+                var i = 1
                 while (i < args!!.Argc()) {
                     idLib.common.Printf("%s ", args.Argv(i))
                     i++
@@ -1061,17 +1116,16 @@ object CmdSystem {
         }
 
         /*
-         ============
-         idCmdSystemLocal::Parse_f
+        ============
+        idCmdSystemLocal::Parse_f
 
-         This just prints out how the rest of the line was parsed, as a debugging tool.
-         ============
-         */
+        This just prints out how the rest of the line was parsed, as a debugging tool.
+        ============
+        */
         private class Parse_f private constructor() : cmdFunction_t() {
             @Throws(idException::class)
             override fun run(args: CmdArgs.idCmdArgs?) {
-                var i: Int
-                i = 0
+                var i = 0
                 while (i < args!!.Argc()) {
                     idLib.common.Printf("%d: %s\n", i, args.Argv(i))
                     i++
@@ -1087,12 +1141,12 @@ object CmdSystem {
         }
 
         /*
-         ============
-         idCmdSystemLocal::Wait_f
+        ============
+        idCmdSystemLocal::Wait_f
 
-         Causes execution of the remainder of the command buffer to be delayed until next frame.
-         ============
-         */
+        Causes execution of the remainder of the command buffer to be delayed until next frame.
+        ============
+        */
         private class Wait_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
                 if (args!!.Argc() == 2) {
@@ -1110,74 +1164,57 @@ object CmdSystem {
             }
         }
 
-        //private	static void				PrintMemInfo_f( const idCmdArgs &args );
-        private class PrintMemInfo_f private constructor() : cmdFunction_t() {
-            @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?) {
-                ListByFlags(args, CMD_FL_SYSTEM)
-            }
-
-            companion object {
-                private val instance: cmdFunction_t = PrintMemInfo_f()
-                fun getInstance(): cmdFunction_t {
-                    return instance
-                }
-            }
-        }
-
         companion object {
             private const val MAX_CMD_BUFFER = 0x10000
-            private var DBG_ExecuteCommandBuffer = 0
 
+            /*
+            ============
+            idCmdSystemLocal::ListByFlags
+            ============
+            */
             @Throws(idException::class)
             private fun ListByFlags(args: CmdArgs.idCmdArgs?, cmdFlags_t: Long) {
                 var i: Int
                 var match: String
                 var cmd: commandDef_s?
                 val cmdList = idList<commandDef_s>()
+
                 if (args!!.Argc() > 1) {
                     match = args.Args(1, -1)
                     match = match.replace(" ".toRegex(), "")
                 } else {
                     match = ""
                 }
+
                 cmd = cmdSystemLocal.GetCommands()
                 while (cmd != null) {
                     if (0L == cmd.flags and cmdFlags_t) {
                         cmd = cmd.next
                         continue
                     }
-                    if (!match.isEmpty() && idStr(cmd.name).Filter(match, false)) {
+                    // FIX: Filter condition was inverted — C++ skips when Filter() == 0 (no match),
+                    // meaning only matching commands are shown. The Kotlin code was skipping matches.
+                    if (match.isNotEmpty() && !idStr(cmd.name).Filter(match, false)) {
                         cmd = cmd.next
                         continue
                     }
+
                     cmdList.Append(cmd)
                     cmd = cmd.next
                 }
+
                 cmdList.Sort()
                 i = 0
                 while (i < cmdList.Num()) {
                     cmd = cmdList[i]
-                    idLib.common.Printf("  %-21s %s\n", cmd.name, cmd.description)
+                    idLib.common.Printf("  %-21s %s\n", cmd!!.name, cmd.description)
                     i++
                 }
                 idLib.common.Printf("%d commands\n", cmdList.Num())
             }
         }
-
-        init {
-            completionString = idStr()
-            completionParms = idStrList()
-            tokenizedCmds = idList()
-            postReload = CmdArgs.idCmdArgs()
-        }
     }
 
-    /*
-     ============
-     idCmdSystemLocal::ListByFlags
-     ============
-     */
     // NOTE: the const wonkyness is required to make msvc happy
     class idListSortCompare : cmp_t<commandDef_s?> {
         override fun compare(a: commandDef_s?, b: commandDef_s?): Int {

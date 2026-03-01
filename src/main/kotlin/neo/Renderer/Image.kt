@@ -818,7 +818,11 @@ object Image {
             // upload the main image level
             Bind()
             if (internalFormat == 0x80E5) {
-                UploadCompressedNormalMap(scaled_width._val, scaled_height._val, scaledBuffer.array(), 0)
+                // FIX: scaledBuffer is a direct ByteBuffer — .array() throws UnsupportedOperationException
+                val tempArray = ByteArray(scaled_width._val * scaled_height._val * 4)
+                scaledBuffer.rewind()
+                scaledBuffer.get(tempArray)
+                UploadCompressedNormalMap(scaled_width._val, scaled_height._val, tempArray, 0)
             } else {
                 scaledBuffer.rewind()
                 qgl.qglTexImage2D(
@@ -866,7 +870,11 @@ object Image {
 
                 // upload the mip map
                 if (internalFormat == 0x80E5) {
-                    UploadCompressedNormalMap(scaled_width._val, scaled_height._val, scaledBuffer.array(), miplevel)
+                    // FIX: scaledBuffer is a direct ByteBuffer — .array() throws UnsupportedOperationException
+                    val mipArray = ByteArray(scaled_width._val * scaled_height._val * 4)
+                    scaledBuffer.rewind()
+                    scaledBuffer.get(mipArray)
+                    UploadCompressedNormalMap(scaled_width._val, scaled_height._val, mipArray, miplevel)
                 } else {
                     qgl.qglTexImage2D(
                         GL11.GL_TEXTURE_2D, miplevel, internalFormat, scaled_width._val, scaled_height._val,

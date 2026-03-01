@@ -152,7 +152,8 @@ class ServerScan {
 
                 // check for duplicate servers
                 for (i in 0 until Num()) {
-                    if (get(i).adr != server.adr) {
+                    // FIX: was != (inverted) - C++ memcmp == 0 means EQUAL, so check for equal addresses
+                    if (get(i).adr == server.adr) {
                         Common.common.DPrintf(
                             "idServerScan::InfoResponse LAN_SCAN: duplicate server %s\n",
                             serv.toString()
@@ -318,20 +319,34 @@ class ServerScan {
 
         //	
         fun GetBestPing(serv: networkServer_t): Boolean {
-            var serv = serv
             var i: Int
             val ic: Int
             ic = Num()
             if (0 == ic) {
                 return false
             }
-            serv = get(0)
-            i = 0
+            // FIX: was reassigning local var reference instead of copying fields.
+            // C++ operator= copies all struct fields; Kotlin reference reassignment just changes the pointer.
+            var bestServer = get(0)
+            i = 1
             while (i < ic) {
-                if (get(i).ping < serv.ping) {
-                    serv = get(i)
+                if (get(i).ping < bestServer.ping) {
+                    bestServer = get(i)
                 }
                 i++
+            }
+            // Copy best server fields to the output parameter
+            serv.adr = bestServer.adr
+            serv.serverInfo = bestServer.serverInfo
+            serv.ping = bestServer.ping
+            serv.id = bestServer.id
+            serv.clients = bestServer.clients
+            serv.challenge = bestServer.challenge
+            serv.OSMask = bestServer.OSMask
+            System.arraycopy(bestServer.pings, 0, serv.pings, 0, serv.pings.size)
+            System.arraycopy(bestServer.rate, 0, serv.rate, 0, serv.rate.size)
+            for (j in 0 until serv.nickname.size) {
+                System.arraycopy(bestServer.nickname[j], 0, serv.nickname[j], 0, serv.nickname[j].size)
             }
             return true
         }

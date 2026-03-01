@@ -285,8 +285,16 @@ object AsyncServer {
 
 //	memset( challenges, 0, sizeof( challenges ) );
 //	memset( userCmds, 0, sizeof( userCmds ) );
-            Arrays.fill(challenges, null)
-            Arrays.fill(userCmds, null)
+            // FIX: Arrays.fill(challenges, null) violates non-null type safety.
+            // C++ memset zeros all bytes; Kotlin equivalent is to create fresh objects.
+            for (c in challenges.indices) {
+                challenges[c] = challenge_s()
+            }
+            for (u in userCmds.indices) {
+                for (v in userCmds[u].indices) {
+                    userCmds[u][v] = usercmd_t()
+                }
+            }
             i = 0
             while (i < AsyncNetwork.MAX_ASYNC_CLIENTS) {
                 ClearClient(i)
@@ -2524,7 +2532,8 @@ object AsyncServer {
                 )
                 outMsg.Init(msgBuf, msgBuf.capacity())
                 outMsg.WriteByte(SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_RELOAD.ordinal.toByte())
-                SendReliableMessage(clientNum, msg)
+                // FIX: was sending msg (incoming message) instead of outMsg (crafted reload message)
+                SendReliableMessage(clientNum, outMsg)
                 // go back to SCS_CONNECTED to sleep on the client until it goes away for a reconnect
                 clients[clientNum].clientState = serverClientState_t.SCS_CONNECTED
                 return

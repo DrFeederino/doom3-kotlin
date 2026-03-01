@@ -62,7 +62,8 @@ object Image_process {
         if (outheight > MAX_DIMENSION) {
             outheight = MAX_DIMENSION
         }
-        out = ByteBuffer.allocate(outwidth * outheight * 4)
+        // FIX: was ByteBuffer.allocate() (heap) — must be direct for potential OpenGL upload
+        out = BufferUtils.createByteBuffer(outwidth * outheight * 4)
         fracstep = inwidth * 0x10000 / outwidth
         frac = fracstep shr 2
         i = 0
