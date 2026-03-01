@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/Image_init.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.Renderer.Image.GeneratorFunction
@@ -143,6 +169,11 @@ object Image_init {
                 vector[0] = -sc
                 vector[1] = -tc
                 vector[2] = -1.0f
+            }
+
+            else -> {
+                common.Error("getCubeVector: invalid cube map face index")
+                return
             }
         }
         mag =
@@ -292,8 +323,7 @@ object Image_init {
             common.Printf("\n%s", header)
             totalSize = 0
 
-//	sortedImage_t	[]sortedArray = (sortedImage_t *)alloca( sizeof( sortedImage_t ) * globalImages.images.Num() );
-            val sortedArray: Array<sortedImage_t?> = arrayOfNulls(Image.globalImages.images.Num())
+            val sortedArray: Array<sortedImage_t> = Array(Image.globalImages.images.Num()) { sortedImage_t() }
             i = 0
             while (i < Image.globalImages.images.Num()) {
                 image = Image.globalImages.images[i]
@@ -328,7 +358,6 @@ object Image_init {
 
                 // only print duplicates (from mismatched wrap / clamp, etc)
                 if (duplicated) {
-//			int j;
                     j = i + 1
                     while (j < Image.globalImages.images.Num()) {
                         if (Icmp(image!!.imgName, Image.globalImages.images[j]!!.imgName) == 0) {
@@ -351,8 +380,8 @@ object Image_init {
                     image.bindCount = 0
                 }
                 if (sorted) {
-                    sortedArray[count]!!.image = image
-                    sortedArray[count]!!.size = image!!.StorageSize()
+                    sortedArray[count].image = image
+                    sortedArray[count].size = image!!.StorageSize()
                 } else {
                     common.Printf("%4d:", i)
                     image!!.Print()
@@ -367,13 +396,13 @@ object Image_init {
                     0,
                     count,
                     R_QsortImageSizes()
-                ) //qsort(sortedArray, count, sizeof(sortedImage_t), R_QsortImageSizes);
+                )
                 partialSize = 0
                 i = 0
                 while (i < count) {
                     common.Printf("%4d:", i)
-                    sortedArray[i]!!.image!!.Print()
-                    partialSize += sortedArray[i]!!.image!!.StorageSize()
+                    sortedArray[i].image!!.Print()
+                    partialSize += sortedArray[i].image!!.StorageSize()
                     if (((i + 1) % 10) == 0) {
                         common.Printf(
                             "-------- %5.1f of %5.1f megs --------\n",
@@ -454,9 +483,8 @@ object Image_init {
             val baseName = idStr(args.Argv(1))
             common.SetRefreshOnPrint(true)
             for (frameNum in 1..9999) {
-//		final char	[]filename=new char[MAX_IMAGE_NAME];
                 var filename: String?
-                val pics: Array<ByteBuffer?> = arrayOfNulls(6) //Good God!
+                val pics: Array<ByteBuffer?> = arrayOfNulls(6)
                 val width: IntArray = intArrayOf(0)
                 val height: IntArray = intArrayOf(0)
                 var side: Int
@@ -470,45 +498,45 @@ object Image_init {
                         common.Printf("not found.\n")
                         break
                     }
+                    // convert from "camera" images to native cube map images
                     when (side) {
-                        0 -> Image_process.R_RotatePic(pics[side], width[0])
-                        1 -> {
+                        0 -> Image_process.R_RotatePic(pics[side], width[0])        // forward
+                        1 -> {                                                       // back
                             Image_process.R_RotatePic(pics[side], width[0])
                             Image_process.R_HorizontalFlip(pics[side], width[0], height[0])
                             Image_process.R_VerticalFlip(pics[side], width[0], height[0])
                         }
 
-                        2 -> Image_process.R_VerticalFlip(pics[side], width[0], height[0])
-                        3 -> Image_process.R_HorizontalFlip(pics[side], width[0], height[0])
-                        4 -> Image_process.R_RotatePic(pics[side], width[0])
-                        5 -> Image_process.R_RotatePic(pics[side], width[0])
+                        2 -> Image_process.R_VerticalFlip(pics[side], width[0], height[0])   // left
+                        3 -> Image_process.R_HorizontalFlip(pics[side], width[0], height[0]) // right
+                        4 -> Image_process.R_RotatePic(pics[side], width[0])        // up
+                        5 -> Image_process.R_RotatePic(pics[side], width[0])        // down
                     }
                     side++
                 }
                 if (side != 6) {
-                    val i = 0
-                    while (i < side) {
-                        pics[side] = null //Mem_Free(pics[side]);
-                        side++
+                    // C++ original has same bug (uses side++ instead of i++); fixed here
+                    var j = 0
+                    while (j < side) {
+                        pics[j] = null
+                        j++
                     }
                     break
                 }
                 var combined: ByteBuffer? =
-                    ByteBuffer.allocate(width[0] * height[0] * 6 * 4) // Mem_Alloc(width[0] * height[0] * 6 * 4);
+                    ByteBuffer.allocate(width[0] * height[0] * 6 * 4)
                 val length: Int = width[0] * height[0] * 4
                 side = 0
                 while (side < 6) {
-
-//			memcpy( combined+width*height*4*side, pics[side], width*height*4 );
                     combined!!.position(length * side)
                     combined.put(pics[side]!!.array(), 0, length)
-                    pics[side] = null //Mem_Free(pics[side]);
+                    pics[side] = null
                     side++
                 }
                 filename = String.format("%sCM%04i.tga", baseName, frameNum)
                 common.Printf("writing %s\n", filename)
                 R_WriteTGA(filename, combined, width[0], height[0] * 6)
-                combined = null //Mem_Free(combined);
+                combined = null
             }
             common.SetRefreshOnPrint(false)
         }
@@ -584,7 +612,12 @@ object Image_init {
             val data: ByteBuffer = ByteBuffer.allocate(256 * 4)
             x = 0
             while (x < 256) {
-                data.putInt(x * 4, x)
+                // Write 4 identical bytes per entry (data[x][0..3] = x)
+                val b = x.toByte()
+                data.put(x * 4 + 0, b)
+                data.put(x * 4 + 1, b)
+                data.put(x * 4 + 2, b)
+                data.put(x * 4 + 3, b)
                 x++
             }
             image.GenerateImage(
@@ -617,22 +650,20 @@ object Image_init {
             x = 0
             while (x < 256) {
                 var f: Float = x / 255.0f
-                if (false) {
-                    f = f.pow(16.0f) as Float
-                } else {
-                    // this is the behavior of the hacked up fragment programs that
-                    // can't really do a power function
-                    f = (f - 0.75f) * 4
-                    if (f < 0) {
-                        f = 0.0f
-                    }
-                    f = f * f
+                // this is the behavior of the hacked up fragment programs that
+                // can't really do a power function
+                f = (f - 0.75f) * 4
+                if (f < 0) {
+                    f = 0.0f
                 }
+                f = f * f
                 val b: Int = (f * 255).toInt()
-                data.putInt(
-                    x * 4,
-                    b
-                ) //TODO:check whether setting 4 bytes to an int is the same as what we're doing here!
+                // Write 4 identical bytes per entry (data[x][0..3] = b)
+                val bb = b.toByte()
+                data.put(x * 4 + 0, bb)
+                data.put(x * 4 + 1, bb)
+                data.put(x * 4 + 2, bb)
+                data.put(x * 4 + 3, bb)
                 x++
             }
             image.GenerateImage(
@@ -664,7 +695,6 @@ object Image_init {
             var y: Int
             val data: ByteBuffer = ByteBuffer.allocate(256 * 256 * 4)
 
-//	memset( data, 0, sizeof( data ) );
             x = 0
             while (x < 256) {
                 val f: Float = x / 255.0f
@@ -676,7 +706,13 @@ object Image_init {
                         // we early out to avoid pow() underflows
                         break
                     }
-                    data.putInt((y * 4) + (x * 256), b)
+                    // data[y][x][0..3] = b; offset = (y*256+x)*4
+                    val off = (y * 256 + x) * 4
+                    val bb = b.toByte()
+                    data.put(off + 0, bb)
+                    data.put(off + 1, bb)
+                    data.put(off + 2, bb)
+                    data.put(off + 3, bb)
                     y++
                 }
                 x++
@@ -697,38 +733,6 @@ object Image_init {
         }
     }
 
-    /*
-     ================
-     R_AlphaRampImage
-
-     Creates a 0-255 ramp image
-     ================
-     */
-    internal class R_AlphaRampImage private constructor() : GeneratorFunction() {
-        override fun run(image: idImage) {
-            var x: Int
-            val data: ByteBuffer = ByteBuffer.allocate(256 * 4)
-            x = 0
-            while (x < 256) {
-                data.putInt(x * 4, x)
-                x++
-            }
-            image.GenerateImage(
-                data,
-                256,
-                1,
-                textureFilter_t.TF_NEAREST,
-                false,
-                textureRepeat_t.TR_CLAMP,
-                textureDepth_t.TD_HIGH_QUALITY
-            )
-        }
-
-        companion object {
-            val instance: GeneratorFunction = R_AlphaRampImage()
-        }
-    }
-
     internal class R_DefaultImage private constructor() : GeneratorFunction() {
         override fun run(image: idImage) {
             image.MakeDefault()
@@ -745,7 +749,6 @@ object Image_init {
                 ByteBuffer.allocate(idImage.DEFAULT_SIZE * idImage.DEFAULT_SIZE * 4)
 
             // solid white texture
-//	memset( data, 255, sizeof( data ) );
             Arrays.fill(data.array(), 255.toByte())
             image.GenerateImage(
                 data,
@@ -769,7 +772,6 @@ object Image_init {
                 ByteBuffer.allocate(idImage.DEFAULT_SIZE * idImage.DEFAULT_SIZE * 4)
 
             // solid black texture
-//	memset( data, 0, sizeof( data ) );
             image.GenerateImage(
                 data,
                 idImage.DEFAULT_SIZE,
@@ -791,9 +793,8 @@ object Image_init {
             val data: Array<Array<ByteArray>> = Array(BORDER_CLAMP_SIZE, { Array(BORDER_CLAMP_SIZE, { ByteArray(4) }) })
 
             // solid white texture with a single pixel black border
-//	memset( data, 255, sizeof( data ) );
-            for (a in data[0].indices) {
-                for (b in data[0][0].indices) {
+            for (a in data.indices) {
+                for (b in data[a].indices) {
                     data[a][b] = byteArrayOf(-1, -1, -1, -1)
                 }
             }
@@ -830,9 +831,7 @@ object Image_init {
             }
             // explicit zero border
             val color: FloatBuffer = BufferUtils.createFloatBuffer(4)
-            //            color[0] = color[1] = color[2] = color[3] = 0.0f;
             qgl.qglTexParameterfv(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, color)
-            //            qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, 0.0f);
         }
 
         companion object {
@@ -845,7 +844,6 @@ object Image_init {
             val data: ByteBuffer =
                 ByteBuffer.allocate(idImage.DEFAULT_SIZE * idImage.DEFAULT_SIZE * 4)
 
-//	memset( data, 0, sizeof( data ) );
             data.put(0, 16.toByte())
             data.put(1, 32.toByte())
             data.put(2, 48.toByte())
@@ -863,32 +861,6 @@ object Image_init {
 
         companion object {
             val instance: GeneratorFunction = R_RGBA8Image()
-        }
-    }
-
-    internal class R_RGB8Image private constructor() : GeneratorFunction() {
-        override fun run(image: idImage) {
-            val data: ByteBuffer =
-                ByteBuffer.allocate(idImage.DEFAULT_SIZE * idImage.DEFAULT_SIZE * 4)
-
-//	memset( data, 0, sizeof( data ) );
-            data.put(0, 16.toByte())
-            data.put(1, 32.toByte())
-            data.put(2, 48.toByte())
-            data.put(3, 255.toByte())
-            image.GenerateImage(
-                data,
-                idImage.DEFAULT_SIZE,
-                idImage.DEFAULT_SIZE,
-                textureFilter_t.TF_DEFAULT,
-                false,
-                textureRepeat_t.TR_REPEAT,
-                textureDepth_t.TD_HIGH_QUALITY
-            )
-        }
-
-        companion object {
-            val instance: GeneratorFunction = R_RGB8Image()
         }
     }
 
@@ -956,7 +928,6 @@ object Image_init {
 
     internal class R_AmbientNormalImage private constructor() : GeneratorFunction() {
         override fun run(image: idImage) {
-//            final byte[][][] data = new byte[DEFAULT_SIZE][DEFAULT_SIZE][4];
             val data = ByteArray(idImage.DEFAULT_SIZE)
             var i: Int
             val red: Int = if ((idImageManager.image_useNormalCompression.GetInteger() == 1)) 0 else 3
@@ -973,7 +944,7 @@ object Image_init {
             val pics: Array<ByteBuffer?> = arrayOfNulls(6)
             i = 0
             while (i < 6) {
-                pics[i] = wrapToNativeBuffer(data) //TODO: wtf does this data[0][0] do?
+                pics[i] = wrapToNativeBuffer(data)
                 i++
             }
             // this must be a cube map for fragment programs to simply substitute for the normalization cube map
@@ -996,11 +967,10 @@ object Image_init {
             var i: Int
             var x: Int
             var y: Int
-            val pixels: Array<ByteBuffer?> = arrayOfNulls(6) //[size*size*4*6];
+            val pixels: Array<ByteBuffer?> = arrayOfNulls(6)
             val size: Int
             size = NORMAL_MAP_SIZE
 
-//	pixels[0] = (GLubyte[]) Mem_Alloc(size*size*4*6);
             i = 0
             while (i < 6) {
                 pixels[i] = BufferUtils.createByteBuffer(size * size * 4)
@@ -1020,8 +990,6 @@ object Image_init {
                 i++
             }
             image.GenerateCubeImage(pixels, size, textureFilter_t.TF_LINEAR, false, textureDepth_t.TD_HIGH_QUALITY)
-
-//            Mem_Free(pixels[0]);
         }
 
         companion object {
@@ -1042,7 +1010,6 @@ object Image_init {
             var y: Int
             val data: Array<Array<ByteArray>> = Array(16, { Array(FALLOFF_TEXTURE_SIZE, { ByteArray(4) }) })
 
-//	memset( data, 0, sizeof( data ) );
             x = 1
             while (x < FALLOFF_TEXTURE_SIZE - 1) {
                 y = 1
@@ -1096,13 +1063,18 @@ object Image_init {
                                 + (y - FOG_SIZE / 2) * (y - FOG_SIZE / 2)).toFloat()
                     )
                     d /= (FOG_SIZE / 2 - 1).toFloat()
-                    b = ((d * 255).toInt().toByte()).toInt()
+                    b = (d * 255).toInt()
                     if (b <= 0) {
                         b = 0
                     } else if (b > 255) {
                         b = 255
                     }
-                    b = ((255 * (1.0f - step[b])).toInt().toByte()).toInt()
+                    b = (255 * (1.0f - step[b])).toInt()
+                    if (b <= 0) {
+                        b = 0
+                    } else if (b > 255) {
+                        b = 255
+                    }
                     if ((x == 0) || (x == FOG_SIZE - 1) || (y == 0) || (y == FOG_SIZE - 1)) {
                         b = 255 // avoid clamping issues
                     }
@@ -1154,7 +1126,7 @@ object Image_init {
                         (x - (FOG_ENTER_SIZE / 2)).toFloat(),
                         (y - (FOG_ENTER_SIZE / 2)).toFloat()
                     )
-                    b = ((d * 255).toInt().toByte()).toInt()
+                    b = (d * 255).toInt()
                     if (b <= 0) {
                         b = 0
                     } else if (b > 255) {
@@ -1203,7 +1175,7 @@ object Image_init {
                     d /= (QUADRATIC_WIDTH / 2).toFloat()
                     d = (1.0f - d)
                     d = (d * d)
-                    b = ((d * 255).toInt().toByte()).toInt()
+                    b = (d * 255).toInt()
                     if (b <= 0) {
                         b = 0
                     } else if (b > 255) {

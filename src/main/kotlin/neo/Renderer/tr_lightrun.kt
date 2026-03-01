@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.*
@@ -155,7 +180,6 @@ object tr_lightrun {
         // bump the view count so we can tell if an
         // area already has a reference
         tr.viewCount++
-        //        System.out.println("tr.viewCount::R_CreateEntityRefs");
 
         // push these points down the BSP tree into areas
         def.world!!.PushVolumeIntoTree(def, null, 8, transformed)
@@ -196,9 +220,8 @@ object tr_lightrun {
         up.set((upVector)!!)
         uLen = up.Normalize()
         normal.set(up.Cross(right))
-        //normal = right.Cross( up );
         normal.Normalize()
-        dist = target.times(normal) //  - ( origin * normal );
+        dist = target.times(normal)
         if (dist < 0) {
             dist = -dist
             normal.set(normal.unaryMinus())
@@ -214,7 +237,6 @@ object tr_lightrun {
         lightProject[1].set(up)
         lightProject[1][3] = -(origin.times(lightProject[1].Normal()))
 
-        // now offset to center
         // now offset to center
         targetGlobal.set(target + origin)
         targetGlobal[3] = 1.0f
@@ -283,7 +305,6 @@ object tr_lightrun {
         i = 0
         while (i < 6) {
             if (ldef.frustumWindings[i] != null) {
-//			delete ldef.frustumWindings[i];
                 ldef.frustumWindings[i] = null
             }
             i++
@@ -337,7 +358,6 @@ object tr_lightrun {
             )
         } else {
             // point light
-//            memset(light.lightProject, 0, sizeof(light.lightProject));
             for (l in light.lightProject.indices) {
                 light.lightProject[l] = idPlane()
             }
@@ -429,7 +449,6 @@ object tr_lightrun {
         // bump the view count so we can tell if an
         // area already has a reference
         tr.viewCount++
-        //        System.out.println("tr.viewCount::R_CreateLightRefs");
 
         // if we have a prelight model that includes all the shadows for the major world occluders,
         // we can limit the area references to those visible through the portals from the light center.
@@ -452,8 +471,6 @@ object tr_lightrun {
      */
     fun R_RenderLightFrustum(renderLight: renderLight_s?, lightFrustum: Array<idPlane?> /*[6]*/) {
         val fakeLight = idRenderLightLocal()
-
-//	memset( &fakeLight, 0, sizeof( fakeLight ) );
         fakeLight.parms = renderLight!!
         R_DeriveLightData(fakeLight)
         R_FreeStaticTriSurf(fakeLight.frustumTris)
@@ -590,17 +607,14 @@ object tr_lightrun {
         // leaves them in the control of the game
         if (Session.session.readDemo != null) {
             if (def.parms.joints != null) {
-//			Mem_Free16( def.parms.joints );
                 def.parms.joints = null
             }
             if (def.parms.callbackData != null) {
-//			Mem_Free( def.parms.callbackData );
                 def.parms.callbackData = null
             }
             i = 0
             while (i < RenderWorld.MAX_RENDERENTITY_GUI) {
                 if (def.parms.gui[i] != null) {
-//				delete def.parms.gui[ i ];
                     def.parms.gui[i] = null
                 }
                 i++
@@ -621,7 +635,6 @@ object tr_lightrun {
             R_FreeEntityDefOverlay(def)
         }
         if (!keepCachedDynamicModel) {
-//		delete def.cachedDynamicModel;
             def.cachedDynamicModel = null
         }
 
@@ -700,7 +713,6 @@ object tr_lightrun {
      R_FreeDerivedData
 
      ReloadModels and RegenerateWorld call this
-     // FIXME: need to do this for all worlds
      ===================
      */
     fun R_FreeDerivedData() {
@@ -757,7 +769,6 @@ object tr_lightrun {
                     continue
                 }
                 if (def.parms.hModel === model) {
-                    //assert( 0 );
                     // this should never happen but Radiant messes it up all the time so just free the derived data
                     R_FreeEntityDefDerivedData(def, false, false)
                 }
@@ -772,7 +783,6 @@ object tr_lightrun {
      R_ReCreateWorldReferences
 
      ReloadModels and RegenerateWorld call this
-     // FIXME: need to do this for all worlds
      ===================
      */
     fun R_ReCreateWorldReferences() {

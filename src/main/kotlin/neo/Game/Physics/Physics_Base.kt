@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Physics/Physics_Base.h, neo/Game/Physics/Physics_Base.cpp
+ */
+
 package neo.Game.Physics
 
 import neo.Game.Entity.idEntity
@@ -465,7 +473,8 @@ class Physics_Base {
                 if (abs(dir * vec) > 0.99) {
                     vec.set(axis[0])
                 }
-                vec.minusAssign(vec.timesVec(dir).timesVec(vec))
+                // FIX: was vec.timesVec(dir).timesVec(vec) (element-wise), should be dot-product-then-scale
+                vec.minusAssign(vec * (vec * dir))
                 vec.Normalize()
                 vec.timesAssign(4.0f)
                 start.set(org + vec)
@@ -482,11 +491,11 @@ class Physics_Base {
         }
 
         override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         init {

@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Cinematic.cinData_t
@@ -9,7 +34,6 @@ import neo.Renderer.Model.shadowCache_s
 import neo.Renderer.Model.silEdge_t
 import neo.Renderer.Model.srfTriangles_s
 import neo.Renderer.RenderWorld.modelTrace_s
-import neo.Renderer.VertexCache.vertCache_s
 import neo.Renderer.tr_render.RB_T_RenderTriangleSurface
 import neo.TempDump.allocArray
 import neo.framework.Common
@@ -219,10 +243,8 @@ object tr_rendertools {
         val counts = IntArray(256)
         var i: Int
         var stencilReadback: ByteBuffer?
-
-//	memset( counts, 0, sizeof( counts ) );
         stencilReadback =
-            ByteBuffer.allocate(glConfig.vidWidth * glConfig.vidHeight) // R_StaticAlloc(glConfig.vidWidth * glConfig.vidHeight);
+            ByteBuffer.allocate(glConfig.vidWidth * glConfig.vidHeight)
         qgl.qglReadPixels(
             0,
             0,
@@ -234,10 +256,10 @@ object tr_rendertools {
         )
         i = 0
         while (i < glConfig.vidWidth * glConfig.vidHeight) {
-            counts[stencilReadback.get(i).toInt()]++
+            counts[stencilReadback.get(i).toInt() and 0xFF]++
             i++
         }
-        stencilReadback = null // R_StaticFree(stencilReadback);
+        stencilReadback = null
 
         // print some stats (not supposed to do from back end in SMP...)
         Common.common.Printf("stencil values:\n")
@@ -262,7 +284,7 @@ object tr_rendertools {
         var i: Int
         var stencilReadback: ByteBuffer?
         stencilReadback =
-            BufferUtils.createByteBuffer(glConfig.vidWidth * glConfig.vidHeight) // R_StaticAlloc(glConfig.vidWidth * glConfig.vidHeight);
+            BufferUtils.createByteBuffer(glConfig.vidWidth * glConfig.vidHeight)
         qgl.qglReadPixels(
             0,
             0,
@@ -275,10 +297,10 @@ object tr_rendertools {
         count = 0
         i = 0
         while (i < glConfig.vidWidth * glConfig.vidHeight) {
-            count += stencilReadback.get(i).toInt()
+            count += stencilReadback.get(i).toInt() and 0xFF
             i++
         }
-        stencilReadback = null // R_StaticFree(stencilReadback);
+        stencilReadback = null
 
         // print some stats (not supposed to do from back end in SMP...)
         Common.common.Printf(
@@ -339,14 +361,13 @@ object tr_rendertools {
             }
             surf = vLight.globalInteractions[0]
             while (surf != null) {
-                //TODO:twice?
                 interactions++
                 surf = surf.nextOnLight
             }
             vLight = vLight.next
         }
         val newDrawSurfs: Array<drawSurf_s?> =
-            drawSurf_s.generateArray(numDrawSurfs + interactions) as Array<drawSurf_s?> // R_FrameAlloc(numDrawSurfs + interactions);
+            drawSurf_s.generateArray(numDrawSurfs + interactions) as Array<drawSurf_s?>
         i = 0
         while (i < numDrawSurfs) {
             surf = drawSurfs[i]
@@ -411,7 +432,7 @@ object tr_rendertools {
             return
         }
         colorReadback =
-            ByteBuffer.allocate(glConfig.vidWidth * glConfig.vidHeight * 4) // R_StaticAlloc(glConfig.vidWidth * glConfig.vidHeight * 4);
+            ByteBuffer.allocate(glConfig.vidWidth * glConfig.vidHeight * 4)
         qgl.qglReadPixels(
             0,
             0,
@@ -424,12 +445,12 @@ object tr_rendertools {
         c = glConfig.vidWidth * glConfig.vidHeight * 4
         i = 0
         while (i < c) {
-            j = colorReadback.get(i).toInt()
-            if (colorReadback.get(i + 1) > j) {
-                j = colorReadback.get(i + 1).toInt()
+            j = colorReadback.get(i).toInt() and 0xFF
+            if ((colorReadback.get(i + 1).toInt() and 0xFF) > j) {
+                j = colorReadback.get(i + 1).toInt() and 0xFF
             }
-            if (colorReadback.get(i + 2) > j) {
-                j = colorReadback.get(i + 2).toInt()
+            if ((colorReadback.get(i + 2).toInt() and 0xFF) > j) {
+                j = colorReadback.get(i + 2).toInt() and 0xFF
             }
             if (j < 128) {
                 colorReadback.put(i + 0, (2 * (128 - j)).toByte())
@@ -462,8 +483,6 @@ object tr_rendertools {
             GL11.GL_UNSIGNED_BYTE,
             colorReadback
         )
-        //
-//        R_StaticFree(colorReadback);
     }
 
     /*
@@ -492,8 +511,7 @@ object tr_rendertools {
         qgl.qglColor3f(1.0f, 1.0f, 1.0f)
         Image.globalImages.BindNull()
         depthReadback =
-            BufferUtils.createByteBuffer(glConfig.vidWidth * glConfig.vidHeight * 4) // R_StaticAlloc(glConfig.vidWidth * glConfig.vidHeight * 4);
-        //	memset( depthReadback, 0, glConfig.vidWidth * glConfig.vidHeight*4 );
+            BufferUtils.createByteBuffer(glConfig.vidWidth * glConfig.vidHeight * 4)
         qgl.qglReadPixels(
             0,
             0,
@@ -503,15 +521,6 @@ object tr_rendertools {
             GL11.GL_FLOAT,
             depthReadback
         )
-
-//if (false){
-//	for ( i = 0 ; i < glConfig.vidWidth * glConfig.vidHeight ; i++ ) {
-//		((byte *)depthReadback)[i*4] = 
-//		((byte *)depthReadback)[i*4+1] = 
-//		((byte *)depthReadback)[i*4+2] = 255 * ((float *)depthReadback)[i];
-//		((byte *)depthReadback)[i*4+3] = 1;
-//	}
-//}
         qgl.qglDrawPixels(
             glConfig.vidWidth,
             glConfig.vidHeight,
@@ -519,7 +528,6 @@ object tr_rendertools {
             GL11.GL_UNSIGNED_BYTE,
             depthReadback
         )
-        //        R_StaticFree(depthReadback);
     }
 
     /*
@@ -565,7 +573,7 @@ object tr_rendertools {
                         continue
                     }
                     val ac =
-                        idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache)) //TODO:figure out how to work these damn casts.
+                        idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
                     qgl.qglVertexPointer(3, GL11.GL_FLOAT, idDrawVert.BYTES, ac.xyzOffset().toLong())
                     tr_render.RB_DrawElementsWithCounters(surf.geo!!)
                     surf = surf.nextOnLight
@@ -629,14 +637,12 @@ object tr_rendertools {
                 while (surf != null) {
                     RB_SimpleSurfaceSetup(surf)
                     val tri: srfTriangles_s = surf.geo!!
-                    for (shadow: vertCache_s? in tri.shadowCache!!) {
-                        qgl.qglVertexPointer(
-                            3,
-                            GL11.GL_FLOAT,
-                            shadowCache_s.BYTES,
-                            VertexCache.vertexCache.Position(shadow).getInt().toLong()
-                        )
-                    }
+                    qgl.qglVertexPointer(
+                        3,
+                        GL11.GL_FLOAT,
+                        shadowCache_s.BYTES,
+                        VertexCache.vertexCache.Position(tri.shadowCache)
+                    )
                     qgl.qglBegin(GL11.GL_LINES)
                     var j = 0
                     while (j < tri.numIndexes) {
@@ -719,8 +725,8 @@ object tr_rendertools {
                         }
                     }
                     val cache: ByteBuffer =
-                        VertexCache.vertexCache.Position(tri.shadowCache) //TODO:figure out how to work these damn casts.
-                    qgl.qglVertexPointer(4, GL11.GL_FLOAT, shadowCache_s.BYTES /*sizeof(cache)*/, cache)
+                        VertexCache.vertexCache.Position(tri.shadowCache)
+                    qgl.qglVertexPointer(4, GL11.GL_FLOAT, shadowCache_s.BYTES, cache)
                     tr_render.RB_DrawElementsWithCounters(tri)
                     surf = surf.nextOnLight
                 }
@@ -840,7 +846,6 @@ object tr_rendertools {
             )
         )
         end.set(start.plus(tr.primaryView!!.renderView.viewaxis[0].times(1000.0f)))
-        //	end = start + tr.primaryView.renderView.viewaxis[0] * 1000.0f;
         if (!tr.primaryWorld!!.Trace(mt, start, end, 0.0f, false)) {
             return
         }
@@ -852,7 +857,6 @@ object tr_rendertools {
         tr_backend.GL_State(GLS_POLYMODE_LINE)
         qgl.qglPolygonOffset(-1.0f, -2.0f)
         qgl.qglEnable(GL11.GL_POLYGON_OFFSET_LINE)
-        idVec3.generateArray(3)
         val matrix = FloatArray(16)
 
         // transform the object verts into global space
@@ -879,7 +883,7 @@ object tr_rendertools {
      Debugging tool
      =====================
      */
-    fun RB_ShowViewEntitys(vModels: viewEntity_s?) { //TODO:should this back ref?
+    fun RB_ShowViewEntitys(vModels: viewEntity_s?) {
         var vModels: viewEntity_s? = vModels
         if (!r_showViewEntitys!!.GetBool()) {
             return
@@ -905,7 +909,6 @@ object tr_rendertools {
         while (vModels != null) {
             val b = idBounds()
             qgl.qglLoadMatrixf(vModels.modelViewMatrix)
-            //            System.out.println("vModels.modelViewMatrix="+vModels.modelViewMatrix[0]);
             if (null == vModels.entityDef) {
                 vModels = vModels.next
                 continue
@@ -1372,8 +1375,6 @@ object tr_rendertools {
         i = 0
         while (i < numDrawSurfs) {
             drawSurf = drawSurfs[i]
-
-//            if (i != 101) continue;
             tri = drawSurf.geo!!
             if (null == tri.verts) {
                 i++
@@ -1533,7 +1534,7 @@ object tr_rendertools {
         while (i < numDrawSurfs) {
             drawSurf = drawSurfs[i]
             tri = drawSurf.geo!!
-            val ac: Array<idDrawVert> = tri.verts as Array<idDrawVert> //TODO:which element is the pointer pointing to?
+            val ac: Array<idDrawVert> = tri.verts as Array<idDrawVert>
             if (null == ac) {
                 i++
                 continue
@@ -2203,8 +2204,6 @@ object tr_rendertools {
         if (v <= 1 || v >= 196) {
             v = 128
         }
-
-//	memset( image, 0, sizeof( image ) );
         mask = 0
         while (mask < 8) {
             y = mask * BAR_HEIGHT

@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Interaction.srfCullInfo_t
@@ -11,7 +36,6 @@ import neo.idlib.math.*
 import kotlin.math.abs
 
 object tr_stencilshadow {
-    //#define	LIGHT_CLIP_EPSILON	0.001f
     val LIGHT_CLIP_EPSILON: Float = 0.1f
 
     // tr_stencilShadow.c -- creator of stencil shadow volumes
@@ -309,43 +333,28 @@ object tr_stencilshadow {
         var `in`: Int
         tr_main.R_GlobalPointToLocal(ent.modelMatrix, light.globalLightOrigin, lv)
         R_LightProjectionMatrix(lv, lightPlaneLocal!!, mat)
-        if (true) {
-            // make a projected copy of the even verts into the odd spots
-            `in` = firstShadowVert
-            i = firstShadowVert
-            while (i < numShadowVerts) {
-                shadowVerts[`in` + 0].w = 1.0f
-                var w: Float = shadowVerts[`in`].ToVec3().times(mat[3].ToVec3()) + mat[3][3]
-                if (w == 0.0f) {
-                    shadowVerts[`in` + 1] = shadowVerts[`in` + 0]
-                    i += 2
-                    `in` += 2
-                    continue
-                }
-                var oow: Float = 1.0f / w
-                shadowVerts[`in` + 1].x =
-                    (shadowVerts[`in`].ToVec3().times(mat[0].ToVec3()) + mat[0][3]) * oow
-                shadowVerts[`in` + 1].y =
-                    (shadowVerts[`in`].ToVec3().times(mat[1].ToVec3()) + mat[1][3]) * oow
-                shadowVerts[`in` + 1].z =
-                    (shadowVerts[`in`].ToVec3().times(mat[2].ToVec3()) + mat[2][3]) * oow
-                shadowVerts[`in` + 1].w = 1.0f
+        // make a projected copy of the even verts into the odd spots
+        `in` = firstShadowVert
+        i = firstShadowVert
+        while (i < numShadowVerts) {
+            shadowVerts[`in` + 0].w = 1.0f
+            var w: Float = shadowVerts[`in`].ToVec3().times(mat[3].ToVec3()) + mat[3][3]
+            if (w == 0.0f) {
+                shadowVerts[`in` + 1].set(shadowVerts[`in` + 0])
                 i += 2
                 `in` += 2
+                continue
             }
-
-//}else{
-//	// messing with W seems to cause some depth precision problems
-//
-//	// make a projected copy of the even verts into the odd spots
-//	in = &shadowVerts[firstShadowVert];
-//	for ( i = firstShadowVert ; i < numShadowVerts ; i+= 2, in += 2 ) {
-//		in[0].w = 1;
-//		in[1].x = *in * mat[0].ToVec3() + mat[0][3];
-//		in[1].y = *in * mat[1].ToVec3() + mat[1][3];
-//		in[1].z = *in * mat[2].ToVec3() + mat[2][3];
-//		in[1].w = *in * mat[3].ToVec3() + mat[3][3];
-//	}
+            var oow: Float = 1.0f / w
+            shadowVerts[`in` + 1].x =
+                (shadowVerts[`in`].ToVec3().times(mat[0].ToVec3()) + mat[0][3]) * oow
+            shadowVerts[`in` + 1].y =
+                (shadowVerts[`in`].ToVec3().times(mat[1].ToVec3()) + mat[1][3]) * oow
+            shadowVerts[`in` + 1].z =
+                (shadowVerts[`in`].ToVec3().times(mat[2].ToVec3()) + mat[2][3]) * oow
+            shadowVerts[`in` + 1].w = 1.0f
+            i += 2
+            `in` += 2
         }
     }
 
@@ -362,8 +371,8 @@ object tr_stencilshadow {
      =============
      */
     fun R_ChopWinding(clipTris: Array<clipTri_t> /*[2]*/, inNum: Int, plane: idPlane): Int {
-        val dists = FloatArray(Interaction.MAX_CLIPPED_POINTS)
-        val sides = IntArray(Interaction.MAX_CLIPPED_POINTS)
+        val dists = FloatArray(MAX_CLIPPED_POINTS)
+        val sides = IntArray(MAX_CLIPPED_POINTS)
         val counts = IntArray(3)
         var dot: Float
         var i: Int = 0
@@ -379,9 +388,9 @@ object tr_stencilshadow {
         for (i in 0 until inClip!!.numVerts) {
             dot = plane.Distance(inClip.verts[i])
             dists[i] = dot
-            if (dot < -Interaction.LIGHT_CLIP_EPSILON) {    // slop onto the back
+            if (dot < -LIGHT_CLIP_EPSILON) {    // slop onto the back
                 sides[i] = SIDE_BACK
-            } else if (dot > Interaction.LIGHT_CLIP_EPSILON) {
+            } else if (dot > LIGHT_CLIP_EPSILON) {
                 sides[i] = SIDE_FRONT
             } else {
                 sides[i] = SIDE_ON
@@ -399,8 +408,8 @@ object tr_stencilshadow {
         }
 
         // avoid wrapping checks by duplicating first value to end
-        sides[i] = sides[0]
-        dists[i] = dists[0]
+        sides[inClip.numVerts] = sides[0]
+        dists[inClip.numVerts] = dists[0]
         inClip.verts[inClip.numVerts].set(inClip.verts[0])
         inClip.edgeFlags[inClip.numVerts] = inClip.edgeFlags[0]
 
@@ -465,9 +474,9 @@ object tr_stencilshadow {
         pingPong[0].edgeFlags[0] = 0
         pingPong[0].edgeFlags[1] = 0
         pingPong[0].edgeFlags[2] = 0
-        pingPong[0].verts[0] = a!!
-        pingPong[0].verts[1] = b!!
-        pingPong[0].verts[2] = c!!
+        pingPong[0].verts[0].set(a!!)
+        pingPong[0].verts[1].set(b!!)
+        pingPong[0].verts[2].set(c!!)
         p = 0
         var i = 0
         while (i < 6) {
@@ -540,7 +549,6 @@ object tr_stencilshadow {
      ===================
      */
     fun R_ClipLineToLight(a: idVec3, b: idVec3, frustum: Array<idPlane> /*[4]*/, p1: idVec4, p2: idVec4): Boolean {
-        var clip: FloatArray
         var d1: Float
         var d2: Float
         var f: Float
@@ -568,16 +576,12 @@ object tr_stencilshadow {
             }
 
             // clip it, keeping the negative side
-            if (d1 < 0) {
-                clip = p1.ToFloatPtr()
-            } else {
-                clip = p2.ToFloatPtr()
-            }
+            val target: idVec4 = if (d1 < 0) p1 else p2
 
             f = d1 / (d1 - d2)
-            clip[0] = p1[0] + f * (p2[0] - p1[0])
-            clip[1] = p1[1] + f * (p2[1] - p1[1])
-            clip[2] = p1[2] + f * (p2[2] - p1[2])
+            target[0] = p1[0] + f * (p2[0] - p1[0])
+            target[1] = p1[1] + f * (p2[1] - p1[1])
+            target[2] = p1[2] + f * (p2[2] - p1[2])
             j++
         }
         return true // retain a fragment
@@ -773,7 +777,7 @@ object tr_stencilshadow {
             remap!!,
             -1,
             tri.numVerts /* sizeof( remap!![0] )*/
-        ) //TODO:create template functions that call the standard functions, that way we just have to replace the template body.
+        )
         frontBits = 0
         var i = 0
         while (i < 6) {

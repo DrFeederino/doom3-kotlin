@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/GameEdit.cpp, neo/Game/GameEdit.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.AFEntity.idAFEntity_Base
@@ -100,7 +118,7 @@ object GameEdit {
         }
 
         override fun Think() {
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 drag.Evaluate(Game_local.gameLocal.time)
             }
             Present()
@@ -154,7 +172,7 @@ object GameEdit {
 
             // if no entity selected for dragging
             if (dragEnt.GetEntity() == null) {
-                if (player.usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK != 0) {
+                if ((player.usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) != 0) {
                     Game_local.gameLocal.clip.TracePoint(
                         trace,
                         viewPoint,
@@ -465,9 +483,10 @@ object GameEdit {
                     sit.typeInfo = idSound::class.java
                     sit.textKey.set("s_shader")
                     selectableEntityClasses.Append(sit)
-                    sit.typeInfo = idLight::class.java
-                    sit.textKey.set("texture")
-                    selectableEntityClasses.Append(sit)
+                    val sit2 = selectedTypeInfo_s()
+                    sit2.typeInfo = idLight::class.java
+                    sit2.textKey.set("texture")
+                    selectableEntityClasses.Append(sit2)
                 }
 
                 3 -> {

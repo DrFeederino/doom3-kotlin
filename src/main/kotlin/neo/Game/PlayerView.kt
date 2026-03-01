@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/PlayerView.cpp, neo/Game/PlayerView.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.GameSys.SaveGame.idRestoreGame
@@ -47,7 +65,7 @@ object PlayerView {
     }
 
     class idPlayerView {
-        private val screenBlobs: Array<screenBlob_t?> = arrayOfNulls<screenBlob_t>(MAX_SCREEN_BLOBS)
+        private val screenBlobs: Array<screenBlob_t> = Array(MAX_SCREEN_BLOBS) { screenBlob_t() }
         private val armorMaterial // armor damage view effect
                 : Material.idMaterial?
         private val berserkMaterial // berserk effect
@@ -101,10 +119,8 @@ object PlayerView {
                 : Material.idMaterial?
         private val view: renderView_s
         fun Save(savefile: idSaveGame) {
-            var blob: screenBlob_t
-            blob = screenBlobs[0]!!
             for (i in 0 until MAX_SCREEN_BLOBS) {
-                val blob = screenBlobs[i]!!
+                val blob = screenBlobs[i]
                 savefile.WriteMaterial(blob.material)
                 savefile.WriteFloat(blob.x)
                 savefile.WriteFloat(blob.y)
@@ -142,7 +158,7 @@ object PlayerView {
 
         fun Restore(savefile: idRestoreGame) {
             for (i in 0 until MAX_SCREEN_BLOBS) {
-                val blob = screenBlobs[i]!!
+                val blob = screenBlobs[i]
                 savefile.ReadMaterial(blob.material!!)
                 blob.x = savefile.ReadFloat()
                 blob.y = savefile.ReadFloat()
@@ -187,10 +203,7 @@ object PlayerView {
             dvFinishTime = Game_local.gameLocal.time - 99999
             kickFinishTime = Game_local.gameLocal.time - 99999
             for (i in 0 until MAX_SCREEN_BLOBS) {
-                if (screenBlobs[i] == null) {
-                    screenBlobs[i] = screenBlob_t()
-                }
-                screenBlobs[i]!!.finishTime = Game_local.gameLocal.time
+                screenBlobs[i].finishTime = Game_local.gameLocal.time
             }
             fadeTime = 0
             bfgVision = false
@@ -460,7 +473,7 @@ object PlayerView {
             }
 
             // hack the shake in at the very last moment, so it can't cause any consistency problems
-            val hackedView = view
+            val hackedView = renderView_s(view)
             hackedView.viewaxis.set(hackedView.viewaxis.times(ShakeAxis()))
             Game_local.gameRenderWorld!!.RenderScene(hackedView)
             if (player!!.spectating) {
@@ -470,13 +483,13 @@ object PlayerView {
             // draw screen blobs
             if (!SysCvar.pm_thirdPerson.GetBool() && !SysCvar.g_skipViewEffects.GetBool()) {
                 for (i in 0 until MAX_SCREEN_BLOBS) {
-                    val blob = screenBlobs[i]!!
+                    val blob = screenBlobs[i]
                     if (blob.finishTime <= Game_local.gameLocal.time) {
                         continue
                     }
                     blob.y += blob.driftAmount
                     var fade: Float =
-                        ((blob.finishTime - Game_local.gameLocal.time) / (blob.finishTime - blob.startFadeTime)).toFloat()
+                        (blob.finishTime - Game_local.gameLocal.time).toFloat() / (blob.finishTime - blob.startFadeTime)
                     if (fade > 1.0f) {
                         fade = 1.0f
                     }
@@ -739,10 +752,10 @@ object PlayerView {
         }
 
         private fun GetScreenBlob(): screenBlob_t {
-            var oldest = screenBlobs[0]!!
+            var oldest = screenBlobs[0]
             for (i in 1 until MAX_SCREEN_BLOBS) {
-                if (screenBlobs[i]!!.finishTime < oldest.finishTime) {
-                    oldest = screenBlobs[i]!!
+                if (screenBlobs[i].finishTime < oldest.finishTime) {
+                    oldest = screenBlobs[i]
                 }
             }
             return oldest

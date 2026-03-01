@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Physics/Force.h, neo/Game/Physics/Force.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ */
+
 package neo.Game.Physics
 
 import neo.Game.GameSys.Class.eventCallback_t
@@ -30,11 +43,11 @@ class Force {
         // removes any pointers to the physics object
         open fun RemovePhysics(phys: idPhysics) {}
         override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
-        override fun  /*idTypeInfo*/GetType(): Class<out idClass> {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+        override fun GetType(): Class<out idClass> {
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
@@ -42,7 +55,7 @@ class Force {
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         companion object {

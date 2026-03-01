@@ -91,7 +91,7 @@ object GuiScript {
                 i++
             }
             if (handler == null) {
-                src.Error("Uknown script call %s", token)
+                src.Error("Unknown script call %s", token)
             }
             // now read parms til ;
             // all parms are read as idWinStr's but will be fixed up later 
@@ -141,7 +141,7 @@ object GuiScript {
 //			delete parms[0].var;
                     parms[0].`var` = dest
                     parms[0].own = false
-                    if (dest is idWinBackground) { //TODO:cast null comparison. EDIT: not possible with static typing, use "instanceof" instead.
+                    if (dest is idWinBackground) {
                         precacheBackground = true
                     }
                 } else if (Icmp(str.c_str()!!, "cmd") == 0) {
@@ -412,7 +412,6 @@ object GuiScript {
      */
     internal class Script_Set private constructor() : Handler() {
         override fun run(window: idWindow, src: idList<idGSWinVar>) {
-            scriptSetTotal++
             var `val`: String?
             var dest = dynamic_cast(idWinStr::class.java, src[0].`var`) as idWinStr?
             if (dest != null) {
@@ -441,7 +440,6 @@ object GuiScript {
 
         companion object {
             val instance: Handler = Script_Set()
-            private var scriptSetTotal = 0
         }
     }
 
@@ -622,7 +620,7 @@ object GuiScript {
                     // 
                     //  added float variable					
                     if (null == rect) {
-                        `val` = src[0].`var` as Winvar.idWinFloat?
+                        `val` = dynamic_cast(Winvar.idWinFloat::class.java, src[0].`var`) as Winvar.idWinFloat?
                     }
                     // 
                 }

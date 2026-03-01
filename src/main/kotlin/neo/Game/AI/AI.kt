@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/ai/AI.cpp, neo/Game/ai/AI.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game.AI
 
 import neo.Game.*
@@ -473,8 +491,9 @@ object AI {
                 if (null == aas) {
                     return true
                 }
-                bounds[1] = aas.GetSettings()!!.boundingBoxes[0][1]
-                bounds[0] = bounds[1].unaryMinus()
+                // FIX: C++ copies by value; Kotlin reference would corrupt shared settings
+                bounds[1].set(aas.GetSettings()!!.boundingBoxes[0][1])
+                bounds[0].set(bounds[1].unaryMinus())
                 bounds[1].z = 32.0f
 
                 // get the AAS area number and a valid point inside that area
@@ -662,7 +681,7 @@ object AI {
                                 if (lastEnd.minus(start).LengthSqr() > trace.endPos.minus(start).LengthSqr() - 0.1f
                                     || trace.normal.times(invGravityDir) < minFloorCos
                                 ) {
-                                    if (stopEvent and SE_BLOCKED != 0) {
+                                    if ((stopEvent and SE_BLOCKED) != 0) {
                                         path.endPos.set(lastEnd)
                                         path.endEvent = SE_BLOCKED
                                         if (SysCvar.ai_debugMove.GetBool()) {
@@ -716,7 +735,7 @@ object AI {
                         }
                         delta.ProjectOntoPlane(trace.normal, AI_pathing.OVERCLIP)
                         curVelocity.ProjectOntoPlane(trace.normal, AI_pathing.OVERCLIP)
-                        if (stopEvent and SE_BLOCKED != 0) {
+                        if ((stopEvent and SE_BLOCKED) != 0) {
                             // if going backwards
                             if (curVelocity.minus(gravityDir.times(curVelocity.times(gravityDir)))
                                     .times(velocity.minus(gravityDir.times(velocity.times(gravityDir)))) < 0.0f
@@ -729,7 +748,7 @@ object AI {
                         j++
                     }
                     if (j >= AI_pathing.MAX_FRAME_SLIDE) {
-                        if (stopEvent and SE_BLOCKED != 0) {
+                        if ((stopEvent and SE_BLOCKED) != 0) {
                             path.endPos.set(curStart)
                             path.endEvent = SE_BLOCKED
                             return true
@@ -2179,7 +2198,7 @@ object AI {
             if (CheckDormant()) {
                 return
             }
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 // clear out the enemy when he dies or is hidden
                 val enemyEnt = enemy.GetEntity()
                 if (enemyEnt != null) {
@@ -2253,7 +2272,7 @@ object AI {
                 AI_PAIN.underscore(false)
                 AI_SPECIAL_DAMAGE.underscore(0.0f)
                 AI_PUSHED.underscore(false)
-            } else if (thinkFlags and Entity.TH_PHYSICS != 0) {
+            } else if ((thinkFlags and Entity.TH_PHYSICS) != 0) {
                 RunPhysics()
             }
             if (af_push_moveables) {
@@ -2300,7 +2319,7 @@ object AI {
                 } else {
                     activator
                 }
-                if (ReactionTo(player) and ATTACK_ON_ACTIVATE != 0) {
+                if ((ReactionTo(player) and ATTACK_ON_ACTIVATE) != 0) {
                     SetEnemy(player)
                 }
 
@@ -3285,7 +3304,7 @@ object AI {
                 }
                 if (enemy.GetEntity() !== attacker && attacker is idActor) {
                     actor = attacker
-                    if (ReactionTo(actor) and ATTACK_ON_DAMAGE != 0) {
+                    if ((ReactionTo(actor) and ATTACK_ON_DAMAGE) != 0) {
                         Game_local.gameLocal.AlertAI(actor)
                         SetEnemy(actor)
                     }
@@ -3545,9 +3564,10 @@ object AI {
                 return 0
             }
             size.set(aas!!.GetSettings()!!.boundingBoxes[0][1].times(boundsScale))
-            bounds[0] = size.unaryMinus()
+            bounds[0].set(size.unaryMinus())
             size.z = 32.0f
-            bounds[1] = size
+            // FIX: C++ copies by value; use .set() to avoid aliasing bounds[1] with size
+            bounds[1].set(size)
             areaNum = if (move.moveType == moveType_t.MOVETYPE_FLY) {
                 aas!!.PointReachableAreaNum(pos, bounds, AASFile.AREA_REACHABLE_WALK or AASFile.AREA_REACHABLE_FLY)
             } else {
@@ -4273,7 +4293,7 @@ object AI {
             }
 
             // try other directions
-            if (Game_local.gameLocal.random.RandomInt() and 1 != 0 || abs(deltay) > abs(deltax)) {
+            if ((Game_local.gameLocal.random.RandomInt() and 1) != 0 || abs(deltay) > abs(deltax)) {
                 tdir = d[1]
                 d[1] = d[2]
                 d[2] = tdir
@@ -4291,7 +4311,7 @@ object AI {
             }
 
             // randomly determine direction of search
-            if (Game_local.gameLocal.random.RandomInt() and 1 == 1) {
+            if ((Game_local.gameLocal.random.RandomInt() and 1) != 0) {
                 tdir = 0.0f
                 while (tdir <= 315) {
                     if (tdir != turnaround && StepDirection(tdir)) {
@@ -5398,7 +5418,7 @@ object AI {
         }
 
         protected fun UpdateParticles() {
-            if (thinkFlags and Entity.TH_UPDATEPARTICLES != 0 && !IsHidden()) {
+            if ((thinkFlags and Entity.TH_UPDATEPARTICLES) != 0 && !IsHidden()) {
                 val realVector = idVec3()
                 val realAxis = idMat3()
                 var particlesAlive = 0
@@ -5499,7 +5519,7 @@ object AI {
 
         protected fun Event_Touch(_other: idEventArg<idEntity>, trace: idEventArg<trace_s?>?) {
             val other = _other.value
-            if (null == enemy.GetEntity() && !other.fl.notarget && ReactionTo(other) and ATTACK_ON_ACTIVATE != 0) {
+            if (null == enemy.GetEntity() && !other.fl.notarget && (ReactionTo(other) and ATTACK_ON_ACTIVATE) != 0) {
                 Activate(other)
             }
             AI_PUSHED.underscore(true)
@@ -5656,7 +5676,7 @@ object AI {
         protected fun Event_HeardSound(ignore_team: idEventArg<Int>) {
             // check if we heard any sounds in the last frame
             val actor = Game_local.gameLocal.GetAlertEntity()
-            if (actor != null && (0 == ignore_team.value || ReactionTo(actor) and ATTACK_ON_SIGHT != 0) && Game_local.gameLocal.InPlayerPVS(
+            if (actor != null && (0 == ignore_team.value || (ReactionTo(actor) and ATTACK_ON_SIGHT) != 0) && Game_local.gameLocal.InPlayerPVS(
                     this
                 )
             ) {

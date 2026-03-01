@@ -63,6 +63,18 @@ object snd_shader {
                 = 0
         var volume // in dB, unfortunately.  Negative values get quieter
                 = 0.0f
+
+        constructor()
+
+        // FIX: Copy constructor for C++ struct value copy semantics (e.g. this->parms = *parms)
+        constructor(other: soundShaderParms_t) {
+            maxDistance = other.maxDistance
+            minDistance = other.minDistance
+            shakes = other.shakes
+            soundClass = other.soundClass
+            soundShaderFlags = other.soundShaderFlags
+            volume = other.volume
+        }
     }
 
     // it is somewhat tempting to make this a virtual class to hide the private
@@ -90,7 +102,7 @@ object snd_shader {
         private val desc // description
                 : idStr = idStr()
         private var errorDuringParse = false
-        private var numLeadins = 0
+        var numLeadins = 0
 
         //
         private var onDemand // only load when played, and free when finished
@@ -199,8 +211,8 @@ object snd_shader {
 
         // returns NULL if an AltSound isn't defined in the shader.
         // we use this for pairing a specific broken light sound with a normal light sound
-        fun GetAltSound(): idSoundShader {
-            return altSound!!
+        fun GetAltSound(): idSoundShader? {
+            return altSound
         }
 
         fun HasDefaultSound(): Boolean {

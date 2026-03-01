@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Player.cpp, neo/Game/Player.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.AFEntity.idAFAttachment
@@ -874,7 +892,7 @@ object Player {
                     // don't pickup "no ammo" weapon types twice
                     // not for D3 SP .. there is only one case in the game where you can get a no ammo
                     // weapon when you might already have it, in that case it is more conistent to pick it up
-                    if (Game_local.gameLocal.isMultiplayer && weaponDecl != null && weapons and (1 shl i) != 0 && 0 == weaponDecl.dict.GetInt(
+                    if (Game_local.gameLocal.isMultiplayer && weaponDecl != null && (weapons and (1 shl i)) != 0 && 0 == weaponDecl.dict.GetInt(
                             "ammoRequired"
                         )
                     ) {
@@ -882,7 +900,7 @@ object Player {
                         continue
                     }
                     if (!Game_local.gameLocal.world!!.spawnArgs.GetBool("no_Weapons") || "weapon_fists" == weaponName || "weapon_soulcube" == weaponName) { //TODO:string in global vars, or local constants.
-                        if (weapons and (1 shl i) == 0 || Game_local.gameLocal.isMultiplayer) {
+                        if ((weapons and (1 shl i)) == 0 || Game_local.gameLocal.isMultiplayer) {
                             if (owner.GetUserInfo().GetBool("ui_autoSwitch") && idealWeapon != null) {
                                 assert(!Game_local.gameLocal.isClient)
                                 idealWeapon._val = (i)
@@ -1571,7 +1589,7 @@ object Player {
             }
             if (hud != null) {
                 // We can spawn with a full soul cube, so we need to make sure the hud knows this
-                if (weapon_soulcube > 0 && inventory.weapons and (1 shl weapon_soulcube) != 0) {
+                if (weapon_soulcube > 0 && (inventory.weapons and (1 shl weapon_soulcube)) != 0) {
                     val max_souls = inventory.MaxAmmoForAmmoClass(this, "ammo_souls")
                     if (inventory.ammo[idWeapon.GetAmmoNumForName("ammo_souls")] >= max_souls) {
                         hud!!.HandleNamedEvent("soulCubeReady")
@@ -1687,13 +1705,13 @@ object Player {
             }
 
             // freelook centering
-            if (usercmd.buttons.toInt() xor oldCmd.buttons.toInt() and UsercmdGen.BUTTON_MLOOK != 0) {
+            if (((usercmd.buttons.toInt() xor oldCmd.buttons.toInt()) and UsercmdGen.BUTTON_MLOOK) != 0) {
                 centerView.Init(Game_local.gameLocal.time.toFloat(), 200.0f, viewAngles.pitch, 0.0f)
             }
 
             // zooming
-            if (usercmd.buttons.toInt() xor oldCmd.buttons.toInt() and UsercmdGen.BUTTON_ZOOM != 0) {
-                if (usercmd.buttons.toInt() and UsercmdGen.BUTTON_ZOOM != 0 && weapon.GetEntity() != null) {
+            if (((usercmd.buttons.toInt() xor oldCmd.buttons.toInt()) and UsercmdGen.BUTTON_ZOOM) != 0) {
+                if ((usercmd.buttons.toInt() and UsercmdGen.BUTTON_ZOOM) != 0 && weapon.GetEntity() != null) {
                     zoomFov.Init(
                         Game_local.gameLocal.time.toFloat(),
                         200.0f,
@@ -2819,7 +2837,7 @@ object Player {
             }
             w = 0
             while (w < MAX_WEAPONS) {
-                if (inventory.weapons and (1 shl w) != 0) {
+                if ((inventory.weapons and (1 shl w)) != 0) {
                     weap = spawnArgs.GetString(Str.va("def_weapon%d", w))
                     if ("" != weap) {
                         idWeapon.CacheWeapon(weap)
@@ -2924,7 +2942,7 @@ object Player {
                 AI_STRAFE_RIGHT.underscore(false)
             }
             AI_RUN.underscore(
-                usercmd.buttons.toInt() and UsercmdGen.BUTTON_RUN != 0 && (
+                (usercmd.buttons.toInt() and UsercmdGen.BUTTON_RUN) != 0 && (
                         SysCvar.pm_stamina.GetFloat() == 0.0f || stamina > SysCvar.pm_staminathreshold.GetFloat()
                         )
             )
@@ -3624,7 +3642,7 @@ object Player {
             }
             if (zoomFov.IsDone(Game_local.gameLocal.time.toFloat())) {
                 fov =
-                    if (honorZoom && usercmd.buttons.toInt() and UsercmdGen.BUTTON_ZOOM != 0 && weapon.GetEntity() != null) weapon.GetEntity()!!
+                    if (honorZoom && (usercmd.buttons.toInt() and UsercmdGen.BUTTON_ZOOM) != 0 && weapon.GetEntity() != null) weapon.GetEntity()!!
                         .GetZoomFov().toFloat() else DefaultFov()
             } else {
                 fov = zoomFov.GetCurrentValue(Game_local.gameLocal.time.toFloat())
@@ -3664,7 +3682,7 @@ object Player {
             origin.set(viewOrigin.plus(gunpos.plus(gunOfs).times(viewAxis)))
 
             // on odd legs, invert some angles
-            scale = if (bobCycle and 128 != 0) {
+            scale = if ((bobCycle and 128) != 0) {
                 -xyspeed
             } else {
                 xyspeed
@@ -4187,7 +4205,7 @@ object Player {
         }
 
         fun PowerUpActive(powerup: Int): Boolean {
-            return inventory.powerups and (1 shl powerup) != 0
+            return (inventory.powerups and (1 shl powerup)) != 0
         }
 
         fun PowerUpModifier(type: Int): Float {
@@ -4280,7 +4298,7 @@ object Player {
                 if (weap.isEmpty()) {
                     continue
                 }
-                if (inventory.weapons and (1 shl w) == 0) {
+                if ((inventory.weapons and (1 shl w)) == 0) {
                     continue
                 }
                 if (inventory.HasAmmo(weap) != 0) {
@@ -4346,7 +4364,7 @@ object Player {
                 if (weap.isEmpty()) {
                     continue
                 }
-                if (inventory.weapons and (1 shl w) == 0) {
+                if ((inventory.weapons and (1 shl w)) == 0) {
                     continue
                 }
                 if (inventory.HasAmmo(weap) != 0) {
@@ -4386,7 +4404,7 @@ object Player {
                 Game_local.gameLocal.Printf("Invalid weapon\n")
                 return
             }
-            if (force || inventory.weapons and (1 shl num) != 0) {
+            if (force || (inventory.weapons and (1 shl num)) != 0) {
                 if (0 == inventory.HasAmmo(weap) && !spawnArgs.GetBool(Str.va("weapon%d_allowempty", num))) {
                     return
                 }
@@ -4624,7 +4642,7 @@ object Player {
         fun AddAIKill() {
             val max_souls: Int
             val ammo_souls: Int
-            if (weapon_soulcube < 0 || inventory.weapons and (1 shl weapon_soulcube) == 0) {
+            if (weapon_soulcube < 0 || (inventory.weapons and (1 shl weapon_soulcube)) == 0) {
                 return
             }
             assert(hud != null)
@@ -5056,7 +5074,7 @@ object Player {
                     val weapnum = Str.va("def_weapon%d", j)
                     val hudWeap = Str.va("weapon%d", j)
                     var weapstate = 0
-                    if (inventory.weapons and (1 shl j) != 0) {
+                    if ((inventory.weapons and (1 shl j)) != 0) {
                         val weap = spawnArgs.GetString(weapnum)
                         if (weap != null && !weap.isEmpty()) {
                             weapstate++
@@ -5277,7 +5295,7 @@ object Player {
                 val weapnum = Str.va("def_weapon%d", i)
                 val hudWeap = Str.va("weapon%d", i)
                 var weapstate = 0
-                if (inventory.weapons and (1 shl i) != 0) {
+                if ((inventory.weapons and (1 shl i)) != 0) {
                     val weap = spawnArgs.GetString(weapnum)
                     if (weap != null && !weap.isEmpty()) {
                         weapstate++
@@ -5439,11 +5457,11 @@ object Player {
             // clear the ik before we do anything else so the skeleton doesn't get updated twice
             walkIK.ClearJointMods()
             if (Game_local.gameLocal.isNewFrame) {
-                if (usercmd.flags.toInt() and UsercmdGen.UCF_IMPULSE_SEQUENCE != oldFlags and UsercmdGen.UCF_IMPULSE_SEQUENCE) {
+                if ((usercmd.flags.toInt() and UsercmdGen.UCF_IMPULSE_SEQUENCE) != (oldFlags and UsercmdGen.UCF_IMPULSE_SEQUENCE)) {
                     PerformImpulse(usercmd.impulse.toInt())
                 }
             }
-            scoreBoardOpen = usercmd.buttons.toInt() and UsercmdGen.BUTTON_SCORES != 0 || forceScoreBoard
+            scoreBoardOpen = (usercmd.buttons.toInt() and UsercmdGen.BUTTON_SCORES) != 0 || forceScoreBoard
             AdjustSpeed()
             UpdateViewAngles()
 
@@ -6108,9 +6126,9 @@ object Player {
             // check for attack
             AI_WEAPON_FIRED.underscore(false)
             if (0 == influenceActive) {
-                if (usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK != 0 && !weaponGone) {
+                if ((usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) != 0 && !weaponGone) {
                     FireWeapon()
-                } else if (oldButtons and UsercmdGen.BUTTON_ATTACK != 0) {
+                } else if ((oldButtons and UsercmdGen.BUTTON_ATTACK) != 0) {
                     AI_ATTACK_HELD.underscore(false)
                     weapon.GetEntity()!!.EndAttack()
                 }
@@ -6131,7 +6149,7 @@ object Player {
             }
             StopFiring()
             weapon.GetEntity()!!.LowerWeapon()
-            if (usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK != 0 && 0 == oldButtons and UsercmdGen.BUTTON_ATTACK) {
+            if ((usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) != 0 && (oldButtons and UsercmdGen.BUTTON_ATTACK) == 0) {
                 buttonMask = buttonMask or UsercmdGen.BUTTON_ATTACK
                 focusCharacter!!.TalkTo(this)
             }
@@ -6150,14 +6168,17 @@ object Player {
             if (Game_local.gameLocal.isClient && !SysCvar.net_clientPredictGUI.GetBool()) {
                 return
             }
-            if (oldButtons xor usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK != 0) {
+            if (((oldButtons xor usercmd.buttons.toInt()) and UsercmdGen.BUTTON_ATTACK) != 0) {
                 val ev: sysEvent_s
                 var command: String? = ""
                 val updateVisuals = CBool(false)
                 val ui = ActiveGui()
                 if (ui != null) {
                     ev =
-                        idLib.sys.GenerateMouseButtonEvent(1, usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK != 0)
+                        idLib.sys.GenerateMouseButtonEvent(
+                            1,
+                            (usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) != 0
+                        )
                     command = ui.HandleEvent(ev, Game_local.gameLocal.time, updateVisuals)
                     if (updateVisuals._val && focusGUIent != null && ui == focusUI) {
                         focusGUIent!!.UpdateVisuals()
@@ -6198,7 +6219,7 @@ object Player {
                     return
                 }
             }
-            if (hiddenWeapon && tipUp && usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK != 0) {
+            if (hiddenWeapon && tipUp && (usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) != 0) {
                 HideTip()
             }
             if (SysCvar.g_dragEntity.GetBool()) {
@@ -6234,7 +6255,7 @@ object Player {
                 SpectateFreeFly(true)
             } else if (usercmd.upmove > 0) {
                 SpectateFreeFly(false)
-            } else if (usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK != 0) {
+            } else if ((usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) != 0) {
                 SpectateCycle()
             }
         }
@@ -6426,7 +6447,7 @@ object Player {
             noDamage = false
             for (i in 0 until physicsObj.GetNumContacts()) {
                 val contact = physicsObj.GetContact(i)!!
-                if (contact.material != null && contact.material!!.GetSurfaceFlags() and Material.SURF_NODAMAGE != 0) {
+                if (contact.material != null && (contact.material!!.GetSurfaceFlags() and Material.SURF_NODAMAGE) != 0) {
                     noDamage = true
                     StartSound("snd_land_hard", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
                     break
@@ -6582,7 +6603,7 @@ object Player {
             if (physicsObj.IsCrouching()) {
                 delta *= 3.0f // crouching accentuates roll
             }
-            if (bobFoot and 1 != 0) {
+            if ((bobFoot and 1) != 0) {
                 delta = -delta
             }
             viewBobAngles.roll += delta
@@ -6705,7 +6726,7 @@ object Player {
         private fun EvaluateControls() {
             // check for respawning
             if (health <= 0) {
-                if (Game_local.gameLocal.time > minRespawnTime && usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK != 0) {
+                if (Game_local.gameLocal.time > minRespawnTime && (usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) != 0) {
                     forceRespawn = true
                 } else if (Game_local.gameLocal.time > maxRespawnTime) {
                     forceRespawn = true
@@ -6717,10 +6738,10 @@ object Player {
                 // in single player, we let the session handle restarting the level or loading a game
                 Game_local.gameLocal.sessionCommand.set("died")
             }
-            if (usercmd.flags.toInt() and UsercmdGen.UCF_IMPULSE_SEQUENCE != oldFlags and UsercmdGen.UCF_IMPULSE_SEQUENCE) {
+            if ((usercmd.flags.toInt() and UsercmdGen.UCF_IMPULSE_SEQUENCE) != (oldFlags and UsercmdGen.UCF_IMPULSE_SEQUENCE)) {
                 PerformImpulse(usercmd.impulse.toInt())
             }
-            scoreBoardOpen = usercmd.buttons.toInt() and UsercmdGen.BUTTON_SCORES != 0 || forceScoreBoard
+            scoreBoardOpen = (usercmd.buttons.toInt() and UsercmdGen.BUTTON_SCORES) != 0 || forceScoreBoard
             oldFlags = usercmd.flags.toInt()
             AdjustSpeed()
 
@@ -6737,7 +6758,7 @@ object Player {
             } else if (noclip) {
                 speed = SysCvar.pm_noclipspeed.GetFloat()
                 bobFrac = 0.0f
-            } else if (!physicsObj.OnLadder() && usercmd.buttons.toInt() and UsercmdGen.BUTTON_RUN != 0 && (usercmd.forwardmove.toInt() != 0 || usercmd.rightmove.toInt() != 0) && usercmd.upmove >= 0) {
+            } else if (!physicsObj.OnLadder() && (usercmd.buttons.toInt() and UsercmdGen.BUTTON_RUN) != 0 && (usercmd.forwardmove.toInt() != 0 || usercmd.rightmove.toInt() != 0) && usercmd.upmove >= 0) {
                 if (!Game_local.gameLocal.isMultiplayer && !physicsObj.IsCrouching() && !PowerUpActive(ADRENALINE)) {
                     stamina -= MS2SEC(idGameLocal.msec.toFloat())
                 }
@@ -7206,7 +7227,7 @@ object Player {
             // only update the focus character when attack button isn't pressed so players
             // can still chainsaw NPC's
             allowFocus =
-                !Game_local.gameLocal.isMultiplayer && (focusCharacter != null || usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK == 0)
+                !Game_local.gameLocal.isMultiplayer && (focusCharacter != null || (usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) == 0)
             oldFocus = focusGUIent
             oldUI = focusUI
             oldChar = focusCharacter
@@ -7498,7 +7519,7 @@ object Player {
                     index = 0
                 }
 
-                if (j != currentPDA && j < 128 && inventory.pdasViewed[j shr 5] and (1 shl (j and 31)) != 0) {
+                if (j != currentPDA && j < 128 && (inventory.pdasViewed[j shr 5] and (1 shl (j and 31))) != 0) {
                     // This pda has been read already, mark in gray
                     objectiveSystem!!.SetStateString(
                         Str.va("listPDA_item_%d", index), Str.va(Str.S_COLOR_GRAY, "%s", pda.GetPdaName())
@@ -7771,7 +7792,7 @@ object Player {
             weaponNum = -1
             i = 0
             while (i < MAX_WEAPONS) {
-                if (inventory.weapons and (1 shl i) != 0) {
+                if ((inventory.weapons and (1 shl i)) != 0) {
                     val weap = spawnArgs.GetString(Str.va("def_weapon%d", i))
                     if (idStr.Cmp(weap, weaponName.value) == 0) {
                         weaponNum = i

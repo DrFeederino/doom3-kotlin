@@ -3,7 +3,7 @@ package neo.Sound
 import neo.Sound.snd_local.*
 import neo.Sound.snd_system.idSoundSystemLocal
 import neo.TempDump
-import neo.TempDump.TODO_Exception
+import neo.framework.Common
 import neo.framework.FileSystem_h
 import neo.framework.File_h.fsOrigin_t
 import neo.framework.File_h.idFile
@@ -60,8 +60,11 @@ object snd_wavefile {
         private var   /*dword*/mulDataSize: Long = 0
 
         //
-        private var ogg // only !NULL when !s_realTimeDecoding
-                : Any?
+        // FIX: Changed ogg from Any? to Long — stores stb_vorbis handle (0 = null) for non-realtime OGG decoding
+        private var ogg: Long = 0 // stb_vorbis handle, only != 0 when !s_realTimeDecoding
+
+        // FIX: Added oggData to keep the raw OGG file data alive for stb_vorbis (memory-based decoding)
+        private var oggData: ByteBuffer? = null
 
         // ~idWaveFile();
         //-----------------------------------------------------------------------------
@@ -83,7 +86,6 @@ object snd_wavefile {
                 return OpenOGG(name.toString(), pwfx)
             }
 
-//	memset( &mpwfx, 0, sizeof( waveformatextensible_t ) );
             mpwfx = waveformatextensible_s()
             mhmmio = FileSystem_h.fileSystem.OpenFileRead(strFileName)
             if (null == mhmmio) {
@@ -124,7 +126,7 @@ object snd_wavefile {
             mulDataSize = ulDataSize.toLong()
             mpbData = TempDump.stobb(pbData)
             mpbDataCur = mpbData!!.duplicate()
-            mdwSize = (ulDataSize / 2).toLong() //sizeof(short);
+            mdwSize = (ulDataSize / 2).toLong()
             mMemSize = ulDataSize.toLong()
             mbIsReadingFromMemory = true
             return 0
@@ -140,18 +142,21 @@ object snd_wavefile {
         //-----------------------------------------------------------------------------
         fun Read(pBuffer: ByteBuffer, dwSizeToRead: Int, pdwSizeRead: IntArray?): Int {
             var dwSizeToRead = dwSizeToRead
-            return if (ogg != null) {
+            return if (ogg != 0L) {
                 ReadOGG(pBuffer.array(), dwSizeToRead, pdwSizeRead)
             } else if (mbIsReadingFromMemory) {
                 if (mpbDataCur == null) {
                     return -1
                 }
-                val pos = dwSizeToRead + mpbDataCur!!.position() //add current offset
-                if (mpbDataCur!!.get(dwSizeToRead) > mpbData!!.get(mulDataSize.toInt())) {
+                if (mpbDataCur!!.position() + dwSizeToRead > mulDataSize.toInt()) {
                     dwSizeToRead = (mulDataSize - mpbDataCur!!.position()).toInt()
                 }
-                SIMDProcessor!!.Memcpy(pBuffer, mpbDataCur!!, dwSizeToRead)
-                mpbDataCur!!.position(pos)
+                // FIX: SIMDProcessor.Memcpy(ByteBuffer, ByteBuffer, Int) resolves to no-op catch-all.
+                // Use direct ByteBuffer copy instead.
+                val src = mpbDataCur!!.duplicate()
+                src.limit(src.position() + dwSizeToRead)
+                pBuffer.put(src)
+                mpbDataCur!!.position(mpbDataCur!!.position() + dwSizeToRead)
                 if (pdwSizeRead != null) {
                     pdwSizeRead[0] = dwSizeToRead
                 }
@@ -175,29 +180,24 @@ object snd_wavefile {
             }
         }
 
+        // FIX: Was a stub throwing TODO_Exception. Implemented from C++ snd_wavefile.cpp:333-355.
         fun Seek(offset: Int): Int {
-            throw TODO_Exception()
-            //
-//            if (ogg != null) {
-//
-//                common.FatalError("idWaveFile::Seek: cannot seek on an OGG file\n");
-//
-//            } else if (mbIsReadingFromMemory) {
-//
-//                mpbDataCur = mpbData + offset;
-//
-//            } else {
-//                if (mhmmio == null) {
-//                    return -1;
-//                }
-//
-//                if ((int) (offset + mseekBase) == mhmmio.Tell()) {
-//                    return 0;
-//                }
-//                mhmmio.Seek(offset + mseekBase, FS_SEEK_SET);
-//                return 0;
-//            }
-//            return -1;
+            if (ogg != 0L) {
+                Common.common.FatalError("idWaveFile::Seek: cannot seek on an OGG file\n")
+            } else if (mbIsReadingFromMemory) {
+                mpbDataCur = mpbData!!.duplicate()
+                mpbDataCur!!.position(offset)
+            } else {
+                if (mhmmio == null) {
+                    return -1
+                }
+                if ((offset + mseekBase).toInt() == mhmmio!!.Tell()) {
+                    return 0
+                }
+                mhmmio!!.Seek((offset + mseekBase), fsOrigin_t.FS_SEEK_SET)
+                return 0
+            }
+            return -1
         }
 
         //-----------------------------------------------------------------------------
@@ -205,7 +205,7 @@ object snd_wavefile {
         // Desc: Closes the wave file 
         //-----------------------------------------------------------------------------
         fun Close(): Int {
-            if (ogg != null) {
+            if (ogg != 0L) {
                 return CloseOGG()
             }
             if (mhmmio != null) {
@@ -222,7 +222,10 @@ object snd_wavefile {
         //-----------------------------------------------------------------------------
         fun ResetFile(): Int {
             if (mbIsReadingFromMemory) {
-                mpbDataCur = mpbData
+                // FIX: C++ pointer reassignment. Kotlin reference assignment would alias.
+                // Must duplicate() to create an independent ByteBuffer pointing to same data.
+                mpbDataCur = mpbData!!.duplicate()
+                mpbDataCur!!.position(0)
             } else {
                 if (mhmmio == null) {
                     return -1
@@ -240,7 +243,8 @@ object snd_wavefile {
                     if (0 == mhmmio!!.Read(ioin, 1)) {
                         return -1
                     }
-                    mck.ckid = Integer.toUnsignedLong((mck.ckid ushr 8).toInt() or (ioin.get().toInt() shl 24))
+                    mck.ckid =
+                        Integer.toUnsignedLong((mck.ckid ushr 8).toInt() or (ioin.get(0).toInt() and 0xFF shl 24))
                 } while (mck.ckid != mmioFOURCC('d'.code, 'a'.code, 't'.code, 'a'.code))
                 mck.cksize = mhmmio!!.ReadInt()
                 assert(!isOgg)
@@ -267,7 +271,7 @@ object snd_wavefile {
         private fun ReadMMIO(): Int {
             val ckIn = mminfo_s() // chunk info. for general use.
             val pcmWaveFormat = pcmwaveformat_s() // Temp PCM structure to load in.       
-            mpwfx = waveformatextensible_s() //memset( &mpwfx, 0, sizeof( waveformatextensible_t ) );
+            mpwfx = waveformatextensible_s()
             mhmmio!!.Read(mckRiff, 12)
             assert(!isOgg)
             mckRiff.ckid = LittleLong(mckRiff.ckid).toLong()
@@ -343,40 +347,51 @@ object snd_wavefile {
         }
 
         private fun OpenOGG(strFileName: String, pwfx: Array<waveformatex_s> /*= NULL*/): Int {
-//            memset(pwfx, 0, sizeof(waveformatex_t));
+            // FIX: C++ zeroes pwfx on entry
+            pwfx[0] = waveformatex_s()
             val error = intArrayOf(0)
-            var vi: STBVorbisInfo? = null
             mhmmio = FileSystem_h.fileSystem.OpenFileRead(strFileName)
             if (null == mhmmio) {
                 return -1
             }
             win_main.Sys_EnterCriticalSection(sys_public.CRITICAL_SECTION_ONE)
-            val buffer = ByteBuffer.allocate(mhmmio!!.Length())
-            mhmmio!!.Read(buffer)
             try {
-                val d_buffer = BufferUtils.createByteBuffer(buffer.capacity()).put(buffer).rewind()
+                val fileSize = mhmmio!!.Length()
+                val buffer = ByteBuffer.allocate(fileSize)
+                mhmmio!!.Read(buffer)
+                val d_buffer = BufferUtils.createByteBuffer(buffer.capacity()).put(buffer).rewind() as ByteBuffer
                 val ov = STBVorbis.stb_vorbis_open_memory(d_buffer, error, null)
-                if (error[0] != 0) {
+                if (ov == 0L) {
+                    Common.common.Warning("Opening OGG file '%s' with stb_vorbis failed\n", strFileName)
                     FileSystem_h.fileSystem.CloseFile(mhmmio!!)
                     mhmmio = null
                     return -1
                 }
-                vi = STBVorbis.stb_vorbis_get_info(ov, STBVorbisInfo.create())
+                val vi = STBVorbis.stb_vorbis_get_info(ov, STBVorbisInfo.create())
                 mfileTime = mhmmio!!.Timestamp()
                 mpwfx.Format.nSamplesPerSec = vi.sample_rate()
                 mpwfx.Format.nChannels = vi.channels()
                 mpwfx.Format.wBitsPerSample = java.lang.Short.SIZE
-                mdwSize =
-                    (STBVorbis.stb_vorbis_stream_length_in_samples(ov) * vi.channels()).toLong() // pcm samples * num channels
+
+                // FIX: C++ checks for zero sample count and logs warning
+                val numSamples = STBVorbis.stb_vorbis_stream_length_in_samples(ov)
+                if (numSamples == 0) {
+                    Common.common.Warning("Couldn't get sound length of '%s' with stb_vorbis\n", strFileName)
+                }
+                mdwSize = (numSamples * vi.channels()).toLong() // pcm samples * num channels
                 mbIsReadingFromMemory = false
                 if (idSoundSystemLocal.s_realTimeDecoding.GetBool()) {
+                    STBVorbis.stb_vorbis_close(ov)
                     FileSystem_h.fileSystem.CloseFile(mhmmio!!)
                     mhmmio = null
                     mpwfx.Format.wFormatTag = snd_local.WAVE_FORMAT_TAG_OGG
                     mhmmio = FileSystem_h.fileSystem.OpenFileRead(strFileName)
                     mMemSize = mhmmio!!.Length().toLong()
                 } else {
-                    ogg = "we only check if this is not null"
+                    // FIX: C++ stores the stb_vorbis handle and keeps oggData alive.
+                    // Kotlin was closing the handle immediately and setting ogg to a dummy string.
+                    ogg = ov
+                    oggData = d_buffer // keep the direct buffer alive so stb_vorbis can read from it
                     mpwfx.Format.wFormatTag = snd_local.WAVE_FORMAT_TAG_PCM
                     mMemSize = mdwSize * java.lang.Short.SIZE / java.lang.Byte.SIZE
                 }
@@ -388,47 +403,66 @@ object snd_wavefile {
             return 0
         }
 
+        // FIX: Was a stub throwing TODO_Exception. Implemented from dhewm3 snd_decoder.cpp:229-262.
+        // Note: stb_vorbis operates on shorts, not bytes like the old ov_read.
         private fun ReadOGG(pBuffer: ByteArray?, dwSizeToRead: Int, pdwSizeRead: IntArray?): Int {
-            throw TODO_Exception()
-            //            int total = dwSizeToRead;
-//            String bufferPtr = (char[]) pBuffer;
-//            OggVorbis_File ov = (OggVorbis_File) ogg;
-//
-//            do {
-//                int ret = ov_read(ov, bufferPtr, total >= 4096 ? 4096 : total, Swap_IsBigEndian(), 2, 1, ov.stream);
-//                if (ret == 0) {
-//                    break;
-//                }
-//                if (ret < 0) {
-//                    return -1;
-//                }
-//                bufferPtr += ret;
-//                total -= ret;
-//            } while (total > 0);
-//
-//            dwSizeToRead = (byte[]) bufferPtr - pBuffer;
-//
-//            if (pdwSizeRead != null) {
-//                pdwSizeRead[0] = dwSizeToRead;
-//            }
-//
-//            return dwSizeToRead;
+            var total = dwSizeToRead / 2 // sizeof(short)
+            // LWJGL stb_vorbis_get_samples_short_interleaved uses ShortBuffer position/limit
+            val shortBuf = BufferUtils.createShortBuffer(total)
+            val ov = ogg
+
+            do {
+                val numShorts = total
+                shortBuf.limit(shortBuf.position() + numShorts)
+                val ret = STBVorbis.stb_vorbis_get_samples_short_interleaved(ov, mpwfx.Format.nChannels, shortBuf)
+                if (ret == 0) {
+                    break
+                }
+                if (ret < 0) {
+                    Common.common.Warning(
+                        "idWaveFile::ReadOGG() stb_vorbis_get_samples_short_interleaved() %d shorts failed\n",
+                        numShorts
+                    )
+                    return -1
+                }
+                // stb_vorbis returns samples per channel, multiply by nChannels to get total shorts
+                val decoded = ret * mpwfx.Format.nChannels
+                shortBuf.position(shortBuf.position() + decoded)
+                total -= decoded
+            } while (total > 0)
+
+            // Convert shorts back to bytes into pBuffer
+            val shortsRead = shortBuf.position()
+            val bytesRead = shortsRead * 2
+            if (pBuffer != null) {
+                shortBuf.flip()
+                val bb = ByteBuffer.allocate(bytesRead)
+                bb.asShortBuffer().put(shortBuf)
+                bb.rewind()
+                bb.get(pBuffer, 0, bytesRead)
+            }
+            if (pdwSizeRead != null) {
+                pdwSizeRead[0] = bytesRead
+            }
+            return bytesRead
         }
 
+        // FIX: Was a stub throwing TODO_Exception. Implemented from dhewm3 snd_decoder.cpp:269-283.
         private fun CloseOGG(): Int {
-            throw TODO_Exception()
-            //            OggVorbis_File ov = (OggVorbis_File) ogg;
-//            if (ov != null) {
-//                Sys_EnterCriticalSection(CRITICAL_SECTION_ONE);
-//                ov_clear(ov);
-////		delete ov;
-//                Sys_LeaveCriticalSection(CRITICAL_SECTION_ONE);
-//                fileSystem.CloseFile(mhmmio);
-//                mhmmio = null;
-//                ogg = null;
-//                return 0;
-//            }
-//            return -1;
+            val ov = ogg
+            if (ov != 0L) {
+                win_main.Sys_EnterCriticalSection(sys_public.CRITICAL_SECTION_ONE)
+                STBVorbis.stb_vorbis_close(ov)
+                win_main.Sys_LeaveCriticalSection(sys_public.CRITICAL_SECTION_ONE)
+                if (mhmmio != null) {
+                    FileSystem_h.fileSystem.CloseFile(mhmmio!!)
+                    mhmmio = null
+                }
+                ogg = 0
+                oggData = null // allow GC of the raw OGG data buffer
+                return 0
+            }
+            return -1
         }
 
         //
@@ -440,7 +474,6 @@ object snd_wavefile {
         //       will close the file.  
         //-----------------------------------------------------------------------------
         init {
-//	memset( &mpwfx, 0, sizeof( waveformatextensible_t ) );
             mpwfx = waveformatextensible_s()
             mhmmio = null
             mck = mminfo_s()
@@ -449,7 +482,8 @@ object snd_wavefile {
             mseekBase = 0
             mbIsReadingFromMemory = false
             mpbData = null
-            ogg = null
+            ogg = 0
+            oggData = null
             isOgg = false
         }
     }

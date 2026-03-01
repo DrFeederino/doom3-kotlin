@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/Model.h
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.Renderer.Material.idMaterial
@@ -19,7 +45,6 @@ import org.lwjgl.opengl.GL11
 import java.nio.ByteBuffer
 
 object Model {
-    //typedef enum {
     val INVALID_JOINT: Int = -1
     val MD5_ANIM_EXT: String = "md5anim"
     val MD5_CAMERA_EXT: String = "md5camera"
@@ -43,11 +68,7 @@ object Model {
     val SHADOW_CAP_INFINITE: Int = 64
 
     init {
-        if (true) {
-            GL_INDEX_TYPE = GL11.GL_UNSIGNED_INT
-            //        } else {
-            //            GL_INDEX_TYPE = GL_UNSIGNED_SHORT;
-        }
+        GL_INDEX_TYPE = GL11.GL_UNSIGNED_INT
     }
 
     enum class dynamicModel_t {
@@ -96,13 +117,10 @@ object Model {
         var v3: Int = 0
     }
 
-    class lightingCache_s(Position: ByteBuffer?) {
-        val localLightVector: idVec3 = idVec3() // this is the statically computed vector to the light
+    class lightingCache_s {
+        val localLightVector: idVec3 = idVec3()
 
-        // in texture space for cards without vertex programs
-        init {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        constructor()
 
         companion object {
             val BYTES: Int = idVec3.BYTES
@@ -118,11 +136,6 @@ object Model {
 
     class shadowCache_s {
         val xyz: idVec4 = idVec4() // we use homogenous coordinate tricks
-
-        constructor()
-        internal constructor(Position: ByteBuffer?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
 
         companion object {
             val BYTES: Int = idVec4.BYTES
@@ -142,7 +155,6 @@ object Model {
 
     // our only drawing geometry type
     class srfTriangles_s {
-        val DBG_count: Int = DBG_counter++
         val bounds: idBounds = idBounds() // for culling
         var facePlanes // [numIndexes/3] plane equations
                 : Array<idPlane?>? = null
@@ -198,8 +210,7 @@ object Model {
 
         override fun toString(): String {
             return ("srfTriangles_s{" +
-                    "DBG_count=" + DBG_count +
-                    ", bounds=" + bounds +
+                    "bounds=" + bounds +
                     ", facePlanes=" + facePlanes.contentToString() +
                     ", indexes=" + indexes.contentToString() +
                     ", numIndexes=" + numIndexes +
@@ -231,10 +242,6 @@ object Model {
                     ", silEdges=" + silEdges.contentToString() +
                     '}')
         }
-
-        companion object {
-            private var DBG_counter: Int = 0
-        }
     }
 
     internal class idTriList : idList<srfTriangles_s?>()
@@ -253,7 +260,6 @@ object Model {
         }
     }
 
-    //} jointHandle_t;
     class idMD5Joint {
         var name: idStr? = null
         var parent: idMD5Joint? = null
@@ -262,9 +268,7 @@ object Model {
     // the init methods may be called again on an already created model when
     // a reloadModels is issued
     abstract class idRenderModel : SERiAL {
-        protected val DBG_count: Int = DBG_counter++
 
-        // public abstract						~idRenderModel() {};
         // Loads static models only, dynamic models must be loaded by the modelManager
         @Throws(idException::class)
         abstract fun InitFromFile(fileName: String?)
@@ -403,15 +407,11 @@ object Model {
         abstract fun GetDefaultPose(): Array<idJointQuat?>?
 
         // Returns number of the joint nearest to the given triangle.
-        abstract fun NearestJoint(surfaceNum: Int, a: Int, c: Int, b: Int): Int
+        abstract fun NearestJoint(surfaceNum: Int, a: Int, b: Int, c: Int): Int
 
         // Writing to and reading from a demo file.
         abstract fun ReadFromDemoFile(f: idDemoFile?)
         abstract fun WriteToDemoFile(f: idDemoFile)
         abstract fun oSet(FindModel: idRenderModel?)
-
-        companion object {
-            private var DBG_counter: Int = 0
-        }
     }
 }

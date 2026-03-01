@@ -195,11 +195,11 @@ object SysCmds {
         i = 0
         while (i < MAX_DEBUGLINES) {
             if (debugLines[i].used) {
-                if (!debugLines[i].blink || Game_local.gameLocal.time and (1 shl 9) != 0) {
+                if (!debugLines[i].blink || (Game_local.gameLocal.time and (1 shl 9)) != 0) {
                     color.set(
                         (debugLines[i].color and 1).toFloat(),
-                        (debugLines[i].color shr 1 and 1).toFloat(),
-                        (debugLines[i].color shr 2 and 1).toFloat(),
+                        ((debugLines[i].color shr 1) and 1).toFloat(),
+                        ((debugLines[i].color shr 2) and 1).toFloat(),
                         1.0f
                     )
                     Game_local.gameRenderWorld!!.DebugLine(color, debugLines[i].start, debugLines[i].end)
@@ -1056,7 +1056,7 @@ object SysCmds {
             if (player == null || !Game_local.gameLocal.CheatsOk(false)) {
                 return
             }
-            if (args!!.Argc() and 1 != 0) {    // must always have an even number of arguments
+            if ((args!!.Argc() and 1) != 0) {    // must always have an even number of arguments
                 Game_local.gameLocal.Printf("usage: spawn classname [key/value pairs]\n")
                 return
             }

@@ -247,7 +247,6 @@ object Window {
     }
 
     open class idWindow {
-        private val DBG_COUNT = DBG_COUNTER++
         var cmd = idStr()
         protected var actualX = 0.0f // physical coords
         protected var actualY = 0.0f // ''
@@ -475,7 +474,6 @@ object Window {
         }
 
         fun SetupBackground() {
-            DBG_SetupBackground++
             if (backGroundName.Length() != 0) {
                 background = DeclManager.declManager.FindMaterial(backGroundName.data!!)
                 background!!.SetImageClassifications(1) // just for resource tracking
@@ -696,7 +694,6 @@ object Window {
         fun GetWinVarOffset(wv: idWinVar?, owner: drawWin_t): Int {
             var ret = -1
 
-            //TODO:think of something after all implementaions are clear.
 //	if ( wv == rect ) {
 //		ret = (int)&( ( idWindow * ) 0 ).rect;
 //	}
@@ -826,9 +823,6 @@ object Window {
 
         fun CalcClientRect(xofs: Float, yofs: Float) {
             drawRect.set(rect.data)
-            //            if(rect.DBG_count==289425){
-//                int a = 1;
-//            }
             if (flags and WIN_INVERTRECT != 0) {
                 drawRect.x = rect.x() - rect.w()
                 drawRect.y = rect.y() - rect.h()
@@ -845,7 +839,6 @@ object Window {
             drawRect.x += xofs
             drawRect.y += yofs
             clientRect.set(drawRect)
-            //            System.out.println(drawRect);
             if (rect.h() > 0.0f && rect.w() > 0.0f) {
                 if (flags and WIN_BORDER != 0 && borderSize != 0.0f) {
                     clientRect.x += borderSize
@@ -979,7 +972,7 @@ object Window {
         }
 
         fun GetName(): String {
-            return name.toString() //TODO:return idStr???
+            return name.toString()
         }
 
 
@@ -1018,7 +1011,6 @@ object Window {
                     }
                     src.ExpectTokenType(TT_NAME, 0, token)
                     token2 = token
-                    //                    System.out.printf(">>>>>>>>%s\n", token.toString());
                     src.UnreadToken(token)
                     val dw = FindChildByName(token2.toString())
                     if (dw != null && dw.win != null) {
@@ -1038,14 +1030,11 @@ object Window {
                             dwt.simp = simple
                             drawWindows.Append(dwt)
                             win.close() //delete win;
-                            simpleCount++
                         } else {
                             AddChild(win)
                             SetFocus(win, false)
                             dwt.win = win
-                            //                            System.out.println(dwt.win.text.c_str());
                             drawWindows.Append(dwt)
-                            plainCount++
                         }
                     }
                 } else if (token.equals("editDef")) {
@@ -1227,7 +1216,6 @@ object Window {
 //                    }
                     // this is a timeline event
                     ev.pending = true
-                    //                    System.out.println("pending +++++++++ " + ev);
                     timeLineEvents.Append(ev)
                 } else if (token.equals("definefloat")) {
                     src.ReadToken(token)
@@ -1594,7 +1582,7 @@ object Window {
                             }
                         }
                     }
-                } else if (event.evType == sysEventType_t.SE_MOUSE) {
+                } else if (event.evType == sysEventType_t.SE_MOUSE || event.evType == sysEventType_t.SE_MOUSE_ABS) {
                     if (updateVisuals != null) {
                         updateVisuals._val = true
                     }
@@ -1706,7 +1694,6 @@ object Window {
                 dc!!.PushClipRect(clientRect)
             }
             if (r_skipGuiShaders!!.GetInteger() < 5) {
-//                bla++;
                 Draw(time, x, y)
             }
             if (gui_debug.GetInteger() != 0) {
@@ -1715,10 +1702,8 @@ object Window {
             val c = drawWindows.Num()
             for (i in 0 until c) {
                 if (drawWindows[i]!!.win != null) {
-                    bla1++
                     drawWindows[i]!!.win!!.Redraw(clientRect.x + xOffset, clientRect.y + yOffset)
                 } else {
-                    bla2++
                     drawWindows[i]!!.simp!!.Redraw(clientRect.x + xOffset, clientRect.y + yOffset)
                 }
             }
@@ -1728,7 +1713,6 @@ object Window {
             if (0 == flags and WIN_NOCLIP) {
                 dc!!.PopClipRect()
             }
-            drawCursorTotal++
             if (gui_edit.GetBool()
                 || (flags and WIN_DESKTOP != 0 && 0 == flags and WIN_NOCURSOR && !hideCursor.data
                         && (gui!!.Active() || flags and WIN_MENUGUI != 0))
@@ -1782,7 +1766,6 @@ object Window {
 
         open fun PostParse() {}
         open fun Activate(activate: Boolean, act: idStr) {
-            DEBUG_Activate++
             val n = (if (activate) ON.ON_ACTIVATE else ON.ON_DEACTIVATE).ordinal
 
             //  make sure win vars are updated before activation
@@ -1997,7 +1980,7 @@ object Window {
 
         fun WriteToDemoFile(f: idDemoFile?) {
             // should never hit unless we re-enable WRITE_GUIS
-            assert(!WRITE_GUIS)
+            assert(WRITE_GUIS)
         }
 
         // SaveGame support
@@ -2160,7 +2143,7 @@ object Window {
                 Common.common.Warning("idWindow::ReadSaveGameString: invalid length")
             }
             string!!.Fill(' ', len)
-            savefile.ReadString(string) //TODO:read to buffer
+            savefile.ReadString(string)
         }
 
         fun ReadSaveGameTransition(trans: idTransitionData, savefile: idFile) {
@@ -2432,8 +2415,6 @@ object Window {
                     // need to fix this up
                     val p = ops[i].a!!.c_str()
                     val `var` = GetWinVarByName(p, true)
-                    //                    System.out.println("=="+p);
-//			delete []p;
                     ops[i].a =  /*(int)*/`var`
                     ops[i].b = -1
                 }
@@ -2665,9 +2646,7 @@ object Window {
         }
 
         fun AddUpdateVar(`var`: idWinVar?) {
-            `var`!!.DEBUG_COUNTER = DEBUG_updateVars++
             updateVars.AddUnique(`var`)
-            //            System.out.printf("%d %s\n", DEBUG_updateVars, var.GetName());
         }
 
         fun Interactive(): Boolean {
@@ -2765,8 +2744,9 @@ object Window {
             definedVars.AddUnique(`var`)
         }
 
-        fun FindChildByPoint(x: Float, y: Float, below: idWindow? /*= NULL*/): idWindow {
-            return FindChildByPoint(x, y, below)
+        fun FindChildByPoint(x: Float, y: Float, below: idWindow? = null): idWindow? {
+            val belowArr = arrayOf(below)
+            return FindChildByPoint(x, y, belowArr)
         }
 
         fun GetChildIndex(window: idWindow): Int {
@@ -2793,12 +2773,7 @@ object Window {
         }
 
         fun GetChild(index: Int): idWindow? {
-            DBG_GetChild++
-            val win_t = drawWindows[index]
-            val win = win_t!!.win
-            if (win_t != null && win_t.DBG_index == 10670) {
-            }
-            return win
+            return drawWindows[index]!!.win
         }
 
         /*
@@ -3017,7 +2992,6 @@ object Window {
         protected fun UpdateWinVars() {
             val c = updateVars.Num()
             for (i in 0 until c) {
-//                System.out.printf("%d %s\n", DEBUG_Activate, updateVars.get(i).c_str());
                 updateVars[i]!!.Update()
             }
         }
@@ -3039,7 +3013,7 @@ object Window {
                 var v4: idWinVec4? = null
                 if (data.data is idWinVec4) {
                     v4 = data.data as idWinVec4?
-                } else if (data.data is idWinFloat) { //TODO:check empty cast(s)(below too I think). EDIT:casts are to check types.
+                } else if (data.data is idWinFloat) {
                     `val` = data.data as idWinFloat?
                 } else {
                     r = data.data as idWinRectangle?
@@ -3402,7 +3376,6 @@ object Window {
         }
 
         protected fun EvaluateRegisters(registers: FloatArray) {
-            DBG_EvaluateRegisters++
             var i: Int
             var b: Int
             var op: wexpOp_t
@@ -3561,7 +3534,6 @@ object Window {
                 for (i in 0 until NumRegisterVars) {
                     if (Icmp(work, RegisterVars[i].name) == 0) {
                         regList.AddReg(work.toString(), etoi(RegisterVars[i].type), src, this, `var`)
-                        DBG_ParseRegEntry++
                         return true
                     }
                 }
@@ -3842,21 +3814,10 @@ object Window {
             protected val gui_edit = idCVar("gui_edit", "0", CVAR_GUI or CVAR_BOOL, "")
             private val dw = drawWin_t()
             private val vec = idVec3(0, 0, 1)
-            var bla1 = 0
-            var bla2 = 0
-            var drawCursorTotal = 0
 
             //
             protected var registerIsTemporary =
                 BooleanArray(MAX_EXPRESSION_REGISTERS) // statics to assist during parsing
-            var DEBUG_Activate = 0
-            var DEBUG_updateVars = 0
-            var simpleCount = 0
-            var plainCount = 0
-
-            //
-            //
-            private var DBG_COUNTER = 0
 
             /*
          ===============
@@ -3867,7 +3828,6 @@ object Window {
          set to their apropriate values.
          ===============
          */
-            private var DBG_EvaluateRegisters = 0
 
             /*
          ================
@@ -3876,9 +3836,6 @@ object Window {
          Returns the child window at the given index
          ================
          */
-            private var DBG_GetChild = 0
-            private var DBG_ParseRegEntry = 0
-            private var DBG_SetupBackground = 0
             private var actionDownRun = false
             private var actionUpRun = false
             private var buff = "" //[16384];

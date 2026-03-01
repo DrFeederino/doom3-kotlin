@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Physics/Physics_AF.h, neo/Game/Physics/Physics_AF.cpp
+ */
+
 package neo.Game.Physics
 
 import neo.Game.Entity
@@ -732,7 +740,7 @@ object Physics_AF {
                 angular.set(body1!!.GetAngularVelocity())
                 invMass = body1!!.GetInverseMass()
                 if (body2 != null) {
-                    angular.minus(body2!!.GetAngularVelocity())
+                    angular.minusAssign(body2!!.GetAngularVelocity())
                     invMass += body2!!.GetInverseMass()
                 }
                 angular.timesAssign(currentFriction / invMass)
@@ -1887,11 +1895,11 @@ object Physics_AF {
 
         override fun Restore(saveFile: idRestoreGame) {
             val steerAngle =
-                CFloat() //TODO:check if these read pointers need to have the original values set instead of zero;
+                CFloat()
             val steerSpeed =
-                CFloat() //TODO:check if these read pointers need to have the original values set instead of zero;
+                CFloat()
             val epsilon =
-                CFloat() //TODO:check if these read pointers need to have the original values set instead of zero;
+                CFloat()
             saveFile.ReadFloat(steerAngle)
             saveFile.ReadFloat(steerSpeed)
             saveFile.ReadFloat(epsilon)
@@ -3599,7 +3607,6 @@ object Physics_AF {
     class AFBodyPState_s() {
         val worldOrigin // position in world space
                 : idVec3
-        private val DBG_count = DBG_counter++
         val externalForce // external force and torque applied to body
                 : idVec6
         val spatialVelocity // linear and rotational velocity of body
@@ -3618,10 +3625,6 @@ object Physics_AF {
             externalForce.set(body.externalForce)
         }
 
-        companion object {
-            private var DBG_counter = 0
-        }
-
         init {
             worldOrigin = idVec3()
             worldAxis = idMat3()
@@ -3631,7 +3634,6 @@ object Physics_AF {
     }
 
     class idAFBody {
-        private val DBG_count = DBG_counter++
         val atRestOrigin: idVec3 = idVec3() // origin at rest
         val centerOfMass: idVec3 = idVec3() // center of mass of body
         private val contactMotorDir: idVec3 = idVec3() // contact motor direction
@@ -3903,7 +3905,6 @@ object Physics_AF {
             density: Float,
             inertiaScale: idMat3 = idMat3.getMat3_identity() /*= mat3_identity*/
         ) {
-            DBG_SetDensity++
             val massTemp = CFloat(mass)
 
             // get the body mass properties
@@ -4088,13 +4089,6 @@ object Physics_AF {
                     = false
             var useFrictionDir //: 1;	// true if a single friction direction should be used
                     = false
-        }
-
-        companion object {
-            private var DBG_SetDensity = 0
-
-            //
-            private var DBG_counter = 0
         }
     }
 
@@ -4344,7 +4338,6 @@ object Physics_AF {
                 primaryConstraint?.J1?.TransposeMultiplyAdd(force, primaryConstraint.lm)
                 j = 0
                 while (j < body.children.Num()) {
-                    DBG_force++
                     child = body.children[j].primaryConstraint!!
                     child.J2.TransposeMultiplyAdd(force, child.lm)
                     j++
@@ -4512,7 +4505,6 @@ object Physics_AF {
 
         companion object {
             // friend class idPhysics_AF;
-            private var DBG_force = 0
         }
     }
 
@@ -4522,7 +4514,6 @@ object Physics_AF {
     //                                                        E
     //===============================================================
     class AFPState_s {
-        private val DBG_count = DBG_counter++
         var activateTime // time since last activation
                 = 0.0f
         var atRest // >= 0 if articulated figure is at rest
@@ -4534,8 +4525,13 @@ object Physics_AF {
         val pushVelocity // velocity with which the af is pushed
                 : idVec6 = idVec6()
 
-        companion object {
-            private var DBG_counter = 0
+        // FIX: Deep copy method to prevent reference aliasing in SaveState/RestoreState.
+        fun set(other: AFPState_s) {
+            activateTime = other.activateTime
+            atRest = other.atRest
+            lastTimeStep = other.lastTimeStep
+            noMoveTime = other.noMoveTime
+            pushVelocity.set(other.pushVelocity)
         }
     }
 
@@ -4902,7 +4898,7 @@ object Physics_AF {
         fun GetBodyId(body: idAFBody): Int {
             val id: Int
             id = bodies.FindIndex(body)
-            if (id == -1 && body != null) { //TODO:can't be null
+            if (id == -1 && body != null) {
                 idGameLocal.Error("GetBodyId: body '%s' is not part of the articulated figure.\n", body.name)
             }
             return id
@@ -4927,7 +4923,7 @@ object Physics_AF {
         fun GetConstraintId(constraint: idAFConstraint): Int {
             val id: Int
             id = constraints.FindIndex(constraint)
-            if (id == -1 && constraint != null) { //TODO:can't be null
+            if (id == -1 && constraint != null) {
                 idGameLocal.Error(
                     "GetConstraintId: constraint '%s' is not part of the articulated figure.\n",
                     constraint.name
@@ -5391,7 +5387,8 @@ object Physics_AF {
                 val masterOrigin = idVec3()
                 val masterAxis = idMat3()
                 self!!.GetMasterPosition(masterOrigin, masterAxis)
-                if (current.atRest >= 0 && (masterBody!!.current.worldOrigin !== masterOrigin || masterBody!!.current.worldAxis !== masterAxis)) {
+                // FIX: Was !== (referential), C++ uses != (structural equality) to check if master actually moved
+                if (current.atRest >= 0 && (masterBody!!.current.worldOrigin != masterOrigin || masterBody!!.current.worldAxis != masterAxis)) {
                     Activate()
                 }
                 masterBody!!.current.worldOrigin.set(masterOrigin)
@@ -5569,8 +5566,11 @@ object Physics_AF {
                 return info
             }
             info.invMass = 1.0f / bodies[id].mass
-            info.invInertiaTensor.set(bodies[id].current.worldAxis.Transpose())
-                .times(bodies[id].inverseInertiaTensor.times(bodies[id].current.worldAxis))
+            info.invInertiaTensor.set(
+                bodies[id].current.worldAxis.Transpose()
+                    .times(bodies[id].inverseInertiaTensor)
+                    .times(bodies[id].current.worldAxis)
+            )
             info.position.set(point.minus(bodies[id].current.worldOrigin))
             info.velocity.set(
                 bodies[id].current.spatialVelocity.SubVec3(0)
@@ -5650,7 +5650,8 @@ object Physics_AF {
 
         override fun SaveState() {
             var i: Int
-            saved = current
+            // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
+            saved.set(current)
             i = 0
             while (i < bodies.Num()) {
 
@@ -5662,7 +5663,8 @@ object Physics_AF {
 
         override fun RestoreState() {
             var i: Int
-            current = saved
+            // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
+            current.set(saved)
             i = 0
             while (i < bodies.Num()) {
                 bodies[i].current.oSet(bodies[i].saved)
@@ -5693,7 +5695,6 @@ object Physics_AF {
         }
 
         override fun Translate(translation: idVec3, id: Int /*= -1*/) {
-            DBG_Translate++
             var i: Int
             var body: idAFBody?
             if (!worldConstraintsLocked) {
@@ -6695,7 +6696,7 @@ object Physics_AF {
                     d_i = i * n + i + 1
                     j = i + 1
                     while (j < numAuxConstraints) {
-                        dstPtr[d_i++] = ptr[p_i] //TODO:
+                        dstPtr[d_i++] = ptr[p_i]
                         p_i += n
                         j++
                     }
@@ -6823,7 +6824,6 @@ object Physics_AF {
         }
 
         private fun VerifyContactConstraints() {
-            DBG_VerifyContactConstraints++
             var i: Int
             var body: idAFBody?
             val normal = idVec3()
@@ -7100,7 +7100,6 @@ object Physics_AF {
         }
 
         private fun CheckForCollisions(timeStep: Float) {
-            DBG_CheckForCollisions++
             //	#define TEST_COLLISION_DETECTION
             var i: Int
             var index: Int
@@ -7149,7 +7148,7 @@ object Physics_AF {
                         index = collisions.Num()
                         collisions.SetNum(index + 1, false)
                         collisions[index] = AFCollision_s()
-                        collisions[index].trace = collision
+                        collisions[index].trace.set(collision)
                         collisions[index].body = body
                     }
                     if (TEST_COLLISION_DETECTION) {
@@ -7548,7 +7547,6 @@ object Physics_AF {
         }
 
         override fun oSet(oGet: idClass?) {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
 
         companion object {
@@ -7570,9 +7568,6 @@ object Physics_AF {
          assumes all bodies are linked for collision detection and relinks all bodies after moving them
          ================
          */
-            private var DBG_CheckForCollisions = 0
-            private var DBG_Translate = 0
-            private var DBG_VerifyContactConstraints = 0
             private val absBounds: idBounds = idBounds()
             private val relBounds: idBounds = idBounds()
         }
@@ -7595,7 +7590,9 @@ object Physics_AF {
             current = AFPState_s() //memset( &current, 0, sizeof( current ) );
             current.atRest = -1
             current.lastTimeStep = UsercmdGen.USERCMD_MSEC.toFloat()
-            saved = current
+            // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
+            saved = AFPState_s()
+            saved.set(current)
             linearFriction = 0.005f
             angularFriction = 0.005f
             contactFriction = 0.8f

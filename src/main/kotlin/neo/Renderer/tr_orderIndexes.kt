@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.framework.Common
@@ -75,21 +100,18 @@ object tr_orderIndexes {
         var v1: Int
         var v2: Int
         var c_starts: Int
-        val c_cost: Int
         if (!r_orderIndexes!!.GetBool()) {
             return
         }
 
         // save off the original indexes
         oldIndexes = IntArray(numIndexes)
-        //	memcpy( oldIndexes, indexes, numIndexes * sizeof( *oldIndexes ) );
         System.arraycopy(indexes, 0, oldIndexes, 0, numIndexes)
         numOldIndexes = numIndexes
 
         // make a table to mark the triangles when they are emited
         numTris = numIndexes / 3
         triangleUsed = BooleanArray(numTris)
-        //	memset( triangleUsed, 0, numTris * sizeof( *triangleUsed ) );
 
         // find the highest vertex number
         numVerts = 0
@@ -104,7 +126,6 @@ object tr_orderIndexes {
 
         // create a table of triangles used by each vertex
         vrefs = arrayOfNulls(numVerts)
-        //	memset( vrefs, 0, numVerts * sizeof( *vrefs ) );
         vrefTable = Array(numIndexes) { vertRef_s() }
         i = 0
         while (i < numIndexes) {
@@ -133,7 +154,7 @@ object tr_orderIndexes {
             c_starts++
             do {
                 // emit this tri
-                base = oldIndexes //[tri * 3];
+                base = oldIndexes
                 base_index = tri * 3
                 indexes[numIndexes + 0] = base[base_index + 0]
                 indexes[numIndexes + 1] = base[base_index + 1]
@@ -175,22 +196,10 @@ object tr_orderIndexes {
                 }
             } while (true)
         }
-        c_cost = R_MeshCost(numIndexes, indexes)
     }
 
     internal class vertRef_s {
         var next: vertRef_s? = null
         var tri: Int = 0
-    } /*
-
-     add all triangles that can be specified by the vertexes in the last 14 cache positions
-
-     pick a new vert to add to the cache
-     don't pick one in the 24 previous cache positions
-     try to pick one that will enable the creation of as many triangles as possible
-
-     look for a vert that shares an edge with the vert about to be evicted
-
-
-     */
+    }
 }

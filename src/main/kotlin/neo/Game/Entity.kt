@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Entity.cpp, neo/Game/Entity.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.AFEntity.idAFEntity_Base
@@ -248,7 +266,6 @@ object Entity {
 
             //	ABSTRACT_PROTOTYPE( idEntity );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
-            var DBG_name: String? = ""
 
             /* **********************************************************************
 
@@ -257,9 +274,6 @@ object Entity {
          ***********************************************************************/
             // physics
             // initialize the default physics
-            private const val DBG_InitDefaultPhysics = 0
-            private var DBG_RunPhysics = 0
-            private var DBG_counter = 0
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
                 return eventCallbacks
             }
@@ -811,7 +825,6 @@ object Entity {
         //
         val targets // when this entity is activated these entities entity are activated
                 : idList<idEntityPtr<idEntity>>
-        private val DBG_count = DBG_counter++
         private val PVSAreas: IntArray = IntArray(MAX_PVS_AREAS) // numbers of the renderer areas the entity covers
         var activeNode // for being linked into activeEntities list
                 : idLinkList<idEntity>
@@ -1376,11 +1389,11 @@ object Entity {
         }
 
         fun BecomeActive(flags: Int) {
-            if (flags and TH_PHYSICS != 0) {
+            if ((flags and TH_PHYSICS) != 0) {
                 // enable the team master if this entity is part of a physics team
                 if (teamMaster != null && teamMaster !== this) {
                     teamMaster!!.BecomeActive(TH_PHYSICS)
-                } else if (0 == thinkFlags and TH_PHYSICS) {
+                } else if (0 == (thinkFlags and TH_PHYSICS)) {
                     // if this is a pusher
                     if (physics is idPhysics_Parametric || physics is idPhysics_Actor) {
                         Game_local.gameLocal.sortPushers = true
@@ -1401,12 +1414,12 @@ object Entity {
 
         fun BecomeInactive(flags: Int) {
             var flags = flags
-            if (flags and TH_PHYSICS != 0) {
+            if ((flags and TH_PHYSICS) != 0) {
                 // may only disable physics on a team master if no team members are running physics or bound to a joints
                 if (teamMaster == this) {
                     var ent = teamMaster!!.teamChain
                     while (ent != null) {
-                        if (ent.thinkFlags and TH_PHYSICS != 0 || ent.bindMaster == this && ent.bindJoint != Model.INVALID_JOINT) {
+                        if ((ent.thinkFlags and TH_PHYSICS) != 0 || ent.bindMaster == this && ent.bindJoint != Model.INVALID_JOINT) {
                             flags = flags and TH_PHYSICS.inv()
                             break
                         }
@@ -1420,7 +1433,7 @@ object Entity {
                     Game_local.gameLocal.numEntitiesToDeactivate++
                 }
             }
-            if (flags and TH_PHYSICS != 0) {
+            if ((flags and TH_PHYSICS) != 0) {
                 // if this entity has a team master
                 if (teamMaster != null && teamMaster != this) {
                     // if the team master is at rest
@@ -1459,7 +1472,7 @@ object Entity {
             }
 
             // don't present to the renderer if the entity hasn't changed
-            if (0 == thinkFlags and TH_UPDATEVISUALS) {
+            if (0 == (thinkFlags and TH_UPDATEVISUALS)) {
                 return
             }
             BecomeInactive(TH_UPDATEVISUALS)
@@ -2289,8 +2302,6 @@ object Entity {
         }
 
         fun GetMasterPosition(masterOrigin: idVec3, masterAxis: idMat3): Boolean {
-            idVec3()
-            idMat3()
             val masterAnimator: idAnimator?
             return if (bindMaster != null) {
                 // if bound to a joint of an animated model
@@ -2396,7 +2407,7 @@ object Entity {
             var moved: Boolean
 
             // don't run physics if not enabled
-            if (0 == thinkFlags and TH_PHYSICS) {
+            if (0 == (thinkFlags and TH_PHYSICS)) {
                 // however do update any animation controllers
                 if (UpdateAnimationControllers()) {
                     BecomeActive(TH_ANIMATE)
@@ -2424,14 +2435,10 @@ object Entity {
                 }
                 part = part.teamChain
             }
-            DBG_name = name.toString()
             // move the whole team
             part = this
             while (part != null) {
                 if (part.physics != null) {
-                    if (name.toString() == "marscity_civilian1_1_head") {
-                        DBG_RunPhysics++
-                    }
                     // run physics
                     moved = part.physics.Evaluate(endTime - startTime, endTime)
 
@@ -4539,7 +4546,7 @@ object Entity {
 
         fun UpdateAnimation() {
             // don't do animations if they're not enabled
-            if (0 == thinkFlags and TH_ANIMATE) {
+            if (0 == (thinkFlags and TH_ANIMATE)) {
                 return
             }
 

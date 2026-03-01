@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Game.Game_local
@@ -46,7 +71,7 @@ object tr_light {
      =================
      */
     private val refRegs: FloatArray =
-        FloatArray(MAX_EXPRESSION_REGISTERS) // don't put on stack, or VC++ will do a page touch
+        FloatArray(MAX_EXPRESSION_REGISTERS)
 
     //==================================================================================================================================================================================================
     /*
@@ -59,8 +84,6 @@ object tr_light {
      This does not instantiate dynamic models for the entity yet.
      =============
      */
-    var DBG_R_SetEntityDefViewEntity: Int = 0
-    var DEBUG_drawZurf: Int = 0
 
     /*
      ==================
@@ -119,42 +142,17 @@ object tr_light {
             return true
         }
         tr_main.R_GlobalPointToLocal(ent.modelMatrix, light.globalLightOrigin, localLightOrigin)
-        val size: Int = tri.ambientSurface!!.numVerts * lightingCache_s.BYTES
-        val cache: Array<lightingCache_s?> = arrayOfNulls(size)
-        if (true) {
-            SIMDProcessor!!.CreateTextureSpaceLightVectors(
-                cache[0]!!.localLightVector as Array<idVec3>,
-                localLightOrigin,
-                tri.ambientSurface!!.verts as Array<idDrawVert>,
-                tri.ambientSurface!!.numVerts,
-                tri.indexes!!,
-                tri.numIndexes
-            )
-        } else {
-//	boolean []used = new boolean[tri.ambientSurface.numVerts];
-//	memset( used, 0, tri.ambientSurface.numVerts * sizeof( used[0] ) );
-//
-//	// because the interaction may be a very small subset of the full surface,
-//	// it makes sense to only deal with the verts used
-//	for ( int j = 0; j < tri.numIndexes; j++ ) {
-//		int i = tri.indexes[j];
-//		if ( used[i] ) {
-//			continue;
-//		}
-//		used[i] = true;
-//
-//		idVec3 lightDir;
-//		const idDrawVert *v;
-//
-//		v = &tri.ambientSurface.verts[i];
-//
-//		lightDir = localLightOrigin - v.xyz;
-//
-//		cache[i].localLightVector[0] = lightDir * v.tangents[0];
-//		cache[i].localLightVector[1] = lightDir * v.tangents[1];
-//		cache[i].localLightVector[2] = lightDir * v.normal;
-//	}
-        }
+        val numVerts: Int = tri.ambientSurface!!.numVerts
+        val size: Int = numVerts * lightingCache_s.BYTES
+        val cache: Array<lightingCache_s> = Array(numVerts) { lightingCache_s() }
+        SIMDProcessor!!.CreateTextureSpaceLightVectors(
+            cache[0].localLightVector as Array<idVec3>,
+            localLightOrigin,
+            tri.ambientSurface!!.verts as Array<idDrawVert>,
+            numVerts,
+            tri.indexes!!,
+            tri.numIndexes
+        )
         tri.lightingCache = VertexCache.vertexCache.Alloc(cache as Array<idDrawVert>, size)
         return tri.lightingCache != null
     }
@@ -188,11 +186,6 @@ object tr_light {
         }
         val temp: Array<shadowCache_s> = Array(tri.numVerts * 2) { shadowCache_s() }
 
-//        if (true) {
-//
-//            SIMDProcessor!!.CreateVertexProgramShadowCache(temp[0].xyz, tri.verts, tri.numVerts);
-//
-//        } else {
         for (i in 0 until tri.numVerts) {
             val v: FloatArray = tri.verts!![i]!!.xyz.ToFloatPtr()
             temp[i * 2 + 0].xyz[0] = v[0]
@@ -213,19 +206,15 @@ object tr_light {
      ==================
      */
     fun R_SkyboxTexGen(surf: drawSurf_s, viewOrg: idVec3?) {
-        var i: Int
         val localViewOrigin = idVec3()
         tr_main.R_GlobalPointToLocal(surf.space!!.modelMatrix, viewOrg!!, localViewOrigin)
         val numVerts: Int = surf.geo!!.numVerts
-        val size: Int = numVerts //* sizeof( idVec3 );
-        val texCoords: Array<idVec3> = idVec3.generateArray(size)
+        val texCoords: Array<idVec3> = idVec3.generateArray(numVerts)
         val verts: Array<idDrawVert> = surf.geo!!.verts as Array<idDrawVert>
-        i = 0
-        while (i < numVerts) {
+        for (i in 0 until numVerts) {
             texCoords[i].set(verts[i].xyz.minus(localViewOrigin))
-            i++
         }
-        surf.dynamicTexCoords = VertexCache.vertexCache.AllocFrameTemp(texCoords, size)
+        surf.dynamicTexCoords = VertexCache.vertexCache.AllocFrameTemp(texCoords, numVerts * idVec3.BYTES)
     }
 
     // this needs to be greater than the dist from origin to corner of near clip plane
@@ -288,8 +277,7 @@ object tr_light {
         transform[12] = transform[13]
         tr_main.R_GlobalPointToLocal(surf.space!!.modelMatrix, viewOrg!!, localViewOrigin)
         val numVerts: Int = surf.geo!!.numVerts
-        val size: Int = numVerts // sizeof(idVec3);
-        val texCoords: Array<idVec3> = idVec3.generateArray(size)
+        val texCoords: Array<idVec3> = idVec3.generateArray(numVerts)
         val verts: Array<idDrawVert> = surf.geo!!.verts as Array<idDrawVert>
         i = 0
         while (i < numVerts) {
@@ -300,7 +288,7 @@ object tr_light {
             texCoords[i].set(tr_main.R_LocalPointToGlobal(transform, v))
             i++
         }
-        surf.dynamicTexCoords = VertexCache.vertexCache.AllocFrameTemp(texCoords, size)
+        surf.dynamicTexCoords = VertexCache.vertexCache.AllocFrameTemp(texCoords, numVerts * idVec3.BYTES)
     }
 
     /*
@@ -318,53 +306,12 @@ object tr_light {
         tr_main.R_GlobalPointToLocal(surf.space!!.modelMatrix, viewOrg!!, localViewOrigin)
         tri = surf.geo!!
 
-        // FIXME: change to 3 component?
-        val size: Int = tri.numVerts // * sizeof( idVec4 );
-        val texCoords: Array<idVec4?> = arrayOfNulls(size)
-        if (true) {
-            SIMDProcessor!!.CreateSpecularTextureCoords(
-                texCoords as Array<idVec4>, localLightOrigin, localViewOrigin,
-                tri.verts as Array<idDrawVert>, tri.numVerts, tri.indexes!!, tri.numIndexes
-            )
-        } else {
-//	bool *used = (bool *)_alloca16( tri.numVerts * sizeof( used[0] ) );
-//	memset( used, 0, tri.numVerts * sizeof( used[0] ) );
-//
-//	// because the interaction may be a very small subset of the full surface,
-//	// it makes sense to only deal with the verts used
-//	for ( int j = 0; j < tri.numIndexes; j++ ) {
-//		int i = tri.indexes[j];
-//		if ( used[i] ) {
-//			continue;
-//		}
-//		used[i] = true;
-//
-//		float ilength;
-//
-//		const idDrawVert *v = &tri.verts[i];
-//
-//		idVec3 lightDir = localLightOrigin - v.xyz;
-//		idVec3 viewDir = localViewOrigin - v.xyz;
-//
-//		ilength = idMath::RSqrt( lightDir * lightDir );
-//		lightDir[0] *= ilength;
-//		lightDir[1] *= ilength;
-//		lightDir[2] *= ilength;
-//
-//		ilength = idMath::RSqrt( viewDir * viewDir );
-//		viewDir[0] *= ilength;
-//		viewDir[1] *= ilength;
-//		viewDir[2] *= ilength;
-//
-//		lightDir += viewDir;
-//
-//		texCoords[i][0] = lightDir * v.tangents[0];
-//		texCoords[i][1] = lightDir * v.tangents[1];
-//		texCoords[i][2] = lightDir * v.normal;
-//		texCoords[i][3] = 1;
-//	}
-        }
-        surf.dynamicTexCoords = VertexCache.vertexCache.AllocFrameTemp(texCoords as Array<idDrawVert>, size)
+        val texCoords: Array<idVec4> = idVec4.generateArray(tri.numVerts)
+        SIMDProcessor!!.CreateSpecularTextureCoords(
+            texCoords, localLightOrigin, localViewOrigin,
+            tri.verts as Array<idDrawVert>, tri.numVerts, tri.indexes!!, tri.numIndexes
+        )
+        surf.dynamicTexCoords = VertexCache.vertexCache.AllocFrameTemp(texCoords, tri.numVerts * idVec4.BYTES)
     }
 
     fun R_SetEntityDefViewEntity(def: idRenderEntityLocal): viewEntity_s {
@@ -372,12 +319,10 @@ object tr_light {
         if (def.viewCount == tr.viewCount) {
             return def.viewEntity!!
         }
-        DBG_R_SetEntityDefViewEntity++
         def.viewCount = tr.viewCount
 
         // set the model and modelview matricies
-        vModel = viewEntity_s() // R_ClearedFrameAlloc(sizeof(vModel));
-        //        TempDump.printCallStack("~~~~~~~~~~~~~~~~~" + vModel.DBG_COUNTER + "\\\\//" + tr.viewCount);
+        vModel = viewEntity_s()
         vModel.entityDef = def
 
         // the scissorRect will be expanded as the model bounds is accepted into visible portal chains
@@ -406,7 +351,6 @@ object tr_light {
     //=============================================================================================================================================================================================
     fun R_TestPointInViewLight(org: idVec3?, light: idRenderLightLocal): Boolean {
         var i: Int
-        //	idVec3	local;
         i = 0
         while (i < 6) {
             val d: Float = light.frustum[i].Distance((org)!!)
@@ -451,7 +395,7 @@ object tr_light {
         light.viewCount = tr.viewCount
 
         // add to the view light chain
-        vLight = viewLight_s() // R_ClearedFrameAlloc(sizeof(vLight));
+        vLight = viewLight_s()
         vLight.lightDef = light
 
         // the scissorRect will be expanded as the light bounds is accepted into visible portal chains
@@ -488,7 +432,7 @@ object tr_light {
         vLight.frustumTris = light.frustumTris
         vLight.falloffImage = light.falloffImage
         vLight.lightShader = light.lightShader
-        vLight.shaderRegisters = null // allocated and evaluated in R_AddLightSurfaces
+        vLight.shaderRegisters = null
 
         // link the view light
         vLight.next = tr.viewDef!!.viewLights
@@ -507,11 +451,11 @@ object tr_light {
         light: idRenderLightLocal, shader: idMaterial?, scissor: idScreenRect?, viewInsideShadow: Boolean
     ) {
         val drawSurf: drawSurf_s
-        var space: viewEntity_s? = spaceView //TODO:should a back reference be set here?
+        var space: viewEntity_s? = spaceView
         if (null == space) {
             space = tr.viewDef!!.worldSpace
         }
-        drawSurf = drawSurf_s() //R_FrameAlloc(sizeof(drawSurf));
+        drawSurf = drawSurf_s()
         drawSurf.geo = tri
         drawSurf.space = space
         drawSurf.material = shader
@@ -530,8 +474,7 @@ object tr_light {
                 // this shader has only constants for parameters
                 drawSurf.shaderRegisters = constRegs.clone()
             } else {
-                // FIXME: share with the ambient surface?
-                val regs = FloatArray(shader.GetNumRegisters()) //R_FrameAlloc(shader.GetNumRegisters());
+                val regs = FloatArray(shader.GetNumRegisters())
                 drawSurf.shaderRegisters = regs
                 shader.EvaluateRegisters(
                     regs,
@@ -776,7 +719,7 @@ object tr_light {
 
             // evaluate the light shader registers
             val lightRegs =
-                FloatArray(lightShader!!.GetNumRegisters()) // R_FrameAlloc(lightShader.GetNumRegisters());
+                FloatArray(lightShader!!.GetNumRegisters())
             vLight.shaderRegisters = lightRegs
             lightShader.EvaluateRegisters(
                 lightRegs,
@@ -811,11 +754,6 @@ object tr_light {
                         lightRegs[registers[2]] = 0.0f
                     }
 
-                    // FIXME:	when using the following values the light shows up bright red when using nvidia drivers/hardware
-                    //			this seems to have been fixed ?
-                    //lightRegs[ registers[0] ] = 1.5143074e-005f;
-                    //lightRegs[ registers[1] ] = 1.5483369e-005f;
-                    //lightRegs[ registers[2] ] = 1.7014690e-005f;
                     if ((lightRegs[registers[0]] > 0.0f
                                 ) || (lightRegs[registers[1]] > 0.0f
                                 ) || (lightRegs[registers[2]] > 0.0f)
@@ -846,20 +784,11 @@ object tr_light {
                 val scissorRect: idScreenRect = R_CalcLightScissorRectangle(vLight)
                 // intersect with the portal crossing scissor rectangle
                 vLight.scissorRect!!.Intersect(scissorRect)
-                //                System.out.println("LoveTheRide===="+vLight.scissorRect);
                 if (r_showLightScissors!!.GetBool()) {
                     tr_main.R_ShowColoredScreenRect(vLight.scissorRect!!, light.index)
                 }
             }
 
-//            if (false) {
-//		// this never happens, because CullLightByPortals() does a more precise job
-//		if ( vLight.scissorRect.IsEmpty() ) {
-//			// this light doesn't touch anything on screen, so remove it from the list
-//			ptr = vLight.next;
-//			continue;
-//		}
-//            }
             // this one stays on the list
             prevPtr = ptr
             ptr = vLight.next
@@ -957,7 +886,7 @@ object tr_light {
         if (r_checkBounds!!.GetBool()) {
             oldBounds.set(def.referenceBounds)
         }
-        def.archived = false // will need to be written to the demo file
+        def.archived = false
         tr.pc!!.c_entityDefCallbacks++
         if (tr.viewDef != null) {
             update = def.parms.callback!!.run(def.parms, tr.viewDef!!.renderView)
@@ -1062,8 +991,6 @@ object tr_light {
             def.parms.modelDepthHack = model.DepthHack() * (1.0f - ndc.z)
         }
 
-        // FIXME: if any of the surfaces have deforms, create a frame-temporary model with references to the
-        // undeformed surfaces.  This would allow deforms to be light interacting.
         return def.dynamicModel
     }
 
@@ -1071,12 +998,10 @@ object tr_light {
         tri: srfTriangles_s?, space: viewEntity_s, renderEntity: renderEntity_s,
         shader: idMaterial, scissor: idScreenRect?
     ) {
-        DEBUG_drawZurf++
-        //        TempDump.printCallStack("" + drawZurf);
         val drawSurf: drawSurf_s
         val shaderParms: FloatArray
         val generatedShaderParms = FloatArray(Material.MAX_ENTITY_SHADER_PARMS)
-        drawSurf = drawSurf_s() // R_FrameAlloc(sizeof(drawSurf));
+        drawSurf = drawSurf_s()
         drawSurf.geo = tri
         drawSurf.space = space
         drawSurf.material = shader
@@ -1096,12 +1021,11 @@ object tr_light {
                 tr.viewDef!!.maxDrawSurfs = INITIAL_DRAWSURFS
                 count = 0
             } else {
-                count = tr.viewDef!!.maxDrawSurfs /*sizeof(tr.viewDef!!.drawSurfs[0])*/
+                count = tr.viewDef!!.maxDrawSurfs
                 tr.viewDef!!.maxDrawSurfs *= 2
             }
             tr.viewDef!!.drawSurfs =
-                drawSurf_s.generateArray(tr.viewDef!!.maxDrawSurfs) // R_FrameAlloc(tr.viewDef!!.maxDrawSurfs);
-            //		memcpy( tr.viewDef!!.drawSurfs, old, count );
+                drawSurf_s.generateArray(tr.viewDef!!.maxDrawSurfs)
             System.arraycopy(old, 0, tr.viewDef!!.drawSurfs, 0, count)
         }
         tr.viewDef!!.drawSurfs[tr.viewDef!!.numDrawSurfs++] = drawSurf
@@ -1112,7 +1036,7 @@ object tr_light {
             // shader only uses constant values
             drawSurf.shaderRegisters = constRegs.clone()
         } else {
-            val regs = FloatArray(shader.GetNumRegisters()) // R_FrameAlloc(shader.GetNumRegisters());
+            val regs = FloatArray(shader.GetNumRegisters())
             drawSurf.shaderRegisters = regs
 
             // a reference shader will take the calculated stage color value from another shader
@@ -1130,7 +1054,6 @@ object tr_light {
                 )
                 pStage = renderEntity.referenceShader!!.GetStage(0)!!
 
-//			memcpy( generatedShaderParms, renderEntity.shaderParms, sizeof( generatedShaderParms ) );
                 System.arraycopy(renderEntity.shaderParms, 0, generatedShaderParms, 0, renderEntity.shaderParms.size)
                 generatedShaderParms[0] = refRegs[pStage.color.registers[0]]
                 generatedShaderParms[1] = refRegs[pStage.color.registers[1]]
@@ -1188,8 +1111,6 @@ object tr_light {
             tr.viewDef!!.renderView.time = Game_local.game.GetTimeGroupTime(1)
             val ndcBounds = idBounds()
             if (!tr_subview.R_PreciseCullSurface(drawSurf, ndcBounds)) {
-                // did we ever use this to forward an entity color to a gui that didn't set color?
-//			memcpy( tr.guiShaderParms, shaderParms, sizeof( tr.guiShaderParms ) );
                 tr_guisurf.R_RenderGuiSurf(gui, drawSurf)
             }
             tr.viewDef!!.floatTime = oldFloatTime
@@ -1244,8 +1165,7 @@ object tr_light {
                 i++
                 continue
             }
-            surf.shader = RenderWorld.R_RemapShaderBySkin(surf.shader, def.parms.customSkin, def.parms.customShader)
-            shader[0] = surf.shader
+            shader[0] = RenderWorld.R_RemapShaderBySkin(surf.shader, def.parms.customSkin, def.parms.customShader)
             RenderWorld.R_GlobalShaderOverride(shader)
             if (null == shader[0]) {
                 i++
@@ -1460,7 +1380,7 @@ object tr_light {
 
         // clear the ambient surface list
         tr.viewDef!!.numDrawSurfs = 0
-        tr.viewDef!!.maxDrawSurfs = 0 // will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
+        tr.viewDef!!.maxDrawSurfs = 0
 
         // go through each entity that is either visible to the view, or to
         // any light that intersects the view (for shadows)
@@ -1519,7 +1439,7 @@ object tr_light {
                 R_AddAmbientDrawsurfs(vEntity)
                 tr.pc!!.c_visibleViewEntities++
             } else {
-                tr.pc!!.c_shadowViewEntities++ //what happens after the scissorsView is set??
+                tr.pc!!.c_shadowViewEntities++
             }
 
             //

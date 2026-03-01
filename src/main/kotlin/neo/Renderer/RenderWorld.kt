@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Interaction.idInteraction
@@ -131,7 +156,7 @@ object RenderWorld {
             }
             return customShader
         }
-        if (null == skin /*|| null == shader*/) {
+        if (null == skin) {
             return shader
         }
         return skin.RemapShaderBySkin(shader)
@@ -208,7 +233,7 @@ object RenderWorld {
         var entityNum: Int = 0
 
         // this automatically implies noShadow
-        var forceUpdate: Int = 0 // force an update (NOTE: not a bool to keep this struct a multiple of 4 bytes)//TODO:
+        var forceUpdate: Int = 0 // force an update (NOTE: not a bool to keep this struct a multiple of 4 bytes)
 
         // networking: see WriteGUIToSnapshot / ReadGUIFromSnapshot
         var gui: Array<idUserInterface?> = arrayOfNulls(MAX_RENDERENTITY_GUI)
@@ -553,6 +578,29 @@ object RenderWorld {
 
         constructor()
 
+        constructor(other: renderLight_s) {
+            origin.set(other.origin)
+            axis.set(other.axis)
+            lightCenter.set(other.lightCenter)
+            lightRadius.set(other.lightRadius)
+            target.set(other.target)
+            right.set(other.right)
+            up.set(other.up)
+            start.set(other.start)
+            end.set(other.end)
+            System.arraycopy(other.shaderParms, 0, shaderParms, 0, shaderParms.size)
+            pointLight._val = other.pointLight._val
+            noShadows._val = other.noShadows._val
+            noSpecular._val = other.noSpecular._val
+            parallel._val = other.parallel._val
+            lightId._val = other.lightId._val
+            allowLightInViewID._val = other.allowLightInViewID._val
+            suppressLightInViewID._val = other.suppressLightInViewID._val
+            shader = other.shader
+            prelightModel = other.prelightModel
+            referenceSound = other.referenceSound
+        }
+
     }
 
     class renderView_s : SERiAL {
@@ -615,15 +663,15 @@ object RenderWorld {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         companion object {
@@ -790,8 +838,8 @@ object RenderWorld {
             start: idVec3,
             end: idVec3,
             radius: Float,
-            skipDynamic: Boolean /*= true*/,
-            skipPlayer: Boolean /* = false*/
+            skipDynamic: Boolean,
+            skipPlayer: Boolean
         ): Boolean
 
 
@@ -837,16 +885,16 @@ object RenderWorld {
             color: idVec4,
             start: idVec3,
             end: idVec3,
-            lifetime: Int /*= 0*/,
-            depthTest: Boolean /* = false*/
+            lifetime: Int,
+            depthTest: Boolean
         )
 
 
-        fun DebugLine(color: idVec4, start: idVec3, end: idVec3, lifetime: Int = 0 /*= 0*/) {
+        fun DebugLine(color: idVec4, start: idVec3, end: idVec3, lifetime: Int = 0) {
             DebugLine(color, start, end, lifetime, false)
         }
 
-        abstract fun DebugArrow(color: idVec4, start: idVec3, end: idVec3, size: Int, lifetime: Int /*= 0*/)
+        abstract fun DebugArrow(color: idVec4, start: idVec3, end: idVec3, size: Int, lifetime: Int)
         fun DebugArrow(color: idVec4, start: idVec3, end: idVec3, size: Int) {
             DebugArrow(color, start, end, size, 0)
         }
@@ -856,12 +904,12 @@ object RenderWorld {
             w: idWinding,
             origin: idVec3,
             axis: idMat3,
-            lifetime: Int /*= 0*/,
-            depthTest: Boolean /*= false*/
+            lifetime: Int,
+            depthTest: Boolean
         )
 
 
-        fun DebugWinding(color: idVec4, w: idWinding, origin: idVec3, axis: idMat3, lifetime: Int = 0 /*= 0*/) {
+        fun DebugWinding(color: idVec4, w: idWinding, origin: idVec3, axis: idMat3, lifetime: Int = 0) {
             DebugWinding(color, w, origin, axis, lifetime, false)
         }
 
@@ -871,8 +919,8 @@ object RenderWorld {
             dir: idVec3,
             radius: Float,
             numSteps: Int,
-            lifetime: Int /* = 0*/,
-            depthTest: Boolean /*= false */
+            lifetime: Int,
+            depthTest: Boolean
         )
 
 
@@ -882,7 +930,7 @@ object RenderWorld {
             dir: idVec3,
             radius: Float,
             numSteps: Int,
-            lifetime: Int = 0 /* = 0*/
+            lifetime: Int = 0
         ) {
             DebugCircle(color, origin, dir, radius, numSteps, lifetime, false)
         }
@@ -890,28 +938,28 @@ object RenderWorld {
         abstract fun DebugSphere(
             color: idVec4,
             sphere: idSphere,
-            lifetime: Int /* = 0*/,
-            depthTest: Boolean /* = false */
+            lifetime: Int,
+            depthTest: Boolean
         )
 
 
-        fun DebugSphere(color: idVec4, sphere: idSphere, lifetime: Int = 0 /* = 0*/) {
+        fun DebugSphere(color: idVec4, sphere: idSphere, lifetime: Int = 0) {
             DebugSphere(color, sphere, lifetime, false)
         }
 
         abstract fun DebugBounds(
             color: idVec4,
             bounds: idBounds,
-            org: idVec3 /* = vec3_origin*/,
-            lifetime: Int /* = 0*/
+            org: idVec3,
+            lifetime: Int
         )
 
 
-        fun DebugBounds(color: idVec4, bounds: idBounds, org: idVec3 = getVec3Origin() /* = vec3_origin*/) {
+        fun DebugBounds(color: idVec4, bounds: idBounds, org: idVec3 = getVec3Origin()) {
             DebugBounds(color, bounds, org, 0)
         }
 
-        abstract fun DebugBox(color: idVec4, box: idBox, lifetime: Int /* = 0*/)
+        abstract fun DebugBox(color: idVec4, box: idBox, lifetime: Int)
         fun DebugBox(color: idVec4, box: idBox) {
             DebugBox(color, box, 0)
         }
@@ -919,12 +967,12 @@ object RenderWorld {
         abstract fun DebugFrustum(
             color: idVec4,
             frustum: idFrustum,
-            showFromOrigin: Boolean /* = false*/,
-            lifetime: Int /*= 0*/
+            showFromOrigin: Boolean,
+            lifetime: Int
         )
 
 
-        fun DebugFrustum(color: idVec4, frustum: idFrustum, showFromOrigin: Boolean = false /* = false*/) {
+        fun DebugFrustum(color: idVec4, frustum: idFrustum, showFromOrigin: Boolean = false) {
             DebugFrustum(color, frustum, showFromOrigin, 0)
         }
 
@@ -934,7 +982,7 @@ object RenderWorld {
             dir: idVec3,
             radius1: Float,
             radius2: Float,
-            lifetime: Int /*= 0*/
+            lifetime: Int
         )
 
         fun DebugCone(color: idVec4, apex: idVec3, dir: idVec3, radius1: Float, radius2: Float) {
@@ -948,12 +996,12 @@ object RenderWorld {
         abstract fun DebugPolygon(
             color: idVec4,
             winding: idWinding?,
-            lifeTime: Int /* = 0*/,
-            depthTest: Boolean /*= false*/
+            lifeTime: Int,
+            depthTest: Boolean
         )
 
 
-        fun DebugPolygon(color: idVec4, winding: idWinding?, lifeTime: Int = 0 /* = 0*/) {
+        fun DebugPolygon(color: idVec4, winding: idWinding?, lifeTime: Int = 0) {
             DebugPolygon(color, winding, lifeTime, false)
         }
 
@@ -964,9 +1012,9 @@ object RenderWorld {
             scale: Float,
             color: idVec4,
             viewAxis: idMat3,
-            align: Int /*= 1*/,
-            lifetime: Int /*= 0*/,
-            depthTest: Boolean /* = false*/
+            align: Int,
+            lifetime: Int,
+            depthTest: Boolean
         )
 
 
@@ -976,8 +1024,8 @@ object RenderWorld {
             scale: Float,
             color: idVec4,
             viewAxis: idMat3,
-            align: Int = 1 /*= 1*/,
-            lifetime: Int = 0 /*= 0*/
+            align: Int = 1,
+            lifetime: Int = 0
         ) {
             DrawText(text, origin, scale, color, viewAxis, align, lifetime, false)
         }

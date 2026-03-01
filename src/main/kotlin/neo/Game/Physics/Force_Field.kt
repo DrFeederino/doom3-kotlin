@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Physics/Force_Field.h, neo/Game/Physics/Force_Field.cpp
+ */
+
 package neo.Game.Physics
 
 import neo.Game.GameSys.SaveGame.idRestoreGame

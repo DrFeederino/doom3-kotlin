@@ -379,7 +379,7 @@ class ChoiceWindow {
                             if (str2.Length() != 0) {
                                 str2.StripTrailingWhitespace()
                                 values.add(str2)
-                                str2.set("") //TODO:what Da fuk? EDIT:yes yes, vision gets blury at 4 in teh morning!
+                                str2.set("")
                             }
                             continue
                         }

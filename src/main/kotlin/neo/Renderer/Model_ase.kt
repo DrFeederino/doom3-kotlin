@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/Model_ase.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.TempDump.bbtocb
@@ -54,22 +80,17 @@ object Model_ase {
             while (j < obj!!.frames.Num()) {
                 mesh = obj.frames[j]
                 if (mesh.vertexes != null) {
-//                    Mem_Free(mesh.vertexes);
                     mesh.vertexes = null
                 }
                 if (mesh.tvertexes != null) {
-//                    Mem_Free(mesh.tvertexes);
                     mesh.tvertexes = null
                 }
                 if (mesh.cvertexes != null) {
-//                    Mem_Free(mesh.cvertexes);
                     mesh.cvertexes = null
                 }
                 if (mesh.faces != null) {
-//                    Mem_Free(mesh.faces);
                     mesh.faces = null
                 }
-                //                Mem_Free(mesh);
                 mesh = null
                 j++
             }
@@ -78,37 +99,27 @@ object Model_ase {
             // free the base nesh
             mesh = obj.mesh
             if (mesh.vertexes != null) {
-//                Mem_Free(mesh.vertexes);
                 mesh.vertexes = null
             }
             if (mesh.tvertexes != null) {
-//                Mem_Free(mesh.tvertexes);
                 mesh.tvertexes = null
             }
             if (mesh.cvertexes != null) {
-//                Mem_Free(mesh.cvertexes);
                 mesh.cvertexes = null
             }
             if (mesh.faces != null) {
-//                Mem_Free(mesh.faces);
                 mesh.faces = null
             }
-            //            Mem_Free(obj);
             obj = null
             i++
         }
         ase.objects.Clear()
         i = 0
         while (i < ase.materials.Num()) {
-
-//            material = ase.materials.oGet(i);
-//            Mem_Free(material);
             ase.materials[i] = null
             i++
         }
         ase.materials.Clear()
-
-//	delete ase;
     }
 
     /*
@@ -160,7 +171,6 @@ object Model_ase {
             }
         }
 
-//        ase.token = replaceByIndex((char) 0, i, ase.token);
         return true
     }
 
@@ -211,8 +221,6 @@ object Model_ase {
         val `object`: aseObject_t
         VERBOSE(("GEOMOBJECT"))
 
-//        object = (aseObject_t *) Mem_Alloc(sizeof(aseObject_t));
-//        memset(object, 0, sizeof(aseObject_t));
         `object` = aseObject_t()
         ase!!.model!!.objects.Append(`object`)
         ase!!.currentObject = `object`
@@ -226,15 +234,15 @@ object Model_ase {
      =================
      */
     fun ASE_Parse(buffer: ByteBuffer?, verbose: Boolean): aseModel_s? {
-        ase = ase_t() //memset( &ase, 0, sizeof( ase ) );
+        ase = ase_t()
         ase!!.verbose = verbose
-        ase!!.buffer = bbtocb((buffer)!!) //.asCharBuffer();
-        ase!!.len = ase!!.buffer!!.length //TODO:capacity?
-        ase!!.curpos = 0 //ase.buffer;
+        ase!!.buffer = bbtocb((buffer)!!)
+        ase!!.len = ase!!.buffer!!.length
+        ase!!.curpos = 0
         ase!!.currentObject = null
 
         // NOTE: using new operator because aseModel_t contains idList class objects
-        ase!!.model = aseModel_s() //memset(ase.model, 0, sizeof(aseModel_t));
+        ase!!.model = aseModel_s()
         ase!!.model!!.objects.Resize(32, 32)
         ase!!.model!!.materials.Resize(32, 32)
         while (ASE_GetToken(false)) {
@@ -279,18 +287,14 @@ object Model_ase {
      */
     class aseFace_t {
         var tVertexNum: IntArray = IntArray(3)
-        var vertexColors: Array<ByteArray?> = Array(3, { ByteArray(4) })
+        var vertexColors: Array<ByteArray> = Array(3) { ByteArray(4) }
         val faceNormal: idVec3 = idVec3()
         var vertexNum: IntArray = IntArray(3)
         val vertexNormals: Array<idVec3> = idVec3.generateArray(3)
     }
 
     class aseMesh_t {
-        //
         val transform: Array<idVec3> = idVec3.generateArray(4) // applied to normals
-        private val DBG_count: Int = DBG_counter++
-
-        //
         var colorsParsed: Boolean = false
         var cvertexes: Array<idVec3>? = null
         var faces: Array<aseFace_t?>? = null
@@ -304,17 +308,11 @@ object Model_ase {
         var timeValue: Int = 0
         var tvertexes: Array<idVec2>? = null
         var vertexes: Array<idVec3>? = null
-
-        companion object {
-            private var DBG_counter: Int = 1
-        }
     }
 
     class aseMaterial_t {
         val name: CharArray = CharArray(128)
         var angle: Float = 0.0f // in clockwise radians
-
-        //        String name;
         var uOffset: Float = 0.0f
         var vOffset: Float = 0.0f // max lets you offset by material without changing texCoords
         var uTiling: Float = 0.0f
@@ -324,11 +322,7 @@ object Model_ase {
     class aseObject_t {
         val frames: idList<aseMesh_t>
         var materialRef: Int = 0
-
-        //
         var mesh: aseMesh_t
-
-        //	char					name[128];
         var name: CharArray
 
         init {
@@ -339,8 +333,7 @@ object Model_ase {
     }
 
     class aseModel_s {
-        //	ID_TIME_T					timeStamp;
-        val timeStamp: LongArray = longArrayOf(1)
+        val timeStamp: LongArray = LongArray(1)
         val materials: idList<aseMaterial_t?>
         val objects: idList<aseObject_t?>
 
@@ -360,14 +353,8 @@ object Model_ase {
         var currentObject: aseObject_t? = null
         var currentVertex: Int = 0
         var len: Int = 0
-
-        //
         var model: aseModel_s? = null
-
-        //        final char[] token = new char[1024];
         var token: String? = null
-
-        //
         var verbose: Boolean = false
     }
 
@@ -457,8 +444,6 @@ object Model_ase {
             } else if (("*MATERIAL" == token)) {
                 VERBOSE("..material %d\n", ase!!.model!!.materials.Num())
 
-//                ase.currentMaterial = (aseMaterial_t) Mem_Alloc(sizeof(aseMaterial_t));
-//                memset(ase.currentMaterial, 0, sizeof(aseMaterial_t));
                 ase!!.currentMaterial = aseMaterial_t()
                 ase!!.currentMaterial!!.uTiling = 1.0f
                 ase!!.currentMaterial!!.vTiling = 1.0f
@@ -502,7 +487,6 @@ object Model_ase {
                 val pMesh: aseMesh_t? = ASE_GetCurrentMesh()
                 if (("*MESH_VERTEX" == token)) {
                     ASE_GetToken(false) // skip number
-                    //pMesh.vertexes[ase.currentVertex] = new idVec3();
                     ASE_GetToken(false)
                     pMesh!!.vertexes!![ase!!.currentVertex].x = ase!!.token!!.toFloat()
                     ASE_GetToken(false)
@@ -604,11 +588,11 @@ object Model_ase {
                     val a: Int = ase!!.token!!.toInt()
 
                     // we flip the vertex order to change the face direction to our style
-                    pMesh!!.faces!![ase!!.currentFace]!!.vertexColors[remap[i]]!![0] =
+                    pMesh!!.faces!![ase!!.currentFace]!!.vertexColors[remap[i]][0] =
                         (pMesh.cvertexes!![a][0] * 255).toInt().toByte()
-                    pMesh.faces!![ase!!.currentFace]!!.vertexColors[remap[i]]!![1] =
+                    pMesh.faces!![ase!!.currentFace]!!.vertexColors[remap[i]][1] =
                         (pMesh.cvertexes!![a][1] * 255).toInt().toByte()
-                    pMesh.faces!![ase!!.currentFace]!!.vertexColors[remap[i]]!![2] =
+                    pMesh.faces!![ase!!.currentFace]!!.vertexColors[remap[i]][2] =
                         (pMesh.cvertexes!![a][2] * 255).toInt().toByte()
                 }
                 ase!!.currentFace++
@@ -627,20 +611,16 @@ object Model_ase {
         override fun run(token: String?) {
             val pMesh: aseMesh_t? = ASE_GetCurrentMesh()
             if (("*MESH_TVERT" == token)) {
-//		char u[80], v[80], w[80];
                 val u: String?
                 val v: String?
                 val w: String?
                 ASE_GetToken(false)
                 pMesh!!.tvertexes!![ase!!.currentVertex] = idVec2()
                 ASE_GetToken(false)
-                //		strcpy( u, ase.token );
                 u = ase!!.token
                 ASE_GetToken(false)
-                //		strcpy( v, ase.token );
                 v = ase!!.token
                 ASE_GetToken(false)
-                //		strcpy( w, ase.token );
                 w = ase!!.token
                 pMesh.tvertexes!![ase!!.currentVertex].x = u!!.toFloat()
                 // our OpenGL second texture axis is inverted from MAX's sense
@@ -666,16 +646,14 @@ object Model_ase {
             if (("*MESH_VERTCOL" == token)) {
                 ASE_GetToken(false)
                 ASE_GetToken(false)
-                // atof can return 0.0f if it can't convert. Not really the case if java land
                 if (pMesh.cvertexes == null) {
                     pMesh.cvertexes = idVec3.generateArray(pMesh.numCVertexes)
                 }
-                //pMesh.cvertexes[ase.currentVertex] = new idVec3();
-                pMesh.cvertexes!![ase!!.currentVertex][0] = atof(token)
+                pMesh.cvertexes!![ase!!.currentVertex][0] = atof(ase!!.token!!)
                 ASE_GetToken(false)
-                pMesh.cvertexes!![ase!!.currentVertex][1] = atof(token)
+                pMesh.cvertexes!![ase!!.currentVertex][1] = atof(ase!!.token!!)
                 ASE_GetToken(false)
-                pMesh.cvertexes!![ase!!.currentVertex][2] = atof(token)
+                pMesh.cvertexes!![ase!!.currentVertex][2] = atof(ase!!.token!!)
                 ase!!.currentVertex++
                 if (ase!!.currentVertex > pMesh.numCVertexes) {
                     Common.common.Error("ase.currentVertex > pMesh.numCVertexes")
@@ -818,7 +796,7 @@ object Model_ase {
 
                     "*MESH_VERTEX_LIST" -> {
                         pMesh!!.vertexes =
-                            idVec3.generateArray(pMesh.numVertexes)// Mem_Alloc(pMesh.numVertexes);
+                            idVec3.generateArray(pMesh.numVertexes)
                         ase!!.currentVertex = 0
                         VERBOSE((".....parsing MESH_VERTEX_LIST\n"))
                         ASE_ParseBracedBlock(ASE_KeyMESH_VERTEX_LIST.instance)
@@ -826,20 +804,20 @@ object Model_ase {
 
                     "*MESH_TVERTLIST" -> {
                         ase!!.currentVertex = 0
-                        pMesh!!.tvertexes = Array(pMesh.numTVertexes) { idVec2() }// Mem_Alloc(pMesh.numTVertexes);
+                        pMesh!!.tvertexes = Array(pMesh.numTVertexes) { idVec2() }
                         VERBOSE((".....parsing MESH_TVERTLIST\n"))
                         ASE_ParseBracedBlock(ASE_KeyMESH_TVERTLIST.instance)
                     }
 
                     "*MESH_CVERTLIST" -> {
                         ase!!.currentVertex = 0
-                        pMesh!!.cvertexes = idVec3.generateArray(pMesh.numCVertexes) // Mem_Alloc(pMesh.numCVertexes);
+                        pMesh!!.cvertexes = idVec3.generateArray(pMesh.numCVertexes)
                         VERBOSE((".....parsing MESH_CVERTLIST\n"))
                         ASE_ParseBracedBlock(ASE_KeyMESH_CVERTLIST.instance)
                     }
 
                     "*MESH_FACE_LIST" -> {
-                        pMesh!!.faces = arrayOfNulls(pMesh.numFaces) // Mem_Alloc(pMesh.numFaces);
+                        pMesh!!.faces = arrayOfNulls(pMesh.numFaces)
                         ase!!.currentFace = 0
                         VERBOSE((".....parsing MESH_FACE_LIST\n"))
                         ASE_ParseBracedBlock(ASE_KeyMESH_FACE_LIST.instance)
@@ -855,7 +833,7 @@ object Model_ase {
                     }
 
                     "*MESH_CFACELIST" -> {
-                        if (null == pMesh!!.faces) { //TODO:check pointer position instead of entire array
+                        if (null == pMesh!!.faces) {
                             Common.common.Error("*MESH_CFACELIST before *MESH_FACE_LIST")
                         }
                         ase!!.currentFace = 0
@@ -888,8 +866,6 @@ object Model_ase {
             if (("*MESH" == token)) {
                 VERBOSE(("...found MESH\n"))
 
-//                mesh = (aseMesh_t) Mem_Alloc(sizeof(aseMesh_t));
-//                memset(mesh, 0, sizeof(aseMesh_t));
                 mesh = aseMesh_t()
                 ase!!.currentMesh = mesh
                 ase!!.currentObject!!.frames.Append(mesh)
@@ -919,7 +895,7 @@ object Model_ase {
                 "*NODE_TM", "*TM_ANIMATION" -> ASE_ParseBracedBlock(ASE_KeyNODE_TM.instance)
                 "*MESH" -> {
                     val transform: Array<idVec3> =
-                        copyVec(ase!!.currentObject!!.mesh.transform) //copied from the bfg sources
+                        copyVec(ase!!.currentObject!!.mesh.transform)
                     run({
                         ase!!.currentObject!!.mesh = aseMesh_t()
                         ase!!.currentMesh = ase!!.currentObject!!.mesh

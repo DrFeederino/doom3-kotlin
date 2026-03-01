@@ -81,7 +81,7 @@ object File_h {
                         }
 
                         'd', 'i' -> {
-                            i = argPtr[va_ptr++] as Long
+                            i = (argPtr[va_ptr++] as Number).toLong()
                             //                            index += sprintf(buf + index, format, i);
                             temp = String.format(format, i)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
@@ -89,7 +89,7 @@ object File_h {
                         }
 
                         'u' -> {
-                            u = argPtr[va_ptr++] as Long
+                            u = (argPtr[va_ptr++] as Number).toLong()
                             //                            index += sprintf(buf + index, format, u);
                             temp = String.format(format, u)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
@@ -97,7 +97,7 @@ object File_h {
                         }
 
                         'o' -> {
-                            u = argPtr[va_ptr++] as Long
+                            u = (argPtr[va_ptr++] as Number).toLong()
                             //                            index += sprintf(buf + index, format, u);
                             temp = String.format(format, u)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
@@ -105,7 +105,7 @@ object File_h {
                         }
 
                         'x' -> {
-                            u = argPtr[va_ptr++] as Long
+                            u = (argPtr[va_ptr++] as Number).toLong()
                             //                            index += sprintf(buf + index, format, u);
                             temp = String.format(format, u)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
@@ -113,7 +113,7 @@ object File_h {
                         }
 
                         'X' -> {
-                            u = argPtr[va_ptr++] as Long
+                            u = (argPtr[va_ptr++] as Number).toLong()
                             //                            index += sprintf(buf + index, format, u);
                             temp = String.format(format, u)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
@@ -121,7 +121,7 @@ object File_h {
                         }
 
                         'c' -> {
-                            i = argPtr[va_ptr++] as Long
+                            i = (argPtr[va_ptr++] as Number).toLong()
                             //                            index += sprintf(buf + index, format, (char) i);
                             temp = String.format(format, i)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
@@ -317,11 +317,9 @@ object File_h {
         fun WriteFloatString(fmt: String, vararg args: Any): Int /* id_attribute((format(printf,2,3)))*/ {
             val buf = CharArray(MAX_PRINT_MSG)
             val len: Int
-            val argPtr = arrayOfNulls<Any?>(args.size)
-            System.arraycopy(args, 0, argPtr, 0, argPtr.size)
 
 //            va_start(argPtr, fmt);
-            len = FS_WriteFloatString(buf, fmt, argPtr)
+            len = FS_WriteFloatString(buf, fmt, *args)
             //            va_end(argPtr);
             return Write(TempDump.atobb(buf)!!, len)
         }
@@ -428,8 +426,8 @@ object File_h {
         }
 
         fun WriteChar(value: Short): Int {
-            val charBytes = ByteBuffer.allocate(2)
-            charBytes.putShort(value)
+            val charBytes = ByteBuffer.allocate(1)
+            charBytes.put(value.toByte())
             return Write(charBytes)
         }
 
@@ -438,15 +436,15 @@ object File_h {
         }
 
         fun ReadUnsignedChar(value: CharArray): Int {
-            val ucharBytes = ByteBuffer.allocate(2)
+            val ucharBytes = ByteBuffer.allocate(1)
             val result = Read(ucharBytes)
-            value[0] = ucharBytes.char
+            value[0] = (ucharBytes[0].toInt() and 0xFF).toChar()
             return result
         }
 
         fun WriteUnsignedChar(value: Char): Int {
-            val ucharBytes = ByteBuffer.allocate(2)
-            ucharBytes.putChar(value)
+            val ucharBytes = ByteBuffer.allocate(1)
+            ucharBytes.put(value.code.toByte())
             return Write(ucharBytes)
         }
 

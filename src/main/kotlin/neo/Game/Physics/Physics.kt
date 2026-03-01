@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Physics/Physics.h, neo/Game/Physics/Physics.cpp
+ */
+
 package neo.Game.Physics
 
 import neo.Game.Entity.idEntity
@@ -63,8 +71,6 @@ object Physics {
     }
 
     abstract class idPhysics : idClass() {
-        protected val DBG_count = DBG_counter++
-
 
         // Must not be virtual
         override fun Save(savefile: idSaveGame) {}
@@ -99,7 +105,7 @@ object Physics {
             SetMass(mass, -1)
         }
 
-        fun GetMass(): Float { //TODO:make sure this shouldn't be overrided.
+        fun GetMass(): Float {
             return GetMass(-1)
         }
 
@@ -273,7 +279,6 @@ object Physics {
 
         companion object {
             // ABSTRACT_PROTOTYPE( idPhysics );
-            private var DBG_counter = 0
             fun SnapTimeToPhysicsFrame(t: Int): Int {
                 val s: Int
                 s = t + UsercmdGen.USERCMD_MSEC - 1

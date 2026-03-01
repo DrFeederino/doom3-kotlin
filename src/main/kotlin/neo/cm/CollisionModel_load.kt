@@ -1,6 +1,47 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 Kotlin project.
+Original source: neo/cm/CollisionModel_load.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
+/*
+===============================================================================
+
+	Trace model vs. polygonal model collision detection.
+
+	Standalone helper functions for collision model loading. The main loading
+	methods are in CollisionModel_local.kt as methods of
+	idCollisionModelManagerLocal.
+
+===============================================================================
+*/
+
 package neo.cm
 
 import neo.cm.AbstractCollisionModel_local.*
+import neo.cm.AbstractCollisionModel_local.Companion.MAX_NODE_POLYGONS
+import neo.cm.AbstractCollisionModel_local.Companion.MIN_NODE_SIZE
 import neo.idlib.BV.idBounds
 import neo.idlib.MapFile.idMapBrush
 import neo.idlib.MapFile.idMapEntity
@@ -11,17 +52,18 @@ import neo.idlib.containers.CInt
 import kotlin.math.abs
 
 /*
- ===============================================================================
+===============================================================================
 
- Spatial subdivision
+Spatial subdivision
 
- ===============================================================================
- */
+===============================================================================
+*/
+
 /*
- ================
- CM_FindSplitter
- ================
- */
+================
+CM_FindSplitter
+================
+*/
 fun CM_FindSplitter(node: cm_node_s, bounds: idBounds, planeType: CInt, planeDist: CFloat): Boolean {
     var i: Int
     var j: Int
@@ -36,10 +78,12 @@ fun CM_FindSplitter(node: cm_node_s, bounds: idBounds, planeType: CInt, planeDis
     var pref: cm_polygonRef_s?
     var n: cm_node_s?
     var forceSplit = false
-    for (i in 0 until 3) {
-        size[i] = bounds[1, i] - bounds[0, i]
-        axis[i] = i
+
+    for (idx in 0 until 3) {
+        size[idx] = bounds[1, idx] - bounds[0, idx]
+        axis[idx] = idx
     }
+
     // sort on largest axis
     i = 0
     while (i < 2) {
@@ -54,102 +98,105 @@ fun CM_FindSplitter(node: cm_node_s, bounds: idBounds, planeType: CInt, planeDis
         }
         i++
     }
+
     // if the node is too small for further splits
-    if (size[0] < Companion.MIN_NODE_SIZE) {
+    if (size[0] < MIN_NODE_SIZE) {
         polyCount = 0
         pref = node.polygons
         while (pref != null) {
             polyCount++
             pref = pref.next
         }
-        if (polyCount > Companion.MAX_NODE_POLYGONS) {
+        if (polyCount > MAX_NODE_POLYGONS) {
             forceSplit = true
         }
     }
+
     // find an axial aligned splitter
-    for (i in 0 until 3) {
+    for (idx in 0 until 3) {
         // start with the largest axis first
-        type = axis[i]
-        bestt = size[i]
+        type = axis[idx]
+        bestt = size[idx]
+
         // if the node is small anough in this axis direction
-        if (!forceSplit && bestt < Companion.MIN_NODE_SIZE) {
+        if (!forceSplit && bestt < MIN_NODE_SIZE) {
             break
         }
+
         // find an axial splitter from the brush bounding boxes
         // also try brushes from parent nodes
         n = node
         while (n != null) {
             bref = n.brushes
             while (bref != null) {
-                for (j in 0 until 2) {
-                    dist = bref.b!!.bounds[j, type]
+                for (jj in 0 until 2) {
+                    dist = bref.b!!.bounds[jj, type]
                     // if the splitter is already used or outside node bounds
                     if (dist >= bounds[1, type] || dist <= bounds[0, type]) {
                         continue
                     }
                     // find the most centered splitter
-                    t = abs(bounds[1, type] - dist - (dist - bounds[0, type]))
+                    t = abs((bounds[1, type] - dist) - (dist - bounds[0, type]))
                     if (t < bestt) {
                         bestt = t
-                        planeType._val = (type)
-                        planeDist._val = (dist)
+                        planeType._val = type
+                        planeDist._val = dist
                     }
                 }
                 bref = bref.next
             }
             n = n.parent
         }
+
         // find an axial splitter from the polygon bounding boxes
-        // also try brushes from parent nodes
+        // also try polygons from parent nodes
         n = node
         while (n != null) {
             pref = n.polygons
             while (pref != null) {
-                j = 0
-                while (j < 2) {
-                    dist = pref.p!!.bounds[j, type]
+                for (jj in 0 until 2) {
+                    dist = pref.p!!.bounds[jj, type]
                     // if the splitter is already used or outside node bounds
                     if (dist >= bounds[1, type] || dist <= bounds[0, type]) {
-                        j++
                         continue
                     }
                     // find the most centered splitter
-                    t = abs(bounds[1, type] - dist - (dist - bounds[0, type]))
+                    t = abs((bounds[1, type] - dist) - (dist - bounds[0, type]))
                     if (t < bestt) {
                         bestt = t
-                        planeType._val = (type)
-                        planeDist._val = (dist)
+                        planeType._val = type
+                        planeDist._val = dist
                     }
-                    j++
                 }
                 pref = pref.next
             }
             n = n.parent
         }
+
         // if we found a splitter on the largest axis
-        if (bestt < size[i]) {
+        if (bestt < size[idx]) {
             // if forced split due to lots of polygons
             if (forceSplit) {
                 return true
             }
             // don't create splitters real close to the bounds
-            if (bounds[1, type] - planeDist._val > Companion.MIN_NODE_SIZE * 0.5f
-                && planeDist._val - bounds[0, type] > Companion.MIN_NODE_SIZE * 0.5f
+            if (bounds[1, type] - planeDist._val > MIN_NODE_SIZE * 0.5f
+                && planeDist._val - bounds[0, type] > MIN_NODE_SIZE * 0.5f
             ) {
                 return true
             }
-            // Add this: If we found a good splitter but didn't return, continue to next axis
-            break  // Break out to try next axis
+            // FIX: Removed erroneous `break` that was not in the C++ original.
+            // C++ continues to next axis to try finding a better splitter.
         }
     }
     return false
 }
 
 /*
- ================
- CM_R_InsideAllChildren
- ================
- */
+================
+CM_R_InsideAllChildren
+================
+*/
 fun CM_R_InsideAllChildren(node: cm_node_s, bounds: idBounds): Boolean {
     assert(node != null)
     if (node.planeType != -1) {
@@ -159,25 +206,29 @@ fun CM_R_InsideAllChildren(node: cm_node_s, bounds: idBounds): Boolean {
         if (bounds[1, node.planeType] <= node.planeDist) {
             return false
         }
-        return if (!CM_R_InsideAllChildren(node.children[0]!!, bounds)) {
-            false
-        } else CM_R_InsideAllChildren(node.children[1]!!, bounds)
+        if (!CM_R_InsideAllChildren(node.children[0]!!, bounds)) {
+            return false
+        }
+        if (!CM_R_InsideAllChildren(node.children[1]!!, bounds)) {
+            return false
+        }
     }
     return true
 }
 
 /*
- ===============================================================================
+===============================================================================
 
- Raw polygon and brush data
+Raw polygon and brush data
 
- ===============================================================================
- */
+===============================================================================
+*/
+
 /*
- =================
- CM_EstimateVertsAndEdges
- =================
- */
+=================
+CM_EstimateVertsAndEdges
+=================
+*/
 fun CM_EstimateVertsAndEdges(mapEnt: idMapEntity, numVerts: CInt, numEdges: CInt) {
     var width: Int
     var height: Int
@@ -204,10 +255,10 @@ fun CM_EstimateVertsAndEdges(mapEnt: idMapEntity, numVerts: CInt, numEdges: CInt
 }
 
 /*
- ================
- CM_CountNodeBrushes
- ================
- */
+================
+CM_CountNodeBrushes
+================
+*/
 fun CM_CountNodeBrushes(node: cm_node_s): Int {
     var count: Int
     var bref: cm_brushRef_s?
@@ -221,40 +272,40 @@ fun CM_CountNodeBrushes(node: cm_node_s): Int {
 }
 
 /*
- ================
- CM_R_GetModelBounds
- ================
- */
+================
+CM_R_GetNodeBounds
+================
+*/
 fun CM_R_GetNodeBounds(bounds: idBounds, node: cm_node_s) {
-    var node = node
+    var currentNode = node
     var pref: cm_polygonRef_s?
     var bref: cm_brushRef_s?
     while (true) {
-        pref = node.polygons
+        pref = currentNode.polygons
         while (pref != null) {
             bounds.AddPoint(pref.p!!.bounds[0])
             bounds.AddPoint(pref.p!!.bounds[1])
             pref = pref.next
         }
-        bref = node.brushes
+        bref = currentNode.brushes
         while (bref != null) {
             bounds.AddPoint(bref.b!!.bounds[0])
             bounds.AddPoint(bref.b!!.bounds[1])
             bref = bref.next
         }
-        if (node.planeType == -1) {
+        if (currentNode.planeType == -1) {
             break
         }
-        CM_R_GetNodeBounds(bounds, node.children[1]!!)
-        node = node.children[0]!!
+        CM_R_GetNodeBounds(bounds, currentNode.children[1]!!)
+        currentNode = currentNode.children[0]!!
     }
 }
 
 /*
- ================
- CM_GetNodeBounds
- ================
- */
+================
+CM_GetNodeBounds
+================
+*/
 fun CM_GetNodeBounds(bounds: idBounds, node: cm_node_s) {
     bounds.Clear()
     CM_R_GetNodeBounds(bounds, node)
@@ -264,10 +315,10 @@ fun CM_GetNodeBounds(bounds: idBounds, node: cm_node_s) {
 }
 
 /*
- ================
- CM_GetNodeContents
- ================
- */
+================
+CM_GetNodeContents
+================
+*/
 fun CM_GetNodeContents(node: cm_node_s): Int {
     var currentNode = node
     var contents: Int

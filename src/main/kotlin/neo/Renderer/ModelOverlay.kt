@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Material.idMaterial
@@ -43,9 +68,6 @@ object ModelOverlay {
         var surfaceId: Int = 0
         var surfaceNum: CInt = CInt()
         var verts: Array<overlayVertex_s?>? = null
-        fun clear() {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
     }
 
     internal class overlayMaterial_s {
@@ -53,8 +75,7 @@ object ModelOverlay {
         val surfaces: idList<overlaySurface_s?> = idList<overlaySurface_s?>()
     }
 
-    class idRenderModelOverlay  // ~idRenderModelOverlay();
-    {
+    class idRenderModelOverlay {
         //
         private val materials: idList<overlayMaterial_s?> = idList<overlayMaterial_s?>()
 
@@ -95,7 +116,7 @@ object ModelOverlay {
             }
 
             // make temporary buffers for the building process
-            val overlayVerts: Array<overlayVertex_s?> = arrayOfNulls(maxVerts)
+            val overlayVerts: Array<overlayVertex_s> = Array(maxVerts) { overlayVertex_s() }
             val  /*glIndex_t*/overlayIndexes = IntArray(maxIndexes)
 
             // pull out the triangles we need from the base surfaces
@@ -163,9 +184,9 @@ object ModelOverlay {
                         val ind: Int = stri.indexes!![index + vnum]
                         if (vertexRemap[ind] == -1) {
                             vertexRemap[ind] = numVerts
-                            overlayVerts[numVerts]!!.vertexNum = ind
-                            overlayVerts[numVerts]!!.st[0] = texCoords[ind][0]
-                            overlayVerts[numVerts]!!.st[1] = texCoords[ind][1]
+                            overlayVerts[numVerts].vertexNum = ind
+                            overlayVerts[numVerts].st[0] = texCoords[ind][0]
+                            overlayVerts[numVerts].st[1] = texCoords[ind][1]
                             numVerts++
                         }
                         overlayIndexes[numIndexes++] = vertexRemap[ind]
@@ -177,19 +198,17 @@ object ModelOverlay {
                     surfNum++
                     continue
                 }
-                val s = overlaySurface_s() // Mem_Alloc(sizeof(overlaySurface_t));
+                val s = overlaySurface_s()
                 s.surfaceNum._val = surfNum
                 s.surfaceId = surf.id
-                s.verts = arrayOfNulls(numVerts) // Mem_Alloc(numVerts);
-                //                memcpy(s.verts, overlayVerts, numVerts * sizeof(s.verts[0]));
+                s.verts = arrayOfNulls(numVerts)
                 i = 0
                 while (i < numVerts) {
                     s.verts!![i] = overlayVertex_s(overlayVerts[i])
                     i++
                 }
                 s.numVerts = numVerts
-                s.indexes = IntArray(numIndexes) ///*(glIndex_t *)*/Mem_Alloc(numIndexes);
-                //                memcpy(s.indexes, overlayIndexes, numIndexes * sizeof(s.indexes[0]));
+                s.indexes = IntArray(numIndexes)
                 System.arraycopy(overlayIndexes, 0, s.indexes, 0, numIndexes)
                 s.numIndexes = numIndexes
                 i = 0
@@ -246,7 +265,7 @@ object ModelOverlay {
                 Common.common.Error("idRenderModelOverlay::AddOverlaySurfacesToModel: baseModel is not a static model")
             }
 
-//	assert( dynamic_cast<idRenderModelStatic *>(baseModel) != null );
+            assert(baseModel is idRenderModelStatic)
             staticModel = baseModel as idRenderModelStatic
             staticModel.overlaysAdded = 0
             if (0 == materials.Num()) {
@@ -356,14 +375,11 @@ object ModelOverlay {
         //
         private fun FreeSurface(surface: overlaySurface_s?) {
             if (surface!!.verts != null) {
-//                Mem_Free(surface.verts);
                 surface.verts = null
             }
             if (surface.indexes != null) {
-//                Mem_Free(surface.indexes);
                 surface.indexes = null
             }
-            surface.clear()
         }
 
         companion object {
@@ -371,16 +387,14 @@ object ModelOverlay {
                 return idRenderModelOverlay()
             }
 
-            @Deprecated("")
             fun Free(overlay: idRenderModelOverlay?) {
-//	delete overlay;
             }
 
             // Removes overlay surfaces from the model.
             fun RemoveOverlaySurfacesFromModel(baseModel: idRenderModel) {
                 val staticModel: idRenderModelStatic
 
-//	assert( dynamic_cast<idRenderModelStatic *>(baseModel) != NULL );
+                assert(baseModel is idRenderModelStatic)
                 staticModel = baseModel as idRenderModelStatic
                 staticModel.DeleteSurfacesWithNegativeId()
                 staticModel.overlaysAdded = 0

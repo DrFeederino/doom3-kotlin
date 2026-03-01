@@ -28,21 +28,11 @@ import neo.ui.Winvar.idWinVec4
 
 class SimpleWindow {
     class drawWin_t {
-        val DBG_index: Int
         var simp: idSimpleWindow? = null
         var win: idWindow? = null
-
-        init {
-            DBG_index = DBG_counter++
-        }
-
-        companion object {
-            private var DBG_counter = 0
-        }
     }
 
     class idSimpleWindow(win: idWindow) {
-        private val DBG_count = DBG_countersOfCreation++
 
         //
         var name: idStr
@@ -71,7 +61,7 @@ class SimpleWindow {
         protected var matScaley: Float
         protected val origin: idVec2
         var rect = idWinRectangle() // overall rect
-        var rotate: idWinFloat? = idWinFloat()
+        var rotate = idWinFloat()
         protected var shear = Winvar.idWinVec2()
 
         //
@@ -110,7 +100,7 @@ class SimpleWindow {
             foreColor.set(win.foreColor)
             borderColor.set(win.borderColor)
             textScale.set(win.textScale)
-            rotate!!.set(win.rotate)
+            rotate.set(win.rotate)
             shear.set(win.shear)
             backGroundName.set(win.backGroundName)
             if (backGroundName.Length() != 0) {
@@ -128,11 +118,7 @@ class SimpleWindow {
             val parent = win.GetParent()
             if (parent != null) {
                 if (text.NeedsUpdate()) {
-                    DBG_idSimpleWindow++
-                    //                    if(DBG_idSimpleWindow++==26)
-//                    if(DBG_idSimpleWindow++==27)
                     parent.AddUpdateVar(text)
-                    //                    System.out.println(">>" + this);
                 }
                 if (visible.NeedsUpdate()) {
                     parent.AddUpdateVar(visible)
@@ -155,7 +141,7 @@ class SimpleWindow {
                 if (textScale.NeedsUpdate()) {
                     parent.AddUpdateVar(textScale)
                 }
-                if (rotate!!.NeedsUpdate()) {
+                if (rotate.NeedsUpdate()) {
                     parent.AddUpdateVar(rotate)
                 }
                 if (shear.NeedsUpdate()) {
@@ -184,9 +170,9 @@ class SimpleWindow {
             DrawBackground(drawRect)
             DrawBorderAndCaption(drawRect)
             if (textShadow != 0) {
-                val shadowText = text.data
+                val shadowText = idStr(text.data!!)
                 val shadowRect = idRectangle(textRect)
-                shadowText!!.RemoveColors()
+                shadowText.RemoveColors()
                 shadowRect.x += textShadow.toFloat()
                 shadowRect.y += textShadow.toFloat()
                 dc!!.DrawText(
@@ -225,7 +211,7 @@ class SimpleWindow {
 
         fun GetWinVarByName(_name: String?): idWinVar? {
             var retVar: idWinVar? = null
-            if (Icmp(_name!!, "background") == 0) { //TODO:should this be a switch?
+            if (Icmp(_name!!, "background") == 0) {
                 retVar = backGroundName
             }
             if (Icmp(_name, "visible") == 0) {
@@ -262,39 +248,40 @@ class SimpleWindow {
         }
 
         fun GetWinVarOffset(wv: idWinVar?, owner: drawWin_t?): Int {
+            var ret = -1
 
-//	if ( wv == &rect ) {
-//		ret = (int)&( ( idSimpleWindow * ) 0 )->rect;
-//	}
-//
-//	if ( wv == &backColor ) {
-//		ret = (int)&( ( idSimpleWindow * ) 0 )->backColor;
-//	}
-//
-//	if ( wv == &matColor ) {
-//		ret = (int)&( ( idSimpleWindow * ) 0 )->matColor;
-//	}
-//
-//	if ( wv == &foreColor ) {
-//		ret = (int)&( ( idSimpleWindow * ) 0 )->foreColor;
-//	}
-//
-//	if ( wv == &borderColor ) {
-//		ret = (int)&( ( idSimpleWindow * ) 0 )->borderColor;
-//	}
-//
-//	if ( wv == &textScale ) {
-//		ret = (int)&( ( idSimpleWindow * ) 0 )->textScale;
-//	}
-//
-//	if ( wv == &rotate ) {
-//		ret = (int)&( ( idSimpleWindow * ) 0 )->rotate;
-//	}
-//
-//	if ( ret != -1 ) {
-//		owner->simp = this;
-//	}
-            return -1
+            if (wv === rect) {
+                ret = Window.TransiotonalDataOffset.RECT_OFFSET.offset
+            }
+
+            if (wv === backColor) {
+                ret = Window.TransiotonalDataOffset.BACKCOLOR_OFFSET.offset
+            }
+
+            if (wv === matColor) {
+                ret = Window.TransiotonalDataOffset.MATCOLOR_OFFSET.offset
+            }
+
+            if (wv === foreColor) {
+                ret = Window.TransiotonalDataOffset.FORECOLOR_OFFSET.offset
+            }
+
+            if (wv === borderColor) {
+                ret = Window.TransiotonalDataOffset.BORDERCOLOR_OFFSET.offset
+            }
+
+            if (wv === textScale) {
+                ret = Window.TransiotonalDataOffset.TEXTSCALE_OFFSET.offset
+            }
+
+            if (wv === rotate) {
+                ret = Window.TransiotonalDataOffset.ROTATE_OFFSET.offset
+            }
+
+            if (ret != -1) {
+                owner?.simp = this
+            }
+            return ret
         }
 
         fun GetParent(): idWindow? {
@@ -323,7 +310,7 @@ class SimpleWindow {
             foreColor.WriteToSaveGame(savefile)
             borderColor.WriteToSaveGame(savefile)
             textScale.WriteToSaveGame(savefile)
-            rotate!!.WriteToSaveGame(savefile)
+            rotate.WriteToSaveGame(savefile)
             shear.WriteToSaveGame(savefile)
             backGroundName.WriteToSaveGame(savefile)
             val stringLen: Int
@@ -359,7 +346,7 @@ class SimpleWindow {
             foreColor.ReadFromSaveGame(savefile)
             borderColor.ReadFromSaveGame(savefile)
             textScale.ReadFromSaveGame(savefile)
-            rotate!!.ReadFromSaveGame(savefile)
+            rotate.ReadFromSaveGame(savefile)
             shear.ReadFromSaveGame(savefile)
             backGroundName.ReadFromSaveGame(savefile)
             val stringLen: Int
@@ -405,8 +392,8 @@ class SimpleWindow {
         protected fun SetupTransforms(x: Float, y: Float) {
             trans.Identity()
             org.set(origin.x + x, origin.y + y, 0.0f)
-            if (rotate != null && rotate!!.data != 0.0f) {
-                rot.Set(org, vec, rotate!!.data)
+            if (rotate.data != 0.0f) {
+                rot.Set(org, vec, rotate.data)
                 trans.set(rot.ToMat3())
             }
             smat.Identity()
@@ -463,11 +450,6 @@ class SimpleWindow {
             private val rot = idRotation()
             private val smat = idMat3()
             private val vec = idVec3(0, 0, 1)
-            var DBG_idSimpleWindow = 0
-
-            //
-            //
-            private var DBG_countersOfCreation = 0
 
             //
             private val trans = idMat3()

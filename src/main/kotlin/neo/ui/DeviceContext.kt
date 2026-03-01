@@ -230,7 +230,6 @@ object DeviceContext {
             }
             AdjustCoords(x1, y1, w1, h1)
             DrawStretchPic(x1[0], y1[0], w1[0], h1[0], s0[0], t0[0], s1[0], t1[0], mat)
-            bla99++
         }
 
         fun DrawRect(x: Float, y: Float, width: Float, height: Float, size: Float, color: idVec4?) {
@@ -266,7 +265,6 @@ object DeviceContext {
             }
             AdjustCoords(x1, y1, w1, h1)
             DrawStretchPic(x1[0], y1[0], w1[0], h1[0], 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
-            aaaa++
         }
 
 
@@ -307,8 +305,8 @@ object DeviceContext {
                 }
                 return FtoiFast(rectDraw.w / charSkip)
             }
-            if (!text.contains("\\0")) {
-                text += '\u0000' //TODO:we temporarily append a '\0' here, but we should refactor the code.
+            if (!text.contains("\u0000")) {
+                text += '\u0000'
             }
             y = lineSkip + rectDraw.y
             len = 0
@@ -384,7 +382,7 @@ object DeviceContext {
                     if (!calcOnly && y > rectDraw.Bottom()) {
                         break
                     }
-                    p_i = newLinePtr //TODO:check if any of the pointers are actually incremented.
+                    p_i = newLinePtr
                     breaks?.Append(p_i)
                     len = 0
                     newLine = 0
@@ -398,7 +396,6 @@ object DeviceContext {
                 p_i++
                 buff[len] = '\u0000'
                 // update the width
-                bla++
                 if (buff[len - 1].code != C_COLOR_ESCAPE && (len <= 1 || buff[len - 2].code != C_COLOR_ESCAPE)) {
                     textWidth += textScale * useFont!!.glyphScale * useFont!!.glyphs[buff[len - 1].code]!!.xSkip
                     // Jim Dosé, I don't know who you are..but I hate you.
@@ -1165,8 +1162,7 @@ object DeviceContext {
                     // (Assets.textFont.glyphs[text[i]].imageHeight -
                     // Assets.textFont.glyphs[text[i]].height);
                     //
-                    if (IsColor(ctos(s))) {
-                        d1++
+                    if (IsColor(text.substring(s_i))) {
                         if (text[s_i + 1].code == C_COLOR_DEFAULT) {
                             newColor.set(color)
                         } else {
@@ -1187,7 +1183,6 @@ object DeviceContext {
                         count += 2
                         continue
                     } else {
-                        d2++
                         val yadj = useScale * glyph.top
                         PaintChar(
                             x,
@@ -1241,7 +1236,6 @@ object DeviceContext {
             }
             AdjustCoords(x1, y1, w, h)
             DrawStretchPic(x1[0], y1[0], w[0], h[0], s1[0], t1[0], s3[0], t3[0], hShader)
-            asdasdasd++
         }
 
         private fun SetFontByScale(scale: Float) {
@@ -1300,12 +1294,6 @@ object DeviceContext {
             val colorRed: idVec4 = idVec4()
             val colorWhite: idVec4 = idVec4()
             val colorYellow: idVec4 = idVec4()
-            var aaaa = 0
-            var asdasdasd = 0
-            var bla = 0
-            var bla99 = 0
-            var d1 = 0
-            var d2 = 0
 
             //
             private val fonts = idList<fontInfoEx_t>()

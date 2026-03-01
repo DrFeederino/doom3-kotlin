@@ -296,9 +296,9 @@ object Target {
 
         override fun Think() {
             val player: idPlayer?
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 player = Game_local.gameLocal.GetLocalPlayer()
-                if (player != null && player.oldButtons.inv() and UsercmdGen.BUTTON_ATTACK != 0 && player.usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK != 0) {
+                if (player != null && (player.oldButtons.inv() and UsercmdGen.BUTTON_ATTACK) != 0 && (player.usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) != 0) {
                     player.usercmd.buttons = player.usercmd.buttons and UsercmdGen.BUTTON_ATTACK.inv().toByte()
                     BecomeInactive(Entity.TH_THINK)
                     ActivateTargets(player)
@@ -309,7 +309,7 @@ object Target {
         }
 
         private fun Event_Activate(activator: idEventArg<idEntity>) {
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 BecomeInactive(Entity.TH_THINK)
             } else {
                 // always allow during cinematics
@@ -519,7 +519,7 @@ object Target {
             val color: idVec4 = idVec4()
             val fadeTo = idVec4()
             val frac: Float
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 GetColor(fadeTo)
                 if (Game_local.gameLocal.time >= fadeEnd) {
                     color.set(fadeTo)
@@ -1349,7 +1349,7 @@ object Target {
         }
 
         override fun Think() {
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 val player = Game_local.gameLocal.GetLocalPlayer()!!
                 player.SetInfluenceFov(fovSetting.GetCurrentValue(Game_local.gameLocal.time.toFloat()))
                 if (fovSetting.IsDone(Game_local.gameLocal.time.toFloat())) {
@@ -1498,7 +1498,7 @@ object Target {
         }
 
         override fun Think() {
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 val player = Game_local.gameLocal.GetLocalPlayer()!!
                 player.SetInfluenceFov(fovSetting.GetCurrentValue(Game_local.gameLocal.time.toFloat()).toFloat())
                 if (fovSetting.IsDone(Game_local.gameLocal.time.toFloat())) {

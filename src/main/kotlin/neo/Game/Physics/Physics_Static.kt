@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Physics/Physics_Static.h, neo/Game/Physics/Physics_Static.cpp
+ */
+
 package neo.Game.Physics
 
 import neo.Game.Entity.idEntity
@@ -448,15 +456,15 @@ class Physics_Static {
         }
 
         override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun  /*idTypeInfo*/GetType(): Class<out idClass> {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         companion object {

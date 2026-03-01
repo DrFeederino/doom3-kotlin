@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Physics/Clip.h, neo/Game/Physics/Clip.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game.Physics
 
 import neo.Game.Entity.idEntity
@@ -322,7 +340,7 @@ object Clip {
             // we must fully check even when bounding boxes don't quite touch
             absBounds.minusAssign(0, vec3_boxEpsilon)
             absBounds.plusAssign(1, vec3_boxEpsilon)
-            Link_r(clp.clipSectors!![0]) //TODO:check if [0] is good enough. upd: seems it is
+            Link_r(clp.clipSectors!![0])
         }
 
 
@@ -465,7 +483,8 @@ object Clip {
         }
 
         fun IsEqual(trm: idTraceModel): Boolean {
-            return traceModelIndex != -1 && GetCachedTraceModel(traceModelIndex) === trm
+            // FIX: Was === (referential identity), C++ uses *GetCachedTraceModel() == trm (structural equality)
+            return traceModelIndex != -1 && GetCachedTraceModel(traceModelIndex) == trm
         }
 
         fun  /*cmHandle_t*/Handle(): Int {                // returns handle used to collide vs this model
@@ -1243,7 +1262,7 @@ object Clip {
                 }
 
                 // if the entity does not have any contents we are looking for
-                if (touch.contents and contentMask == 0) {
+                if ((touch.contents and contentMask) == 0) {
                     i++
                     continue
                 }
@@ -1519,7 +1538,7 @@ object Clip {
                             handle,
                             contact.modelFeature,
                             winding
-                        ) //TODO:is this function necessary?
+                        )
                     }
 
                     else -> {}

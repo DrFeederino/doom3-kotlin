@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/Image_program.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.Renderer.Image.textureDepth_t
@@ -14,6 +40,35 @@ import org.lwjgl.BufferUtils
 import java.nio.ByteBuffer
 
 object Image_program {
+
+    /*
+    all uncompressed
+    uncompressed normal maps
+
+    downsample images
+
+    16 meg Dynamic cache
+
+    Anisotropic texturing
+
+    Trilinear on all
+    Trilinear on normal maps, bilinear on others
+    Bilinear on all
+
+
+    Manager
+
+    ->List
+    ->Print
+    ->Reload( bool force )
+
+    Anywhere that an image name is used (diffusemaps, bumpmaps, specularmaps, lights, etc),
+    an imageProgram can be specified.
+
+    This allows load time operations, like heightmap-to-normalmap conversion and image
+    composition, to be automatically handled in a way that supports timestamped reloads.
+    */
+
     // we build a canonical token form of the image program here
     val parseBuffer: StringBuffer = StringBuffer(Image.MAX_IMAGE_NAME)
     private val factors: Array<FloatArray> =
@@ -85,11 +140,7 @@ object Image_program {
             return true
         }
         if (0 == token.Icmp("addnormals")) {
-            var pic2: Array<ByteBuffer?>? = arrayOf(
-                if (pic != null && pic[0] != null) ByteBuffer.allocate(
-                    pic[0]!!.capacity()
-                ) else null
-            )
+            var pic2: Array<ByteBuffer?>? = arrayOf(null) // C++: byte *pic2 = NULL
             val width2: IntArray = intArrayOf(0)
             val height2: IntArray = intArrayOf(0)
             MatchAndAppendToken(src, "(")
@@ -98,8 +149,8 @@ object Image_program {
             }
             MatchAndAppendToken(src, ",")
             if (!R_ParseImageProgram_r(src, pic2, width2, height2, timestamps, depth)) {
-                if (pic != null && pic[0] != null) {
-                    pic[0]!!.clear() //R_StaticFree(pic);
+                if (pic != null) {
+                    pic[0] = null // C++: R_StaticFree(*pic); *pic = NULL
                 }
                 return false
             }
@@ -114,7 +165,6 @@ object Image_program {
                     width2[0],
                     height2[0]
                 )
-                //                R_StaticFree(pic2);
                 pic2 = null
                 if (depth != null) {
                     depth[0] = textureDepth_t.TD_BUMP
@@ -138,11 +188,7 @@ object Image_program {
             return true
         }
         if (0 == token.Icmp("add")) {
-            val pic2: Array<ByteBuffer?> = arrayOf(
-                if (pic != null) ByteBuffer.allocate(
-                    pic[0]!!.capacity()
-                ) else null
-            )
+            val pic2: Array<ByteBuffer?> = arrayOf(null) // C++: byte *pic2 = NULL
             val width2: IntArray = intArrayOf(0)
             val height2: IntArray = intArrayOf(0)
             MatchAndAppendToken(src, "(")
@@ -151,8 +197,8 @@ object Image_program {
             }
             MatchAndAppendToken(src, ",")
             if (!R_ParseImageProgram_r(src, pic2, width2, height2, timestamps, depth)) {
-                if (pic != null && pic[0] != null) {
-                    pic[0]!!.clear() //R_StaticFree(pic[0]);
+                if (pic != null) {
+                    pic[0] = null // C++: R_StaticFree(*pic); *pic = NULL
                 }
                 return false
             }
@@ -160,7 +206,6 @@ object Image_program {
             // process it
             if (pic != null && pic[0] != null) {
                 R_ImageAdd(pic[0], width!![0], height!![0], pic2[0], width2[0], height2[0])
-                //                R_StaticFree(pic2);
             }
             MatchAndAppendToken(src, ")")
             return true
@@ -242,7 +287,10 @@ object Image_program {
                 c = width!![0] * height!![0] * 4
                 i = 0
                 while (i < c) {
-                    pic[0]!!.put(i + 3, ((pic[0]!!.get(i) + pic[0]!!.get(i + 1) + pic[0]!!.get(i + 2)) / 3).toByte())
+                    pic[0]!!.put(i + 3,
+                        (((pic[0]!!.get(i).toInt() and 0xFF) + (pic[0]!!.get(i + 1)
+                            .toInt() and 0xFF) + (pic[0]!!.get(i + 2).toInt() and 0xFF)) / 3).toByte()
+                    )
                     pic[0]!!.put(i, 255.toByte())
                     pic[0]!!.put(i + 1, 255.toByte())
                     pic[0]!!.put(i + 2, 255.toByte())
@@ -282,10 +330,8 @@ object Image_program {
     fun AppendToken(token: idToken) {
         // add a leading space if not at the beginning
         if (parseBuffer.length > 0) {
-//            idStr.Append(parseBuffer, MAX_IMAGE_NAME, " ");
             parseBuffer.append(" ")
         }
-        //        idStr.Append(parseBuffer, MAX_IMAGE_NAME, token.toString());
         parseBuffer.append(token.toString())
     }
 
@@ -299,7 +345,6 @@ object Image_program {
             return
         }
         // a matched token won't need a leading space
-//        idStr.Append(parseBuffer, MAX_IMAGE_NAME, match);
         parseBuffer.append(match)
     }
 
@@ -321,10 +366,12 @@ object Image_program {
 
         // copy and convert to grey scale
         j = width * height
-        depth = ByteArray(j) //R_StaticAlloc(j);
+        depth = ByteArray(j)
         i = 0
         while (i < j) {
-            depth[i] = ((data!!.get(i * 4) + data.get(i * 4 + 1) + data.get(i * 4 + 2)) / 3).toByte()
+            depth[i] =
+                (((data!!.get(i * 4).toInt() and 0xFF) + (data.get(i * 4 + 1).toInt() and 0xFF) + (data.get(i * 4 + 2)
+                    .toInt() and 0xFF)) / 3).toByte()
             i++
         }
         val dir = idVec3()
@@ -338,19 +385,17 @@ object Image_program {
                 var d3: Int
                 var d4: Int
                 var a1: Int
-                var a2: Int
                 var a3: Int
                 var a4: Int
 
                 // FIXME: look at five points?
                 // look at three points to estimate the gradient
-                d1 = depth[(i * width + j)].toInt()
+                d1 = depth[(i * width + j)].toInt() and 0xFF
                 a1 = d1
-                d2 = depth[(i * width + ((j + 1) and (width - 1)))].toInt()
-                a2 = d2
-                d3 = depth[(((i + 1) and (height - 1)) * width + j)].toInt()
+                d2 = depth[(i * width + ((j + 1) and (width - 1)))].toInt() and 0xFF
+                d3 = depth[(((i + 1) and (height - 1)) * width + j)].toInt() and 0xFF
                 a3 = d3
-                d4 = depth[(((i + 1) and (height - 1)) * width + ((j + 1) and (width - 1)))].toInt()
+                d4 = depth[(((i + 1) and (height - 1)) * width + ((j + 1) and (width - 1)))].toInt() and 0xFF
                 a4 = d4
                 d2 -= d1
                 d3 -= d1
@@ -375,8 +420,6 @@ object Image_program {
             }
             i++
         }
-
-//        R_StaticFree(depth);
     }
 
     /*
@@ -392,9 +435,10 @@ object Image_program {
         var l: Int
         val normal = idVec3()
         var out: Int
-        orig = ByteArray(width * height * 4) // R_StaticAlloc(width * height * 4);
-        //	memcpy( orig, data, width * height * 4 );
-        System.arraycopy(data!!.array(), 0, orig, 0, width * height * 4)
+        orig = ByteArray(width * height * 4)
+        data!!.position(0)
+        data.get(orig)
+        data.position(0)
         i = 0
         while (i < width) {
             j = 0
@@ -405,30 +449,28 @@ object Image_program {
                     l = -1
                     while (l < 2) {
                         var `in`: Int
-                        `in` =  /*orig +*/(((j + l) and (height - 1)) * width + ((i + k) and (width - 1))) * 4
+                        `in` = (((j + l) and (height - 1)) * width + ((i + k) and (width - 1))) * 4
 
                         // ignore 000 and -1 -1 -1
-                        if ((orig[`in` + 0].toInt() == 0) && (orig[`in` + 1]
-                                .toInt() == 0) && (orig[`in` + 2].toInt() == 0)
+                        if ((orig[`in` + 0].toInt() and 0xFF) == 0 && (orig[`in` + 1].toInt() and 0xFF) == 0 && (orig[`in` + 2].toInt() and 0xFF) == 0
                         ) {
                             l++
                             continue
                         }
-                        if ((orig[`in` + 0].toInt() == 128) && (orig[`in` + 1]
-                                .toInt() == 128) && (orig[`in` + 2].toInt() == 128)
+                        if ((orig[`in` + 0].toInt() and 0xFF) == 128 && (orig[`in` + 1].toInt() and 0xFF) == 128 && (orig[`in` + 2].toInt() and 0xFF) == 128
                         ) {
                             l++
                             continue
                         }
-                        normal.plusAssign(0, factors[k + 1][l + 1] * (orig[`in` + 0] - 128))
-                        normal.plusAssign(1, factors[k + 1][l + 1] * (orig[`in` + 1] - 128))
-                        normal.plusAssign(2, factors[k + 1][l + 1] * (orig[`in` + 2] - 128))
+                        normal.plusAssign(0, factors[k + 1][l + 1] * ((orig[`in` + 0].toInt() and 0xFF) - 128))
+                        normal.plusAssign(1, factors[k + 1][l + 1] * ((orig[`in` + 1].toInt() and 0xFF) - 128))
+                        normal.plusAssign(2, factors[k + 1][l + 1] * ((orig[`in` + 2].toInt() and 0xFF) - 128))
                         l++
                     }
                     k++
                 }
                 normal.Normalize()
-                out =  /*data +*/(j * width + i) * 4
+                out = (j * width + i) * 4
                 data.put(out + 0, (128 + 127 * normal[0]).toInt().toByte())
                 data.put(out + 1, (128 + 127 * normal[1]).toInt().toByte())
                 data.put(out + 2, (128 + 127 * normal[2]).toInt().toByte())
@@ -436,8 +478,6 @@ object Image_program {
             }
             i++
         }
-
-//        R_StaticFree(orig);
     }
 
     /*
@@ -447,6 +487,7 @@ object Image_program {
      ===================
      */
     fun R_ImageAdd(data1: ByteBuffer?, width1: Int, height1: Int, data2: ByteBuffer?, width2: Int, height2: Int) {
+        var data2: ByteBuffer? = data2
         var i: Int
         var j: Int
         val c: Int
@@ -455,24 +496,20 @@ object Image_program {
         // resample pic2 to the same size as pic1
         if (width2 != width1 || height2 != height1) {
             newMap = Image_process.R_Dropsample(data2, width2, height2, width1, height1)
-            data2!!.put(newMap) //TODO:not overwrite reference. EDIT:is this enough?
+            data2 = BufferUtils.createByteBuffer(newMap.size).put(newMap).flip()
         } else {
             newMap = null
         }
         c = width1 * height1 * 4
         i = 0
         while (i < c) {
-            j = data1!!.get(i) + data2!!.get(i)
+            j = (data1!!.get(i).toInt() and 0xFF) + (data2!!.get(i).toInt() and 0xFF)
             if (j > 255) {
                 j = 255
             }
             data1.put(i, j.toByte())
             i++
         }
-
-//        if (newMap != null) {
-//            R_StaticFree(newMap);
-//        }
     }
 
     /*
@@ -487,7 +524,7 @@ object Image_program {
         c = width * height * 4
         i = 0
         while (i < c) {
-            j = ((data!!.get(i) * scale[i and 3]).toInt().toByte()).toInt()
+            j = ((data!!.get(i).toInt() and 0xFF) * scale[i and 3]).toInt()
             if (j < 0) {
                 j = 0
             } else if (j > 255) {
@@ -509,7 +546,7 @@ object Image_program {
         c = width * height * 4
         i = 0
         while (i < c) {
-            data!!.put(i + 3, (255 - data.get(i + 3)).toByte())
+            data!!.put(i + 3, (255 - (data.get(i + 3).toInt() and 0xFF)).toByte())
             i += 4
         }
     }
@@ -525,9 +562,9 @@ object Image_program {
         c = width * height * 4
         i = 0
         while (i < c) {
-            data!!.put(i + 0, (255 - data.get(i + 0)).toByte())
-            data.put(i + 1, (255 - data.get(i + 1)).toByte())
-            data.put(i + 2, (255 - data.get(i + 2)).toByte())
+            data!!.put(i + 0, (255 - (data.get(i + 0).toInt() and 0xFF)).toByte())
+            data.put(i + 1, (255 - (data.get(i + 1).toInt() and 0xFF)).toByte())
+            data.put(i + 2, (255 - (data.get(i + 2).toInt() and 0xFF)).toByte())
             i += 4
         }
     }
@@ -561,11 +598,11 @@ object Image_program {
                 var d2: Int
                 val n = idVec3()
                 var len: Float
-                d1 =  /* data1 + */(i * width1 + j) * 4
-                d2 =  /*data2 + */(i * width1 + j) * 4
-                n[0] = (data1!!.get(d1 + 0) - 128) / 127.0f
-                n[1] = (data1.get(d1 + 1) - 128) / 127.0f
-                n[2] = (data1.get(d1 + 2) - 128) / 127.0f
+                d1 = (i * width1 + j) * 4
+                d2 = (i * width1 + j) * 4
+                n[0] = ((data1!!.get(d1 + 0).toInt() and 0xFF) - 128) / 127.0f
+                n[1] = ((data1.get(d1 + 1).toInt() and 0xFF) - 128) / 127.0f
+                n[2] = ((data1.get(d1 + 2).toInt() and 0xFF) - 128) / 127.0f
 
                 // There are some normal maps that blend to 0,0,0 at the edges
                 // this screws up compression, so we try to correct that here by instead fading it to 0,0,1
@@ -573,8 +610,8 @@ object Image_program {
                 if (len < 1.0f) {
                     n[2] = Sqrt(1.0f - (n[0] * n[0]) - (n[1] * n[1]))
                 }
-                n.plusAssign(0, (data2!!.get(d2 + 0) - 128) / 127.0f)
-                n.plusAssign(1, (data2.get(d2 + 1) - 128) / 127.0f)
+                n.plusAssign(0, ((data2!!.get(d2 + 0).toInt() and 0xFF) - 128) / 127.0f)
+                n.plusAssign(1, ((data2.get(d2 + 1).toInt() and 0xFF) - 128) / 127.0f)
                 n.Normalize()
                 data1.put(d1 + 0, (n[0] * 127 + 128).toInt().toByte())
                 data1.put(d1 + 1, (n[1] * 127 + 128).toInt().toByte())
@@ -584,10 +621,6 @@ object Image_program {
             }
             i++
         }
-
-//        if (newMap != null) {
-//            R_StaticFree(newMap);
-//        }
     }
 
     /*

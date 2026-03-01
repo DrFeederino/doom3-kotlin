@@ -4822,11 +4822,11 @@ class Game_local {
                     }
                     val entBounds = ent.GetPhysics().GetAbsBounds()
                     val contents = ent.GetPhysics().GetContents()
-                    if (contents and Material.CONTENTS_BODY != 0) {
+                    if ((contents and Material.CONTENTS_BODY) != 0) {
                         gameRenderWorld!!.DebugBounds(colorCyan, entBounds)
-                    } else if (contents and Material.CONTENTS_TRIGGER != 0) {
+                    } else if ((contents and Material.CONTENTS_TRIGGER) != 0) {
                         gameRenderWorld!!.DebugBounds(colorOrange, entBounds)
-                    } else if (contents and Material.CONTENTS_SOLID != 0) {
+                    } else if ((contents and Material.CONTENTS_SOLID) != 0) {
                         gameRenderWorld!!.DebugBounds(colorGreen, entBounds)
                     } else {
                         if (0.0f == entBounds.GetVolume()) {

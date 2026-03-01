@@ -1095,7 +1095,7 @@ object Trigger {
         }
 
         override fun Think() {
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 TouchEntities()
             }
             idEntity_Think()
@@ -1159,7 +1159,7 @@ object Trigger {
         }
 
         private fun Event_Trigger(activator: idEventArg<idEntity?>) {
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 BecomeInactive(Entity.TH_THINK)
             } else {
                 BecomeActive(Entity.TH_THINK)

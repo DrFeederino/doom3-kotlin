@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Model.dynamicModel_t
@@ -30,8 +55,8 @@ object Model_prt {
      ===============================================================================
      */
     class idRenderModelPrt : idRenderModelStatic() {
-        //
         private var particleSystem: idDeclParticle? = null
+
         override fun InitFromFile(fileName: String?) {
             name = idStr((fileName)!!)
             particleSystem = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, (fileName)) as idDeclParticle?
@@ -54,27 +79,18 @@ object Model_prt {
             var cachedModel: idRenderModel? = cachedModel
             val staticModel: idRenderModelStatic
             if (cachedModel != null && !r_useCachedDynamicModels!!.GetBool()) {
-//		delete cachedModel;
                 cachedModel = null
             }
 
             // this may be triggered by a model trace or other non-view related source, to which we should look like an empty model
             if (renderEntity == null || viewDef == null) {
-//		delete cachedModel;
                 return null
             }
             if (r_skipParticles!!.GetBool()) {
-//		delete cachedModel;
                 return null
             }
 
-            /*
-             // if the entire system has faded out
-             if ( renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] && viewDef.renderView.time * 0.001f >= renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] ) {
-             delete cachedModel;
-             return null;
-             }
-             */if (cachedModel != null) {
+            if (cachedModel != null) {
                 assert((cachedModel is idRenderModelStatic))
                 assert((Icmp(cachedModel.Name(), parametricParticle_SnapshotName) == 0))
                 staticModel = cachedModel as idRenderModelStatic
@@ -104,7 +120,6 @@ object Model_prt {
                 val stageAge: Int =
                     (g.renderView.time + renderEntity.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] * 1000 - stage.timeOffset * 1000).toInt()
                 val stageCycle: Int = stageAge / stage.cycleMsec
-                //                int inCycleTime = stageAge - stageCycle * stage.cycleMsec;
 
                 // some particles will be in this cycle, some will be in the previous cycle
                 steppingRandom.SetSeed(
@@ -124,7 +139,7 @@ object Model_prt {
                     staticModel.surfaces.Append(surf)
                     surf.id = stageNum
                     surf.shader = stage.material
-                    surf.geometry = srfTriangles_s() //R_AllocStaticTriSurf();
+                    surf.geometry = srfTriangles_s()
                     R_AllocStaticTriSurfVerts(surf.geometry!!, 4 * count)
                     R_AllocStaticTriSurfIndexes(surf.geometry!!, 6 * count)
                     R_AllocStaticTriSurfPlanes(surf.geometry!!, 6 * count)
@@ -186,7 +201,6 @@ object Model_prt {
 
                 // build the indexes
                 var numIndexes = 0
-                /*glIndex_t*/
                 val indexes: IntArray? = surf.geometry!!.indexes
                 var i = 0
                 while (i < numVerts) {

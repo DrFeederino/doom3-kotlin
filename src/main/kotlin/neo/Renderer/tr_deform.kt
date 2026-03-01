@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Material.deform_t
@@ -39,151 +64,7 @@ object tr_deform {
      */
     val MAX_TRI_WINDING_INDEXES: Int = 16
 
-    /*
-     =====================
-     R_FlareDeform
-
-     =====================
-     */
-    /*
-     static void R_FlareDeform( drawSurf_t *surf ) {
-     const srfTriangles_t *tri;
-     srfTriangles_t		*newTri;
-     idPlane	plane;
-     float	dot;
-     idVec3	localViewer;
-     int		j;
-
-     tri = surf.geo;
-
-     if ( tri.numVerts != 4 || tri.numIndexes != 6 ) {
-     //FIXME: temp hack for flares on tripleted models
-     common.Warning( "R_FlareDeform: not a single quad" );
-     return;
-     }
-
-     // this srfTriangles_t and all its indexes and caches are in frame
-     // memory, and will be automatically disposed of
-     newTri = (srfTriangles_t *)R_ClearedFrameAlloc( sizeof( *newTri ) );
-     newTri.numVerts = 4;
-     newTri.numIndexes = 2*3;
-     newTri.indexes = (glIndex_t *)R_FrameAlloc( newTri.numIndexes * sizeof( newTri.indexes[0] ) );
-
-     idDrawVert *ac = (idDrawVert *)_alloca16( newTri.numVerts * sizeof( idDrawVert ) );
-
-     // find the plane
-     plane.FromPoints( tri.verts[tri.indexes[0]].xyz, tri.verts[tri.indexes[1]].xyz, tri.verts[tri.indexes[2]].xyz );
-
-     // if viewer is behind the plane, draw nothing
-     R_GlobalPointToLocal( surf.space.modelMatrix, tr.viewDef!!.renderView.vieworg, localViewer );
-     float distFromPlane = localViewer * plane.Normal() + plane[3];
-     if ( distFromPlane <= 0 ) {
-     newTri.numIndexes = 0;
-     surf.geo = newTri;
-     return;
-     }
-
-     idVec3	center;
-     center = tri.verts[0].xyz;
-     for ( j = 1 ; j < tri.numVerts ; j++ ) {
-     center += tri.verts[j].xyz;
-     }
-     center *= 1.0f/tri.numVerts;
-
-     idVec3	dir = localViewer - center;
-     dir.Normalize();
-
-     dot = dir * plane.Normal();
-
-     // set vertex colors based on plane angle
-     int	color = (int)(dot * 8 * 256);
-     if ( color > 255 ) {
-     color = 255;
-     }
-     for ( j = 0 ; j < newTri.numVerts ; j++ ) {
-     ac[j].color[0] =
-     ac[j].color[1] =
-     ac[j].color[2] = color;
-     ac[j].color[3] = 255;
-     }
-
-     float	spread = surf.shaderRegisters[ surf.material.GetDeformRegister(0) ] * r_flareSize.GetFloat();
-     idVec3	edgeDir[4][3];
-     glIndex_t		indexes[MAX_TRI_WINDING_INDEXES];
-     int		numIndexes = R_WindingFromTriangles( tri, indexes );
-
-     surf.material = declManager.FindMaterial( "textures/smf/anamorphicFlare" );
-
-     // only deal with quads
-     if ( numIndexes != 4 ) {
-     return;
-     }
-
-     // compute centroid
-     idVec3 centroid, toeye, forward, up, left;
-     centroid.Set( 0, 0, 0 );
-     for ( int i = 0; i < 4; i++ ) {
-     centroid += tri.verts[ indexes[i] ].xyz;
-     }
-     centroid /= 4;
-
-     // compute basis vectors
-     up.Set( 0, 0, 1 );
-
-     toeye = centroid - localViewer;
-     toeye.Normalize();
-     left = toeye.Cross( up );
-     up = left.Cross( toeye );
-
-     left = left * 40 * 6;
-     up = up * 40;
-
-     // compute flares
-     struct flare_t {
-     float	angle;
-     float	length;
-     };
-
-     static flare_t flares[] = {
-     { 0, 100 },
-     { 90, 100 }
-     };
-
-     for ( int i = 0; i < 4; i++ ) {
-     memset( ac + i, 0, sizeof( ac[i] ) );
-     }
-
-     ac[0].xyz = centroid - left;
-     ac[0].st[0] = 0; ac[0].st[1] = 0;
-
-     ac[1].xyz = centroid + up;
-     ac[1].st[0] = 1; ac[1].st[1] = 0;
-
-     ac[2].xyz = centroid + left;
-     ac[2].st[0] = 1; ac[2].st[1] = 1;
-
-     ac[3].xyz = centroid - up;
-     ac[3].st[0] = 0; ac[3].st[1] = 1;
-
-     // setup colors
-     for ( j = 0 ; j < newTri.numVerts ; j++ ) {
-     ac[j].color[0] =
-     ac[j].color[1] =
-     ac[j].color[2] = 255;
-     ac[j].color[3] = 255;
-     }
-
-     // setup indexes
-     static glIndex_t	triIndexes[2*3] = {
-     0,1,2,  0,2,3
-     };
-
-     memcpy( newTri.indexes, triIndexes, sizeof( triIndexes ) );
-
-     R_FinishDeform( surf, newTri, ac );
-     }
-     */
-    val  /*glIndex_t	*/triIndexes /*[18*3]*/: IntArray = intArrayOf(
+    val triIndexes: IntArray = intArrayOf(
         0, 4, 5,
         0, 5, 6,
         0, 6, 7,
@@ -294,10 +175,10 @@ object tr_deform {
 
         // this srfTriangles_t and all its indexes and caches are in frame
         // memory, and will be automatically disposed of
-        newTri = srfTriangles_s() // R_ClearedFrameAlloc(sizeof(newTri));
+        newTri = srfTriangles_s()
         newTri.numVerts = tri.numVerts
         newTri.numIndexes = tri.numIndexes
-        newTri.indexes = IntArray(newTri.numIndexes) // R_FrameAlloc(newTri.numIndexes);
+        newTri.indexes = IntArray(newTri.numIndexes)
         val ac: Array<idDrawVert> = Array(newTri.numVerts) { idDrawVert() }
         i = 0
         while (i < tri.numVerts) {
@@ -357,17 +238,17 @@ object tr_deform {
 
         // this srfTriangles_t and all its indexes and caches are in frame
         // memory, and will be automatically disposed of
-        val newTri = srfTriangles_s() // R_ClearedFrameAlloc(sizeof(newTri));
+        val newTri = srfTriangles_s()
         newTri.numVerts = tri.numVerts
         newTri.numIndexes = tri.numIndexes
-        newTri.indexes = IntArray(newTri.numIndexes) // R_FrameAlloc(newTri.numIndexes);
+        newTri.indexes = IntArray(newTri.numIndexes)
         System.arraycopy(
             tri.indexes,
             0,
             newTri.indexes,
             0,
             newTri.numIndexes
-        ) //memcpy( newTri.indexes, tri.indexes, newTri.numIndexes * sizeof( newTri.indexes[0] ) );
+        )
         val ac: Array<idDrawVert> = Array(newTri.numVerts) { idDrawVert() }
 
         // this is a lot of work for two triangles...
@@ -432,12 +313,10 @@ object tr_deform {
                 var l: Float
                 val i1: Int = tri.indexes!![i + edgeVerts[nums[j]][0]]
                 val i2: Int = tri.indexes!![i + edgeVerts[nums[j]][1]]
-                ac[i1] = tri.verts!![i1]!!
+                ac[i1] = idDrawVert(tri.verts!![i1]!!)
                 val av1: idDrawVert = ac[i1]
-                ac[i2] = tri.verts!![i2]!!
+                ac[i2] = idDrawVert(tri.verts!![i2]!!)
                 val av2: idDrawVert = ac[i2]
-                //                av1 = tri.verts[i1];
-//                av2 = tri.verts[i2];
                 l = 0.5f * lengths[j]
 
                 // cross this with the view direction to get minor axis
@@ -460,8 +339,8 @@ object tr_deform {
     }
 
     fun R_WindingFromTriangles(
-        tri: srfTriangles_s,  /*glIndex_t*/
-        indexes: IntArray /*[MAX_TRI_WINDING_INDEXES]*/
+        tri: srfTriangles_s,
+        indexes: IntArray
     ): Int {
         var i: Int
         var j: Int
@@ -527,7 +406,6 @@ object tr_deform {
 
                             // this is an interior edge
                             break
-                            l++
                         }
                         if (l != 3) {
                             break
@@ -543,7 +421,6 @@ object tr_deform {
                     indexes[numIndexes] = next
                     numIndexes++
                     break
-                    j++
                 }
                 if (j != 3) {
                     break
@@ -573,18 +450,22 @@ object tr_deform {
 
         // this srfTriangles_t and all its indexes and caches are in frame
         // memory, and will be automatically disposed of
-        newTri = srfTriangles_s() // R_ClearedFrameAlloc(sizeof(newTri));
+        newTri = srfTriangles_s()
         newTri.numVerts = 16
         newTri.numIndexes = 18 * 3
         newTri.indexes = IntArray(newTri.numIndexes)
         val ac: Array<idDrawVert?> = arrayOfNulls(newTri.numVerts)
 
         // find the plane
-        plane.FromPoints(
+        if (!plane.FromPoints(
             tri.verts!![tri.indexes!![0]]!!.xyz,
             tri.verts!![tri.indexes!![1]]!!.xyz,
             tri.verts!![tri.indexes!![2]]!!.xyz
-        )
+            )
+        ) {
+            Common.common.Warning("R_FlareDeform: plane.FromPoints failed")
+            return
+        }
 
         // if viewer is behind the plane, draw nothing
         tr_main.R_GlobalPointToLocal(surf.space!!.modelMatrix, tr.viewDef!!.renderView.vieworg, localViewer)
@@ -623,7 +504,7 @@ object tr_deform {
         val spread: Float =
             surf.shaderRegisters!![surf.material!!.GetDeformRegister(0)] * r_flareSize!!.GetFloat()
         val edgeDir: Array<Array<idVec3>> = generateArray(4, 3)
-        val  /*glIndex_t*/indexes = IntArray(MAX_TRI_WINDING_INDEXES)
+        val indexes = IntArray(MAX_TRI_WINDING_INDEXES)
         val numIndexes: Int = R_WindingFromTriangles(tri, indexes)
 
         // only deal with quads
@@ -705,19 +586,6 @@ object tr_deform {
             i++
         }
 
-//if (true){
-//	static glIndex_t	triIndexes[18*3] = {
-//		0,4,5,  0,5,6, 0,6,7, 0,7,1, 1,7,8, 1,8,9,
-//		15,4,0, 15,0,3, 3,0,1, 3,1,2, 2,1,9, 2,9,10,
-//		14,15,3, 14,3,13, 13,3,2, 13,2,12, 12,2,11, 11,2,10
-//	};
-//}else{
-//	newTri.numIndexes = 12;
-//	static glIndex_t triIndexes[4*3] = {
-//		0,1,2, 0,2,3, 0,4,5,0,5,6
-//	};
-//}
-//        memcpy(newTri.indexes, triIndexes, sizeof(triIndexes));
         System.arraycopy(triIndexes, 0, newTri.indexes, 0, triIndexes.size)
         R_FinishDeform(surf, newTri, ac)
     }
@@ -738,7 +606,7 @@ object tr_deform {
 
         // this srfTriangles_t and all its indexes and caches are in frame
         // memory, and will be automatically disposed of
-        newTri = srfTriangles_s() // R_ClearedFrameAlloc(sizeof(newTri));
+        newTri = srfTriangles_s()
         newTri.numVerts = tri.numVerts
         newTri.numIndexes = tri.numIndexes
         newTri.indexes = tri.indexes
@@ -746,7 +614,7 @@ object tr_deform {
         val dist: Float = surf.shaderRegisters!![surf.material!!.GetDeformRegister(0)]
         i = 0
         while (i < tri.numVerts) {
-            ac[i] = tri.verts!![i]
+            ac[i] = idDrawVert(tri.verts!![i])
             ac[i]!!.xyz.set(tri.verts!![i]!!.xyz.plus(tri.verts!![i]!!.normal.times(dist)))
             i++
         }
@@ -769,7 +637,7 @@ object tr_deform {
 
         // this srfTriangles_t and all its indexes and caches are in frame
         // memory, and will be automatically disposed of
-        newTri = srfTriangles_s() // R_ClearedFrameAlloc(sizeof(newTri));
+        newTri = srfTriangles_s()
         newTri.numVerts = tri.numVerts
         newTri.numIndexes = tri.numIndexes
         newTri.indexes = tri.indexes
@@ -799,7 +667,7 @@ object tr_deform {
 
         // this srfTriangles_t and all its indexes and caches are in frame
         // memory, and will be automatically disposed of
-        newTri = srfTriangles_s() // R_ClearedFrameAlloc(sizeof(newTri));
+        newTri = srfTriangles_s()
         newTri.numVerts = tri.numVerts
         newTri.numIndexes = tri.numIndexes
         newTri.indexes = tri.indexes
@@ -889,7 +757,6 @@ object tr_deform {
             Common.common.Printf("R_EyeballDeform: too many triangles in surface")
             return
         }
-        //	memset( triUsed, 0, sizeof( triUsed ) );
         numIslands = 0
         while (numIslands < MAX_EYEBALL_ISLANDS) {
             islands[numIslands] = eyeIsland_t()
@@ -918,7 +785,7 @@ object tr_deform {
         // this srfTriangles_t and all its indexes and caches are in frame
         // memory, and will be automatically disposed of
         // the surface cannot have more indexes or verts than the original
-        newTri = srfTriangles_s() // R_ClearedFrameAlloc(sizeof(newTri));
+        newTri = srfTriangles_s()
         newTri.numVerts = tri.numVerts
         newTri.numIndexes = tri.numIndexes
         newTri.indexes = IntArray(tri.numIndexes)
@@ -1028,13 +895,6 @@ object tr_deform {
             return
         }
 
-//    if (false) {
-//        if (renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME] != 0f
-//                && viewDef!!.renderView.time * 0.001 >= renderEntity.shaderParms[SHADERPARM_PARTICLE_STOPTIME]) {
-//            // the entire system has faded out
-//            return null;
-//        }
-//    }
         //
         // calculate the area of all the triangles
         //
@@ -1089,11 +949,11 @@ object tr_deform {
 
                 // allocate a srfTriangles in temp memory that can hold all the particles
                 var tri: srfTriangles_s
-                tri = srfTriangles_s() // R_ClearedFrameAlloc(sizeof(tri));
+                tri = srfTriangles_s()
                 tri.numVerts = 4 * count
                 tri.numIndexes = 6 * count
-                tri.verts = idDrawVert.generateArray(tri.numVerts) // R_FrameAlloc(tri.numVerts);
-                tri.indexes = IntArray(tri.numIndexes) // R_FrameAlloc(tri.numIndexes);
+                tri.verts = idDrawVert.generateArray(tri.numVerts)
+                tri.indexes = IntArray(tri.numIndexes)
 
                 // just always draw the particles
                 tri.bounds.set(stage.bounds)
@@ -1251,20 +1111,15 @@ object tr_deform {
             deform_t.DFRM_EYEBALL -> R_EyeballDeform(drawSurf)
             deform_t.DFRM_PARTICLE -> R_ParticleDeform(drawSurf, true)
             deform_t.DFRM_PARTICLE2 -> R_ParticleDeform(drawSurf, false)
-            null -> TODO()
+            else -> return
         }
     }
 
     //========================================================================================
     class eyeIsland_t {
-        val bounds: idBounds
-        val mid: idVec3
+        val bounds: idBounds = idBounds()
+        val mid: idVec3 = idVec3()
         var numTris: Int = 0
         var tris: IntArray = IntArray(MAX_EYEBALL_TRIS)
-
-        init {
-            bounds = idBounds()
-            mid = idVec3()
-        }
     }
 }

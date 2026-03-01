@@ -241,7 +241,6 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     override fun SetupTrmModel(trm: idTraceModel, material: Array<idMaterial?>): Int {
         var j: Int
         val vertex: Array<cm_vertex_s>?
-        val edge: Array<cm_edge_s>?
         var poly: cm_polygon_s
         val model: cm_model_s
         val trmPoly: Array<traceModelPoly_t>
@@ -266,16 +265,20 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
         // edges
         model.numEdges = trm.numEdges
-        edge = model.edges
-        val trmEdge: Array<traceModelEdge_t> = trm.edges
+        // FIX: C++ uses `edge = model->edges + 1` and `const trmEdge = trm.edges + 1`
+        // Both pointers are offset by +1 (edges are 1-based in the collision model).
+        // The original Kotlin created a reference alias `trmEdge = trm.edges` then did
+        // `trmEdge[i] = trm.edges[i + 1]` which CORRUPTED the cached trace model's edges
+        // array by shifting references left. Also `edge.set(i, model.edges[i+1])` corrupted
+        // model edges through self-aliasing. Fix: read from trm.edges[i+1], write to
+        // model.edges[i+1], never modify trm.
         for (i in 0 until trm.numEdges) {
-            trmEdge[i] = trm.edges[i + 1]
-            edge?.set(i, model.edges!![i + 1])
-            edge?.get(i)!!.vertexNum[0] = trmEdge[i].v[0]
-            edge[i].vertexNum[1] = trmEdge[i].v[1]
-            edge[i].normal.set(trmEdge[i].normal)
-            edge[i].internal = false
-            edge[i].sideSet = 0
+            val trmE = trm.edges[i + 1]
+            model.edges!![i + 1].vertexNum[0] = trmE.v[0]
+            model.edges!![i + 1].vertexNum[1] = trmE.v[1]
+            model.edges!![i + 1].normal.set(trmE.normal)
+            model.edges!![i + 1].internal = false
+            model.edges!![i + 1].sideSet = 0
         }
         // polygons
         model.numPolygons = trm.numPolys
@@ -445,6 +448,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         var poly: cm_trmPolygon_s?
         var edge: cm_trmEdge_s?
         var vert: cm_trmVertex_s?
+
+        // C++: memset( results, 0, sizeof( *results ) )
+        results.clear()
+
         if (model < 0 || model > MAX_SUBMODELS || model > maxModels) {
             Common.common.Printf("idCollisionModelManagerLocal::Translation: invalid model handle\n")
             return
@@ -558,7 +565,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             results.c.normal.set(getVec3Origin())
             results.c.material = null
             results.c.point.set(start)
-            Session.session.rw.DebugArrow(colorRed, start, end, 1)
+            // FIX: C++ checks if ( session->rw ) before calling. rw is lateinit and may not be initialized.
+            try {
+                Session.session.rw.DebugArrow(colorRed, start, end, 1)
+            } catch (_: UninitializedPropertyAccessException) {
+            }
             Common.common.Printf("idCollisionModelManagerLocal::Translation: huge translation\n")
             return
         }
@@ -830,6 +841,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         var a: Float
         var lasta: Float
 
+        // C++: memset( results, 0, sizeof( *results ) )
+        results.clear()
 
         // if special position test
         if (rotation.GetAngle() == 0.0f) {
@@ -1529,7 +1542,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 tw.trace.c.material = poly.material
                 tw.trace.c.type = contactType_t.CONTACT_EDGE
                 tw.trace.c.modelFeature = edgeNum
-                tw.trace.c.trmFeature = listOf(*tw.edges).indexOf(trmEdge)
+                tw.trace.c.trmFeature = tw.edges.indexOf(trmEdge)
                 // calculate collision point
                 normal[0] = trmEdge.cross[2]
                 normal[1] = -trmEdge.cross[1]
@@ -1579,7 +1592,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.trace.c.material = poly.material
             tw.trace.c.type = contactType_t.CONTACT_TRMVERTEX
             tw.trace.c.modelFeature = poly.hashCode()
-            tw.trace.c.trmFeature = listOf(*tw.vertices).indexOf(v)
+            tw.trace.c.trmFeature = tw.vertices.indexOf(v)
             tw.trace.c.point.set(v.p + tw.trace.fraction * (v.endp - v.p))
             // if retrieving contacts
             if (tw.getContacts) {
@@ -1630,7 +1643,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.trace.c.material = poly.material
             tw.trace.c.type = contactType_t.CONTACT_TRMVERTEX
             tw.trace.c.modelFeature = poly.hashCode() // need to check
-            tw.trace.c.trmFeature = listOf(*tw.vertices).indexOf(v)
+            tw.trace.c.trmFeature = tw.vertices.indexOf(v)
             tw.trace.c.point.set(v.p + tw.trace.fraction * (v.endp - v.p))
             // if retrieving contacts
             if (tw.getContacts) {
@@ -1670,8 +1683,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.trace.c.contents = poly.contents
             tw.trace.c.material = poly.material
             tw.trace.c.type = contactType_t.CONTACT_MODELVERTEX
-            tw.trace.c.modelFeature = poly.hashCode()
-            tw.trace.c.trmFeature = listOf(*tw.polys).indexOf(trmpoly)
+            // FIX: C++ uses pointer arithmetic (v - tw->model->vertices) to get vertex index.
+            // Kotlin had poly.hashCode() which is completely wrong — must be the vertex index.
+            tw.trace.c.modelFeature = tw.model!!.vertices!!.indexOf(v)
+            tw.trace.c.trmFeature = tw.polys.indexOf(trmpoly)
             tw.trace.c.point.set(v.p + tw.trace.fraction * (endp - v.p))
             // if retrieving contacts
             if (tw.getContacts) {
@@ -2007,17 +2022,18 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     private fun RotateEdgeThroughEdge(
         tw: cm_traceWork_s, pl1: idPluecker, vc: idVec3, vd: idVec3, minTan: Float, tanHalfAngle: CFloat
     ): Boolean {
-        val v0: Float
-        val v1: Float
-        val v2: Float
-        val a: Float
-        val b: Float
-        val c: Float
-        val d: Float
-        val sqrtd: Float
-        val q: Float
-        var frac1: Float
-        var frac2: Float
+        // FIX: C++ uses double for all these variables - precision-critical quadratic solver
+        val v0: Double
+        val v1: Double
+        val v2: Double
+        val a: Double
+        val b: Double
+        val c: Double
+        val d: Double
+        val sqrtd: Double
+        val q: Double
+        var frac1: Double
+        var frac2: Double
         val ct = idVec3()
         val dt = idVec3()
         val pl2 = idPluecker()
@@ -2123,25 +2139,26 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         ct.set((vc - tw.origin) * tw.matrix)
         dt.set((vd - tw.origin) * tw.matrix)
         pl2.FromLine(ct, dt)
-        v0 = pl2[0] * pl1[4] + pl2[4] * pl1[0]
-        v1 = pl2[1] * pl1[2] - pl2[2] * pl1[1] + pl2[5] * pl1[3] - pl2[3] * pl1[5]
-        v2 = pl2[1] * pl1[5] + pl2[2] * pl1[3] + pl2[5] * pl1[1] + pl2[3] * pl1[2]
+        // FIX: All computations in Double to match C++ double precision
+        v0 = (pl2[0] * pl1[4] + pl2[4] * pl1[0]).toDouble()
+        v1 = (pl2[1] * pl1[2] - pl2[2] * pl1[1] + pl2[5] * pl1[3] - pl2[3] * pl1[5]).toDouble()
+        v2 = (pl2[1] * pl1[5] + pl2[2] * pl1[3] + pl2[5] * pl1[1] + pl2[3] * pl1[2]).toDouble()
         a = v0 - v2
         b = v1
         c = v0 + v2
-        if (a == 0.0f) {
-            if (b == 0.0f) {
+        if (a == 0.0) {
+            if (b == 0.0) {
                 return false
             }
-            frac1 = -c / (2.0f * b)
-            frac2 = 1.0E10F // = tan( idMath::HALF_PI )
+            frac1 = -c / (2.0 * b)
+            frac2 = 1e10 // = tan( idMath::HALF_PI )
         } else {
             d = b * b - c * a
-            if (d <= 0.0f) {
+            if (d <= 0.0) {
                 return false
             }
-            sqrtd = sqrt(d)
-            q = if (b > 0.0f) {
+            sqrtd = kotlin.math.sqrt(d)
+            q = if (b > 0.0) {
                 -b + sqrtd
             } else {
                 -b - sqrtd
@@ -2156,10 +2173,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
         // get smallest tangent for which a collision occurs
         if (frac1 >= minTan && frac1 < tanHalfAngle._val) {
-            tanHalfAngle._val = (frac1)
+            tanHalfAngle._val = frac1.toFloat()
         }
         if (frac2 >= minTan && frac2 < tanHalfAngle._val) {
-            tanHalfAngle._val = (frac2)
+            tanHalfAngle._val = frac2.toFloat()
         }
         if (tw.angle < 0.0f) {
             tanHalfAngle._val = (-tanHalfAngle._val)
@@ -2179,17 +2196,18 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     private fun EdgeFurthestFromEdge(
         tw: cm_traceWork_s, pl1: idPluecker, vc: idVec3, vd: idVec3, tanHalfAngle: CFloat, dir: CFloat
     ): Boolean {
-        val v0: Float
-        val v1: Float
-        val v2: Float
-        val a: Float
-        val b: Float
-        var c: Float
-        val d: Float
-        val sqrtd: Float
-        val q: Float
-        var frac1: Float
-        var frac2: Float
+        // FIX: C++ uses double for all these variables - precision-critical quadratic solver
+        val v0: Double
+        val v1: Double
+        val v2: Double
+        val a: Double
+        val b: Double
+        var c: Double
+        val d: Double
+        val sqrtd: Double
+        val q: Double
+        var frac1: Double
+        var frac2: Double
         val ct = idVec3()
         val dt = idVec3()
         val pl2 = idPluecker()
@@ -2221,23 +2239,24 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         ct.set((vc - tw.origin) * tw.matrix)
         dt.set((vd - tw.origin) * tw.matrix)
         pl2.FromLine(ct, dt)
-        v0 = pl2[0] * pl1[4] + pl2[4] * pl1[0]
-        v1 = pl2[1] * pl1[2] - pl2[2] * pl1[1] + pl2[5] * pl1[3] - pl2[3] * pl1[5]
-        v2 = pl2[1] * pl1[5] + pl2[2] * pl1[3] + pl2[5] * pl1[1] + pl2[3] * pl1[2]
+        // FIX: All computations in Double to match C++ double precision
+        v0 = (pl2[0] * pl1[4] + pl2[4] * pl1[0]).toDouble()
+        v1 = (pl2[1] * pl1[2] - pl2[2] * pl1[1] + pl2[5] * pl1[3] - pl2[3] * pl1[5]).toDouble()
+        v2 = (pl2[1] * pl1[5] + pl2[2] * pl1[3] + pl2[5] * pl1[1] + pl2[3] * pl1[2]).toDouble()
 
         // get the direction of motion at the initial position
         c = v0 + v2
         if (tw.angle > 0.0f) {
-            if (c > 0.0f) {
-                dir._val = v1
+            if (c > 0.0) {
+                dir._val = v1.toFloat()
             } else {
-                dir._val = -v1
+                dir._val = (-v1).toFloat()
             }
         } else {
-            if (c > 0.0f) {
-                dir._val = -v1
+            if (c > 0.0) {
+                dir._val = (-v1).toFloat()
             } else {
-                dir._val = v1
+                dir._val = v1.toFloat()
             }
         }
         // negative direction means the edges move towards each other at the initial position
@@ -2247,19 +2266,19 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         a = -v1
         b = -v2
         c = v1
-        if (a == 0.0f) {
-            if (b == 0.0f) {
+        if (a == 0.0) {
+            if (b == 0.0) {
                 return false
             }
-            frac1 = -c / (2.0f * b)
-            frac2 = 1.0E10F // = tan( idMath::HALF_PI )
+            frac1 = -c / (2.0 * b)
+            frac2 = 1e10 // = tan( idMath::HALF_PI )
         } else {
             d = b * b - c * a
-            if (d <= 0.0f) {
+            if (d <= 0.0) {
                 return false
             }
-            sqrtd = sqrt(d)
-            q = if (b > 0.0f) {
+            sqrtd = kotlin.math.sqrt(d)
+            q = if (b > 0.0) {
                 -b + sqrtd
             } else {
                 -b - sqrtd
@@ -2271,13 +2290,13 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             frac1 = -frac1
             frac2 = -frac2
         }
-        if (frac1 < 0.0f && frac2 < 0.0f) {
+        if (frac1 < 0.0 && frac2 < 0.0) {
             return false
         }
         if (frac1 > frac2) {
-            tanHalfAngle._val = frac1
+            tanHalfAngle._val = frac1.toFloat()
         } else {
-            tanHalfAngle._val = frac2
+            tanHalfAngle._val = frac2.toFloat()
         }
         if (tw.angle < 0.0f) {
             tanHalfAngle._val = (-tanHalfAngle._val)
@@ -2438,7 +2457,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.trace.c.material = poly.material
             tw.trace.c.type = contactType_t.CONTACT_EDGE
             tw.trace.c.modelFeature = edgeNum
-            tw.trace.c.trmFeature = listOf(*tw.edges).indexOf(trmEdge)
+            tw.trace.c.trmFeature = tw.edges.indexOf(trmEdge)
             tw.trace.c.point.set(collisionPoint)
             // if no collision can be closer
             if (tw.maxTan == 0.0f) {
@@ -2458,17 +2477,18 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     private fun RotatePointThroughPlane(
         tw: cm_traceWork_s, point: idVec3, plane: idPlane, angle: Float, minTan: Float, tanHalfAngle: CFloat
     ): Boolean {
-        val v0: Float
-        val v1: Float
-        val v2: Float
-        val a: Float
-        val b: Float
-        val c: Float
-        var d: Float
-        val sqrtd: Float
-        val q: Float
-        var frac1: Float
-        var frac2: Float
+        // FIX: C++ uses double for all these variables - precision-critical quadratic solver
+        val v0: Double
+        val v1: Double
+        val v2: Double
+        val a: Double
+        val b: Double
+        val c: Double
+        var d: Double
+        val sqrtd: Double
+        val q: Double
+        var frac1: Double
+        var frac2: Double
         val p = idVec3()
         val normal = idVec3()
 
@@ -2508,27 +2528,28 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
         // transform rotation axis to z-axis
         p.set((point - tw.origin) * tw.matrix)
-        d = plane[3] + plane.Normal() * tw.origin
+        // FIX: d is Double now, convert plane distance to Double
+        d = (plane[3] + plane.Normal() * tw.origin).toDouble()
         normal.set(plane.Normal() * tw.matrix)
         v0 = normal[2] * p[2] + d
-        v1 = (normal[0] * p[1] - normal[1] * p[0])
-        v2 = (normal[0] * p[0] + normal[1] * p[1])
+        v1 = (normal[0] * p[1] - normal[1] * p[0]).toDouble()
+        v2 = (normal[0] * p[0] + normal[1] * p[1]).toDouble()
         a = v0 - v2
         b = v1
         c = v0 + v2
-        if (a == 0.0f) {
-            if (b == 0.0f) {
+        if (a == 0.0) {
+            if (b == 0.0) {
                 return false
             }
-            frac1 = -c / (2.0f * b)
-            frac2 = 1e10f // = tan( idMath::HALF_PI )
+            frac1 = -c / (2.0 * b)
+            frac2 = 1e10 // = tan( idMath::HALF_PI )
         } else {
             d = b * b - c * a
-            if (d <= 0.0f) {
+            if (d <= 0.0) {
                 return false
             }
-            sqrtd = sqrt(d)
-            q = if (b > 0.0f) {
+            sqrtd = kotlin.math.sqrt(d)
+            q = if (b > 0.0) {
                 -b + sqrtd
             } else {
                 -b - sqrtd
@@ -2543,10 +2564,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
         // get smallest tangent for which a collision occurs
         if (frac1 >= minTan && frac1 < tanHalfAngle._val) {
-            tanHalfAngle._val = frac1
+            tanHalfAngle._val = frac1.toFloat()
         }
         if (frac2 >= minTan && frac2 < tanHalfAngle._val) {
-            tanHalfAngle._val = frac2
+            tanHalfAngle._val = frac2.toFloat()
         }
         if (angle < 0.0f) {
             tanHalfAngle._val = (-tanHalfAngle._val)
@@ -2566,16 +2587,17 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     private fun PointFurthestFromPlane(
         tw: cm_traceWork_s, point: idVec3, plane: idPlane, angle: Float, tanHalfAngle: CFloat, dir: CFloat
     ): Boolean {
-        val v1: Float
-        val v2: Float
-        val a: Float
-        val b: Float
-        val c: Float
-        val d: Float
-        val sqrtd: Float
-        val q: Float
-        var frac1: Float
-        var frac2: Float
+        // FIX: C++ uses double for all these variables - precision-critical quadratic solver
+        val v1: Double
+        val v2: Double
+        val a: Double
+        val b: Double
+        val c: Double
+        val d: Double
+        val sqrtd: Double
+        val q: Double
+        var frac1: Double
+        var frac2: Double
         val p = idVec3()
         val normal = idVec3()
 
@@ -2584,14 +2606,14 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // transform rotation axis to z-axis
         p.set((point - tw.origin) * tw.matrix)
         normal.set(plane.Normal() * tw.matrix)
-        v1 = normal[0] * p[1] - normal[1] * p[0]
-        v2 = normal[0] * p[0] + normal[1] * p[1]
+        v1 = (normal[0] * p[1] - normal[1] * p[0]).toDouble()
+        v2 = (normal[0] * p[0] + normal[1] * p[1]).toDouble()
 
         // the point will always start at the front of the plane, therefore v0 + v2 > 0 is always true
         if (angle < 0.0f) {
-            dir._val = (-v1)
+            dir._val = (-v1).toFloat()
         } else {
-            dir._val = (v1)
+            dir._val = v1.toFloat()
         }
         // negative direction means the point moves towards the plane at the initial position
         if (dir._val <= 0.0f) {
@@ -2600,19 +2622,19 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         a = -v1
         b = -v2
         c = v1
-        if (a == 0.0f) {
-            if (b == 0.0f) {
+        if (a == 0.0) {
+            if (b == 0.0) {
                 return false
             }
-            frac1 = -c / (2.0f * b)
-            frac2 = 1e10f // = tan( idMath::HALF_PI )
+            frac1 = -c / (2.0 * b)
+            frac2 = 1e10 // = tan( idMath::HALF_PI )
         } else {
             d = b * b - c * a
-            if (d <= 0.0f) {
+            if (d <= 0.0) {
                 return false
             }
-            sqrtd = sqrt(d)
-            q = if (b > 0.0f) {
+            sqrtd = kotlin.math.sqrt(d)
+            q = if (b > 0.0) {
                 -b + sqrtd
             } else {
                 -b - sqrtd
@@ -2624,13 +2646,13 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             frac1 = -frac1
             frac2 = -frac2
         }
-        if (frac1 < 0.0f && frac2 < 0.0f) {
+        if (frac1 < 0.0 && frac2 < 0.0) {
             return false
         }
         if (frac1 > frac2) {
-            tanHalfAngle._val = (frac1)
+            tanHalfAngle._val = frac1.toFloat()
         } else {
-            tanHalfAngle._val = (frac2)
+            tanHalfAngle._val = frac2.toFloat()
         }
         if (angle < 0.0f) {
             tanHalfAngle._val = (-tanHalfAngle._val)
@@ -2795,7 +2817,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.trace.c.type = contactType_t.CONTACT_TRMVERTEX
             tw.trace.c.modelFeature = poly.hashCode()
             //tw.trace.c.modelFeature = vertexNum;
-            tw.trace.c.trmFeature = listOf(*tw.vertices).indexOf(v)
+            tw.trace.c.trmFeature = tw.vertices.indexOf(v)
             tw.trace.c.point.set(collisionPoint)
         }
     }
@@ -2865,8 +2887,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             tw.trace.c.contents = poly.contents
             tw.trace.c.material = poly.material
             tw.trace.c.type = contactType_t.CONTACT_MODELVERTEX
-            tw.trace.c.modelFeature = listOf(*tw.model!!.vertices!!).indexOf(v)
-            tw.trace.c.trmFeature = listOf(*tw.polys).indexOf(trmpoly)
+            tw.trace.c.modelFeature = tw.model!!.vertices!!.indexOf(v)
+            tw.trace.c.trmFeature = tw.polys.indexOf(trmpoly)
             tw.trace.c.point.set(v.p)
         }
     }
@@ -3418,13 +3440,17 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             } else {
                 // determine if the rotation axis intersects the trm
                 plaxis.FromRay(tw.origin, tw.axis)
+                // FIX: Restructured loop to avoid out-of-bounds array access.
+                // Original C++ uses for-loop with poly++ in loop increment:
+                //   for ( poly = tw.polys, i = 0; i < tw.numPolys; i++, poly++ )
+                // The old Kotlin while-loop accessed tw.polys[i] after i++ but before
+                // the while condition check, causing IndexOutOfBoundsException.
                 i = 0
                 while (i < tw.numPolys) {
                     poly = tw.polys[i]
                     // back face cull polygons
                     if (poly.plane.Normal().times(tw.axis) > 0.0f) {
                         i++
-                        poly = tw.polys[i]
                         continue
                     }
                     // test if the axis goes between the polygon edges
@@ -3446,7 +3472,6 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                         break
                     }
                     i++
-                    poly = tw.polys[i]
                 }
             }
         }
@@ -4198,7 +4223,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 while (i < numSteps) {
 
                     // calculate next point on approximated circle
-                    rot.Set(tw.origin, tw.axis, tw.angle * ((i + 1) / numSteps))
+                    // FIX: C++ uses (float)(i+1) to force float division. Kotlin (i+1)/numSteps is integer division.
+                    rot.Set(tw.origin, tw.axis, tw.angle * ((i + 1).toFloat() / numSteps))
                     end.set(rot.times(start))
                     // trace through spatial subdivision and then through leafs
                     TraceThroughAxialBSPTree_r(tw, tw.model!!.node, 0.0f, 1.0f, start, end)
@@ -4468,6 +4494,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             } else if (p1.bounds[1][currentNode.planeType] < currentNode.planeDist && p2.bounds[1][currentNode.planeType] < currentNode.planeDist) {
                 currentNode = currentNode.children[1]!!
             } else {
+                // FIX: C++ recurses into children[1] before iterating children[0].
+                // Kotlin was missing the recursive call, leaving stale polygon references in back subtree.
+                ReplacePolygons(model, currentNode.children[1]!!, p1, p2, newp)
                 currentNode = currentNode.children[0]!!
             }
         }
@@ -5001,7 +5030,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             if (currentNode.planeType == -1) {
                 break
             }
-            currentNode = if (polygon.bounds[1][currentNode.planeType] > currentNode.planeDist) {
+            // FIX: First condition must test bounds[0] (min), not bounds[1] (max).
+            // C++: polygon->bounds[0][node->planeType] > node->planeDist
+            currentNode = if (polygon.bounds[0][currentNode.planeType] > currentNode.planeDist) {
                 currentNode.children[0]!!
             } else if (polygon.bounds[1][currentNode.planeType] < currentNode.planeDist) {
                 currentNode.children[1]!!
@@ -5079,7 +5110,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // load it
         filename = idStr(name)
         filename.SetFileExtension(RenderWorld.PROC_FILE_EXT)
-        src = idLexer(name, Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_NODOLLARPRECOMPILE)
+        // FIX: C++ passes `filename` (with .proc extension) to idLexer, not original `name`.
+        src = idLexer(filename.toString(), Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_NODOLLARPRECOMPILE)
         if (!src.IsLoaded()) {
             Common.common.Warning(
                 "idCollisionModelManagerLocal::LoadProcBSP: couldn't load %s", filename.toString()
@@ -5193,7 +5225,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         // make a local copy of the winding
         neww = idFixedWinding(w)
         neww.GetBounds(bounds)
-        origin.set(bounds[1] - (bounds[0]) * 0.5f)
+        // FIX: C++ is (bounds[1] - bounds[0]) * 0.5f — must subtract first, then scale.
+        // Kotlin had bounds[1] - bounds[0] * 0.5f which scales bounds[0] first (wrong).
+        origin.set((bounds[1] - bounds[0]) * 0.5f)
         radius = origin.Length() + CHOP_EPSILON
         origin.set(bounds[0] + (origin))
         //
@@ -5254,7 +5288,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             bestNumWindings = 1 + b.numPlanes
             chopped = false
             do {
-                front = list.w[k]
+                // FIX: C++ `front = list->w[k]` copies the winding by value (stack object).
+                // Kotlin was aliasing the reference, so Split() would modify the original in the list.
+                front = idFixedWinding(list.w[k]!!)
                 cm_tmpList!!.numWindings = 0
                 planeNum = startPlane
                 i = 0
@@ -5441,8 +5477,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             cm_windingList!!.bounds.AddPoint(w[i].ToVec3())
             i++
         }
+        // FIX: C++ is (bounds[1] - bounds[0]) * 0.5 — subtract first, then scale.
         cm_windingList!!.origin.set(
-            cm_windingList!!.bounds[1] - (cm_windingList!!.bounds[0]) * 0.5f
+            (cm_windingList!!.bounds[1] - cm_windingList!!.bounds[0]) * 0.5f
         )
         cm_windingList!!.radius = cm_windingList!!.origin.Length() + CHOP_EPSILON
         cm_windingList!!.origin.set(cm_windingList!!.bounds[0] + (cm_windingList!!.origin))
@@ -5606,7 +5643,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         val poly: cm_polygon_s
         val size: Int
         size =
-            cm_polygon_s.BYTES + (numEdges - 1) * Integer.SIZE //sizeof( cm_polygon_t ) + ( numEdges - 1 ) * sizeof( poly.edges[0] );
+            cm_polygon_s.BYTES + (numEdges - 1) * Integer.BYTES //sizeof( cm_polygon_t ) + ( numEdges - 1 ) * sizeof( poly.edges[0] );
         model.numPolygons++
         model.polygonMemory += size
         poly = cm_polygon_s() // Mem_Alloc(size);
@@ -5618,7 +5655,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         val brush: cm_brush_s
         val size: Int
         size =
-            cm_brush_s.BYTES + (numPlanes - 1) * Integer.SIZE //sizeof( cm_brush_t ) + ( numPlanes - 1 ) * sizeof( brush.planes[0] );
+            cm_brush_s.BYTES + (numPlanes - 1) * idPlane.BYTES //sizeof( cm_brush_t ) + ( numPlanes - 1 ) * sizeof( brush.planes[0] );
         model.numBrushes++
         model.brushMemory += size
         brush = cm_brush_s() // Mem_Alloc(size);
@@ -6240,7 +6277,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                             model.numSharpEdges++
                         } else {
                             s = 0.5f / (0.5f + 0.5f * dot)
-                            edge.normal.set(edge.normal + (p.plane.Normal()) * (s))
+                            // FIX: C++ is s * (edge->normal + p->plane.Normal()) — s scales entire sum.
+                            // Kotlin had edge.normal + planeNormal * s which only scales planeNormal.
+                            edge.normal.set((edge.normal + p.plane.Normal()) * s)
                         }
                     }
                     i++
@@ -7222,7 +7261,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 i,
                 model.edges!![i].vertexNum[0],
                 model.edges!![i].vertexNum[1],
-                model.edges!![i].internal,
+                if (model.edges!![i].internal) 1 else 0,
                 model.edges!![i].numUsers
             )
             i++
@@ -7256,12 +7295,12 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         val name: idStr
         name = idStr(filename)
         name.SetFileExtension(CM_FILE_EXT)
-        Common.common.Printf("writing %s\n", filename)
+        Common.common.Printf("writing %s\n", name.toString())
         // _D3XP was saving to fs_cdpath
-        fp = FileSystem_h.fileSystem.OpenFileWrite(filename, "fs_devpath")
+        fp = FileSystem_h.fileSystem.OpenFileWrite(name.toString(), "fs_devpath")
         if (null == fp) {
             Common.common.Warning(
-                "idCollisionModelManagerLocal::WriteCollisionModelsToFile: Error opening file %s\n", filename
+                "idCollisionModelManagerLocal::WriteCollisionModelsToFile: Error opening file %s\n", name.toString()
             )
             return
         }
@@ -7478,9 +7517,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         model.contents = CM_GetNodeContents(model.node!!)
         // total memory used by this model
         model.usedMemory =
-            (model.numVertices * cm_vertex_s.BYTES + model.numEdges * cm_edge_s.BYTES + model.polygonMemory + model.brushMemory + model.numNodes //* cm_node_s.Bytes
-                    + model.numPolygonRefs //* cm_polygonRef_s.Bytes
-                    + model.numBrushRefs) //* cm_brushRef_s.Bytes;
+            (model.numVertices * cm_vertex_s.BYTES + model.numEdges * cm_edge_s.BYTES + model.polygonMemory + model.brushMemory + model.numNodes * cm_node_s.BYTES + model.numPolygonRefs * cm_polygonRef_s.BYTES + model.numBrushRefs * cm_brushRef_s.BYTES)
         return true
     }
 
@@ -7613,7 +7650,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             }
         }
         if (cm_drawNormals.GetBool()) {
-            mid.set(start + end * 0.5f)
+            mid.set((start + end) * 0.5f)
             if (isRotated) {
                 end.set(mid + (axis.times(edge.normal)) * 5.0f)
             } else {

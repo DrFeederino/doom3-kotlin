@@ -336,7 +336,7 @@ object Anim {
                 totaldelta.Zero()
             } else {
                 c_ptr = jointInfo[0].firstComponent
-                if (jointInfo[0].animBits and ANIM_TX !== 0) {
+                if ((jointInfo[0].animBits and ANIM_TX) != 0) {
                     i = 0
                     while (i < numFrames) {
                         val index = c_ptr + numAnimatedComponents * i
@@ -349,7 +349,7 @@ object Anim {
                     totaldelta.x = 0.0f
                 }
 
-                if (jointInfo[0].animBits and ANIM_TY !== 0) {
+                if ((jointInfo[0].animBits and ANIM_TY) != 0) {
                     i = 0
                     while (i < numFrames) {
                         val index = c_ptr + numAnimatedComponents * i
@@ -362,7 +362,7 @@ object Anim {
                     totaldelta.y = 0.0f
                 }
 
-                if (jointInfo[0].animBits and ANIM_TZ !== 0) {
+                if ((jointInfo[0].animBits and ANIM_TZ) != 0) {
                     i = 0
                     while (i < numFrames) {
                         val index = c_ptr + numAnimatedComponents * i
@@ -663,25 +663,25 @@ object Anim {
                 if (animBits != 0) {
                     jointframe = componentFrames.Ptr()
                     jf_ptr = f_ptr + infoPtr.firstComponent
-                    if (animBits and (ANIM_TX or ANIM_TY or ANIM_TZ) != 0) {
-                        if (animBits and ANIM_TX != 0) {
+                    if ((animBits and (ANIM_TX or ANIM_TY or ANIM_TZ)) != 0) {
+                        if ((animBits and ANIM_TX) != 0) {
                             jointPtr.t.x = jointframe[jf_ptr++]
                         }
-                        if (animBits and ANIM_TY != 0) {
+                        if ((animBits and ANIM_TY) != 0) {
                             jointPtr.t.y = jointframe[jf_ptr++]
                         }
-                        if (animBits and ANIM_TZ != 0) {
+                        if ((animBits and ANIM_TZ) != 0) {
                             jointPtr.t.z = jointframe[jf_ptr++]
                         }
                     }
-                    if (animBits and (ANIM_QX or ANIM_QY or ANIM_QZ) != 0) {
-                        if (animBits and ANIM_QX != 0) {
+                    if ((animBits and (ANIM_QX or ANIM_QY or ANIM_QZ)) != 0) {
+                        if ((animBits and ANIM_QX) != 0) {
                             jointPtr.q.x = jointframe[jf_ptr++]
                         }
-                        if (animBits and ANIM_QY != 0) {
+                        if ((animBits and ANIM_QY) != 0) {
                             jointPtr.q.y = jointframe[jf_ptr++]
                         }
-                        if (animBits and ANIM_QZ != 0) {
+                        if ((animBits and ANIM_QZ) != 0) {
                             jointPtr.q.z = jointframe[jf_ptr]
                         }
                         jointPtr.q.w = jointPtr.q.CalcW()
@@ -781,19 +781,19 @@ object Anim {
             val componentPtr1 = componentFrames.getList(Array<Float>::class.java)!!
             val componentPtr2 = componentFrames.getList(Array<Float>::class.java)!!
 
-            if (jointInfo[0].animBits and ANIM_TX != 0) {
+            if ((jointInfo[0].animBits and ANIM_TX) != 0) {
                 offset.x = componentPtr1[c1_ptr] * frame.frontlerp + componentPtr2[c2_ptr] * frame.backlerp
                 c1_ptr++
                 c2_ptr++
             }
 
-            if (jointInfo[0].animBits and ANIM_TY != 0) {
+            if ((jointInfo[0].animBits and ANIM_TY) != 0) {
                 offset.y = componentPtr1[c1_ptr] * frame.frontlerp + componentPtr2[c2_ptr] * frame.backlerp
                 c1_ptr++
                 c2_ptr++
             }
 
-            if (jointInfo[0].animBits and ANIM_TZ != 0) {
+            if ((jointInfo[0].animBits and ANIM_TZ) != 0) {
                 offset.z = componentPtr1[c1_ptr] * frame.frontlerp + componentPtr2[c2_ptr] * frame.backlerp
             }
 
@@ -815,15 +815,15 @@ object Anim {
             var j1_ptr: Int = numAnimatedComponents * frame.frame1 + jointInfo[0].firstComponent
             val jointframe2 = componentFrames.getList(Array<Float>::class.java)!!
             var j2_ptr: Int = numAnimatedComponents * frame.frame2 + jointInfo[0].firstComponent
-            if (animBits and ANIM_TX != 0) {
+            if ((animBits and ANIM_TX) != 0) {
                 j1_ptr++
                 j2_ptr++
             }
-            if (animBits and ANIM_TY != 0) {
+            if ((animBits and ANIM_TY) != 0) {
                 j1_ptr++
                 j2_ptr++
             }
-            if (animBits and ANIM_TZ != 0) {
+            if ((animBits and ANIM_TZ) != 0) {
                 j1_ptr++
                 j2_ptr++
             }
@@ -921,22 +921,22 @@ object Anim {
 
             // origin position
             offset.set(baseFrame[0].t)
-            if (jointInfo[0].animBits and (ANIM_TX or ANIM_TY or ANIM_TZ) != 0) {
+            if ((jointInfo[0].animBits and (ANIM_TX or ANIM_TY or ANIM_TZ)) != 0) {
                 val componentPtr1 = componentFrames.getList(Array<Float>::class.java)!!
                 c1_ptr = numAnimatedComponents * frame.frame1 + jointInfo[0].firstComponent
                 val componentPtr2 = componentFrames.getList(Array<Float>::class.java)!!
                 c2_ptr = numAnimatedComponents * frame.frame2 + jointInfo[0].firstComponent
-                if (jointInfo[0].animBits and ANIM_TX != 0) {
+                if ((jointInfo[0].animBits and ANIM_TX) != 0) {
                     offset.x = componentPtr1[c1_ptr] * frame.frontlerp + componentPtr2[c2_ptr] * frame.backlerp
                     c1_ptr++
                     c2_ptr++
                 }
-                if (jointInfo[0].animBits and ANIM_TY != 0) {
+                if ((jointInfo[0].animBits and ANIM_TY) != 0) {
                     offset.y = componentPtr1[c1_ptr] * frame.frontlerp + componentPtr2[c2_ptr] * frame.backlerp
                     c1_ptr++
                     c2_ptr++
                 }
-                if (jointInfo[0].animBits and ANIM_TZ != 0) {
+                if ((jointInfo[0].animBits and ANIM_TZ) != 0) {
                     offset.z = componentPtr1[c1_ptr] * frame.frontlerp + componentPtr2[c2_ptr] * frame.backlerp
                 }
             }

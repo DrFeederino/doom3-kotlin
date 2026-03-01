@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/Material.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.Renderer.Cinematic.idCinematic
@@ -404,7 +430,6 @@ object Material {
         var height: Int = 0
 
         constructor() {
-            blaCounter++
         }
 
         private constructor(texture: textureStage_t) {
@@ -430,7 +455,6 @@ object Material {
                     + CPP_class.Enum.SIZE //dynamicidImage_t
                     + (Integer.SIZE * 2)
                     + Integer.SIZE)
-            private var blaCounter: Int = 0
         }
     }
 
@@ -457,7 +481,6 @@ object Material {
 
     class shaderStage_t {
         val texture: textureStage_t
-        private val DBG_count: Int = DBG_counter++
         var alphaTestRegister: Int = 0
         var color: colorStage_t
         var conditionRegister: Int = 0 // if registers[conditionRegister] == 0, skip stage
@@ -495,7 +518,6 @@ object Material {
                     + CPP_class.Bool.SIZE
                     + java.lang.Float.SIZE
                     + CPP_class.Pointer.SIZE) //newShaderStage_t
-            private var DBG_counter: Int = 0
         }
     }
 
@@ -538,7 +560,6 @@ object Material {
 
         //
         private val texGenRegisters: IntArray = IntArray(MAX_TEXGEN_REGISTERS) // for wobbleSky
-        var DBG_BALLS: Int = 0
 
         //
         var stages: Array<shaderStage_t?>? = null
@@ -714,9 +735,7 @@ object Material {
         }
 
         override fun Parse(text: String, textLength: Int): Boolean {
-            DEBUG_Parse++
             val src = idLexer()
-            //	idToken	token;
             val parsingData = mtrParsingData_s()
             src.LoadMemory(text, textLength, GetFileName(), GetLineNum())
             src.SetFlags(DeclManager.DECL_LEXER_FLAGS)
@@ -725,7 +744,6 @@ object Material {
             // reset to the unparsed state
             CommonInit()
 
-//	memset( &parsingData, 0, sizeof( parsingData ) );
             pd = parsingData // this is only valid during parse
 
             // parse it
@@ -891,25 +909,19 @@ object Material {
              }
              */
             if (numStages != 0) {
-                stages = arrayOfNulls(numStages) // R_StaticAlloc(numStages* sizeof( stages[0] )
-                //		memcpy( stages, pd.parseStages, numStages * sizeof( stages[0] ) );
-                DEBUG_Parse++
-                //                System.out.printf("%d-->%s\n", DEBUG_Parse, text);
+                stages = arrayOfNulls(numStages)
                 for (a in 0 until numStages) {
                     stages!![a] = pd!!.parseStages[a]
                 }
             }
             if (numOps != 0) {
-                ops = arrayOfNulls(numOps) // R_StaticAlloc(numOps * sizeof( ops[0] )
-                //		memcpy( ops, pd.shaderOps, numOps * sizeof( ops[0] ) );
+                ops = arrayOfNulls(numOps)
                 for (a in ops!!.indices) {
                     ops!![a] = pd!!.shaderOps[a]
                 }
             }
             if (numRegisters != 0) {
-                expressionRegisters =
-                    FloatArray(numRegisters) //R_StaticAlloc(numRegisters *sizeof( expressionRegisters[0] )
-                //		memcpy( expressionRegisters, pd.shaderRegisters, numRegisters * sizeof( expressionRegisters[0] ) );
+                expressionRegisters = FloatArray(numRegisters)
                 System.arraycopy(pd!!.shaderRegisters, 0, expressionRegisters, 0, numRegisters)
             }
 
@@ -932,9 +944,7 @@ object Material {
                 // delete any idCinematic textures
                 i = 0
                 while (i < numStages) {
-                    //TODO:for loop is unnecessary
                     if (stages!![i]!!.texture.cinematic[0] != null) {
-//				delete stages[i].texture.cinematic;
                         stages!![i]!!.texture.cinematic[0]?.deconstruct()
                     }
                     if (stages!![i]!!.newStage != null) {
@@ -945,15 +955,12 @@ object Material {
                 stages = null
             }
             if (expressionRegisters != null) {
-//                R_StaticFree(expressionRegisters);
                 expressionRegisters = null
             }
             if (constantRegisters != null) {
-//                R_StaticFree(constantRegisters);
                 constantRegisters = null
             }
             if (ops != null) {
-//                R_StaticFree(ops);
                 ops = null
             }
         }
@@ -1326,7 +1333,6 @@ object Material {
             for (i in 0 until numStages) {
                 if (stages!![i]!!.texture.cinematic[0] != null) {
                     stages!![i]!!.texture.cinematic[0]!!.Close()
-                    //			delete stages[i].texture.cinematic;
                     stages!![i]!!.texture.cinematic[0] = null
                 }
             }
@@ -1601,7 +1607,6 @@ object Material {
             allowOverlays = true
             unsmoothedTangents = false
             gui = null
-            //	memset( deformRegisters, 0, sizeof( deformRegisters ) );
             Arrays.fill(deformRegisters, 0)
             editorAlpha = 1.0f
             spectrum = 0
@@ -1864,10 +1869,6 @@ object Material {
                     continue
                 } else if (token.equals("{")) {
                     // create the new stage
-                    DBG_ParseStage++
-                    if (DBG_ParseStage == 41) { //
-//                        continue;
-                    }
                     ParseStage(src, trpDefault)
                     continue
                 } else {
@@ -1975,14 +1976,12 @@ object Material {
             val srcBlend: Int
             val dstBlend: Int
 
-//            System.out.printf("ParseBlend(%d)\n", DBG_ParseBlend++);
             if (!src.ReadToken(token)) {
                 return
             }
 
             // blending combinations
             if (0 == token.Icmp("blend")) {
-                DBG_ParseBlend++
                 stage!!.drawStateBits = GLS_SRCBLEND_SRC_ALPHA or GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA
                 return
             }
@@ -2155,7 +2154,6 @@ object Material {
         }
 
         private fun ParseStage(src: idLexer, trpDefault: textureRepeat_t = textureRepeat_t.TR_REPEAT /*= TR_REPEAT */) {
-            DEBUG_imageName++
             val token = idToken()
             var str: String?
             val ss: shaderStage_t?
@@ -2181,14 +2179,9 @@ object Material {
             cubeMap = cubeFiles_t.CF_2D
             imageName[0] = 0.toChar()
 
-//	memset( &newStage, 0, sizeof( newStage ) );
             ss = pd!!.parseStages[numStages]
             ts = ss!!.texture
             ClearStage(ss)
-            var asdasdasdasd = 0
-            if (DBG_ParseStage == 41) {
-                asdasdasdasd = 0
-            }
             while (true) {
                 if (TestMaterialFlag(MF_DEFAULTED)) {    // we have a parse error
                     return
@@ -2378,18 +2371,14 @@ object Material {
                 if (0 == token.Icmp("scroll") || 0 == token.Icmp("translate")) {
                     a = ParseExpression(src)
                     MatchToken(src, ",")
-                    if (DBG_ParseStage == 41) {
-                        b = ParseExpression(src)
-                    } else {
-                        b = ParseExpression(src)
-                    }
+                    b = ParseExpression(src)
                     matrix[0][0] = GetExpressionConstant(1.0f)
                     matrix[0][1] = GetExpressionConstant(0.0f)
                     matrix[0][2] = a
                     matrix[1][0] = GetExpressionConstant(0.0f)
                     matrix[1][1] = GetExpressionConstant(1.0f)
                     matrix[1][2] = b
-                    MultiplyTextureMatrix(ts, matrix) //HACKME::3:scrolling screws up our beloved logo. For now.
+                    MultiplyTextureMatrix(ts, matrix)
                     continue
                 }
                 if (0 == token.Icmp("scale")) {
@@ -2554,10 +2543,7 @@ object Material {
                     continue
                 }
                 if (0 == token.Icmp("alpha")) {
-                    DEBUG_ParseStage++
                     ss.color.registers[3] = ParseExpression(src)
-                    //                    System.out.printf("alpha=>%d\n", ss.color.registers[3]);
-                    ss.color.registers[3]
                     continue
                 }
                 if (0 == token.Icmp("rgb")) {
@@ -2604,7 +2590,6 @@ object Material {
                     if (src.ReadTokenOnLine(token)) {
                         newStage.megaTexture = idMegaTexture()
                         if (!newStage.megaTexture!!.InitFromMegaFile(token.toString())) {
-//					delete newStage.megaTexture;
                             newStage.megaTexture = null
                             SetMaterialFlag(MF_DEFAULTED)
                             continue
@@ -2650,7 +2635,6 @@ object Material {
 
             // now load the image with all the parms we parsed
             if (strLen(imageName) > 0) {
-                DEBUG_imageName += 0
                 ts.image!![0] = Image.globalImages.ImageFromFile(ctos(imageName), tf, allowPicmip, trp, td, cubeMap)
                 if (null == ts.image[0]) {
                     ts.image[0] = Image.globalImages.defaultImage
@@ -2989,9 +2973,7 @@ object Material {
                 return 0
             }
             if ((token.type == TT_NUMBER) || token.equals(".") || token.equals("-")) {
-                val dbg_bla: Int = GetExpressionConstant(token.GetFloatValue())
-                //                System.out.printf("TT_NUMBER = %d\n", dbg_bla);
-                return dbg_bla
+                return GetExpressionConstant(token.GetFloatValue())
             }
 
             // see if it is a table name
@@ -3013,8 +2995,6 @@ object Material {
         private fun ParseExpressionPriority(src: idLexer, priority: Int): Int {
             val token = idToken()
             val a: Int
-            DBG_ParseExpressionPriority++
-            //            if(DBG_ParseExpressionPriority==101)return 0;
             if (priority == 0) {
                 return ParseTerm(src)
             }
@@ -3142,12 +3122,10 @@ object Material {
             var old: Array<IntArray> = Array(2, { IntArray(3) })
             if (!ts.hasMatrix) {
                 ts.hasMatrix = true
-                //		memcpy( ts.matrix, registers, sizeof( ts.matrix ) );
                 ts.matrix = registers.copyOf()
                 return
             }
 
-//	memcpy( old, ts.matrix, sizeof( old ) );
             old = ts.matrix.copyOf()
 
             // multiply the two maticies
@@ -3308,11 +3286,9 @@ object Material {
 
             // evaluate the registers once, and save them
             constantRegisters =
-                FloatArray(GetNumRegisters()) // R_ClearedStaticAlloc(GetNumRegisters() /* sizeof( float )*/);
+                FloatArray(GetNumRegisters())
             val shaderParms = FloatArray(MAX_ENTITY_SHADER_PARMS)
-            //	memset( shaderParms, 0, sizeof( shaderParms ) );
             val viewDef = viewDef_s()
-            //	memset( &viewDef, 0, sizeof( viewDef ) );
             EvaluateRegisters(constantRegisters!!, shaderParms, viewDef, null)
         }
 
@@ -3465,7 +3441,6 @@ object Material {
                 infoParm_t("surftype15", 0, surfTypes_t.SURFTYPE_15, 0)
             )
             val numInfoParms: Int = infoParms.size
-            var DBG_ParseStage: Int = 0
 
             /*
          =================
@@ -3483,9 +3458,6 @@ object Material {
 
          =================
          */
-            var DEBUG_imageName: Int = 0
-            private var DBG_ParseBlend: Int = 0
-            private var DBG_ParseExpressionPriority: Int = 0
 
             /*
          =========================
@@ -3494,8 +3466,6 @@ object Material {
          Parses the current material definition and finds all necessary images.
          =========================
          */
-            private var DEBUG_Parse: Int = 0
-            private var DEBUG_ParseStage: Int = 0
         }
     }
 

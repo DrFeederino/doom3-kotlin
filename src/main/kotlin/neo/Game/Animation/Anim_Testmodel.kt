@@ -454,7 +454,7 @@ class Anim_Testmodel {
             val axis = idMat3()
             val ang = idAngles()
             var i: Int
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 if (anim != 0 && Game_local.gameLocal.testmodel == this && mode != SysCvar.g_testModelAnimate.GetInteger()) {
                     StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
                     if (head.GetEntity() != null) {

@@ -1,6 +1,31 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/Model_liquid.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
-import neo.Game.Animation.Anim_Blend
 import neo.Renderer.Material.idMaterial
 import neo.Renderer.Model.dynamicModel_t
 import neo.Renderer.Model.idRenderModel
@@ -27,13 +52,11 @@ import neo.idlib.math.idMath
 import neo.idlib.math.idMath.Cos16
 import neo.idlib.math.idMath.Sqrt
 import neo.idlib.math.idVec3
-import java.util.*
 
 object Model_liquid {
     val LIQUID_MAX_SKIP_FRAMES: Int = 5
     val LIQUID_MAX_TYPES: Int = 3
 
-    //    
     /*
      ===============================================================================
 
@@ -42,12 +65,9 @@ object Model_liquid {
      ===============================================================================
      */
     class idRenderModelLiquid : idRenderModelStatic() {
-        //
         var nextDropTime: Int = 0
         private var deformInfo: deformInfo_s? = null // used to create srfTriangles_s from base frames and new vertexes
 
-        //
-        //
         private var density: Float = 0.97f
         private var drop_delay: Float = 1000.0f
         private var drop_height: Float = 4.0f
@@ -56,31 +76,25 @@ object Model_liquid {
         private lateinit var page1: Array<Float>
         private lateinit var page2: Array<Float>
 
-        //
         private val pages: idList<Float> = idList()
 
-        //
-        private val random: idRandom? = null
+        private val random: idRandom = idRandom()
         private var scale_x: Float = 256.0f
         private var scale_y: Float = 256.0f
         private var seed: Int = 0
 
-        //
         private var shader: idMaterial?
         private var time: Int = 0
         private var update_tics: Int = 33
 
-        //
         private val verts: idList<idDrawVert> = idList()
         private var verts_x: Int = 32
         private var verts_y: Int = 32
 
-        //
-        //
         init {
-            shader = DeclManager.declManager.FindMaterial((null as String?)!!)
+            shader = DeclManager.declManager.FindMaterial(null as idStr?)
             // ~30 hz
-            random!!.SetSeed(0)
+            random.SetSeed(0)
         }
 
         @Throws(idException::class)
@@ -140,8 +154,6 @@ object Model_liquid {
                 } else if (0 == token.Icmp("shader")) {
                     parser.ReadToken(token)
                     shader = DeclManager.declManager.FindMaterial(token)
-                } else if (0 == token.Icmp("seed")) {
-                    seed = parser.ParseInt()
                 } else if (0 == token.Icmp("update_rate")) {
                     rate = parser.ParseFloat()
                     if ((rate <= 0.0f) || (rate > 60.0f)) {
@@ -159,8 +171,8 @@ object Model_liquid {
             scale_x = size_x / (verts_x - 1)
             scale_y = size_y / (verts_y - 1)
             pages.SetNum(2 * verts_x * verts_y)
-            page1 = pages.getList()
-            page2 = Arrays.copyOfRange(page1, verts_x * verts_y, page1.size)
+            page1 = Array(verts_x * verts_y) { 0.0f }
+            page2 = Array(verts_x * verts_y) { 0.0f }
             verts.SetNum(verts_x * verts_y)
             i = 0
             y = 0
@@ -223,7 +235,6 @@ object Model_liquid {
             val t: Int
             val lerp: Float
             if (cachedModel != null) {
-//		delete cachedModel;
                 cachedModel = null
             }
             if (deformInfo == null) {
@@ -232,7 +243,7 @@ object Model_liquid {
             if (view == null) {
                 t = 0
             } else {
-                t = view!!.renderView.time
+                t = view.renderView.time
             }
 
             // update the liquid model
@@ -270,9 +281,9 @@ object Model_liquid {
             }
             nextDropTime = 0
             time = 0
-            random!!.SetSeed(seed)
-            page1 = pages.getList()
-            page2 = Arrays.copyOfRange(page1, verts_x * verts_y, page1.size)
+            random.SetSeed(seed)
+            page1 = Array(verts_x * verts_y) { 0.0f }
+            page2 = Array(verts_x * verts_y) { 0.0f }
             i = 0
             y = 0
             while (y < verts_y) {
@@ -295,7 +306,6 @@ object Model_liquid {
             var top: Int
             var right: Int
             var bottom: Int
-            val up: Float
             val down: Float
             var pos: Float
             left = (bounds[0].x / scale_x).toInt()
@@ -303,7 +313,6 @@ object Model_liquid {
             top = (bounds[0].y / scale_y).toInt()
             bottom = (bounds[1].y / scale_y).toInt()
             down = bounds[0].z
-            up = bounds[1].z
             if ((right < 1) || (left >= verts_x) || (bottom < 1) || (top >= verts_x)) {
                 return
             }
@@ -339,11 +348,9 @@ object Model_liquid {
             val tri: srfTriangles_s
             var i: Int
             val base: Int
-            var vert: idDrawVert
             val surf = modelSurface_s()
             val inv_lerp: Float
             inv_lerp = 1.0f - lerp
-            vert = verts[0]
             i = 0
             while (i < verts.Num()) {
                 verts[i].xyz.z = page1[i] * lerp + page2[i] * inv_lerp
@@ -369,8 +376,8 @@ object Model_liquid {
             tri.numVerts = deformInfo!!.numOutputVerts
             R_AllocStaticTriSurfVerts(tri, tri.numVerts)
             SIMDProcessor!!.Memcpy(
-                tri.verts as Array<Anim_Blend.idAnimBlend>,
-                verts.getList(),
+                tri.verts as Array<idDrawVert>,
+                verts.getList() as Array<idDrawVert>,
                 deformInfo!!.numSourceVerts
             )
 
@@ -410,10 +417,10 @@ object Model_liquid {
             val invlength: Float = 1.0f / radsquare.toFloat()
             var dist: Float
             if (x < 0) {
-                x = 1 + drop_radius + random!!.RandomInt(verts_x - (2 * drop_radius) - 1)
+                x = 1 + drop_radius + random.RandomInt(verts_x - (2 * drop_radius) - 1)
             }
             if (y < 0) {
-                y = 1 + drop_radius + random!!.RandomInt(verts_y - (2 * drop_radius) - 1)
+                y = 1 + drop_radius + random.RandomInt(verts_y - (2 * drop_radius) - 1)
             }
             left = -drop_radius
             right = drop_radius
@@ -463,8 +470,6 @@ object Model_liquid {
                 nextDropTime = (time + drop_delay).toInt()
             }
 
-//            p1 = page1;
-//            p2 = page2;
             p2 = 0
             p1 = p2
             when (liquid_type) {

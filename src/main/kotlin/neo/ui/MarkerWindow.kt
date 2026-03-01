@@ -18,6 +18,7 @@ import neo.idlib.Text.Parser.idParser
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.va
+import neo.idlib.containers.CBool
 import neo.idlib.containers.List.idList
 import neo.idlib.math.idVec4
 import neo.sys.sys_public.sysEventType_t
@@ -37,7 +38,7 @@ class MarkerWindow {
     }
 
     class idMarkerWindow : idWindow {
-        private val loggedStats = arrayOfNulls<logStats_t>(Session.MAX_LOGGED_STATS)
+        private val loggedStats = Array(Session.MAX_LOGGED_STATS) { logStats_t() }
         private var currentMarker = 0
         private var currentTime = 0
         private var imageBuff: IntArray? = null
@@ -60,7 +61,7 @@ class MarkerWindow {
             CommonInit()
         }
 
-        fun HandleEvent(event: sysEvent_s, updateVisuals: Boolean): String {
+        override fun HandleEvent(event: sysEvent_s, updateVisuals: CBool?): String {
             if (!(event.evType == sysEventType_t.SE_KEY && event.evValue2 != 0)) {
                 return ""
             }
@@ -134,7 +135,7 @@ class MarkerWindow {
                     for (i in 0 until c) {
                         val md = markerTimes[i]
                         if (md.rect.w == 0.0f) {
-                            md.rect.x = r.x + r.w * (md.time / len) - 8
+                            md.rect.x = r.x + r.w * (md.time.toFloat() / len) - 8
                             md.rect.y = r.y + r.h - 20
                             md.rect.w = 16.0f
                             md.rect.h = 16.0f
@@ -223,18 +224,18 @@ class MarkerWindow {
                         //                        file->Read(loggedStats, numStats * sizeof(loggedStats[0]));
                         i = 0
                         while (i < numStats) {
-                            file.Read(loggedStats[i]!!)
-                            if (loggedStats[i]!!.health < 0) {
-                                loggedStats[i]!!.health = 0
+                            file.Read(loggedStats[i])
+                            if (loggedStats[i].health < 0) {
+                                loggedStats[i].health = 0
                             }
-                            if (loggedStats[i]!!.stamina < 0) {
-                                loggedStats[i]!!.stamina = 0
+                            if (loggedStats[i].stamina < 0) {
+                                loggedStats[i].stamina = 0
                             }
-                            if (loggedStats[i]!!.heartRate < 0) {
-                                loggedStats[i]!!.heartRate = 0.0f
+                            if (loggedStats[i].heartRate < 0) {
+                                loggedStats[i].heartRate = 0.0f
                             }
-                            if (loggedStats[i]!!.combat < 0) {
-                                loggedStats[i]!!.combat = 0
+                            if (loggedStats[i].combat < 0) {
+                                loggedStats[i].combat = 0
                             }
                             i++
                         }
@@ -272,18 +273,18 @@ class MarkerWindow {
                     while (i < numStats - 1) {
                         x1 += step
                         x2 = x1 + step
-                        y1 = 63.0f * (loggedStats[i]!!.health / HEALTH_MAX)
-                        y2 = 63.0f * (loggedStats[i + 1]!!.health / HEALTH_MAX)
+                        y1 = 63.0f * (loggedStats[i].health.toFloat() / HEALTH_MAX)
+                        y2 = 63.0f * (loggedStats[i + 1].health.toFloat() / HEALTH_MAX)
                         Line(x1, y1, x2, y2, imageBuff!!, -0xffff01)
-                        y1 = 63.0f * (loggedStats[i]!!.heartRate / RATE_MAX)
-                        y2 = 63 * (loggedStats[i + 1]!!.heartRate / RATE_MAX)
+                        y1 = 63.0f * (loggedStats[i].heartRate / RATE_MAX)
+                        y2 = 63.0f * (loggedStats[i + 1].heartRate / RATE_MAX)
                         Line(x1, y1, x2, y2, imageBuff!!, -0xff0100)
                         // stamina not quite as high on graph so health does not get obscured with both at 100%
-                        y1 = 62.0f * (loggedStats[i]!!.stamina / STAMINA_MAX)
-                        y2 = 62.0f * (loggedStats[i + 1]!!.stamina / STAMINA_MAX)
+                        y1 = 62.0f * (loggedStats[i].stamina.toFloat() / STAMINA_MAX)
+                        y2 = 62.0f * (loggedStats[i + 1].stamina.toFloat() / STAMINA_MAX)
                         Line(x1, y1, x2, y2, imageBuff!!, -0x10000)
-                        y1 = 63.0f * (loggedStats[i]!!.combat / COMBAT_MAX)
-                        y2 = 63.0f * (loggedStats[i + 1]!!.combat / COMBAT_MAX)
+                        y1 = 63.0f * (loggedStats[i].combat.toFloat() / COMBAT_MAX)
+                        y2 = 63.0f * (loggedStats[i + 1].combat.toFloat() / COMBAT_MAX)
                         Line(x1, y1, x2, y2, imageBuff!!, -0xff0001)
                         i++
                     }

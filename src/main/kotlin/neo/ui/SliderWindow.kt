@@ -175,7 +175,7 @@ class SliderWindow {
         }
 
         override fun Draw(time: Int, x: Float, y: Float) {
-            val color = foreColor.data
+            val color = idVec4(foreColor.data)
             if (null == cvar && null == buddyWin) {
                 return
             }

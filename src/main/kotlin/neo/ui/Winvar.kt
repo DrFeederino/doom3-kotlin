@@ -23,8 +23,6 @@ object Winvar {
 
     abstract class idWinVar // public   ~idWinVar();
     {
-        private val DBG_count = DBG_counter++
-        var DEBUG_COUNTER = 0
         protected var eval = true
         protected var guiDict: idDict? = null
         protected var name: String? = null
@@ -65,7 +63,6 @@ object Winvar {
             guiDict = null
             val len = key.Length()
             if (len > 5 && _name.startsWith("gui:")) {
-                DBG_Init++
                 key = key.Right(len - VAR_GUIPREFIX_LEN)
                 SetGuiInfo(win!!.GetGui().GetStateDict(), key.toString())
                 win.AddUpdateVar(this)
@@ -101,17 +98,9 @@ object Winvar {
         }
 
         companion object {
-            var DBG_Init = 0
-
-            //
-            //
-            private var DBG_counter = 0
-
             @Deprecated("calling this function in idWindow::EmitOp hides the loading bar progress.")
             fun clone(`var`: idWinVar?): idWinVar? {
                 if (`var` == null) return null
-                if (`var`.name != null && `var`.name!!.isEmpty()) {
-                }
                 if (`var` is idWinBool) {
                     return idWinBool(`var`)
                 }
@@ -215,7 +204,7 @@ object Winvar {
         }
 
         override fun c_str(): String {
-            return va("%d", data)
+            return if (data) "1" else "0"
         }
 
         // SaveGames
@@ -304,8 +293,8 @@ object Winvar {
             return this
         }
 
-        //public	operator const char *() {//TODO:wtF?
-        open fun oCastChar(): CharArray { //TODO:wtF?
+        //public	operator const char *() {
+        open fun oCastChar(): CharArray {
             return data!!.c_str()
         }
 
@@ -413,7 +402,7 @@ object Winvar {
         }
 
         override fun Set(`val`: String?) {
-            data = `val`!!.toInt()
+            data = atoi(`val`!!)
             if (guiDict != null) {
                 guiDict!!.SetInt(GetName(), data)
             }
@@ -823,7 +812,7 @@ object Winvar {
             y: Float,
             z: Float,
             w: Float
-        ) : this() { //TODO: check whether the int to pointer cast works like this.
+        ) : this() {
             data.set(idVec4(x, y, z, w))
         }
 
@@ -1088,12 +1077,12 @@ object Winvar {
     }
 
     class idWinBackground : idWinStr {
-        protected val mat: Array<idMaterial?>?
+        protected var mat: Array<idMaterial?>? = null
 
         //
         //
         constructor() : super() {
-            mat = arrayOfNulls(1)
+            mat = null
             data = idStr()
         }
 
@@ -1104,9 +1093,9 @@ object Winvar {
             mat = other.mat
             if (mat != null) {
                 if (data!!.IsEmpty()) {
-                    mat[0] = null
+                    mat!![0] = null
                 } else {
-                    mat[0] = DeclManager.declManager.FindMaterial(data!!)
+                    mat!![0] = DeclManager.declManager.FindMaterial(data!!)
                 }
             }
         }
@@ -1124,29 +1113,16 @@ object Winvar {
             if (guiDict != null) {
                 guiDict!!.Set(GetName(), data!!)
             }
-            if (mat!![0] != null) {
+            if (mat != null) {
                 if (data!!.IsEmpty()) {
-                    mat[0] = null
+                    mat!![0] = null
                 } else {
-                    mat[0] = DeclManager.declManager.FindMaterial(data!!)
+                    mat!![0] = DeclManager.declManager.FindMaterial(data!!)
                 }
             }
             return data
         }
 
-        //        public idWinBackground set(final idWinBackground other) {
-        //            super.set(other);
-        //            data = other.data;
-        //            mat[0] = other.mat[0];
-        //            if (mat != null) {
-        //                if (data.IsEmpty()) {
-        //                    mat[0] = null;
-        //                } else {
-        //                    mat[0] = declManager.FindMaterial(data);
-        //                }
-        //            }
-        //            return this;
-        //        }
         override fun oCastChar(): CharArray {
             return data!!.c_str()
         }
@@ -1167,11 +1143,11 @@ object Winvar {
             if (guiDict != null) {
                 guiDict!!.Set(GetName(), data!!)
             }
-            if (mat!![0] != null) {
+            if (mat != null) {
                 if (data!!.IsEmpty()) {
-                    mat[0] = null
+                    mat!![0] = null
                 } else {
-                    mat[0] = DeclManager.declManager.FindMaterial(data!!)
+                    mat!![0] = DeclManager.declManager.FindMaterial(data!!)
                 }
             }
         }
@@ -1182,9 +1158,9 @@ object Winvar {
                 data!!.set(guiDict!!.GetString(s))
                 if (mat != null) {
                     if (data!!.IsEmpty()) {
-                        mat[0] = null
+                        mat!![0] = null
                     } else {
-                        mat[0] = DeclManager.declManager.FindMaterial(data!!)
+                        mat!![0] = DeclManager.declManager.FindMaterial(data!!)
                     }
                 }
             }
@@ -1196,6 +1172,9 @@ object Winvar {
         }
 
         fun SetMaterialPtr(m: idMaterial?) {
+            if (mat == null) {
+                mat = arrayOfNulls(1)
+            }
             mat!![0] = m
         }
 
@@ -1216,11 +1195,11 @@ object Winvar {
                 data!!.Fill(' ', len)
                 savefile.ReadString(data!!)
             }
-            if (mat!![0] != null) {
+            if (mat != null) {
                 if (len > 0) {
-                    mat[0] = DeclManager.declManager.FindMaterial(data!!)
+                    mat!![0] = DeclManager.declManager.FindMaterial(data!!)
                 } else {
-                    mat[0] = null
+                    mat!![0] = null
                 }
             }
         }

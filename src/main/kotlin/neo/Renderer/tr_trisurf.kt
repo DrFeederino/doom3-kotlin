@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Game.GameSys.SysCvar.Companion._DEBUG
@@ -165,42 +190,6 @@ var c_duplicatedEdges: Int = 0
 var c_tripledEdges: Int = 0
 var c_totalSilEdges: Int = 0
 
-//
-//    static final idBlockAlloc<srfTriangles_s> srfTrianglesAllocator = new idBlockAlloc<>(1 << 8);
-//
-//    static final idDynamicBlockAlloc<idDrawVert> triVertexAllocator;
-//    static final idDynamicBlockAlloc</*glIndex_t*/Integer> triIndexAllocator;
-//    static final idDynamicBlockAlloc<shadowCache_s> triShadowVertexAllocator;
-//    static final idDynamicBlockAlloc<idPlane> triPlaneAllocator;
-//    static final idDynamicBlockAlloc</*glIndex_t*/Integer> triSilIndexAllocator;
-//    static final idDynamicBlockAlloc<silEdge_t> triSilEdgeAllocator;
-//    static final idDynamicBlockAlloc<dominantTri_s> triDominantTrisAllocator;
-//    static final idDynamicBlockAlloc<Integer> triMirroredVertAllocator;
-//    static final idDynamicBlockAlloc<Integer> triDupVertAllocator;
-//
-//    static {
-//        if (USE_TRI_DATA_ALLOCATOR) {
-//            triVertexAllocator = new idDynamicBlockAlloc(1 << 20, 1 << 10);
-//            triIndexAllocator = new idDynamicBlockAlloc(1 << 18, 1 << 10);
-//            triShadowVertexAllocator = new idDynamicBlockAlloc(1 << 18, 1 << 10);
-//            triPlaneAllocator = new idDynamicBlockAlloc(1 << 17, 1 << 10);
-//            triSilIndexAllocator = new idDynamicBlockAlloc(1 << 17, 1 << 10);
-//            triSilEdgeAllocator = new idDynamicBlockAlloc(1 << 17, 1 << 10);
-//            triDominantTrisAllocator = new idDynamicBlockAlloc(1 << 16, 1 << 10);
-//            triMirroredVertAllocator = new idDynamicBlockAlloc(1 << 16, 1 << 10);
-//            triDupVertAllocator = new idDynamicBlockAlloc(1 << 16, 1 << 10);
-////        } else {
-////            triVertexAllocator = new idDynamicAlloc(1 << 20, 1 << 10);
-////            triIndexAllocator = new idDynamicAlloc(1 << 18, 1 << 10);
-////            triShadowVertexAllocator = new idDynamicAlloc(1 << 18, 1 << 10);
-////            triPlaneAllocator = new idDynamicAlloc(1 << 17, 1 << 10);
-////            triSilIndexAllocator = new idDynamicAlloc(1 << 17, 1 << 10);
-////            triSilEdgeAllocator = new idDynamicAlloc(1 << 17, 1 << 10);
-////            triDominantTrisAllocator = new idDynamicAlloc(1 << 16, 1 << 10);
-////            triMirroredVertAllocator = new idDynamicAlloc(1 << 16, 1 << 10);
-////            triDupVertAllocator = new idDynamicAlloc(1 << 16, 1 << 10);
-//        }
-//    }
 var numPlanes: Int = 0
 var numSilEdges: Int = 0
 var silEdgeHash: idHashIndex = idHashIndex(SILEDGE_HASH_SIZE, MAX_SIL_EDGES)
@@ -229,29 +218,6 @@ private var DBG_R_CleanupTriangles: Int = 0
  */
 fun R_InitTriSurfData() {
     silEdges = silEdge_t.generateArray(MAX_SIL_EDGES)
-
-//
-//        // initialize allocators for triangle surfaces
-//        triVertexAllocator.Init();
-//        triIndexAllocator.Init();
-//        triShadowVertexAllocator.Init();
-//        triPlaneAllocator.Init();
-//        triSilIndexAllocator.Init();
-//        triSilEdgeAllocator.Init();
-//        triDominantTrisAllocator.Init();
-//        triMirroredVertAllocator.Init();
-//        triDupVertAllocator.Init();
-//
-//        // never swap out triangle surfaces
-//        triVertexAllocator.SetLockMemory(true);
-//        triIndexAllocator.SetLockMemory(true);
-//        triShadowVertexAllocator.SetLockMemory(true);
-//        triPlaneAllocator.SetLockMemory(true);
-//        triSilIndexAllocator.SetLockMemory(true);
-//        triSilEdgeAllocator.SetLockMemory(true);
-//        triDominantTrisAllocator.SetLockMemory(true);
-//        triMirroredVertAllocator.SetLockMemory(true);
-//        triDupVertAllocator.SetLockMemory(true);
 }
 
 /*
@@ -260,18 +226,8 @@ fun R_InitTriSurfData() {
  ===============
  */
 fun R_ShutdownTriSurfData() {
-    silEdges = null //R_StaticFree(silEdges);
+    silEdges = null
     silEdgeHash.Free()
-    //        srfTrianglesAllocator.Shutdown();
-//        triVertexAllocator.Shutdown();
-//        triIndexAllocator.Shutdown();
-//        triShadowVertexAllocator.Shutdown();
-//        triPlaneAllocator.Shutdown();
-//        triSilIndexAllocator.Shutdown();
-//        triSilEdgeAllocator.Shutdown();
-//        triDominantTrisAllocator.Shutdown();
-//        triMirroredVertAllocator.Shutdown();
-//        triDupVertAllocator.Shutdown();
 }
 
 /*
@@ -282,17 +238,6 @@ fun R_ShutdownTriSurfData() {
 fun R_PurgeTriSurfData(frame: frameData_t?) {
     // free deferred triangle surfaces
     R_FreeDeferredTriSurfs(frame)
-
-    // free empty base blocks
-//        triVertexAllocator.FreeEmptyBaseBlocks();
-//        triIndexAllocator.FreeEmptyBaseBlocks();
-//        triShadowVertexAllocator.FreeEmptyBaseBlocks();
-//        triPlaneAllocator.FreeEmptyBaseBlocks();
-//        triSilIndexAllocator.FreeEmptyBaseBlocks();
-//        triSilEdgeAllocator.FreeEmptyBaseBlocks();
-//        triDominantTrisAllocator.FreeEmptyBaseBlocks();
-//        triMirroredVertAllocator.FreeEmptyBaseBlocks();
-//        triDupVertAllocator.FreeEmptyBaseBlocks();
 }
 
 /*
@@ -392,51 +337,10 @@ fun R_ReallyFreeStaticTriSurf(tri: srfTriangles_s?) {
         return
     }
     R_FreeStaticTriSurfVertexCaches(tri)
-    //
-//        if (tri.verts != null) {
-//            // R_CreateLightTris points tri.verts at the verts of the ambient surface
-//            if (tri.ambientSurface == null || tri.verts != tri.ambientSurface.verts) {
-//                triVertexAllocator.Free(tri.verts);
-//            }
-//        }
-//
-//        if (!tri.deformedSurface) {
-//            if (tri.indexes != null) {
-//                // if a surface is completely inside a light volume R_CreateLightTris points tri.indexes at the indexes of the ambient surface
-//                if (tri.ambientSurface == null || tri.indexes != tri.ambientSurface.indexes) {
-//                    triIndexAllocator.Free(tri.indexes);
-//                }
-//            }
-//            if (tri.silIndexes != null) {
-//                triSilIndexAllocator.Free(tri.silIndexes);
-//            }
-//            if (tri.silEdges != null) {
-//                triSilEdgeAllocator.Free(tri.silEdges);
-//            }
-//            if (tri.dominantTris != null) {
-//                triDominantTrisAllocator.Free(tri.dominantTris);
-//            }
-//            if (tri.mirroredVerts != null) {
-//                triMirroredVertAllocator.Free(tri.mirroredVerts);
-//            }
-//            if (tri.dupVerts != null) {
-//                triDupVertAllocator.Free(tri.dupVerts);
-//            }
-//        }
-//
-//        if (tri.facePlanes != null) {
-//            triPlaneAllocator.Free(tri.facePlanes);
-//        }
-//
-//        if (tri.shadowVertexes != null) {
-//            triShadowVertexAllocator.Free(tri.shadowVertexes);
-//        }
+
     if (_DEBUG) {
-//            memset(tri, 0, sizeof(srfTriangles_t));
         tri = srfTriangles_s()
     }
-    //
-//        srfTrianglesAllocator.Free(tri);
 }
 
 /*
@@ -448,29 +352,7 @@ fun R_CheckStaticTriSurfMemory(tri: srfTriangles_s?) {
     if (null == tri) {
         return
     }
-    //
-//        if (tri.verts != null) {
-//            // R_CreateLightTris points tri.verts at the verts of the ambient surface
-//            if (tri.ambientSurface == null || tri.verts != tri.ambientSurface.verts) {
-//                final String error = triVertexAllocator.CheckMemory(tri.verts);
-//                assert (error == null);
-//            }
-//        }
-//
-//        if (!tri.deformedSurface) {
-//            if (tri.indexes != null) {
-//                // if a surface is completely inside a light volume R_CreateLightTris points tri.indexes at the indexes of the ambient surface
-//                if (tri.ambientSurface == null || tri.indexes != tri.ambientSurface.indexes) {
-//                    final String error = triIndexAllocator.CheckMemory(tri.indexes);
-//                    assert (error == null);
-//                }
-//            }
-//        }
-//
-//        if (tri.shadowVertexes != null) {
-//            final String error = triShadowVertexAllocator.CheckMemory(tri.shadowVertexes);
-//            assert (error == null);
-//        }
+    // Block/dynamic allocator memory checks not applicable — JVM manages memory
 }
 
 /*
@@ -534,8 +416,6 @@ fun R_FreeStaticTriSurf(tri: Array<srfTriangles_s?>?) {
 @Deprecated("")
 fun R_AllocStaticTriSurf(): srfTriangles_s {
     DBG_R_AllocStaticTriSurf++
-    //        srfTriangles_s tris = srfTrianglesAllocator.Alloc();
-//        memset(tris, 0, sizeof(srfTriangles_t));
     return srfTriangles_s()
 }
 
@@ -553,11 +433,9 @@ fun R_CopyStaticTriSurf(tri: srfTriangles_s): srfTriangles_s {
     R_AllocStaticTriSurfIndexes(newTri, tri.numIndexes)
     newTri.numVerts = tri.numVerts
     newTri.numIndexes = tri.numIndexes
-    //	memcpy( newTri.verts, tri.verts, tri.numVerts * sizeof( newTri.verts[0] ) );
     for (i in 0 until tri.numVerts) {
         newTri.verts!![i] = idDrawVert((tri.verts!![i])!!)
     }
-    //	memcpy( newTri.indexes, tri.indexes, tri.numIndexes * sizeof( newTri.indexes[0] ) );
     System.arraycopy(tri.indexes, 0, newTri.indexes, 0, tri.numIndexes)
     return newTri
 }
@@ -569,7 +447,7 @@ fun R_CopyStaticTriSurf(tri: srfTriangles_s): srfTriangles_s {
  */
 fun R_AllocStaticTriSurfVerts(tri: srfTriangles_s, numVerts: Int) {
     assert((tri.verts == null))
-    tri.verts = Array(numVerts) { idDrawVert() }//triVertexAllocator.Alloc(numVerts);
+    tri.verts = Array(numVerts) { idDrawVert() }
 }
 
 /*
@@ -579,7 +457,7 @@ fun R_AllocStaticTriSurfVerts(tri: srfTriangles_s, numVerts: Int) {
  */
 fun R_AllocStaticTriSurfIndexes(tri: srfTriangles_s, numIndexes: Int) {
     assert((tri.indexes == null))
-    tri.indexes = IntArray(numIndexes) // triIndexAllocator.Alloc(numIndexes);
+    tri.indexes = IntArray(numIndexes)
 }
 
 /*
@@ -589,7 +467,7 @@ fun R_AllocStaticTriSurfIndexes(tri: srfTriangles_s, numIndexes: Int) {
  */
 fun R_AllocStaticTriSurfShadowVerts(tri: srfTriangles_s, numVerts: Int) {
     assert((tri.shadowVertexes == null))
-    tri.shadowVertexes = shadowCache_s.generateArray(numVerts) //triShadowVertexAllocator.Alloc(numVerts);
+    tri.shadowVertexes = shadowCache_s.generateArray(numVerts)
 }
 
 /*
@@ -599,7 +477,7 @@ fun R_AllocStaticTriSurfShadowVerts(tri: srfTriangles_s, numVerts: Int) {
  */
 fun R_AllocStaticTriSurfPlanes(tri: srfTriangles_s, numIndexes: Int) {
     tri.facePlanes =
-        idPlane.generateArray(numIndexes / 3) as Array<idPlane?>//triPlaneAllocator.Alloc(numIndexes / 3);
+        idPlane.generateArray(numIndexes / 3) as Array<idPlane?>
 }
 
 /*
@@ -666,7 +544,6 @@ fun R_ReferenceStaticTriSurfIndexes(tri: srfTriangles_s, reference: srfTriangles
  =================
  */
 fun R_FreeStaticTriSurfSilIndexes(tri: srfTriangles_s) {
-//        triSilIndexAllocator.Free(tri.silIndexes);
     tri.silIndexes = null
 }
 
@@ -733,7 +610,7 @@ fun R_CreateSilRemap(tri: srfTriangles_s): IntArray {
     var hashKey: Int
     var v1: idDrawVert?
     var v2: idDrawVert?
-    remap = IntArray(tri.numVerts) // R_ClearedStaticAlloc(tri.numVerts);
+    remap = IntArray(tri.numVerts)
     if (!r_useSilRemap!!.GetBool()) {
         i = 0
         while (i < tri.numVerts) {
@@ -787,20 +664,17 @@ fun R_CreateSilIndexes(tri: srfTriangles_s) {
     var i: Int
     val remap: IntArray
     if (tri.silIndexes != null) {
-//            triSilIndexAllocator.Free(tri.silIndexes);
         tri.silIndexes = null
     }
     remap = R_CreateSilRemap(tri)
 
     // remap indexes to the first one
-    tri.silIndexes = IntArray(tri.numIndexes) //triSilIndexAllocator.Alloc(tri.numIndexes);
+    tri.silIndexes = IntArray(tri.numIndexes)
     i = 0
     while (i < tri.numIndexes) {
         tri.silIndexes!![i] = remap[tri.indexes!![i]]
         i++
     }
-
-//        R_StaticFree(remap);
 }
 
 /*
@@ -838,8 +712,7 @@ fun R_CreateDupVerts(tri: srfTriangles_s) {
         }
         i++
     }
-    tri.dupVerts = IntArray(tri.numDupVerts * 2) // triDupVertAllocator.Alloc(tri.numDupVerts * 2);
-    //	memcpy( tri.dupVerts, tempDupVerts, tri.numDupVerts * 2 * sizeof( tri.dupVerts[0] ) );
+    tri.dupVerts = IntArray(tri.numDupVerts * 2)
     System.arraycopy(tempDupVerts, 0, tri.dupVerts, 0, tri.numDupVerts * 2)
 }
 
@@ -1057,7 +930,6 @@ fun R_IdentifySilEdges(tri: srfTriangles_s, omitCoplanarEdges: Boolean) {
     c_totalSilEdges += numSilEdges
 
     // sort the sil edges based on plane number
-//        qsort(silEdges, numSilEdges, sizeof(silEdges[0]), SilEdgeSort);
     Arrays.sort(silEdges, 0, numSilEdges, SilEdgeSort())
 
     // count up the distribution.
@@ -1217,7 +1089,6 @@ fun R_DuplicateMirroredVertexes(tri: srfTriangles_s) {
     var numMirror: Int
     tVerts = arrayOfNulls(tri.numVerts)
     for (t in tVerts.indices) {
-//	memset( tverts, 0, tri.numVerts * sizeof( *tverts ) );
         tVerts[t] = tangentVert_t()
     }
 
@@ -1253,19 +1124,17 @@ fun R_DuplicateMirroredVertexes(tri: srfTriangles_s) {
         tri.mirroredVerts = null
         return
     }
-    tri.mirroredVerts = IntArray(tri.numMirroredVerts) //triMirroredVertAllocator.Alloc(tri.numMirroredVerts);
+    tri.mirroredVerts = IntArray(tri.numMirroredVerts)
     if (USE_TRI_DATA_ALLOCATOR) {
-        tri.verts =  /*triVertexAllocator.*/Resize(tri.verts as Array<idDrawVert>, totalVerts) as Array<idDrawVert>?
+        tri.verts = Resize(tri.verts as Array<idDrawVert>, totalVerts) as Array<idDrawVert>?
     } else {
         val oldVerts: Array<idDrawVert>? = tri.verts
         R_AllocStaticTriSurfVerts(tri, totalVerts)
-        //	memcpy( tri.verts, oldVerts, tri.numVerts * sizeof( tri.verts[0] ) );
         i = 0
         while (i < tri.numVerts) {
             tri.verts!![i] = idDrawVert((oldVerts!![i]))
             i++
         }
-        //            triVertexAllocator.Free(oldVerts);
     }
 
     // create the duplicates
@@ -1380,7 +1249,7 @@ fun R_BuildDominantTris(tri: srfTriangles_s) {
     var i: Int
     var j: Int
     val dt: Array<dominantTri_s?>
-    val ind: Array<indexSort_t?> = arrayOfNulls(tri.numIndexes) // R_StaticAlloc(tri.numIndexes);
+    val ind: Array<indexSort_t?> = arrayOfNulls(tri.numIndexes)
     i = 0
     while (i < tri.numIndexes) {
         ind[i] = indexSort_t()
@@ -1388,11 +1257,9 @@ fun R_BuildDominantTris(tri: srfTriangles_s) {
         ind[i]!!.faceNum = i / 3
         i++
     }
-    //        qsort(ind, tri.numIndexes, sizeof(ind[]), IndexSort);
     Arrays.sort(ind, 0, tri.numIndexes, IndexSort())
     dt = arrayOfNulls(tri.numVerts)
-    tri.dominantTris = dt // triDominantTrisAllocator.Alloc(tri.numVerts);
-    //	memset( dt, 0, tri.numVerts * sizeof( dt[0] ) );
+    tri.dominantTris = dt
     i = 0
     while (i < tri.numIndexes) {
         var maxArea = 0.0f
@@ -1477,8 +1344,6 @@ fun R_BuildDominantTris(tri: srfTriangles_s) {
         }
         i += j
     }
-
-//        R_StaticFree(ind);
 }
 
 /*
@@ -1527,110 +1392,17 @@ fun R_DeriveTangents(tri: srfTriangles_s, allocFacePlanes: Boolean = true) {
         R_AllocStaticTriSurfPlanes(tri, tri.numIndexes)
     }
     planes = tri.facePlanes
-    if (true) {
-        if (null == planes) {
-            planes = idPlane.generateArray(tri.numIndexes / 3) as Array<idPlane?>
-        }
-        SIMDProcessor!!.DeriveTangents(
-            planes as Array<idPlane>,
-            tri.verts as Array<idDrawVert>,
-            tri.numVerts,
-            tri.indexes!!,
-            tri.numIndexes
-        )
-
-//}else{
-//
-//	for ( i = 0; i < tri.numVerts; i++ ) {
-//		tri.verts[i].normal.Zero();
-//		tri.verts[i].tangents[0].Zero();
-//		tri.verts[i].tangents[1].Zero();
-//	}
-//
-//	for ( i = 0; i < tri.numIndexes; i += 3 ) {
-//		// make face tangents
-//		float		d0[5], d1[5];
-//		idDrawVert	*a, *b, *c;
-//		idVec3		temp, normal, tangents[2];
-//
-//		a = tri.verts + tri.indexes[i + 0];
-//		b = tri.verts + tri.indexes[i + 1];
-//		c = tri.verts + tri.indexes[i + 2];
-//
-//		d0[0] = b.xyz[0] - a.xyz[0];
-//		d0[1] = b.xyz[1] - a.xyz[1];
-//		d0[2] = b.xyz[2] - a.xyz[2];
-//		d0[3] = b.st[0] - a.st[0];
-//		d0[4] = b.st[1] - a.st[1];
-//
-//		d1[0] = c.xyz[0] - a.xyz[0];
-//		d1[1] = c.xyz[1] - a.xyz[1];
-//		d1[2] = c.xyz[2] - a.xyz[2];
-//		d1[3] = c.st[0] - a.st[0];
-//		d1[4] = c.st[1] - a.st[1];
-//
-//		// normal
-//		temp[0] = d1[1] * d0[2] - d1[2] * d0[1];
-//		temp[1] = d1[2] * d0[0] - d1[0] * d0[2];
-//		temp[2] = d1[0] * d0[1] - d1[1] * d0[0];
-//		VectorNormalizeFast2( temp, normal );
-//
-//if (USE_INVA){
-//		float area = d0[3] * d1[4] - d0[4] * d1[3];
-//		float inva = area < 0.0f ? -1 : 1;		// was = 1.0f / area;
-//
-//        temp[0] = (d0[0] * d1[4] - d0[4] * d1[0]) * inva;
-//        temp[1] = (d0[1] * d1[4] - d0[4] * d1[1]) * inva;
-//        temp[2] = (d0[2] * d1[4] - d0[4] * d1[2]) * inva;
-//		VectorNormalizeFast2( temp, tangents[0] );
-//
-//        temp[0] = (d0[3] * d1[0] - d0[0] * d1[3]) * inva;
-//        temp[1] = (d0[3] * d1[1] - d0[1] * d1[3]) * inva;
-//        temp[2] = (d0[3] * d1[2] - d0[2] * d1[3]) * inva;
-//		VectorNormalizeFast2( temp, tangents[1] );
-//}else{
-//        temp[0] = (d0[0] * d1[4] - d0[4] * d1[0]);
-//        temp[1] = (d0[1] * d1[4] - d0[4] * d1[1]);
-//        temp[2] = (d0[2] * d1[4] - d0[4] * d1[2]);
-//		VectorNormalizeFast2( temp, tangents[0] );
-//
-//        temp[0] = (d0[3] * d1[0] - d0[0] * d1[3]);
-//        temp[1] = (d0[3] * d1[1] - d0[1] * d1[3]);
-//        temp[2] = (d0[3] * d1[2] - d0[2] * d1[3]);
-//		VectorNormalizeFast2( temp, tangents[1] );
-//}
-//
-//		// sum up the tangents and normals for each vertex on this face
-//		for ( int j = 0 ; j < 3 ; j++ ) {
-//			vert = &tri.verts[tri.indexes[i+j]];
-//			vert.normal += normal;
-//			vert.tangents[0] += tangents[0];
-//			vert.tangents[1] += tangents[1];
-//		}
-//
-//		if ( planes ) {
-//			planes.Normal() = normal;
-//			planes.FitThroughPoint( a.xyz );
-//			planes++;
-//		}
-//	}
+    if (null == planes) {
+        planes = idPlane.generateArray(tri.numIndexes / 3) as Array<idPlane?>
     }
+    SIMDProcessor!!.DeriveTangents(
+        planes as Array<idPlane>,
+        tri.verts as Array<idDrawVert>,
+        tri.numVerts,
+        tri.indexes!!,
+        tri.numIndexes
+    )
 
-//if (false){
-//
-//	if ( tri.silIndexes != null ) {
-//		for ( i = 0; i < tri.numVerts; i++ ) {
-//			tri.verts[i].normal.Zero();
-//		}
-//		for ( i = 0; i < tri.numIndexes; i++ ) {
-//			tri.verts[tri.silIndexes[i]].normal += planes[i/3].Normal();
-//		}
-//		for ( i = 0 ; i < tri.numIndexes ; i++ ) {
-//			tri.verts[tri.indexes[i]].normal = tri.verts[tri.silIndexes[i]].normal;
-//		}
-//	}
-//
-//}else
     run({
         val dupVerts: IntArray? = tri.dupVerts
         val verts: Array<idDrawVert>? = tri.verts
@@ -1650,47 +1422,12 @@ fun R_DeriveTangents(tri: srfTriangles_s, allocFacePlanes: Boolean = true) {
         }
     })
 
-//if (false){
-//	// sum up both sides of the mirrored verts
-//	// so the S vectors exactly mirror, and the T vectors are equal
-//	for ( i = 0 ; i < tri.numMirroredVerts ; i++ ) {
-//		idDrawVert	*v1, *v2;
-//
-//		v1 = &tri.verts[ tri.numVerts - tri.numMirroredVerts + i ];
-//		v2 = &tri.verts[ tri.mirroredVerts[i] ];
-//
-//		v1.tangents[0] -= v2.tangents[0];
-//		v1.tangents[1] += v2.tangents[1];
-//
-//		v2.tangents[0] = vec3_origin - v1.tangents[0];
-//		v2.tangents[1] = v1.tangents[1];
-//	}
-//}
     // project the summed vectors onto the normal plane
     // and normalize.  The tangent vectors will not necessarily
     // be orthogonal to each other, but they will be orthogonal
     // to the surface normal.
-    if (true) {
-        SIMDProcessor!!.NormalizeTangents(tri.verts as Array<idDrawVert>, tri.numVerts)
+    SIMDProcessor!!.NormalizeTangents(tri.verts as Array<idDrawVert>, tri.numVerts)
 
-//}else{
-//
-//	for ( i = 0 ; i < tri.numVerts ; i++ ) {
-//		idDrawVert *vert = &tri.verts[i];
-//
-//		VectorNormalizeFast2( vert.normal, vert.normal );
-//
-//		// project the tangent vectors
-//		for ( int j = 0 ; j < 2 ; j++ ) {
-//			float d;
-//
-//			d = vert.tangents[j] * vert.normal;
-//			vert.tangents[j] = vert.tangents[j] - d * vert.normal;
-//			VectorNormalizeFast2( vert.tangents[j], vert.tangents[j] );
-//		}
-//	}
-//
-    }
     tri.tangentsCalculated = true
     tri.facePlanesCalculated = true
 }
@@ -1814,7 +1551,7 @@ fun R_RemoveUnusedVerts(tri: srfTriangles_s) {
     val mark: IntArray
     var index: Int
     var used: Int
-    mark = IntArray(tri.numVerts) // R_ClearedStaticAlloc(tri.numVerts);
+    mark = IntArray(tri.numVerts)
     i = 0
     while (i < tri.numIndexes) {
         index = tri.indexes!![i]
@@ -1866,7 +1603,6 @@ fun R_RemoveUnusedVerts(tri: srfTriangles_s) {
         // this doesn't realloc the arrays to save the memory used by the unused verts
     }
 
-//        R_StaticFree(mark);
 }
 
 /*
@@ -1902,7 +1638,6 @@ fun R_MergeSurfaceList(surfaces: Array<srfTriangles_s>, numSurfaces: Int): srfTr
     i = 0
     while (i < numSurfaces) {
         tri = surfaces[i]
-        //		memcpy( newTri.verts + totalVerts, tri.verts, tri.numVerts * sizeof( *tri.verts ) );
         var k = 0
         var tv: Int = totalVerts
         while (k < tri.numVerts) {
@@ -2060,7 +1795,7 @@ fun R_BuildDeformInfo(
     if (useUnsmoothedTangents) {
         R_BuildDominantTris(tri)
     }
-    deform = deformInfo_s() //R_ClearedStaticAlloc(sizeof(deform));
+    deform = deformInfo_s()
     deform.numSourceVerts = numVerts
     deform.numOutputVerts = tri.numVerts
     deform.numIndexes = numIndexes
@@ -2074,11 +1809,9 @@ fun R_BuildDeformInfo(
     deform.numDupVerts = tri.numDupVerts
     deform.dupVerts = tri.dupVerts!!
     if (tri.verts != null) {
-//            triVertexAllocator.Free(tri.verts);
         tri.verts = null
     }
     if (tri.facePlanes != null) {
-//            triPlaneAllocator.Free(tri.facePlanes);
         tri.facePlanes = null
     }
     return deform
@@ -2094,7 +1827,7 @@ fun R_BuildDeformInfo(
     val deform: deformInfo_s
     val tri: srfTriangles_s
     var i: Int
-    tri = srfTriangles_s() //memset( &tri, 0, sizeof( tri ) );
+    tri = srfTriangles_s()
     tri.numVerts = numVerts
     R_AllocStaticTriSurfVerts(tri, tri.numVerts)
     SIMDProcessor!!.Memcpy(tri.verts as Array<idDrawVert>, verts as Array<idDrawVert>, tri.numVerts)
@@ -2121,7 +1854,7 @@ fun R_BuildDeformInfo(
     if (useUnsmoothedTangents) {
         R_BuildDominantTris(tri)
     }
-    deform = deformInfo_s() //deformInfo_t *)R_ClearedStaticAlloc( sizeof( *deform ) );
+    deform = deformInfo_s()
     deform.numSourceVerts = numVerts
     deform.numOutputVerts = tri.numVerts
     deform.numIndexes = numIndexes
@@ -2134,14 +1867,6 @@ fun R_BuildDeformInfo(
     deform.mirroredVerts = tri.mirroredVerts
     deform.numDupVerts = tri.numDupVerts
     deform.dupVerts = tri.dupVerts
-
-//	if ( tri.verts ) {
-//		triVertexAllocator.Free( tri.verts );
-//	}
-//
-//	if ( tri.facePlanes ) {
-//		triPlaneAllocator.Free( tri.facePlanes );
-//	}
     return deform
 }
 
@@ -2151,25 +1876,6 @@ fun R_BuildDeformInfo(
  ===================
  */
 fun R_FreeDeformInfo(deformInfo: deformInfo_s?) {
-//        if (deformInfo.indexes != null) {
-//            triIndexAllocator.Free(deformInfo.indexes);
-//        }
-//        if (deformInfo.silIndexes != null) {
-//            triSilIndexAllocator.Free(deformInfo.silIndexes);
-//        }
-//        if (deformInfo.silEdges != null) {
-//            triSilEdgeAllocator.Free(deformInfo.silEdges);
-//        }
-//        if (deformInfo.dominantTris != null) {
-//            triDominantTrisAllocator.Free(deformInfo.dominantTris);
-//        }
-//        if (deformInfo.mirroredVerts != null) {
-//            triMirroredVertAllocator.Free(deformInfo.mirroredVerts);
-//        }
-//        if (deformInfo.dupVerts != null) {
-//            triDupVertAllocator.Free(deformInfo.dupVerts);
-//        }
-//        R_StaticFree(deformInfo);
 }
 
 /*
@@ -2211,7 +1917,7 @@ private fun Resize(verts: Array<idDrawVert>, totalVerts: Int): Array<idDrawVert?
 
 private fun Resize(shadowVertexes: Array<shadowCache_s>, numVerts: Int): Array<shadowCache_s?> {
     val newArray: Array<shadowCache_s?> = arrayOfNulls(numVerts)
-    val length: Int = min(shadowVertexes.size.toFloat(), numVerts.toFloat()).toInt()
+    val length: Int = min(shadowVertexes.size, numVerts)
     System.arraycopy(shadowVertexes, 0, newArray, 0, length)
     return newArray
 }
@@ -2244,56 +1950,7 @@ private fun Resize(indexes: IntArray?, numIndexes: Int): IntArray? {
 @Deprecated("")
 class R_ShowTriSurfMemory_f private constructor() : cmdFunction_t() {
     override fun run(args: CmdArgs.idCmdArgs?) {
-//            common.Printf("%6d kB in %d triangle surfaces\n",
-//                    (srfTrianglesAllocator.GetAllocCount() /* sizeof( srfTriangles_t )*/) >> 10,
-//                    srfTrianglesAllocator.GetAllocCount());
-//
-//            common.Printf("%6d kB vertex memory (%d kB free in %d blocks, %d empty base blocks)\n",
-//                    triVertexAllocator.GetBaseBlockMemory() >> 10, triVertexAllocator.GetFreeBlockMemory() >> 10,
-//                    triVertexAllocator.GetNumFreeBlocks(), triVertexAllocator.GetNumEmptyBaseBlocks());
-//
-//            common.Printf("%6d kB index memory (%d kB free in %d blocks, %d empty base blocks)\n",
-//                    triIndexAllocator.GetBaseBlockMemory() >> 10, triIndexAllocator.GetFreeBlockMemory() >> 10,
-//                    triIndexAllocator.GetNumFreeBlocks(), triIndexAllocator.GetNumEmptyBaseBlocks());
-//
-//            common.Printf("%6d kB shadow vert memory (%d kB free in %d blocks, %d empty base blocks)\n",
-//                    triShadowVertexAllocator.GetBaseBlockMemory() >> 10, triShadowVertexAllocator.GetFreeBlockMemory() >> 10,
-//                    triShadowVertexAllocator.GetNumFreeBlocks(), triShadowVertexAllocator.GetNumEmptyBaseBlocks());
-//
-//            common.Printf("%6d kB tri plane memory (%d kB free in %d blocks, %d empty base blocks)\n",
-//                    triPlaneAllocator.GetBaseBlockMemory() >> 10, triPlaneAllocator.GetFreeBlockMemory() >> 10,
-//                    triPlaneAllocator.GetNumFreeBlocks(), triPlaneAllocator.GetNumEmptyBaseBlocks());
-//
-//            common.Printf("%6d kB sil index memory (%d kB free in %d blocks, %d empty base blocks)\n",
-//                    triSilIndexAllocator.GetBaseBlockMemory() >> 10, triSilIndexAllocator.GetFreeBlockMemory() >> 10,
-//                    triSilIndexAllocator.GetNumFreeBlocks(), triSilIndexAllocator.GetNumEmptyBaseBlocks());
-//
-//            common.Printf("%6d kB sil edge memory (%d kB free in %d blocks, %d empty base blocks)\n",
-//                    triSilEdgeAllocator.GetBaseBlockMemory() >> 10, triSilEdgeAllocator.GetFreeBlockMemory() >> 10,
-//                    triSilEdgeAllocator.GetNumFreeBlocks(), triSilEdgeAllocator.GetNumEmptyBaseBlocks());
-//
-//            common.Printf("%6d kB dominant tri memory (%d kB free in %d blocks, %d empty base blocks)\n",
-//                    triDominantTrisAllocator.GetBaseBlockMemory() >> 10, triDominantTrisAllocator.GetFreeBlockMemory() >> 10,
-//                    triDominantTrisAllocator.GetNumFreeBlocks(), triDominantTrisAllocator.GetNumEmptyBaseBlocks());
-//
-//            common.Printf("%6d kB mirror vert memory (%d kB free in %d blocks, %d empty base blocks)\n",
-//                    triMirroredVertAllocator.GetBaseBlockMemory() >> 10, triMirroredVertAllocator.GetFreeBlockMemory() >> 10,
-//                    triMirroredVertAllocator.GetNumFreeBlocks(), triMirroredVertAllocator.GetNumEmptyBaseBlocks());
-//
-//            common.Printf("%6d kB dup vert memory (%d kB free in %d blocks, %d empty base blocks)\n",
-//                    triDupVertAllocator.GetBaseBlockMemory() >> 10, triDupVertAllocator.GetFreeBlockMemory() >> 10,
-//                    triDupVertAllocator.GetNumFreeBlocks(), triDupVertAllocator.GetNumEmptyBaseBlocks());
-//
-//            common.Printf("%6d kB total triangle memory\n",
-//                    (srfTrianglesAllocator.GetAllocCount() /* sizeof( srfTriangles_t )*/ + triVertexAllocator.GetBaseBlockMemory()
-//                    + triIndexAllocator.GetBaseBlockMemory()
-//                    + triShadowVertexAllocator.GetBaseBlockMemory()
-//                    + triPlaneAllocator.GetBaseBlockMemory()
-//                    + triSilIndexAllocator.GetBaseBlockMemory()
-//                    + triSilEdgeAllocator.GetBaseBlockMemory()
-//                    + triDominantTrisAllocator.GetBaseBlockMemory()
-//                    + triMirroredVertAllocator.GetBaseBlockMemory()
-//                    + triDupVertAllocator.GetBaseBlockMemory()) >> 10);
+        // Block/dynamic allocator stats not applicable — JVM manages memory
     }
 
     companion object {
@@ -2315,7 +1972,7 @@ class SilEdgeSort : cmp_t<silEdge_t?> {
             return 1
         }
         if (a.p2 < b.p2) {
-            return -1 //TODO:returning 1 is like true, 0 false...what is -1 then?
+            return -1
         }
         if (a.p2 > b.p2) {
             return 1

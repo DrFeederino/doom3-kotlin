@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.*
@@ -78,7 +103,6 @@ object RenderWorld_local {
     // assume any lightDef or entityDef index above this is an internal error
     val LUDICROUS_INDEX: Int = 10000
 
-    //
     val WRITE_GUIS: Boolean = false
 
     class portal_s {
@@ -287,7 +311,6 @@ object RenderWorld_local {
                 def.index = entityHandle
             }
             def.parms = renderEntity_s(re)
-            //        TempDump.printCallStack("~~~~~~~~~~~~~~~~~" );
             tr_main.R_AxisToModelMatrix(def.parms.axis, def.parms.origin, def.modelMatrix)
             def.lastModifiedFrameNum = tr.frameCount
             if (Session.session.writeDemo != null && def.archived) {
@@ -336,7 +359,6 @@ object RenderWorld_local {
             def.parms.gui[1] = null
             def.parms.gui[2] = null
 
-//	delete def;
             entityDefs[entityHandle] = null
         }
 
@@ -420,7 +442,7 @@ object RenderWorld_local {
                 light.world = this
                 light.index = lightHandle
             }
-            light.parms = rlight
+            light.parms = renderLight_s(rlight)
             light.lastModifiedFrameNum = tr.frameCount
             if (Session.session.writeDemo != null && light.archived) {
                 WriteFreeLight(lightHandle)
@@ -464,7 +486,6 @@ object RenderWorld_local {
                 WriteFreeLight(lightHandle)
             }
 
-            //delete light;
             lightDefs[lightHandle] = null
         }
 
@@ -541,7 +562,7 @@ object RenderWorld_local {
                 interactionTableWidth = entityDefs.Num() + 100
                 interactionTableHeight = lightDefs.Num() + 100
                 val size: Int = interactionTableWidth * interactionTableHeight //* sizeof(interactionTable);
-                interactionTable = arrayOfNulls(size) // R_ClearedStaticAlloc(size);
+                interactionTable = arrayOfNulls(size)
                 var count = 0
                 for (i in 0 until lightDefs.Num()) {
                     val ldef: idRenderLightLocal? = lightDefs[i]
@@ -764,11 +785,9 @@ object RenderWorld_local {
          */
         override fun RenderScene(renderView: renderView_s) {
             if (!ID_DEDICATED) {
-                val copy: renderView_s
                 if (!glConfig.isInitialized) {
                     return
                 }
-                copy = renderView_s(renderView)
 
                 // skip front end rendering work, which will result
                 // in only gui drawing
@@ -826,7 +845,7 @@ object RenderWorld_local {
                 }
 
                 if (r_lockSurfaces.GetBool()) {
-                    tr.lockSurfacesRealViewDef = parms
+                    tr.lockSurfacesRealViewDef = viewDef_s(parms)
 
                     // usually the following are called later in R_RenderView(), but we pass
                     // the locked viewDef to that function so do these calculations here
@@ -836,10 +855,10 @@ object RenderWorld_local {
                     R_SetupProjection(tr.lockSurfacesRealViewDef!!)
 
                     val origParms = tr.lockSurfacesRealViewDef!!
-                    parms = tr.lockSurfacesViewDef!!
+                    parms = viewDef_s(tr.lockSurfacesViewDef!!)
                     parms.renderWorld = origParms.renderWorld
                     parms.floatTime = origParms.floatTime
-                    parms.drawSurfs = origParms.drawSurfs // should be NULL I think
+                    parms.drawSurfs = origParms.drawSurfs
                     parms.numDrawSurfs = origParms.numDrawSurfs
                     parms.maxDrawSurfs = origParms.maxDrawSurfs
                     parms.viewLights = origParms.viewLights
@@ -848,12 +867,7 @@ object RenderWorld_local {
 
                 } else {
                     // save current viewDef so it can be used if we enable r_lockSurfaces in the next frame
-                    tr.lockSurfacesViewDef = parms
-                }
-
-                if (r_lockSurfaces.GetBool()) {
-                    RenderSystem.R_LockSurfaceScene(parms)
-                    return
+                    tr.lockSurfacesViewDef = viewDef_s(parms)
                 }
 
                 // save this world for use by some console commands
@@ -873,19 +887,6 @@ object RenderWorld_local {
                     WriteRenderView(renderView)
                 }
 
-//                if (false) {
-//                    for (int i = 0; i < entityDefs.Num(); i++) {
-//                        idRenderEntityLocal def = entityDefs.get(i);
-//                        if (!def) {
-//                            continue;
-//                        }
-//                        if (def.parms.callback) {
-//                            continue;
-//                        }
-//                        if (def.parms.hModel.IsDynamicModel() == DM_CONTINUOUS) {
-//                        }
-//                    }
-//                }
                 val endTime = Sys_Milliseconds()
                 tr.pc!!.frontEndMsec += endTime - startTime
 
@@ -1003,7 +1004,6 @@ object RenderWorld_local {
             }
             Common.common.Error("idRenderWorld::GetPortal: portalNum > numPortals")
 
-//            memset(ret, 0, sizeof(ret));
             return exitPortal_t()
         }
 
@@ -1021,7 +1021,6 @@ object RenderWorld_local {
             var local: localTrace_t
             val localStart = idVec3()
             val localEnd = idVec3()
-            idVec3()
             var j: Int
             val model: idRenderModel
             var tri: srfTriangles_s?
@@ -1039,10 +1038,10 @@ object RenderWorld_local {
                 Common.common.Printf("idRenderWorld::GuiTrace: handle %d is NULL\n", entityHandle)
                 return pt
             }
-            model = def.parms.hModel!!
             if ((def.parms.callback != null) || def.parms.hModel == null || (def.parms.hModel!!.IsDynamicModel() != dynamicModel_t.DM_STATIC)) {
                 return pt
             }
+            model = def.parms.hModel!!
 
             // transform the points into local space
             tr_main.R_GlobalPointToLocal(def.modelMatrix, start, localStart)
@@ -1232,23 +1231,21 @@ object RenderWorld_local {
                             ref = ref.areaNext!!
                             continue
                         }
-                        if (true) {    /* _D3XP addition. could use a cleaner approach */
-                            if (skipPlayer) {
-                                val name: String = model.Name()
-                                var exclude: String?
-                                var k: Int
-                                k = 0
-                                while (playerModelExcludeList.size > k) {
-                                    exclude = playerModelExcludeList[k]
-                                    if ((name == exclude)) {
-                                        break
-                                    }
-                                    k++
+                        if (skipPlayer) {
+                            val name: String = model.Name()
+                            var exclude: String?
+                            var k: Int
+                            k = 0
+                            while (playerModelExcludeList.size > k) {
+                                exclude = playerModelExcludeList[k]
+                                if ((name == exclude)) {
+                                    break
                                 }
-                                if (playerModelExcludeList[k] != null) {
-                                    ref = ref.areaNext!!
-                                    continue
-                                }
+                                k++
+                            }
+                            if (playerModelExcludeList[k] != null) {
+                                ref = ref.areaNext!!
+                                continue
                             }
                         }
                         model = tr_light.R_EntityDefDynamicModel(def)
@@ -1277,23 +1274,21 @@ object RenderWorld_local {
                             j++
                             continue
                         }
-                        if (true) { /* _D3XP addition. could use a cleaner approach */
-                            if (skipPlayer) {
-                                val name: String = shader.GetName()
-                                var exclude: String?
-                                var k: Int
-                                k = 0
-                                while (k < playerMaterialExcludeList.size) {
-                                    exclude = playerMaterialExcludeList[k]
-                                    if ((name == exclude)) {
-                                        break
-                                    }
-                                    k++
+                        if (skipPlayer) {
+                            val name: String = shader.GetName()
+                            var exclude: String?
+                            var k: Int
+                            k = 0
+                            while (k < playerMaterialExcludeList.size) {
+                                exclude = playerMaterialExcludeList[k]
+                                if ((name == exclude)) {
+                                    break
                                 }
-                                if (playerMaterialExcludeList[k] != null) {
-                                    j++
-                                    continue
-                                }
+                                k++
+                            }
+                            if (playerMaterialExcludeList[k] != null) {
+                                j++
+                                continue
                             }
                         }
                         tri = surf.geometry
@@ -1337,7 +1332,6 @@ object RenderWorld_local {
         }
 
         override fun FastWorldTrace(results: modelTrace_s, start: idVec3, end: idVec3): Boolean {
-//            memset(results, 0, sizeof(modelTrace_t));
             results.fraction = 1.0f
             if (areaNodes != null) {
                 RecurseProcBSP_r(results, -1, 0, 0.0f, 1.0f, start, end)
@@ -1870,8 +1864,7 @@ object RenderWorld_local {
                     j++
                 }
 
-                // add the portal to a1
-                p = portal_s() // R_ClearedStaticAlloc(sizeof(p));
+                p = portal_s()
                 p.intoArea = a2
                 p.doublePortal = doublePortals!![i]
                 p.w = w
@@ -1881,7 +1874,7 @@ object RenderWorld_local {
                 doublePortals!![i]!!.portals[0] = p
 
                 // reverse it for a2
-                p = portal_s() // R_ClearedStaticAlloc(sizeof(p));
+                p = portal_s()
                 p.intoArea = a1
                 p.doublePortal = doublePortals!![i]
                 p.w = w.Reverse()
@@ -1952,9 +1945,7 @@ object RenderWorld_local {
                 area = portalAreas!![i]
                 portal = area.portals
                 while (portal != null) {
-                    //TODO:linkage?
                     nextPortal = portal.next
-                    //			delete portal.w;
                     portal.w = null
                     portal = nextPortal
                 }
@@ -1969,19 +1960,15 @@ object RenderWorld_local {
                 i++
             }
             if (portalAreas != null) {
-//                R_StaticFree(portalAreas);
                 portalAreas = null
                 numPortalAreas = 0
-                //                R_StaticFree(areaScreenRect);
                 areaScreenRect = null
             }
             if (doublePortals != null) {
-//                R_StaticFree(doublePortals);
                 doublePortals = null
                 numInterAreaPortals = 0
             }
             if (areaNodes != null) {
-//                R_StaticFree(areaNodes);
                 areaNodes = null
             }
 
@@ -1989,7 +1976,6 @@ object RenderWorld_local {
             i = 0
             while (i < localModels.Num()) {
                 ModelManager.renderModelManager.RemoveModel(localModels[i])
-                localModels.RemoveIndex(i)
                 i++
             }
             localModels.Clear()
@@ -2016,7 +2002,7 @@ object RenderWorld_local {
             // even though we only have a single area, create a node
             // that has both children pointing at it so we don't need to
             //
-            areaNodes = arrayOf(areaNode_t()) // R_ClearedStaticAlloc(sizeof(areaNodes[0]));
+            areaNodes = arrayOf(areaNode_t())
             areaNodes!![0].plane[3] = 1.0f
             areaNodes!![0].children[0] = -1
             areaNodes!![0].children[1] = -1
@@ -2033,7 +2019,6 @@ object RenderWorld_local {
             var i: Int
             generateAllInteractionsCalled = false
             if (interactionTable != null) {
-//                R_StaticFree(interactionTable);
                 interactionTable = null
             }
 
@@ -2209,7 +2194,6 @@ object RenderWorld_local {
                     token,
                     RenderWorld.PROC_FILE_ID
                 )
-                //		delete src;
                 return false
             }
 
@@ -2249,7 +2233,6 @@ object RenderWorld_local {
                 src.Error("idRenderWorldLocal::InitFromMap: bad token \"%s\"", token)
             }
 
-//	delete src;
             // if it was a trivial map without any areas, create a single area
             if (0 == numPortalAreas) {
                 ClearWorld()
@@ -2492,7 +2475,7 @@ object RenderWorld_local {
             if (tr.viewDef!!.areaNum < 0) {
                 i = 0
                 while (i < numPortalAreas) {
-                    areaScreenRect!![i] = idScreenRect(tr.viewDef!!.scissor) //TODO:copy constructor?
+                    areaScreenRect!![i] = idScreenRect(tr.viewDef!!.scissor)
                     i++
                 }
 
@@ -2644,7 +2627,6 @@ object RenderWorld_local {
         fun FlowLightThroughPortals(light: idRenderLightLocal) {
             val ps: portalStack_s
             var i: Int
-            idVec3(light.globalLightOrigin)
 
             // if the light origin areaNum is not in a valid area,
             // the light won't have any area refs
@@ -2652,7 +2634,6 @@ object RenderWorld_local {
                 return
             }
 
-//            memset(ps, 0, sizeof(ps));
             ps = portalStack_s()
             ps.numPortalPlanes = 6
             i = 0
@@ -3012,7 +2993,6 @@ object RenderWorld_local {
             }
 
             // start with none visible, and flood fill from the current area
-//            memset(tr.viewDef!!.connectedAreas, 0, numPortalAreas);
             tr.viewDef!!.connectedAreas = BooleanArray(numPortalAreas)
             BuildConnectedAreas_r(tr.viewDef!!.areaNum)
         }
@@ -3038,7 +3018,6 @@ object RenderWorld_local {
             // bump the view count, invalidating all
             // visible areas
             tr.viewCount++
-            //            System.out.println("tr.viewCount::FindViewLightsAndEntities");
             tr.DBG_viewCount++
 
             // flow through all the portals and add models / lights
@@ -3284,7 +3263,6 @@ object RenderWorld_local {
         }
 
         override fun StopWritingDemo() {
-            //	writeDemo = NULL;
         }
 
         override fun ProcessDemoCommand(
@@ -3353,8 +3331,9 @@ object RenderWorld_local {
                         i++
                     }
 
-//                    if (!readDemo.ReadInt(viewShadow.globalMaterial)) {
-                    if (readDemo.Read((viewShadow.globalMaterial)!!) == 0) {
+                    viewShadow.globalMaterial = null
+                    val globalMatTmp = CInt()
+                    if (readDemo.ReadInt(globalMatTmp) == 0) {
                         return false
                     }
                     if (r_showDemo!!.GetBool()) {
@@ -3462,8 +3441,11 @@ object RenderWorld_local {
             Session.session.writeDemo!!.WriteInt(demoSystem_t.DS_RENDER)
             Session.session.writeDemo!!.WriteInt(demoCommand_t.DC_LOADMAP)
             val header = demoHeader_t()
-            //            strncpy(header.mapname, mapName.c_str(), sizeof(header.mapname) - 1);
-            header.mapname = mapName.c_str()
+            // safely copy mapName into 256-char buffer, padding with nulls
+            val nameChars = mapName.c_str()
+            val len = minOf(nameChars.size, 255)
+            System.arraycopy(nameChars, 0, header.mapname, 0, len)
+            header.mapname[len] = 0.toChar() // null-terminate
             header.version._val = 4
             header.sizeofRenderEntity._val = 4
             header.sizeofRenderLight._val = 4
@@ -3474,7 +3456,7 @@ object RenderWorld_local {
                 Session.session.writeDemo!!.WriteChar(header.mapname[i].code.toShort())
             }
             if (r_showDemo!!.GetBool()) {
-                Common.common.Printf("write DC_DELETE_LIGHTDEF: %s\n", mapName)
+                Common.common.Printf("write DC_LOADMAP: %s\n", mapName)
             }
         }
 
@@ -3510,8 +3492,7 @@ object RenderWorld_local {
                 Session.session.writeDemo!!.WriteFloat(renderView.shaderParms[i])
                 i++
             }
-            //            session.writeDemo.WriteInt(renderView.globalMaterial);
-            Session.session.writeDemo!!.Write(renderView.globalMaterial!!)
+            Session.session.writeDemo!!.WriteInt(0) // globalMaterial
             if (r_showDemo!!.GetBool()) {
                 Common.common.Printf("write DC_RENDERVIEW: %d\n", renderView.time)
             }
@@ -3609,16 +3590,13 @@ object RenderWorld_local {
             Session.session.writeDemo!!.WriteVec3(light.up)
             Session.session.writeDemo!!.WriteVec3(light.start)
             Session.session.writeDemo!!.WriteVec3(light.end)
-            //            session.writeDemo.WriteInt(light.prelightModel);
-            Session.session.writeDemo!!.Write(light.prelightModel!!)
+            Session.session.writeDemo!!.WriteInt(if (light.prelightModel != null) 1 else 0)
             Session.session.writeDemo!!.WriteInt(light.lightId._val)
-            //            session.writeDemo.WriteInt(light.shader);
-            Session.session.writeDemo!!.Write(light.shader!!)
+            Session.session.writeDemo!!.WriteInt(if (light.shader != null) 1 else 0)
             for (i in 0 until Material.MAX_ENTITY_SHADER_PARMS) {
                 Session.session.writeDemo!!.WriteFloat(light.shaderParms[i])
             }
-            //            session.writeDemo.WriteInt(light.referenceSound);
-            Session.session.writeDemo!!.Write(light.referenceSound!!)
+            Session.session.writeDemo!!.WriteInt(if (light.referenceSound != null) 1 else 0)
             if (light.prelightModel != null) {
                 Session.session.writeDemo!!.WriteHashString(light.prelightModel!!.Name())
             }
@@ -3645,50 +3623,32 @@ object RenderWorld_local {
             Session.session.writeDemo!!.WriteInt(demoCommand_t.DC_UPDATE_ENTITYDEF)
             Session.session.writeDemo!!.WriteInt(handle)
 
-//            session.writeDemo.WriteInt((int) ent.hModel);
-            Session.session.writeDemo!!.Write(ent.hModel!!)
+            Session.session.writeDemo!!.WriteInt(if (ent.hModel != null) 1 else 0)
             Session.session.writeDemo!!.WriteInt(ent.entityNum)
             Session.session.writeDemo!!.WriteInt(ent.bodyId)
             Session.session.writeDemo!!.WriteVec3(ent.bounds[0])
             Session.session.writeDemo!!.WriteVec3(ent.bounds[1])
-            //            session.writeDemo.WriteInt((int) ent.callback);
-            Session.session.writeDemo!!.Write(ent.callback!!)
-            //            session.writeDemo.WriteInt((int) ent.callbackData);
-            Session.session.writeDemo!!.Write(ent.callbackData!!)
+            Session.session.writeDemo!!.WriteInt(0) // callback
+            Session.session.writeDemo!!.WriteInt(0) // callbackData
             Session.session.writeDemo!!.WriteInt(ent.suppressSurfaceInViewID)
             Session.session.writeDemo!!.WriteInt(ent.suppressShadowInViewID)
             Session.session.writeDemo!!.WriteInt(ent.suppressShadowInLightID)
             Session.session.writeDemo!!.WriteInt(ent.allowSurfaceInViewID)
             Session.session.writeDemo!!.WriteVec3(ent.origin)
             Session.session.writeDemo!!.WriteMat3(ent.axis)
-            //            session.writeDemo.WriteInt((int) ent.customShader);
-//            session.writeDemo.WriteInt((int) ent.referenceShader);
-//            session.writeDemo.WriteInt((int) ent.customSkin);
-//            session.writeDemo.WriteInt((int) ent.referenceSound);
-            Session.session.writeDemo!!.Write(ent.customShader!!)
-            Session.session.writeDemo!!.Write(ent.referenceShader!!)
-            Session.session.writeDemo!!.Write(ent.customSkin!!)
-            Session.session.writeDemo!!.Write(ent.referenceSound!!)
+            Session.session.writeDemo!!.WriteInt(if (ent.customShader != null) 1 else 0)
+            Session.session.writeDemo!!.WriteInt(if (ent.referenceShader != null) 1 else 0)
+            Session.session.writeDemo!!.WriteInt(if (ent.customSkin != null) 1 else 0)
+            Session.session.writeDemo!!.WriteInt(if (ent.referenceSound != null) 1 else 0)
             for (i in 0 until Material.MAX_ENTITY_SHADER_PARMS) {
                 Session.session.writeDemo!!.WriteFloat(ent.shaderParms[i])
             }
             for (i in 0 until RenderWorld.MAX_RENDERENTITY_GUI) {
-//                session.writeDemo.WriteInt((int &) ent.gui[i]);
-                Session.session.writeDemo!!.Write(ent.gui[i]!!)
+                Session.session.writeDemo!!.WriteInt(if (ent.gui[i] != null) 1 else 0)
             }
-            //            session.writeDemo.WriteInt((int) ent.remoteRenderView);
-            Session.session.writeDemo!!.Write(ent.remoteRenderView!!)
+            Session.session.writeDemo!!.WriteInt(0) // remoteRenderView
             Session.session.writeDemo!!.WriteInt(ent.numJoints)
-            //            session.writeDemo.WriteInt((int) ent.joints);
-            for (joint: idJointMat? in ent.joints!!) { //TODO: double check if writing individual floats is equavalent to the int cast above.
-                val mat: FloatArray = joint!!.ToFloatArray()
-                val buffer: ByteBuffer = ByteBuffer.allocate(mat.size * 4)
-                buffer.asFloatBuffer().put(mat)
-                Session.session.readDemo!!.Write(buffer)
-                //                for (int a = 0; a < mat.length; a++) {
-//                    session.readDemo.WriteFloat(mat[a]);
-//                }
-            }
+            Session.session.writeDemo!!.WriteInt(0) // joints pointer placeholder
             Session.session.writeDemo!!.WriteFloat(ent.modelDepthHack)
             Session.session.writeDemo!!.WriteBool(ent.noSelfShadow)
             Session.session.writeDemo!!.WriteBool(ent.noShadow)
@@ -3720,25 +3680,6 @@ object RenderWorld_local {
                 }
             }
 
-            /*
-             if ( ent.decals ) {
-             ent.decals.WriteToDemoFile( session.readDemo );
-             }
-             if ( ent.overlay ) {
-             ent.overlay.WriteToDemoFile( session.writeDemo );
-             }
-             */if (WRITE_GUIS) {
-//                if (ent.gui != null) {
-//                    ent.gui.WriteToDemoFile(session.writeDemo);
-//                }
-//                if (ent.gui2 != null) {
-//                    ent.gui2.WriteToDemoFile(session.writeDemo);
-//                }
-//                if (ent.gui3 != null) {
-//                    ent.gui3.WriteToDemoFile(session.writeDemo);
-//                }
-            }
-
             // RENDERDEMO_VERSION >= 2 ( Doom3 1.2 )
             Session.session.writeDemo!!.WriteInt(ent.timeGroup)
             Session.session.writeDemo!!.WriteInt(ent.xrayIndex)
@@ -3756,35 +3697,36 @@ object RenderWorld_local {
             val shadow = renderEntityShadow()
             val index = CInt()
             var i: Int
+            val hModel = CInt()
+            val customShader = CInt()
+            val referenceShader = CInt()
+            val customSkin = CInt()
+            val referenceSound = CInt()
+            val gui = Array(RenderWorld.MAX_RENDERENTITY_GUI) { CInt() }
+            val tmp = CInt()
+
             Session.session.readDemo!!.ReadInt(index)
             if (index._val < 0) {
                 Common.common.Error("ReadRenderEntity: index < 0")
             }
 
-//            session.readDemo.ReadInt((int) shadow.hModel);
-            Session.session.readDemo!!.Read((shadow.hModel)!!)
+            Session.session.readDemo!!.ReadInt(hModel)
             Session.session.readDemo!!.ReadInt(shadow.entityNum)
             Session.session.readDemo!!.ReadInt(shadow.bodyId)
             Session.session.readDemo!!.ReadVec3(shadow.bounds[0])
             Session.session.readDemo!!.ReadVec3(shadow.bounds[1])
-            //            session.readDemo.ReadInt((int) shadow.callback);
-//            session.readDemo.ReadInt((int) shadow.callbackData);
-            Session.session.readDemo!!.Read((shadow.callback)!!)
-            Session.session.readDemo!!.Read((shadow.callbackData)!!)
+            Session.session.readDemo!!.ReadInt(tmp) // callback
+            Session.session.readDemo!!.ReadInt(tmp) // callbackData
             Session.session.readDemo!!.ReadInt(shadow.suppressSurfaceInViewID)
             Session.session.readDemo!!.ReadInt(shadow.suppressShadowInViewID)
             Session.session.readDemo!!.ReadInt(shadow.suppressShadowInLightID)
             Session.session.readDemo!!.ReadInt(shadow.allowSurfaceInViewID)
             Session.session.readDemo!!.ReadVec3(shadow.origin)
             Session.session.readDemo!!.ReadMat3(shadow.axis)
-            //            session.readDemo.ReadInt((int) shadow.customShader);
-//            session.readDemo.ReadInt((int) shadow.referenceShader);
-//            session.readDemo.ReadInt((int) shadow.customSkin);
-//            session.readDemo.ReadInt((int) shadow.referenceSound);
-            Session.session.readDemo!!.Read((shadow.customShader)!!)
-            Session.session.readDemo!!.Read((shadow.referenceShader)!!)
-            Session.session.readDemo!!.Read((shadow.customSkin)!!)
-            Session.session.readDemo!!.Read((shadow.referenceSound)!!)
+            Session.session.readDemo!!.ReadInt(customShader)
+            Session.session.readDemo!!.ReadInt(referenceShader)
+            Session.session.readDemo!!.ReadInt(customSkin)
+            Session.session.readDemo!!.ReadInt(referenceSound)
             i = 0
             while (i < Material.MAX_ENTITY_SHADER_PARMS) {
                 Session.session.readDemo!!.ReadFloat(shadow.shaderParms[i])
@@ -3792,26 +3734,12 @@ object RenderWorld_local {
             }
             i = 0
             while (i < RenderWorld.MAX_RENDERENTITY_GUI) {
-
-//                session.readDemo.ReadInt((int) shadow.gui[i]);
-                Session.session.readDemo!!.Read((shadow.gui[i])!!)
+                Session.session.readDemo!!.ReadInt(gui[i])
                 i++
             }
-            //            session.readDemo.ReadInt((int) shadow.remoteRenderView);
-            Session.session.readDemo!!.Read((shadow.remoteRenderView)!!)
+            Session.session.readDemo!!.ReadInt(tmp) // remoteRenderView
             Session.session.readDemo!!.ReadInt(shadow.numJoints)
-            //            session.readDemo.ReadInt((int) shadow.joints);
-            for (joint: idJointMat in shadow.joints!!) { //TODO: double check if writing individual floats is equavalent to the int cast above.
-                val mat: FloatArray = joint.ToFloatArray()
-                val buffer: ByteBuffer = ByteBuffer.allocate(mat.size * 4)
-                buffer.asFloatBuffer().put(mat)
-                Session.session.readDemo!!.Read(buffer)
-                //                for (int a = 0; a < mat.length; a++) {
-//                    float[] b = {0};
-//                    session.readDemo.ReadFloat(b);
-//                    mat[a] = b[0];
-//                }
-            }
+            Session.session.readDemo!!.ReadInt(tmp) // joints pointer
             Session.session.readDemo!!.ReadFloat(shadow.modelDepthHack)
             Session.session.readDemo!!.ReadBool(shadow.noSelfShadow)
             Session.session.readDemo!!.ReadBool(shadow.noShadow)
@@ -3819,26 +3747,36 @@ object RenderWorld_local {
             Session.session.readDemo!!.ReadBool(shadow.weaponDepthHack)
             Session.session.readDemo!!.ReadInt(shadow.forceUpdate)
             shadow.callback = null
-            if (shadow.customShader != null) {
+            if (customShader._val != 0) {
                 shadow.customShader = DeclManager.declManager.FindMaterial(Session.session.readDemo!!.ReadHashString())
+            } else {
+                shadow.customShader = null
             }
-            if (shadow.customSkin != null) {
+            if (customSkin._val != 0) {
                 shadow.customSkin = DeclManager.declManager.FindSkin(Session.session.readDemo!!.ReadHashString())
+            } else {
+                shadow.customSkin = null
             }
-            if (shadow.hModel != null) {
+            if (hModel._val != 0) {
                 shadow.hModel = ModelManager.renderModelManager.FindModel(Session.session.readDemo!!.ReadHashString())
+            } else {
+                shadow.hModel = null
             }
-            if (shadow.referenceShader != null) {
+            if (referenceShader._val != 0) {
                 shadow.referenceShader =
                     DeclManager.declManager.FindMaterial(Session.session.readDemo!!.ReadHashString())
+            } else {
+                shadow.referenceShader = null
             }
-            if (shadow.referenceSound != null) {
-//		int	index;
-                Session.session.readDemo!!.ReadInt(index)
-                shadow.referenceSound = Session.session.sw.EmitterForIndex(index._val)
+            if (referenceSound._val != 0) {
+                Session.session.readDemo!!.ReadInt(tmp)
+                shadow.referenceSound = Session.session.sw.EmitterForIndex(tmp._val)
+            } else {
+                shadow.referenceSound = null
             }
+            shadow.remoteRenderView = null
             if (shadow.numJoints._val != 0) {
-                shadow.joints = Array(shadow.numJoints._val) { idJointMat() } //Mem_Alloc16(ent.numJoints);
+                shadow.joints = Array(shadow.numJoints._val) { idJointMat() }
                 i = 0
                 while (i < shadow.numJoints._val) {
                     val data: FloatArray = shadow.joints!![i].ToFloatArray()
@@ -3852,22 +3790,15 @@ object RenderWorld_local {
             }
             shadow.callbackData = null
 
-            /*
-             if ( ent.decals ) {
-             ent.decals = idRenderModelDecal::Alloc();
-             ent.decals.ReadFromDemoFile( session.readDemo );
-             }
-             if ( ent.overlay ) {
-             ent.overlay = idRenderModelOverlay::Alloc();
-             ent.overlay.ReadFromDemoFile( session.readDemo );
-             }
-             */i = 0
+            i = 0
             while (i < RenderWorld.MAX_RENDERENTITY_GUI) {
-                if (shadow.gui[i] != null) {
+                if (gui[i]._val != 0) {
                     shadow.gui[i] = uiManager.Alloc()
                     if (WRITE_GUIS) {
                         shadow.gui[i]!!.ReadFromDemoFile((Session.session.readDemo)!!)
                     }
+                } else {
+                    shadow.gui[i] = null
                 }
                 i++
             }
@@ -3894,6 +3825,10 @@ object RenderWorld_local {
         fun ReadRenderLight() {
             val light = renderLight_s()
             val index = CInt()
+            val prelightModel = CInt()
+            val shader = CInt()
+            val referenceSound = CInt()
+
             Session.session.readDemo!!.ReadInt(index)
             if (index._val < 0) {
                 Common.common.Error("ReadRenderLight: index < 0 ")
@@ -3913,29 +3848,32 @@ object RenderWorld_local {
             Session.session.readDemo!!.ReadVec3(light.up)
             Session.session.readDemo!!.ReadVec3(light.start)
             Session.session.readDemo!!.ReadVec3(light.end)
-            //            session.readDemo.ReadInt((int) shadow.prelightModel);
-            Session.session.readDemo!!.Read((light.prelightModel)!!)
+            Session.session.readDemo!!.ReadInt(prelightModel)
             Session.session.readDemo!!.ReadInt(light.lightId)
-            //            session.readDemo.ReadInt((int) shadow.shader);
-            Session.session.readDemo!!.Read((light.shader)!!)
+            Session.session.readDemo!!.ReadInt(shader)
             for (i in 0 until Material.MAX_ENTITY_SHADER_PARMS) {
                 val parm = CFloat()
                 Session.session.readDemo!!.ReadFloat(parm)
                 light.shaderParms[i] = parm._val
             }
-            //            session.readDemo.ReadInt((int) shadow.referenceSound);
-            Session.session.readDemo!!.Read((light.referenceSound)!!)
-            if (light.prelightModel != null) {
+            Session.session.readDemo!!.ReadInt(referenceSound)
+            if (prelightModel._val != 0) {
                 light.prelightModel =
                     ModelManager.renderModelManager.FindModel(Session.session.readDemo!!.ReadHashString())
+            } else {
+                light.prelightModel = null
             }
-            if (light.shader != null) {
+            if (shader._val != 0) {
                 light.shader = DeclManager.declManager.FindMaterial(Session.session.readDemo!!.ReadHashString())
+            } else {
+                light.shader = null
             }
-            if (light.referenceSound != null) {
-//		int	index;
-                Session.session.readDemo!!.ReadInt(index)
-                light.referenceSound = Session.session.sw.EmitterForIndex(index._val)
+            if (referenceSound._val != 0) {
+                val tmp = CInt()
+                Session.session.readDemo!!.ReadInt(tmp)
+                light.referenceSound = Session.session.sw.EmitterForIndex(tmp._val)
+            } else {
+                light.referenceSound = null
             }
             UpdateLightDef(index._val, light)
             if (r_showDemo!!.GetBool()) {
@@ -3949,7 +3887,6 @@ object RenderWorld_local {
             // we overflowed the interaction table, so dump it
             // we may want to resize this in the future if it turns out to be common
             Common.common.Printf("idRenderWorldLocal::ResizeInteractionTable: overflowed interactionTableWidth, dumping\n")
-            //            R_StaticFree(interactionTable);
             interactionTable = null
         }
 
@@ -4396,8 +4333,6 @@ object RenderWorld_local {
                         // the CPU time.  The table is updated at interaction::AllocAndLink() and interaction::UnlinkAndFree()
                         val index: Int = lDef.index * interactionTableWidth + eDef.index
                         inter = interactionTable!![index]
-                        if (index == 441291) {
-                        }
                         if (inter != null) {
                             // if this entity wasn't in view already, the scissor rect will be empty,
                             // so it will only be used for shadow casting

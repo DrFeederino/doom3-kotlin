@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/SecurityCamera.cpp, neo/Game/SecurityCamera.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.Entity.idEntity
@@ -188,7 +206,7 @@ object SecurityCamera {
         override fun Think() {
             val pct: Float
             val travel: Float
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 if (SysCvar.g_showEntityInfo.GetBool()) {
                     DrawFov()
                 }
@@ -200,7 +218,7 @@ object SecurityCamera {
 
             // run physics
             RunPhysics()
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 if (CanSeePlayer()) {
                     if (alertMode == SCANNING) {
                         val sightTime: Float
@@ -329,14 +347,14 @@ object SecurityCamera {
         private fun CanSeePlayer(): Boolean {
             var i: Int
             var dist: Float
-            var ent: idPlayer
+            var ent: idPlayer?
             val tr = trace_s()
             val dir = idVec3()
             val handle: pvsHandle_t?
             handle = Game_local.gameLocal.pvs.SetupCurrentPVS(pvsArea)
             i = 0
             while (i < Game_local.gameLocal.numClients) {
-                ent = Game_local.gameLocal.entities[i] as idPlayer
+                ent = Game_local.gameLocal.entities[i] as? idPlayer
                 if (ent == null || ent.fl.notarget) {
                     i++
                     continue
@@ -488,7 +506,6 @@ object SecurityCamera {
             val right = idVec3()
             val up = idVec3()
             val target = idVec3()
-            idVec3()
             val dir = idVec3()
             val radius: Float
             val lightOffset = idVec3()

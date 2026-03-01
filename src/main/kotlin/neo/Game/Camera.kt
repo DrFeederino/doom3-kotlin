@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Camera.cpp, neo/Game/Camera.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.Entity.idEntity
@@ -439,7 +457,7 @@ object Camera {
         override fun Think() {
             val frame: Int
             val frameTime: Int
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 // check if we're done in the Think function when the cinematic is being skipped (obj.GetViewParms isn't called when skipping cinematics).
                 if (!Game_local.gameLocal.skipCinematic) {
                     return
@@ -621,7 +639,7 @@ object Camera {
 
         private fun Event_Activate(_activator: idEventArg<idEntity>) {
             activator.oSet(_activator.value)
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 Stop()
             } else {
                 Start()

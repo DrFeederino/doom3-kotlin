@@ -1,3 +1,16 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/draw_arb2.cpp
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.Renderer.Material.stageVertexColor_t
@@ -74,6 +87,33 @@ object draw_arb2 {
         qgl.qglActiveTextureARB(ARBMultitexture.GL_TEXTURE0_ARB + unit)
     }
 
+    private fun findLineThatStartsWith(text: String, findMe: String): Int {
+        var res = text.indexOf(findMe)
+        while (res != -1) {
+            // skip whitespace before match, if any
+            var cur = res
+            if (cur > 0) cur--
+            while (cur > 0 && (text[cur] == ' ' || text[cur] == '\t')) {
+                cur--
+            }
+            // now we should be at a newline (or at the beginning)
+            if (cur == 0) return cur
+            if (text[cur] == '\n' || text[cur] == '\r') return cur + 1
+            // otherwise maybe we're in commented out text or whatever, search on
+            res = text.indexOf(findMe, res + 1)
+        }
+        return -1
+    }
+
+    private fun isARBidentifierChar(c: Int): Boolean {
+        // according to chapter 3.11.2 in ARB_fragment_program.txt identifiers can only
+        // contain these chars (first char mustn't be a number, but that doesn't matter here)
+        return c == '$'.code || c == '_'.code
+                || (c in '0'.code..'9'.code)
+                || (c in 'A'.code..'Z'.code)
+                || (c in 'a'.code..'z'.code)
+    }
+
     /*
      =============
      RB_ARB2_CreateDrawInteractions
@@ -128,7 +168,7 @@ object draw_arb2 {
 
             // set the vertex pointers
             val ac =
-                idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache)) //TODO:figure out how to work these damn casts.
+                idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
             qgl.qglColorPointer(4, GL11.GL_UNSIGNED_BYTE, idDrawVert.BYTES, ac.colorOffset().toLong())
             qgl.qglVertexAttribPointerARB(11, 3, GL11.GL_FLOAT, false, idDrawVert.BYTES, ac.normalOffset().toLong())
             qgl.qglVertexAttribPointerARB(10, 3, GL11.GL_FLOAT, false, idDrawVert.BYTES, ac.tangentsOffset_1().toLong())
@@ -282,7 +322,7 @@ object draw_arb2 {
 
         // load the program even if we don't support it, so
         // fs_copyfiles can generate cross-platform data dumps
-        fileSystem.ReadFile(fullPath.toString(),  /*(void **)&*/fileBuffer, null)
+        fileSystem.ReadFile(fullPath.toString(), fileBuffer, null)
         if (fileBuffer[0] == null) {
             Common.common.Printf(": File not found\n")
             return
@@ -323,12 +363,13 @@ object draw_arb2 {
             Common.common.Printf(": !!ARB not found\n")
             return
         }
-        end = start + buffer.substring(start).indexOf("END")
-        if (-1 == end) {
+        val endIdx = buffer.substring(start).indexOf("END")
+        if (endIdx == -1) {
             Common.common.Printf(": END not found\n")
             return
         }
-        buffer = buffer.substring(start, end + 3) //end[3] = 0;
+        end = start + endIdx
+        buffer = buffer.substring(start, end + 3)
 
         // DG: hack gamma correction into shader
         if (r_gammaInShader.GetBool() && progs[progIndex].target == GL_FRAGMENT_PROGRAM_ARB &&
@@ -336,12 +377,12 @@ object draw_arb2 {
         ) {
 
             // note that strlen("dhewm3tmpres") == strlen("result.color")
-            var tmpres = "TEMP dhewm3tmpres; # injected by dhewm3 for gamma correction\n"
+            val tmpres = "TEMP dhewm3tmpres; # injected by dhewm3 for gamma correction\n"
 
-            // Note: program.env[4].xyz = r_brightness; program.env[4].w = 1.0/r_gamma
+            // Note: program.env[PP_GAMMA_BRIGHTNESS].xyz = r_brightness; program.env[PP_GAMMA_BRIGHTNESS].w = 1.0/r_gamma
             // outColor.rgb = pow(dhewm3tmpres.rgb*r_brightness, vec3(1.0/r_gamma))
             // outColor.a = dhewm3tmpres.a;
-            var extraLines =
+            val extraLines =
                 "# gamma correction in shader, injected by dhewm3 \n" +
                         // MUL_SAT clamps the result to [0, 1] - it must not be negative because
                         // POW might not work with a negative base (it looks wrong with intel's Linux driver)
@@ -349,17 +390,16 @@ object draw_arb2 {
                         // it's clamped anyway and pow(base, exp) is always >= 1 for base >= 1
                         "MUL_SAT dhewm3tmpres.xyz, program.env[21], dhewm3tmpres;\n" + // first multiply with brightness
                         "POW result.color.x, dhewm3tmpres.x, program.env[21].w;\n" + // then do pow(dhewm3tmpres.xyz, vec3(1/gamma))
-                        "POW result.color.y, dhewm3tmpres.y, program.env[21].w;\n" +  // (apparently POW only supports scalars, not whole vectors)
+                        "POW result.color.y, dhewm3tmpres.y, program.env[21].w;\n" + // (apparently POW only supports scalars, not whole vectors)
                         "POW result.color.z, dhewm3tmpres.z, program.env[21].w;\n" +
                         "MOV result.color.w, dhewm3tmpres.w;\n" + // alpha remains unmodified
                         "\nEND\n\n" // we add this block right at the end, replacing the original "END" string
 
-            var fullLen = buffer.length + tmpres.length + extraLines.length
-            var outStr = StringBuilder(fullLen + 1)
+            val fullLen = buffer.length + tmpres.length + extraLines.length
+            val outStr = StringBuilder(fullLen + 1)
 
             // add tmpres right after OPTION line (if any)
-            // buffer has already been trimmed to start at index 0 ("!!ARBfp...")
-            var insertPos = buffer.indexOf("OPTION")
+            var insertPos = findLineThatStartsWith(buffer, "OPTION")
             if (insertPos == -1) {
                 // no OPTION? then just put it after the first line (usually sth like "!!ARBfp1.0\n")
                 insertPos = 0
@@ -368,27 +408,70 @@ object draw_arb2 {
             while (buffer[insertPos] != '\n' && buffer[insertPos] != '\r') {
                 ++insertPos
             }
-            // skip  the newline character(s) as well
+            // skip the newline character(s) as well
             while (buffer[insertPos] == '\n' || buffer[insertPos] == '\r') {
                 ++insertPos
             }
 
             // copy text up to insertPos
-            outStr.append(buffer.take(insertPos))
+            outStr.append(buffer, 0, insertPos)
             // copy tmpres ("TEMP dhewm3tmpres; # ..")
             outStr.append(tmpres)
             // copy remaining original shader up to (excluding) "END"
             outStr.append(buffer.substring(insertPos, buffer.indexOf("END")))
 
-
             // replace all existing occurrences of "result.color" with "dhewm3tmpres"
-            val result = outStr.replace("result.color".toRegex(), "dhewm3tmpres")
-            outStr.clear()
-            outStr.append(result)
+            // and handle "OUTPUT bla = result.color;" -> "ALIAS  bla = dhewm3tmpres;"
+            var resIdx = outStr.indexOf("result.color")
+            while (resIdx != -1) {
+                outStr.replace(resIdx, resIdx + 12, "dhewm3tmpres")
+
+                // if this was part of "OUTPUT bla = result.color;", replace
+                // "OUTPUT bla" with "ALIAS  bla" (so it becomes "ALIAS  bla = dhewm3tmpres;")
+                var s = resIdx - 1
+                // first skip whitespace before "dhewm3tmpres" (was "result.color")
+                while (s > 0 && (outStr[s] == ' ' || outStr[s] == '\t')) {
+                    --s
+                }
+                // if there's no '=' before result.color, this line can't be affected
+                if (s > 0 && outStr[s] == '=' && s > 8) {
+                    --s // we were on '=', so go to the char before and skip whitespace again
+                    while (s > 0 && (outStr[s] == ' ' || outStr[s] == '\t')) {
+                        --s
+                    }
+                    // now we should be at the end of "bla" (or however the variable/alias is called)
+                    if (s > 7 && isARBidentifierChar(outStr[s].code)) {
+                        --s
+                        // skip all the remaining chars that are legal in identifiers
+                        while (s > 0 && isARBidentifierChar(outStr[s].code)) {
+                            --s
+                        }
+                        // there should be at least one space/tab between "OUTPUT" and "bla"
+                        if (s > 6 && (outStr[s] == ' ' || outStr[s] == '\t')) {
+                            --s
+                            // skip remaining whitespace (if any)
+                            while (s > 0 && (outStr[s] == ' ' || outStr[s] == '\t')) {
+                                --s
+                            }
+                            // now we should be at "OUTPUT" (specifically at its last 'T'),
+                            // if this is indeed such a case
+                            if (s >= 5 && outStr[s] == 'T') {
+                                val outputStart = s - 5
+                                if (outStr.substring(outputStart, outputStart + 6) == "OUTPUT") {
+                                    // it really is "OUTPUT" => replace "OUTPUT" with "ALIAS "
+                                    outStr.replace(outputStart, outputStart + 6, "ALIAS ")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                resIdx = outStr.indexOf("result.color", resIdx + 13)
+            }
+
             assert(outStr.length <= fullLen)
 
             // now add extraLines that calculate and set a gamma-corrected result.color
-            // strcat() should be safe because fullLen was calculated taking all parts into account
             outStr.append(extraLines)
             buffer = outStr.toString()
         }
@@ -402,7 +485,7 @@ object draw_arb2 {
         qgl.qglProgramStringARB(
             progs[progIndex].target,
             ARBVertexProgram.GL_PROGRAM_FORMAT_ASCII_ARB,
-            start,  /*(unsigned char *)*/
+            start,
             substring
         )
 
@@ -416,7 +499,8 @@ object draw_arb2 {
             } else if (ofs[0] >= buffer.length - start) {
                 Common.common.Printf("error at end of program\n")
             } else {
-                Common.common.Printf("error at %d:\n%s", ofs[0], start + ofs[0])
+                val printOfs = maxOf(ofs[0] - 20, 0)
+                Common.common.Printf("error at %d:\n%s", ofs[0], buffer.substring(printOfs))
             }
             return
         }
@@ -479,14 +563,13 @@ object draw_arb2 {
     fun R_ARB2_Init() {
         glConfig.allowARB2Path = false
 
-        Common.common.Printf("---------- R_ARB2_Init ----------\n")
+        Common.common.Printf("ARB2 renderer: ")
 
         if (!glConfig.ARBVertexProgramAvailable || !glConfig.ARBFragmentProgramAvailable) {
             Common.common.Printf("Not available.\n")
             return
         }
         Common.common.Printf("Available.\n")
-        Common.common.Printf("---------------------------------\n")
 
         glConfig.allowARB2Path = true
     }
@@ -692,7 +775,6 @@ object draw_arb2 {
                 R_LoadARBProgram(i)
                 i++
             }
-            Common.common.Printf("-------------------------------\n")
         }
 
         companion object {

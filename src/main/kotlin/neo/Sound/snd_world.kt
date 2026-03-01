@@ -15,7 +15,6 @@ import neo.Sound.sound.SCHANNEL_ANY
 import neo.Sound.sound.idSoundEmitter
 import neo.Sound.sound.idSoundWorld
 import neo.TempDump
-import neo.TempDump.TODO_Exception
 import neo.framework.*
 import neo.framework.DemoFile.demoSystem_t
 import neo.framework.DemoFile.idDemoFile
@@ -32,10 +31,14 @@ import neo.idlib.math.Random.idRandom
 import neo.sys.win_main.Sys_EnterCriticalSection
 import neo.sys.win_main.Sys_LeaveCriticalSection
 import org.lwjgl.BufferUtils
+import org.lwjgl.openal.AL
 import org.lwjgl.openal.AL10
+import org.lwjgl.openal.AL11.alSource3i
+import org.lwjgl.openal.ALCapabilities
+import org.lwjgl.openal.EXTEfx
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
-import kotlin.math.abs
+
 import kotlin.math.atan
 import kotlin.math.min
 
@@ -103,6 +106,13 @@ class snd_world {
             Array(snd_shader.SOUND_MAX_CLASSES) { idSoundFade() } // for global sound fading
         var writeDemo // if not NULL, archive commands here
                 : idDemoFile? = null
+
+        // FIX: Missing EFX fields from C++ snd_local.h. Required for reverb effects.
+        var listenerEffect: Int = 0            // ALuint - current EFX effect applied to listener slot
+        var listenerSlot: Int = 0              // ALuint - auxiliary effect slot for reverb
+        var listenerAreFiltersInitialized = false
+        var listenerFilters: IntArray = IntArray(2) // [0] = direct filter, [1] = send filter
+        var listenerSlotReverbGain: Float = 1.0f
 
         // virtual					~idSoundWorldLocal();
         // call at each map start
@@ -310,7 +320,7 @@ class snd_world {
          ===================
          */
         override fun StopWritingDemo() {
-            writeDemo = null //TODO:booleanize?
+            writeDemo = null
         }
 
         /*
@@ -449,7 +459,6 @@ class snd_world {
                 localSound!!.StopSound(channel)
             }
             if (shaderName.isEmpty()) {
-//            if (!shaderName || !shaderName[0]) {
                 return
             }
             val shader = DeclManager.declManager.FindSound(shaderName) ?: return
@@ -475,6 +484,15 @@ class snd_world {
                 return
             }
             pause44kHz = snd_system.soundSystemLocal.GetCurrent44kHzTime()
+
+            // FIX: Missing from Kotlin — dhewm3 pauses OpenAL sources when entering menus
+            for (i in 0 until emitters.Num()) {
+                val emitter = emitters[i]
+                if (!emitter.playing) {
+                    continue
+                }
+                emitter.PauseAll()
+            }
         }
 
         override fun UnPause() {
@@ -486,6 +504,15 @@ class snd_world {
             offset44kHz = snd_system.soundSystemLocal.GetCurrent44kHzTime() - pause44kHz
             OffsetSoundTime(offset44kHz)
             pause44kHz = -1
+
+            // FIX: Missing from Kotlin — dhewm3 resumes OpenAL sources when leaving menus
+            for (i in 0 until emitters.Num()) {
+                val emitter = emitters[i]
+                if (!emitter.playing) {
+                    continue
+                }
+                emitter.UnPauseAll()
+            }
         }
 
         override fun IsPaused(): Boolean {
@@ -761,7 +788,7 @@ class snd_world {
                         Common.common.Error("idSoundWorldLocal::ReadFromSaveGame: channel > SOUND_MAX_CHANNELS")
                     }
                     val chan = def.channels[channel]
-                    if (chan.decoder != null) {
+                    if (chan.decoder == null) {
                         // The pointer in the save file is not valid, so we grab a new one
                         chan.decoder = idSampleDecoder.Alloc()
                     }
@@ -781,6 +808,11 @@ class snd_world {
                     // make sure we start up the hardware voice if needed
                     chan.triggered = chan.triggerState
                     chan.openalStreamingOffset = currentSoundTime - chan.trigger44kHzTime
+                    // DG: round up openalStreamingOffset to multiple of 8, so it still has an even number
+                    //  if we calculate "how many 11kHz stereo samples do we need to decode" and don't
+                    //  run into a "I need one more sample apparently, so decode 0 stereo samples"
+                    //  situation that could cause an endless loop.. (44kHz/11kHz = 4; *2 for stereo => 8)
+                    chan.openalStreamingOffset = (chan.openalStreamingOffset + 7) and 7.inv()
 
                     // adjust the hardware fade time
                     if (chan.channelFade.fadeStart44kHz != 0) {
@@ -804,29 +836,34 @@ class snd_world {
             }
         }
 
-        fun ReadFromSaveGameSoundChannel(saveGame: idFile?, ch: idSoundChannel?) {
-            throw TODO_Exception()
-            //            ch.triggerState = saveGame.ReadBool();
-//            short tmp;
-//            tmp = saveGame.ReadChar();
-//            tmp = saveGame.ReadChar();
-//            tmp = saveGame.ReadChar();
-//            ch.trigger44kHzTime = saveGame.ReadInt();
-//            ch.triggerGame44kHzTime = saveGame.ReadInt();
-//            ReadFromSaveGameSoundShaderParams(saveGame, ch.parms);
-//            saveGame.ReadInt((int &) ch.leadinSample);
-//            ch.triggerChannel = saveGame.ReadInt();
-//            saveGame.ReadInt((int &) ch.soundShader);
-//            saveGame.ReadInt((int &) ch.decoder);
-//            ch.diversity = saveGame.ReadFloat();
-//            ch.lastVolume = saveGame.ReadFloat();
-//            for (int m = 0; m < 6; m++) {
-//                ch.lastV[m] = saveGame.ReadFloat();
-//            }
-//            ch.channelFade.fadeStart44kHz = saveGame.ReadInt();
-//            ch.channelFade.fadeEnd44kHz = saveGame.ReadInt();
-//            ch.channelFade.fadeStartVolume = saveGame.ReadFloat();
-//            ch.channelFade.fadeEndVolume = saveGame.ReadFloat();
+        // FIX: Was a stub throwing TODO_Exception. Implemented from C++ snd_world.cpp:1433-1458.
+        fun ReadFromSaveGameSoundChannel(saveGame: idFile, ch: idSoundChannel) {
+            ch.triggerState = saveGame.ReadBool()
+            saveGame.ReadChar() // padding byte
+            saveGame.ReadChar() // padding byte
+            saveGame.ReadChar() // padding byte
+            ch.trigger44kHzTime = saveGame.ReadInt()
+            ch.triggerGame44kHzTime = saveGame.ReadInt()
+            if (ch.parms == null) {
+                ch.parms = snd_shader.soundShaderParms_t()
+            }
+            ReadFromSaveGameSoundShaderParams(saveGame, ch.parms!!)
+            saveGame.ReadInt() // leadinSample pointer (not valid, set NULL)
+            ch.leadinSample = null
+            ch.triggerChannel = saveGame.ReadInt()
+            saveGame.ReadInt() // soundShader pointer (not valid, set NULL)
+            ch.soundShader = null
+            saveGame.ReadInt() // decoder pointer (not valid, set NULL)
+            ch.decoder = null
+            ch.diversity = saveGame.ReadFloat()
+            ch.lastVolume = saveGame.ReadFloat()
+            for (m in 0 until 6) {
+                ch.lastV[m] = saveGame.ReadFloat()
+            }
+            ch.channelFade.fadeStart44kHz = saveGame.ReadInt()
+            ch.channelFade.fadeEnd44kHz = saveGame.ReadInt()
+            ch.channelFade.fadeStartVolume = saveGame.ReadFloat()
+            ch.channelFade.fadeEndVolume = saveGame.ReadFloat()
         }
 
         fun ReadFromSaveGameSoundShaderParams(saveGame: idFile, params: snd_shader.soundShaderParms_t) {
@@ -896,14 +933,38 @@ class snd_world {
                 snd_system.soundSystemLocal.currentSoundWorld = null
             }
             AVIClose()
+
+            // delete emitters before deleting the listenerSlot, so their sources aren't
+            // associated with the listenerSlot anymore
             i = 0
             while (i < emitters.Num()) {
                 if (emitters[i] != null) {
-//			delete emitters[i];
                     emitters[i] = idSoundEmitterLocal()
                 }
                 i++
             }
+
+            // FIX: Missing EFX cleanup from C++ Shutdown(). Deletes auxiliary effect slot and filters.
+            if (idSoundSystemLocal.useEAXReverb) {
+                if (EXTEfx.alIsAuxiliaryEffectSlot(listenerSlot)) {
+                    EXTEfx.alAuxiliaryEffectSloti(listenerSlot, EXTEfx.AL_EFFECTSLOT_EFFECT, EXTEfx.AL_EFFECTSLOT_NULL)
+                    EXTEfx.alDeleteAuxiliaryEffectSlots(listenerSlot)
+                    listenerSlot = EXTEfx.AL_EFFECTSLOT_NULL
+                }
+
+                if (listenerAreFiltersInitialized) {
+                    listenerAreFiltersInitialized = false
+
+                    if (listenerFilters[0] != EXTEfx.AL_FILTER_NULL && listenerFilters[1] != EXTEfx.AL_FILTER_NULL) {
+                        EXTEfx.alDeleteFilters(listenerFilters[0])
+                        EXTEfx.alDeleteFilters(listenerFilters[1])
+                        listenerFilters[0] = EXTEfx.AL_FILTER_NULL
+                        listenerFilters[1] = EXTEfx.AL_FILTER_NULL
+                    }
+                }
+                listenerSlotReverbGain = 1.0f
+            }
+
             localSound = null
         }
 
@@ -917,6 +978,51 @@ class snd_world {
             listenerArea = 0
             listenerAreaName.set("Undefined")
             listenerEnvironmentID = -2
+
+            // FIX: Missing EFX initialization from C++ Init(). Creates auxiliary effect slot and lowpass filters.
+            if (idSoundSystemLocal.useEAXReverb) {
+                if (!EXTEfx.alIsAuxiliaryEffectSlot(listenerSlot)) {
+                    AL10.alGetError()
+                    listenerSlot = EXTEfx.alGenAuxiliaryEffectSlots()
+                    val e = AL10.alGetError()
+                    if (e != AL10.AL_NO_ERROR) {
+                        Common.common.Warning("idSoundWorldLocal::Init: alGenAuxiliaryEffectSlots failed: 0x%x", e)
+                        listenerSlot = EXTEfx.AL_EFFECTSLOT_NULL
+                    }
+                }
+
+                if (!listenerAreFiltersInitialized) {
+                    listenerAreFiltersInitialized = true
+
+                    AL10.alGetError()
+                    listenerFilters[0] = EXTEfx.alGenFilters()
+                    listenerFilters[1] = EXTEfx.alGenFilters()
+                    val e = AL10.alGetError()
+                    if (e != AL10.AL_NO_ERROR) {
+                        Common.common.Warning("idSoundWorldLocal::Init: alGenFilters failed: 0x%x", e)
+                        listenerFilters[0] = EXTEfx.AL_FILTER_NULL
+                        listenerFilters[1] = EXTEfx.AL_FILTER_NULL
+                    } else {
+                        EXTEfx.alFilteri(listenerFilters[0], EXTEfx.AL_FILTER_TYPE, EXTEfx.AL_FILTER_LOWPASS)
+                        // original EAX occlusion value was -1150
+                        // pow(10.0, (-1150*0.25*1.0)/2000.0)
+                        EXTEfx.alFilterf(listenerFilters[0], EXTEfx.AL_LOWPASS_GAIN, 0.718208f)
+                        // pow(10.0, (-1150*1.0)/2000.0)
+                        EXTEfx.alFilterf(listenerFilters[0], EXTEfx.AL_LOWPASS_GAINHF, 0.266073f)
+
+                        EXTEfx.alFilteri(listenerFilters[1], EXTEfx.AL_FILTER_TYPE, EXTEfx.AL_FILTER_LOWPASS)
+                        // original EAX occlusion value was -1150
+                        // pow(10.0, (-1150*(0.25+1.5-1.0))/2000.0)
+                        EXTEfx.alFilterf(listenerFilters[1], EXTEfx.AL_LOWPASS_GAIN, 0.370467f)
+                        // pow(10.0, (-1150*1.5)/2000.0)
+                        EXTEfx.alFilterf(listenerFilters[1], EXTEfx.AL_LOWPASS_GAINHF, 0.137246f)
+                    }
+                    // allow reducing the gain effect globally via s_alReverbGain CVar
+                    listenerSlotReverbGain = idSoundSystemLocal.s_alReverbGain.GetFloat()
+                    EXTEfx.alAuxiliaryEffectSlotf(listenerSlot, EXTEfx.AL_EFFECTSLOT_GAIN, listenerSlotReverbGain)
+                }
+            }
+
             gameMsec = 0
             game44kHz = 0
             pause44kHz = -1
@@ -943,25 +1049,10 @@ class snd_world {
             enviroSuitActive = false
         }
 
+        // FIX: ClearBuffer was only used with old non-OpenAL hardware audio path.
+        // dhewm3 removed it entirely. Made no-op instead of crashing with TODO_Exception.
         fun ClearBuffer() {
-            throw TODO_Exception()
-            //
-//            // check to make sure hardware actually exists
-//            if (NOT(snd_audio_hw)) {
-//                return;
-//            }
-//
-//            short[] fBlock;
-//            long/*ulong*/ fBlockLen;
-//
-//            if (!snd_audio_hw.Lock( /*(void **)&*/fBlock, fBlockLen)) {
-//                return;
-//            }
-//
-//            if (fBlock != null) {//TODO:create an init flag within all classes??
-//                SIMDProcessor.Memset(fBlock, 0, fBlockLen);
-//                snd_audio_hw.Unlock(fBlock, fBlockLen);
-//            }
+            // no-op with OpenAL
         }
 
         // update
@@ -1017,7 +1108,7 @@ class snd_world {
                         rw!!.DebugBounds(idVec4(vis, 0.25f, vis, vis), ref, def.origin)
 
                         // draw an arrow to the audible position, possible a portal center
-                        if (def.origin !== def.spatializedOrigin) {
+                        if (def.origin != def.spatializedOrigin) {
                             rw!!.DebugArrow(colorRed, def.origin, def.spatializedOrigin, 4)
                         }
 
@@ -1270,8 +1361,8 @@ class snd_world {
                     snd_system.soundSystemLocal.dB2Scale(parms.volume)
                 }
 
-            // global volume scale
-            volume *= snd_system.soundSystemLocal.dB2Scale(idSoundSystemLocal.s_volume.GetFloat())
+            // FIX: dhewm3 moved global volume scale (s_volume) to AFTER the clamp+0.333 scaling.
+            // Removed the original s_volume application here — it's now applied at lines below.
 
             // volume fading
             var fadeDb = chan.channelFade.FadeDbAt44kHz(current44kHz)
@@ -1327,6 +1418,18 @@ class snd_world {
                 }
             }
 
+            // FIX: dhewm3 clamps volume to 1.0 and scales by 0.333 to prevent audio drowning
+            // when many loud sounds play simultaneously. Global volume scale is applied AFTER
+            // clamping so reducing s_volume doesn't cause different weapon volume issues.
+            // See https://github.com/dhewm/dhewm3/issues/179
+            if (volume > 1.0f) {
+                volume = 1.0f
+            }
+            volume *= 0.333f
+
+            // global volume scale
+            volume *= snd_system.soundSystemLocal.dB2Scale(idSoundSystemLocal.s_volume.GetFloat())
+
             //
             // do we have anything to add?
             //
@@ -1377,27 +1480,47 @@ class snd_world {
                         )
                         AL10.alSourcef(chan.openalSource, AL10.AL_GAIN, min(volume.toFloat(), 1.0f))
                     }
+                    // FIX: dhewm3 — looping sounds with a leadin can't use HW buffer + AL_LOOPING
+                    // because we need to switch from leadin to the looped sound
+                    // See https://github.com/dhewm/dhewm3/issues/291
+                    val haveLeadin = chan.soundShader!!.numLeadins > 0
                     AL10.alSourcei(
                         chan.openalSource,
                         AL10.AL_LOOPING,
-                        if (looping && chan.soundShader!!.entries[0]!!.hardwareBuffer) AL10.AL_TRUE else AL10.AL_FALSE
+                        if (looping && chan.soundShader!!.entries[0]!!.hardwareBuffer && !haveLeadin) AL10.AL_TRUE else AL10.AL_FALSE
                     )
-                    if (!BuildDefines.MACOS_X) {
-                        AL10.alSourcef(chan.openalSource, AL10.AL_REFERENCE_DISTANCE, minD.toFloat())
-                        AL10.alSourcef(chan.openalSource, AL10.AL_MAX_DISTANCE, maxD.toFloat())
-                    }
+                    AL10.alSourcef(chan.openalSource, AL10.AL_REFERENCE_DISTANCE, minD.toFloat())
+                    AL10.alSourcef(chan.openalSource, AL10.AL_MAX_DISTANCE, maxD.toFloat())
                     AL10.alSourcef(
                         chan.openalSource,
                         AL10.AL_PITCH,
                         if (slowmoActive && !chan.disallowSlow) slowmoSpeed.toFloat() else 1.0f
                     )
-                    //                    if (ID_OPENAL) {
-//                        long lOcclusion = (enviroSuitActive ? -1150 : 0);
-//                        if (soundSystemLocal.alEAXSet) {
-//                            soundSystemLocal.alEAXSet(EAXPROPERTYID_EAX_Source, EAXSOURCE_OCCLUSION, chan.openalSource, lOcclusion, sizeof(lOcclusion));
-//                        }
-//                    }
-                    if (!looping && chan.leadinSample!!.hardwareBuffer || looping && chan.soundShader!!.entries[0]!!.hardwareBuffer) {
+
+                    // FIX: dhewm3 uses EFX source sends instead of proprietary EAX occlusion
+                    if (idSoundSystemLocal.useEAXReverb) {
+                        if (enviroSuitActive) {
+                            AL10.alSourcei(chan.openalSource, EXTEfx.AL_DIRECT_FILTER, listenerFilters[0])
+                            alSource3i(
+                                chan.openalSource,
+                                EXTEfx.AL_AUXILIARY_SEND_FILTER,
+                                listenerSlot,
+                                0,
+                                listenerFilters[1]
+                            )
+                        } else {
+                            AL10.alSourcei(chan.openalSource, EXTEfx.AL_DIRECT_FILTER, EXTEfx.AL_FILTER_NULL)
+                            alSource3i(
+                                chan.openalSource,
+                                EXTEfx.AL_AUXILIARY_SEND_FILTER,
+                                listenerSlot,
+                                0,
+                                EXTEfx.AL_FILTER_NULL
+                            )
+                        }
+                    }
+
+                    if (!looping && chan.leadinSample!!.hardwareBuffer || looping && !haveLeadin && chan.soundShader!!.entries[0]!!.hardwareBuffer) {
                         // handle uncompressed (non streaming) single shot and looping sounds
                         if (chan.triggered) {
                             AL10.alSourcei(
@@ -1413,14 +1536,11 @@ class snd_world {
                         // handle streaming sounds (decode on the fly) both single shot AND looping
                         if (chan.triggered) {
                             AL10.alSourcei(chan.openalSource, AL10.AL_BUFFER, 0)
-                            AL10.alDeleteBuffers(chan.lastopenalStreamingBuffer) //alDeleteBuffers(3, chan.lastopenalStreamingBuffer[0]);
+                            AL10.alDeleteBuffers(chan.lastopenalStreamingBuffer)
                             chan.lastopenalStreamingBuffer.put(0, chan.openalStreamingBuffer[0])
                             chan.lastopenalStreamingBuffer.put(1, chan.openalStreamingBuffer[1])
                             chan.lastopenalStreamingBuffer.put(2, chan.openalStreamingBuffer[2])
-                            AL10.alGenBuffers(chan.openalStreamingBuffer) //alGenBuffers(3, chan.openalStreamingBuffer[0]);
-                            //                            if (soundSystemLocal.alEAXSetBufferMode) {
-//                                soundSystemLocal.alEAXSetBufferMode(3, chan.openalStreamingBuffer[0], alGetEnumValue(ID_ALCHAR + "AL_STORAGE_ACCESSIBLE"));
-//                            }
+                            AL10.alGenBuffers(chan.openalStreamingBuffer)
                             buffers.put(0, chan.openalStreamingBuffer[0])
                             buffers.put(1, chan.openalStreamingBuffer[1])
                             buffers.put(2, chan.openalStreamingBuffer[2])
@@ -1429,15 +1549,13 @@ class snd_world {
                             finishedbuffers = AL10.alGetSourcei(
                                 chan.openalSource,
                                 AL10.AL_BUFFERS_PROCESSED
-                            ) //alGetSourcei(chan.openalSource, AL_BUFFERS_PROCESSED, finishedbuffers);
-                            DBG_AddChannelContribution++
+                            )
                             for (i in 0 until finishedbuffers) { //jake2
                                 buffers.put(
                                     i,
                                     AL10.alSourceUnqueueBuffers(chan.openalSource)
-                                ) //alSourceUnqueueBuffers(chan.openalSource, finishedbuffers, buffers[0]);
+                                )
                             }
-                            //                            System.out.println("====" + AL10.alGetError());
                             if (finishedbuffers == 3) {
                                 chan.triggered = true
                             }
@@ -1461,20 +1579,14 @@ class snd_world {
                                 } else {
                                     val bla = idMath.FtoiFast(alignedInputSamples[i]).toShort()
                                     dataS.put(i, bla)
-                                    //                                    System.out.println("<<" + bla);
                                 }
                             }
-                            data.duplicate().position(0)
-                            //                            System.out.printf(">>\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n", d.get(), d.get(), d.get(), d.get(), d.get(), d.get(), d.get(), d.get(), d.get(), d.get());
-//                            System.out.printf(">>\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n%f\n", d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat(), d.getFloat());
                             AL10.alBufferData(
                                 buffers[j],
                                 if (chan.leadinSample!!.objectInfo.nChannels == 1) AL10.AL_FORMAT_MONO16 else AL10.AL_FORMAT_STEREO16,
                                 data,
                                 44100
                             )
-                            //                                fc.write(d);
-//                            System.out.println("  buffers2 " + AL10.alGetError());
                             chan.openalStreamingOffset += MIXBUFFER_SAMPLES
                             j++
                         }
@@ -1496,7 +1608,7 @@ class snd_world {
                     if (sample.objectInfo.nChannels == 2) {
                         // need to add a stereo path, but very few samples go through this
                         alignedInputSamples =
-                            FloatArray(MIXBUFFER_SAMPLES * 2) //memset(alignedInputSamples, 0, sizeof(alignedInputSamples[0]) * MIXBUFFER_SAMPLES * 2);
+                            FloatArray(MIXBUFFER_SAMPLES * 2)
                     } else {
                         slow.GatherChannelSamples(offset, MIXBUFFER_SAMPLES, alignedInputSamples)
                     }
@@ -1651,38 +1763,35 @@ class snd_world {
                 listenerOrientation.put(5, -listenerAxis[2].x.toFloat())
                 AL10.alListenerf(AL10.AL_GAIN, 1.0f)
                 AL10.alListener3f(AL10.AL_POSITION, listenerPosition[0], listenerPosition[1], listenerPosition[2])
-                AL10.alListenerfv(AL10.AL_ORIENTATION, listenerOrientation) //SO6874122
+                AL10.alListenerfv(AL10.AL_ORIENTATION, listenerOrientation)
 
-// #if ID_OPENAL
-                // if ( soundSystemLocal.s_useEAXReverb.GetBool() ) {
-                // if ( soundSystemLocal.efxloaded ) {
-                // idSoundEffect *effect = NULL;
-                // int EnvironmentID = -1;
-                // idStr defaultStr( "default" );
-                // idStr listenerAreaStr( listenerArea );
-                // soundSystemLocal.EFXDatabase.FindEffect( listenerAreaStr, &effect, &EnvironmentID );
-                // if (!effect)
-                // soundSystemLocal.EFXDatabase.FindEffect( listenerAreaName, &effect, &EnvironmentID );
-                // if (!effect)
-                // soundSystemLocal.EFXDatabase.FindEffect( defaultStr, &effect, &EnvironmentID );
-                // // only update if change in settings
-                // if ( soundSystemLocal.s_muteEAXReverb.GetBool() || ( listenerEnvironmentID != EnvironmentID ) ) {
-                // EAXREVERBPROPERTIES EnvironmentParameters;
-                // // get area reverb setting from EAX Manager
-                // if ( ( effect ) && ( effect.data) && ( memcpy( &EnvironmentParameters, effect.data, effect.datasize ) ) ) {
-                // if ( soundSystemLocal.s_muteEAXReverb.GetBool() ) {
-                // EnvironmentParameters.lRoom = -10000;
-                // EnvironmentID = -2;
-// }
-                // if ( soundSystemLocal.alEAXSet ) {
-                // soundSystemLocal.alEAXSet( &EAXPROPERTYID_EAX_FXSlot0, EAXREVERB_ALLPARAMETERS, 0, &EnvironmentParameters, sizeof( EnvironmentParameters ) );
-                // }
-                // }
-                // listenerEnvironmentID = EnvironmentID;
-                // }
-                // }
-                // }
-// #endif
+                // FIX: dhewm3 EFX reverb lookup replaces old commented-out EAX code
+                if (idSoundSystemLocal.useEAXReverb && snd_system.soundSystemLocal.efxloaded) {
+                    val effectHandle = intArrayOf(0)
+
+                    // allow reducing the gain effect globally via s_alReverbGain CVar
+                    val gain = idSoundSystemLocal.s_alReverbGain.GetFloat()
+                    if (listenerSlotReverbGain != gain) {
+                        listenerSlotReverbGain = gain
+                        EXTEfx.alAuxiliaryEffectSlotf(listenerSlot, EXTEfx.AL_EFFECTSLOT_GAIN, gain)
+                    }
+
+                    var found =
+                        snd_system.soundSystemLocal.EFXDatabase.FindEffect(idStr(listenerArea.toString()), effectHandle)
+                    if (!found) {
+                        found =
+                            snd_system.soundSystemLocal.EFXDatabase.FindEffect(idStr(listenerAreaName), effectHandle)
+                    }
+                    if (!found) {
+                        found = snd_system.soundSystemLocal.EFXDatabase.FindEffect(idStr("default"), effectHandle)
+                    }
+
+                    // only update if change in settings
+                    if (found && listenerEffect != effectHandle[0]) {
+                        listenerEffect = effectHandle[0]
+                        EXTEfx.alAuxiliaryEffectSloti(listenerSlot, EXTEfx.AL_EFFECTSLOT_EFFECT, effectHandle[0])
+                    }
+                }
             }
 
             // debugging option to mute all but a single soundEmitter
@@ -1759,12 +1868,8 @@ class snd_world {
                 snd_system.soundSystemLocal.snd_audio_hw!!.GetNumberOfSpeakers()
             }
 
-//            float[] mix = new float[MIXBUFFER_SAMPLES * 6 + 16];
-//            float[] mix_p = (float[]) (((int) mix + 15) & ~15);	// SIMD align
             val mix_p = FloatArray(MIXBUFFER_SAMPLES * 6 + 16)
 
-//            SIMDProcessor.Memset(mix_p, 0, MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
-//
             MixLoop(lastAVI44kHz, numSpeakers, mix_p)
             for (i in 0 until numSpeakers) {
                 val outD = ByteBuffer.allocate(MIXBUFFER_SAMPLES * 2)
@@ -1818,7 +1923,7 @@ class snd_world {
                 var occlusionDistance = 0.0f
 
                 // air blocking windows will block sound like closed doors
-                if (0 == re.blockingBits and (TempDump.etoi(portalConnection_t.PS_BLOCK_VIEW) or TempDump.etoi(
+                if (0 != re.blockingBits and (TempDump.etoi(portalConnection_t.PS_BLOCK_VIEW) or TempDump.etoi(
                         portalConnection_t.PS_BLOCK_AIR
                     ))
                 ) {
@@ -1975,26 +2080,23 @@ class snd_world {
                         j++
                     }
                 } else {
-                    var offset = abs(localTime - localTriggerTimes) // offset in samples
+                    var offset = localTime - localTriggerTimes // offset in samples
                     val size =
                         if (looping) chan.soundShader!!.entries[0]!!.LengthIn44kHzSamples() else chan.leadinSample!!.LengthIn44kHzSamples()
                     val plitudeData =
                         if (looping) chan.soundShader!!.entries[0]!!.amplitudeData else chan.leadinSample!!.amplitudeData
                     if (plitudeData != null) {
-                        val amplitudeData = plitudeData.asFloatBuffer()
+                        val amplitudeData = plitudeData.asShortBuffer()
                         // when the amplitudeData is present use that fill a dummy sourceBuffer
                         // this is to allow for amplitude based effect on hardware audio solutions
                         if (looping) {
                             offset %= size
                         }
-                        if (offset < size) {
+                        if (offset >= 0 && offset < size) {
                             j = 0
                             while (j < AMPLITUDE_SAMPLES) {
-                                if (offset >= amplitudeData.limit()) {
-                                    offset = amplitudeData.limit() - 1
-                                }
                                 sourceBuffer[j] =
-                                    if (j and 1 == 1) amplitudeData[(offset / 512) * 2] else amplitudeData[(offset / 512) * 2 + 1]
+                                    if (j and 1 == 1) amplitudeData[(offset / 512) * 2].toFloat() else amplitudeData[(offset / 512) * 2 + 1].toFloat()
                                 j++
                             }
                         }
@@ -2117,7 +2219,6 @@ class snd_world {
          finalMixBuffer
          ===============
          */
-            private var DBG_AddChannelContribution = 0
         }
 
         init {

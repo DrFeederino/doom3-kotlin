@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.*
@@ -105,14 +130,11 @@ object tr_backend {
      ====================
      */
     fun RB_LogComment(vararg comment: Any?) {
-//   va_list marker;
         if (null == tr.logFile) {
             return
         }
         fprintf(tr.logFile!!, "// ")
-        //	va_start( marker, comment );
         vfprintf(tr.logFile!!, comment)
-        //	va_end( marker );
     }
 
     //=============================================================================
@@ -277,12 +299,7 @@ object tr_backend {
                     Common.common.Error("GL_State: invalid dst blend state bits\n")
                 }
             }
-            //            qglEnable(34336);
-//            qglEnable(34820);
-//            if (srcFactor == 770) {
             qgl.qglBlendFunc(srcFactor, dstFactor)
-            //            }
-//            System.out.printf("GL_State(%d, %d)--%d;\n", srcFactor, dstFactor, DBG_GL_State);
         }
 
         //
@@ -304,7 +321,7 @@ object tr_backend {
             val g: Boolean = (stateBits and GLS_GREENMASK) == 0
             val b: Boolean = (stateBits and GLS_BLUEMASK) == 0
             val a: Boolean = (stateBits and GLS_ALPHAMASK) == 0
-            qgl.qglColorMask(r, g, b, a) //solid backgroundus
+            qgl.qglColorMask(r, g, b, a)
         }
 
         //
@@ -322,42 +339,6 @@ object tr_backend {
         // alpha test
         //
         if ((diff and GLS_ATEST_BITS) != 0) {
-            if (backEnd!!.viewDef!!.numDrawSurfs == 5) {
-                backEnd!!.viewDef!!.drawSurfs[3]
-                //                backEnd.viewDef.drawSurfs[0] =
-//                backEnd.viewDef.drawSurfs[1] =
-//                backEnd.viewDef.drawSurfs[2] =
-//                backEnd.viewDef.drawSurfs[3] =
-//                backEnd.viewDef.drawSurfs[4] =
-//                temp;
-////                temp.shaderRegisters[0] = 330.102997f;
-////                temp.shaderRegisters[1] = 1.00000000f;
-////                temp.shaderRegisters[2] = 1.00000000f;
-////                temp.shaderRegisters[3] = 1.00000000f;
-////                temp.shaderRegisters[4] = 1.00000000f;
-////                temp.shaderRegisters[5] = 0.000000000f;
-////                temp.shaderRegisters[6] = 0.000000000f;
-////                temp.shaderRegisters[7] = 0.000000000f;
-////                temp.shaderRegisters[8] = 0.000000000f;
-////                temp.shaderRegisters[9] = 0.000000000f;
-////                temp.shaderRegisters[10] = 0.000000000f;
-////                temp.shaderRegisters[11] = 0.000000000f;
-////                temp.shaderRegisters[12] = 0.000000000f;
-////                temp.shaderRegisters[13] = 0.000000000f;
-////                temp.shaderRegisters[14] = 0.000000000f;
-////                temp.shaderRegisters[15] = 0.000000000f;
-////                temp.shaderRegisters[16] = 0.000000000f;
-////                temp.shaderRegisters[17] = 0.000000000f;
-////                temp.shaderRegisters[18] = 0.000000000f;
-////                temp.shaderRegisters[19] = 0.000000000f;
-////                temp.shaderRegisters[20] = 0.000000000f;
-////                temp.shaderRegisters[21] = 1.00000000f;
-////                temp.shaderRegisters[22] = 0.00999999978f;
-////                temp.shaderRegisters[23] = 3.30102992f;
-////                temp.shaderRegisters[24] = 0.0120000001f;
-////                temp.shaderRegisters[25] = 3.96123600f;
-////                temp.shaderRegisters[26] = 0.000000000f;
-            }
             when (stateBits and GLS_ATEST_BITS) {
                 0 -> qgl.qglDisable(GL11.GL_ALPHA_TEST)
                 GLS_ATEST_EQ_255 -> {

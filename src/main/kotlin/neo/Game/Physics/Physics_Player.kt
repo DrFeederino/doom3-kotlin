@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Physics/Physics_Player.h, neo/Game/Physics/Physics_Player.cpp
+ */
+
 package neo.Game.Physics
 
 import neo.Game.Entity.idEntity
@@ -9,6 +17,7 @@ import neo.Game.Physics.Physics.impactInfo_s
 import neo.Game.Physics.Physics_Actor.idPhysics_Actor
 import neo.Renderer.Material
 import neo.TempDump
+import neo.cm.contactInfo_t
 import neo.cm.contactType_t
 import neo.cm.trace_s
 import neo.framework.UsercmdGen.usercmd_t
@@ -125,6 +134,18 @@ object Physics_Player {
         val pushVelocity: idVec3 = idVec3()
         var stepUp = 0.0f
         val velocity: idVec3 = idVec3()
+
+        // FIX: C++ struct assignment copies by value; Kotlin reference assignment does not.
+        fun set(other: playerPState_s) {
+            origin.set(other.origin)
+            velocity.set(other.velocity)
+            localOrigin.set(other.localOrigin)
+            pushVelocity.set(other.pushVelocity)
+            stepUp = other.stepUp
+            movementFlags = other.movementFlags
+            movementTime = other.movementTime
+            movementType = other.movementType
+        }
     }
 
     class idPhysics_Player : idPhysics_Actor() {
@@ -263,11 +284,11 @@ object Physics_Player {
         }
 
         fun HasJumped(): Boolean {
-            return current.movementFlags and PMF_JUMPED != 0
+            return (current.movementFlags and PMF_JUMPED) != 0
         }
 
         fun HasSteppedUp(): Boolean {
-            return current.movementFlags and (PMF_STEPPED_UP or PMF_STEPPED_DOWN) != 0
+            return (current.movementFlags and (PMF_STEPPED_UP or PMF_STEPPED_DOWN)) != 0
         }
 
         fun GetStepUp(): Float {
@@ -275,7 +296,7 @@ object Physics_Player {
         }
 
         fun IsCrouching(): Boolean {
-            return current.movementFlags and PMF_DUCKED != 0
+            return (current.movementFlags and PMF_DUCKED) != 0
         }
 
         fun OnLadder(): Boolean {
@@ -350,11 +371,11 @@ object Physics_Player {
         }
 
         override fun SaveState() {
-            saved = current
+            saved.set(current)
         }
 
         override fun RestoreState() {
-            current = saved
+            current.set(saved)
             clipModel!!.Link(Game_local.gameLocal.clip, self, 0, current.origin, clipModel!!.GetAxis())
             EvaluateContacts()
         }
@@ -995,9 +1016,9 @@ object Physics_Player {
             } // apply ground friction
             else if (walking && TempDump.etoi(waterLevel) <= TempDump.etoi(waterLevel_t.WATERLEVEL_FEET)) {
                 // no friction on slick surfaces
-                if (!(groundMaterial != null && groundMaterial!!.GetSurfaceFlags() and Material.SURF_SLICK != 0)) {
+                if (!(groundMaterial != null && (groundMaterial!!.GetSurfaceFlags() and Material.SURF_SLICK) != 0)) {
                     // if getting knocked back, no friction
-                    if (0 == current.movementFlags and PMF_TIME_KNOCKBACK) {
+                    if ((current.movementFlags and PMF_TIME_KNOCKBACK) == 0) {
                         control = if (speed < PM_STOPSPEED) PM_STOPSPEED else speed
                         drop += control * PM_FRICTION * frametime
                     }
@@ -1120,9 +1141,9 @@ object Physics_Player {
             viewRight.Normalize()
             wishvel.set(
                 viewForward.times(command.forwardmove.toFloat())
-                    .plus(viewRight.times(command.rightmove.toFloat())).times(scale)
+                    .plus(viewRight.times(command.rightmove.toFloat()))
             )
-            wishvel.minusAssign(gravityNormal.times(command.upmove.toFloat()).times(scale))
+            wishvel.minusAssign(gravityNormal.times(wishvel.times(gravityNormal)))
             wishdir.set(wishvel)
             wishspeed = wishdir.Normalize()
             wishspeed *= scale
@@ -1188,7 +1209,7 @@ object Physics_Player {
             wishspeed *= scale
 
             // clamp the speed lower if wading or walking on the bottom
-            if (waterLevel != null) {
+            if (waterLevel.ordinal != 0) {
                 var waterScale: Float
                 waterScale = waterLevel.ordinal / 3.0f
                 waterScale = 1.0f - (1.0f - PM_SWIMSCALE) * waterScale
@@ -1199,13 +1220,13 @@ object Physics_Player {
 
             // when a player gets hit, they temporarily lose full control, which allows them to be moved a bit
             accelerate =
-                if (groundMaterial != null && groundMaterial!!.GetSurfaceFlags() and Material.SURF_SLICK != 0 || current.movementFlags and PMF_TIME_KNOCKBACK != 0) {
+                if (groundMaterial != null && (groundMaterial!!.GetSurfaceFlags() and Material.SURF_SLICK) != 0 || (current.movementFlags and PMF_TIME_KNOCKBACK) != 0) {
                     PM_AIRACCELERATE
                 } else {
                     PM_ACCELERATE
                 }
             Accelerate(wishdir, wishspeed, accelerate)
-            if (groundMaterial != null && groundMaterial!!.GetSurfaceFlags() and Material.SURF_SLICK != 0 || current.movementFlags and PMF_TIME_KNOCKBACK != 0) {
+            if (groundMaterial != null && (groundMaterial!!.GetSurfaceFlags() and Material.SURF_SLICK) != 0 || (current.movementFlags and PMF_TIME_KNOCKBACK) != 0) {
                 current.velocity.plusAssign(gravityVector.times(frametime))
             }
             oldVelocity.set(current.velocity)
@@ -1278,7 +1299,7 @@ object Physics_Player {
                 if (newspeed < 0) {
                     newspeed = 0.0f
                 }
-                current.velocity.times(newspeed / speed)
+                current.velocity.timesAssign(newspeed / speed)
             }
 
             // accelerate
@@ -1394,7 +1415,7 @@ object Physics_Player {
 
             // FIXME: jitter around to find a free spot ?
             if (trace.fraction >= 1.0f) {
-//		memset( &trace, 0, sizeof( trace ) );//TODO:init
+//		memset( &trace, 0, sizeof( trace ) );
                 trace.endpos.set(current.origin)
                 trace.endAxis.set(clipModelAxis)
                 trace.fraction = 0.0f
@@ -1420,12 +1441,24 @@ object Physics_Player {
             clipModel!!.SetPosition(current.origin, clipModel!!.GetAxis())
             EvaluateContacts()
 
+            // TEMP DEBUG: Log contact info
+            if (contacts.Num() == 0) {
+                Game_local.gameLocal.Printf("CheckGround: NO contacts at origin %s\n", current.origin.ToString(2))
+            } else {
+                for (idx in 0 until contacts.Num()) {
+                    Game_local.gameLocal.Printf(
+                        "CheckGround: contact[%d] entity=%d normal=%s\n",
+                        idx, contacts[idx].entityNum, contacts[idx].normal.ToString(2)
+                    )
+                }
+            }
+            // END DEBUG
             // setup a ground trace from the contacts
             groundTrace.endpos.set(current.origin)
             groundTrace.endAxis.set(clipModel!!.GetAxis())
             if (contacts.Num() != 0) {
                 groundTrace.fraction = 0.0f
-                groundTrace.c = contacts[0]
+                groundTrace.c = contactInfo_t(contacts[0])
                 i = 1
                 while (i < contacts.Num()) {
                     groundTrace.c.normal.plusAssign(contacts[i].normal)
@@ -1436,7 +1469,7 @@ object Physics_Player {
                 groundTrace.fraction = 1.0f
             }
             contents = Game_local.gameLocal.clip.Contents(current.origin, clipModel, clipModel!!.GetAxis(), -1, self)
-            if (contents and Game_local.MASK_SOLID != 0) {
+            if ((contents and Game_local.MASK_SOLID) != 0) {
                 // do something corrective if stuck in solid
                 CorrectAllSolid(groundTrace, contents)
             }
@@ -1480,7 +1513,7 @@ object Physics_Player {
             walking = true
 
             // hitting solid ground will end a waterjump
-            if (current.movementFlags and PMF_TIME_WATERJUMP != 0) {
+            if ((current.movementFlags and PMF_TIME_WATERJUMP) != 0) {
                 current.movementFlags =
                     current.movementFlags and (PMF_TIME_WATERJUMP or PMF_TIME_LAND).inv()
                 current.movementTime = 0
@@ -1533,7 +1566,7 @@ object Physics_Player {
                     current.movementFlags = current.movementFlags or PMF_DUCKED
                 } else {
                     // stand up if possible
-                    if (current.movementFlags and PMF_DUCKED != 0) {
+                    if ((current.movementFlags and PMF_DUCKED) != 0) {
                         // try to stand up
                         end.set(current.origin.minus(gravityNormal.times(SysCvar.pm_normalheight.GetFloat() - SysCvar.pm_crouchheight.GetFloat())))
                         Game_local.gameLocal.clip.Translation(
@@ -1550,7 +1583,7 @@ object Physics_Player {
                         }
                     }
                 }
-                if (current.movementFlags and PMF_DUCKED != 0) {
+                if ((current.movementFlags and PMF_DUCKED) != 0) {
                     playerSpeed = crouchSpeed
                     maxZ = SysCvar.pm_crouchheight.GetFloat()
                 } else {
@@ -1609,7 +1642,7 @@ object Physics_Player {
 
                 // if a ladder surface
                 if (trace.c.material != null
-                    && trace.c.material!!.GetSurfaceFlags() and Material.SURF_LADDER != 0
+                    && (trace.c.material!!.GetSurfaceFlags() and Material.SURF_LADDER) != 0
                 ) {
 
                     // check a step height higher
@@ -1640,7 +1673,7 @@ object Physics_Player {
 
                         // if it also is a ladder surface
                         if (trace.c.material != null
-                            && trace.c.material!!.GetSurfaceFlags() and Material.SURF_LADDER != 0
+                            && (trace.c.material!!.GetSurfaceFlags() and Material.SURF_LADDER) != 0
                         ) {
                             ladder = true
                             ladderNormal.set(trace.c.normal)
@@ -1658,12 +1691,12 @@ object Physics_Player {
             }
 
             // must wait for jump to be released
-            if (current.movementFlags and PMF_JUMP_HELD != 0) {
+            if ((current.movementFlags and PMF_JUMP_HELD) != 0) {
                 return false
             }
 
             // don't jump if we can't stand up
-            if (current.movementFlags and PMF_DUCKED != 0) {
+            if ((current.movementFlags and PMF_DUCKED) != 0) {
                 return false
             }
             groundPlane = false // jumping away
@@ -1723,7 +1756,7 @@ object Physics_Player {
             // check at feet level
             point.set(current.origin.minus(gravityNormal.times(bounds[0, 2] + 1.0f)))
             contents = Game_local.gameLocal.clip.Contents(point, null, idMat3.getMat3_identity(), -1, self)
-            if (contents and Game_local.MASK_WATER != 0) {
+            if ((contents and Game_local.MASK_WATER) != 0) {
                 waterType = contents
                 waterLevel = waterLevel_t.WATERLEVEL_FEET
 
@@ -1737,14 +1770,14 @@ object Physics_Player {
                 )
                 contents =
                     Game_local.gameLocal.clip.Contents(point, null, idMat3.getMat3_identity(), -1, self)
-                if (contents and Game_local.MASK_WATER != 0) {
+                if ((contents and Game_local.MASK_WATER) != 0) {
                     waterLevel = waterLevel_t.WATERLEVEL_WAIST
 
                     // check at head level
                     point.set(current.origin.minus(gravityNormal.times(bounds[1, 2] - 1.0f)))
                     contents =
                         Game_local.gameLocal.clip.Contents(point, null, idMat3.getMat3_identity(), -1, self)
-                    if (contents and Game_local.MASK_WATER != 0) {
+                    if ((contents and Game_local.MASK_WATER) != 0) {
                         waterLevel = waterLevel_t.WATERLEVEL_HEAD
                     }
                 }
@@ -1845,7 +1878,7 @@ object Physics_Player {
             } else if (ladder) {
                 // going up or down a ladder
                 LadderMove()
-            } else if (current.movementFlags and PMF_TIME_WATERJUMP != 0) {
+            } else if ((current.movementFlags and PMF_TIME_WATERJUMP) != 0) {
                 // jumping out of water
                 WaterJumpMove()
             } else if (TempDump.etoi(waterLevel) > 1) {
@@ -1885,7 +1918,8 @@ object Physics_Player {
             clipModel = null
             clipMask = 0
             current = playerPState_s() //memset( &current, 0, sizeof( current ) );
-            saved = current
+            saved = playerPState_s()
+            saved.set(current)
             walkSpeed = 0.0f
             crouchSpeed = 0.0f
             maxStepHeight = 0.0f

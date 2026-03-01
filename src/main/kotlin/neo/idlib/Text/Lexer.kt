@@ -1279,7 +1279,7 @@ object Lexer {
 
         // returns true if at the end of the file
         fun EndOfFile(): Boolean {
-            return script_p >= end_p
+            return script_p >= end_p - 1 || script_p >= end_p
         }
 
         // returns the current filename
@@ -1418,9 +1418,9 @@ object Lexer {
          */
         @Throws(idException::class)
         private fun ReadWhiteSpace(): Boolean {
-            if (filename.CheckExtension("roq")) {
-                return false
-            }
+//            if (filename.CheckExtension("roq")) {
+//                return false
+//            }
             while (true) {
                 // skip white space
                 while (buffer.get(script_p) <= ' ') {

@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Model.lightingCache_s
@@ -40,18 +65,14 @@ object VertexCache {
     }
 
     class vertCache_s : Iterable<vertCache_s?> {
-        //TODO:use iterators for all our makeshift linked lists.
         var frameUsed: Int = 0 // it can't be purged if near the current frame
         var indexBuffer: Boolean = false // holds indexes instead of vertexes
         var next: vertCache_s? = this
         var prev: vertCache_s? = null // may be on the static list or one of the frame lists
         var offset: Int = 0
-        var size: Int = 0 // may be larger than the amount asked for, due
-
-        //                                 // to round up and minimum fragment sizes
+        var size: Int = 0 // may be larger than the amount asked for, due to round up and minimum fragment sizes
         var tag: vertBlockTag_t? = null // a tag of 0 is a free block
         var user: vertCache_s? = null // will be set to zero when purged
-        private val  /*GLuint*/vao: Int = 0
         var  /*GLuint*/vbo: Int = 0
         var virtMem: ByteBuffer? = null // only one of vbo / virtMem will be set
         override fun iterator(): MutableIterator<vertCache_s> {
@@ -132,8 +153,6 @@ object VertexCache {
                 : vertCache_s
 
         //
-        //        private final idBlockAlloc<vertCache_s> headerAllocator = new idBlockAlloc<>(1024);
-        //
         private val freeStaticHeaders // head of doubly linked list
                 : vertCache_s
         private var listNum: Int = 0 // currentFrame % NUM_VERTEX_FRAMES, determines which tempBuffers to use
@@ -160,7 +179,6 @@ object VertexCache {
             dynamicHeaders = vertCache_s()
             deferredFreeList = vertCache_s()
             staticHeaders = vertCache_s()
-            //tempBuffers = arrayOfNulls(VertexCache.NUM_VERTEX_FRAMES)
         }
 
         fun Init() {
@@ -205,14 +223,10 @@ object VertexCache {
                 tempBuffers[i]!!.next!!.prev = tempBuffers[i]!!.prev
                 tempBuffers[i]!!.prev!!.next = tempBuffers[i]!!.next
             }
-            //            Mem_Free(junk);
             EndFrame()
         }
 
         fun Shutdown() {
-//	PurgeAll();	// !@#: also purge the temp buffers
-
-//            headerAllocator.Shutdown();
         }
 
         /*
@@ -266,14 +280,13 @@ object VertexCache {
             // if we don't have any remaining unused headers, allocate some more
             if (freeStaticHeaders.next === freeStaticHeaders) {
                 for (i in 0 until EXPAND_HEADERS) {
-                    block = vertCache_s() //headerAllocator.Alloc();
+                    block = vertCache_s()
                     block.next = freeStaticHeaders.next
                     block.prev = freeStaticHeaders
                     block.next!!.prev = block
                     block.prev!!.next = block
                     if (!virtualMemory) {
                         block.vbo = qgl.qglGenBuffersARB()
-                        //                        block.vao = GL30.glGenVertexArrays();
                     }
                 }
             }
@@ -297,7 +310,7 @@ object VertexCache {
             staticAllocTotal += block.size
 
             // this will be set to zero when it is purged
-            block.user = buffer //TODO:wtf?
+            block.user = buffer
             buffer = block
 
             // allocation doesn't imply used-for-drawing, because at level
@@ -309,25 +322,25 @@ object VertexCache {
             // copy the data
             if (block.vbo != 0) {
                 if (indexBuffer) {
-                    qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ELEMENT_ARRAY_BUFFER_ARB, block.vbo) //TODO:get?
+                    qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ELEMENT_ARRAY_BUFFER_ARB, block.vbo)
                     qgl.qglBufferDataARB(
-                        ARBVertexBufferObject.GL_ELEMENT_ARRAY_BUFFER_ARB,  /*(GLsizeiptrARB)*/
+                        ARBVertexBufferObject.GL_ELEMENT_ARRAY_BUFFER_ARB,
                         size,
                         data,
                         ARBVertexBufferObject.GL_STATIC_DRAW_ARB
                     )
                 } else {
-                    qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB, block.vbo) //TODO:get?
+                    qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB, block.vbo)
                     if (allocatingTempBuffer) {
                         qgl.qglBufferDataARB(
-                            ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB,  /*(GLsizeiptrARB)*/
+                            ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB,
                             size,
                             data,
                             ARBVertexBufferObject.GL_STREAM_DRAW_ARB
                         )
                     } else {
                         qgl.qglBufferDataARB(
-                            ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB,  /*(GLsizeiptrARB)*/
+                            ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB,
                             size,
                             data,
                             ARBVertexBufferObject.GL_STATIC_DRAW_ARB
@@ -335,8 +348,6 @@ object VertexCache {
                     }
                 }
             } else {
-                block.virtMem = ByteBuffer.allocate(size)
-                //                SIMDProcessor.Memcpy(block.virtMem, data, size);
                 block.virtMem = data.duplicate()
             }
             return buffer
@@ -346,8 +357,6 @@ object VertexCache {
         fun Alloc(data: IntArray, size: Int, buffer: vertCache_s?, indexBuffer: Boolean /*= false*/) {
             val byteData: ByteBuffer = ByteBuffer.allocate(data.size * 4)
             byteData.asIntBuffer().put(data)
-
-//            Alloc(byteData, size, buffer, indexBuffer);
             throw Deprecation_Exception()
         }
 
@@ -459,7 +468,7 @@ object VertexCache {
             // if we don't have any remaining unused headers, allocate some more
             if (freeDynamicHeaders.next === freeDynamicHeaders) {
                 for (i in 0 until EXPAND_HEADERS) {
-                    block = vertCache_s() // headerAllocator.Alloc();
+                    block = vertCache_s()
                     block.next = freeDynamicHeaders.next
                     block.prev = freeDynamicHeaders
                     block.next!!.prev = block
@@ -488,23 +497,18 @@ object VertexCache {
             block.virtMem = tempBuffers[listNum]!!.virtMem
             block.vbo = tempBuffers[listNum]!!.vbo
             if (block.vbo != 0) {
-//                GL30.glBindVertexArray(block.vao);
                 qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB, block.vbo)
                 qgl.qglBufferSubDataARB(
                     ARBVertexBufferObject.GL_ARRAY_BUFFER_ARB,
-                    block.offset.toLong(),  /*(GLsizeiptrARB)*/
+                    block.offset.toLong(),
                     size.toLong(),
                     data
                 )
-                //                GL15.glBufferData(GL_ARRAY_BUFFER, DrawVert.toByteBuffer(data), GL15.GL_STATIC_DRAW);
-//                GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
             } else {
                 val position: ByteBuffer = block.virtMem!!.position(block.offset)
                 for (i in 0 until size) {
                     position.put(data.get(i))
                 }
-                //                System.arraycopy(data, 0, block.virtMem.position(block.offset), size);
-//                SIMDProcessor.Memcpy(block.virtMem.position(block.offset), data, size);
             }
             return block
         }
@@ -595,13 +599,6 @@ object VertexCache {
                 )
             }
 
-//if (false){
-//	// if our total static count is above our working memory limit, start purging things
-//	while ( staticAllocTotal > r_vertexBufferMegs.GetInteger() * 1024 * 1024 ) {
-//		// free the least recently used
-//
-//	}
-//}
             if (!virtualMemory) {
                 // unbind vertex buffers so normal virtual memory will be used in case
                 // r_useVertexBuffers / r_useIndexBuffers
@@ -636,10 +633,8 @@ object VertexCache {
         // listVertexCache calls this
         fun List() {
             var numActive = 0
-            //            int numDeferred = 0;
             var frameStatic = 0
             var totalStatic = 0
-            //            int deferredSpace = 0;
             var block: vertCache_s?
             block = staticHeaders.next
             while (block !== staticHeaders) {
@@ -679,7 +674,6 @@ object VertexCache {
             }
         }
 
-        //        private void InitMemoryBlocks(int size);
         private fun ActuallyFree(block: vertCache_s?) {
             if (null == block) {
                 Common.common.Error("idVertexCache Free: NULL pointer")
@@ -694,13 +688,8 @@ object VertexCache {
                 staticAllocTotal -= block.size
                 staticCountTotal--
                 if (block.vbo != 0) {
-//                    if (false) {// this isn't really necessary, it will be reused soon enough
-//                        // filling with zero length data is the equivalent of freeing
-//                        qglBindBufferARB(GL_ARRAY_BUFFER_ARB, block.vbo);
-//                        qglBufferDataARB(GL_ARRAY_BUFFER_ARB, 0, 0, GL_DYNAMIC_DRAW_ARB);
-//                    }
+                    // VBO will be reused, no need to free
                 } else if (block.virtMem != null) {
-//                    Mem_Free(block.virtMem);
                     block.virtMem = null
                 }
             }
@@ -709,15 +698,11 @@ object VertexCache {
             // unlink stick it back on the free list
             block.next!!.prev = block.prev
             block.prev!!.next = block.next
-            if (true) {
-                // stick it on the front of the free list so it will be reused immediately
-                block.next = freeStaticHeaders.next
-                block.prev = freeStaticHeaders
-                //            } else {
-//                // stick it on the back of the free list so it won't be reused soon (just for debugging)
-//                block.next = freeStaticHeaders;
-//                block.prev = freeStaticHeaders.prev;
-            }
+
+            // stick it on the front of the free list so it will be reused immediately
+            block.next = freeStaticHeaders.next
+            block.prev = freeStaticHeaders
+
             block.next!!.prev = block
             block.prev!!.next = block
         }

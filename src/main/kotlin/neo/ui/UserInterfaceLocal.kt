@@ -98,14 +98,10 @@ class UserInterfaceLocal {
                 // FIXME: Memory leak!!
                 return false
             }
-
-//            int sz = sizeof(idWindow.class);
-//            sz = sizeof(idSimpleWindow.class);
             loading = true
             if (rebuild || desktop == null) {
                 desktop = idWindow(this)
             }
-            //            System.out.println("FAAAAAAAAAAAAAAAAAAR " + desktop);
             source.set(qpath)
             state.Set("text", "Test Text!")
             val src =
@@ -123,7 +119,6 @@ class UserInterfaceLocal {
                             desktop!!.SetFlag(Window.WIN_DESKTOP)
                             desktop!!.FixupParms()
                         }
-                        //                        continue;
                     }
                 }
                 state.Set("name", qpath)
@@ -131,7 +126,7 @@ class UserInterfaceLocal {
                 desktop!!.SetDC(UserInterface.uiManagerLocal.dc)
                 desktop!!.SetFlag(Window.WIN_DESKTOP)
                 desktop!!.name = idStr("Desktop")
-                desktop!!.text = idWinStr(va("Invalid GUI: %s", qpath)) //TODO:clean this mess up.
+                desktop!!.text = idWinStr(va("Invalid GUI: %s", qpath))
                 desktop!!.rect.set(idRectangle(0.0f, 0.0f, 640.0f, 480.0f))
                 desktop!!.drawRect.set(desktop!!.rect.data)
                 desktop!!.foreColor.set(idVec4(1.0f, 1.0f, 1.0f, 1.0f))
@@ -151,7 +146,6 @@ class UserInterfaceLocal {
 
         override fun HandleEvent(event: sysEvent_s, _time: Int, updateVisuals: CBool?): String? {
             time = _time
-            //            System.out.println(System.nanoTime()+"HandleEvent time="+_time+" "+Common.com_ticNumber);
             if (bindHandler != null && event.evType == sysEventType_t.SE_KEY && event.evValue2 == 1) {
                 val ret = bindHandler!!.HandleEvent(event, updateVisuals)
                 bindHandler = null
@@ -159,7 +153,7 @@ class UserInterfaceLocal {
             }
 
             if (event.evType == sysEventType_t.SE_MOUSE || event.evType == sysEventType_t.SE_MOUSE_ABS) {
-                if (desktop != null || (desktop!!.GetFlags() and WIN_MENUGUI) != 0) {
+                if (desktop == null || (desktop!!.GetFlags() and WIN_MENUGUI) != 0) {
                     // DG: this is a fullscreen GUI, scale the mousedelta added to cursorX/Y
                     //     by 640/w, because the GUI pretends that everything is 640x480
                     //     even if the actual resolution is higher => mouse moved too fast
@@ -541,6 +535,10 @@ class UserInterfaceLocal {
             return refs
         }
 
+        fun Size(): Long {
+            return state.Size() + source.Allocated()
+        }
+
         fun RecurseSetKeyBindingNames(window: idWindow) {
             var i: Int
             val v = window.GetWinVarByName("bind")
@@ -568,19 +566,19 @@ class UserInterfaceLocal {
         }
 
         override fun oSet(FindGui: idUserInterface?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
     }
 
@@ -690,12 +688,13 @@ class UserInterfaceLocal {
         override fun ListGuis() {
             val c = guis.Num()
             Common.common.Printf("\n   size   refs   name\n")
-            var  /*size_t*/total = 0
+            var  /*size_t*/total: Long = 0
             var copies = 0
             var unique = 0
             for (i in 0 until c) {
-                guis[i]
-                val isUnique = guis[i]!!.interactive
+                val gui = guis[i]!!
+                val sz = gui.Size()
+                val isUnique = gui.interactive
                 if (isUnique) {
                     unique++
                 } else {
@@ -703,14 +702,13 @@ class UserInterfaceLocal {
                 }
                 Common.common.Printf(
                     "%6.1fk %4d (%s) %s ( %d transitions )\n",
-                    0 / 1024.0f,
-                    guis[i]!!.GetRefs(),
+                    sz / 1024.0f,
+                    gui.GetRefs(),
                     if (isUnique) "unique" else "copy",
-                    guis[i]!!
-                        .GetSourceFile(),
-                    guis[i]!!.desktop!!.NumTransitions()
+                    gui.GetSourceFile(),
+                    gui.desktop!!.NumTransitions()
                 )
-                total += 0
+                total += sz
             }
             Common.common.Printf(
                 "===========\n  %d total Guis ( %d copies, %d unique ), %.2f total Mbytes",
@@ -755,7 +753,6 @@ class UserInterfaceLocal {
         ): idUserInterface? {
             val c = guis.Num()
             for (i in 0 until c) {
-//		idUserInterfaceLocal gui = guis.get(i);
                 if (0 == Icmp(guis[i]!!.GetSourceFile(), qpath!!)) {
                     if (!forceUnique && (needInteractive || guis[i]!!.IsInteractive())) {
                         break

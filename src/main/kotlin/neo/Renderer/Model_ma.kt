@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.TempDump.bbtocb
@@ -22,9 +47,6 @@ import java.nio.*
 import kotlin.math.abs
 
 object Model_ma {
-    /**
-     *
-     */
     var maGlobal: ma_t? = null
 
     /*
@@ -42,8 +64,6 @@ object Model_ma {
 
     @Throws(idException::class)
     fun MA_ParseNodeHeader(parser: idParser, header: maNodeHeader_t) {
-
-//	memset(header, 0, sizeof(maNodeHeader_t));//TODO:
         val token = idToken()
         while (parser.ReadToken(token)) {
             if (0 == token.Icmp("-")) {
@@ -93,7 +113,6 @@ object Model_ma {
     fun MA_ParseAttribHeader(parser: idParser, header: maAttribHeader_t): Boolean {
         val token = idToken()
 
-        // memset(header, 0, sizeof(maAttribHeader_t));
         parser.ReadToken(token)
         if (0 == token.Icmp("-")) {
             parser.ReadToken(token)
@@ -108,10 +127,8 @@ object Model_ma {
 
     @Throws(idException::class)
     fun MA_ReadVec3(parser: idParser, vec: idVec3): Boolean {
-        // idToken token;
         if (!parser.SkipUntilString("double3")) {
             throw idException(va("Maya Loader '%s': Invalid Vec3", parser.GetFileName()))
-            //		return false;
         }
 
         //We need to flip y and z because of the maya coordinate system
@@ -131,11 +148,9 @@ object Model_ma {
     fun MA_ParseTransform(parser: idParser): Boolean {
         val header = maNodeHeader_t()
         val transform: maTransform_s
-        // memset(&header, 0, sizeof(header));
 
         //Allocate room for the transform
-        transform = maTransform_s() // Mem_Alloc(sizeof(maTransform_s));
-        // memset(transform, 0, sizeof(maTransform_t));
+        transform = maTransform_s()
         transform.scale.z = 1.0f
         transform.scale.y = transform.scale.z
         transform.scale.x = transform.scale.y
@@ -170,7 +185,7 @@ object Model_ma {
                 }
             }
         }
-        if (!header.parent!!.isEmpty()) {
+        if (header.parent.isNotEmpty()) {
             //Find the parent
             val parent: Array<maTransform_s?> = arrayOfNulls(1)
             maGlobal!!.model!!.transforms!!.Get(header.parent, parent)
@@ -186,13 +201,11 @@ object Model_ma {
 
     @Throws(idException::class)
     fun MA_ParseVertex(parser: idParser, header: maAttribHeader_t): Boolean {
-        val pMesh: maMesh_t? = maGlobal!!.currentObject!!.mesh
-        // idToken token;
+        val pMesh: maMesh_t = maGlobal!!.currentObject!!.mesh
 
-        //Allocate enough space for all the verts if this is the first attribute for verticies
-        if (null == pMesh!!.vertexes) {
+        if (null == pMesh.vertexes) {
             pMesh.numVertexes = header.size
-            pMesh.vertexes = idVec3.generateArray(pMesh.numVertexes)// Mem_Alloc(pMesh.numVertexes);
+            pMesh.vertexes = idVec3.generateArray(pMesh.numVertexes)
         }
 
         //Get the start and end index for this attribute
@@ -214,16 +227,16 @@ object Model_ma {
 
     @Throws(idException::class)
     fun MA_ParseVertexTransforms(parser: idParser, header: maAttribHeader_t): Boolean {
-        val pMesh: maMesh_t? = maGlobal!!.currentObject!!.mesh
+        val pMesh: maMesh_t = maGlobal!!.currentObject!!.mesh
         val token = idToken()
 
         //Allocate enough space for all the verts if this is the first attribute for verticies
-        if (null == pMesh!!.vertTransforms) {
+        if (null == pMesh.vertTransforms) {
             if (header.size == 0) {
                 header.size = 1
             }
             pMesh.numVertTransforms = header.size
-            pMesh.vertTransforms = Array(pMesh.numVertTransforms) { idVec4() }// Mem_Alloc(pMesh.numVertTransforms);
+            pMesh.vertTransforms = Array(pMesh.numVertTransforms) { idVec4() }
             pMesh.nextVertTransformIndex = 0
         }
 
@@ -263,13 +276,11 @@ object Model_ma {
 
     @Throws(idException::class)
     fun MA_ParseEdge(parser: idParser, header: maAttribHeader_t): Boolean {
-        val pMesh: maMesh_t? = maGlobal!!.currentObject!!.mesh
-        // idToken token;
+        val pMesh: maMesh_t = maGlobal!!.currentObject!!.mesh
 
-        //Allocate enough space for all the verts if this is the first attribute for verticies
-        if (null == pMesh!!.edges) {
+        if (null == pMesh.edges) {
             pMesh.numEdges = header.size
-            pMesh.edges = idVec3.generateArray(pMesh.numEdges) // Mem_Alloc(pMesh.numEdges);
+            pMesh.edges = idVec3.generateArray(pMesh.numEdges)
         }
 
         //Get the start and end index for this attribute
@@ -291,13 +302,13 @@ object Model_ma {
 
     @Throws(idException::class)
     fun MA_ParseNormal(parser: idParser, header: maAttribHeader_t): Boolean {
-        val pMesh: maMesh_t? = maGlobal!!.currentObject!!.mesh
+        val pMesh: maMesh_t = maGlobal!!.currentObject!!.mesh
         val token = idToken()
 
         //Allocate enough space for all the verts if this is the first attribute for verticies
-        if (null == pMesh!!.normals) {
+        if (null == pMesh.normals) {
             pMesh.numNormals = header.size
-            pMesh.normals = idVec3.generateArray(pMesh.numNormals) // Mem_Alloc(pMesh.numNormals);
+            pMesh.normals = idVec3.generateArray(pMesh.numNormals)
         }
 
         //Get the start and end index for this attribute
@@ -337,13 +348,13 @@ object Model_ma {
 
     @Throws(idException::class)
     fun MA_ParseFace(parser: idParser, header: maAttribHeader_t): Boolean {
-        val pMesh: maMesh_t? = maGlobal!!.currentObject!!.mesh
+        val pMesh: maMesh_t = maGlobal!!.currentObject!!.mesh
         val token = idToken()
 
         //Allocate enough space for all the verts if this is the first attribute for verticies
-        if (null == pMesh!!.faces) {
+        if (null == pMesh.faces) {
             pMesh.numFaces = header.size
-            pMesh.faces = arrayOfNulls(pMesh.numFaces) // Mem_Alloc(pMesh.numFaces);
+            pMesh.faces = Array(pMesh.numFaces) { maFace_t() }
         }
 
         //Get the start and end index for this attribute
@@ -365,7 +376,6 @@ object Model_ma {
                 val count: Int = parser.ParseInt()
                 if (count != 3) {
                     throw idException(va("Maya Loader '%s': Face is not a triangle.", parser.GetFileName()))
-                    //                    return false;
                 }
                 //Increment the face number because a new face always starts with an "f" token
                 currentFace++
@@ -387,7 +397,6 @@ object Model_ma {
                 val count: Int = parser.ParseInt()
                 if (count != 3) {
                     throw idException(va("Maya Loader '%s': Invalid texture coordinates.", parser.GetFileName()))
-                    //                    return false;
                 }
                 pMesh.faces!![currentFace]!!.tVertexNum[0] = parser.ParseInt()
                 pMesh.faces!![currentFace]!!.tVertexNum[1] = parser.ParseInt()
@@ -396,7 +405,6 @@ object Model_ma {
                 val count: Int = parser.ParseInt()
                 if (count != 3) {
                     throw idException(va("Maya Loader '%s': Invalid texture coordinates.", parser.GetFileName()))
-                    //                    return false;
                 }
                 pMesh.faces!![currentFace]!!.tVertexNum[0] = parser.ParseInt()
                 pMesh.faces!![currentFace]!!.tVertexNum[1] = parser.ParseInt()
@@ -405,7 +413,6 @@ object Model_ma {
                 val count: Int = parser.ParseInt()
                 if (count != 3) {
                     throw idException(va("Maya Loader '%s': Invalid vertex color.", parser.GetFileName()))
-                    //                    return false;
                 }
                 pMesh.faces!![currentFace]!!.vertexColors[0] = parser.ParseInt()
                 pMesh.faces!![currentFace]!!.vertexColors[1] = parser.ParseInt()
@@ -417,13 +424,11 @@ object Model_ma {
 
     @Throws(idException::class)
     fun MA_ParseColor(parser: idParser, header: maAttribHeader_t): Boolean {
-        val pMesh: maMesh_t? = maGlobal!!.currentObject!!.mesh
-        // idToken token;
+        val pMesh: maMesh_t = maGlobal!!.currentObject!!.mesh
 
-        //Allocate enough space for all the verts if this is the first attribute for verticies
-        if (null == pMesh!!.colors) {
+        if (null == pMesh.colors) {
             pMesh.numColors = header.size
-            pMesh.colors = ByteArray(pMesh.numColors * 4) // Mem_Alloc(pMesh.numColors * 4);
+            pMesh.colors = ByteArray(pMesh.numColors * 4)
         }
 
         //Get the start and end index for this attribute
@@ -446,7 +451,7 @@ object Model_ma {
 
     @Throws(idException::class)
     fun MA_ParseTVert(parser: idParser, header: maAttribHeader_t): Boolean {
-        val pMesh: maMesh_t? = maGlobal!!.currentObject!!.mesh
+        val pMesh: maMesh_t = maGlobal!!.currentObject!!.mesh
         val token = idToken()
 
         //This is not the texture coordinates. It is just the name so ignore it
@@ -455,9 +460,9 @@ object Model_ma {
         }
 
         //Allocate enough space for all the data
-        if (null == pMesh!!.tvertexes) {
+        if (null == pMesh.tvertexes) {
             pMesh.numTVertexes = header.size
-            pMesh.tvertexes = Array(pMesh.numTVertexes) { idVec2() }// Mem_Alloc(pMesh.numTVertexes);
+            pMesh.tvertexes = Array(pMesh.numTVertexes) { idVec2() }
         }
 
         //Get the start and end index for this attribute
@@ -493,8 +498,8 @@ object Model_ma {
      *	Quick check to see if the vert participates in a shared normal
      */
     fun MA_QuickIsVertShared(faceIndex: Int, vertIndex: Int): Boolean {
-        val pMesh: maMesh_t? = maGlobal!!.currentObject!!.mesh
-        val vertNum: Int = pMesh!!.faces!![faceIndex]!!.vertexNum[vertIndex]
+        val pMesh: maMesh_t = maGlobal!!.currentObject!!.mesh
+        val vertNum: Int = pMesh.faces!![faceIndex]!!.vertexNum[vertIndex]
         for (i in 0..2) {
             var edge: Int = pMesh.faces!![faceIndex]!!.edge[i]
             if (edge < 0) {
@@ -509,8 +514,8 @@ object Model_ma {
     }
 
     fun MA_GetSharedFace(faceIndex: Int, vertIndex: Int, sharedFace: IntArray, sharedVert: IntArray) {
-        val pMesh: maMesh_t? = maGlobal!!.currentObject!!.mesh
-        val vertNum: Int = pMesh!!.faces!![faceIndex]!!.vertexNum[vertIndex]
+        val pMesh: maMesh_t = maGlobal!!.currentObject!!.mesh
+        val vertNum: Int = pMesh.faces!![faceIndex]!!.vertexNum[vertIndex]
         sharedFace[0] = -1
         sharedVert[0] = -1
 
@@ -541,8 +546,7 @@ object Model_ma {
     @Throws(idException::class)
     fun MA_ParseMesh(parser: idParser) {
         val `object`: maObject_t
-        `object` = maObject_t() // Mem_Alloc(sizeof(maObject_t));
-        //	memset( object, 0, sizeof( maObject_t ) );
+        `object` = maObject_t()
         maGlobal!!.model!!.objects.Append(`object`)
         maGlobal!!.currentObject = `object`
         `object`.materialRef = -1
@@ -552,12 +556,12 @@ object Model_ma {
         MA_ParseNodeHeader(parser, nodeHeader)
 
         //Find my parent
-        if (!nodeHeader.parent!!.isEmpty()) {
+        if (nodeHeader.parent.isNotEmpty()) {
             //Find the parent
             val parent: Array<maTransform_s?> = arrayOfNulls(1)
             maGlobal!!.model!!.transforms!!.Get(nodeHeader.parent, parent)
             if (parent[0] != null) {
-                maGlobal!!.currentObject!!.mesh!!.transform = parent[0]
+                maGlobal!!.currentObject!!.mesh.transform = parent[0]
             }
         }
         `object`.name = nodeHeader.name
@@ -591,10 +595,10 @@ object Model_ma {
                 }
             }
         }
-        val pMesh: maMesh_t? = maGlobal!!.currentObject!!.mesh
+        val pMesh: maMesh_t = maGlobal!!.currentObject!!.mesh
 
         //Get the verts from the edge
-        for (i in 0 until pMesh!!.numFaces) {
+        for (i in 0 until pMesh.numFaces) {
             for (j in 0..2) {
                 var edge: Int = pMesh.faces!![i]!!.edge[j]
                 if (edge < 0) {
@@ -664,8 +668,8 @@ object Model_ma {
             pMesh.vertexes!![idx].plusAssign(pMesh.vertTransforms!![i].ToVec3())
         }
         MA_VERBOSE((va("MESH %s - parent %s\n", nodeHeader.name, nodeHeader.parent)))
-        MA_VERBOSE((va("\tverts:%d\n", maGlobal!!.currentObject!!.mesh!!.numVertexes)))
-        MA_VERBOSE((va("\tfaces:%d\n", maGlobal!!.currentObject!!.mesh!!.numFaces)))
+        MA_VERBOSE((va("\tverts:%d\n", maGlobal!!.currentObject!!.mesh.numVertexes)))
+        MA_VERBOSE((va("\tfaces:%d\n", maGlobal!!.currentObject!!.mesh.numFaces)))
     }
 
     @Throws(idException::class)
@@ -692,7 +696,7 @@ object Model_ma {
                         parser.ReadToken(token)
                     }
                     var fileNode: maFileNode_t
-                    fileNode = maFileNode_t() // Mem_Alloc(sizeof(maFileNode_t));
+                    fileNode = maFileNode_t()
                     fileNode.name = header.name
                     fileNode.path = token.toString()
                     maGlobal!!.model!!.fileNodes!!.Set(fileNode.name, fileNode)
@@ -709,8 +713,6 @@ object Model_ma {
         val header = maNodeHeader_t()
         MA_ParseNodeHeader(parser, header)
         val matNode = maMaterialNode_s()
-        //        matNode = (maMaterialNode_s) Mem_Alloc(sizeof(maMaterialNode_t));
-//	memset(matNode, 0, sizeof(maMaterialNode_t));
         matNode.name = header.name
         maGlobal!!.model!!.materialNodes!!.Set(matNode.name, matNode)
     }
@@ -747,8 +749,7 @@ object Model_ma {
 
                 //Got the file
                 val material: maMaterial_t
-                material = maMaterial_t() //Mem_Alloc(sizeof(maMaterial_t));
-                //			memset( material, 0, sizeof( maMaterial_t ) );
+                material = maMaterial_t()
 
                 //Remove the OS stuff
                 val qPath: String
@@ -774,7 +775,6 @@ object Model_ma {
         var dot: Int = temp.Find(".")
         if (dot == -1) {
             throw idException(va("Maya Loader '%s': Invalid Connect Attribute.", parser.GetFileName()))
-            //		return false;
         }
         srcName = temp.Left(dot)
         srcType = temp.Right(temp.Length() - dot - 1)
@@ -783,7 +783,6 @@ object Model_ma {
         dot = temp.Find(".")
         if (dot == -1) {
             throw idException(va("Maya Loader '%s': Invalid Connect Attribute.", parser.GetFileName()))
-            //		return false;
         }
         destName = temp.Left(dot)
         destType = temp.Right(temp.Length() - dot - 1)
@@ -861,8 +860,8 @@ object Model_ma {
 
     fun MA_ApplyTransformation(model: maModel_s?) {
         for (i in 0 until model!!.objects.Num()) {
-            val mesh: maMesh_t? = model.objects[i]!!.mesh
-            var transform: maTransform_s? = mesh!!.transform
+            val mesh: maMesh_t = model.objects[i]!!.mesh
+            var transform: maTransform_s? = mesh.transform
             while (transform != null) {
                 val rotx = idMat4()
                 val roty = idMat4()
@@ -902,7 +901,7 @@ object Model_ma {
      */
     @Throws(idException::class)
     fun MA_Parse(buffer: CharBuffer, filename: String?, verbose: Boolean): maModel_s? {
-        // // memset( &maGlobal, 0, sizeof( maGlobal ) );
+        maGlobal = ma_t()
         maGlobal!!.verbose = verbose
         maGlobal!!.currentObject = null
 
@@ -912,7 +911,7 @@ object Model_ma {
         maGlobal!!.model!!.materials.Resize(32, 32)
         val parser = idParser()
         parser.SetFlags(LEXFL_NOSTRINGCONCAT)
-        parser.LoadMemory(buffer, buffer.length, (filename)!!) //TODO:use capacity instead of length?
+        parser.LoadMemory(buffer, buffer.length, (filename)!!)
         val token = idToken()
         while (parser.ReadToken(token)) {
             if (0 == token.Icmp("createNode")) {
@@ -957,7 +956,6 @@ object Model_ma {
             ma = null
         }
 
-//        fileSystem.FreeFile(buf);
         return ma
     }
 
@@ -970,64 +968,11 @@ object Model_ma {
         if (ma == null) {
             return
         }
-        //        for (i = 0; i < ma.objects.Num(); i++) {
-//            obj = ma.objects.oGet(i);
-//
-//            // free the base nesh
-//            mesh = obj.mesh;
-//
-//            if (mesh.vertexes != null) {
-//                Mem_Free(mesh.vertexes);
-//            }
-//            if (mesh.vertTransforms != null) {
-//                Mem_Free(mesh.vertTransforms);
-//            }
-//            if (mesh.normals != null) {
-//                Mem_Free(mesh.normals);
-//            }
-//            if (mesh.tvertexes != null) {
-//                Mem_Free(mesh.tvertexes);
-//            }
-//            if (mesh.edges != null) {
-//                Mem_Free(mesh.edges);
-//            }
-//            if (mesh.colors != null) {
-//                Mem_Free(mesh.colors);
-//            }
-//            if (mesh.faces != null) {
-//                Mem_Free(mesh.faces);
-//            }
-//            Mem_Free(obj);
-//        }
-//        ma.objects.Clear();
-//
-//        for (i = 0; i < ma.materials.Num(); i++) {
-//            material = ma.materials.oGet(i);
-//            Mem_Free(material);
-//        }
-//        ma.materials.Clear();
-//
-//        maTransform_s trans;
-//        for (i = 0; i < ma.transforms.Num(); i++) {
-//            trans = ma.transforms.GetIndex(i);
-//            Mem_Free(trans);
-//        }
-//        ma.transforms.Clear();
-//
-//        maFileNode_t fileNode;
-//        for (i = 0; i < ma.fileNodes.Num(); i++) {
-//            fileNode = ma.fileNodes.GetIndex(i);
-//            Mem_Free(fileNode);
-//        }
-//        ma.fileNodes.Clear();
-//
-//        maMaterialNode_s matNode;
-//        for (i = 0; i < ma.materialNodes.Num(); i++) {
-//            matNode = ma.materialNodes.GetIndex(i);
-//            Mem_Free(matNode);
-//        }
-        ma!!.materialNodes!!.Clear()
-        //	delete ma;
+        ma.objects.Clear()
+        ma.materials.Clear()
+        ma.transforms?.Clear()
+        ma.fileNodes?.Clear()
+        ma.materialNodes?.Clear()
     }
 
     /*
@@ -1038,15 +983,11 @@ object Model_ma {
      ===============================================================================
      */
     class maNodeHeader_t {
-        //	char					name[128];
-        var name: String? = null
-
-        //	char					parent[128];
-        var parent: String? = null
+        var name: String = ""
+        var parent: String = ""
     }
 
     class maAttribHeader_t {
-        //	char					name[128];
         var name: String? = null
         var size: Int = 0
     }
@@ -1109,8 +1050,6 @@ object Model_ma {
 
     class maMaterial_t {
         var angle: Float = 0.0f // in clockwise radians
-
-        //	char					name[128];
         var name: String? = null
         var uOffset: Float = 0.0f
         var vOffset: Float = 0.0f // max lets you offset by material without changing texCoords
@@ -1119,36 +1058,24 @@ object Model_ma {
     }
 
     class maObject_t {
-        //	char					materialName[128];
         var materialName: String? = null
         var materialRef: Int = 0
-
-        //
-        var mesh: maMesh_t? = null
-
-        //	char					name[128];
+        var mesh: maMesh_t = maMesh_t()
         var name: String? = null
     }
 
     class maFileNode_t {
-        //	char					name[128];
         var name: String? = null
-
-        //	char					path[1024];
         var path: String? = null
     }
 
     class maMaterialNode_s {
-        //
         var child: maMaterialNode_s? = null
         var file: maFileNode_t? = null
-
-        //	char					name[128];
         var name: String? = null
     }
 
     class maModel_s {
-        //
         //Material Resolution
         var fileNodes: idHashTable<maFileNode_t>? = null
         var materialNodes: idHashTable<maMaterialNode_s>? = null

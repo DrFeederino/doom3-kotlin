@@ -2,7 +2,6 @@ package neo.framework
 
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local
-import neo.Renderer.GuiModel.idGuiModel
 import neo.Renderer.Image
 import neo.Renderer.RenderSystem
 import neo.Sound.snd_system
@@ -462,14 +461,9 @@ class Common {
                     }
                 } else {
                     Session.session.Frame()
-                    idGuiModel.bla = true
 
                     // normal, in-sequence screen update
                     Session.session.UpdateScreen(false)
-                    //                    int a = GuiModel.idGuiModel.bla1;
-//                    a = GuiModel.idGuiModel.bla2;
-//                    a = GuiModel.idGuiModel.bla3;
-//                    a = GuiModel.idGuiModel.bla4;
                 }
 
                 // report timing information

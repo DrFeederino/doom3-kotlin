@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Item.cpp, neo/Game/Item.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.Entity.idAnimatedEntity
@@ -260,7 +278,7 @@ object Item {
         }
 
         override fun Think() {
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 if (spin) {
                     val ang = idAngles()
                     val org = idVec3()
@@ -281,8 +299,12 @@ object Item {
             super.Present()
             if (!fl.hidden && pulse) {
                 // also add a highlight shell model
-                val shell: renderEntity_s?
-                shell = renderEntity!!
+                // C++ creates a copy: renderEntity_t shell = renderEntity;
+                // Kotlin has no copy constructor, so we save/restore modified fields
+                val shell = renderEntity!!
+                val origCallback = shell.callback
+                val origEntityNum = shell.entityNum
+                val origCustomShader = shell.customShader
 
                 // we will mess with shader parms when the item is in view
                 // to give the "item pulse" effect
@@ -294,6 +316,11 @@ object Item {
                 } else {
                     gameRenderWorld!!.UpdateEntityDef(itemShellHandle, shell)
                 }
+
+                // restore original values (C++ used a stack copy that went out of scope)
+                shell.callback = origCallback
+                shell.entityNum = origEntityNum
+                shell.customShader = origCustomShader
             }
         }
 
@@ -984,7 +1011,7 @@ object Item {
 
         override fun Think() {
             RunPhysics()
-            if (thinkFlags and Entity.TH_PHYSICS != 0) {
+            if ((thinkFlags and Entity.TH_PHYSICS) != 0) {
                 // update trigger position
                 trigger!!.Link(
                     Game_local.gameLocal.clip,
@@ -994,7 +1021,7 @@ object Item {
                     idMat3.getMat3_identity()
                 )
             }
-            if (thinkFlags and Entity.TH_UPDATEPARTICLES != 0) {
+            if ((thinkFlags and Entity.TH_UPDATEPARTICLES) != 0) {
                 if (!Game_local.gameLocal.smokeParticles!!.EmitSmoke(
                         smoke,
                         smokeTime,

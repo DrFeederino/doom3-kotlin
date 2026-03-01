@@ -1,10 +1,36 @@
+/*
+ * ===========================================================================
+ *
+ * Doom 3 GPL Source Code
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ===========================================================================
+ *
+ * Original source: neo/sound/snd_cache.cpp, neo/sound/snd_local.h
+ */
+
 package neo.Sound
 
 import neo.Sound.snd_local.idSampleDecoder
 import neo.Sound.snd_local.waveformatex_s
 import neo.Sound.snd_system.idSoundSystemLocal
 import neo.Sound.snd_wavefile.idWaveFile
-import neo.framework.BuildDefines
 import neo.framework.Common
 import neo.framework.Common.MemInfo_t
 import neo.framework.DeclManager
@@ -23,16 +49,6 @@ import kotlin.math.min
 import kotlin.math.sin
 
 object snd_cache {
-    //    static final boolean USE_SOUND_CACHE_ALLOCATOR = true;
-    //    static final idDynamicBlockAlloc<Byte> soundCacheAllocator;
-    //
-    //    static {
-    //        if (USE_SOUND_CACHE_ALLOCATOR) {
-    //            soundCacheAllocator = new idDynamicBlockAlloc<>(1 << 20, 1 << 10);
-    ////        } else {
-    ////            soundCacheAllocator = new idDynamicAlloc<>(1 << 20, 1 << 10);
-    //        }
-    //    }
     /*
      ===================================================================================
 
@@ -81,7 +97,7 @@ object snd_cache {
         }
 
         fun  /*ID_TIME_T*/GetNewTimeStamp(): Long {
-            val timestamp = longArrayOf(0)
+            val timestamp = LongArray(1)
             FileSystem_h.fileSystem.ReadFile(name.toString(), null, timestamp)
             if (timestamp[0] == FileSystem_h.FILE_NOT_FOUND_TIMESTAMP.toLong()) {
                 val oggName = idStr(name)
@@ -96,15 +112,13 @@ object snd_cache {
             var i: Int
             var v: Float
             var sample: Short
-
-//	memset( &objectInfo, 0, sizeof( objectInfo ) );
             objectInfo = waveformatex_s()
             objectInfo.nChannels = 1
             objectInfo.wBitsPerSample = 16
             objectInfo.nSamplesPerSec = 44100
             objectSize = MIXBUFFER_SAMPLES * 2
             objectMemSize = objectSize * 2 //* sizeof(short);
-            nonCacheData = BufferUtils.createByteBuffer(objectMemSize) //soundCacheAllocator.Alloc(objectMemSize);
+            nonCacheData = BufferUtils.createByteBuffer(objectMemSize)
             val ncd = nonCacheData!!.asShortBuffer()
             i = 0
             while (i < MIXBUFFER_SAMPLES) {
@@ -116,21 +130,21 @@ object snd_cache {
             }
             if (idSoundSystemLocal.useOpenAL) {
                 AL10.alGetError()
-                //                alGenBuffers(1, openalBuffer);
                 openalBuffer = AL10.alGenBuffers()
                 if (AL10.alGetError() != AL10.AL_NO_ERROR) {
                     Common.common.Error("idSoundCache: error generating OpenAL hardware buffer")
                 }
                 AL10.alGetError()
-                //                alBufferData(openalBuffer, objectInfo.nChannels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, nonCacheData, objectMemSize, objectInfo.nSamplesPerSec);
                 AL10.alBufferData(
-                    openalBuffer /*  <<TODO>>   */,
+                    openalBuffer,
                     if (objectInfo.nChannels == 1) AL10.AL_FORMAT_MONO16 else AL10.AL_FORMAT_STEREO16,
                     nonCacheData!!,
                     objectInfo.nSamplesPerSec
                 )
                 if (AL10.alGetError() != AL10.AL_NO_ERROR) {
-                    Common.common.Error("idSoundCache: error loading data into OpenAL hardware buffer")
+                    Common.common.Warning("idSoundCache: error loading data into OpenAL hardware buffer")
+                    // FIX: Missing hardwareBuffer = false in error path (matches C++)
+                    hardwareBuffer = false
                 } else {
                     hardwareBuffer = true
                 }
@@ -194,7 +208,7 @@ object snd_cache {
             objectInfo = info[0]
             objectSize = fh.GetOutputSize()
             objectMemSize = fh.GetMemorySize()
-            nonCacheData = BufferUtils.createByteBuffer(objectMemSize) //soundCacheAllocator.Alloc( objectMemSize );
+            nonCacheData = BufferUtils.createByteBuffer(objectMemSize)
             val temp = ByteBuffer.allocate(objectMemSize)
             fh.Read(temp, objectMemSize, null)
             nonCacheData!!.put(temp).rewind()
@@ -207,15 +221,12 @@ object snd_cache {
                 // PCM loads directly;
                 if (objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_PCM) {
                     AL10.alGetError()
-                    //                    alGenBuffers(1, openalBuffer);
                     openalBuffer = AL10.alGenBuffers()
                     if (AL10.alGetError() != AL10.AL_NO_ERROR) {
                         Common.common.Error("idSoundCache: error generating OpenAL hardware buffer")
                     }
-                    //                    if (alIsBuffer(openalBuffer)) {
                     if (AL10.alIsBuffer(openalBuffer)) {
                         AL10.alGetError()
-                        //                        alBufferData(openalBuffer, objectInfo.nChannels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, nonCacheData, objectMemSize, objectInfo.nSamplesPerSec);
                         AL10.alBufferData(
                             openalBuffer,
                             if (objectInfo.nChannels == 1) AL10.AL_FORMAT_MONO16 else AL10.AL_FORMAT_STEREO16,
@@ -223,14 +234,17 @@ object snd_cache {
                             objectInfo.nSamplesPerSec
                         )
                         if (AL10.alGetError() != AL10.AL_NO_ERROR) {
-                            Common.common.Error("idSoundCache: error loading data into OpenAL hardware buffer")
+                            // FIX: Was Error() (fatal) — C++ uses Warning() (non-fatal)
+                            Common.common.Warning("idSoundCache: error loading data into OpenAL hardware buffer")
+                            hardwareBuffer = false
                         } else {
+                            // NOTE: Differs from C++ — amplitude data computation is not in dhewm3 snd_cache.cpp
                             // Compute amplitude block size
                             val blockSize = 512 * objectInfo.nSamplesPerSec / 44100
 
                             // Allocate amplitude data array
                             amplitudeData =
-                                BufferUtils.createByteBuffer((objectSize / blockSize + 1) * 2 * java.lang.Short.BYTES) //soundCacheAllocator.Alloc( ( objectSize / blockSize + 1 ) * 2 * sizeof( short) );
+                                BufferUtils.createByteBuffer((objectSize / blockSize + 1) * 2 * java.lang.Short.BYTES)
 
                             // Creating array of min/max amplitude pairs per blockSize samples
                             val ncd = nonCacheData!!.asShortBuffer()
@@ -246,8 +260,8 @@ object snd_cache {
                                     max = max(ncd[i + j].toInt(), max.toInt()).toShort()
                                     j++
                                 }
-                                amplitudeData!!.putShort(i / blockSize * 2, min)
-                                amplitudeData!!.putShort(i / blockSize * 2 + 1, max)
+                                amplitudeData!!.putShort((i / blockSize * 2) * 2, min)
+                                amplitudeData!!.putShort((i / blockSize * 2 + 1) * 2, max)
                                 i += blockSize
                             }
                             hardwareBuffer = true
@@ -257,9 +271,8 @@ object snd_cache {
 
                 // OGG decompressed at load time (when smaller than s_decompressionLimit seconds, 6 seconds by default)
                 if (objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_OGG) {
-                    if (BuildDefines.MACOS_X && objectSize < objectInfo.nSamplesPerSec * idSoundSystemLocal.s_decompressionLimit.GetInteger()
-                        || AL10.alIsExtensionPresent("EAX-RAM") && objectSize < objectInfo.nSamplesPerSec * idSoundSystemLocal.s_decompressionLimit.GetInteger()
-                    ) {
+                    // FIX: Removed MACOS_X and EAX-RAM guards — dhewm3 C++ checks only size vs decompression limit
+                    if (objectSize < objectInfo.nSamplesPerSec * idSoundSystemLocal.s_decompressionLimit.GetInteger()) {
                         AL10.alGetError()
                         openalBuffer = AL10.alGenBuffers()
                         if (AL10.alGetError() != AL10.AL_NO_ERROR) {
@@ -268,7 +281,7 @@ object snd_cache {
                         if (AL10.alIsBuffer(openalBuffer)) {
                             val decoder: idSampleDecoder = idSampleDecoder.Alloc()
                             var destData =
-                                BufferUtils.createByteBuffer((LengthIn44kHzSamples() + 1) * java.lang.Float.BYTES) //soundCacheAllocator.Alloc( ( LengthIn44kHzSamples() + 1 ) * sizeof( float ) );
+                                BufferUtils.createByteBuffer((LengthIn44kHzSamples() + 1) * java.lang.Float.BYTES)
 
                             // Decoder *always* outputs 44 kHz data
                             decoder.Decode(this, 0, LengthIn44kHzSamples(), destData.asFloatBuffer())
@@ -276,37 +289,46 @@ object snd_cache {
                             // Downsample back to original frequency (save memory)
                             if (objectInfo.nSamplesPerSec == 11025) {
                                 for (i in 0 until objectSize) {
-                                    if (destData.getFloat(i * 4) < -32768.0f) {
-                                        destData.putShort(i, Short.MIN_VALUE)
-                                    } else if (destData.getFloat(i * 4) > 32767.0f) {
-                                        destData.putShort(i, Short.MAX_VALUE)
+                                    if (destData.getFloat(i * 4 * 4) < -32768.0f) {
+                                        destData.putShort(i * 2, Short.MIN_VALUE)
+                                    } else if (destData.getFloat(i * 4 * 4) > 32767.0f) {
+                                        destData.putShort(i * 2, Short.MAX_VALUE)
                                     } else {
-                                        destData.putShort(i, idMath.FtoiFast(destData.getFloat(i * 4)).toShort())
+                                        destData.putShort(
+                                            i * 2,
+                                            idMath.FtoiFast(destData.getFloat(i * 4 * 4)).toShort()
+                                        )
                                     }
                                 }
                             } else if (objectInfo.nSamplesPerSec == 22050) {
                                 for (i in 0 until objectSize) {
-                                    if (destData.getFloat(i * 2) < -32768.0f) {
-                                        destData.putShort(i, Short.MIN_VALUE)
-                                    } else if (destData.getFloat(i * 2) > 32767.0f) {
-                                        destData.putShort(i, Short.MAX_VALUE)
+                                    if (destData.getFloat(i * 2 * 4) < -32768.0f) {
+                                        destData.putShort(i * 2, Short.MIN_VALUE)
+                                    } else if (destData.getFloat(i * 2 * 4) > 32767.0f) {
+                                        destData.putShort(i * 2, Short.MAX_VALUE)
                                     } else {
-                                        destData.putShort(i, idMath.FtoiFast(destData.getFloat(i * 2)).toShort())
+                                        destData.putShort(
+                                            i * 2,
+                                            idMath.FtoiFast(destData.getFloat(i * 2 * 4)).toShort()
+                                        )
                                     }
                                 }
                             } else {
                                 for (i in 0 until objectSize) {
-                                    if (destData.getFloat(i) < -32768.0f) {
-                                        destData.putShort(i, Short.MIN_VALUE)
-                                    } else if (destData.getFloat(i) > 32767.0f) {
-                                        destData.putShort(i, Short.MAX_VALUE)
+                                    if (destData.getFloat(i * 4) < -32768.0f) {
+                                        destData.putShort(i * 2, Short.MIN_VALUE)
+                                    } else if (destData.getFloat(i * 4) > 32767.0f) {
+                                        destData.putShort(i * 2, Short.MAX_VALUE)
                                     } else {
-                                        destData.putShort(i, idMath.FtoiFast(destData.getFloat(i)).toShort())
+                                        destData.putShort(i * 2, idMath.FtoiFast(destData.getFloat(i * 4)).toShort())
                                     }
                                 }
                             }
                             AL10.alGetError()
-                            //                            alBufferData(openalBuffer, objectInfo.nChannels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, destData, objectSize * sizeof(short), objectInfo.nSamplesPerSec);
+                            // FIX: C++ passes objectSize * sizeof(short) as data size;
+                            // LWJGL uses remaining() — must limit the buffer to valid short data
+                            destData.limit(objectSize * 2)
+                            destData.position(0)
                             AL10.alBufferData(
                                 openalBuffer,
                                 if (objectInfo.nChannels == 1) AL10.AL_FORMAT_MONO16 else AL10.AL_FORMAT_STEREO16,
@@ -314,14 +336,17 @@ object snd_cache {
                                 objectInfo.nSamplesPerSec
                             )
                             if (AL10.alGetError() != AL10.AL_NO_ERROR) {
-                                Common.common.Error("idSoundCache: error loading data into OpenAL hardware buffer")
+                                // FIX: Was Error() (fatal) — C++ uses Warning() (non-fatal)
+                                Common.common.Warning("idSoundCache: error loading data into OpenAL hardware buffer")
+                                hardwareBuffer = false
                             } else {
+                                // NOTE: Differs from C++ — amplitude data computation is not in dhewm3 snd_cache.cpp
                                 // Compute amplitude block size
                                 val blockSize = 512 * objectInfo.nSamplesPerSec / 44100
 
                                 // Allocate amplitude data array
                                 amplitudeData =
-                                    BufferUtils.createByteBuffer((objectSize / blockSize + 1) * 2 * java.lang.Short.BYTES) //soundCacheAllocator.Alloc( ( objectSize / blockSize + 1 ) * 2 * sizeof( short ) );
+                                    BufferUtils.createByteBuffer((objectSize / blockSize + 1) * 2 * java.lang.Short.BYTES)
 
                                 // Creating array of min/max amplitude pairs per blockSize samples
                                 var i: Int
@@ -332,28 +357,29 @@ object snd_cache {
                                     var j: Int
                                     j = 0
                                     while (j < Min(objectSize - i, blockSize)) {
-                                        min = if (destData.getShort(i + j) < min) destData.getShort(i + j) else min
-                                        max = if (destData.getShort(i + j) > max) destData.getShort(i + j) else max
+                                        min =
+                                            if (destData.getShort((i + j) * 2) < min) destData.getShort((i + j) * 2) else min
+                                        max =
+                                            if (destData.getShort((i + j) * 2) > max) destData.getShort((i + j) * 2) else max
                                         j++
                                     }
-                                    amplitudeData!!.putShort(i / blockSize * 2, min)
-                                    amplitudeData!!.putShort(i / blockSize * 2 + 1, max)
+                                    amplitudeData!!.putShort((i / blockSize * 2) * 2, min)
+                                    amplitudeData!!.putShort((i / blockSize * 2 + 1) * 2, max)
                                     i += blockSize
                                 }
                                 hardwareBuffer = true
                             }
 
-//					soundCacheAllocator.Free( (byte *)destData );
-                            destData.clear()
+                            destData = BufferUtils.createByteBuffer(0) // release reference
                             idSampleDecoder.Free(decoder)
                         }
                     }
                 }
 
-                // Free memory if sample was loaded into hardware
+                // NOTE: Differs from C++ — dhewm3 does NOT free nonCacheData after hardware buffer load.
+                // This frees system memory but means FetchFromCache() will fail for hardware-buffered sounds.
                 if (hardwareBuffer) {
-//			soundCacheAllocator.Free( nonCacheData );
-                    nonCacheData!!.clear()
+                    nonCacheData = null
                 }
             }
             fh.Close()
@@ -384,24 +410,22 @@ object snd_cache {
 
         fun PurgeSoundSample() {            // frees all data
             purged = true
-            if (hardwareBuffer && idSoundSystemLocal.useOpenAL) {
-                val error = AL10.alGetError()
-                //                alDeleteBuffers(1, openalBuffer);
+            if (idSoundSystemLocal.useOpenAL) {
+                AL10.alGetError()
                 AL10.alDeleteBuffers(openalBuffer)
-                if (error != AL10.AL_NO_ERROR) {
-                    Common.common.Error("idSoundCache: error unloading data from OpenAL hardware buffer")
-                } else {
-                    openalBuffer = 0
-                    hardwareBuffer = false
+                if (AL10.alGetError() != AL10.AL_NO_ERROR) {
+                    Common.common.Warning("idSoundCache: error unloading data from OpenAL hardware buffer")
                 }
+                openalBuffer = 0
+                hardwareBuffer = false
             }
             if (amplitudeData != null) {
-//                soundCacheAllocator.Free(amplitudeData);
-                amplitudeData!!.clear()
+                // FIX: C++ sets pointer to NULL after free. .clear() doesn't release memory.
+                amplitudeData = null
             }
             if (nonCacheData != null) {
-//                soundCacheAllocator.Free(nonCacheData);
-                nonCacheData!!.clear()
+                // FIX: C++ sets pointer to NULL after free. .clear() doesn't release memory.
+                nonCacheData = null
             }
         }
 
@@ -413,20 +437,19 @@ object snd_cache {
                 return
             }
             val shortSamples = objectSize shr 1
-            val converted = BufferUtils.createByteBuffer(shortSamples * 2) // soundCacheAllocator.Alloc(shortSamples);
+            val converted = BufferUtils.createByteBuffer(shortSamples * 2)
             if (objectInfo.nChannels == 1) {
                 for (i in 0 until shortSamples) {
-                    converted.putShort(i, nonCacheData!!.getShort(i * 2))
+                    converted.putShort(i * 2, nonCacheData!!.getShort(i * 2 * 2))
                 }
             } else {
                 var i = 0
                 while (i < shortSamples) {
-                    converted.putShort(i + 0, nonCacheData!!.getShort(i * 2 + 0))
-                    converted.putShort(i + 1, nonCacheData!!.getShort(i * 2 + 1))
+                    converted.putShort((i + 0) * 2, nonCacheData!!.getShort((i * 2 + 0) * 2))
+                    converted.putShort((i + 1) * 2, nonCacheData!!.getShort((i * 2 + 1) * 2))
                     i += 2
                 }
             }
-            //            soundCacheAllocator.Free(nonCacheData);
             nonCacheData = converted
             objectSize = objectSize shr 1
             objectMemSize = objectMemSize shr 1
@@ -474,7 +497,6 @@ object snd_cache {
         //
         //
         init {
-//	memset( &objectInfo, 0, sizeof(waveformatex_t) );
             objectInfo = waveformatex_s()
             objectSize = 0
             objectMemSize = 0
@@ -600,7 +622,6 @@ object snd_cache {
                 sample.levelLoadReferenced = false
             }
 
-//            soundCacheAllocator.FreeEmptyBaseBlocks();
         }
 
         /*
@@ -633,7 +654,6 @@ object snd_cache {
                 }
             }
 
-//            soundCacheAllocator.FreeEmptyBaseBlocks();
             Common.common.Printf("%5dk referenced\n", useCount / 1024)
             Common.common.Printf("%5dk purged\n", purgeCount / 1024)
             Common.common.Printf("----------------------------------------\n")
@@ -709,8 +729,6 @@ object snd_cache {
         //
         init {
             listCache = idList()
-            //            soundCacheAllocator.Init();
-//            soundCacheAllocator.SetLockMemory(true);
             listCache.AssureSize(1024, idSoundSample())
             listCache.SetGranularity(256)
             insideLevelLoad = false

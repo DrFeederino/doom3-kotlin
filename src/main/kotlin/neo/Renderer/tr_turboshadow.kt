@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Interaction.srfCullInfo_t
@@ -133,7 +158,7 @@ object tr_turboshadow {
             i--
             sil++
         }
-        val numShadowIndexes: Int = shadowIndex //shadowIndexes - tempIndexes;
+        val numShadowIndexes: Int = shadowIndex
 
         // we aren't bothering to separate front and back caps on these
         newTri.numShadowIndexesNoFrontCaps = numShadowIndexes + numShadowingFaces * 6
@@ -147,7 +172,7 @@ object tr_turboshadow {
             // allocate memory for the indexes
             R_AllocStaticTriSurfIndexes(newTri, newTri.numIndexes)
             // copy the indexes we created for the sil planes
-            SIMDProcessor!!.Memcpy(newTri.indexes!!, tempIndexes, numShadowIndexes /* sizeof( tempIndexes[0] )*/)
+            SIMDProcessor!!.Memcpy(newTri.indexes!!, tempIndexes, numShadowIndexes)
         }
 
         // these have no effect, because they extend to infinity
@@ -253,7 +278,7 @@ object tr_turboshadow {
         }
         tr_main.R_GlobalPointToLocal(ent.modelMatrix, light.globalLightOrigin, localLightOrigin)
         val vertRemap = IntArray(tri.numVerts)
-        SIMDProcessor!!.Memset(vertRemap, -1, tri.numVerts /* sizeof(vertRemap[0])*/)
+        SIMDProcessor!!.Memset(vertRemap, -1, tri.numVerts)
         i = 0
         j = 0
         while (i < tri.numIndexes) {
@@ -290,7 +315,7 @@ object tr_turboshadow {
             R_ResizeStaticTriSurfShadowVerts(newTri, newTri.numVerts)
         } else {
             R_AllocStaticTriSurfShadowVerts(newTri, newTri.numVerts)
-            SIMDProcessor!!.Memcpy(newTri.shadowVertexes!!, shadowVerts, newTri.numVerts /* sizeof( shadowVerts[0] ) */)
+            SIMDProcessor!!.Memcpy(newTri.shadowVertexes!!, shadowVerts, newTri.numVerts)
         }
 
         // alloc the max possible size
@@ -346,7 +371,7 @@ object tr_turboshadow {
             // allocate memory for the indexes
             R_AllocStaticTriSurfIndexes(newTri, newTri.numIndexes)
             // copy the indexes we created for the sil planes
-            SIMDProcessor!!.Memcpy(newTri.indexes!!, tempIndexes, numShadowIndexes /* sizeof( tempIndexes[0] )*/)
+            SIMDProcessor!!.Memcpy(newTri.indexes!!, tempIndexes, numShadowIndexes)
         }
 
         // these have no effect, because they extend to infinity

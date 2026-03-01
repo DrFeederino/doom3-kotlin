@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Cinematic.cinData_t
@@ -100,7 +125,22 @@ val r_vidModes: Array<vidmode_s> = arrayOf(
     vidmode_s("Mode  5: 1024x768", 1024, 768),
     vidmode_s("Mode  6: 1152x864", 1152, 864),
     vidmode_s("Mode  7: 1280x1024", 1280, 1024),
-    vidmode_s("Mode  8: 1600x1200", 1600, 1200)
+    vidmode_s("Mode  8: 1600x1200", 1600, 1200),
+    vidmode_s("Mode  9: 1280x720", 1280, 720),
+    vidmode_s("Mode 10: 1366x768", 1366, 768),
+    vidmode_s("Mode 11: 1440x900", 1440, 900),
+    vidmode_s("Mode 12: 1400x1050", 1400, 1050),
+    vidmode_s("Mode 13: 1600x900", 1600, 900),
+    vidmode_s("Mode 14: 1680x1050", 1680, 1050),
+    vidmode_s("Mode 15: 1920x1080", 1920, 1080),
+    vidmode_s("Mode 16: 1920x1200", 1920, 1200),
+    vidmode_s("Mode 17: 2048x1152", 2048, 1152),
+    vidmode_s("Mode 18: 2560x1600", 2560, 1600),
+    vidmode_s("Mode 19: 3200x2400", 3200, 2400),
+    vidmode_s("Mode 20: 3840x2160", 3840, 2160),
+    vidmode_s("Mode 21: 4096x2304", 4096, 2304),
+    vidmode_s("Mode 22: 2880x1800", 2880, 1800),
+    vidmode_s("Mode 23: 2560x1440", 2560, 1440)
 )
 
 /*
@@ -469,7 +509,7 @@ val r_skipParticles = idCVar(
 val r_subviewOnly = idCVar(
     "r_subviewOnly", "0", CVAR_RENDERER or CVAR_BOOL, "1 = don't render main view, allowing subviews to be debugged"
 )
-val r_shadows = idCVar("r_shadows", "1", CVAR_RENDERER or CVAR_BOOL or CVAR_ARCHIVE, "enable shadows")
+val r_shadows = idCVar("r_shadows", "0", CVAR_RENDERER or CVAR_BOOL or CVAR_ARCHIVE, "enable shadows")
 val r_testARBProgram =
     idCVar("r_testARBProgram", "0", CVAR_RENDERER or CVAR_BOOL, "experiment with vertex/fragment programs")
 val r_testGamma = idCVar(
@@ -1177,7 +1217,6 @@ fun R_RenderingFPS(renderView: renderView_s?): Float {
 }
 
 fun R_InitOpenGL() {
-//	GLint			temp;
     val temp: IntBuffer = BufferUtils.createIntBuffer(16)
     val parms = glimpParms_t()
     var i: Int
@@ -1259,9 +1298,6 @@ fun R_InitOpenGL() {
 
     // parse our vertex and fragment programs, possibly disable support for
     // one of the paths if there was an error
-//        R_NV10_Init();
-//        R_NV20_Init();
-//        R_R200_Init();
     draw_arb2.R_ARB2_Init()
     cmdSystem.AddCommand(
         "reloadARBprograms", R_ReloadARBPrograms_f.instance, CMD_FL_RENDERER, "reloads ARB programs"
@@ -1288,7 +1324,7 @@ fun R_InitOpenGL() {
     }
 
     if (_WIN32) {
-        if (!glCheck) { // && win32.osversion.dwMajorVersion == 6) {//TODO:should this be applicable?
+        if (!glCheck) {
             glCheck = true
             if (0 == Icmp(
                     glConfig.vendor_string!!, "Microsoft"
@@ -1298,13 +1334,6 @@ fun R_InitOpenGL() {
                     cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "vid_restart partial windowed\n")
                     Sys_GrabMouseCursor(false)
                 }
-                //TODO: messageBox below.
-//                    int ret = MessageBox(null, "Please install OpenGL drivers from your graphics hardware vendor to run " + GAME_NAME + ".\nYour OpenGL functionality is limited.",
-//                            "Insufficient OpenGL capabilities", MB_OKCANCEL | MB_ICONWARNING | MB_TASKMODAL);
-//                    if (ret == IDCANCEL) {
-//                        cmdSystem.BufferCommandText(CMD_EXEC_APPEND, "quit\n");
-//                        cmdSystem.ExecuteCommandBuffer();
-//                    }
                 if (cvarSystem.GetCVarBool("r_fullscreen")) {
                     cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "vid_restart\n")
                 }
@@ -1360,58 +1389,6 @@ fun R_SetColorMappings() {
     GLimp_SetGamma(gammaTable, gammaTable, gammaTable)
 }
 
-fun R_ScreenShot_f(args: CmdArgs.idCmdArgs?) {
-    val checkName = idStr()
-    var width: Int = glConfig.vidWidth
-    var height: Int = glConfig.vidHeight
-    var blends = 0
-    when (args!!.Argc()) {
-        1 -> {
-            width = glConfig.vidWidth
-            height = glConfig.vidHeight
-            blends = 1
-            R_ScreenshotFilename(lastNumber, "screenshots/shot", checkName)
-        }
-
-        2 -> {
-            width = glConfig.vidWidth
-            height = glConfig.vidHeight
-            blends = 1
-            checkName.set(args.Argv(1))
-        }
-
-        3 -> {
-            width = args.Argv(1).toInt()
-            height = args.Argv(2).toInt()
-            blends = 1
-            R_ScreenshotFilename(lastNumber, "screenshots/shot", checkName)
-        }
-
-        4 -> {
-            width = args.Argv(1).toInt()
-            height = args.Argv(2).toInt()
-            blends = args.Argv(3).toInt()
-            if (blends < 1) {
-                blends = 1
-            }
-            if (blends > MAX_BLENDS) {
-                blends = MAX_BLENDS
-            }
-            R_ScreenshotFilename(lastNumber, "screenshots/shot", checkName)
-        }
-
-        else -> {
-            common.Printf("usage: screenshot\n       screenshot <filename>\n       screenshot <width> <height>\n       screenshot <width> <height> <blends>\n")
-            return
-        }
-    }
-
-    // put the console away
-    Console.console.Close()
-    tr.TakeScreenshot(width, height, checkName.toString(), blends, null)
-    common.Printf("Wrote %s\n", checkName.toString())
-}
-
 /*
  ===============
  R_StencilShot
@@ -1426,31 +1403,25 @@ fun R_StencilShot() {
     val height: Int = tr.GetScreenHeight()
     val pix: Int = width * height
     c = pix * 3 + 18
-    buffer = ByteBuffer.allocate(c) // Mem_Alloc(c);
-    //        memset(buffer, 0, 18);
-//        buffer = new int[18];//TODO:use c?
-    var byteBuffer: ByteBuffer = ByteBuffer.allocate(pix) // Mem_Alloc(pix);
+    buffer = ByteBuffer.allocate(c)
+    var byteBuffer: ByteBuffer = ByteBuffer.allocate(pix)
     qgl.qglReadPixels(0, 0, width, height, GL11.GL_STENCIL_INDEX, GL11.GL_UNSIGNED_BYTE, byteBuffer)
     i = 0
     while (i < pix) {
         buffer.put(18 + i * 3, byteBuffer.get(i))
         buffer.put(18 + (i * 3) + 1, byteBuffer.get(i))
-        //		buffer[18+i*3+2] = ( byteBuffer[i] & 15 ) * 16;
         buffer.put(18 + (i * 3) + 2, byteBuffer.get(i))
         i++
     }
 
     // fill in the header (this is vertically flipped, which qglReadPixels emits)
     buffer.put(2, 2.toByte()) // uncompressed type
-    buffer.put(12, (width and 255).toByte()) //TODO: mayhaps use int[] instead of byte[]?
+    buffer.put(12, (width and 255).toByte())
     buffer.put(13, (width shr 8).toByte())
     buffer.put(14, (height and 255).toByte())
     buffer.put(15, (height shr 8).toByte())
     buffer.put(16, 24.toByte()) // pixel size
     fileSystem.WriteFile("screenshots/stencilShot.tga", buffer, c, "fs_savepath")
-
-//        Mem_Free(buffer);
-//        Mem_Free(byteBuffer);
 }
 
 /*
@@ -1480,7 +1451,7 @@ fun R_CheckExtension(name: String?): Boolean {
 fun R_ReadTiledPixels(width: Int, height: Int, buffer: ByteArray?, offset: Int, ref: renderView_s? /*= NULL*/) {
     // include extra space for OpenGL padding to word boundaries
     var temp: ByteArray? =
-        ByteArray((glConfig.vidWidth + 3) * glConfig.vidHeight * 3) //R_StaticAlloc( (glConfig.vidWidth+3) * glConfig.vidHeight * 3 );
+        ByteArray((glConfig.vidWidth + 3) * glConfig.vidHeight * 3)
     val oldWidth: Int = glConfig.vidWidth
     val oldHeight: Int = glConfig.vidHeight
     tr.tiledViewport[0] = width
@@ -1513,8 +1484,6 @@ fun R_ReadTiledPixels(width: Int, height: Int, buffer: ByteArray?, offset: Int, 
             qgl.qglReadPixels(0, 0, w, h, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, ByteBuffer.wrap(temp))
             val row: Int = (w * 3 + 3) and 3.inv() // OpenGL pads to dword boundaries
             for (y in 0 until h) {
-//				memcpy( buffer + ( ( yo + y )* width + xo ) * 3,
-//					temp + y * row, w * 3 );
                 System.arraycopy(temp, y * row, buffer, offset + (((yo + y) * width + xo) * 3), w * 3)
             }
             yo += oldHeight
@@ -1527,7 +1496,6 @@ fun R_ReadTiledPixels(width: Int, height: Int, buffer: ByteArray?, offset: Int, 
     tr.tiledViewport[0] = 0
     tr.tiledViewport[1] = 0
 
-//	R_StaticFree( temp );
     temp = null
     glConfig.vidWidth = oldWidth
     glConfig.vidHeight = oldHeight
@@ -1713,7 +1681,6 @@ internal class R_EnvShot_f private constructor() : cmdFunction_t() {
         }
         primary = viewDef_s(tr.primaryView!!)
 
-//	memset( &axis, 0, sizeof( axis ) );
         axis[0].set(0, 0, 1.0f)
         axis[0].set(1, 2, 1.0f)
         axis[0].set(2, 1, 1.0f)
@@ -1788,7 +1755,6 @@ internal class R_MakeAmbientMap_f private constructor() : cmdFunction_t() {
             outSize = 32
         }
 
-//	memset( &cubeAxis, 0, sizeof( cubeAxis ) );
         cubeAxis[0].set(0, 0, 1.0f)
         cubeAxis[0].set(1, 2, 1.0f)
         cubeAxis[0].set(2, 1, 1.0f)
@@ -1857,7 +1823,7 @@ internal class R_MakeAmbientMap_f private constructor() : cmdFunction_t() {
                             val test = idVec3()
                             while (true) {
                                 for (j in 0..2) {
-                                    test[j] = (-1 + 2 * (Math.random().toInt() and 0x7fff) / 0x7fff).toFloat()
+                                    test[j] = (-1 + 2 * (Random().nextInt() and 0x7fff) / 0x7fff).toFloat()
                                 }
                                 if (test.Length() > 1.0f) {
                                     continue
@@ -1891,12 +1857,6 @@ internal class R_MakeAmbientMap_f private constructor() : cmdFunction_t() {
                 i++
             }
         }
-
-//            for (i = 0; i < 6; i++) {
-//                if (buffers[i]) {
-//                    Mem_Free(buffers[i]);
-//                }
-//            }
     }
 
     companion object {
@@ -2055,7 +2015,6 @@ internal class R_TestImage_f private constructor() : cmdFunction_t() {
     override fun run(args: CmdArgs.idCmdArgs?) {
         val imageNum: Int
         if (tr.testVideo != null) {
-//		delete tr.testVideo;
             tr.testVideo = null
         }
         tr.testImage = null
@@ -2089,7 +2048,6 @@ internal class R_TestImage_f private constructor() : cmdFunction_t() {
 internal class R_TestVideo_f private constructor() : cmdFunction_t() {
     override fun run(args: CmdArgs.idCmdArgs?) {
         if (tr.testVideo != null) {
-//		delete tr.testVideo;
             tr.testVideo = null
         }
         tr.testImage = null
@@ -2104,7 +2062,6 @@ internal class R_TestVideo_f private constructor() : cmdFunction_t() {
         val cin: cinData_t
         cin = tr.testVideo!!.ImageForTime(0)
         if (cin.image == null) {
-//		delete tr.testVideo;
             tr.testVideo = null
             tr.testImage = null
             return
@@ -2245,24 +2202,19 @@ internal class R_ReportImageDuplication_f private constructor() : cmdFunction_t(
                 val h2: IntArray = intArrayOf(0)
                 val data2: ByteBuffer = R_LoadImageProgram(image2.imgName.toString(), w2, h2, null)!!
                 if (!w2.contentEquals(w1) || !h2.contentEquals(h1)) {
-//                        R_StaticFree(data2);
                     j++
                     continue
                 }
 
-//                    if (memcmp(data1, data2, w1 * h1 * 4)) {
-                if ((data1 == data2)) { //TODO: check range?
-//                        R_StaticFree(data2);
+                if (data1 != data2) {
                     j++
                     continue
                 }
 
-//                    R_StaticFree(data2);
                 common.Printf("%s == %s\n", image1.imgName, image2.imgName)
                 Session.session.UpdateScreen(true)
                 count++
                 break
-                j++
             }
             i++
         }
@@ -2349,7 +2301,6 @@ internal class R_VidRestart_f private constructor() : cmdFunction_t() {
 
         // make sure the regeneration doesn't use anything no longer valid
         tr.viewCount++
-        //            System.out.println("tr.viewCount::R_VidRestart_f");
         tr.viewDef = null
 
         // regenerate all necessary interactions

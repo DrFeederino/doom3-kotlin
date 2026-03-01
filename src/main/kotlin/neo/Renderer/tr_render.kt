@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.*
@@ -20,10 +45,12 @@ import neo.Renderer.qgl.qglStencilMask
 import neo.Renderer.qgl.qglViewport
 import neo.Renderer.tr_backend.GL_Cull
 import neo.Renderer.tr_backend.GL_State
+import neo.Renderer.RenderWorld.renderView_s
 import neo.Renderer.tr_main.myGlMultMatrix
 import neo.TempDump.btoi
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.math.idPlane
+import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
 import neo.sys.win_glimp.GLimp_ActivateContext
 import neo.sys.win_glimp.GLimp_DeactivateContext
@@ -37,48 +64,6 @@ object tr_render {
      back end scene + lights rendering functions
 
      */
-    //    
-    //    
-    //    
-    //    
-    //    
-    //    
-    /*
-     ================
-     RB_DrawElementsWithCounters
-     ================
-     */
-    var DEBUG_RB_DrawElementsWithCounters: Int = 0
-
-    /*
-     ======================
-     RB_BindVariableStageImage
-
-     Handles generating a cinematic frame if needed
-     ======================
-     */
-    private var DBG_RB_BindVariableStageImage: Int = 0
-
-    /*
-     ======================
-     RB_GetShaderTextureMatrix
-     ======================
-     */
-    private var DBG_RB_GetShaderTextureMatrix: Int = 0
-
-    /*
-     ======================
-     RB_RenderDrawSurfChainWithFunction
-     ======================
-     */
-    private var DBG_RB_RenderDrawSurfChainWithFunction: Int = 0
-
-    /*
-     =================
-     RB_SubmittInteraction
-     =================
-     */
-    private var DBG_RB_SubmittInteraction: Int = 0
 
     /*
      =================
@@ -93,10 +78,10 @@ object tr_render {
         backEnd!!.pc.c_drawIndexes += tri.numIndexes
         backEnd!!.pc.c_drawVertexes += tri.numVerts
         if (tri.ambientSurface != null) {
-            if (tri.indexes.contentEquals(tri.ambientSurface!!.indexes)) {
+            if (tri.indexes === tri.ambientSurface!!.indexes) {
                 backEnd!!.pc.c_drawRefIndexes += tri.numIndexes
             }
-            if (tri.verts.contentEquals(tri.ambientSurface!!.verts)) {
+            if (tri.verts === tri.ambientSurface!!.verts) {
                 backEnd!!.pc.c_drawRefVertexes += tri.numVerts
             }
         }
@@ -108,17 +93,20 @@ object tr_render {
         qgl.qglEnd()
     }
 
+    /*
+     ================
+     RB_DrawElementsWithCounters
+     ================
+     */
     fun RB_DrawElementsWithCounters(tri: srfTriangles_s) {
         backEnd!!.pc.c_drawElements++
         backEnd!!.pc.c_drawIndexes += tri.numIndexes
         backEnd!!.pc.c_drawVertexes += tri.numVerts
-        DEBUG_RB_DrawElementsWithCounters++
-        //        TempDump.printCallStack("" + DEBUG_RB_DrawElementsWithCounters);
         if (tri.ambientSurface != null) {
-            if (tri.indexes.contentEquals(tri.ambientSurface!!.indexes)) {
+            if (tri.indexes === tri.ambientSurface!!.indexes) {
                 backEnd!!.pc.c_drawRefIndexes += tri.numIndexes
             }
-            if (tri.verts.contentEquals(tri.ambientSurface!!.verts)) {
+            if (tri.verts === tri.ambientSurface!!.verts) {
                 backEnd!!.pc.c_drawRefVertexes += tri.numVerts
             }
         }
@@ -135,8 +123,7 @@ object tr_render {
             if (r_useIndexBuffers.GetBool()) {
                 VertexCache.vertexCache.UnbindIndex()
             }
-            //            if(tri.DBG_count!=11)
-            qgl.qglDrawElements(GL11.GL_TRIANGLES, count, Model.GL_INDEX_TYPE /*GL_UNSIGNED_INT*/, tri.indexes)
+            qgl.qglDrawElements(GL11.GL_TRIANGLES, count, Model.GL_INDEX_TYPE, tri.indexes)
         }
     }
 
@@ -185,7 +172,7 @@ object tr_render {
             return
         }
         val ac =
-            idDrawVert(VertexCache.vertexCache.Position(tri.ambientCache)) //TODO:figure out how to work these damn casts.
+            idDrawVert(VertexCache.vertexCache.Position(tri.ambientCache))
         qgl.qglVertexPointer(3, GL11.GL_FLOAT, idDrawVert.BYTES, ac.xyzOffset().toLong())
         qgl.qglTexCoordPointer(2, GL11.GL_FLOAT, idDrawVert.BYTES, ac.stOffset().toLong())
         RB_DrawElementsWithCounters(tri)
@@ -199,8 +186,6 @@ object tr_render {
     fun RB_EnterWeaponDepthHack() {
         qgl.qglDepthRange(0.0f, 0.5f)
         val matrix = FloatArray(16)
-
-//	memcpy( matrix, backEnd!!.viewDef!!.projectionMatrix, sizeof( matrix ) );
         System.arraycopy(backEnd!!.viewDef!!.projectionMatrix, 0, matrix, 0, matrix.size)
         matrix[14] *= 0.25f
         qgl.qglMatrixMode(GL11.GL_PROJECTION)
@@ -216,8 +201,6 @@ object tr_render {
     fun RB_EnterModelDepthHack(depth: Float) {
         qgl.qglDepthRange(0.0f, 1.0f)
         val matrix = FloatArray(16)
-
-//	memcpy( matrix, backEnd!!.viewDef!!.projectionMatrix, sizeof( matrix ) );
         System.arraycopy(backEnd!!.viewDef!!.projectionMatrix, 0, matrix, 0, matrix.size)
         matrix[14] -= depth
         qgl.qglMatrixMode(GL11.GL_PROJECTION)
@@ -289,7 +272,6 @@ object tr_render {
 
     fun RB_RenderDrawSurfChainWithFunction(drawSurfs: drawSurf_s?, triFunc_: triFunc) {
         var drawSurf: drawSurf_s?
-        DBG_RB_RenderDrawSurfChainWithFunction++
         backEnd!!.currentSpace = null
         drawSurf = drawSurfs
         while (drawSurf != null) {
@@ -331,11 +313,6 @@ object tr_render {
         matrix[4] = shaderRegisters[texture.matrix[0]!![1]]
         matrix[8] = 0.0f
         matrix[12] = shaderRegisters[texture.matrix[0]!![2]]
-        DBG_RB_GetShaderTextureMatrix++
-        //        System.out.println(">>>>>>" + DBG_RB_GetShaderTextureMatrix);
-//        System.out.println("0:" + Arrays.toString(texture.matrix[0]));
-//        System.out.println("1:" + Arrays.toString(texture.matrix[1]));
-//        System.out.println("<<<<<<" + DBG_RB_GetShaderTextureMatrix);
 
         // we attempt to keep scrolls from generating incredibly large texture values, but
         // center rotations and center scales can still generate offsets that need to be > 1
@@ -367,28 +344,12 @@ object tr_render {
     fun RB_LoadShaderTextureMatrix(shaderRegisters: FloatArray?, texture: textureStage_t?) {
         val matrix = FloatArray(16)
         RB_GetShaderTextureMatrix(shaderRegisters!!, texture!!, matrix)
-        //        final float[] m = matrix;
-//        System.out.printf("RB_LoadShaderTextureMatrix("
-//                + "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f)\n",
-//                m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15]);
-
-//        TempDump.printCallStack("------->" + (DBG_RB_LoadShaderTextureMatrix++));
         qgl.qglMatrixMode(GL11.GL_TEXTURE)
         qgl.qglLoadMatrixf(matrix)
         qgl.qglMatrixMode(GL11.GL_MODELVIEW)
     }
 
     fun RB_BindVariableStageImage(texture: textureStage_t, shaderRegisters: FloatArray?) {
-        DBG_RB_BindVariableStageImage++
-        //        if (DBG_RB_BindVariableStageImage == 50) {
-//            for (drawSurf_s draw : backEnd!!.viewDef!!.drawSurfs) {
-//                System.out.println("=============================");
-//                for (int s = 0; draw != null && s < draw.material.GetNumStages(); s++) {
-//                    if(draw.material.GetStage(s).texture.image[0]!=null)
-//                        System.out.println("ss::"+draw.material.GetStage(s).texture.image[0].texNum);
-//                }
-//            }
-//        }
         if (texture.cinematic[0] != null) {
             val cin: cinData_t?
             if (r_skipDynamicTextures!!.GetBool()) {
@@ -408,10 +369,7 @@ object tr_render {
                 Image.globalImages.blackImage!!.Bind()
             }
         } else {
-            //FIXME: see why image is invalid
             if (texture.image!![0] != null) {
-//                final int titty = texture.image[0].texNum;
-//                if (titty != 58) return;
                 texture.image[0]!!.Bind()
             }
         }
@@ -429,7 +387,7 @@ object tr_render {
         // texgens
         if (texture.texgen == texgen_t.TG_DIFFUSE_CUBE) {
             val vert =
-                idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache)) //TODO:figure out how to work these damn casts.
+                idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
             qgl.qglTexCoordPointer(3, GL11.GL_FLOAT, idDrawVert.BYTES, vert.normal.ToFloatPtr())
         }
         if (texture.texgen == texgen_t.TG_SKYBOX_CUBE || texture.texgen == texgen_t.TG_WOBBLESKY_CUBE) {
@@ -439,12 +397,12 @@ object tr_render {
             qgl.qglEnable(GL11.GL_TEXTURE_GEN_S)
             qgl.qglEnable(GL11.GL_TEXTURE_GEN_T)
             qgl.qglEnable(GL11.GL_TEXTURE_GEN_R)
-            qgl.qglTexGenf(GL11.GL_S, GL11.GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP /*_EXT*/.toFloat())
-            qgl.qglTexGenf(GL11.GL_T, GL11.GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP /*_EXT*/.toFloat())
-            qgl.qglTexGenf(GL11.GL_R, GL11.GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP /*_EXT*/.toFloat())
+            qgl.qglTexGenf(GL11.GL_S, GL11.GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP.toFloat())
+            qgl.qglTexGenf(GL11.GL_T, GL11.GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP.toFloat())
+            qgl.qglTexGenf(GL11.GL_R, GL11.GL_TEXTURE_GEN_MODE, GL13.GL_REFLECTION_MAP.toFloat())
             qgl.qglEnableClientState(GL11.GL_NORMAL_ARRAY)
             val vert =
-                idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache)) // {//TODO:figure out how to work these damn casts.
+                idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
             qgl.qglNormalPointer(GL11.GL_FLOAT, idDrawVert.BYTES, vert.normalOffset().toLong())
             qgl.qglMatrixMode(GL11.GL_TEXTURE)
             val mat = FloatArray(16)
@@ -469,13 +427,13 @@ object tr_render {
                     ) || (texture.texgen == texgen_t.TG_WOBBLESKY_CUBE)
         ) {
             val vert =
-                idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache)) // {//TODO:figure out how to work these damn casts.
+                idDrawVert(VertexCache.vertexCache.Position(surf.geo!!.ambientCache))
             qgl.qglTexCoordPointer(
                 2,
                 GL11.GL_FLOAT,
-                idDrawVert.BYTES,  //			(void *)&(((idDrawVert *)vertexCache.Position( surf.geo.ambientCache )).st) );
+                idDrawVert.BYTES,
                 vert.st.ToFloatPtr()
-            ) //TODO:WDF?
+            )
         }
         if (texture.texgen == texgen_t.TG_REFLECT_CUBE) {
             qgl.qglDisable(GL11.GL_TEXTURE_GEN_S)
@@ -578,7 +536,7 @@ object tr_render {
      */
     fun RB_BeginDrawingView() {
 
-        val viewDef = viewDef_s(backEnd!!.viewDef!!)
+        val viewDef = backEnd!!.viewDef!!
 
         // set the modelview matrix for the viewer
         qglMatrixMode(GL_PROJECTION)
@@ -700,7 +658,6 @@ object tr_render {
                     ) || (din.specularColor[1] > 0
                     ) || (din.specularColor[2] > 0)) && din.specularImage !== Image.globalImages.blackImage))
         ) {
-            DBG_RB_SubmittInteraction++
             drawInteraction.run(din)
         }
     }
@@ -799,16 +756,16 @@ object tr_render {
             if (0.0f == lightRegs[lightStage!!.conditionRegister]) {
                 continue
             }
-            inter.lightImage = lightStage.texture.image!![0] //TODO:pointeR?
+            inter.lightImage = lightStage.texture.image!![0]
 
-//            memcpy(inter.lightProjection, lightProject, sizeof(inter.lightProjection));
             for (i in inter.lightProjection.indices) {
                 inter.lightProjection[i] = lightProject[i].ToVec4()
             }
             // now multiply the texgen by the light texture matrix
             if (lightStage.texture.hasMatrix) {
                 RB_GetShaderTextureMatrix(lightRegs, lightStage.texture, backEnd!!.lightTextureMatrix)
-                draw_common.RB_BakeTextureMatrixIntoTexgen( /*reinterpret_cast<class idPlane *>*/inter.lightProjection as Array<idVec4>,
+                draw_common.RB_BakeTextureMatrixIntoTexgen(
+                    inter.lightProjection as Array<idVec4>,
                     backEnd!!.lightTextureMatrix
                 )
             }
@@ -933,31 +890,40 @@ object tr_render {
         // now it must be reverted to the real render view so the scene gets rendered
         // from the actual current players point of view
         if (r_lockSurfaces.GetBool() && tr.primaryView == cmd.viewDef) {
-            val origParms = viewDef_s(cmd.viewDef!!)
-            cmd.viewDef
+            val parms = cmd.viewDef!!
+            val origParms = viewDef_s(parms)
             val real = tr.lockSurfacesRealViewDef!!
-            cmd.viewDef!!.apply {
-                renderView = real.renderView
-                projectionMatrix = real.projectionMatrix.copyOf()
-                worldSpace = real.worldSpace
-                // ... other camera-position fields ...
-                // restore draw-data from original:
-                renderWorld = origParms.renderWorld
-                floatTime = origParms.floatTime
-                drawSurfs = origParms.drawSurfs
-                numDrawSurfs = origParms.numDrawSurfs
-                maxDrawSurfs = origParms.maxDrawSurfs
-                viewLights = origParms.viewLights
-                viewEntitys = origParms.viewEntitys
-                connectedAreas = origParms.connectedAreas
+
+            // C++: *parms = tr.lockSurfacesRealViewDef — copy ALL camera-related fields from real view
+            parms.renderView = renderView_s(real.renderView)
+            parms.projectionMatrix = real.projectionMatrix.copyOf()
+            parms.worldSpace = viewEntity_s(real.worldSpace)
+            parms.viewport = idScreenRect(real.viewport)
+            parms.scissor = idScreenRect(real.scissor)
+            parms.isSubview = real.isSubview
+            parms.isMirror = real.isMirror
+            parms.areaNum = real.areaNum
+            parms.initialViewAreaOrigin.set(real.initialViewAreaOrigin)
+            for (i in real.frustum.indices) {
+                parms.frustum[i] = idPlane(real.frustum[i])
             }
-            var vModel = cmd.viewDef!!.viewEntitys
+
+            // restore draw-data from original (locked) view
+            parms.renderWorld = origParms.renderWorld
+            parms.floatTime = origParms.floatTime
+            parms.drawSurfs = origParms.drawSurfs
+            parms.numDrawSurfs = origParms.numDrawSurfs
+            parms.maxDrawSurfs = origParms.maxDrawSurfs
+            parms.viewLights = origParms.viewLights
+            parms.viewEntitys = origParms.viewEntitys
+            parms.connectedAreas = origParms.connectedAreas
+
+            var vModel = parms.viewEntitys
             while (vModel != null) {
-                myGlMultMatrix(vModel.modelMatrix, cmd.viewDef!!.worldSpace.modelViewMatrix, vModel.modelViewMatrix)
+                myGlMultMatrix(vModel.modelMatrix, parms.worldSpace.modelViewMatrix, vModel.modelViewMatrix)
                 vModel = vModel.next
             }
         }
-
 
         backEnd!!.viewDef = cmd.viewDef
 

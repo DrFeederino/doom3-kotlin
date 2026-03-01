@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/Image_process.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.framework.Common.Companion.common
@@ -25,28 +51,18 @@ object Image_process {
         var outheight: Int = outheight
         var i: Int
         var j: Int
-        var inrow: ByteBuffer
-        var inrow2: ByteBuffer
-        /*unsigned*/
         var frac: Int
         val fracstep: Int
-        /*unsigned*/
         val p1 = IntArray(MAX_DIMENSION)
         val p2 = IntArray(MAX_DIMENSION)
-        var pix1: ByteBuffer
-        var pix2: ByteBuffer
-        var pix3: ByteBuffer
-        var pix4: ByteBuffer
         val out: ByteBuffer
-        val out_p: ByteBuffer
         if (outwidth > MAX_DIMENSION) {
             outwidth = MAX_DIMENSION
         }
         if (outheight > MAX_DIMENSION) {
             outheight = MAX_DIMENSION
         }
-        out = ByteBuffer.allocate(outwidth * outheight * 4) //(byte *)R_StaticAlloc( outwidth * outheight * 4 );
-        out_p = out
+        out = ByteBuffer.allocate(outwidth * outheight * 4)
         fracstep = inwidth * 0x10000 / outwidth
         frac = fracstep shr 2
         i = 0
@@ -64,32 +80,55 @@ object Image_process {
         }
         i = 0
         while (i < outheight) {
-            inrow = `in`.duplicate()
-            inrow.position(4 * inwidth * (((i + 0.25f) * inheight / outheight).toInt()))
-            inrow2 = `in`.duplicate() //
-            inrow2.position(4 * inwidth * (((i + 0.75f) * inheight / outheight).toInt()))
-            frac = fracstep shr 1
+            // Use absolute byte offsets for row/column addressing
+            val inrowOff = 4 * inwidth * (((i + 0.25f) * inheight / outheight).toInt())
+            val inrow2Off = 4 * inwidth * (((i + 0.75f) * inheight / outheight).toInt())
             j = 0
             while (j < outwidth) {
-                pix1 = inrow.duplicate().position(p1[j])
-                pix2 = inrow.duplicate().position(p2[j])
-                pix3 = inrow2.duplicate().position(p1[j])
-                pix4 = inrow2.duplicate().position(p2[j])
-                out_p.put((addUnsignedBytes(pix1.get(), pix2.get(), pix3.get(), pix4.get()) shr 2).toByte())
-                out_p.put((addUnsignedBytes(pix1.get(), pix2.get(), pix3.get(), pix4.get()) shr 2).toByte())
-                out_p.put((addUnsignedBytes(pix1.get(), pix2.get(), pix3.get(), pix4.get()) shr 2).toByte())
-                out_p.put((addUnsignedBytes(pix1.get(), pix2.get(), pix3.get(), pix4.get()) shr 2).toByte())
+                val pix1Off = inrowOff + p1[j]
+                val pix2Off = inrowOff + p2[j]
+                val pix3Off = inrow2Off + p1[j]
+                val pix4Off = inrow2Off + p2[j]
+                out.put(
+                    (addUnsignedBytes(
+                        `in`.get(pix1Off),
+                        `in`.get(pix2Off),
+                        `in`.get(pix3Off),
+                        `in`.get(pix4Off)
+                    ) shr 2).toByte()
+                )
+                out.put(
+                    (addUnsignedBytes(
+                        `in`.get(pix1Off + 1),
+                        `in`.get(pix2Off + 1),
+                        `in`.get(pix3Off + 1),
+                        `in`.get(pix4Off + 1)
+                    ) shr 2).toByte()
+                )
+                out.put(
+                    (addUnsignedBytes(
+                        `in`.get(pix1Off + 2),
+                        `in`.get(pix2Off + 2),
+                        `in`.get(pix3Off + 2),
+                        `in`.get(pix4Off + 2)
+                    ) shr 2).toByte()
+                )
+                out.put(
+                    (addUnsignedBytes(
+                        `in`.get(pix1Off + 3),
+                        `in`.get(pix2Off + 3),
+                        `in`.get(pix3Off + 3),
+                        `in`.get(pix4Off + 3)
+                    ) shr 2).toByte()
+                )
                 j++
             }
             i++
         }
-        return out
+        return out.also { it.position(0) }
     }
 
     /*
-     ================
-     R_Dropsample
-
      Used to resample images in a more general than quartering fashion.
      Normal maps and such should not be bilerped.
      ================
@@ -102,11 +141,11 @@ object Image_process {
         var pix1: Int
         val out: ByteArray
         var out_p: Int
-        out = ByteArray(outwidth * outheight * 4) // R_StaticAlloc(outwidth * outheight * 4);
+        out = ByteArray(outwidth * outheight * 4)
         out_p = 0
         i = 0
         while (i < outheight) {
-            inrow =  /*in +*/(4 * inwidth * (((i + 0.25f) * inheight / outheight).toInt()))
+            inrow = 4 * inwidth * (((i + 0.25f) * inheight / outheight).toInt())
             j = 0
             while (j < outwidth) {
                 k = j * inwidth / outwidth
@@ -132,7 +171,7 @@ object Image_process {
     fun R_SetBorderTexels(inBase: ByteBuffer?, width: Int, height: Int, border: ByteArray /*[4]*/) {
         var i: Int
         var out: Int
-        out = 0 //inBase;
+        out = 0
         i = 0
         while (i < height) {
             inBase!!.put(out + 0, border[0])
@@ -142,7 +181,7 @@ object Image_process {
             i++
             out += width * 4
         }
-        out =  /*inBase+*/(width - 1) * 4
+        out = (width - 1) * 4
         i = 0
         while (i < height) {
             inBase!!.put(out + 0, border[0])
@@ -152,7 +191,7 @@ object Image_process {
             i++
             out += width * 4
         }
-        out = 0 //inBase;
+        out = 0
         i = 0
         while (i < width) {
             inBase!!.put(out + 0, border[0])
@@ -162,7 +201,7 @@ object Image_process {
             i++
             out += 4
         }
-        out =  /*inBase+*/width * 4 * (height - 1)
+        out = width * 4 * (height - 1)
         i = 0
         while (i < width) {
             inBase!!.put(out + 0, border[0])
@@ -190,7 +229,7 @@ object Image_process {
         plane = row * depth
         j = 1
         while (j < depth - 1) {
-            out =  /*inBase +*/j * plane
+            out = j * plane
             i = 0
             while (i < height) {
                 inBase.put(out + 0, border[0])
@@ -200,7 +239,7 @@ object Image_process {
                 i++
                 out += row
             }
-            out =  /*inBase+*/(width - 1) * 4 + j * plane
+            out = (width - 1) * 4 + j * plane
             i = 0
             while (i < height) {
                 inBase.put(out + 0, border[0])
@@ -210,7 +249,7 @@ object Image_process {
                 i++
                 out += row
             }
-            out =  /*inBase +*/j * plane
+            out = j * plane
             i = 0
             while (i < width) {
                 inBase.put(out + 0, border[0])
@@ -220,7 +259,7 @@ object Image_process {
                 i++
                 out += 4
             }
-            out =  /*inBase+*/width * 4 * (height - 1) + j * plane
+            out = width * 4 * (height - 1) + j * plane
             i = 0
             while (i < width) {
                 inBase.put(out + 0, border[0])
@@ -232,7 +271,7 @@ object Image_process {
             }
             j++
         }
-        out = 0 //inBase;
+        out = 0
         i = 0
         while (i < plane) {
             inBase.put(out + 0, border[0])
@@ -242,7 +281,7 @@ object Image_process {
             i += 4
             out += 4
         }
-        out =  /*inBase+*/(depth - 1) * plane
+        out = (depth - 1) * plane
         i = 0
         while (i < plane) {
             inBase.put(out + 0, border[0])
@@ -295,9 +334,9 @@ object Image_process {
         if (0 == newHeight) {
             newHeight = 1
         }
-        out = BufferUtils.createByteBuffer(newWidth * newHeight * 4) // R_StaticAlloc(newWidth * newHeight * 4);
-        out_p = 0 //out;
-        in_p = 0 //in;
+        out = BufferUtils.createByteBuffer(newWidth * newHeight * 4)
+        out_p = 0
+        in_p = 0
         width = width shr 1
         height = height shr 1
         if (width == 0 || height == 0) {
@@ -436,9 +475,9 @@ object Image_process {
         newHeight = height shr 1
         newDepth = depth shr 1
         out =
-            ByteBuffer.allocate(newWidth * newHeight * newDepth * 4) // R_StaticAlloc(newWidth * newHeight * newDepth * 4);
-        out_p = 0 //out;
-        in_p = 0 //in;
+            ByteBuffer.allocate(newWidth * newHeight * newDepth * 4)
+        out_p = 0
+        in_p = 0
         width = width shr 1
         height = height shr 1
         depth = depth shr 1
@@ -530,18 +569,20 @@ object Image_process {
         premult[1] = blend[1] * blend[3]
         premult[2] = blend[2] * blend[3]
 
-        for (i in 0 until pixelCount step 4) {
+        // C++ iterates pixelCount times with data+=4 per pixel
+        for (i in 0 until pixelCount) {
+            val off = i * 4
             data?.put(
-                i + 0,
-                ((data.get(i + 0) * inverseAlpha + premult[0]) shr 9).toByte()
+                off + 0,
+                (((data.get(off + 0).toInt() and 0xFF) * inverseAlpha + premult[0]) shr 9).toByte()
             )
             data?.put(
-                i + 1,
-                ((data.get(i + 0) * inverseAlpha + premult[1]) shr 9).toByte()
+                off + 1,
+                (((data.get(off + 1).toInt() and 0xFF) * inverseAlpha + premult[1]) shr 9).toByte()
             )
             data?.put(
-                i + 2,
-                ((data.get(i + 0) * inverseAlpha + premult[2]) shr 9).toByte()
+                off + 2,
+                (((data.get(off + 2).toInt() and 0xFF) * inverseAlpha + premult[2]) shr 9).toByte()
             )
         }
     }
@@ -561,9 +602,10 @@ object Image_process {
         while (i < height) {
             j = 0
             while (j < width / 2) {
-                temp = data!!.getInt(i * width + j)
-                data.putInt(i * width + j, data.getInt((i * width + width) - 1 - j))
-                data.putInt((i * width + width) - 1 - j, temp)
+                // ByteBuffer getInt/putInt uses byte offset (C++ *(int*)data uses 4-byte elements)
+                temp = data!!.getInt((i * width + j) * 4)
+                data.putInt((i * width + j) * 4, data.getInt((i * width + width - 1 - j) * 4))
+                data.putInt((i * width + width - 1 - j) * 4, temp)
                 j++
             }
             i++
@@ -578,9 +620,10 @@ object Image_process {
         while (i < width) {
             j = 0
             while (j < height / 2) {
-                temp = data!!.getInt(j * width + i)
-                val index: Int = (height - 1 - j) * width + i
-                data.putInt(j * width + i, data.getInt(index))
+                // ByteBuffer getInt/putInt uses byte offset (C++ *(int*)data uses 4-byte elements)
+                temp = data!!.getInt((j * width + i) * 4)
+                val index: Int = ((height - 1 - j) * width + i) * 4
+                data.putInt((j * width + i) * 4, data.getInt(index))
                 data.putInt(index, temp)
                 j++
             }
@@ -592,19 +635,20 @@ object Image_process {
         var i: Int
         var j: Int
         val temp: ByteBuffer
-        temp = ByteBuffer.allocate(width * width * 4) // R_StaticAlloc(width * width * 4);
+        temp = ByteBuffer.allocate(width * width * 4)
         i = 0
         while (i < width) {
             j = 0
             while (j < width) {
-                temp.putInt((i * width + j), data!!.getInt((j * width + i)))
+                // ByteBuffer getInt/putInt uses byte offset (C++ *(int*)data uses 4-byte elements)
+                temp.putInt((i * width + j) * 4, data!!.getInt((j * width + i) * 4))
                 j++
             }
             i++
         }
-//	memcpy( data, temp, width * width * 4 );
-//        System.arraycopy(temp, 0, data, 0, width * width * 4);
-        data!!.put(temp)
-//        R_StaticFree(temp);
+        data!!.position(0)
+        temp.position(0)
+        data.put(temp)
+        data.position(0)
     }
 }

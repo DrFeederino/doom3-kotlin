@@ -163,7 +163,7 @@ object sound {
         var num44kHzSamples = 0
         var numBytes = 0
         var numChannels = 0
-        var numSamplesPerSecond: Long = 0
+        var numSamplesPerSecond = 0
         var start44kHzTime = 0
     }
 

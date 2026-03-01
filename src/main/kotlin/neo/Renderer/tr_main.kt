@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.framework.Common
@@ -82,7 +107,7 @@ object tr_main {
      This uses the "infinite far z" trick
      ===============
      */
-    private val random: idRandom? = null
+    private val random: idRandom = idRandom()
 
     /*
      ======================
@@ -165,7 +190,6 @@ object tr_main {
         block = frame.memory
         while (block != null) {
             nextBlock = block.next
-            block = null
             block = nextBlock
         }
         frame = null
@@ -180,10 +204,10 @@ object tr_main {
     fun R_InitFrameData() {
         val block: frameMemoryBlock_s?
         R_ShutdownFrameData()
-        frameData = frameData_t() // Mem_ClearedAlloc(sizeof(frameData));
+        frameData = frameData_t()
         val frame: frameData_t = frameData!!
         val size: Int = MEMORY_BLOCK_SIZE
-        block = frameMemoryBlock_s() // Mem_Alloc(size /*+ sizeof( *block )*/);
+        block = frameMemoryBlock_s()
         if (null == block) {
             Common.common.FatalError("R_InitFrameData: Mem_Alloc() failed")
         }
@@ -229,19 +253,6 @@ object tr_main {
     @Deprecated("")
     fun R_StaticAlloc(bytes: Int): Any {
         throw UnsupportedOperationException()
-        //        Object buf;
-//
-//        tr.pc.c_alloc++;
-//
-//        tr.staticAllocCount += bytes;
-//
-//        buf = Mem_Alloc(bytes);
-//
-//        // don't exit on failure on zero length allocations since the old code didn't
-//        if (null == buf && (bytes != 0)) {
-//            common.FatalError("R_StaticAlloc failed on %d bytes", bytes);
-//        }
-//        return buf;
     }
 
     /*
@@ -251,8 +262,6 @@ object tr_main {
      */
     @Deprecated("")
     fun R_StaticFree(data: Any?) {
-//        tr.pc.c_free++;
-//        Mem_Free(data);
         throw UnsupportedOperationException()
     }
 
@@ -283,50 +292,6 @@ object tr_main {
      */
     @Deprecated("")
     fun R_FrameAlloc(bytes: Int): Any {
-//        frameData_t frame;
-//        frameMemoryBlock_s block;
-//        Object buf;
-//
-//        bytes = (bytes + 16) & ~15;
-//        // see if it can be satisfied in the current block
-//        frame = frameData;
-//        block = frame.alloc;
-//
-//        if (block.size - block.used >= bytes) {
-//            buf = block.base + block.used;
-//            block.used += bytes;
-//            return buf;
-//        }
-//
-//        // advance to the next memory block if available
-//        block = block.next;
-//        // create a new block if we are at the end of
-//        // the chain
-//        if (null == block) {
-//            int size;
-//
-//            size = MEMORY_BLOCK_SIZE;
-//            block = (frameMemoryBlock_s) Mem_Alloc(size /*+ sizeof( *block )*/);
-//            if (null == block) {
-//                common.FatalError("R_FrameAlloc: Mem_Alloc() failed");
-//            }
-//            block.size = size;
-//            block.used = 0;
-//            block.next = null;
-//            frame.alloc.next = block;
-//        }
-//
-//        // we could fix this if we needed to...
-//        if (bytes > block.size) {
-//            common.FatalError("R_FrameAlloc of %d exceeded MEMORY_BLOCK_SIZE",
-//                    bytes);
-//        }
-//
-//        frame.alloc = block;
-//
-//        block.used = bytes;
-//
-//        return block.base;
         throw UnsupportedOperationException()
     }
 
@@ -337,11 +302,6 @@ object tr_main {
      */
     @Deprecated("")
     fun R_ClearedFrameAlloc(bytes: Int): Any {
-//        Object r;
-//
-//        r = R_FrameAlloc(bytes);
-//        SIMDProcessor.Memset(r, 0, bytes);
-//        return r;
         throw UnsupportedOperationException()
     }
 
@@ -382,42 +342,13 @@ object tr_main {
     // FIXME: these assume no skewing or scaling transforms
     fun R_LocalPointToGlobal(modelMatrix: FloatArray /*[16]*/, `in`: idVec3): idVec3 {
         val out = idVec3()
-
-// if (MACOS_X && __i386__){
-        // __m128 m0, m1, m2, m3;
-        // __m128 in0, in1, in2;
-        // float i0,i1,i2;
-        // i0 = in[0];
-        // i1 = in[1];
-        // i2 = in[2];
-        // m0 = _mm_loadu_ps(&modelMatrix[0]);
-        // m1 = _mm_loadu_ps(&modelMatrix[4]);
-        // m2 = _mm_loadu_ps(&modelMatrix[8]);
-        // m3 = _mm_loadu_ps(&modelMatrix[12]);
-        // in0 = _mm_load1_ps(&i0);
-        // in1 = _mm_load1_ps(&i1);
-        // in2 = _mm_load1_ps(&i2);
-        // m0 = _mm_mul_ps(m0, in0);
-        // m1 = _mm_mul_ps(m1, in1);
-        // m2 = _mm_mul_ps(m2, in2);
-        // m0 = _mm_add_ps(m0, m1);
-        // m0 = _mm_add_ps(m0, m2);
-        // m0 = _mm_add_ps(m0, m3);
-        // _mm_store_ss(&out[0], m0);
-        // m1 = (__m128) _mm_shuffle_epi32((__m128i)m0, 0x55);
-        // _mm_store_ss(&out[1], m1);
-        // m2 = _mm_movehl_ps(m2, m0);
-        // _mm_store_ss(&out[2], m2);
-// }else
-        run({
-            out.set(
-                idVec3(
-                    ((`in`[0] * modelMatrix[0]) + (`in`[1] * modelMatrix[4]) + (`in`[2] * modelMatrix[8]) + modelMatrix[12]),
-                    ((`in`[0] * modelMatrix[1]) + (`in`[1] * modelMatrix[5]) + (`in`[2] * modelMatrix[9]) + modelMatrix[13]),
-                    ((`in`[0] * modelMatrix[2]) + (`in`[1] * modelMatrix[6]) + (`in`[2] * modelMatrix[10]) + modelMatrix[14])
-                )
+        out.set(
+            idVec3(
+                ((`in`[0] * modelMatrix[0]) + (`in`[1] * modelMatrix[4]) + (`in`[2] * modelMatrix[8]) + modelMatrix[12]),
+                ((`in`[0] * modelMatrix[1]) + (`in`[1] * modelMatrix[5]) + (`in`[2] * modelMatrix[9]) + modelMatrix[13]),
+                ((`in`[0] * modelMatrix[2]) + (`in`[1] * modelMatrix[6]) + (`in`[2] * modelMatrix[10]) + modelMatrix[14])
             )
-        })
+        )
         return out
     }
 
@@ -570,20 +501,12 @@ object tr_main {
                 j++
             }
             if (j == 8) {
-//                System.out.println("<<<<<<<<<<< " + DBG_R_CornerCullLocalBox);
-//                System.out.println(">>>>>>>>>>> " + Arrays.toString(transformed));
-//                System.out.println(">>>>>>>>>>> " + Arrays.toString(dists));
-//                System.out.println("<<<<<<<<<<< " + DBG_R_CornerCullLocalBox);
                 // all points were behind one of the planes
                 tr.pc!!.c_box_cull_out++
                 return true
             }
             i++
         }
-        //        System.out.println("<<<<<<<<<<< " + DBG_R_CornerCullLocalBox);
-//        System.out.println(">>>>>>>>>>> " + Arrays.toString(transformed));
-//        System.out.println(">>>>>>>>>>> " + Arrays.toString(dists));
-//        System.out.println("<<<<<<<<<<< " + DBG_R_CornerCullLocalBox);
         tr.pc!!.c_box_cull_in++
         return false // not culled
     }
@@ -766,7 +689,7 @@ object tr_main {
         val origin = idVec3()
         val viewerMatrix = FloatArray(16)
         viewDef.worldSpace = viewEntity_s()
-        val world: viewEntity_s = viewDef.worldSpace //memset(world, 0, sizeof(world));
+        val world: viewEntity_s = viewDef.worldSpace
 
         // the model matrix is an identity
         world.modelMatrix[0 * 4 + 0] = 1.0f
@@ -812,7 +735,7 @@ object tr_main {
         // frames are going to be blended together
         // for motion blurred anti-aliasing
         if (r_jitter!!.GetBool()) {
-            jitterx = random!!.RandomFloat()
+            jitterx = random.RandomFloat()
             jittery = random.RandomFloat()
         } else {
             jittery = 0.0f
@@ -950,32 +873,12 @@ object tr_main {
      */
     fun R_SortDrawSurfs() {
         // sort the drawsurfs by sort type, then orientation, then shader
-//        qsort(tr.viewDef!!.drawSurfs, tr.viewDef!!.numDrawSurfs, sizeof(tr.viewDef!!.drawSurfs[0]), R_QsortSurfaces);
         if (tr.viewDef!!.drawSurfs != null) {
             Arrays.sort(tr.viewDef!!.drawSurfs, 0, tr.viewDef!!.numDrawSurfs, R_QsortSurfaces())
-            //            int bla = 0;
-//            for (int i = 0; i < tr.viewDef!!.numDrawSurfs; i++) {
-//                Material.shaderStage_t[] stages = tr.viewDef!!.drawSurfs[i].material.stages;
-//                if (stages != null && stages[0].texture.image[0] != null &&
-//                        stages[0].texture.image[0].imgName.toString().contains("env/cloudy")) {
-//                    tr.viewDef!!.drawSurfs[bla++] = tr.viewDef!!.drawSurfs[i];
-//                    System.out.println(stages[0].texture.image[0].imgName);
-//                }
-//            }
-//            tr.viewDef!!.numDrawSurfs = bla;
-//
-//            final int from = 61;
-//            final int to = Math.min(tr.viewDef!!.numDrawSurfs - from, from + 1);
-//            tr.viewDef!!.drawSurfs = Arrays.copyOfRange(tr.viewDef!!.drawSurfs, from, to);
-//            tr.viewDef!!.numDrawSurfs = to - from;
-//           tr.viewDef!!.drasawwwwwwwwwwwwwwwwwwwwwwwwwwwwaw a    wSurfs[0].geo.indexes = null;
         }
     }
 
     //========================================================================
-    //    
-    //    
-    //==============================================================================
     fun R_RenderView(parms: viewDef_s) {
         val oldView: viewDef_s?
         DEBUG_R_RenderView++
@@ -983,7 +886,6 @@ object tr_main {
             return
         }
         tr.viewCount++
-        //        System.out.println("tr.viewCount::R_RenderView");
 
         // save view in case we are a subview
         oldView = tr.viewDef
@@ -1003,7 +905,6 @@ object tr_main {
 
         // identify all the visible portalAreas, and the entityDefs and
         // lightDefs that are in them and pass culling.
-//	static_cast<idRenderWorldLocal *>(parms.renderWorld).FindViewLightsAndEntities();
         parms.renderWorld!!.FindViewLightsAndEntities()
 
         // constrain the view frustum to the view lights and entities
@@ -1035,7 +936,6 @@ object tr_main {
 
         // write everything needed to the demo file
         if (Session.session.writeDemo != null) {
-//		static_cast<idRenderWorldLocal *>(parms.renderWorld)->WriteVisibleDefs( tr.viewDef );
             parms.renderWorld!!.WriteVisibleDefs(tr.viewDef!!)
         }
 

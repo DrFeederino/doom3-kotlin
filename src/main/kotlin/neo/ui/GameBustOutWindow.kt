@@ -378,7 +378,7 @@ object GameBustOutWindow {
 
         //
         private var bigPaddleTime = 0
-        private val board: Array<idList<BOBrick>?> = arrayOfNulls<idList<BOBrick>>(BOARD_ROWS)
+        private val board: Array<idList<BOBrick>?> = Array(BOARD_ROWS) { idList<BOBrick>() }
         private var boardDataLoaded = false
         private var currentLevel = 0
         private var gameOver = false
@@ -781,12 +781,12 @@ object GameBustOutWindow {
                         var pType: Float //= 0.0f;
                         val bent = BOEntity(this)
                         val brick = BOBrick(bent, bx, by, stepx, stepy)
-                        bcolor.x = levelBoardData!![currentBoard + pixelindex + 0] / 255.0f
-                        bcolor.y = levelBoardData!![currentBoard + pixelindex + 1] / 255.0f
-                        bcolor.z = levelBoardData!![currentBoard + pixelindex + 2] / 255.0f
+                        bcolor.x = (levelBoardData!![currentBoard + pixelindex + 0].toInt() and 0xFF) / 255.0f
+                        bcolor.y = (levelBoardData!![currentBoard + pixelindex + 1].toInt() and 0xFF) / 255.0f
+                        bcolor.z = (levelBoardData!![currentBoard + pixelindex + 2].toInt() and 0xFF) / 255.0f
                         bcolor.w = 1.0f
                         brick.SetColor(bcolor)
-                        pType = levelBoardData!![pixelindex + 3] / 255.0f
+                        pType = (levelBoardData!![currentBoard + pixelindex + 3].toInt() and 0xFF) / 255.0f
                         if (pType > 0.0f && pType < 1.0f) {
                             if (pType < 0.5f) {
                                 brick.powerup = powerupType_t.POWERUP_BIGPADDLE
@@ -859,13 +859,15 @@ object GameBustOutWindow {
 
         private fun UpdatePowerups() {
             val pos = idVec2()
-            for (i in 0 until powerUps.Num()) {
+            var i = 0
+            while (i < powerUps.Num()) {
                 val pUp = powerUps[i]
 
                 // Check for powerup falling below screen
                 if (pUp.position.y > 480) {
                     powerUps.RemoveIndex(i)
                     pUp.removed = true
+                    i++
                     continue
                 }
 
@@ -906,6 +908,7 @@ object GameBustOutWindow {
                     powerUps.RemoveIndex(i)
                     pUp.removed = true
                 }
+                i++
             }
         }
 
@@ -1003,7 +1006,7 @@ object GameBustOutWindow {
                     while (j < num) {
                         val brick = board[i]!![j]
                         collision = brick.checkCollision(ballCenter, ball.velocity)
-                        if (collision != null) {
+                        if (collision != collideDir_t.COLLIDE_NONE) {
                             // Now break the brick if there was a collision
                             brick.isBroken = true
                             brick.ent!!.fadeOut = true
@@ -1023,7 +1026,7 @@ object GameBustOutWindow {
                         }
                         j++
                     }
-                    if (collision != null) {
+                    if (collision != collideDir_t.COLLIDE_NONE) {
                         playSoundBrick = true
                         break
                     }
@@ -1078,7 +1081,7 @@ object GameBustOutWindow {
 
         private fun UpdateScore() {
             if (gameOver) {
-                gui!!.HandleNamedEvent("GameOver") //TODO:put text in property files for localization.
+                gui!!.HandleNamedEvent("GameOver")
                 return
             }
 

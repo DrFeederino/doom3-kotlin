@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/GuiModel.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.Renderer.Material.idMaterial
@@ -52,9 +78,6 @@ class GuiModel {
             indexes.SetNum(0, false)
             verts.SetNum(0, false)
             AdvanceSurf()
-            //            if (bla) {
-            clear++
-            //            }
         }
 
         fun WriteToDemo(demo: idDemoFile?) {
@@ -88,8 +111,7 @@ class GuiModel {
             while (j < i) {
                 val surf = surfaces[j]
 
-//                demo.WriteInt((int) surf.material);
-                demo.Write(surf.material!!)
+                demo.WriteInt(0) // C++ writes (int&)surf->material; we write 0 for compat
                 demo.WriteFloat(surf.color[0])
                 demo.WriteFloat(surf.color[1])
                 demo.WriteFloat(surf.color[2])
@@ -144,8 +166,7 @@ class GuiModel {
             while (j < i._val) {
                 val surf = surfaces[j]
 
-//                demo.ReadInt((int) surf.material);
-                demo.Read(surf.material!!) //TODO:serialize?
+                demo.ReadInt(k) // C++ reads (int&)surf->material; consume for compat
                 surf.color[0] = demo.ReadFloat()
                 surf.color[1] = demo.ReadFloat()
                 surf.color[2] = demo.ReadFloat()
@@ -161,19 +182,15 @@ class GuiModel {
 
         fun EmitToCurrentView(modelMatrix: FloatArray /*[16]*/, depthHack: Boolean) {
             val modelViewMatrix = FloatArray(16)
-            var worldMVM = if (r_lockSurfaces.GetBool() && tr.viewDef == tr.primaryView) {
-                tr.lockSurfacesRealViewDef?.worldSpace?.modelViewMatrix
-            } else {
-                tr.viewDef!!.worldSpace.modelViewMatrix
-            }
+            var worldMVM = tr.viewDef!!.worldSpace.modelViewMatrix
 
             // DG: for r_lockSurfaces use the real world modelViewMatrix
             //     so GUIs don't float around
             if (r_lockSurfaces.GetBool() && tr.viewDef == tr.primaryView) {
-                worldMVM = tr.lockSurfacesRealViewDef?.worldSpace?.modelViewMatrix
+                worldMVM = tr.lockSurfacesRealViewDef?.worldSpace?.modelViewMatrix ?: worldMVM
             }
 
-            myGlMultMatrix(modelMatrix, worldMVM!!, modelViewMatrix)
+            myGlMultMatrix(modelMatrix, worldMVM, modelViewMatrix)
 
             for (i in 0 until surfaces.Num()) {
                 EmitSurface(surfaces[i], modelMatrix, modelViewMatrix, depthHack)
@@ -235,16 +252,13 @@ class GuiModel {
             viewDef.worldSpace.modelViewMatrix[15] = 1.0f
             viewDef.maxDrawSurfs = surfaces.Num()
             viewDef.drawSurfs =
-                drawSurf_s.generateArray(viewDef.maxDrawSurfs) ///*(drawSurf_t **)*/ R_FrameAlloc(viewDef!!.maxDrawSurfs * sizeof(viewDef!!.drawSurfs[0]));
+                drawSurf_s.generateArray(viewDef.maxDrawSurfs);
             viewDef.numDrawSurfs = 0
             val oldViewDef = tr.viewDef
             tr.viewDef = viewDef
 
             // add the surfaces to this view
             for (i in 0 until surfaces.Num()) {
-                if (i == 33) {
-                    surfaces[i].material!!.DBG_BALLS = i
-                }
                 EmitSurface(surfaces[i], viewDef.worldSpace.modelMatrix, viewDef.worldSpace.modelViewMatrix, false)
             }
             tr.viewDef = oldViewDef
@@ -255,7 +269,6 @@ class GuiModel {
 
         // these calls are forwarded from the renderer
         fun SetColor(r: Float, g: Float, b: Float, a: Float) {
-            setColorTotal++
             if (!glConfig.isInitialized) {
                 return
             }
@@ -263,12 +276,7 @@ class GuiModel {
                 return  // no change
             }
             if (surf!!.numVerts != 0) {
-//                if (bla) {
-//                }
-//                TempDump.printCallStack(setColorTotal + "");
-//                System.out.printf("%d\n", setColorTotal);
                 AdvanceSurf()
-                setColor++
             }
 
             // change the parms
@@ -290,8 +298,6 @@ class GuiModel {
             max_x: Float /*= 640.0f*/,
             max_y: Float /*= 480.0f*/
         ) {
-//            TempDump.printCallStack(bla4+"");
-            bla4++
             if (!glConfig.isInitialized) {
                 return
             }
@@ -300,19 +306,12 @@ class GuiModel {
             }
 
             // break the current surface if we are changing to a new material
-//                    if (bla) {
-//                    }
-//            System.out.printf("%s\n%s\n\n", hShader, surf.material);
             if (hShader !== surf!!.material) {
                 if (surf!!.numVerts != 0) {
                     AdvanceSurf()
-                    //                    if (bla) {
-//                    System.out.printf("~~ %d %d\n", Window.idWindow.bla1, Window.idWindow.bla2);
-//                    }
                 }
                 hShader.EnsureNotPurged() // in case it was a gui item started before a level change
                 surf!!.material = hShader
-                //                TempDump.printCallStack(bla4 + "");
             }
 
             // add the verts and indexes to the current surface
@@ -406,8 +405,6 @@ class GuiModel {
                     i += 3
                 }
             } else {
-                drawStretchPic++
-                //                if (dVerts[0].xyz.x == 212) {
                 val numVerts = verts.Num()
                 val numIndexes = indexes.Num()
                 verts.AssureSize(numVerts + vertCount)
@@ -418,11 +415,9 @@ class GuiModel {
                     indexes[numIndexes + i] = numVerts + dIndexes[i] - surf!!.firstVert
                 }
 
-                //                memcpy( & verts[numVerts], dverts, vertCount * sizeof(verts[0]));
                 for (i in 0 until vertCount) {
                     verts[i + numVerts] = idDrawVert(dVerts[i])
                 }
-                //                }
             }
         }
 
@@ -553,7 +548,6 @@ class GuiModel {
             verts[3].tangents[1][1] = 1.0f
             verts[3].tangents[1][2] = 0.0f
             this.DrawStretchPic(verts /*[0]*/, indexes /*[0]*/, 4, 6, hShader, false, 0.0f, 0.0f, 640.0f, 480.0f)
-            bla99++
         }
 
         /*
@@ -633,9 +627,6 @@ class GuiModel {
             if (material !== surf!!.material) {
                 if (surf!!.numVerts != 0) {
                     AdvanceSurf()
-                    if (bla) {
-                        bla4++
-                    }
                 }
                 /*const_cast<idMaterial *>*/material.EnsureNotPurged() // in case it was a gui item started before a level change
                 surf!!.material = material
@@ -650,7 +641,6 @@ class GuiModel {
                 indexes[numIndexes + i] = numVerts + tempIndexes[i] - surf!!.firstVert
             }
 
-//            memcpy(verts[numVerts], tempVerts, vertCount * sizeof(verts[0]));
             for (i in 0 until vertCount) {
                 verts[numVerts + i] = idDrawVert(tempVerts[i]!!)
             }
@@ -678,12 +668,6 @@ class GuiModel {
             s.firstVert = verts.Num()
             surfaces.Append(s)
             surf = surfaces[surfaces.Num() - 1]
-            //            TempDump.printCallStack(bla555 + "");
-            setColorTotal
-            setColor
-            clear
-            drawStretchPic
-            bla555++
         }
 
         private fun EmitSurface(
@@ -698,12 +682,11 @@ class GuiModel {
             }
 
             // copy verts and indexes
-            tri = srfTriangles_s() ///*(srfTriangles_s *)*/ R_ClearedFrameAlloc(sizeof(tri));
+            tri = srfTriangles_s()
             tri.numIndexes = surf.numIndexes
-            tri.numVerts = surf.numVerts //TODO:see if we can get rid of these single element arrays. EDIT:done.
+            tri.numVerts = surf.numVerts
             tri.indexes =
-                IntArray(tri.numIndexes) ///*(glIndex_t *)*/ R_FrameAlloc(tri.numIndexes * sizeof(tri.indexes[0]));
-            //            memcpy(tri.indexes, indexes[surf.firstIndex], tri.numIndexes * sizeof(tri.indexes[0]));
+                IntArray(tri.numIndexes)
             var s = surf.firstIndex
             var d = 0
             while (d < tri.numIndexes) {
@@ -716,8 +699,7 @@ class GuiModel {
             // but some things, like deforms and recursive
             // guis, need to access the verts in cpu space, not just through the vertex range
             tri.verts =
-                Array(tri.numVerts) { idDrawVert() } ///*(idDrawVert *)*/ R_FrameAlloc(tri.numVerts * sizeof(tri.verts[0]));
-            //            memcpy(tri.verts,  & verts[surf.firstVert], tri.numVerts * sizeof(tri.verts[0]));
+                Array(tri.numVerts) { idDrawVert() }
             for (i in 0 until tri.numVerts) {
                 tri.verts!![i] = idDrawVert(verts[surf.firstVert + i])
             }
@@ -730,16 +712,13 @@ class GuiModel {
                 return
             }
             val renderEntity: renderEntity_s
-            renderEntity = renderEntity_s() //memset( & renderEntity, 0, sizeof(renderEntity));
-            //            memcpy(renderEntity.shaderParms, surf.color, sizeof(surf.color));
+            renderEntity = renderEntity_s()
             renderEntity.shaderParms[0] = surf.color[0]
             renderEntity.shaderParms[1] = surf.color[1]
             renderEntity.shaderParms[2] = surf.color[2]
             renderEntity.shaderParms[3] = surf.color[3]
-            val guiSpace = viewEntity_s() ///*(viewEntity_t *)*/ R_ClearedFrameAlloc(sizeof( * guiSpace));
-            //            memcpy(guiSpace.modelMatrix, modelMatrix, sizeof(guiSpace.modelMatrix));
+            val guiSpace = viewEntity_s()
             System.arraycopy(modelMatrix, 0, guiSpace.modelMatrix, 0, guiSpace.modelMatrix.size)
-            //            memcpy(guiSpace.modelViewMatrix, modelViewMatrix, sizeof(guiSpace.modelViewMatrix));
             System.arraycopy(modelViewMatrix, 0, guiSpace.modelViewMatrix, 0, guiSpace.modelViewMatrix.size)
             guiSpace.weaponDepthHack = depthHack
 
@@ -747,15 +726,5 @@ class GuiModel {
             tr_light.R_AddDrawSurf(tri, guiSpace, renderEntity, surf.material!!, tr.viewDef!!.scissor)
         }
 
-        companion object {
-            var bla = false
-            var bla555 = 0
-            var bla99 = 0
-            private var clear = 0
-            private var setColor = 0
-            private var setColorTotal = 0
-            private var drawStretchPic = 0
-            private var bla4 = 0
-        }
     }
 }

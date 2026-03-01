@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/Image.h + neo/renderer/Image_load.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.Renderer.Image_files.R_WritePalTGA
@@ -10,7 +36,6 @@ import neo.Renderer.Image_init.R_ReloadImages_f
 import neo.Renderer.Image_init.R_WhiteImage
 import neo.Renderer.Image_init.makeNormalizeVectorCubeMap
 import neo.Renderer.Image_program.R_LoadImageProgram
-import neo.Renderer.Material.idMaterial
 import neo.Renderer.Material.textureFilter_t
 import neo.Renderer.Material.textureRepeat_t
 import neo.TempDump.CPP_class
@@ -222,7 +247,7 @@ object Image {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            return ByteBuffer.allocate(BYTES)
         }
 
         override fun Read(buffer: ByteBuffer) {
@@ -248,7 +273,33 @@ object Image {
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            val buffer = ByteBuffer.allocate(BYTES)
+            buffer.order(ByteOrder.LITTLE_ENDIAN)
+            buffer.putInt(dwSize)
+            buffer.putInt(dwFlags)
+            buffer.putInt(dwHeight)
+            buffer.putInt(dwWidth)
+            buffer.putInt(dwPitchOrLinearSize)
+            buffer.putInt(dwDepth)
+            buffer.putInt(dwMipMapCount)
+            for (a in dwReserved1.indices) {
+                buffer.putInt(dwReserved1[a])
+            }
+            buffer.putInt(ddspf!!.dwSize)
+            buffer.putInt(ddspf!!.dwFlags)
+            buffer.putInt(ddspf!!.dwFourCC)
+            buffer.putInt(ddspf!!.dwRGBBitCount)
+            buffer.putInt(ddspf!!.dwRBitMask)
+            buffer.putInt(ddspf!!.dwGBitMask)
+            buffer.putInt(ddspf!!.dwBBitMask)
+            buffer.putInt(ddspf!!.dwABitMask)
+            buffer.putInt(dwCaps1)
+            buffer.putInt(dwCaps2)
+            for (b in dwReserved2.indices) {
+                buffer.putInt(dwReserved2[b])
+            }
+            buffer.flip()
+            return buffer
         }
 
         companion object {
@@ -349,11 +400,8 @@ object Image {
         var uploadHeight: CInt
         var uploadDepth // after power of two, downsample, and MAX_TEXTURE_SIZE
                 : CInt
-        private var _COUNTER = 0
-
         //
         constructor() {
-            _COUNTER = DEBUG_COUNTER++
             texNum = TEXTURE_NOT_LOADED
             partialImage = null
             type = textureType_t.TT_DISABLED
@@ -376,7 +424,6 @@ object Image {
             levelLoadReferenced = false
             precompressedFile = false
             defaulted = false
-            //            timestamp[0] = 0;
             bindCount = 0
             uploadWidth = CInt()
             uploadHeight = CInt()
@@ -385,7 +432,6 @@ object Image {
             cacheUsageNext = null
             cacheUsagePrev = cacheUsageNext
             hashNext = null
-            //            isMonochrome[0] = false;
             refCount = 0
         }
 
@@ -505,9 +551,6 @@ object Image {
                 if (tmu.current2DMap != texNum) {
                     tmu.current2DMap = texNum
                     qgl.qglBindTexture(GL11.GL_TEXTURE_2D, texNum)
-                    if (texNum == 25) {
-                        println("Blaaaaaaasphemy!")
-                    }
                 }
             } else if (type == textureType_t.TT_CUBIC) {
                 if (tmu.currentCubeMap != texNum) {
@@ -592,13 +635,10 @@ object Image {
         fun PurgeImage() {
             if (texNum != TEXTURE_NOT_LOADED) {
                 // sometimes is NULL when exiting with an error
-//                if (qglDeleteTextures) {
                 try {
                     qgl.qglDeleteTextures(1, texNum) // this should be the ONLY place it is ever called!
-                } catch (e: RuntimeException) { //TODO:deal with this.
-//                    e.printStackTrace();
+                } catch (e: RuntimeException) {
                 }
-                //                }
                 texNum = TEXTURE_NOT_LOADED
             }
 
@@ -685,7 +725,6 @@ object Image {
 //            scaledBuffer = null;
             // generate the texture number
             texNum = qgl.qglGenTextures()
-            println(">>>>$imgName: $texNum")
 
             // select proper internal format before we resample
             internalFormat = SelectInternalFormat(pic, 1, width, height, depth, isMonochrome)
@@ -695,15 +734,13 @@ object Image {
                 // we must copy even if unchanged, because the border zeroing
                 // would otherwise modify const data
                 scaledBuffer =
-                    BufferUtils.createByteBuffer(width * height * 4) // R_StaticAlloc(scaled_width[0] * scaled_height[0]);
+                    BufferUtils.createByteBuffer(width * height * 4)
                 val temp = ByteArray(width * height * 4)
-                //		memcpy (scaledBuffer, pic, width*height*4);
                 pic.rewind()
                 pic[temp]
-                scaledBuffer.put(temp) //System.arraycopy(pic.array(), 0, scaledBuffer, 0, width * height * 4);
+                scaledBuffer.put(temp)
             } else {
                 // resample down as needed (FIXME: this doesn't seem like it resamples anymore!)
-                //scaledBuffer = R_ResampleTexture( pic, width, height, width >>= 1, height >>= 1 );
                 scaledBuffer = Image_process.R_MipMap(pic, width, height, preserveBorder)
                 width = width shr 1
                 height = height shr 1
@@ -715,7 +752,7 @@ object Image {
                 }
                 while (width > scaled_width._val || height > scaled_height._val) {
                     shrunk = Image_process.R_MipMap(scaledBuffer, width, height, preserveBorder)
-                    scaledBuffer.clear() //R_StaticFree(scaledBuffer);
+                    scaledBuffer.clear()
                     scaledBuffer.put(shrunk)
                     width = width shr 1
                     height = height shr 1
@@ -755,32 +792,12 @@ object Image {
             }
             if (generatorFunction == null && (depth == textureDepth_t.TD_BUMP && idImageManager.image_writeNormalTGA.GetBool() || depth != textureDepth_t.TD_BUMP && idImageManager.image_writeTGA.GetBool())) {
                 // Optionally write out the texture to a .tga
-//                String[] filename = {null};
                 val filename = arrayOfNulls<String>(1)
                 ImageProgramStringToCompressedFileName(imgName.toString(), filename)
                 val ext = filename[0]!!.lastIndexOf('.')
                 if (ext > -1) {
-//			strcpy( ext, ".tga" );
-                    filename[0] = filename[0]!!.substring(0, ext) + ".tga" // + filename[0].substring(ext);
-                    // swap the red/alpha for the write
-                    /*
-                    if ( depth == TD_BUMP ) {
-                        for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 ) {
-                            scaledBuffer[ i ] = scaledBuffer[ i + 3 ];
-                            scaledBuffer[ i + 3 ] = 0;
-                        }
-                    }
-                    */Image_files.R_WriteTGA(filename[0], scaledBuffer, scaled_width._val, scaled_height._val, false)
-
-                    // put it back
-                    /*
-                    if ( depth == TD_BUMP ) {
-                        for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 ) {
-                            scaledBuffer[ i + 3 ] = scaledBuffer[ i ];
-                            scaledBuffer[ i ] = 0;
-                        }
-                    }
-                    */
+                    filename[0] = filename[0]!!.substring(0, ext) + ".tga"
+                    Image_files.R_WriteTGA(filename[0], scaledBuffer, scaled_width._val, scaled_height._val, false)
                 }
             }
 
@@ -800,14 +817,6 @@ object Image {
             // upload the main image level
             Bind()
             if (internalFormat == 0x80E5) {
-                /*
-                 if ( depth == TD_BUMP ) {
-                 for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 ) {
-                 scaledBuffer[ i ] = scaledBuffer[ i + 3 ];
-                 scaledBuffer[ i + 3 ] = 0;
-                 }
-                 }
-                 */
                 UploadCompressedNormalMap(scaled_width._val, scaled_height._val, scaledBuffer.array(), 0)
             } else {
                 scaledBuffer.rewind()
@@ -830,7 +839,7 @@ object Image {
             while (scaled_width._val > 1 || scaled_height._val > 1) {
                 // preserve the border after mip map unless repeating
                 shrunk = Image_process.R_MipMap(scaledBuffer, scaled_width._val, scaled_height._val, preserveBorder)
-                scaledBuffer.clear() //R_StaticFree(scaledBuffer);
+                scaledBuffer.clear()
                 scaledBuffer.put(shrunk).flip()
                 scaled_width.rightShift(1)
                 scaled_height.rightShift(1)
@@ -864,10 +873,7 @@ object Image {
                     )
                 }
             }
-            //
-//            if (scaledBuffer != null) {
-//                R_StaticFree(scaledBuffer);
-//            }
+
             SetImageFilterAndRepeat()
 
             // see if we messed anything up
@@ -908,7 +914,6 @@ object Image {
             // FIXME: allow picmip here
             // generate the texture number
             texNum = qgl.qglGenTextures()
-            //            System.out.println(imgName + ": " + texNum);
 
             // select proper internal format before we resample
             // this function doesn't need to know it is 3D, so just make it very "tall"
@@ -930,7 +935,7 @@ object Image {
             val scaledBuffer: ByteBuffer
             var shrunk: ByteBuffer?
             scaledBuffer = BufferUtils.createByteBuffer(scaled_width * scaled_height * scaled_depth * 4)
-            scaledBuffer.put(pic) // memcpy( scaledBuffer, pic, scaled_width * scaled_height * scaled_depth * 4 );
+            scaledBuffer.put(pic)
             miplevel = 0
             while ((scaled_width > 1) || (scaled_height > 1) || (scaled_depth > 1)) {
                 // preserve the border after mip map unless repeating
@@ -941,7 +946,7 @@ object Image {
                     scaled_depth,
                     (repeat != textureRepeat_t.TR_REPEAT)
                 )
-                scaledBuffer.clear() // R_StaticFree(scaledBuffer);
+                scaledBuffer.clear()
                 scaledBuffer.put(shrunk)
                 scaled_width = scaled_width shr 1
                 scaled_height = scaled_height shr 1
@@ -963,7 +968,7 @@ object Image {
                     0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, scaledBuffer
                 )
             }
-            scaledBuffer.clear() // R_StaticFree(scaledBuffer);
+            scaledBuffer.clear()
             when (filter) {
                 textureFilter_t.TF_DEFAULT -> {
                     qgl.qglTexParameterf(
@@ -1053,7 +1058,6 @@ object Image {
 
             // generate the texture number
             texNum = qgl.qglGenTextures()
-            //            System.out.println(imgName + ": " + texNum);
 
             // select proper internal format before we resample
             internalFormat = SelectInternalFormat(pics, 6, width, height, depth, isMonochrome)
@@ -1143,11 +1147,9 @@ object Image {
                     )
                     if (scaled_width > 2) {
                         shrunken = Image_process.R_MipMap(shrunk[i], scaled_width / 2, scaled_height / 2, false)
-                        // R_StaticFree(shrunk[i]);
                         shrunk[i] = shrunken
                     } else {
-                        shrunk[i]!!.clear() // R_StaticFree(shrunk[i]);
-                        //                        shrunken = null;
+                        shrunk[i]!!.clear()
                     }
                     i++
                 }
@@ -1201,13 +1203,7 @@ object Image {
                     // then do a qglCopyTexSubImage2D of the data we want
                     // this might be a 16+ meg allocation, which could fail on _alloca
                     junk =
-                        BufferUtils.createByteBuffer(potWidth._val * potHeight._val * 4) // Mem_Alloc(potWidth[0] * potHeight[0] * 4);
-                    //			memset( junk, 0, potWidth * potHeight * 4 );		//!@#
-//                    if (false) { // Disabling because it's unnecessary and introduces a green strip on edge of _currentRender
-//			for ( int i = 0 ; i < potWidth * potHeight * 4 ; i+=4 ) {
-//				junk[i+1] = 255;
-//			}
-//                    }
+                        BufferUtils.createByteBuffer(potWidth._val * potHeight._val * 4)
                     qgl.qglTexImage2D(
                         GL11.GL_TEXTURE_2D,
                         0,
@@ -1219,7 +1215,6 @@ object Image {
                         GL11.GL_UNSIGNED_BYTE,
                         junk
                     )
-                    //                    Mem_Free(junk);
                     junk = null
                     qgl.qglCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth._val, imageHeight._val)
                 }
@@ -1416,13 +1411,8 @@ object Image {
                 // these probably should be clamp, but we have a lot of issues with editor
                 // geometry coming out with texcoords slightly off one side, resulting in
                 // a smear across the entire polygon
-                if (true) {
-                    qgl.qglTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT.toFloat())
-                    qgl.qglTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT.toFloat())
-                } else {
-                    qgl.qglTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE.toFloat())
-                    qgl.qglTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE.toFloat())
-                }
+                qgl.qglTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT.toFloat())
+                qgl.qglTexParameterf(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT.toFloat())
             }
         }
 
@@ -1881,9 +1871,7 @@ object Image {
                 return
             }
             val header: ddsFileHeader_t
-            //	memset( &header, 0, sizeof(header) );
             header = ddsFileHeader_t()
-            //            header.dwSize = sizeof(header);
             header.dwFlags = DDSF_CAPS or DDSF_PIXELFORMAT or DDSF_WIDTH or DDSF_HEIGHT
             header.dwHeight = uploadHeight._val
             header.dwWidth = uploadWidth._val
@@ -1909,7 +1897,6 @@ object Image {
                 header.dwCaps1 = header.dwCaps1 or (DDSF_MIPMAP or DDSF_COMPLEX)
             }
 
-//            header.ddspf.dwSize = sizeof(header.ddspf);
             if (FormatIsDXT(altInternalFormat)) {
                 header.ddspf!!.dwFlags = DDSF_FOURCC
                 when (altInternalFormat) {
@@ -1962,8 +1949,8 @@ object Image {
                 return
             }
             Common.common.Printf("Writing precompressed image: %s\n", (filename))
-            f.WriteString("DDS ") //, 4);
-            f.Write(header.Write() /*, sizeof(header) */)
+            f.Write(ByteBuffer.wrap("DDS ".toByteArray()))
+            f.Write(header.Write())
 
             // bind to the image so we can read back the contents
             Bind()
@@ -1982,7 +1969,7 @@ object Image {
                     size = uw * uh * (bitSize / 8)
                 }
                 if (data == null) {
-                    data = ByteBuffer.allocate(size) // R_StaticAlloc(size);
+                    data = ByteBuffer.allocate(size)
                 }
                 if (FormatIsDXT(altInternalFormat)) {
                     qgl.qglGetCompressedTexImageARB(GL11.GL_TEXTURE_2D, level, data)
@@ -2000,46 +1987,39 @@ object Image {
                 }
             }
 
-//            if (data != null) {
-//                R_StaticFree(data);
-//            }
-//
             fileSystem.CloseFile(f)
         }
 
+        /*
+         ================
+         CheckPrecompressedImage
+
+         If fullLoad is false, only the small mip levels of the image will be loaded
+         ================
+         */
         fun CheckPrecompressedImage(fullLoad: Boolean): Boolean {
             if (!glConfig.isInitialized || !glConfig.textureCompressionAvailable) {
                 return false
             }
-            if (true) { // ( _D3XP had disabled ) - Allow grabbing of DDS's from original Doom pak files
-                // if we are doing a copyFiles, make sure the original images are referenced
-                if (fileSystem.PerformingCopyFiles()) {
-                    return false
-                }
+            // ( _D3XP had disabled ) - Allow grabbing of DDS's from original Doom pak files
+            // if we are doing a copyFiles, make sure the original images are referenced
+            if (fileSystem.PerformingCopyFiles()) {
+                return false
             }
             if (depth == textureDepth_t.TD_BUMP && idImageManager.image_useNormalCompression.GetInteger() != 2) {
                 return false
             }
 
             // god i love last minute hacks :-)
-            // me too.
-            if ((Common.com_machineSpec.GetInteger() >= 1) && (Common.com_videoRam.GetInteger() >= 128) && (imgName.Icmpn(
+            if ((Common.com_machineSpec.GetInteger() >= 1) && (imgName.Icmpn(
                     "lights/",
                     7
                 ) == 0)
             ) {
-                return false //TODO:enable this by using openCL for the values above.
+                return false
             }
-            if ((imgName.toString().contains("mars")
-                        || imgName.toString().contains("planet"))
-            ) {
-//                System.out.println(">>>>>>>>>>>" + DEBUG_CheckPrecompressedImage);
-//                return true;
-            }
-            DEBUG_CheckPrecompressedImage++
             val filename = arrayOf<String?>(null)
             ImageProgramStringToCompressedFileName(imgName.toString(), filename)
-            //            System.out.println("====" + filename[0]);
 
             // get the file timestamp
             val precompTimestamp/*ID_TIME_T */ = longArrayOf(0)
@@ -2066,39 +2046,42 @@ object Image {
                 fileSystem.CloseFile(f)
                 return false
             }
-            if (!fullLoad && len > idImageManager.image_cacheMinK.GetInteger() * 1024) {
-                len = idImageManager.image_cacheMinK.GetInteger() * 1024
-            }
-            val data = ByteBuffer.allocate(len) // R_StaticAlloc(len);
+            val data = ByteBuffer.allocate(len)
             f.Read(data)
             fileSystem.CloseFile(f)
             data.order(ByteOrder.LITTLE_ENDIAN)
             val magic = LittleLong(data.getInt()).toLong()
-            data.position(4) //, 4);
+            data.position(4)
             val _header = ddsFileHeader_t(data)
             val ddspf_dwFlags = LittleLong(_header.ddspf!!.dwFlags)
             if (magic != DDS_MAKEFOURCC('D'.code, 'D'.code, 'S'.code, ' '.code).toLong()) {
                 Common.common.Printf("CheckPrecompressedImage( %s ): magic != 'DDS '\n", imgName.toString())
-                //                R_StaticFree(data);
                 return false
             }
 
             // if we don't support color index textures, we must load the full image
             // should we just expand the 256 color image to 32 bit for upload?
             if (((ddspf_dwFlags and DDSF_ID_INDEXCOLOR) != 0) && !glConfig.sharedTexturePaletteAvailable) {
-//                R_StaticFree(daDta);
                 return false
             }
 
             // upload all the levels
-            UploadPrecompressedImage(data, len) //TODO:disables all pictures, also makes shit blocky.
+            UploadPrecompressedImage(data, len)
 
-//            R_StaticFree(data);
             return true
         }
 
+        /*
+         ===================
+         UploadPrecompressedImage
+
+         This can be called by the front end during normal loading,
+         or by the backend after a background read of the file
+         has completed
+         ===================
+         */
         fun UploadPrecompressedImage(data: ByteBuffer?, len: Int) {
-            data!!.position(4) //, 4)
+            data!!.position(4)
             val header = ddsFileHeader_t((data))
 
             // ( not byte swapping dwReserved1 dwReserved2 )
@@ -2122,34 +2105,17 @@ object Image {
 
             // generate the texture number
             texNum = qgl.qglGenTextures()
-            //            System.out.println(imgName + ": " + texNum);
 
-//            if (texNum == 58) {
-//                DBG_UploadPrecompressedImage = data.duplicate();
-//                DBG_UploadPrecompressedImage.order(data.order());
-//            } else
-//            if (texNum == 59) {
-//                texNum = null;
-//                final int pos = data.position();
-//                data = DBG_UploadPrecompressedImage.duplicate();
-//                data.order(DBG_UploadPrecompressedImage.order());
-//                UploadPrecompressedImage(data, len);
-//                return;
-//            }
             var externalFormat = 0
             precompressedFile = true
             uploadWidth._val = header.dwWidth
             uploadHeight._val = header.dwHeight
             if ((header.ddspf!!.dwFlags and DDSF_FOURCC) != 0) {
-//                System.out.printf("%d\n", header.ddspf.dwFourCC);
-//                switch (bla[DEBUG_dwFourCC++]) {
                 when (header.ddspf!!.dwFourCC) {
                     DDS_MAKEFOURCC_DXT1 -> if ((header.ddspf!!.dwFlags and DDSF_ALPHAPIXELS) != 0) {
                         internalFormat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
-                        //                            System.out.printf("GL_COMPRESSED_RGBA_S3TC_DXT1_EXT\n");
                     } else {
                         internalFormat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGB_S3TC_DXT1_EXT
-                        //                            System.out.printf("GL_COMPRESSED_RGB_S3TC_DXT1_EXT\n");
                     }
 
                     DDS_MAKEFOURCC_DXT3 -> internalFormat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
@@ -2212,9 +2178,9 @@ object Image {
                 } else {
                     val imageData = BufferUtils.createByteBuffer(size)
                     imageData.put(data.array(), offset, size)
-                    imageData.order(ByteOrder.LITTLE_ENDIAN) //TODO: should ByteOrder be reverted? <data> uses LITTLE_ENDIAN.
-                    imageData.flip() //FUCKME: the lwjgl version of <glCompressedTexImage2DARB> uses bytebuffer.remaining() as size.
-                    if (FormatIsDXT(internalFormat)) { //TODO: remove blocky crap!
+                    imageData.order(ByteOrder.LITTLE_ENDIAN)
+                    imageData.flip()
+                    if (FormatIsDXT(internalFormat)) {
                         qgl.qglCompressedTexImage2DARB(
                             GL11.GL_TEXTURE_2D,
                             i - skipMip,
@@ -2225,7 +2191,6 @@ object Image {
                             size,
                             imageData
                         )
-                        //                        System.out.printf("qglCompressedTexImage2DARB(%d)\n", imageData.get(0) & 0xFF);
                     } else {
                         qgl.qglTexImage2D(
                             GL11.GL_TEXTURE_2D,
@@ -2253,14 +2218,18 @@ object Image {
             SetImageFilterAndRepeat()
         }
 
+        /*
+         ===============
+         ActuallyLoadImage
+
+         Absolutely every image goes through this path
+         On exit, the idImage will have a valid OpenGL texture number that can be bound
+         ===============
+         */
         fun ActuallyLoadImage(checkForPrecompressed: Boolean, fromBackEnd: Boolean) {
             val width = intArrayOf(0)
             val height = intArrayOf(0)
             var pic: ByteBuffer? = null
-            if (imgName.equals("guis/assets/splash/launch")) {
-//                return;
-            }
-            //            System.out.println((DBG_ActuallyLoadImage++) + " " + imgName);
 
             // this is the ONLY place generatorFunction will ever be called
             if (generatorFunction != null) {
@@ -2282,7 +2251,7 @@ object Image {
             // load the image from disk
             //
             if (cubeFiles != cubeFiles_t.CF_2D) {
-                val pics = arrayOfNulls<ByteBuffer>(6) //TODO:FIXME!
+                val pics = arrayOfNulls<ByteBuffer>(6)
 
                 // we don't check for pre-compressed cube images currently
                 Image_files.R_LoadCubeImages(imgName.toString(), cubeFiles, pics, width, timestamp)
@@ -2293,12 +2262,6 @@ object Image {
                 }
                 GenerateCubeImage( /*(const byte **)*/pics, width[0], filter, allowDownSize, depth)
                 precompressedFile = false
-                //
-//                for (int i = 0; i < 6; i++) {
-//                    if (pics[0][i] != 0) {
-//                        R_StaticFree(pics[i]);
-//                    }
-//                }
             } else {
                 // see if we have a pre-generated image file that is
                 // already image processed and compressed
@@ -2319,28 +2282,12 @@ object Image {
                     MakeDefault()
                     return
                 }
-                /*
-                 // swap the red and alpha for rxgb support
-                 // do this even on tga normal maps so we only have to use
-                 // one fragment program
-                 // if the image is precompressed ( either in palletized mode or true rxgb mode )
-                 // then it is loaded above and the swap never happens here
-                 if ( depth == TD_BUMP && globalImages.image_useNormalCompression.GetInteger() != 1 ) {
-                 for ( int i = 0; i < width * height * 4; i += 4 ) {
-                 pic[ i + 3 ] = pic[ i ];
-                 pic[ i ] = 0;
-                 }
-                 }
-                 */
                 // build a hash for checking duplicate image files
                 // NOTE: takes about 10% of image load times (SD)
                 // may not be strictly necessary, but some code uses it, so let's leave it in
-                //imageHash = MD4_BlockChecksum(pic, width[0] * height[0] * 4);
                 GenerateImage(pic, width[0], height[0], filter, allowDownSize, repeat, depth)
-                //why, because we rock!
                 precompressedFile = false
 
-//                R_StaticFree(pic);
                 // write out the precompressed version of this file if needed
                 WritePrecompressedImage()
             }
@@ -2463,18 +2410,16 @@ object Image {
             // OpenGL's pixel packing rule
             row = max(width.toFloat(), 4.0f).toInt()
             normals = ByteArray(row * height)
-            if (normals == null) {
-                Common.common.Error("R_UploadCompressedNormalMap: _alloca failed")
-            }
             `in` = 0
             out = 0
             i = 0
             while (i < height) {
                 j = 0
                 while (j < width) {
-                    x = rgba[`in` + (j * 4) + 0].toInt()
-                    y = rgba[`in` + (j * 4) + 1].toInt()
-                    z = rgba[`in` + (j * 4) + 2].toInt()
+                    // mask with 0xFF to get unsigned value (Kotlin bytes are signed)
+                    x = rgba[`in` + (j * 4) + 0].toInt() and 0xFF
+                    y = rgba[`in` + (j * 4) + 1].toInt() and 0xFF
+                    z = rgba[`in` + (j * 4) + 2].toInt() and 0xFF
                     var c: Int
                     if ((x == 128) && (y == 128) && (z == 128)) {
                         // the "nullnormal" color
@@ -2500,7 +2445,7 @@ object Image {
                     ImageProgramStringToCompressedFileName(imgName, filename)
                     val ext = filename[0]!!.lastIndexOf('.')
                     if (ext != -1) {
-                        filename[0] = filename[0]!!.substring(0, ext) + "_pal.tga" //strcpy(ext, "_pal.tga");
+                        filename[0] = filename[0]!!.substring(0, ext) + "_pal.tga"
                         R_WritePalTGA(filename[0], normals, globalImages.compressedPalette, width, height)
                     }
                 }
@@ -2567,10 +2512,17 @@ object Image {
                 while (i < c) {
                     var cOr: Int
                     var cAnd: Int
-                    aOr = aOr or scan!![pos + 3].toInt()
-                    aAnd = aAnd and scan[pos + 3].toInt()
-                    cOr = scan[pos + 0].toInt() or scan[pos + 1].toInt() or scan[pos + 2].toInt()
-                    cAnd = scan[pos + 0].toInt() and scan[pos + 1].toInt() and scan[pos + 2].toInt()
+
+                    // mask with 0xFF to get unsigned value (Kotlin bytes are signed)
+                    val r = scan!![pos + 0].toInt() and 0xFF
+                    val g = scan[pos + 1].toInt() and 0xFF
+                    val b = scan[pos + 2].toInt() and 0xFF
+                    val a = scan[pos + 3].toInt() and 0xFF
+
+                    aOr = aOr or a
+                    aAnd = aAnd and a
+                    cOr = r or g or b
+                    cAnd = r and g and b
 
                     // if rgb are all the same, the or and and will match
                     rgbDiffer = rgbDiffer or (cOr xor cAnd)
@@ -2579,16 +2531,14 @@ object Image {
                     // allowing the values to be off by several units and
                     // still use the NV20 mono path
                     if (monochromeResult[0]) {
-                        if ((abs((scan[pos + 0] - scan[pos + 1]).toFloat()) > 16
-                                    || abs((scan[pos + 0] - scan[pos + 2]).toFloat()) > 16)
-                        ) {
+                        if (abs(r - g) > 16 || abs(r - b) > 16) {
                             monochromeResult[0] = false
                         }
                     }
                     rgbOr = rgbOr or cOr
                     rgbAnd = rgbAnd and cAnd
-                    cOr = cOr or scan[pos + 3].toInt()
-                    cAnd = cAnd and scan[pos + 3].toInt()
+                    cOr = cOr or a
+                    cAnd = cAnd and a
                     rgbaDiffer = rgbaDiffer or (cOr xor cAnd)
                     i++
                     pos += 4
@@ -2672,15 +2622,6 @@ object Image {
                 } else GL11.GL_INTENSITY8
                 // single byte for all channels
             }
-            if (false) {
-                // we don't support alpha textures any more, because there
-                // is a discrepancy in the definition of TEX_ENV_COMBINE that
-                // causes them to be treated as 0 0 0 A, instead of 1 1 1 A as
-                // normal texture modulation treats them
-                if (rgbAnd == 255) {
-                    return GL11.GL_ALPHA8 // single byte, only alpha
-                }
-            }
             if (minimumDepth == textureDepth_t.TD_HIGH_QUALITY) {
                 return GL11.GL_RGBA8 // four bytes
             }
@@ -2694,15 +2635,12 @@ object Image {
         }
 
         fun ImageProgramStringToCompressedFileName(imageProg: String, fileName: Array<String?>) {
-//            char s;
             var f: Int
             var i: Int
             val ff = CharArray(imageProg.length + 10)
 
-//	strcpy( fileName, "dds/" );
             fileName[0] = "dds/"
             f = fileName[0]!!.length
-            //            ff = fileName[0].toCharArray();
             System.arraycopy(fileName[0]!!.toCharArray(), 0, ff, 0, f)
             var depth = 0
 
@@ -2731,7 +2669,6 @@ object Image {
                 i++
             }
             ff[f++] = 0.toChar()
-            //	strcat( fileName, ".dds" );
             fileName[0] = ctos(ff) + ".dds"
         }
 
@@ -2773,7 +2710,7 @@ object Image {
                     + backgroundDownload_s.SIZE
                     + CPP_class.Pointer.SIZE //idImage
                     + idStr.SIZE
-                    + CPP_class.Pointer.SIZE //idImage.//TODO:does a function pointer have size?
+                    + CPP_class.Pointer.SIZE //idImage
                     + CPP_class.Bool.SIZE
                     + CPP_class.Enum.SIZE
                     + CPP_class.Enum.SIZE
@@ -2813,41 +2750,6 @@ object Image {
                 intArrayOf(0, 255, 0, 128),
                 intArrayOf(0, 0, 255, 128)
             )
-
-            /*
-         ================
-         CheckPrecompressedImage
-
-         If fullLoad is false, only the small mip levels of the image will be loaded
-         ================
-         */
-            var DEBUG_CheckPrecompressedImage = 0
-
-            /*
-         ===============
-         ActuallyLoadImage
-
-         Absolutely every image goes through this path
-         On exit, the idImage will have a valid OpenGL texture number that can be bound
-         ===============
-         */
-            private val DBG_ActuallyLoadImage = 0
-            private val DBG_Bind = 0
-
-            /*
-         ===================
-         UploadPrecompressedImage
-
-         This can be called by the front end during normal loading,
-         or by the backend after a background read of the file
-         has completed
-         ===================
-         */
-            private val DBG_UploadPrecompressedImage: ByteBuffer? = null
-
-            //
-            //
-            private var DEBUG_COUNTER = 0
         }
     }
 
@@ -2913,8 +2815,6 @@ object Image {
 
         @Throws(idException::class)
         fun Init() {
-
-//	memset(imageHashTable, 0, sizeof(imageHashTable));
             imageHashTable = arrayOfNulls(imageHashTable.size)
             images.Resize(1024, 1024)
 
@@ -3124,9 +3024,6 @@ object Image {
             // load it if we aren't in a level preload
             if (image_preload.GetBool() && !insideLevelLoad) {
                 image.referencedOutsideLevelLoad = true
-                if (idMaterial.DBG_ParseStage == 41) {
-//                    return null;
-                }
                 image.ActuallyLoadImage(true, false) // check for precompressed, load is from front end
                 DeclManager.declManager.MediaPrint(
                     "%dx%d %s\n",
@@ -3236,7 +3133,7 @@ object Image {
          ==================
          R_CompleteBackgroundImageLoads
 
-         Do we need to worry about vid_restarts here?//TODO:do we indeed?
+         Do we need to worry about vid_restarts here?
          ==================
          */
         // called once a frame to allow any background loads that have been completed
@@ -3253,7 +3150,7 @@ object Image {
                         fileSystem.CloseFile(image.bgl.f!!)
                         // upload the image
                         image.UploadPrecompressedImage(image.bgl.file.buffer, image.bgl.file.length)
-                        image.bgl.file.buffer = null //R_StaticFree(image.bgl.file.buffer);
+                        image.bgl.file.buffer = null
                         if (image_showBackgroundLoads.GetBool()) {
                             Common.common.Printf("R_CompleteBackgroundImageLoad: %s\n", image.imgName)
                         }
@@ -3490,7 +3387,7 @@ object Image {
         fun AddDDSCommand(cmd: String?) {
             var i: Int
             val key: Int
-            if (!(cmd != null && !cmd.isEmpty())) { //TODO:WdaF?
+            if (cmd.isNullOrEmpty()) {
                 return
             }
             key = ddsHash!!.GenerateKey(cmd, false)
@@ -3551,7 +3448,6 @@ object Image {
                 i++
             }
 
-//	delete sortIndex;
             mi.imageAssetsTotal = total
             f.Printf("\nTotal image bytes allocated: %s\n", FormatNumber(total))
             fileSystem.CloseFile(f)
@@ -3572,8 +3468,6 @@ object Image {
                 Common.common.Error("idImageManager::AllocImage: \"%s\" is too long\n", name)
             }
             hash = idStr(name).FileNameHash()
-            //            System.out.printf(">>>>>>>>>>>>>>%d--%s\n", hash, name);
-//            System.out.printf(">>>>>>>>>>>>>>%d--%s\n", idStr.IHash(name.toCharArray()), name);
             image = idImage()
             images.Append(image)
             image.hashNext = imageHashTable[hash]
@@ -3632,43 +3526,23 @@ object Image {
                 }
                 i++
             }
-            if (false) {
-//	for ( i = 0; i < 16; i++ ) {
-//		for ( j = 0 ; j < 16 ; j++ ) {
-//
-//			v.set(0,  ( i - 7.5 ) / 8);
-//			v.set(1,  ( j - 7.5 ) / 8);
-//
-//			t = 1.0f - ( v.get(0)*v.get(0) + v.get(1)*v.get(1) );
-//			if ( t < 0 ) {
-//				t = 0;
-//			}
-//			v.set(2,  idMath.Sqrt( t ));
-//
-//			temptable[(i*16+j)*3+0] = 128 + floor( 127 * v.get(0) + 0.5f );
-//			temptable[(i*16+j)*3+1] = 128 + floor( 127 * v.get(1) );
-//			temptable[(i*16+j)*3+2] = 128 + floor( 127 * v.get(2) );
-//		}
-//	}
-            } else {
-                i = 0
-                while (i < 16) {
-                    j = 0
-                    while (j < 16) {
-                        v[0] = (compressedToOriginal[i] - 127.5f) / 128.0f
-                        v[1] = (compressedToOriginal[j] - 127.5f) / 128.0f
-                        t = 1.0f - (v[0] * v[0] + v[1] * v[1])
-                        if (t < 0) {
-                            t = 0.0f
-                        }
-                        v[2] = Sqrt(t)
-                        temptable[(i * 16 + j) * 3 + 0] = (128 + floor(127 * v[0] + 0.5f)).toInt().toByte()
-                        temptable[(i * 16 + j) * 3 + 1] = (128 + floor((127 * v[1]))).toInt().toByte()
-                        temptable[(i * 16 + j) * 3 + 2] = (128 + floor((127 * v[2]))).toInt().toByte()
-                        j++
+            i = 0
+            while (i < 16) {
+                j = 0
+                while (j < 16) {
+                    v[0] = (compressedToOriginal[i] - 127.5f) / 128.0f
+                    v[1] = (compressedToOriginal[j] - 127.5f) / 128.0f
+                    t = 1.0f - (v[0] * v[0] + v[1] * v[1])
+                    if (t < 0) {
+                        t = 0.0f
                     }
-                    i++
+                    v[2] = Sqrt(t)
+                    temptable[(i * 16 + j) * 3 + 0] = (128 + floor(127 * v[0] + 0.5f)).toInt().toByte()
+                    temptable[(i * 16 + j) * 3 + 1] = (128 + floor((127 * v[1]))).toInt().toByte()
+                    temptable[(i * 16 + j) * 3 + 2] = (128 + floor((127 * v[2]))).toInt().toByte()
+                    j++
                 }
+                i++
             }
 
             // color 255 will be the "nullnormal" color for no reflection

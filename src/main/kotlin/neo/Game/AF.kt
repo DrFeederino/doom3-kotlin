@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/AF.cpp, neo/Game/AF.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.Animation.Anim.AFJointModType_t
@@ -829,8 +847,8 @@ object AF {
             val jointName = idToken()
             val origin = idVec3()
             val renderOrigin = idVec3()
-            val axis: idMat3
-            val renderAxis: idMat3
+            val axis = idMat3()
+            val renderAxis = idMat3()
             if (!IsLoaded()) {
                 return
             }
@@ -838,8 +856,8 @@ object AF {
 
             // get the render position
             origin.set(physicsObj.GetOrigin(0))
-            axis = physicsObj.GetAxis(0)
-            renderAxis = baseAxis.Transpose().times(axis)
+            axis.set(physicsObj.GetAxis(0))
+            renderAxis.set(baseAxis.Transpose().times(axis))
             renderOrigin.set(origin.minus(baseOrigin.times(renderAxis)))
 
             // parse all the bind constraints
@@ -981,7 +999,6 @@ object AF {
         protected fun LoadBody(fb: idDeclAF_Body, joints: Array<idJointMat>): Boolean {
             val id: Int
             var i: Int
-            DBG_LoadBody++
             val length: Float
             val candleMass = CFloat()
             val trm = idTraceModel()
@@ -1315,7 +1332,6 @@ object AF {
         }
 
         companion object {
-            private var DBG_LoadBody = 0
         }
 
         // ~idAF( void );

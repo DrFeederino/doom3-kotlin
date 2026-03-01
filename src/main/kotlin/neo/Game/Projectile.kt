@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Projectile.cpp, neo/Game/Projectile.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.AFEntity.idAFAttachment
@@ -155,7 +173,7 @@ object Projectile {
                 val ent: idEntity?
 
                 // remove projectile when a 'noimpact' surface is hit
-                if (collision.c.material != null && collision.c.material!!.GetSurfaceFlags() and Material.SURF_NOIMPACT != 0) {
+                if (collision.c.material != null && (collision.c.material!!.GetSurfaceFlags() and Material.SURF_NOIMPACT) != 0) {
                     return false
                 }
 
@@ -513,7 +531,7 @@ object Projectile {
         }
 
         override fun Think() {
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 if (thrust != 0.0f && Game_local.gameLocal.time < thrust_end) {
                     // evaluate force
                     thruster.SetForce(GetPhysics().GetAxis()[0] * thrust)
@@ -610,7 +628,7 @@ object Projectile {
             }
 
             // remove projectile when a 'noimpact' surface is hit
-            if (collision.c.material != null && collision.c.material!!.GetSurfaceFlags() and Material.SURF_NOIMPACT != 0) {
+            if (collision.c.material != null && (collision.c.material!!.GetSurfaceFlags() and Material.SURF_NOIMPACT) != 0) {
                 PostEventMS(EV_Remove, 0)
                 idLib.common.DPrintf("Projectile collision no impact\n")
                 return true

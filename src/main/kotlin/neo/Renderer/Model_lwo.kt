@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/Model_lwo.cpp + neo/renderer/Model_lwo.h
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.TempDump
@@ -46,7 +72,6 @@ object Model_lwo {
      ====================================================================== */
     const val FLEN_ERROR = -9999
 
-    //    public static final int ID_VMAP = ('V' << 24 | 'M' << 16 | 'A' << 8 | 'P');
     const val ID_AAST = 'A'.code shl 24 or ('A'.code shl 16) or ('S'.code shl 8) or 'T'.code
     const val ID_ADTR = 'A'.code shl 24 or ('D'.code shl 16) or ('T'.code shl 8) or 'R'.code
     const val ID_ALPH = 'A'.code shl 24 or ('L'.code shl 16) or ('P'.code shl 8) or 'H'.code
@@ -66,7 +91,6 @@ object Model_lwo {
     const val ID_CLRH = 'C'.code shl 24 or ('L'.code shl 16) or ('R'.code shl 8) or 'H'.code
     const val ID_CNTR = 'C'.code shl 24 or ('N'.code shl 16) or ('T'.code shl 8) or 'R'.code
 
-    //
     /* surfaces */
     const val ID_COLR = 'C'.code shl 24 or ('O'.code shl 16) or ('L'.code shl 8) or 'R'.code
     const val ID_CONT = 'C'.code shl 24 or ('O'.code shl 16) or ('N'.code shl 8) or 'T'.code
@@ -79,21 +103,16 @@ object Model_lwo {
     const val ID_ENVL = 'E'.code shl 24 or ('N'.code shl 16) or ('V'.code shl 8) or 'L'.code
     const val ID_ETPS = 'E'.code shl 24 or ('T'.code shl 16) or ('P'.code shl 8) or 'S'.code
 
-    //
     /* polygon types */
     const val ID_FACE = 'F'.code shl 24 or ('A'.code shl 16) or ('C'.code shl 8) or 'E'.code
     const val ID_FALL = 'F'.code shl 24 or ('A'.code shl 16) or ('L'.code shl 8) or 'L'.code
     const val ID_FKEY = 'F'.code shl 24 or ('K'.code shl 16) or ('E'.code shl 8) or 'Y'.code
     const val ID_FLAG = 'F'.code shl 24 or ('L'.code shl 16) or ('A'.code shl 8) or 'G'.code
-
-    //
     const val ID_FORM = 'F'.code shl 24 or ('O'.code shl 16) or ('R'.code shl 8) or 'M'.code
     const val ID_FTPS = 'F'.code shl 24 or ('T'.code shl 16) or ('P'.code shl 8) or 'S'.code
     const val ID_FUNC = 'F'.code shl 24 or ('U'.code shl 16) or ('N'.code shl 8) or 'C'.code
     const val ID_GAMM = 'G'.code shl 24 or ('A'.code shl 16) or ('M'.code shl 8) or 'M'.code
     const val ID_GLOS = 'G'.code shl 24 or ('L'.code shl 16) or ('O'.code shl 8) or 'S'.code
-
-    //
     /* gradient */
     const val ID_GRAD = 'G'.code shl 24 or ('R'.code shl 16) or ('A'.code shl 8) or 'D'.code
     const val ID_GREN = 'G'.code shl 24 or ('R'.code shl 16) or ('E'.code shl 8) or 'N'.code
@@ -106,21 +125,15 @@ object Model_lwo {
     const val ID_IFLT = 'I'.code shl 24 or ('F'.code shl 16) or ('L'.code shl 8) or 'T'.code
     const val ID_IKEY = 'I'.code shl 24 or ('K'.code shl 16) or ('E'.code shl 8) or 'Y'.code
     const val ID_IMAG = 'I'.code shl 24 or ('M'.code shl 16) or ('A'.code shl 8) or 'G'.code
-
-    //
     /* image map */
     const val ID_IMAP = 'I'.code shl 24 or ('M'.code shl 16) or ('A'.code shl 8) or 'P'.code
     const val ID_INAM = 'I'.code shl 24 or ('N'.code shl 16) or ('A'.code shl 8) or 'M'.code
     const val ID_ISEQ = 'I'.code shl 24 or ('S'.code shl 16) or ('E'.code shl 8) or 'Q'.code
     const val ID_ITPS = 'I'.code shl 24 or ('T'.code shl 16) or ('P'.code shl 8) or 'S'.code
     const val ID_KEY = 'K'.code shl 24 or ('E'.code shl 16) or ('Y'.code shl 8) or ' '.code
-
-    //
     /* top-level chunks */
     const val ID_LAYR = 'L'.code shl 24 or ('A'.code shl 16) or ('Y'.code shl 8) or 'R'.code
     const val ID_LINE = 'L'.code shl 24 or ('I'.code shl 16) or ('N'.code shl 8) or 'E'.code
-
-    //    public static final int ID_LINE = ('L' << 24 | 'I' << 16 | 'N' << 8 | 'E');
     const val ID_LSIZ = 'L'.code shl 24 or ('S'.code shl 16) or ('I'.code shl 8) or 'Z'.code
     const val ID_LUMI = 'L'.code shl 24 or ('U'.code shl 16) or ('M'.code shl 8) or 'I'.code
     const val ID_LWO2 = 'L'.code shl 24 or ('W'.code shl 16) or ('O'.code shl 8) or '2'.code
@@ -131,8 +144,7 @@ object Model_lwo {
     const val ID_OPAC = 'O'.code shl 24 or ('P'.code shl 16) or ('A'.code shl 8) or 'C'.code
     const val ID_OREF = 'O'.code shl 24 or ('R'.code shl 16) or ('E'.code shl 8) or 'F'.code
 
-    //
-    /* polygon tags */ //    public static final int ID_SURF = ('S' << 24 | 'U' << 16 | 'R' << 8 | 'F');
+    /* polygon tags */
     const val ID_PART = 'P'.code shl 24 or ('A'.code shl 16) or ('R'.code shl 8) or 'T'.code
     const val ID_PFLT = 'P'.code shl 24 or ('F'.code shl 16) or ('L'.code shl 8) or 'T'.code
     const val ID_PIXB = 'P'.code shl 24 or ('I'.code shl 16) or ('X'.code shl 8) or 'B'.code
@@ -140,12 +152,8 @@ object Model_lwo {
     const val ID_PNTS = 'P'.code shl 24 or ('N'.code shl 16) or ('T'.code shl 8) or 'S'.code
     const val ID_POLS = 'P'.code shl 24 or ('O'.code shl 16) or ('L'.code shl 8) or 'S'.code
     const val ID_POST = 'P'.code shl 24 or ('O'.code shl 16) or ('S'.code shl 8) or 'T'.code
-
-    //
     /* envelopes */
     const val ID_PRE = 'P'.code shl 24 or ('R'.code shl 16) or ('E'.code shl 8) or ' '.code
-
-    //
     /* procedural */
     const val ID_PROC = 'P'.code shl 24 or ('R'.code shl 16) or ('O'.code shl 8) or 'C'.code
     const val ID_PROJ = 'P'.code shl 24 or ('R'.code shl 16) or ('O'.code shl 8) or 'J'.code
@@ -158,8 +166,6 @@ object Model_lwo {
     const val ID_ROTA = 'R'.code shl 24 or ('O'.code shl 16) or ('T'.code shl 8) or 'A'.code
     const val ID_RSAN = 'R'.code shl 24 or ('S'.code shl 16) or ('A'.code shl 8) or 'N'.code
     const val ID_SATR = 'S'.code shl 24 or ('A'.code shl 16) or ('T'.code shl 8) or 'R'.code
-
-    //
     /* shader */
     const val ID_SHDR = 'S'.code shl 24 or ('H'.code shl 16) or ('D'.code shl 8) or 'R'.code
     const val ID_SHRP = 'S'.code shl 24 or ('H'.code shl 16) or ('R'.code shl 8) or 'P'.code
@@ -172,8 +178,6 @@ object Model_lwo {
     const val ID_STCC = 'S'.code shl 24 or ('T'.code shl 16) or ('C'.code shl 8) or 'C'.code
     const val ID_STCK = 'S'.code shl 24 or ('T'.code shl 16) or ('C'.code shl 8) or 'K'.code
     const val ID_STEP = 'S'.code shl 24 or ('T'.code shl 16) or ('E'.code shl 8) or 'P'.code
-
-    //
     /* clips */
     const val ID_STIL = 'S'.code shl 24 or ('T'.code shl 16) or ('I'.code shl 8) or 'L'.code
     const val ID_SURF = 'S'.code shl 24 or ('U'.code shl 16) or ('R'.code shl 8) or 'F'.code
@@ -183,19 +187,13 @@ object Model_lwo {
     const val ID_TEXT = 'T'.code shl 24 or ('E'.code shl 16) or ('X'.code shl 8) or 'T'.code
     const val ID_TIME = 'T'.code shl 24 or ('I'.code shl 16) or ('M'.code shl 8) or 'E'.code
     const val ID_TIMG = 'T'.code shl 24 or ('I'.code shl 16) or ('M'.code shl 8) or 'G'.code
-
-    //
     /* texture coordinates */
     const val ID_TMAP = 'T'.code shl 24 or ('M'.code shl 16) or ('A'.code shl 8) or 'P'.code
     const val ID_TRAN = 'T'.code shl 24 or ('R'.code shl 16) or ('A'.code shl 8) or 'N'.code
     const val ID_TRNL = 'T'.code shl 24 or ('R'.code shl 16) or ('N'.code shl 8) or 'L'.code
     const val ID_TROP = 'T'.code shl 24 or ('R'.code shl 16) or ('O'.code shl 8) or 'P'.code
-
-    //
     /* texture layer */
     const val ID_TYPE = 'T'.code shl 24 or ('Y'.code shl 16) or ('P'.code shl 8) or 'E'.code
-
-    //    public static final int ID_COLR = ('C' << 24 | 'O' << 16 | 'L' << 8 | 'R');
     const val ID_VALU = 'V'.code shl 24 or ('A'.code shl 16) or ('L'.code shl 8) or 'U'.code
     const val ID_VMAD = 'V'.code shl 24 or ('M'.code shl 16) or ('A'.code shl 8) or 'D'.code
     const val ID_VMAP = 'V'.code shl 24 or ('M'.code shl 16) or ('A'.code shl 8) or 'P'.code
@@ -210,8 +208,6 @@ object Model_lwo {
     const val PROJ_SPHERICAL = 2
     const val WRAP_EDGE = 1
     const val WRAP_MIRROR = 3
-
-    //
     const val WRAP_NONE = 0
     const val WRAP_REPEAT = 2
     const val ID_BTEX = 'B'.code shl 24 or ('T'.code shl 16) or ('E'.code shl 8) or 'X'.code
@@ -225,9 +221,6 @@ object Model_lwo {
     /* IDs specific to LWOB */
     const val ID_SRFS = 'S'.code shl 24 or ('R'.code shl 16) or ('F'.code shl 8) or 'S'.code
     const val ID_STEX = 'S'.code shl 24 or ('T'.code shl 16) or ('E'.code shl 8) or 'X'.code
-
-    //    static final int ID_TAMP = ('T' << 24 | 'A' << 16 | 'M' << 8 | 'P');
-    //    static final int ID_TIMG = ('T' << 24 | 'I' << 16 | 'M' << 8 | 'G');
     const val ID_TAAS = 'T'.code shl 24 or ('A'.code shl 16) or ('A'.code shl 8) or 'S'.code
     const val ID_TCLR = 'T'.code shl 24 or ('C'.code shl 16) or ('L'.code shl 8) or 'R'.code
     const val ID_TCTR = 'T'.code shl 24 or ('C'.code shl 16) or ('T'.code shl 8) or 'R'.code
@@ -243,7 +236,6 @@ object Model_lwo {
     const val ID_TVEL = 'T'.code shl 24 or ('V'.code shl 16) or ('E'.code shl 8) or 'L'.code
     const val ID_VDIF = 'V'.code shl 24 or ('D'.code shl 16) or ('I'.code shl 8) or 'F'.code
 
-    //    static final int ID_FLAG = ('F' << 24 | 'L' << 16 | 'A' << 8 | 'G');
     const val ID_VLUM = 'V'.code shl 24 or ('L'.code shl 16) or ('U'.code shl 8) or 'M'.code
     const val ID_VSPC = 'V'.code shl 24 or ('S'.code shl 16) or ('P'.code shl 8) or 'C'.code
     var flen = 0
@@ -268,10 +260,6 @@ object Model_lwo {
         var rlen: Int
 
         /* allocate the Clip structure */
-        // Mem_ClearedAlloc(sizeof(lwClip));
-        //            if (NOT(clip)) {
-//                break Fail;
-//            }
         clip.contrast.`val` = 1.0f
         clip.brightness.`val` = 1.0f
         clip.saturation.`val` = 1.0f
@@ -381,16 +369,13 @@ object Model_lwo {
 
                 ID_NEGA -> clip.negative = getU2(fp)
                 ID_IFLT, ID_PFLT -> {
-                    filt = lwPlugin() // Mem_ClearedAlloc(sizeof(lwPlugin));
-                    if (filt == null) {
-                        return gotoFail(clip)
-                    }
+                    filt = lwPlugin()
                     filt.name = getS0(fp)
                     filt.flags = getU2(fp)
                     rlen = get_flen()
                     filt.data = getbytes(fp, sz - rlen)
                     if (id == ID_IFLT) {
-                        clip.ifilter = lwListAdd(clip.ifilter, filt)!! //TODO:check this construction
+                        clip.ifilter = lwListAdd(clip.ifilter, filt)!!
                         clip.nifilters++
                     } else {
                         clip.pfilter = lwListAdd(clip.pfilter, filt)!!
@@ -471,10 +456,7 @@ object Model_lwo {
 
 
         /* allocate the Envelope structure */
-        env = lwEnvelope() // Mem_ClearedAlloc(sizeof(lwEnvelope));
-//            if (null == env) {
-//                break@Fail
-//            }
+        env = lwEnvelope()
 
         /* remember where we started */set_flen(0)
         pos = fp.Tell()
@@ -496,10 +478,7 @@ object Model_lwo {
                 ID_PRE -> env.behavior[0] = getU2(fp)
                 ID_POST -> env.behavior[1] = getU2(fp)
                 ID_KEY -> {
-                    key = lwKey() // Mem_ClearedAlloc(sizeof(lwKey));
-                    if (key == null) { //TODO:unnecessary?
-                        return gotoFailEnvelope(env)
-                    }
+                    key = lwKey()
                     key.time = getF4(fp)
                     key.value = getF4(fp)
                     lwListInsert(env.key, key)
@@ -538,10 +517,7 @@ object Model_lwo {
                 }
 
                 ID_CHAN -> {
-                    plug = lwPlugin() // Mem_ClearedAlloc(sizeof(lwPlugin));
-                    if (plug == null) {
-                        return gotoFailEnvelope(env)
-                    }
+                    plug = lwPlugin()
                     plug.name = getS0(fp)
                     plug.flags = getU2(fp)
                     plug.data = getbytes(fp, sz - get_flen())
@@ -831,8 +807,6 @@ object Model_lwo {
                 if (key1.next != null) {
                     `in` *= (key1.time - key0.time) / (key1.next!!.time - key0.time)
                 }
-                //                break;
-                return `in`
             }
 
             ID_BEZ2 -> {
@@ -1005,23 +979,6 @@ object Model_lwo {
         return list
     }
 
-    //    @Deprecated
-    //    public static Object lwListAdd(Object list, Object node) {
-    //        lwNode head, tail = new lwNode();
-    //
-    //        head = (lwNode) list;
-    //        if (null == head) {
-    //            return node;
-    //        }
-    //        while (head != null) {
-    //            tail = head;
-    //            head = head.next;
-    //        }
-    //        tail.next = (lwNode) node;
-    //        ((lwNode) node).prev = tail;
-    //
-    //        return list;
-    //    }
     /*
      ======================================================================
      lwListInsert()
@@ -1093,14 +1050,13 @@ object Model_lwo {
             flen = FLEN_ERROR
             return null
         }
-        data = ByteBuffer.allocate(size) //Mem_ClearedAlloc(size);
+        data = ByteBuffer.allocate(size)
         if (null == data) {
             flen = FLEN_ERROR
             return null
         }
         if (size != fp.Read(data, size)) {
             flen = FLEN_ERROR
-            //            Mem_Free(data);
             data = null
             return null
         }
@@ -1125,16 +1081,13 @@ object Model_lwo {
         if (flen == FLEN_ERROR) {
             return 0
         }
-        //        c[0] = 0;
         i = fp.Read(ByteBuffer.wrap(c))
         if (i < 0) {
             flen = FLEN_ERROR
             return 0
         }
         flen += 1
-        return if (c[0] > 127) {
-            c[0] - 256
-        } else c[0].toInt()
+        return c[0].toInt()
     }
 
     fun getI2(fp: idFile): Short {
@@ -1146,7 +1099,7 @@ object Model_lwo {
             flen = FLEN_ERROR
             return 0
         }
-        BigRevBytes(i,  /*2,*/1)
+        BigRevBytes(i, 1)
         flen += 2
         return i.short
     }
@@ -1160,7 +1113,7 @@ object Model_lwo {
             flen = FLEN_ERROR
             return 0
         }
-        BigRevBytes(i,  /*4,*/1)
+        BigRevBytes(i, 1)
         flen += 4
         return i.int
     }
@@ -1171,14 +1124,13 @@ object Model_lwo {
         if (flen == FLEN_ERROR) {
             return Char(0)
         }
-        c[0] = 0
         i = fp.Read(ByteBuffer.wrap(c), 1)
         if (i < 0) {
             flen = FLEN_ERROR
             return Char(0)
         }
         flen += 1
-        return c[0] as Char
+        return (c[0].toInt() and 0xFF).toChar()
     }
 
     fun getU2(fp: idFile): Int {
@@ -1190,7 +1142,7 @@ object Model_lwo {
             flen = FLEN_ERROR
             return 0
         }
-        BigRevBytes(i,  /*2*,*/1)
+        BigRevBytes(i, 1)
         flen += 2
         return i.short.toInt() and 0xFFFF
     }
@@ -1204,7 +1156,7 @@ object Model_lwo {
             flen = FLEN_ERROR
             return 0
         }
-        BigRevBytes(i,  /*4,*/1)
+        BigRevBytes(i, 1)
         flen += 4
         return i.int
     }
@@ -1219,7 +1171,7 @@ object Model_lwo {
         if (fp.Read(c) == -1) {
             return 0
         }
-        if (c[0].toInt() != 0xFF) {
+        if ((c[0].toInt() and 0xFF) != 0xFF) {
             i = TempDump.btoi(c) shl 8
             c.clear()
             if (fp.Read(c) == -1) {
@@ -1257,7 +1209,7 @@ object Model_lwo {
             flen = FLEN_ERROR
             return 0.0f
         }
-        BigRevBytes(f,  /*4,*/1)
+        BigRevBytes(f, 1)
         flen += 4
         return if (FLOAT_IS_DENORMAL(f.getFloat(0))) {
             0.0f
@@ -1295,7 +1247,7 @@ object Model_lwo {
             return null
         }
         len = i + (i and 1)
-        s = ByteBuffer.allocate(len) // Mem_ClearedAlloc(len);
+        s = ByteBuffer.allocate(len)
         if (s == null) {
             flen = FLEN_ERROR
             return null
@@ -1309,10 +1261,10 @@ object Model_lwo {
             return null
         }
         flen += len
-        return TempDump.bbtocb(s).toString().trim { it <= ' ' } //TODO:check output(my tests return chinese characters).
+        return TempDump.bbtocb(s).toString().trim { it <= ' ' }
     }
 
-    @Deprecated("") //UNUSED
+    @Deprecated("")
     fun sgetI1(bp: Array<String>): Int {
         var i: Int
         if (flen == FLEN_ERROR) {
@@ -1332,34 +1284,18 @@ object Model_lwo {
         if (flen == FLEN_ERROR) {
             return 0
         }
-        //   memcpy( i, bp, 2 );
-        BigRevBytes(bp,  /*bp.position(), 2,*/1)
+        BigRevBytes(bp, 1)
         flen += 2
         i = bp.getShort()
-        bp.position(bp.position() + 2)
         return i
     }
 
-    @Deprecated("") //UNUSED
+    @Deprecated("")
     fun sgetI4(bp: Array<String?>?): Int {
         throw UnsupportedOperationException()
-        //        int[] i = {0};
-//
-//        if (flen == FLEN_ERROR) {
-//            return 0;
-//        }
-////   memcpy( &i, *bp, 4 );
-//        i[0] |= bp[0].charAt(0) << 24;
-//        i[0] |= bp[0].charAt(1) << 16;
-//        i[0] |= bp[0].charAt(2) << 8;
-//        i[0] |= bp[0].charAt(3) << 0;//TODO:check endianess
-//        BigRevBytes(i, /*4,*/ 1);
-//        flen += 4;
-//        bp[0] = bp[0].substring(4);
-//        return i[0];
     }
 
-    @Deprecated("") //UNUSED
+    @Deprecated("")
     fun sgetU1(bp: Array<String>): Char {
         val c: Char
         if (flen == FLEN_ERROR) {
@@ -1371,25 +1307,21 @@ object Model_lwo {
         return c
     }
 
-    fun sgetU2(bp: ByteBuffer): Short {
+    fun sgetU2(bp: ByteBuffer): Int {
         if (flen == FLEN_ERROR) {
             return 0
         }
-        //        i = (short) ((bp.get() << 8) | bp.get());//TODO: &0xFF???
 
         flen += 2
-        //        *bp += 2;
-        return bp.short
+        return bp.short.toInt() and 0xFFFF
     }
 
     fun sgetU4(bp: ByteBuffer): Int {
         if (flen == FLEN_ERROR) {
             return 0
         }
-        //   memcpy( &i, *bp, 4 );
-        BigRevBytes(bp,  /*bp.position(), 4,*/1)
+        BigRevBytes(bp, 1)
         flen += 4
-        //        bp.position(bp.position() + 4);
         return bp.int
     }
 
@@ -1399,7 +1331,7 @@ object Model_lwo {
         if (flen == FLEN_ERROR) {
             return 0
         }
-        if (bp.get(pos).toInt() != 0xFF) {
+        if ((bp.get(pos).toInt() and 0xFF) != 0xFF) {
             i = TempDump.btoi(bp.get(pos)) shl 8 or TempDump.btoi(bp.get(pos + 1))
             flen += 2
             bp.position(pos + 2)
@@ -1418,11 +1350,9 @@ object Model_lwo {
         if (flen == FLEN_ERROR) {
             return 0.0f
         }
-        //   memcpy( &f, *bp, 4 );
-        BigRevBytes(bp,  /*bp.position(), 4,*/1)
+        BigRevBytes(bp, 1)
         flen += 4
         f = bp.float
-        //        bp.position(bp.position() + 4);
         if (FLOAT_IS_DENORMAL(f)) {
             f = 0.0f
         }
@@ -1431,29 +1361,21 @@ object Model_lwo {
 
     fun sgetS0(bp: ByteBuffer): String {
         var s = ""
-        //   unsigned char *buf = *bp;
         var len: Int
         val pos = bp.position()
         if (flen == FLEN_ERROR) {
             return ""
         }
 
-        //   len = strlen( (const char*)buf ) + 1;
         s = String(bp.array()).substring(pos)
-        len = TempDump.strLen(s) + 1 //TODO:check
+        len = TempDump.strLen(s) + 1
         if (1 == len) {
             flen += 2
             bp.position(pos + 2)
             return ""
         }
         len += len and 1
-        //        s =  Mem_ClearedAlloc(len);
-//        if (null == s) {
-//            flen = FLEN_ERROR;
-//            return null;
-//        }
-//
-//   memcpy( s, buf, len );
+
         s = s.substring(0, len)
         flen += s.length
         bp.position(pos + s.length)
@@ -1470,11 +1392,6 @@ object Model_lwo {
     fun lwFreeObject(`object`: lwObject?) {
         var `object` = `object`
         if (`object` != null) {
-//            lwListFree(object.layer, lwFreeLayer.getInstance());
-//            lwListFree(object.env, lwFreeEnvelope.getInstance());
-//            lwListFree(object.clip, lwFreeClip.getInstance());
-//            lwListFree(object.surf, lwFreeSurface.getInstance());
-//            lwFreeTags(object.taglist);
             `object` = null
         }
     }
@@ -1543,14 +1460,8 @@ object Model_lwo {
             }
         }
         /* allocate an object and a default layer */
-        `object` = lwObject() // Mem_ClearedAlloc(sizeof(lwObject));
-        //            if (null == object) {
-//                break Fail;
-//            }
-        layer = lwLayer() // Mem_ClearedAlloc(sizeof(lwLayer));
-        //            if (null == layer) {
-//                break Fail;
-//            }
+        `object` = lwObject()
+        layer = lwLayer()
         `object`.layer = layer
         `object`.timeStamp[0] = fp.Timestamp()
 
@@ -1566,7 +1477,6 @@ object Model_lwo {
                 }
                 FileSystem_h.fileSystem.CloseFile(fp)
             }
-            //        lwFreeObject(object);
             return null
         }
 
@@ -1578,10 +1488,7 @@ object Model_lwo {
             when (id) {
                 ID_LAYR -> {
                     if (`object`.nlayers > 0) {
-                        layer = lwLayer() // Mem_ClearedAlloc(sizeof(lwLayer));
-                        //                            if (null == layer) {
-//                                break Fail;
-//                            }
+                        layer = lwLayer()
                         `object`.layer = lwListAdd(`object`.layer, layer)!!
                     }
                     `object`.nlayers++
@@ -1603,7 +1510,6 @@ object Model_lwo {
                             }
                             FileSystem_h.fileSystem.CloseFile(fp)
                         }
-                        //        lwFreeObject(object);
                         return null
                     }
                     if (rlen <= cksize - 2) {
@@ -1625,7 +1531,6 @@ object Model_lwo {
                         }
                         FileSystem_h.fileSystem.CloseFile(fp)
                     }
-                    //        lwFreeObject(object);
                     return null
                 }
 
@@ -1639,7 +1544,6 @@ object Model_lwo {
                         }
                         FileSystem_h.fileSystem.CloseFile(fp)
                     }
-                    //        lwFreeObject(object);
                     return null
                 }
 
@@ -1661,7 +1565,6 @@ object Model_lwo {
                             }
                             FileSystem_h.fileSystem.CloseFile(fp)
                         }
-                        //        lwFreeObject(object);
                         return null
                     }
                     layer.vmap = lwListAdd(layer.vmap, node)!!
@@ -1678,7 +1581,6 @@ object Model_lwo {
                         }
                         FileSystem_h.fileSystem.CloseFile(fp)
                     }
-                    //        lwFreeObject(object);
                     return null
                 }
 
@@ -1700,7 +1602,6 @@ object Model_lwo {
                             }
                             FileSystem_h.fileSystem.CloseFile(fp)
                         }
-                        //        lwFreeObject(object);
                         return null
                     }
                     if (rlen < cksize) {
@@ -1718,7 +1619,6 @@ object Model_lwo {
                         }
                         FileSystem_h.fileSystem.CloseFile(fp)
                     }
-                    //        lwFreeObject(object);
                     return null
                 }
 
@@ -1734,7 +1634,6 @@ object Model_lwo {
                             }
                             FileSystem_h.fileSystem.CloseFile(fp)
                         }
-                        //        lwFreeObject(object);
                         return null
                     }
                     `object`.env = lwListAdd(`object`.env, node)!!
@@ -1753,7 +1652,6 @@ object Model_lwo {
                             }
                             FileSystem_h.fileSystem.CloseFile(fp)
                         }
-                        //        lwFreeObject(object);
                         return null
                     }
                     `object`.clip = lwListAdd(`object`.clip, node)!!
@@ -1772,7 +1670,6 @@ object Model_lwo {
                             }
                             FileSystem_h.fileSystem.CloseFile(fp)
                         }
-                        //        lwFreeObject(object);
                         return null
                     }
                     `object`.surf = lwListAdd(`object`.surf, node)
@@ -1806,7 +1703,6 @@ object Model_lwo {
                     }
                     FileSystem_h.fileSystem.CloseFile(fp)
                 }
-                //        lwFreeObject(object);
                 return null
             }
         }
@@ -1829,7 +1725,6 @@ object Model_lwo {
                     }
                     FileSystem_h.fileSystem.CloseFile(fp)
                 }
-                //        lwFreeObject(object);
                 return null
             }
             if (!lwResolvePolySurfaces(layer.polygon, `object`)) {
@@ -1842,7 +1737,6 @@ object Model_lwo {
                     }
                     FileSystem_h.fileSystem.CloseFile(fp)
                 }
-                //        lwFreeObject(object);
                 return null
             }
             lwGetVertNormals(layer.point, layer.polygon)
@@ -1856,7 +1750,6 @@ object Model_lwo {
                     }
                     FileSystem_h.fileSystem.CloseFile(fp)
                 }
-                //        lwFreeObject(object);
                 return null
             }
             if (!lwGetPolyVMaps(layer.polygon, layer.vmap)) {
@@ -1869,7 +1762,6 @@ object Model_lwo {
                     }
                     FileSystem_h.fileSystem.CloseFile(fp)
                 }
-                //        lwFreeObject(object);
                 return null
             }
             layer = layer.next
@@ -1878,36 +1770,6 @@ object Model_lwo {
 
     }
 
-    //    static {
-    //        ID_SRFS = LWID_('S', 'R', 'F', 'S');
-    ////ID_FLAG= LWID_('F','L','A','G');
-    //        ID_VLUM = LWID_('V', 'L', 'U', 'M');
-    //        ID_VDIF = LWID_('V', 'D', 'I', 'F');
-    //        ID_VSPC = LWID_('V', 'S', 'P', 'C');
-    //        ID_RFLT = LWID_('R', 'F', 'L', 'T');
-    //        ID_BTEX = LWID_('B', 'T', 'E', 'X');
-    //        ID_CTEX = LWID_('C', 'T', 'E', 'X');
-    //        ID_DTEX = LWID_('D', 'T', 'E', 'X');
-    //        ID_LTEX = LWID_('L', 'T', 'E', 'X');
-    //        ID_RTEX = LWID_('R', 'T', 'E', 'X');
-    //        ID_STEX = LWID_('S', 'T', 'E', 'X');
-    //        ID_TTEX = LWID_('T', 'T', 'E', 'X');
-    //        ID_TFLG = LWID_('T', 'F', 'L', 'G');
-    //        ID_TSIZ = LWID_('T', 'S', 'I', 'Z');
-    //        ID_TCTR = LWID_('T', 'C', 'T', 'R');
-    //        ID_TFAL = LWID_('T', 'F', 'A', 'L');
-    //        ID_TVEL = LWID_('T', 'V', 'E', 'L');
-    //        ID_TCLR = LWID_('T', 'C', 'L', 'R');
-    //        ID_TVAL = LWID_('T', 'V', 'A', 'L');
-    ////ID_TAMP= LWID_('T','A','M','P');
-    ////ID_TIMG= LWID_('T','I','M','G');
-    //        ID_TAAS = LWID_('T', 'A', 'A', 'S');
-    //        ID_TREF = LWID_('T', 'R', 'E', 'F');
-    //        ID_TOPC = LWID_('T', 'O', 'P', 'C');
-    //        ID_SDAT = LWID_('S', 'D', 'A', 'T');
-    //        ID_TFP0 = LWID_('T', 'F', 'P', '0');
-    //        ID_TFP1 = LWID_('T', 'F', 'P', '1');
-    //    }
     /*
      ======================================================================
      add_clip()
@@ -1919,16 +1781,12 @@ object Model_lwo {
         var clist = clist
         val clip: lwClip
         var p: Int
-        clip = lwClip() // Mem_ClearedAlloc(sizeof(lwClip));
-        if (null == clip) {
-            return 0
-        }
+        clip = lwClip()
         clip.contrast.`val` = 1.0f
         clip.brightness.`val` = 1.0f
         clip.saturation.`val` = 1.0f
         clip.gamma.`val` = 1.0f
-        if (s[0]!!.indexOf("(sequence)").also { p = it } != 0) {
-//      p[ -1 ] = 0;
+        if (s[0]!!.indexOf("(sequence)").also { p = it } != -1) {
             s[0] = TempDump.replaceByIndex('\u0000', p, s[0]!!)
             clip.type = ID_ISEQ
             clip.source.seq.prefix = s[0]
@@ -1958,12 +1816,9 @@ object Model_lwo {
         var i: Int
         i = 0
         while (i < 3) {
-            env = lwEnvelope() // Mem_ClearedAlloc(sizeof(lwEnvelope));
-            key0 = lwKey() // Mem_ClearedAlloc(sizeof(lwKey));
-            key1 = lwKey() // Mem_ClearedAlloc(sizeof(lwKey));
-            if (null == env || null == key0 || null == key1) {
-                return 0
-            }
+            env = lwEnvelope()
+            key0 = lwKey()
+            key1 = lwKey()
             key0.next = key1
             key0.value = pos[i]
             key0.time = 0.0f
@@ -1974,11 +1829,9 @@ object Model_lwo {
             key0.shape = key1.shape
             env.index = nenvs[0] + i + 1
             env.type = 0x0301 + i
-            env.name = "" //(String) Mem_ClearedAlloc(11);
+            env.name = ""
             if (env.name != null) {
-                env.name = "Position." + ('X'.code + i)
-                //                env.name = "Position.X";
-//                env.name[9] += i;
+                env.name = "Position." + ('X' + i)
             }
             env.key = key0
             env.nkeys = 2
@@ -1999,7 +1852,7 @@ object Model_lwo {
      ====================================================================== */
     fun get_texture(s: String): lwTexture {
         val tex: lwTexture
-        tex = lwTexture() // Mem_ClearedAlloc(sizeof(lwTexture));
+        tex = lwTexture()
         tex.tmap.size.`val`[2] = 1.0f
         tex.tmap.size.`val`[1] = tex.tmap.size.`val`[2]
         tex.tmap.size.`val`[0] = tex.tmap.size.`val`[1]
@@ -2020,7 +1873,6 @@ object Model_lwo {
             }
             tex.param.imap.aa_strength = 1.0f
             tex.param.imap.amplitude.`val` = 1.0f
-            //            Mem_Free(s);
         } else {
             tex.type = ID_PROC.toLong()
             tex.param.proc.name = s
@@ -2048,14 +1900,7 @@ object Model_lwo {
         var i = 0
 
 
-        /* allocate the Surface structure */surf = lwSurface() // Mem_ClearedAlloc(sizeof(lwSurface));
-
-        if (surf == null) {
-            if (surf != null) {
-                lwFreeSurface.getInstance().run(surf)
-            }
-            return null
-        }
+        /* allocate the Surface structure */surf = lwSurface()
 
         /* non-zero defaults */surf.color.rgb[0] = 0.78431f
         surf.color.rgb[1] = 0.78431f
@@ -2286,13 +2131,7 @@ object Model_lwo {
                 }
 
                 ID_SHDR -> {
-                    shdr = lwPlugin() // Mem_ClearedAlloc(sizeof(lwPlugin));
-                    if (null == shdr) {
-                        if (surf != null) {
-                            lwFreeSurface.getInstance().run(surf)
-                        }
-                        return null
-                    }
+                    shdr = lwPlugin()
                     shdr.name = String(getbytes(fp, sz)!!)
                     surf.shader = lwListAdd(surf.shader, shdr)!!
                     surf.nshaders++
@@ -2341,7 +2180,6 @@ object Model_lwo {
      ====================================================================== */
     fun lwGetPolygons5(fp: idFile, cksize: Int, plist: lwPolygonList, ptoffset: Int): Boolean {
         var pp: lwPolygon
-        //        lwPolVert pv;
         val buf: ByteBuffer?
         var i: Int
         var j: Int
@@ -2364,9 +2202,8 @@ object Model_lwo {
 
         /* count the polygons and vertices */nverts = 0
         npols = 0
-        //            buf = buf;
         while (buf.position() < cksize) {
-            nv = sgetU2(buf).toInt()
+            nv = sgetU2(buf)
             nverts += nv
             npols++
             buf.position(buf.position() + 2 * nv)
@@ -2381,13 +2218,11 @@ object Model_lwo {
         }
 
         /* fill in the new polygons */
-//            buf = buf;
         pp = plist.pol!![plist.offset.also { p = it }]!!
-        //            pv = plist.pol[0].v[v = plist.voffset];
         v = plist.voffset
         i = 0
         while (i < npols) {
-            nv = sgetU2(buf).toInt()
+            nv = sgetU2(buf)
             pp.nverts = nv
             pp.type = ID_FACE.toLong()
             if (null == pp.v) {
@@ -2406,12 +2241,10 @@ object Model_lwo {
             j -= 1
             pp.surf = lwNode.getPosition(pp.surf, j) as lwSurface?
             pp = plist.pol!![p++]!!
-            //                pv = plist.pol[0].v[v += nv];
             v += nv
             i++
         }
 
-//            buf=null
         return true
 
     }
@@ -2448,8 +2281,6 @@ object Model_lwo {
 
 
         /* open the file */
-        //fp = fopen( filename, "rb" );
-        //if ( !fp ) return null;
 
         /* read the first 12 bytes */fp = FileSystem_h.fileSystem.OpenFileRead(filename)
         if (null == fp) {
@@ -2472,14 +2303,8 @@ object Model_lwo {
             return null
         }
         /* allocate an object and a default layer */
-        `object` = lwObject() // Mem_ClearedAlloc(sizeof(lwObject));
-        if (null == `object`) {
-            return gotoFail2(failID, id, fp, failpos)
-        }
-        layer = lwLayer() // Mem_ClearedAlloc(sizeof(lwLayer));
-        if (null == layer) {
-            return gotoFail2(failID, id, fp, failpos)
-        }
+        `object` = lwObject()
+        layer = lwLayer()
         `object`.layer = layer
         `object`.nlayers = 1
 
@@ -2555,7 +2380,6 @@ object Model_lwo {
             }
             FileSystem_h.fileSystem.CloseFile(fp)
         }
-        //        lwFreeObject(object);
         return null
     }
 
@@ -2568,18 +2392,8 @@ object Model_lwo {
     fun lwFreePoints(point: lwPointList?) {
         if (point != null) {
             if (point.pt != null) {
-//                for (i = 0; i < point.count; i++) {
-//                    if (point.pt[ i].pol != null) {
-//                        Mem_Free(point.pt[ i].pol);
-//                    }
-//                    if (point.pt[ i].vm != null) {
-//                        Mem_Free(point.pt[ i].vm);
-//                    }
-//                }
-//                Mem_Free(point.pt);
                 point.pt = null
             }
-            //            memset(point, 0, sizeof(lwPointList));
         }
     }
 
@@ -2592,22 +2406,8 @@ object Model_lwo {
     fun lwFreePolygons(plist: lwPolygonList?) {
         if (plist != null) {
             if (plist.pol != null) {
-//                for (i = 0; i < plist.count; i++) {
-//                    if (plist.pol[ i].v != null) {
-//                        for (j = 0; j < plist.pol[ i].nverts; j++) {
-//                            if (plist.pol[ i].v[ j].vm != null) {
-//                                Mem_Free(plist.pol[ i].v[ j].vm);
-//                            }
-//                        }
-//                    }
-//                }
-//                if (plist.pol[ 0].v != null) {
-//                    Mem_Free(plist.pol[ 0].v);
-//                }
-//                Mem_Free(plist.pol);
                 plist.pol = null
             }
-            //            memset(plist, 0, sizeof(lwPolygonList));
         }
     }
 
@@ -2631,19 +2431,16 @@ object Model_lwo {
         point.offset = point.count
         point.count += np
         var oldpt = point.pt
-        point.pt = arrayOfNulls(point.count) // Mem_Alloc(point.count);
+        point.pt = arrayOfNulls(point.count)
 
         if (null == point.pt) {
             return false
         }
         if (oldpt != null) {
-//            memcpy(point.pt, oldpt, point.offset * sizeof(lwPoint));
             System.arraycopy(oldpt, 0, point.pt, 0, point.offset)
-            //            Mem_Free(oldpt);
             oldpt = null
         }
-        //	memset( &point.pt[ point.offset ], 0, np * sizeof( lwPoint ) );
-        for (n in point.offset until np) {
+        for (n in point.offset until point.offset + np) {
             point.pt!![n] = lwPoint()
         }
 
@@ -2651,19 +2448,18 @@ object Model_lwo {
         if (null == f) {
             return false
         }
-        BigRevBytes(f,  /*4,*/np * 3)
+        BigRevBytes(f, np * 3)
 
         /* assign position values */i = 0
         j = 0
         while (i < np) {
-            point.pt!![i]!!.pos[0] = f.float //f[ j ];
-            point.pt!![i]!!.pos[1] = f.float //f[ j + 1 ];
-            point.pt!![i]!!.pos[2] = f.float //f[ j + 2 ];
+            point.pt!![i]!!.pos[0] = f.float
+            point.pt!![i]!!.pos[1] = f.float
+            point.pt!![i]!!.pos[2] = f.float
             i++
             j += 3
         }
 
-//        Mem_Free(f);
         return true
     }
 
@@ -2720,17 +2516,11 @@ object Model_lwo {
         plist.offset = plist.count
         plist.count += npols
         var oldpol = plist.pol
-        plist.pol = arrayOfNulls(plist.count) // Mem_Alloc(plist.count);
-        //        if (null == plist.pol) {
-//            return false;
-//        }
+        plist.pol = arrayOfNulls(plist.count)
         if (oldpol != null) {
-//            memcpy(plist.pol, oldpol, plist.offset);
             System.arraycopy(oldpol, 0, plist.pol, 0, plist.offset)
-            //            Mem_Free(oldpol);
             oldpol = null
         }
-        //        memset(plist.pol + plist.offset, 0, npols);
         i = 0
         while (i < npols) {
             plist.pol!![plist.offset + i] = lwPolygon()
@@ -2739,16 +2529,11 @@ object Model_lwo {
         plist.voffset = plist.vcount
         plist.vcount += nverts
         var oldpolv = plist.pol!![0]!!.v
-        plist.pol!![0]!!.v = arrayOfNulls(plist.vcount) // Mem_Alloc(plist.vcount);
-//        if (plist.pol[0].v.isEmpty()) {
-//            return false
-//        }
+        plist.pol!![0]!!.v = arrayOfNulls(plist.vcount)
         if (oldpolv != null) {
-//            memcpy(plist.pol[0].v, oldpolv, plist.voffset);
-            System.arraycopy(oldpolv, 0, plist.pol!![0]!!.v, 0, plist.offset)
-            oldpolv = null //Mem_Free(oldpolv);
+            System.arraycopy(oldpolv, 0, plist.pol!![0]!!.v, 0, plist.voffset)
+            oldpolv = null
         }
-        //        memset(plist.pol[ 0].v + plist.voffset, 0, nverts);
         i = 0
         while (i < nverts) {
             plist.pol!![0]!!.v!![plist.voffset + i] = lwPolVert()
@@ -2758,8 +2543,7 @@ object Model_lwo {
         /* fix up the old vertex pointers */i = 1
         while (i < plist.offset) {
             for (j in plist.pol!![i]!!.v!!.indices) {
-//            plist.pol[i].v = plist.pol[i - 1].v + plist.pol[i - 1].nverts;
-                plist.pol!![i]!!.v!![j] = lwPolVert() //TODO:simplify.
+                plist.pol!![i]!!.v!![j] = lwPolVert()
             }
             i++
         }
@@ -2775,7 +2559,6 @@ object Model_lwo {
      ====================================================================== */
     fun lwGetPolygons(fp: idFile, cksize: Int, plist: lwPolygonList, ptoffset: Int): Boolean {
         var pp: lwPolygon?
-        //        lwPolVert pv;
         var buf: ByteBuffer?
         var i: Int
         var j: Int
@@ -2800,9 +2583,8 @@ object Model_lwo {
 
         /* count the polygons and vertices */nverts = 0
         npols = 0
-        //            buf = buf;
-        while (buf.hasRemaining()) { //( bp < buf + cksize - 4 ) {
-            nv = sgetU2(buf).toInt()
+        while (buf.hasRemaining()) {
+            nv = sgetU2(buf)
             nv = nv and 0x03FF
             nverts += nv
             npols++
@@ -2816,13 +2598,12 @@ object Model_lwo {
             return gotoFreePolygon(plist)
         }
 
-        /* fill in the new polygons */buf.rewind() //bp = buf;
+        /* fill in the new polygons */buf.rewind()
         p = plist.offset
-        //            pv = plist.pol[0].v[v = plist.voffset];
         v = plist.voffset
         i = 0
         while (i < npols) {
-            nv = sgetU2(buf).toInt()
+            nv = sgetU2(buf)
             flags = nv and 0xFC00
             nv = nv and 0x03FF
             pp = plist.pol!![p++]!!
@@ -2838,7 +2619,6 @@ object Model_lwo {
                 j++
             }
 
-//                pv = plist.pol[0].v[v += nv];
             v += nv
             i++
         }
@@ -2924,10 +2704,7 @@ object Model_lwo {
                 i++
                 continue
             }
-            point.pt!![i]!!.pol = IntArray(point.pt!![i]!!.npols) // Mem_ClearedAlloc(point.pt[ i].npols);
-//            if (point.pt!![i]!!.pol.isNotEmpty()) {
-//                return false
-//            }
+            point.pt!![i]!!.pol = IntArray(point.pt!![i]!!.npols)
             point.pt!![i]!!.npols = 0
             i++
         }
@@ -2964,10 +2741,7 @@ object Model_lwo {
         if (tlist.count == 0) {
             return true
         }
-        s = arrayOfNulls(tlist.count) // Mem_ClearedAlloc(tlist.count);
-        //        if (null == s) {
-//            return 0;
-//        }
+        s = arrayOfNulls(tlist.count)
         i = 0
         while (i < tlist.count) {
             st = surf
@@ -2991,16 +2765,12 @@ object Model_lwo {
                 if (null == s.getOrNull(index)) {
                     return false
                 }
-                s[index]!!.name = "" //(String) Mem_ClearedAlloc(tlist.tag[ index].length() + 1);
-//                if (s[index].name.isNotEmpty()) {
-//                    return false
-//                }
+                s[index]!!.name = ""
                 s[index]!!.name = tlist.tag!![index]
                 surf = lwListAdd(surf, s[index])
                 `object`.nsurfs++
             }
-            //            polygon.pol!![ i].surf.set(s[ index]);
-            polygon.pol!![i]!!.surf = s[index] //TODO:should this be an set() to preserve the refs?
+            polygon.pol!![i]!!.surf = s[index]
             i++
         }
         return true
@@ -3081,14 +2851,8 @@ object Model_lwo {
     fun lwFreeTags(tlist: lwTagList?) {
         if (tlist != null) {
             if (tlist.tag != null) {
-//                for (i = 0; i < tlist.count; i++) {
-//                    if (tlist.tag[ i] != null) {
-//                        Mem_Free(tlist.tag[ i]);
-//                    }
-//                }
                 tlist.tag = null
             }
-            //            memset(tlist, 0, sizeof(lwTagList));
         }
     }
 
@@ -3118,7 +2882,7 @@ object Model_lwo {
         /* count the strings */
         bp = String(buf.array())
         val split = bp.split("\u0000").stream().filter { it.isNotEmpty() }.collect(Collectors.toList())
-        tags = split.toTypedArray() //TODO:make sure we don't need the \0?
+        tags = split.toTypedArray()
         nTags = tags.size
 
         /* expand the string array to hold the new tags */tList.offset = tList.count
@@ -3533,8 +3297,8 @@ object Model_lwo {
                 ID_GREN -> tex.param.grad.end = getF4(fp)
                 ID_GRPT -> tex.param.grad.repeat = getU2(fp)
                 ID_FKEY -> {
-                    nkeys = sz // sizeof(lwGradKey);
-                    tex.param.grad.key = Array(nkeys) { lwGradKey() } // Mem_ClearedAlloc(nkeys);
+                    nkeys = sz
+                    tex.param.grad.key = Array(nkeys) { lwGradKey() }
                     if (tex.param.grad.key!!.isEmpty()) {
                         return 0
                     }
@@ -3552,7 +3316,7 @@ object Model_lwo {
 
                 ID_IKEY -> {
                     nkeys = sz / 2
-                    tex.param.grad.ikey = IntArray(nkeys) // Mem_ClearedAlloc(nkeys);
+                    tex.param.grad.ikey = IntArray(nkeys)
                     if (null == tex.param.grad.ikey) {
                         return 0
                     }
@@ -3600,7 +3364,7 @@ object Model_lwo {
         var tex: lwTexture?
         var sz: Int
         val ok: Int
-        tex = lwTexture() // Mem_ClearedAlloc(sizeof(lwTexture));
+        tex = lwTexture()
         tex.type = type.toLong()
         tex.tmap.size.`val`[2] = 1.0f
         tex.tmap.size.`val`[1] = tex.tmap.size.`val`[2]
@@ -3634,7 +3398,7 @@ object Model_lwo {
      Read a shader record from a SURF.BLOK in an LWO2 file.
      ====================================================================== */
     fun lwGetShader(fp: idFile, bloksz: Int): lwPlugin? {
-        val shdr = lwPlugin() //Mem_ClearedAlloc(sizeof(lwPlugin));
+        val shdr = lwPlugin()
         var id: Int
         var sz: Int
         var hsz: Int
@@ -3743,7 +3507,7 @@ object Model_lwo {
      ====================================================================== */
     fun lwDefaultSurface(): lwSurface {
         val surf: lwSurface
-        surf = lwSurface() // Mem_ClearedAlloc(sizeof(lwSurface));
+        surf = lwSurface()
         surf.color.rgb[0] = 0.78431f
         surf.color.rgb[1] = 0.78431f
         surf.color.rgb[2] = 0.78431f
@@ -3772,10 +3536,7 @@ object Model_lwo {
         var rlen: Int
 
 
-        /* allocate the Surface structure */surf = lwSurface() // Mem_ClearedAlloc(sizeof(lwSurface));
-//            if (null == surf) {
-//                break Fail;
-//            }
+        /* allocate the Surface structure */surf = lwSurface()
 
         /* non-zero defaults */
         surf.color.rgb[0] = 0.78431f
@@ -3992,7 +3753,6 @@ object Model_lwo {
      ====================================================================== */
     fun lwGetVMap(fp: idFile, cksize: Int, ptoffset: Int, poloffset: Int, perpoly: Int): lwVMap? {
         var buf: ByteBuffer?
-        //        String b[];
         val vmap: lwVMap
         var i: Int
         var j: Int
@@ -4005,18 +3765,13 @@ object Model_lwo {
         if (null == buf) {
             return null
         }
-        vmap = lwVMap() // Mem_ClearedAlloc(sizeof(lwVMap));
-        //        if (null == vmap) {
-//            buf = null
-//            return null;
-//        }
+        vmap = lwVMap()
 
         /* initialize the vmap */vmap.perpoly = perpoly
 
-//        buf = buf;
         set_flen(0)
         vmap.type = sgetU4(buf).toLong()
-        vmap.dim = sgetU2(buf).toInt()
+        vmap.dim = sgetU2(buf)
         vmap.name = sgetS0(buf)
         rlen = get_flen()
 
@@ -4032,12 +3787,12 @@ object Model_lwo {
 
         /* allocate the vmap */
         vmap.nverts = npts
-        vmap.vindex = IntArray(npts) // Mem_ClearedAlloc(npts);
+        vmap.vindex = IntArray(npts)
         if (perpoly != 0) {
-            vmap.pindex = IntArray(npts) // Mem_ClearedAlloc(npts);
+            vmap.pindex = IntArray(npts)
         }
         if (vmap.dim > 0) {
-            vmap.value = Array(npts) { FloatArray(vmap.dim) } // Mem_ClearedAlloc(npts);
+            vmap.value = Array(npts) { FloatArray(vmap.dim) }
 
         }
 
@@ -4056,7 +3811,6 @@ object Model_lwo {
             i++
         }
         buf = null
-        //lwFreeVMap.getInstance().run(vmap)
         return vmap
 
     }
@@ -4094,7 +3848,7 @@ object Model_lwo {
         while (i < point.count) {
             if (point.pt!![i]!!.nvmaps != 0) {
                 point.pt!![i]!!.vm =
-                    Array(point.pt!![i]!!.nvmaps) { lwVMapPt() } // Mem_ClearedAlloc(point.pt[ i].nvmaps);
+                    Array(point.pt!![i]!!.nvmaps) { lwVMapPt() }
                 if (point.pt!![i]!!.vm == null) {
                     return false
                 }
@@ -4197,11 +3951,9 @@ object Model_lwo {
     /* generic linked list */
     abstract class lwNode : NiLLABLE<lwNode> {
         var NULL = false
-
-        //        lwNode next, prev;
         var data: Any? = null
         override fun oSet(node: lwNode): lwNode {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun isNULL(): Boolean {
@@ -4229,7 +3981,7 @@ object Model_lwo {
                 var position = getPosition(n)
                 if (position > pos) {
                     while (position != pos) {
-                        if (null == n) { //TODO:make sure the returning null isn't recast into an int somewhere.
+                        if (null == n) {
                             break
                         }
                         position--
@@ -4257,7 +4009,6 @@ object Model_lwo {
         var prev: lwPlugin? = null
         var ord: String? = null
 
-        //        Object data;
         override fun getNext(): lwNode? {
             return next
         }
@@ -4510,7 +4261,7 @@ object Model_lwo {
             opac_type = tempNode.opac_type
             opacity = tempNode.opacity
             ord = tempNode.ord
-            param = tempNode.param // TODO: check if this is OK to copy like the refs instead of deep copy
+            param = tempNode.param
             tmap = tempNode.tmap
             type = tempNode.type
 
@@ -4659,7 +4410,6 @@ object Model_lwo {
             return hash
         }
 
-        //TODO:make sure the name is enough for equality.
         override fun equals(obj: Any?): Boolean {
             if (obj == null) {
                 return false
@@ -4667,7 +4417,7 @@ object Model_lwo {
             if (obj !is lwSurface) {
                 return false
             }
-            return name === obj.name
+            return name == obj.name
         }
     }
 
@@ -4857,7 +4607,7 @@ object Model_lwo {
         var nsurfs = 0
         var surf // linked list of surfaces
                 : lwSurface? = null
-        var timeStamp: LongArray = longArrayOf(0)
+        var timeStamp: LongArray = LongArray(1)
     }
 
     /*
@@ -4883,8 +4633,6 @@ object Model_lwo {
         override fun run(p: Any?) {
             var clip = p as lwClip?
             if (clip != null) {
-//                lwListFree(clip.ifilter, lwFreePlugin.getInstance());
-//                lwListFree(clip.pfilter, lwFreePlugin.getInstance());
                 when (clip.type) {
                     ID_STIL -> {
                         if (clip.source.still.name != null) {
@@ -4937,7 +4685,6 @@ object Model_lwo {
     @Deprecated("")
     class lwFree private constructor() : LW() {
         override fun run(p: Any?) {
-//        Mem_Free(ptr);
         }
 
         companion object {
@@ -4962,8 +4709,6 @@ object Model_lwo {
                 if (env.name != null) {
                     env.name = null
                 }
-                //                lwListFree(env.key, lwFree.getInstance());
-//                lwListFree(env.cfilter, lwFreePlugin.getInstance());
                 env = null
             }
         }
@@ -4997,7 +4742,6 @@ object Model_lwo {
                 }
                 lwFreePoints(layer.point)
                 lwFreePolygons(layer.polygon)
-                //                lwListFree(layer.vmap, lwFreeVMap.getInstance());
                 layer = null
             }
         }
@@ -5019,19 +4763,6 @@ object Model_lwo {
     class lwFreePlugin private constructor() : LW() {
         override fun run(o: Any?) {
             throw TODO_Exception()
-            //            lwPlugin p = (lwPlugin) o;
-//            if (p != null) {
-//                if (p.ord != null) {
-//                    Mem_Free(p.ord);
-//                }
-//                if (p.name != null) {
-//                    Mem_Free(p.name);
-//                }
-//                if (p.data != null) {
-//                    Mem_Free(p.data);
-//                }
-//                Mem_Free(p);
-//            }
         }
 
         companion object {
@@ -5053,39 +4784,32 @@ object Model_lwo {
             var t = p as lwTexture?
             if (t != null) {
                 if (t.ord != null) {
-//                    Mem_Free(t.ord);
                     t.ord = null
                 }
                 when (t.type.toInt()) {
                     ID_IMAP -> if (t.param.imap.vmap_name != null) {
-//                            Mem_Free(t.param.imap.vmap_name);
                         t.param.imap.vmap_name = null
                     }
 
                     ID_PROC -> {
                         if (t.param.proc.name != null) {
-//                            Mem_Free(t.param.proc.name);
                             t.param.proc.name = null
                         }
                         if (t.param.proc.data != null) {
-//                            Mem_Free(t.param.proc.data);
                             t.param.proc.data = null
                         }
                     }
 
                     ID_GRAD -> {
                         if (t.param.grad.key != null) {
-//                            Mem_Free(t.param.grad.key);
                             t.param.grad.key = null
                         }
                         if (t.param.grad.ikey != null) {
-//                            Mem_Free(t.param.grad.ikey);
                             t.param.grad.ikey = null
                         }
                     }
                 }
                 if (t.tmap.ref_object != null) {
-//                    Mem_Free(t.tmap.ref_object);
                     t.tmap.ref_object = null
                 }
                 t = null
@@ -5116,20 +4840,6 @@ object Model_lwo {
                 if (surf.srcname != null) {
                     surf.srcname = null
                 }
-                //
-//                lwListFree(surf.shader, lwFreePlugin.getInstance());
-//
-//                lwListFree(surf.color.tex, lwFreeTexture.getInstance());
-//                lwListFree(surf.luminosity.tex, lwFreeTexture.getInstance());
-//                lwListFree(surf.diffuse.tex, lwFreeTexture.getInstance());
-//                lwListFree(surf.specularity.tex, lwFreeTexture.getInstance());
-//                lwListFree(surf.glossiness.tex, lwFreeTexture.getInstance());
-//                lwListFree(surf.reflection.val.tex, lwFreeTexture.getInstance());
-//                lwListFree(surf.transparency.val.tex, lwFreeTexture.getInstance());
-//                lwListFree(surf.eta.tex, lwFreeTexture.getInstance());
-//                lwListFree(surf.translucency.tex, lwFreeTexture.getInstance());
-//                lwListFree(surf.bump.tex, lwFreeTexture.getInstance());
-//
                 surf = null
             }
         }
@@ -5182,9 +4892,6 @@ object Model_lwo {
                     vmap.pindex = null
                 }
                 if (vmap.value != null) {
-//                    if (vmap.val[0] != 0.0f) {
-//                        Mem_Free(vmap.val[0]);
-//                    }
                     vmap.value = null
                 }
                 vmap.clear()

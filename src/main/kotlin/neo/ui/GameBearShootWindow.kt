@@ -265,7 +265,7 @@ object GameBearShootWindow {
             onContinue.ReadFromSaveGame(savefile)
             onNewGame.ReadFromSaveGame(savefile)
             timeSlice = savefile.ReadFloat()
-            timeRemaining = savefile.ReadInt().toFloat()
+            timeRemaining = savefile.ReadFloat()
             gameOver = savefile.ReadBool()
             currentLevel = savefile.ReadInt()
             goalsHit = savefile.ReadInt()
@@ -329,10 +329,6 @@ object GameBearShootWindow {
                 entities[i].Draw(dc!!)
                 i--
             }
-        }
-
-        fun Activate(activate: Boolean): String {
-            return ""
         }
 
         override fun GetWinVarByName(

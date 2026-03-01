@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/ai/AAS.h, neo/Game/ai/AAS.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game.AI
 
 import neo.Game.AI.AAS_local.idAASLocal
@@ -10,56 +28,49 @@ import neo.idlib.containers.CInt
 import neo.idlib.math.idPlane
 import neo.idlib.math.idVec3
 
-object AAS {
-    const val PATHTYPE_BARRIERJUMP = 2
-    const val PATHTYPE_JUMP = 3
-
-    /*
-     ===============================================================================
+/*
+ ===============================================================================
 
      Area Awareness System
 
-     ===============================================================================
-     */
+ ===============================================================================
+ */
+
+object AAS {
+
     // enum {
     const val PATHTYPE_WALK = 0
     const val PATHTYPE_WALKOFFLEDGE = 1
-
+    const val PATHTYPE_BARRIERJUMP = 2
+    const val PATHTYPE_JUMP = 3
     // };
+
     class aasPath_s {
-        var moveAreaNum // number of the area the AI should move towards
-                = 0
-        val moveGoal: idVec3 = idVec3() // point the AI should move towards
-        var reachability // reachability used for navigation
-                : idReachability? = null
-        val secondaryGoal: idVec3 = idVec3() // secondary move goal for complex navigation
-        var type // path type
-                = 0
+        var type: Int = 0                               // path type
+        val moveGoal: idVec3 = idVec3()                 // point the AI should move towards
+        var moveAreaNum: Int = 0                         // number of the area the AI should move towards
+        val secondaryGoal: idVec3 = idVec3()            // secondary move goal for complex navigation
+        var reachability: idReachability? = null         // reachability used for navigation
     }
 
     class aasGoal_s {
-        var areaNum // area the goal is in
-                = 0
-        val origin: idVec3 = idVec3() // position of goal
+        var areaNum: Int = 0                            // area the goal is in
+        val origin: idVec3 = idVec3()                   // position of goal
     }
 
     class aasObstacle_s {
-        val absBounds: idBounds = idBounds() // absolute bounds of obstacle
-        val expAbsBounds: idBounds = idBounds() // expanded absolute bounds of obstacle
+        val absBounds: idBounds = idBounds()            // absolute bounds of obstacle
+        val expAbsBounds: idBounds = idBounds()         // expanded absolute bounds of obstacle
     }
 
     abstract class idAASCallback {
-        // virtual						~idAASCallback() {};
         abstract fun TestArea(aas: idAAS, areaNum: Int): Boolean
     }
 
     abstract class idAAS {
-        // virtual						~idAAS() = 0;
+
         // Initialize for the given map.
-        abstract fun Init(
-            mapName: idStr,  /*unsigned int*/
-            mapFileCRC: Long
-        ): Boolean
+        abstract fun Init(mapName: idStr, /*unsigned int*/ mapFileCRC: Long): Boolean
 
         // Print AAS stats.
         abstract fun Stats()
@@ -119,10 +130,10 @@ object AAS {
         abstract fun SetAreaState(bounds: idBounds, areaContents: Int, disabled: Boolean): Boolean
 
         // Add an obstacle to the routing system.
-        abstract fun  /*aasHandle_t*/AddObstacle(bounds: idBounds): Int
+        abstract fun /*aasHandle_t*/ AddObstacle(bounds: idBounds): Int
 
         // Remove an obstacle from the routing system.
-        abstract fun RemoveObstacle(   /*aasHandle_t*/handle: Int)
+        abstract fun RemoveObstacle(/*aasHandle_t*/ handle: Int)
 
         // Remove all obstacles from the routing system.
         abstract fun RemoveAllObstacles()
@@ -201,6 +212,11 @@ object AAS {
         ): Boolean
 
         companion object {
+            /*
+             ============
+             idAAS::Alloc
+             ============
+             */
             fun Alloc(): idAAS {
                 return idAASLocal()
             }

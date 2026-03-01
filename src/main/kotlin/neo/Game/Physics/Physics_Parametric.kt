@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Physics/Physics_Parametric.h, neo/Game/Physics/Physics_Parametric.cpp
+ */
+
 package neo.Game.Physics
 
 import neo.Game.Entity
@@ -217,6 +225,28 @@ object Physics_Parametric {
                 = 0
         var useSplineAngles // set the orientation using the spline
                 = false
+
+        // FIX: Deep copy method to prevent reference aliasing in SaveState/RestoreState.
+        // C++ relies on struct assignment (operator=) which does member-wise value copy.
+        fun set(other: parametricPState_s) {
+            origin.set(other.origin)
+            axis.set(other.axis)
+            localOrigin.set(other.localOrigin)
+            localAngles.set(other.localAngles)
+            angles.set(other.angles)
+            time = other.time
+            atRest = other.atRest
+            useSplineAngles = other.useSplineAngles
+            // NOTE: Extrapolation/interpolation/spline objects are reference-copied.
+            // In practice, these define the parametric motion and are not mutated
+            // between SaveState and RestoreState calls (only during setup).
+            linearExtrapolation = other.linearExtrapolation
+            angularExtrapolation = other.angularExtrapolation
+            linearInterpolation = other.linearInterpolation
+            angularInterpolation = other.angularInterpolation
+            spline = other.spline
+            splineInterpolate = other.splineInterpolate
+        }
     }
 
     class idPhysics_Parametric : idPhysics_Base() {
@@ -585,12 +615,13 @@ object Physics_Parametric {
             return false
         }
 
+        // FIX: was `saved = current` (reference aliasing). Now uses deep copy.
         override fun SaveState() {
-            saved = current
+            saved.set(current)
         }
 
         override fun RestoreState() {
-            current = saved
+            current.set(saved)
             clipModel?.Link(Game_local.gameLocal.clip, self, 0, current.origin, current.axis)
         }
 
@@ -995,7 +1026,9 @@ object Physics_Parametric {
             current.spline = null
             current.splineInterpolate = idInterpolateAccelDecelLinear()
             current.splineInterpolate.Init(0.0f, 1.0f, 1.0f, 2.0f, 0.0f, 0.0f)
-            saved = current
+            // FIX: was `saved = current` (reference aliasing). Create independent saved state.
+            saved = parametricPState_s()
+            saved.set(current)
             isPusher = false
             pushFlags = 0
             clipModel = null

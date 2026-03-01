@@ -14,8 +14,6 @@ class ListGUI {
      ===============================================================================
      */
     abstract class idListGUI : idList<idStr?>() {
-        //TODO:what kind of impact does this inheritance which is farther inherited by ListGUILocal have!?
-        // virtual				~idListGUI() { }
         abstract fun Config(pGUI: idUserInterface?, name: String?)
         abstract fun Add(id: Int, s: idStr?)
 

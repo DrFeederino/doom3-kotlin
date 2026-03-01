@@ -1,8 +1,42 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms.
+You should have received a copy of these additional terms immediately following
+the terms and conditions of the GNU General Public License which accompanied
+the Doom 3 Source Code.  If not, please request a copy in writing from
+id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms,
+you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120,
+Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.Renderer.Cinematic.point
 import neo.Sound.snd_system
-import neo.TempDump.TODO_Exception
 import neo.TempDump.wrapToNativeBuffer
 import neo.framework.Common
 import neo.framework.FileSystem_h.fileSystem
@@ -74,8 +108,8 @@ object Cinematic {
         d.putShort(b.getShort(bPos + 0))
         d.putShort(b.getShort(bPos + 2))
         d.putShort(b.getShort(bPos + 2))
-        a.position(aPos + 4) // += 2;
-        b.position(bPos + 4) // += 2;
+        a.position(aPos + 4)
+        b.position(bPos + 4)
     }
 
     private fun VQ2TO4(a: IntBuffer, b: IntBuffer, c: IntBuffer, d: IntBuffer) {
@@ -101,15 +135,15 @@ object Cinematic {
         d.put(b[bPos + 0])
         d.put(b[bPos + 1])
         d.put(b[bPos + 1])
-        a.position(aPos + 2) // += 2;
-        b.position(bPos + 2) // += 2;
+        a.position(aPos + 2)
+        b.position(bPos + 2)
     }
 
     //
     private fun VQ2TO2(a: ByteBuffer, b: ByteBuffer, c: ByteBuffer, d: ByteBuffer) {
         val aPos = a.position()
         val bPos = b.position()
-        c.putShort(a.getShort(aPos)) //TODO:use shortBuffers instead?
+        c.putShort(a.getShort(aPos))
         c.putShort(b.getShort(bPos))
         d.putShort(a.getShort(aPos))
         d.putShort(a.getShort(aPos))
@@ -119,8 +153,8 @@ object Cinematic {
         d.putShort(a.getShort(aPos))
         d.putShort(b.getShort(bPos))
         d.putShort(b.getShort(bPos))
-        a.position(aPos + 2) //++;
-        b.position(bPos + 2) //++;
+        a.position(aPos + 2)
+        b.position(bPos + 2)
     }
 
     private fun VQ2TO2(a: IntBuffer, b: IntBuffer, c: IntBuffer, d: IntBuffer) {
@@ -136,12 +170,13 @@ object Cinematic {
         d.put(a[aPos])
         d.put(b[bPos])
         d.put(b[bPos])
-        a.get() //++;
-        b.get() //++;
+        a.get()
+        b.get()
     }
 
     private fun JPEGBlit(wStatus: ByteBuffer?, data: IntArray?, offset: Int, datasize: Int): Int {
-        throw TODO_Exception()
+        Common.common.Warning("JPEGBlit() called but libjpeg is not available")
+        return 0
     }
 
     /**
@@ -226,7 +261,6 @@ object Cinematic {
 
         // the pointers in cinData_t will remain valid until the next UpdateForTime() call
         open fun ImageForTime(milliseconds: Int): cinData_t {
-            //	memset( &c, 0, sizeof( c ) );
             return cinData_t()
         }
 
@@ -260,25 +294,13 @@ object Cinematic {
                     ROQ_YY_tab[i] = ((i shl 6) or (i shr 2)).toLong()
                     i++
                 }
-                file = IntArray(65536) // Mem_Alloc(65536);
+                file = IntArray(65536)
                 vq2 = ByteBuffer.allocate(256 * 16 * 4 * 2)
-                    .order(ByteOrder.LITTLE_ENDIAN) // Mem_Alloc(256*16*4 * sizeof( word ));
+                    .order(ByteOrder.LITTLE_ENDIAN)
                 vq4 = ByteBuffer.allocate(256 * 64 * 4 * 2)
-                    .order(ByteOrder.LITTLE_ENDIAN) // Mem_Alloc(256*64*4 * sizeof( word ));
+                    .order(ByteOrder.LITTLE_ENDIAN)
                 vq8 = ByteBuffer.allocate(256 * 256 * 4 * 2)
-                    .order(ByteOrder.LITTLE_ENDIAN) // Mem_Alloc(256*256*4 * sizeof( word ));
-
-//            //TODO:for debug purposes only.
-//            short[] bla2 = new short[256 * 16 * 4];
-//            short[] bla4 = new short[256 * 64 * 4];
-//            short[] bla8 = new short[256 * 256 * 4];
-//            Arrays.fill(bla2, (short) 0xCD);
-//            Arrays.fill(bla4, (short) 0xCD);
-//            Arrays.fill(bla8, (short) 0xCD);
-//            Arrays.fill(file, 0xCD);
-//            vq2.asShortBuffer().put(bla2);
-//            vq4.asShortBuffer().put(bla4);
-//            vq8.asShortBuffer().put(bla8);
+                    .order(ByteOrder.LITTLE_ENDIAN)
             }
 
             // shutdown cinematic play back data
@@ -332,7 +354,7 @@ object Cinematic {
     }
 
     internal class idCinematicLocal() :
-        idCinematic() { //    private static void flushBufferToDisk(final ByteBuffer buffer) {
+        idCinematic() {
         private val mComp = LongArray(256)
         private val t = LongArray(2)
         private var CIN_WIDTH = 0
@@ -362,7 +384,6 @@ object Cinematic {
         private var numQuads: Long = 0
         private var onQuad: Long = 0
 
-        //        private byte[][][] qStatus = new byte[2][][];
         private var qStatus: Array<Array<ByteBuffer?>?> = arrayOfNulls(2)
         private var roqF0: Long = 0
         private var roqF1: Long = 0
@@ -386,17 +407,17 @@ object Cinematic {
 
         init {
             status = cinStatus_t.FMV_EOF
-            qStatus[0] = arrayOfNulls(32768) // Mem_Alloc(32768);
-            qStatus[1] = arrayOfNulls(32768) // Mem_Alloc(32768);
+            qStatus[0] = arrayOfNulls(32768)
+            qStatus[1] = arrayOfNulls(32768)
         }
 
         private constructor(local: idCinematicLocal) : this() {
             System.arraycopy(local.mComp, 0, mComp, 0, mComp.size)
-            qStatus = local.qStatus //pointer
+            qStatus = local.qStatus
             fileName = local.fileName
             CIN_WIDTH = local.CIN_WIDTH
             CIN_HEIGHT = local.CIN_HEIGHT
-            iFile = local.iFile //pointer
+            iFile = local.iFile
             status = local.status
             tfps = local.tfps
             RoQPlayed = local.RoQPlayed
@@ -407,7 +428,7 @@ object Cinematic {
             samplesPerLine = local.samplesPerLine
             roq_id = local.roq_id
             screenDelta = local.screenDelta
-            buf = local.buf //pointer
+            buf = local.buf
             samplesPerPixel = local.samplesPerPixel
             xSize = local.xSize
             ySize = local.ySize
@@ -424,7 +445,7 @@ object Cinematic {
             animationLength = local.animationLength
             startTime = local.startTime
             frameRate = local.frameRate
-            image = local.image //pointer
+            image = local.image
             looping = local.looping
             dirty = local.dirty
             half = local.half
@@ -464,7 +485,7 @@ object Cinematic {
             CIN_HEIGHT = DEFAULT_CIN_HEIGHT
             CIN_WIDTH = DEFAULT_CIN_WIDTH
             samplesPerPixel = 4
-            startTime = 0 //Sys_Milliseconds();
+            startTime = 0
             buf = null
             val tempFile = ByteBuffer.allocate(file!!.size)
             iFile!!.Read(tempFile, 16)
@@ -495,7 +516,7 @@ object Cinematic {
             if (thisTime < 0) {
                 thisTime = 0
             }
-            cinData = cinData_t() //memset( &cinData, 0, sizeof(cinData) );
+            cinData = cinData_t()
             if (r_skipROQ.GetBool()) {
                 return cinData
             }
@@ -553,9 +574,6 @@ object Cinematic {
             cinData.imageHeight = CIN_HEIGHT
             cinData.status = status
             cinData.image = wrapToNativeBuffer(buf!!.slice().array())
-            //            if (tr_render.variable >= 189) {
-//            flushBufferToDisk(buf);
-//            }
             return cinData
         }
 
@@ -565,7 +583,6 @@ object Cinematic {
 
         override fun Close() {
             if (image != null) {
-//                Mem_Free(image);
                 image = null
                 buf = null
                 status = cinStatus_t.FMV_EOF
@@ -741,7 +758,6 @@ object Cinematic {
                             buf = image
                         }
                         if (numQuads == 0L) {        // first frame
-//				memcpy(image+screenDelta, image, samplesPerLine*ysize);
                             System.arraycopy(
                                 image!!.array(),
                                 0,
@@ -780,8 +796,13 @@ object Cinematic {
                     ROQ_QUAD_JPEG -> if (0L == numQuads) {
                         normalBuffer0 = t[0]
                         JPEGBlit(image, file!!, framedata, RoQFrameSize)
-                        //				memcpy(image+screenDelta, image, samplesPerLine*ysize);
-                        System.arraycopy(image, 0, image, screenDelta, samplesPerLine.toInt() * ySize)
+                        System.arraycopy(
+                            image!!.array(),
+                            0,
+                            image!!.array(),
+                            screenDelta,
+                            samplesPerLine.toInt() * ySize
+                        )
                         numQuads++
                     }
 
@@ -804,7 +825,6 @@ object Cinematic {
                 roq_flags = (file!![framedata + 6] + file!![framedata + 7] * 256).toLong()
                 roqF0 = file!![framedata + 7].toByte().toLong()
                 roqF1 = file!![framedata + 6].toByte().toLong()
-                //                System.out.printf("roq_id=%d, roqF0=%d, roqF1=%d\n", roq_id, roqF0, roqF1);
                 if (RoQFrameSize > 65536 || roq_id == 0x1084) {
                     Common.common.DPrintf("roq_size>65536||roq_id==0x1084\n")
                     status = cinStatus_t.FMV_EOF
@@ -816,20 +836,16 @@ object Cinematic {
                 if (inMemory && status != cinStatus_t.FMV_EOF) {
                     inMemory = false
                     framedata += 8
-                    redump = true //goto redump;
+                    redump = true
                 }
-            } while (redump) //{
-
+            } while (redump)
 //
 // one more frame hits the dust
 //
-//	assert(RoQFrameSize <= 65536);
-//	r = Sys_StreamedRead( file, RoQFrameSize+8, 1, iFile );
             RoQPlayed += (RoQFrameSize + 8).toLong()
         }
 
         private fun move8_32(src: ByteBuffer, dst: ByteBuffer?, spl: Long) {
-//            if (true) {
             val dsrc: IntBuffer
             val ddst: IntBuffer
             val dspl: Int
@@ -900,34 +916,9 @@ object Cinematic {
             ddst.put(7 * dspl + 5, dsrc[7 * dspl + 5])
             ddst.put(7 * dspl + 6, dsrc[7 * dspl + 6])
             ddst.put(7 * dspl + 7, dsrc[7 * dspl + 7])
-            //}else{
-//	// double *dsrc, *ddst;
-//	int dspl;
-//
-//	// dsrc = (double *)src;
-//	// ddst = (double *)dst;
-//	dspl = spl>>3;
-//
-//	dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; dst[3] = src[3];
-//	src += dspl; dst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; dst[3] = src[3];
-//	src += dspl; dst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; dst[3] = src[3];
-//	src += dspl; dst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; dst[3] = src[3];
-//	src += dspl; dst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; dst[3] = src[3];
-//	src += dspl; dst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; dst[3] = src[3];
-//	src += dspl; dst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; dst[3] = src[3];
-//	src += dspl; dst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1]; dst[2] = src[2]; dst[3] = src[3];
-//            }
         }
 
         private fun move4_32(src: ByteBuffer, dst: ByteBuffer?, spl: Long) {
-//            if (true) {
             val dsrc: IntBuffer
             val ddst: IntBuffer
             val dspl: Int
@@ -950,26 +941,9 @@ object Cinematic {
             ddst.put(3 * dspl + 1, dsrc[3 * dspl + 1])
             ddst.put(3 * dspl + 2, dsrc[3 * dspl + 2])
             ddst.put(3 * dspl + 3, dsrc[3 * dspl + 3])
-            //}else{
-//	// double *dsrc, *ddst;
-//	int dspl;
-//
-//	// dsrc = (double *)src;
-//	// ddst = (double *)dst;
-//	dspl = spl>>3;
-//
-//	dst[0] = src[0]; dst[1] = src[1];
-//	src += dspl; dst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1];
-//	src += dspl; dst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1];
-//	src += dspl; dst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1];
-//            }
         }
 
         private fun blit8_32(src: ByteBuffer, dst: ByteBuffer?, spl: Long) {
-//            if (true) {
             val dsrc: IntBuffer
             val ddst: IntBuffer
             val dspl: Int
@@ -1040,34 +1014,9 @@ object Cinematic {
             ddst.put(7 * dspl + 5, dsrc.get())
             ddst.put(7 * dspl + 6, dsrc.get())
             ddst.put(7 * dspl + 7, dsrc.get())
-            //}else{
-//	// double *dsrc, *ddst;
-//	int dspl;
-//
-//	// dsrc = (double *)src;
-//	// ddst = (double *)dst;
-//	dspl = spl>>3;
-//
-//	dst[0] = dsrc[0]; dst[1] = dsrc[1]; dst[2] = dsrc[2]; dst[3] = dsrc[3];
-//	dsrc += 4; ddst += dspl;
-//	dst[0] = dsrc[0]; dst[1] = dsrc[1]; dst[2] = dsrc[2]; dst[3] = dsrc[3];
-//	dsrc += 4; ddst += dspl;
-//	dst[0] = dsrc[0]; dst[1] = dsrc[1]; dst[2] = dsrc[2]; dst[3] = dsrc[3];
-//	dsrc += 4; ddst += dspl;
-//	dst[0] = dsrc[0]; dst[1] = dsrc[1]; dst[2] = dsrc[2]; dst[3] = dsrc[3];
-//	dsrc += 4; ddst += dspl;
-//	dst[0] = dsrc[0]; dst[1] = dsrc[1]; dst[2] = dsrc[2]; dst[3] = dsrc[3];
-//	dsrc += 4; ddst += dspl;
-//	dst[0] = dsrc[0]; dst[1] = dsrc[1]; dst[2] = dsrc[2]; dst[3] = dsrc[3];
-//	dsrc += 4; ddst += dspl;
-//	dst[0] = dsrc[0]; dst[1] = dsrc[1]; dst[2] = dsrc[2]; dst[3] = dsrc[3];
-//	dsrc += 4; ddst += dspl;
-//	dst[0] = dsrc[0]; dst[1] = dsrc[1]; dst[2] = dsrc[2]; dst[3] = dsrc[3];
-//            }
         }
 
         private fun blit4_32(src: ByteBuffer, dst: ByteBuffer?, spl: Long) {
-//            if (true) {
             val dsrc: IntBuffer
             val ddst: IntBuffer
             val dspl: Int
@@ -1090,26 +1039,9 @@ object Cinematic {
             ddst.put(3 * dspl + 1, dsrc.get())
             ddst.put(3 * dspl + 2, dsrc.get())
             ddst.put(3 * dspl + 3, dsrc.get())
-            //}else{
-//	// double *dsrc, *ddst;
-//	int dspl;
-//
-//	// dsrc = (double *)src;
-//	// ddst = (double *)dst;
-//	dspl = spl>>3;
-//
-//	dst[0] = src[0]; dst[1] = src[1];
-//	dsrc += 2; ddst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1];
-//	dsrc += 2; ddst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1];
-//	dsrc += 2; ddst += dspl;
-//	dst[0] = src[0]; dst[1] = src[1];
-//            }
         }
 
         private fun blit2_32(src: ByteBuffer, dst: ByteBuffer?, spl: Long) {
-//            if (true) {
             val dsrc: IntBuffer
             val ddst: IntBuffer
             val dspl: Int
@@ -1120,20 +1052,8 @@ object Cinematic {
             ddst.put(0 * dspl + 1, dsrc.get())
             ddst.put(1 * dspl + 0, dsrc.get())
             ddst.put(1 * dspl + 1, dsrc.get())
-            //}else{
-//	// double *dsrc, *ddst;
-//	int dspl;
-//
-//	// dsrc = (double *)src;
-//	// ddst = (double *)dst;
-//	dspl = spl>>3;
-//
-//	dst[0] = src[0];
-//	dst[dspl] = src[1];
-//            }
         }
 
-        //
         private fun yuv_to_rgb(y: Long, u: Long, v: Long): Short {
             var r: Long
             var g: Long
@@ -1190,7 +1110,6 @@ object Cinematic {
                 b = 255
             }
 
-//            System.out.printf("----- %d, %d, %d, %d, %d, %d, %d, %d\n", LittleLong((r) + (g << 8) + (b << 16)), y, u, v, YY, r, g, b);
             return LittleLong(r + (g shl 8) + (b shl 16))
         }
 
@@ -1271,7 +1190,7 @@ object Cinematic {
                             y0 = input[i_ptr++].toLong()
                             y1 = input[i_ptr++].toLong()
                             y2 = input[i_ptr++].toLong()
-                            y3 = input[i_ptr++].toLong() //TODO:beware the signed vs unsigned shit.
+                            y3 = input[i_ptr++].toLong()
                             cr = input[i_ptr++].toLong()
                             cb = input[i_ptr++].toLong()
                             ibptr.put(yuv_to_rgb24(y0, cr, cb).also { x0 = it })
@@ -1490,9 +1409,8 @@ object Cinematic {
             temp = null
             i = (numQuadCels - 64).toInt()
             while (i < numQuadCels) {
-                //temp;			// eoq
                 qStatus[1]!![i] = temp
-                qStatus[0]!![i] = qStatus[1]!![i] // eoq
+                qStatus[0]!![i] = qStatus[1]!![i]
                 i++
             }
         }
@@ -1508,12 +1426,12 @@ object Cinematic {
             screenDelta = (CIN_HEIGHT * samplesPerLine).toInt()
             if (image == null) {
                 image = ByteBuffer.allocate((CIN_WIDTH * CIN_HEIGHT * samplesPerPixel * 2).toInt())
-                    .order(ByteOrder.LITTLE_ENDIAN) //Mem_Alloc((int) (CIN_WIDTH * CIN_HEIGHT * samplesPerPixel * 2));
+                    .order(ByteOrder.LITTLE_ENDIAN)
             }
             half = false
             smoothedDouble = false
-            t[0] = screenDelta.toLong() //t[0] = (0 - (unsigned int)image)+(unsigned int)image+screenDelta;
-            t[1] = -screenDelta.toLong() //t[1] = (0 - ((unsigned int)image + screenDelta))+(unsigned int)image;
+            t[0] = screenDelta.toLong()
+            t[1] = -screenDelta.toLong()
             drawX = CIN_WIDTH.toLong()
             drawY = CIN_HEIGHT.toLong()
         }
@@ -1564,31 +1482,4 @@ object Cinematic {
             private var debugImageForTime = 0
         }
     }
-    //        try {
-    //            File file = new File("/temp/j" + fileNumber);
-    //            file.createNewFile();
-    //            try (FileChannel fileChannel = FileChannel.open(file.toPath(), StandardOpenOption.WRITE)) {
-    //                fileChannel.write(buffer.slice());
-    //            }
-    ////            File fileVQ2 = new File("/temp/jvq2" + fileNumber);
-    ////            fileVQ2.createNewFile();
-    ////            try (FileChannel fileChannel = FileChannel.open(fileVQ2.toPath(), StandardOpenOption.WRITE)) {
-    ////                fileChannel.write(vq2.duplicate());
-    ////            }
-    ////            File fileVQ4 = new File("/temp/jvq4" + fileNumber);
-    ////            fileVQ4.createNewFile();
-    ////            try (FileChannel fileChannel = FileChannel.open(fileVQ4.toPath(), StandardOpenOption.WRITE)) {
-    ////                fileChannel.write(vq4.duplicate());
-    ////            }
-    ////            File fileVQ8 = new File("/temp/jvq8" + (fileNumber));
-    ////            fileVQ8.createNewFile();
-    ////            try (FileChannel fileChannel = FileChannel.open(fileVQ8.toPath(), StandardOpenOption.WRITE)) {
-    ////                fileChannel.write(vq8.duplicate());
-    ////            }
-    //            fileNumber++;
-    //        } catch (IOException ex) {
-    //            Logger.getLogger(Cinematic.class.getName()).log(Level.SEVERE, null, ex);
-    //        }
-    //    }
-    //    static int fileNumber = 0;
 }

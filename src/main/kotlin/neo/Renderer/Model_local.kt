@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/Model.cpp + neo/renderer/Model_local.h
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.Renderer.Material.deform_t
@@ -103,16 +129,9 @@ object Model_local {
                 : Boolean
         protected var isStaticWorldModel: Boolean
         protected var lastArchivedFrame: Int
-
-        //
-        //
         protected var lastModifiedFrame: Int
         protected var levelLoadReferenced // for determining if it needs to be freed
                 : Boolean
-
-        //
-        //
-        //
         protected var name: idStr
         protected var purged // eventually we will have dynamic reloading
                 : Boolean
@@ -238,14 +257,12 @@ object Model_local {
 
         override fun AddSurface(surface: modelSurface_s?) {
             surfaces.Append(modelSurface_s(surface))
-            //surfaces.AppendClone(surface);
             if (surface!!.geometry != null) {
                 bounds.plusAssign(surface.geometry!!.bounds)
             }
         }
 
         override fun FinishSurfaces() {
-            DBG_FinishSurfaces++
             var i: Int
             var totalVerts: Int
             var totalIndexes: Int
@@ -412,53 +429,39 @@ object Model_local {
         }
 
         override fun Print() {
-            var totalTris = 0
-            var totalVerts = 0
-            val totalBytes: Int // = 0;
-            totalBytes = Memory()
-            var closed = 'C'
-            for (j in 0 until NumSurfaces()) {
-                val surf: modelSurface_s? = Surface(j)
-                if (null == surf!!.geometry) {
+            Common.common.Printf("%s\n", name)
+            Common.common.Printf("Static model.\n")
+            Common.common.Printf(
+                "bounds: (%f %f %f) to (%f %f %f)\n",
+                bounds[0][0], bounds[0][1], bounds[0][2],
+                bounds[1][0], bounds[1][1], bounds[1][2]
+            )
+
+            Common.common.Printf("    verts  tris material\n")
+            for (i in 0 until NumSurfaces()) {
+                val surf: modelSurface_s? = Surface(i)
+
+                val tri: srfTriangles_s? = surf!!.geometry
+                val material: idMaterial? = surf.shader
+
+                if (tri == null) {
+                    Common.common.Printf("%2i: %s, NULL surface geometry\n", i, material!!.GetName())
                     continue
                 }
-                if (!surf.geometry!!.perfectHull) {
-                    closed = ' '
+
+                Common.common.Printf("%2i: %5i %5i %s", i, tri.numVerts, tri.numIndexes / 3, material!!.GetName())
+                if (tri.generateNormals) {
+                    Common.common.Printf(" (smoothed)\n")
+                } else {
+                    Common.common.Printf("\n")
                 }
-                totalTris += surf.geometry!!.numIndexes / 3
-                totalVerts += surf.geometry!!.numVerts
             }
-            Common.common.Printf(
-                "%c%4dk %3d %4d %4d %s",
-                closed,
-                totalBytes / 1024,
-                NumSurfaces(),
-                totalVerts,
-                totalTris,
-                Name()
-            )
-            if (IsDynamicModel() == dynamicModel_t.DM_CACHED) {
-                Common.common.Printf(" (DM_CACHED)")
-            }
-            if (IsDynamicModel() == dynamicModel_t.DM_CONTINUOUS) {
-                Common.common.Printf(" (DM_CONTINUOUS)")
-            }
-            if (defaulted) {
-                Common.common.Printf(" (DEFAULTED)")
-            }
-            if (bounds[0][0] >= bounds[1][0]) {
-                Common.common.Printf(" (EMPTY BOUNDS)")
-            }
-            if (bounds[1][0] - bounds[0][0] > 100000) {
-                Common.common.Printf(" (HUGE BOUNDS)")
-            }
-            Common.common.Printf("\n")
         }
 
         override fun List() {
             var totalTris = 0
             var totalVerts = 0
-            val totalBytes: Int //= 0;
+            val totalBytes: Int
             totalBytes = Memory()
             var closed = 'C'
             for (j in 0 until NumSurfaces()) {
@@ -570,10 +573,6 @@ object Model_local {
             view: viewDef_s?,
             cachedModel: idRenderModel?
         ): idRenderModel? {
-            if (cachedModel != null) {
-//		delete cachedModel;
-//		cachedModel = NULL;
-            }
             Common.common.Error("InstantiateDynamicModel called on static model '%s'", name.toString())
             return null
         }
@@ -598,7 +597,7 @@ object Model_local {
             return null
         }
 
-        override fun NearestJoint(surfaceNum: Int, a: Int, c: Int, b: Int): Int {
+        override fun NearestJoint(surfaceNum: Int, a: Int, b: Int, c: Int): Int {
             return Model.INVALID_JOINT
         }
 
@@ -662,12 +661,9 @@ object Model_local {
         }
 
         override fun WriteToDemoFile(f: idDemoFile) {
-//            int[] data = new int[1];
-
             // note that it has been updated
             lastArchivedFrame = tr.frameCount
 
-//            data = DC_DEFINE_MODEL.ordinal();//FIXME:WHY?
             f.WriteInt(demoCommand_t.DC_DEFINE_MODEL)
             f.WriteHashString(Name())
             var i: Int
@@ -751,8 +747,6 @@ object Model_local {
                 return false
             }
             ConvertLWOToModelSurfaces(lwo)
-            //
-//            lwFreeObject(lwo);
             return true
         }
 
@@ -789,23 +783,22 @@ object Model_local {
                     max = data.get(i)
                 }
             }
-            if (true) {
-                // write out a gray scale height map
-                val image: ByteBuffer = ByteBuffer.allocate(len) // R_StaticAlloc(len);
-                var image_p = 0
-                for (i in 0 until (len / 4)) {
-                    val v: Float = (data.get(i) - min) / (max - min)
-                    image.put(image_p, (v * 255).toInt().toByte())
-                    image.put(image_p + 3, 255.toByte())
-                    image_p += 4
-                }
-                val tgaName = idStr((fileName))
-                tgaName.StripFileExtension()
-                tgaName.Append(".tga")
-                Image_files.R_WriteTGA(tgaName.toString(), image, size, size, false)
-                //                R_StaticFree(image);
-//return false;
+            // write out a gray scale height map
+            val image: ByteBuffer = ByteBuffer.allocate(len)
+            var image_p = 0
+            for (i in 0 until (len / 4)) {
+                val v: Float = (data.get(i) - min) / (max - min)
+                val gray = (v * 255).toInt().toByte()
+                image.put(image_p, gray)
+                image.put(image_p + 1, gray)
+                image.put(image_p + 2, gray)
+                image.put(image_p + 3, 255.toByte())
+                image_p += 4
             }
+            val tgaName = idStr((fileName))
+            tgaName.StripFileExtension()
+            tgaName.Append(".tga")
+            Image_files.R_WriteTGA(tgaName.toString(), image, size, size, false)
 
             // find the island above sea level
             var minX: Int
@@ -874,7 +867,6 @@ object Model_local {
             val width: Int = maxX - minX + 1
             val height: Int = maxY - minY + 1
 
-//width /= 2;
             // allocate triangle surface
             val tri: srfTriangles_s = R_AllocStaticTriSurf()
             tri.numVerts = width * height
@@ -896,14 +888,6 @@ object Model_local {
             for (i in 0 until (height - 1)) {
                 for (j in 0 until (width - 1)) {
                     val v: Int = (i * (width - 1) + j) * 6
-                    //if (false){
-//			tri.indexes[ v + 0 ] = i * width + j;
-//			tri.indexes[ v + 1 ] = (i+1) * width + j;
-//			tri.indexes[ v + 2 ] = (i+1) * width + j + 1;
-//			tri.indexes[ v + 3 ] = i * width + j;
-//			tri.indexes[ v + 4 ] = (i+1) * width + j + 1;
-//			tri.indexes[ v + 5 ] = i * width + j + 1;
-//}else
                     run({
                         tri.indexes!![v + 0] = i * width + j
                         tri.indexes!![v + 1] = (i * width) + j + 1
@@ -915,7 +899,6 @@ object Model_local {
                 }
             }
 
-//            fileSystem.FreeFile(data);
             data = null
             val surface = modelSurface_s()
             surface.geometry = tri
@@ -937,7 +920,7 @@ object Model_local {
         }
 
         override fun oSet(FindModel: idRenderModel?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         fun ConvertASEToModelSurfaces(ase: aseModel_s?): Boolean {
@@ -1046,8 +1029,9 @@ object Model_local {
             while (objectNum < ase.objects.Num()) {
                 `object` = ase.objects[objectNum]
                 mesh = `object`!!.mesh
-                material = ase.materials[`object`.materialRef]
-                im1 = DeclManager.declManager.FindMaterial(ctos(material!!.name))
+                material = if (ase.materials.Num() > `object`.materialRef) ase.materials[`object`.materialRef] else null
+                im1 =
+                    DeclManager.declManager.FindMaterial(if (material != null) idStr(ctos(material!!.name)) else null as idStr?)
                 var normalsParsed: Boolean = mesh.normalsParsed
 
                 // completely ignore any explict normals on surfaces with a renderbump command
@@ -1062,7 +1046,7 @@ object Model_local {
                 // note that we really should combine the surfaces with common materials
                 // before doing this operation, because we can miss a slop combination
                 // if they are in different surfaces
-                vRemap = IntArray(mesh.numVertexes) // R_StaticAlloc(mesh.numVertexes /* sizeof( vRemap[0] ) */);
+                vRemap = IntArray(mesh.numVertexes)
                 if (fastLoad) {
                     // renderbump doesn't care about vertex count
                     j = 0
@@ -1085,7 +1069,7 @@ object Model_local {
                         j++
                     }
                 }
-                tvRemap = IntArray(mesh.numTVertexes) // R_StaticAlloc(mesh.numTVertexes /* sizeof( tvRemap[0] )*/);
+                tvRemap = IntArray(mesh.numTVertexes)
                 if (fastLoad) {
                     // renderbump doesn't care about vertex count
                     j = 0
@@ -1164,10 +1148,7 @@ object Model_local {
 
                         // we may or may not have colors to compare
                         if (mesh.colorsParsed) {
-                            color[0] = mesh.faces!![j]!!.vertexColors[k]!![0]
-                            color[1] = mesh.faces!![j]!!.vertexColors[k]!![1]
-                            color[2] = mesh.faces!![j]!!.vertexColors[k]!![2]
-                            color[3] = mesh.faces!![j]!!.vertexColors[k]!![3]
+                            color = mesh.faces!![j]!!.vertexColors[k]
                         }
 
                         // find a matching vert
@@ -1262,11 +1243,6 @@ object Model_local {
                     }
                     j++
                 }
-                //
-//                R_StaticFree(mvTable);
-//                R_StaticFree(mvHash);
-//                R_StaticFree(tvRemap);
-//                R_StaticFree(vRemap);
 
                 // see if we need to merge with a previous surface of the same material
                 modelSurf = surfaces[mergeTo[objectNum]]
@@ -1284,7 +1260,6 @@ object Model_local {
         }
 
         fun ConvertLWOToModelSurfaces(lwo: lwObject?): Boolean {
-            DBG_ConvertLWOToModelSurfaces++
             var im1: idMaterial?
             var im2: idMaterial?
             var tri: srfTriangles_s
@@ -1326,7 +1301,6 @@ object Model_local {
             // the modeling programs can save out multiple surfaces with a common
             // material, but we would like to merge them together where possible
             mergeTo = IntArray(i)
-            //	memset( &surf, 0, sizeof( surf ) );
             if (!r_mergeModelSurfaces.GetBool()) {
                 // don't merge any
                 lwoSurf = lwo.surf
@@ -1386,7 +1360,7 @@ object Model_local {
                 return false
             }
             val vList: Array<idVec3> =
-                idVec3.generateArray(layer.point.count) // R_StaticAlloc(layer.point.count /* sizeof( vList[0] ) */);
+                idVec3.generateArray(layer.point.count)
             j = 0
             while (j < layer.point.count) {
                 vList[j].set(
@@ -1430,7 +1404,7 @@ object Model_local {
             } else {
                 Common.common.Warning("ConvertLWOToModelSurfaces: model '%s' has bad or missing uv data", name)
                 numTVertexes = 1
-                tvList = Array(numTVertexes) { idVec2() } // Mem_ClearedAlloc(numTVertexes /* sizeof( tvList[0] )*/);
+                tvList = Array(numTVertexes) { idVec2() };
             }
 
             // It seems like the tools our artists are using often generate
@@ -1438,7 +1412,7 @@ object Model_local {
             // note that we really should combine the surfaces with common materials
             // before doing this operation, because we can miss a slop combination
             // if they are in different surfaces
-            vRemap = IntArray(layer.point.count) // R_StaticAlloc(layer.point.count /* sizeof( vRemap[0] )*/);
+            vRemap = IntArray(layer.point.count);
             if (fastLoad) {
                 // renderbump doesn't care about vertex count
                 j = 0
@@ -1461,7 +1435,7 @@ object Model_local {
                     j++
                 }
             }
-            tvRemap = IntArray(numTVertexes) // R_StaticAlloc(numTVertexes /* sizeof( tvRemap[0] )*/);
+            tvRemap = IntArray(numTVertexes);
             if (fastLoad) {
                 // renderbump doesn't care about vertex count
                 j = 0
@@ -1505,7 +1479,7 @@ object Model_local {
 
                 // we will have a hash chain based on the xyz values
                 mvHash =
-                    arrayOfNulls(layer.point.count) // R_ClearedStaticAlloc(layer.point.count, matchVert_s.class/* sizeof( mvHash[0] ) */);
+                    arrayOfNulls(layer.point.count);
 
                 // allocate triangle surface
                 tri = R_AllocStaticTriSurf()
@@ -1653,9 +1627,6 @@ object Model_local {
                     tri.verts!![j]!!.color = mv.color
                     j++
                 }
-                //
-//                R_StaticFree(mvTable);
-//                R_StaticFree(mvHash);
 
                 // see if we need to merge with a previous surface of the same material
                 modelSurf = surfaces[mergeTo[i]]
@@ -1670,11 +1641,6 @@ object Model_local {
                 lwoSurf = lwoSurf.next
                 i++
             }
-            //
-//            R_StaticFree(tvRemap);
-//            R_StaticFree(vRemap);
-//            R_StaticFree(tvList);
-//            R_StaticFree(vList);
             return true
         }
 
@@ -1812,7 +1778,7 @@ object Model_local {
                 // note that we really should combine the surfaces with common materials
                 // before doing this operation, because we can miss a slop combination
                 // if they are in different surfaces
-                vRemap = IntArray(mesh.numVertexes) // R_StaticAlloc(mesh.numVertexes /* sizeof( vRemap[0] )*/);
+                vRemap = IntArray(mesh.numVertexes)
                 if (fastLoad) {
                     // renderbump doesn't care about vertex count
                     j = 0
@@ -1835,7 +1801,7 @@ object Model_local {
                         j++
                     }
                 }
-                tvRemap = IntArray(mesh.numTVertexes) // R_StaticAlloc(mesh.numTVertexes /* sizeof( tvRemap[0] ) */);
+                tvRemap = IntArray(mesh.numTVertexes);
                 if (fastLoad) {
                     // renderbump doesn't care about vertex count
                     j = 0
@@ -1864,11 +1830,11 @@ object Model_local {
                 // there are, because MA tracks them separately but we need them unified
                 // the maximum possible number of combined vertexes is the number of indexes
                 mvTable =
-                    arrayOfNulls(mesh.numFaces * 3) // R_ClearedStaticAlloc(mesh.numFaces * 3 /* sizeof( mvTable[0] )*/);
+                    arrayOfNulls(mesh.numFaces * 3);
 
                 // we will have a hash chain based on the xyz values
                 mvHash =
-                    arrayOfNulls(mesh.numVertexes) // R_ClearedStaticAlloc(mesh.numVertexes /* sizeof( mvHash[0] )*/);
+                    arrayOfNulls(mesh.numVertexes);
 
                 // allocate triangle surface
                 tri = R_AllocStaticTriSurf()
@@ -1911,7 +1877,6 @@ object Model_local {
                             normal.set((mesh.faces!![j]!!.vertexNormals[k])!!)
                         }
 
-                        //BSM: Todo: Fix the vertex colors
                         // we may or may not have colors to compare
                         if (mesh.faces!![j]!!.vertexColors[k] != -1 && mesh.faces!![j]!!.vertexColors[k] != -999) {
                             val offset: Int = mesh.faces!![j]!!.vertexColors[k] * 4
@@ -1975,23 +1940,12 @@ object Model_local {
                 }
 
                 // an MA allows the texture coordinates to be scaled, translated, and rotated
-                //BSM: Todo: Does Maya support this and if so how
-                //if ( ase.materials.Num() == 0 ) {
                 vOffset = 0.0f
                 uOffset = vOffset
                 vTiling = 1.0f
                 uTiling = vTiling
                 textureSin = 0.0f
                 textureCos = 1.0f
-                //} else {
-                //	material = ase.materials[object.materialRef];
-                //	uOffset = -material.uOffset;
-                //	vOffset = material.vOffset;
-                //	uTiling = material.uTiling;
-                //	vTiling = material.vTiling;
-                //	textureSin = idMath::Sin( material.angle );
-                //	textureCos = idMath::Cos( material.angle );
-                //}
 
                 // now allocate and generate the combined vertexes
                 R_AllocStaticTriSurfVerts(tri, tri.numVerts)
@@ -2011,11 +1965,6 @@ object Model_local {
                     }
                     j++
                 }
-                //
-//                R_StaticFree(mvTable);
-//                R_StaticFree(mvHash);
-//                R_StaticFree(tvRemap);
-//                R_StaticFree(vRemap);
 
                 // see if we need to merge with a previous surface of the same material
                 modelSurf = surfaces[mergeTo[objectNum]]
@@ -2032,7 +1981,6 @@ object Model_local {
             return true
         }
 
-        //	static short []identityColor/*[4]*/ = { 255, 255, 255, 255 };
         fun ConvertLWOToASE(obj: lwObject?, fileName: String?): aseModel_s? {
             var j: Int
             var k: Int
@@ -2048,7 +1996,7 @@ object Model_local {
             var materialRef = 0
             var surf: lwSurface? = obj.surf
             while (surf != null) {
-                val mat = aseMaterial_t() // Mem_ClearedAlloc(sizeof( * mat));
+                val mat = aseMaterial_t();
                 System.arraycopy(surf.name!!.toCharArray(), 0, mat.name, 0, surf.name!!.length)
                 mat.vTiling = 1.0f
                 mat.uTiling = mat.vTiling
@@ -2057,16 +2005,16 @@ object Model_local {
                 mat.angle = mat.uOffset
                 ase.materials.Append(mat)
                 val layer: lwLayer? = obj.layer
-                val `object` = aseObject_t() // Mem_ClearedAlloc(sizeof( * object));
+                val `object` = aseObject_t();
                 `object`.materialRef = materialRef++
                 val mesh: aseMesh_t = `object`.mesh
                 ase.objects.Append(`object`)
                 mesh!!.numFaces = layer!!.polygon.count
                 mesh.numTVFaces = mesh.numFaces
-                mesh.faces = arrayOfNulls(mesh.numFaces) // Mem_Alloc(mesh.numFaces /* sizeof( mesh.faces[0] )*/);
+                mesh.faces = arrayOfNulls(mesh.numFaces);
                 mesh.numVertexes = layer.point.count
                 mesh.vertexes =
-                    idVec3.generateArray(mesh.numVertexes) // Mem_Alloc(mesh.numVertexes /* sizeof( mesh.vertexes[0] )*/);
+                    idVec3.generateArray(mesh.numVertexes);
 
                 // vertex positions
                 if (layer.point.count <= 0) {
@@ -2093,7 +2041,7 @@ object Model_local {
                 }
                 if (mesh.numTVertexes != 0) {
                     mesh.tvertexes =
-                        Array(mesh.numTVertexes) { idVec2() } // Mem_Alloc(mesh.numTVertexes /* sizeof( mesh.tvertexes[0] )*/);
+                        Array(mesh.numTVertexes) { idVec2() }
                     var offset = 0
                     var vm: lwVMap? = layer.vmap
                     while (vm != null) {
@@ -2113,7 +2061,7 @@ object Model_local {
                     Common.common.Warning("ConvertLWOToASE: model '%s' has bad or missing uv data", (fileName)!!)
                     mesh.numTVertexes = 1
                     mesh.tvertexes =
-                        Array(mesh.numTVertexes) { idVec2() } // Mem_ClearedAlloc(mesh.numTVertexes /* sizeof( mesh.tvertexes[0] )*/);
+                        Array(mesh.numTVertexes) { idVec2() };
                 }
                 mesh.normalsParsed = true
                 mesh.colorsParsed = true // because we are falling back to the surface color
@@ -2147,13 +2095,13 @@ object Model_local {
 
                         // complete fallbacks
                         mesh.faces!![faceIndex]!!.tVertexNum[k] = 0
-                        mesh.faces!![faceIndex]!!.vertexColors[k]!![0] =
+                        mesh.faces!![faceIndex]!!.vertexColors[k][0] =
                             (surf.color.rgb[0] * 255).toInt().toByte()
-                        mesh.faces!![faceIndex]!!.vertexColors[k]!![1] =
+                        mesh.faces!![faceIndex]!!.vertexColors[k][1] =
                             (surf.color.rgb[1] * 255).toInt().toByte()
-                        mesh.faces!![faceIndex]!!.vertexColors[k]!![2] =
+                        mesh.faces!![faceIndex]!!.vertexColors[k][2] =
                             (surf.color.rgb[2] * 255).toInt().toByte()
-                        mesh.faces!![faceIndex]!!.vertexColors[k]!![3] = 255.toByte()
+                        mesh.faces!![faceIndex]!!.vertexColors[k][3] = 255.toByte()
 
                         // first set attributes from the vertex
                         val pt: lwPoint? = layer.point.pt!![poly.getV(k)!!.index]
@@ -2166,7 +2114,7 @@ object Model_local {
                             }
                             if (vm.vmap.type == Model_lwo.LWID_('R', 'G', 'B', 'A').toLong()) {
                                 for (chan in 0..3) {
-                                    mesh.faces!![faceIndex]!!.vertexColors[k]!![chan] =
+                                    mesh.faces!![faceIndex]!!.vertexColors[k][chan] =
                                         (255 * vm.vmap.value!![vm.index][chan]).toInt().toByte()
                                 }
                             }
@@ -2182,7 +2130,7 @@ object Model_local {
                             }
                             if (vm.vmap.type == Model_lwo.LWID_('R', 'G', 'B', 'A').toLong()) {
                                 for (chan in 0..3) {
-                                    mesh.faces!![faceIndex]!!.vertexColors[k]!![chan] =
+                                    mesh.faces!![faceIndex]!!.vertexColors[k][chan] =
                                         (255 * vm.vmap.value!![vm.index][chan]).toInt().toByte()
                                 }
                             }
@@ -2196,12 +2144,10 @@ object Model_local {
                 mesh.numFaces = faceIndex
                 mesh.numTVFaces = faceIndex
                 val newFaces: Array<aseFace_t?> =
-                    arrayOfNulls(mesh.numFaces) // Mem_Alloc(mesh.numFaces /* sizeof ( mesh.faces[0] ) */);
-                //		memcpy( newFaces, mesh.faces, sizeof( mesh.faces[0] ) * mesh.numFaces );
+                    arrayOfNulls(mesh.numFaces);
                 for (i in 0 until mesh.numFaces) {
                     newFaces[i] = mesh.faces!![i]
                 }
-                //                Mem_Free(mesh.faces);
                 mesh.faces = newFaces
                 surf = surf.next
             }
@@ -2249,15 +2195,15 @@ object Model_local {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         internal class matchVert_s(val index: Int) {
@@ -2267,17 +2213,6 @@ object Model_local {
             var v: Int = 0
             var tv: Int = 0
 
-            //            static int getPosition(matchVert_s v1, matchVert_s[] vList) {
-            //                int i;
-            //
-            //                for (i = 0; i < vList.length; i++) {
-            //                    if (vList[i].equals(v1)) {
-            //                        break;
-            //                    }
-            //                }
-            //
-            //                return i;
-            //            }
             override fun hashCode(): Int {
                 var result: Int = v
                 result = 31 * result + tv
@@ -2290,16 +2225,10 @@ object Model_local {
                 val that: matchVert_s = o as matchVert_s
                 if (v != that.v) return false
                 return tv == that.tv
-            } //            static matchVert_s[] generateArray(final int length) {
-            //                return Stream.
-            //                        generate(matchVert_s::new).
-            //                        limit(length).
-            //                        toArray(matchVert_s[]::new);
-            //            }
+            }
         }
 
         companion object {
-            //
             protected val r_mergeModelSurfaces: idCVar = idCVar(
                 "r_mergeModelSurfaces",
                 "1",
@@ -2313,8 +2242,6 @@ object Model_local {
             protected val r_slopVertex: idCVar =
                 idCVar("r_slopVertex", "0.01", CVAR_RENDERER, "merge xyz coordinates this far apart")
             val identityColor /*[4]*/: ByteArray = byteArrayOf(255.toByte(), 255.toByte(), 255.toByte(), 255.toByte())
-            private val DBG_ConvertASEToModelSurfaces: Int = 0
-            private var DBG_ConvertLWOToModelSurfaces: Int = 0
 
             /*
          ================
@@ -2341,7 +2268,6 @@ object Model_local {
 
          ================
          */
-            private var DBG_FinishSurfaces: Int = 0
         }
     }
 }

@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Game.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.AFEntity.idAFEntity_Base
@@ -921,7 +939,6 @@ object Game {
             meshAxis: idMat3,
             poseIsSet: BooleanArray
         ): idRenderModel? {
-            var meshAxis = meshAxis
             var i: Int
             var jointNum: Int
             val af: idDeclAF?
@@ -1043,8 +1060,8 @@ object Game {
                 }
                 bodyOrigin[i].set(fb.origin.ToVec3())
                 newBodyOrigin[i].set(bodyOrigin[i])
-                bodyAxis[i] = axis
-                newBodyAxis[i] = bodyAxis[i]
+                bodyAxis[i].set(axis)
+                newBodyAxis[i].set(bodyAxis[i])
                 i++
             }
 
@@ -1075,23 +1092,18 @@ object Game {
                 angles.yaw = sscanf.nextFloat()
                 angles.roll = sscanf.nextFloat()
                 if (fb.jointName.Icmp("origin") == 0) {
-                    meshAxis = bodyAxis[i]!!.Transpose().times(angles.ToMat3())
+                    meshAxis.set(bodyAxis[i]!!.Transpose().times(angles.ToMat3()))
                     meshOrigin.set(origin.minus(bodyOrigin[i].times(meshAxis)))
                     poseIsSet[0] = true
                 } else {
                     newBodyOrigin[i].set(origin)
-                    newBodyAxis[i] = angles.ToMat3()
+                    newBodyAxis[i].set(angles.ToMat3())
                 }
                 arg = args.MatchPrefix("body ", arg)
             }
 
             // save the original joints
-            originalJoints = arrayOfNulls<idJointMat?>(numMD5joints)
-            i = 0
-            while (i < numMD5joints) {
-                originalJoints[i] = ent.joints!![i]
-                i++
-            }
+            originalJoints = Array(numMD5joints) { idJointMat(ent.joints!![it]!!) }
             // buffer to store the joint mods
             jointMod =
                 arrayOfNulls<declAFJointMod_t>(numMD5joints) //memset(jointMod, -1, numMD5joints * sizeof(declAFJointMod_t));
@@ -1117,9 +1129,10 @@ object Game {
                 }
                 if (jointNum >= 0 && jointNum < ent.numJoints) {
                     jointMod[jointNum] = fb.jointMod
-                    modifiedAxis[jointNum] =
+                    modifiedAxis[jointNum].set(
                         bodyAxis[i]!!.times(originalJoints[jointNum]!!.ToMat3().Transpose()).Transpose()
                             .times(newBodyAxis[i]!!.times(meshAxis.Transpose()))
+                    )
                     // FIXME: calculate correct modifiedOrigin
                     modifiedOrigin[jointNum].set(originalJoints[jointNum]!!.ToVec3())
                 }

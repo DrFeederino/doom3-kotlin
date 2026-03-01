@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Material.dynamicidImage_t
@@ -102,8 +127,6 @@ object tr_subview {
         ndcBounds.Clear()
         i = 0
         while (i < tri.numVerts) {
-
-//		int j;
             var pointFlags: Int
             tr_main.R_TransformModelToClip(
                 tri.verts!![i]!!.xyz, drawSurf.space!!.modelViewMatrix,
@@ -164,12 +187,9 @@ object tr_subview {
             w[0] = tr_main.R_LocalPointToGlobal(drawSurf.space!!.modelMatrix, v1)
             w[1] = tr_main.R_LocalPointToGlobal(drawSurf.space!!.modelMatrix, v2)
             w[2] = tr_main.R_LocalPointToGlobal(drawSurf.space!!.modelMatrix, v3)
-            w[2].t = 0.0f
-            w[2].s = w[2].t
-            w[1].t = w[2].s
-            w[1].s = w[1].t
-            w[0].t = w[1].s
-            w[0].s = w[0].t
+            w[0].s = 0.0f; w[0].t = 0.0f
+            w[1].s = 0.0f; w[1].t = 0.0f
+            w[2].s = 0.0f; w[2].t = 0.0f
             j = 0
             while (j < 4) {
                 if (!w.ClipInPlace(tr.viewDef!!.frustum[j].unaryMinus(), 0.1f)) {
@@ -204,7 +224,7 @@ object tr_subview {
         val plane = idPlane()
 
         // copy the viewport size from the original
-        parms = viewDef_s(tr.viewDef!!) //        parms = (viewDef_s) R_FrameAlloc(sizeof(parms));
+        parms = viewDef_s(tr.viewDef!!)
         parms.renderView.viewID = 0 // clear to allow player bodies to show up, and suppress view weapons
         parms.isSubview = true
         parms.isMirror = true
@@ -262,12 +282,9 @@ object tr_subview {
      */
     fun R_XrayViewBySurface(drawSurf: drawSurf_s?): viewDef_s {
         val parms: viewDef_s
-        //	orientation_t	surface, camera;
-//	idPlane			originalPlane, plane;
 
         // copy the viewport size from the original
-//	parms = (viewDef_s )R_FrameAlloc( sizeof( parms ) );
-        parms = tr.viewDef!!
+        parms = viewDef_s(tr.viewDef!!)
         parms.renderView.viewID = 0 // clear to allow player bodies to show up, and suppress view weapons
         parms.isSubview = true
         parms.isXraySubview = true
@@ -293,8 +310,7 @@ object tr_subview {
         }
 
         // copy the viewport size from the original
-//	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
-        parms = tr.viewDef!!
+        parms = viewDef_s(tr.viewDef!!)
         parms.isSubview = true
         parms.isMirror = false
         parms.renderView = surf.space!!.entityDef!!.parms.remoteRenderView!!
@@ -401,7 +417,7 @@ object tr_subview {
         parms.subviewSurface = surf
 
         // triangle culling order changes with mirroring
-        parms.isMirror = (parms.isMirror xor tr.viewDef!!.isMirror) // != 0 );
+        parms.isMirror = (parms.isMirror xor tr.viewDef!!.isMirror)
 
         // generate render commands for it
         tr_main.R_RenderView(parms)
@@ -500,20 +516,18 @@ object tr_subview {
                 when (stage!!.texture.dynamic) {
                     dynamicidImage_t.DI_REMOTE_RENDER -> R_RemoteRender(drawSurf, stage.texture)
                     dynamicidImage_t.DI_MIRROR_RENDER -> R_MirrorRender(
-                        drawSurf,  /*const_cast<textureStage_t *>*/
+                        drawSurf,
                         (stage.texture),
                         scissor
                     )
 
                     dynamicidImage_t.DI_XRAY_RENDER -> R_XrayRender(
-                        drawSurf,  /*const_cast<textureStage_t *>*/
+                        drawSurf,
                         (stage.texture),
                         scissor
                     )
 
-                    dynamicidImage_t.DI_STATIC -> TODO()
-                    dynamicidImage_t.DI_SCRATCH -> TODO()
-                    dynamicidImage_t.DI_CUBE_RENDER -> TODO()
+                    else -> {} // DI_STATIC, DI_SCRATCH, DI_CUBE_RENDER: no subview action
                 }
             }
             return true
@@ -529,7 +543,7 @@ object tr_subview {
         parms.subviewSurface = drawSurf
 
         // triangle culling order changes with mirroring
-        parms.isMirror = (parms.isMirror xor tr.viewDef!!.isMirror) // != 0 );
+        parms.isMirror = (parms.isMirror xor tr.viewDef!!.isMirror)
 
         // generate render commands for it
         tr_main.R_RenderView(parms)

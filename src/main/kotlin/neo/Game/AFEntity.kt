@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/AFEntity.cpp, neo/Game/AFEntity.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.AF.idAF
@@ -136,7 +154,7 @@ object AFEntity {
             var i: Int
 
             // don't present to the renderer if the entity hasn't changed
-            if (0 == thinkFlags and Entity.TH_UPDATEVISUALS) {
+            if ((thinkFlags and Entity.TH_UPDATEVISUALS) == 0) {
                 return
             }
             BecomeInactive(Entity.TH_UPDATEVISUALS)
@@ -365,7 +383,7 @@ object AFEntity {
 
         override fun Think() {
             super.Think()
-            if (thinkFlags and Entity.TH_UPDATEPARTICLES != 0) {
+            if ((thinkFlags and Entity.TH_UPDATEPARTICLES) != 0) {
                 UpdateDamageEffects()
             }
         }
@@ -432,7 +450,8 @@ object AFEntity {
 
         override fun AddDamageEffect(collision: trace_s, velocity: idVec3, damageDefName: String) {
             if (body != null) {
-                val c = collision
+                val c = trace_s()
+                c.set(collision)
                 c.c.id = Clip.JOINT_HANDLE_TO_CLIPMODEL_ID(attachJoint)
                 body!!.AddDamageEffect(c, velocity, damageDefName)
             }
@@ -572,7 +591,7 @@ object AFEntity {
         override fun Think() {
             RunPhysics()
             UpdateAnimation()
-            if (thinkFlags and Entity.TH_UPDATEVISUALS != 0) {
+            if ((thinkFlags and Entity.TH_UPDATEVISUALS) != 0) {
                 Present()
                 LinkCombat()
             }
@@ -845,19 +864,18 @@ object AFEntity {
         }
 
         override fun Present() {
-            val skeleton: renderEntity_s
             if (!Game_local.gameLocal.isNewFrame) {
                 return
             }
 
             // don't present to the renderer if the entity hasn't changed
-            if (0 == thinkFlags and Entity.TH_UPDATEVISUALS) {
+            if ((thinkFlags and Entity.TH_UPDATEVISUALS) == 0) {
                 return
             }
 
             // update skeleton model
             if (gibbed && !IsHidden() && skeletonModel != null) {
-                skeleton = renderEntity!!
+                val skeleton = renderEntity_s(renderEntity!!)
                 skeleton.hModel = skeletonModel
                 // add to refresh list
                 if (skeletonModelDefHandle == -1) {
@@ -920,7 +938,7 @@ object AFEntity {
                     list[i].GetPhysics().SetClipMask(Material.CONTENTS_SOLID)
                     velocity.set(list[i].GetPhysics().GetAbsBounds().GetCenter().minus(entityCenter))
                     velocity.NormalizeFast()
-                    velocity.plusAssign(if (i and 1 == 1) dir else dir.unaryMinus())
+                    velocity.plusAssign(if ((i and 1) == 1) dir else dir.unaryMinus())
                     list[i].GetPhysics().SetLinearVelocity(velocity.times(75.0f))
                 }
                 list[i].GetRenderEntity()!!.noShadow = true
@@ -1498,10 +1516,9 @@ object AFEntity {
             var velocity = 0.0f
             var steerAngle = 0.0f
             val origin = idVec3()
-            idMat3()
             val wheelRotation = idRotation()
             val steerRotation = idRotation()
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 if (player != null) {
                     // capture the input from a player
                     velocity = SysCvar.g_vehicleVelocity.GetFloat()
@@ -1600,7 +1617,7 @@ object AFEntity {
                  */
             }
             UpdateAnimation()
-            if (thinkFlags and Entity.TH_UPDATEVISUALS != 0) {
+            if ((thinkFlags and Entity.TH_UPDATEVISUALS) != 0) {
                 Present()
                 LinkCombat()
             }
@@ -1715,7 +1732,7 @@ object AFEntity {
             val origin = idVec3()
             val axis = idMat3()
             val rotation = idRotation()
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 if (player != null) {
                     // capture the input from a player
                     velocity = SysCvar.g_vehicleVelocity.GetFloat()
@@ -1796,7 +1813,7 @@ object AFEntity {
                 }
             }
             UpdateAnimation()
-            if (thinkFlags and Entity.TH_UPDATEVISUALS != 0) {
+            if ((thinkFlags and Entity.TH_UPDATEVISUALS) != 0) {
                 Present()
                 LinkCombat()
             }
@@ -1923,7 +1940,7 @@ object AFEntity {
             val origin = idVec3()
             val axis = idMat3()
             val rotation = idRotation()
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 if (player != null) {
                     // capture the input from a player
                     velocity = SysCvar.g_vehicleVelocity.GetFloat()
@@ -2014,7 +2031,7 @@ object AFEntity {
                 }
             }
             UpdateAnimation()
-            if (thinkFlags and Entity.TH_UPDATEVISUALS != 0) {
+            if ((thinkFlags and Entity.TH_UPDATEVISUALS) != 0) {
                 Present()
                 LinkCombat()
             }
@@ -2103,7 +2120,7 @@ object AFEntity {
 
         override fun Think() {
             val steamDir = idVec3()
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 steamDir.x = Game_local.gameLocal.random.CRandomFloat() * steamForce
                 steamDir.y = Game_local.gameLocal.random.CRandomFloat() * steamForce
                 steamDir.z = steamUpForce

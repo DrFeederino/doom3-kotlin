@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.TempDump.TODO_Exception
@@ -16,8 +41,6 @@ object qgl {
     val qGL_FALSE: Boolean = false
     val qGL_TRUE: Boolean = true
     private val GL_DEBUG: Boolean = false
-    var bla: Int = 0
-
     init {
         if (GL_DEBUG) qglEnable(GL43.GL_DEBUG_OUTPUT)
     }
@@ -54,7 +77,6 @@ object qgl {
     //extern PFNGLISBUFFERARBPROC qglIsBufferARB;
     fun qglBufferDataARB(target: Int, size: Int, data: ByteBuffer, usage: Int) {
         DEBUG_printName("glBufferDataARB")
-        //        GL15.glBufferData(target, data, usage);//TODO:!!!!!!!!!!!!!!!!!!!!!!!!!
         ARBVertexBufferObject.glBufferDataARB(target, data, usage)
     }
 
@@ -63,29 +85,18 @@ object qgl {
         ARBVertexBufferObject.glBufferSubDataARB(target, offset, data)
     }
 
-    //extern PFNGLGETBUFFERSUBDATAARBPROC qglGetBufferSubDataARB;
-    //extern PFNGLMAPBUFFERARBPROC qglMapBufferARB;
-    //extern PFNGLUNMAPBUFFERARBPROC qglUnmapBufferARB;
-    //extern PFNGLGETBUFFERPARAMETERIVARBPROC qglGetBufferParameterivARB;
-    //extern PFNGLGETBUFFERPOINTERVARBPROC qglGetBufferPointervARB;
-    //
-    //
+
     // NV_register_combiners
     fun qglCombinerParameterfvNV(pName: Int, params: FloatArray?) {
         throw UnsupportedOperationException()
     }
 
     //extern	void ( APIENTRY *qglCombinerParameterivNV )( GLenum pName, const GLint *params );
-    //extern	void ( APIENTRY *qglCombinerParameterfNV )( GLenum pName, const GLfloat param );
     fun qglCombinerParameteriNV(pName: Int, param: Int) {
-        DEBUG_printName("glCombinerParameteriNV")
-        //        NVRegisterCombiners.glCombinerParameteriNV(pName, param);
         throw UnsupportedOperationException()
     }
 
     fun qglCombinerInputNV(stage: Int, portion: Int, variable: Int, input: Int, mapping: Int, componentUsage: Int) {
-        DEBUG_printName("glCombinerInputNV")
-        //        NVRegisterCombiners.glCombinerInputNV(stage, portion, variable, input, mapping, componentUsage);
         throw UnsupportedOperationException()
     }
 
@@ -93,14 +104,10 @@ object qgl {
         stage: Int, portion: Int, abOutput: Int, cdOutput: Int, sumOutput: Int, scale: Int, bias: Int,
         abDotProduct: Boolean, cdDotProduct: Boolean, muxSum: Boolean
     ) {
-        DEBUG_printName("glCombinerOutputNV")
-        //        NVRegisterCombiners.glCombinerOutputNV(stage, portion, abOutput, cdOutput, sumOutput, scale, bias, abDotProduct, cdDotProduct, muxSum);
         throw UnsupportedOperationException()
     }
 
     fun qglFinalCombinerInputNV(variable: Int, input: Int, mapping: Int, componentUsage: Int) {
-        DEBUG_printName("glFinalCombinerInputNV")
-        //        NVRegisterCombiners.glFinalCombinerInputNV(variable, input, mapping, componentUsage);
         throw UnsupportedOperationException()
     }
 
@@ -142,7 +149,6 @@ object qgl {
         width: Int, height: Int, border: Int, imageSize: Int, data: ByteBuffer?
     ) {
         DEBUG_printName("glCompressedTexImage2DARB")
-        //        ARBTextureCompression.glCompressedTexImage2DARB(target, level, internalformat, width, height, border, data);
         GL13.glCompressedTexImage2D(target, level, internalformat, width, height, border, data)
     }
 
@@ -167,7 +173,6 @@ object qgl {
             imageSize,
             pData_buffer_offset
         )
-        throw UnsupportedOperationException()
     }
 
     fun  /*PFNGLGETCOMPRESSEDTEXIMAGEARBPROC*/qglGetCompressedTexImageARB(target: Int, index: Int, img: ByteBuffer) {
@@ -186,7 +191,6 @@ object qgl {
         stride: Int,
         pointer: FloatArray?
     ) {
-//        GL20.glVertexAttribPointer(index, size, normalized, stride, FloatBuffer.wrap(pointer));
         throw UnsupportedOperationException("Not supported yet.")
     }
 
@@ -237,7 +241,7 @@ object qgl {
         index: Enum<*>,
         params: FloatArray
     ) {
-        DEBUG_printName("glProgramEnvParameter4fvARB") //TODO:convert calls to floatbuffer
+        DEBUG_printName("glProgramEnvParameter4fvARB")
         qglProgramEnvParameter4fvARB(target, index.ordinal, params)
     }
 
@@ -247,9 +251,8 @@ object qgl {
         index: Int,
         params: FloatArray
     ) {
-        DEBUG_printName("glProgramEnvParameter4fvARB") //TODO:convert calls to floatbuffer
+        DEBUG_printName("glProgramEnvParameter4fvARB")
         ARBVertexProgram.glProgramEnvParameter4fvARB(target, index, params)
-        //        qglProgramEnvParameter4fvARB(target, index, wrap(params));
     }
 
     fun  /*PFNGLPROGRAMENVPARAMETER4FVARBPROC*/qglProgramEnvParameter4fvARB(
@@ -270,109 +273,12 @@ object qgl {
         ARBVertexProgram.glProgramLocalParameter4fvARB(target, index, params)
     }
 
-    //extern PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
-    //
     // GL_EXT_depth_bounds_test
     fun  /*PFNGLDEPTHBOUNDSEXTPROC*/qglDepthBoundsEXT(zmin: Float, zmax: Float) {
         DEBUG_printName("glDepthBoundsEXT")
         EXTDepthBoundsTest.glDepthBoundsEXT(zmin.toDouble(), zmax.toDouble())
     }
-    //
-    ////===========================================================================
-    //    public static int qwglChoosePixelFormat(long hdc, PIXELFORMATDESCRIPTOR pixelformatdescriptor) {
-    //        return WGL.wglChoosePixelFormat(hdc, pixelformatdescriptor);
-    //    }
-    //
-    //    public static int qwglDescribePixelFormat(long hdc, int i, int uint, PIXELFORMATDESCRIPTOR lppixelformatdescriptor) {
-    //        return WGL.wglDescribePixelFormat(hdc, i, uint, lppixelformatdescriptor);
-    //    }
-    //
-    //    public static int qwglGetPixelFormat(long hdc) {
-    //        return WGL.wglGetPixelFormat(hdc);
-    //    }
-    //
-    //    public static boolean qwglSetPixelFormat(long hdc, int i, PIXELFORMATDESCRIPTOR pixelformatdescriptor) {
-    //        return WGL.wglSetPixelFormat(hdc, i, pixelformatdescriptor);
-    //    }
-    //
-    //    public static boolean qwglSwapBuffers(long hdc) {
-    //        return WGL.wglSwapBuffers(hdc);
-    //    }
-    /**
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     */
-    //    public static boolean qwglCopyContext(long hglrc1, long hglrc2, int uint) {
-    //        return WGL.wglCopyContext(hglrc1, hglrc2, uint);
-    //    }
-    //
-    //    public static long qwglCreateContext(long hdc) {
-    //        return WGL.wglCreateContext(hdc);
-    //    }
-    //
-    //    public static long qwglCreateLayerContext(long hdc, int i) {
-    //        throw new UnsupportedOperationException("Not supported yet.");
-    //    }
-    //
-    //    public static boolean qwglDeleteContext(long hglrc) {
-    //        return WGL.wglDeleteContext(hglrc);
-    //    }
-    //
-    //    public static long qwglGetCurrentContext() {
-    //        return WGL.wglGetCurrentContext();
-    //    }
-    //
-    //    public static long qwglGetCurrentDC() {
-    //        return WGL.wglGetCurrentDC();
-    //    }
-    //
-    //    public static long qwglGetProcAddress(String lpcstr) {
-    //        return WGL.wglGetProcAddress(lpcstr);
-    //    }
-    //
-    //    public static boolean qwglMakeCurrent(long hdc, long hglrc) {
-    //        return WGL.wglMakeCurrent(hdc, hglrc);
-    //    }
-    //
-    //    public static boolean qwglShareLists(long hglrc1, long hglrc2) {
-    //        return WGL.wglShareLists(hglrc1, hglrc2);
-    //    }
-    //
-    //    public static boolean qwglUseFontBitmaps(long hdc, long dword1, long dword2, long dword3) {
-    //        throw new UnsupportedOperationException("Not supported yet.");
-    //    }
-    /**
-     *
-     */
-    //    public static boolean qwglUseFontOutlines(long hdc, long dword1, long dword2, long dword3, float f1, float f2, int, LPGLYPHMETRICSFLOAT lpglyphmetricsfloat) {
-    //        throw new UnsupportedOperationException("Not supported yet.");
-    //    }
-    //
-    //    public static boolean qwglDescribeLayerPlane(long hdc, int i1, int i2, int uint, LPLAYERPLANEDESCRIPTOR lplayerplanedescriptor) {
-    //        throw new UnsupportedOperationException("Not supported yet.");
-    //    }
-    //
-    //    public static int qwglSetLayerPaletteEntries(long hdc, int i1, int i2, int i3, long colorref) {
-    //        throw new UnsupportedOperationException("Not supported yet.");
-    //    }
-    //
-    //    public static int qwglGetLayerPaletteEntries(long hdc, int i1, int i2, int i3, long colorref) {
-    //        throw new UnsupportedOperationException("Not supported yet.");
-    //    }
-    //
-    //    public static boolean qwglRealizeLayerPalette(long hdc, int i, boolean b) {
-    //        throw new UnsupportedOperationException("Not supported yet.");
-    //    }
-    //
-    //    public static boolean qwglSwapLayerBuffers(long hdc, int uint) {
-    //        return WGL.wglSwapLayerBuffers(hdc, uint);
-    //    }
+
     fun qglAccum(op: Int, value: Float) {
         DEBUG_printName("glAccum")
         GL43.glAccum(op, value)
@@ -385,7 +291,7 @@ object qgl {
 
     fun qglAreTexturesResident(n: Int, textures: IntBuffer, residences: ByteBuffer): Boolean {
         DEBUG_printName("glAreTexturesResident")
-        return GL43.glAreTexturesResident(textures, residences) //TODO:is n really necessary?
+        return GL43.glAreTexturesResident(textures, residences)
     }
 
     fun qglArrayElement(i: Int) {
@@ -400,7 +306,6 @@ object qgl {
 
     fun qglBindTexture(target: Int, texture: Int) {
         DEBUG_printName("glBindTexture")
-        //        System.out.printf("qglBindTexture(%d, %d)\n", target, texture);
         GL43.glBindTexture(target, texture)
     }
 
@@ -419,7 +324,6 @@ object qgl {
 
     fun qglBlendFunc(sFactor: Int, dFactor: Int) {
         DEBUG_printName("glBlendFunc")
-        //        System.out.printf("--%d, %d\n", sFactor, dFactor);
         GL43.glBlendFunc(sFactor, dFactor)
     }
 
@@ -429,7 +333,6 @@ object qgl {
     }
 
     fun qglCallLists(n: Int, type: Int, lists: Any?) {
-//        GL43.glCallLists(lists);
         throw UnsupportedOperationException("Not supported yet.")
     }
 
@@ -648,8 +551,6 @@ object qgl {
 
     @Deprecated("")
     fun qglColorPointer(size: Int, type: Int, stride: Int, pointer: Any?) {
-        DEBUG_printName("glColorPointer")
-        //        GL43.glColorPointer(size, type, stride, );
         throw UnsupportedOperationException("Not supported yet.")
     }
 
@@ -759,7 +660,7 @@ object qgl {
 
     fun qglDrawElements(mode: Int, count: Int, type: Int, indices: IntArray?) {
         DEBUG_printName("glDrawElements2")
-        GL43.glDrawElements(mode, wrap(indices!!).position(count).flip()) //TODO:subarray
+        GL43.glDrawElements(mode, wrap(indices!!).position(count).flip())
     }
 
     fun qglDrawPixels(width: Int, height: Int, format: Int, type: Int, pixels: ByteBuffer) {
@@ -778,8 +679,6 @@ object qgl {
     }
 
     fun qglEdgeFlagPointer(stride: Int, pointer: Any?) {
-        DEBUG_printName("glEdgeFlagPointer")
-        //        GL43.glEdgeFlagPointer(stride, );
         throw UnsupportedOperationException("Not supported yet.")
     }
 
@@ -790,7 +689,6 @@ object qgl {
 
     fun qglEnable(cap: Int) {
         DEBUG_printName("glEnable")
-        //        System.out.println("--"+cap);
         GL43.glEnable(cap)
     }
 
@@ -925,8 +823,6 @@ object qgl {
 
     fun qglGenTextures(): Int {
         DEBUG_printName("glGenTextures")
-        //        System.out.println("-----"+ (bla++));
-//        TempDump.printCallStack("" + (bla++));
         return GL43.glGenTextures()
     }
 
@@ -1006,20 +902,14 @@ object qgl {
     }
 
     fun qglGetPixelMapfv(map: Int, values: FloatArray?) {
-        DEBUG_printName("glGetPixelMapfv")
-        //        GL43.glGetPixelMapfv(map, );
         throw UnsupportedOperationException("Not supported yet.")
     }
 
     fun qglGetPixelMapuiv(map: Int, values: IntArray?) {
-        DEBUG_printName("glGetPixelMapuiv")
-        //        GL43.glGetPixelMapuiv(map, );
         throw UnsupportedOperationException("Not supported yet.")
     }
 
     fun qglGetPixelMapusv(map: Int, values: ShortArray?) {
-        DEBUG_printName("glGetPixelMapusv")
-        //        GL43.glGetPixelMapusv(map, );
         throw UnsupportedOperationException("Not supported yet.")
     }
 
@@ -1029,8 +919,6 @@ object qgl {
     }
 
     fun qglGetPolygonStipple(mask: Byte) {
-        DEBUG_printName("glGetPolygonStipple")
-        //        GL43.glGetPolygonStipple();
         throw UnsupportedOperationException("Not supported yet.")
     }
 
@@ -1041,7 +929,7 @@ object qgl {
 
     fun qglGetStringi(name: Int, index: Int): String? {
         DEBUG_printName("glGetStringi")
-        return GL43.glGetString(name)
+        return GL30.glGetStringi(name, index)
     }
 
     fun qglGetTexEnvfv(target: Int, pName: Int, params: FloatArray?) {
@@ -1167,7 +1055,6 @@ object qgl {
     fun qglInterleavedArrays(format: Int, stride: Int, pointer: ByteBuffer) {
         DEBUG_printName("glInterleavedArrays")
         GL43.glInterleavedArrays(format, stride, pointer)
-        throw UnsupportedOperationException("Not supported yet.")
     }
 
     fun qglIsEnabled(cap: Int): Boolean {
@@ -1251,7 +1138,7 @@ object qgl {
     }
 
     fun qglLoadMatrixf(m: FloatArray) {
-        DEBUG_printName("glLoadMatrixf") //TODO:convert to FloatBuffer.
+        DEBUG_printName("glLoadMatrixf")
         GL43.glLoadMatrixf(m)
     }
 
@@ -1934,8 +1821,6 @@ object qgl {
 
     @Deprecated("")
     fun qglTexCoordPointer(size: Int, type: Int, stride: Int, pointer: FloatArray?) {
-        DEBUG_printName("glTexCoordPointer")
-        //        GL43.glTexCoordPointer(size, stride, FloatBuffer.wrap(pointer));
         throw UnsupportedOperationException("Not supported yet.")
     }
 
@@ -1955,7 +1840,7 @@ object qgl {
     }
 
     fun qglTexEnvi(target: Int, pName: Int, param: Int) {
-        DEBUG_printName("glTexEnvi") //ENVY!!
+        DEBUG_printName("glTexEnvi")
         GL43.glTexEnvi(target, pName, param)
     }
 
@@ -2022,7 +1907,6 @@ object qgl {
     ) {
         DEBUG_printName("glTexImage2D")
         qglTexImage2D(target, level, internalformat, width, height, border, format, type, wrap(pixels!!))
-        throw UnsupportedOperationException()
     }
 
     fun qglTexImage2D(
@@ -2217,8 +2101,6 @@ object qgl {
 
     @Deprecated("")
     fun qglVertexPointer(size: Int, type: Int, stride: Int, pointer: FloatArray?) {
-//        GL43.glVertexPointer(size, type, stride, 0);
-//        GL43.glVertexPointer(size, stride, wrap(pointer));//TODO:use FloatBuffer.
         throw UnsupportedOperationException("Not supported yet.")
     }
 
@@ -2234,50 +2116,12 @@ object qgl {
 
     private fun DEBUG_printName(functionName: String) {
         if (GL_DEBUG) {
-//            System.out.println(functionName);
+            println(functionName)
         }
     }
 
-    //
-    //    
-    //    
-    //    extern  int   ( WINAPI * qwglChoosePixelFormat )(HDC, CONST PIXELFORMATDESCRIPTOR *);
-    //extern  int   ( WINAPI * qwglDescribePixelFormat) (HDC, int, UINT, LPPIXELFORMATDESCRIPTOR);
-    //extern  int   ( WINAPI * qwglGetPixelFormat)(HDC);
-    //extern  BOOL  ( WINAPI * qwglSetPixelFormat)(HDC, int, CONST PIXELFORMATDESCRIPTOR *);
-    //extern  BOOL  ( WINAPI * qwglSwapBuffers)(HDC);
-    //
-    //extern BOOL  ( WINAPI * qwglCopyContext)(HGLRC, HGLRC, UINT);
-    //extern HGLRC ( WINAPI * qwglCreateContext)(HDC);
-    //extern HGLRC ( WINAPI * qwglCreateLayerContext)(HDC, int);
-    //extern BOOL  ( WINAPI * qwglDeleteContext)(HGLRC);
-    //extern HGLRC ( WINAPI * qwglGetCurrentContext)(VOID);
-    //extern HDC   ( WINAPI * qwglGetCurrentDC)(VOID);
-    //extern PROC  ( WINAPI * qwglGetProcAddress)(LPCSTR);
-    //extern BOOL  ( WINAPI * qwglMakeCurrent)(HDC, HGLRC);
-    //extern BOOL  ( WINAPI * qwglShareLists)(HGLRC, HGLRC);
-    //extern BOOL  ( WINAPI * qwglUseFontBitmaps)(HDC, DWORD, DWORD, DWORD);
-    //
-    //extern BOOL  ( WINAPI * qwglUseFontOutlines)(HDC, DWORD, DWORD, DWORD, FLOAT,
-    //                                           FLOAT, int, LPGLYPHMETRICSFLOAT);
-    //
-    //extern BOOL ( WINAPI * qwglDescribeLayerPlane)(HDC, int, int, UINT,
-    //                                            LPLAYERPLANEDESCRIPTOR);
-    //extern int  ( WINAPI * qwglSetLayerPaletteEntries)(HDC, int, int, int,
-    //                                                CONST COLORREF *);
-    //extern int  ( WINAPI * qwglGetLayerPaletteEntries)(HDC, int, int, int,
-    //                                                COLORREF *);
-    //extern BOOL ( WINAPI * qwglRealizeLayerPalette)(HDC, int, BOOL);
-    //extern BOOL ( WINAPI * qwglSwapLayerBuffers)(HDC, UINT);
     private fun checkGLError() {
-        if (GL_DEBUG) {
-            BufferUtils.createByteBuffer(1000)
-//            while (GL43.glGetDebugMessageLog(1, null, null, null, null, null, messageLog) > 0) {
-//                println(TempDump.bbtoa(messageLog));
-//                messageLog.clear();
-//            }
-//            Util.checkGLError();
-        }
+        // Debug error checking is a no-op when GL_DEBUG is false
     }
 
     @Deprecated("the calling functions should send ByteBuffers instead.")

@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Actor.cpp, neo/Game/Actor.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.AFEntity.idAFAttachment
@@ -986,7 +1004,8 @@ object Actor {
                 rightEyeJoint = headEnt.GetAnimator()!!.GetJointHandle(jointname)
 
                 // set up the eye height.  check if it's specified in the def.
-                if (!spawnArgs.GetFloat("eye_height", "0", CFloat(eyeOffset.z))) {
+                val eyeHeight = CFloat(eyeOffset.z)
+                if (!spawnArgs.GetFloat("eye_height", "0", eyeHeight)) {
                     // if not in the def, then try to base it off the idle animation
                     val anim = headEnt.GetAnimator()!!.GetAnim("idle")
                     if (anim != 0 && leftEyeJoint != Model.INVALID_JOINT) {
@@ -1002,6 +1021,8 @@ object Actor {
                         // just base it off the bounding box size
                         eyeOffset.z = GetPhysics().GetBounds()[1].z - 6
                     }
+                } else {
+                    eyeOffset.z = eyeHeight._val
                 }
                 headAnim.Init(this, headEnt.GetAnimator()!!, Anim.ANIMCHANNEL_ALL)
             } else {
@@ -1011,7 +1032,8 @@ object Actor {
                 rightEyeJoint = animator.GetJointHandle(jointname)
 
                 // set up the eye height.  check if it's specified in the def.
-                if (!spawnArgs.GetFloat("eye_height", "0", CFloat(eyeOffset.z))) {
+                val eyeHeight2 = CFloat(eyeOffset.z)
+                if (!spawnArgs.GetFloat("eye_height", "0", eyeHeight2)) {
                     // if not in the def, then try to base it off the idle animation
                     val anim = animator.GetAnim("idle")
                     if (anim != 0 && leftEyeJoint != Model.INVALID_JOINT) {
@@ -1026,6 +1048,8 @@ object Actor {
                         // just base it off the bounding box size
                         eyeOffset.z = GetPhysics().GetBounds()[1].z - 6
                     }
+                } else {
+                    eyeOffset.z = eyeHeight2._val
                 }
                 headAnim.Init(this, animator, Anim.ANIMCHANNEL_HEAD)
             }
@@ -2861,7 +2885,9 @@ object Actor {
             DeconstructScriptObject()
             scriptObject.Free()
             StopSound(gameSoundChannel_t.SND_CHANNEL_ANY.ordinal, false)
-            idClipModel.delete(combatModel!!)
+            if (combatModel != null) {
+                idClipModel.delete(combatModel!!)
+            }
             combatModel = null
             if (head.GetEntity() != null) {
                 head.GetEntity()!!.ClearBody()

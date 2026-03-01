@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Material.idMaterial
@@ -124,9 +149,7 @@ object RenderSystem {
             common.Printf("lightScale: %f\n", backEnd!!.pc.maxLightValue)
         }
 
-//        memset(tr.pc, 0, sizeof(tr.pc));
         tr.pc = performanceCounters_t()
-        //        memset(backEnd.pc, 0, sizeof(backEnd.pc));
         backEnd!!.pc = backEndCounters_t()
     }
 
@@ -169,9 +192,7 @@ object RenderSystem {
     fun R_GetCommandBuffer(command_t: emptyCommand_t): emptyCommand_t {
         val cmd: emptyCommand_t
 
-//        cmd = R_FrameAlloc(bytes);
-//        cmd.next = null;
-        cmd = command_t //our little trick for downcasting. EDIT:??
+        cmd = command_t
         frameData!!.cmdTail!!.next = cmd
         frameData!!.cmdTail = cmd
         return cmd
@@ -188,7 +209,7 @@ object RenderSystem {
     fun R_ClearCommandChain() {
         // clear the command chain
         frameData!!.cmdTail = emptyCommand_t()
-        frameData!!.cmdHead = frameData!!.cmdTail // R_FrameAlloc(sizeof(frameData.cmdHead));
+        frameData!!.cmdHead = frameData!!.cmdTail
         frameData!!.cmdHead!!.commandId = renderCommand_t.RC_NOP
         frameData!!.cmdHead!!.next = null
     }
@@ -203,7 +224,7 @@ object RenderSystem {
         if (!r_showSurfaces.GetBool()) {
             return
         }
-        common.Printf("view:%p surfs:%d\n", parms, parms.numDrawSurfs)
+        common.Printf("view:%s surfs:%d\n", parms, parms.numDrawSurfs)
     }
 
     /*
@@ -216,7 +237,7 @@ object RenderSystem {
      */
     fun R_AddDrawViewCmd(parms: viewDef_s) {
         var cmd: drawSurfsCommand_t
-        R_GetCommandBuffer(drawSurfsCommand_t().also({ cmd = it /*sizeof(cmd)*/ }))
+        R_GetCommandBuffer(drawSurfsCommand_t().also({ cmd = it }))
         cmd.commandId = renderCommand_t.RC_DRAW_VIEW
         cmd.viewDef = parms
         if (parms.viewEntitys != null) {
@@ -264,8 +285,7 @@ object RenderSystem {
         }
 
         // add the stored off surface commands again
-//        cmd = (drawSurfsCommand_t) R_GetCommandBuffer(sizeof(cmd));
-        R_GetCommandBuffer(tr.lockSurfacesCmd!!) //TODO:double check to make sure the casting and casting back preserves our values.
+        R_GetCommandBuffer(tr.lockSurfacesCmd!!)
     }
 
     /*
@@ -485,7 +505,6 @@ object RenderSystem {
     }
 
     abstract class idRenderSystem {
-        // virtual					~idRenderSystem() {}
         // set up cvars and basic data structures, but don't
         // init OpenGL, so it can also be used for dedicated servers
         abstract fun Init()

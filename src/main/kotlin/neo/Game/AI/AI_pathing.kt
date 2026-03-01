@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/ai/AI_pathing.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game.AI
 
 import neo.Game.AI.AAS.idAAS
@@ -81,11 +99,11 @@ object AI_pathing {
         d0 = plane1.x * node.pos.x + plane1.y * node.pos.y + plane1.z
         while (node.parent != null) {
             d1 = plane1.x * node.parent!!.pos.x + plane1.y * node.parent!!.pos.y + plane1.z
-            if (FLOATSIGNBITSET(d0) xor FLOATSIGNBITSET(d1) != 0) {
+            if ((FLOATSIGNBITSET(d0) xor FLOATSIGNBITSET(d1)) != 0) {
                 plane2.set(Plane2DFromPoints(node.pos, node.parent!!.pos))
                 d2 = plane2.x * start.x + plane2.y * start.y + plane2.z
                 d3 = plane2.x * end.x + plane2.y * end.y + plane2.z
-                if (FLOATSIGNBITSET(d2) xor FLOATSIGNBITSET(d3) != 0) {
+                if ((FLOATSIGNBITSET(d2) xor FLOATSIGNBITSET(d3)) != 0) {
                     return true
                 }
             }
@@ -1122,10 +1140,10 @@ object AI_pathing {
             trace.blockingEntity = Game_local.gameLocal.entities[clipTrace.c.entityNum]
         } else {
             aasTrace.getOutOfSolid = 1 //true;
-            if (stopEvent and AI.SE_ENTER_LEDGE_AREA != 0) {
+            if ((stopEvent and AI.SE_ENTER_LEDGE_AREA) != 0) {
                 aasTrace.flags = aasTrace.flags or AASFile.AREA_LEDGE
             }
-            if (stopEvent and AI.SE_ENTER_OBSTACLE != 0) {
+            if ((stopEvent and AI.SE_ENTER_OBSTACLE) != 0) {
                 aasTrace.travelFlags = aasTrace.travelFlags or AASFile.TFL_INVALID
             }
             aas.Trace(aasTrace, start, end)
@@ -1139,8 +1157,8 @@ object AI_pathing {
                 trace.normal.set(aas.GetPlane(aasTrace.planeNum).Normal())
                 trace.blockingEntity = Game_local.gameLocal.world
                 if (aasTrace.fraction < 1.0f) {
-                    if (stopEvent and AI.SE_ENTER_LEDGE_AREA != 0) {
-                        if (aas.AreaFlags(aasTrace.blockingAreaNum) and AASFile.AREA_LEDGE != 0) {
+                    if ((stopEvent and AI.SE_ENTER_LEDGE_AREA) != 0) {
+                        if ((aas.AreaFlags(aasTrace.blockingAreaNum) and AASFile.AREA_LEDGE) != 0) {
                             path.endPos.set(trace.endPos)
                             path.endNormal.set(trace.normal)
                             path.endEvent = AI.SE_ENTER_LEDGE_AREA
@@ -1155,8 +1173,8 @@ object AI_pathing {
                             return true
                         }
                     }
-                    if (stopEvent and AI.SE_ENTER_OBSTACLE != 0) {
-                        if (aas.AreaTravelFlags(aasTrace.blockingAreaNum) and AASFile.TFL_INVALID != 0) {
+                    if ((stopEvent and AI.SE_ENTER_OBSTACLE) != 0) {
+                        if ((aas.AreaTravelFlags(aasTrace.blockingAreaNum) and AASFile.TFL_INVALID) != 0) {
                             path.endPos.set(trace.endPos)
                             path.endNormal.set(trace.normal)
                             path.endEvent = AI.SE_ENTER_OBSTACLE

@@ -20,6 +20,8 @@ import neo.sys.win_main.Sys_LeaveCriticalSection
 import neo.sys.win_shared
 import org.lwjgl.BufferUtils
 import org.lwjgl.openal.AL10
+import org.lwjgl.openal.AL11.alSource3i
+import org.lwjgl.openal.EXTEfx
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
@@ -82,7 +84,7 @@ object snd_emitter {
         }
     }
 
-    open class SoundFX//            memset(continuitySamples, 0, sizeof(float) * 4);     //
+    open class SoundFX
     {
         protected var buffer: FloatArray = FloatArray(0)
         protected var channel = 0
@@ -247,7 +249,8 @@ object snd_emitter {
 
         // functions
         fun GenerateSlowChannel(playPos: FracTime, sampleCount44k: Int, finalBuffer: FloatArray) {
-            val sw = snd_system.soundSystemLocal.GetPlayingSoundWorld() as idSoundWorldLocal
+            // FIX: Added null check from C++ — GetPlayingSoundWorld() can return null during level transitions
+            val sw = snd_system.soundSystemLocal.GetPlayingSoundWorld() as? idSoundWorldLocal
             val `in` = FloatArray(MIXBUFFER_SAMPLES + 3)
             val out = FloatArray(MIXBUFFER_SAMPLES + 3)
             val src = FloatArray(MIXBUFFER_SAMPLES + 3 - 2)
@@ -262,7 +265,8 @@ object snd_emitter {
 
 //            src = in + 2;
 //            spline = out + 2;
-            slowmoSpeed = sw.slowmoSpeed
+            // FIX: C++ checks if sw is null and defaults to 1.0f
+            slowmoSpeed = sw?.slowmoSpeed ?: 1.0f
             neededSamples = (sampleCount44k * slowmoSpeed + 4).toInt()
             orgTime = playPos.time
 
@@ -298,10 +302,10 @@ object snd_emitter {
             lowpass.SetParms(slowmoSpeed * 15000, 1.2f, 9.0f)
             System.arraycopy(src, 0, `in`, 2, MIXBUFFER_SAMPLES + 3 - 2)
             System.arraycopy(spline, 0, out, 2, MIXBUFFER_SAMPLES + 3 - 2)
-            `in`[0] = in_p1[0] //FIXME:ugly block.
-            `in`[1] = in_p2[0]
-            out[0] = out_p1[0]
-            out[1] = out_p2[0]
+            `in`[1] = in_p1[0] // in_p[-1] = in[1]
+            `in`[0] = in_p2[0] // in_p[-2] = in[0]
+            out[1] = out_p1[0] // out_p[-1] = out[1]
+            out[0] = out_p2[0] // out_p[-2] = out[0]
             i = 0
             count = 0
             while (i < numSamples) {
@@ -330,9 +334,12 @@ object snd_emitter {
         }
 
         fun Reset() {
-//	memset( this, 0, sizeof( *this ) );//TODO:
+            // FIX: C++ memset(this, 0, sizeof(*this)) zeroes ALL fields before setting overrides.
+            // Kotlin was only resetting a subset, leaving active/playbackState/lowpass stale.
+            active = false
+            playbackState = 0
+            lowpass = SoundFX_LowpassFast()
 
-//	this.chan = chan;
             curPosition.Set(0)
             newPosition.Set(0)
             curSampleOffset = -10000
@@ -406,6 +413,10 @@ object snd_emitter {
         var triggerState = false
         var triggered = false
 
+        // FIX: Missing from Kotlin — C++ snd_local.h declares both fields
+        var stopped = false
+        var paused = false  // DG: currently paused, but generally still playing
+
         //						~idSoundChannel( void );
         fun Clear() {
             var j: Int
@@ -417,20 +428,20 @@ object snd_emitter {
             diversity = 0.0f
             leadinSample = null
             trigger44kHzTime = 0
+            // FIX: C++ sets stopped = false and paused = false in Clear()
+            stopped = false
             j = 0
             while (j < 6) {
                 lastV[j] = 0.0f
                 j++
             }
-            //	memset( &parms, 0, sizeof(parms) );
             parms = snd_shader.soundShaderParms_t()
             triggered = false
+            paused = false
             openalSource = 0 //null;
             openalStreamingOffset = 0
-            //            openalStreamingBuffer[0] = openalStreamingBuffer[1] = openalStreamingBuffer[2] = 0;
-//            lastopenalStreamingBuffer[0] = lastopenalStreamingBuffer[1] = lastopenalStreamingBuffer[2] = 0;
-            openalStreamingBuffer.clear()
-            lastopenalStreamingBuffer.clear()
+            openalStreamingBuffer.put(0, 0).put(1, 0).put(2, 0)
+            lastopenalStreamingBuffer.put(0, 0).put(1, 0).put(2, 0)
         }
 
         fun Start() {
@@ -442,6 +453,7 @@ object snd_emitter {
 
         fun Stop() {
             triggerState = false
+            stopped = true  // FIX: C++ sets stopped = true in Stop()
             if (decoder != null) {
                 idSampleDecoder.Free(decoder!!)
                 decoder = null
@@ -463,25 +475,28 @@ object snd_emitter {
             var dest_p = 0
             var len: Int
 
-//Sys_DebugPrintf( "msec:%i sample:%i : %i : %i\n", Sys_Milliseconds(), soundSystemLocal.GetCurrent44kHzTime(), sampleOffset44k, sampleCount44k );	//!@#
             // negative offset times will just zero fill
             if (sampleOffset44k < 0) {
                 len = -sampleOffset44k
                 if (len > sampleCount44k) {
                     len = sampleCount44k
                 }
-                //		memset( dest_p, 0, len * sizeof( dest_p[0] ) );
-//                dest.clear();
+                // FIX: C++ memset zeroes the negative-offset region
+                for (i in dest_p until dest_p + len) {
+                    dest.put(i, 0.0f)
+                }
                 dest_p += len
                 sampleCount44k -= len
                 sampleOffset44k += len
             }
 
             // grab part of the leadin sample
-            val leadin = leadinSample!!
+            val leadin = leadinSample
             if (leadin == null || sampleOffset44k < 0 || sampleCount44k <= 0) {
-//		memset( dest_p, 0, sampleCount44k * sizeof( dest_p[0] ) );
-//                dest.clear();
+                // FIX: C++ memset zeroes remaining buffer before returning
+                for (i in dest_p until dest_p + sampleCount44k) {
+                    dest.put(i, 0.0f)
+                }
                 return
             }
             if (sampleOffset44k < leadin.LengthIn44kHzSamples()) {
@@ -499,16 +514,22 @@ object snd_emitter {
 
             // if not looping, zero fill any remaining spots
             if (null == soundShader || 0 == parms!!.soundShaderFlags and snd_shader.SSF_LOOPING) {
-//		memset( dest_p, 0, sampleCount44k * sizeof( dest_p[0] ) );
-//                dest.clear();
+                // FIX: C++ memset zeroes remaining buffer before returning
+                for (i in dest_p until dest_p + sampleCount44k) {
+                    dest.put(i, 0.0f)
+                }
                 return
             }
 
             // fill the remainder with looped samples
             val loop = soundShader!!.entries[0]
-                ?: //		memset( dest_p, 0, sampleCount44k * sizeof( dest_p[0] ) );
-//                dest.clear();
+            if (loop == null) {
+                // FIX: C++ memset zeroes remaining buffer before returning
+                for (i in dest_p until dest_p + sampleCount44k) {
+                    dest.put(i, 0.0f)
+                }
                 return
+            }
             sampleOffset44k -= leadin.LengthIn44kHzSamples()
             while (sampleCount44k > 0) {
                 val totalLen = loop.LengthIn44kHzSamples()
@@ -519,7 +540,7 @@ object snd_emitter {
                 }
 
                 // decode the sample
-                decoder!!.Decode(loop, sampleOffset44k, len, dest) //TODO:
+                decoder!!.Decode(loop, sampleOffset44k, len, dest)
                 dest.position(len.let { dest_p += it; dest_p })
                 sampleCount44k -= len
                 sampleOffset44k += len
@@ -531,6 +552,14 @@ object snd_emitter {
                 if (AL10.alIsSource(openalSource)) {
                     AL10.alSourceStop(openalSource)
                     AL10.alSourcei(openalSource, AL10.AL_BUFFER, 0)
+                    // FIX: C++ unassociates effect slot from source so it can be deleted on shutdown
+                    alSource3i(
+                        openalSource,
+                        EXTEfx.AL_AUXILIARY_SEND_FILTER,
+                        EXTEfx.AL_EFFECTSLOT_NULL,
+                        0,
+                        EXTEfx.AL_FILTER_NULL
+                    )
                     snd_system.soundSystemLocal.FreeOpenALSource(openalSource)
                 }
                 if (openalStreamingBuffer.get(0) != 0 && openalStreamingBuffer.get(1) != 0 && openalStreamingBuffer.get(
@@ -538,10 +567,9 @@ object snd_emitter {
                     ) != 0
                 ) {
                     AL10.alGetError()
-                    //                    alDeleteBuffers(3, openalStreamingBuffer[0]);
                     AL10.alDeleteBuffers(openalStreamingBuffer)
                     if (AL10.alGetError() == AL10.AL_NO_ERROR) {
-                        openalStreamingBuffer.clear()
+                        openalStreamingBuffer.put(0, 0).put(1, 0).put(2, 0)
                     }
                 }
                 if (lastopenalStreamingBuffer.get(0) != 0 && lastopenalStreamingBuffer.get(1) != 0 && lastopenalStreamingBuffer.get(
@@ -549,10 +577,9 @@ object snd_emitter {
                     ) != 0
                 ) {
                     AL10.alGetError()
-                    //                    alDeleteBuffers(3, lastopenalStreamingBuffer[0]);
                     AL10.alDeleteBuffers(lastopenalStreamingBuffer)
                     if (AL10.alGetError() == AL10.AL_NO_ERROR) {
-                        lastopenalStreamingBuffer.clear()
+                        lastopenalStreamingBuffer.put(0, 0).put(1, 0).put(2, 0)
                     }
                 }
             }
@@ -659,7 +686,8 @@ object snd_emitter {
             }
             this.origin.set(origin)
             this.listenerId = listenerId
-            this.parms = parms
+            // FIX: C++ does struct value copy (*parms). Kotlin reference assignment would alias.
+            this.parms = snd_shader.soundShaderParms_t(parms)
 
             // FIXME: change values on all channels?
         }
@@ -703,8 +731,7 @@ object snd_emitter {
 
             // build the channel parameters by taking the shader parms and optionally overriding
             val chanParms = Array(1) { snd_shader.soundShaderParms_t() }
-            chanParms[0] = shader.parms
-            OverrideParms(chanParms[0], parms, chanParms)
+            OverrideParms(shader.parms, parms, chanParms)
             chanParms[0].soundShaderFlags = chanParms[0].soundShaderFlags or soundShaderFlags
             if (chanParms[0].shakes > 0.0f) {
                 shader.CheckShakesAndOgg()
@@ -861,6 +888,7 @@ object snd_emitter {
             chan.triggerGame44kHzTime = soundWorld!!.game44kHz
             chan.soundShader = shader
             chan.triggerChannel = channel
+            chan.stopped = false  // FIX: C++ sets chan->stopped = false before Start()
             chan.Start()
 
             // we need to start updating the def and mixing it in
@@ -888,7 +916,7 @@ object snd_emitter {
                 chan.triggerGame44kHzTime -= (diversity * length).toInt()
                 chan.triggerGame44kHzTime = chan.triggerGame44kHzTime and 7.inv()
             }
-            length *= (1000 / snd_local.PRIMARYFREQ.toFloat()).toInt()
+            length = (length * (1000.0f / snd_local.PRIMARYFREQ)).toInt()
             Sys_LeaveCriticalSection()
             return length
         }
@@ -975,6 +1003,48 @@ object snd_emitter {
                 chan.soundShader = null
                 i++
             }
+            Sys_LeaveCriticalSection()
+        }
+
+        // FIX: Missing from Kotlin — dhewm3 C++ additions for pause/resume on menu open/close
+
+        // DG: to pause active OpenAL sources when entering menu etc
+        fun PauseAll() {
+            Sys_EnterCriticalSection()
+
+            for (i in 0 until snd_local.SOUND_MAX_CHANNELS) {
+                val chan = channels[i]
+
+                if (!chan.triggerState) {
+                    continue
+                }
+
+                if (AL10.alIsSource(chan.openalSource)) {
+                    AL10.alSourcePause(chan.openalSource)
+                    chan.paused = true
+                }
+            }
+
+            Sys_LeaveCriticalSection()
+        }
+
+        // DG: to resume active OpenAL sources when leaving menu etc
+        fun UnPauseAll() {
+            Sys_EnterCriticalSection()
+
+            for (i in 0 until snd_local.SOUND_MAX_CHANNELS) {
+                val chan = channels[i]
+
+                if (!chan.triggerState) {
+                    continue
+                }
+
+                if (AL10.alIsSource(chan.openalSource) && chan.paused) {
+                    AL10.alSourcePlay(chan.openalSource)
+                    chan.paused = false
+                }
+            }
+
             Sys_LeaveCriticalSection()
         }
 
@@ -1088,7 +1158,6 @@ object snd_emitter {
             maxDistance = 10.0f // meters
             spatializedOrigin.Zero()
 
-//	memset( &parms, 0, sizeof( parms ) );
             parms = snd_shader.soundShaderParms_t()
         }
 
@@ -1160,7 +1229,6 @@ object snd_emitter {
                     if (0 == chan.parms!!.soundShaderFlags and snd_shader.SSF_LOOPING) {
                         var   /*ALint*/state = AL10.AL_PLAYING
                         if (idSoundSystemLocal.useOpenAL && AL10.alIsSource(chan.openalSource)) {
-//                            alGetSourcei(chan.openalSource, AL_SOURCE_STATE, state);
                             state = AL10.alGetSourcei(chan.openalSource, AL10.AL_SOURCE_STATE)
                         }
                         val slow = GetSlowChannel(chan)
@@ -1171,10 +1239,8 @@ object snd_emitter {
                                 if (chan.leadinSample!!.onDemand) {
                                     chan.leadinSample!!.PurgeSoundSample()
                                 }
-                                i++
-                                continue
                             }
-                        } else if (chan.trigger44kHzTime + chan.leadinSample!!.LengthIn44kHzSamples() < current44kHzTime || state == AL10.AL_STOPPED) {
+                        } else if (chan.trigger44kHzTime + chan.leadinSample!!.LengthIn44kHzSamples() < current44kHzTime || chan.stopped) {
                             chan.Stop()
 
                             // free hardware resources
@@ -1184,8 +1250,6 @@ object snd_emitter {
                             if (chan.leadinSample!!.onDemand) {
                                 chan.leadinSample!!.PurgeSoundSample()
                             }
-                            i++
-                            continue
                         }
                     }
 
@@ -1284,7 +1348,7 @@ object snd_emitter {
         }
 
         fun GetSlowChannel(chan: idSoundChannel): idSlowChannel {
-            return slowChannels[channels.indexOf(chan)] //TODO: pointer subtraction
+            return slowChannels[channels.indexOf(chan)]
         }
 
         fun SetSlowChannel(chan: idSoundChannel?, slow: idSlowChannel) {

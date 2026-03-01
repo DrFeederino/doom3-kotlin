@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Physics/Physics_Monster.h, neo/Game/Physics/Physics_Monster.cpp
+ */
+
 package neo.Game.Physics
 
 import neo.Game.Actor.idActor
@@ -87,6 +95,17 @@ object Physics_Monster {
             velocity = idVec3()
             localOrigin = idVec3()
             pushVelocity = idVec3()
+        }
+
+        // FIX: C++ struct assignment copies by value; Kotlin reference assignment does not.
+        // This method performs a deep copy to simulate C++ struct copy semantics.
+        fun set(other: monsterPState_s) {
+            origin.set(other.origin)
+            velocity.set(other.velocity)
+            localOrigin.set(other.localOrigin)
+            pushVelocity.set(other.pushVelocity)
+            onGround = other.onGround
+            atRest = other.atRest
         }
     }
 
@@ -335,11 +354,14 @@ object Physics_Monster {
         }
 
         override fun SaveState() {
-            saved = current
+            // FIX: Was "saved = current" which only copies the reference in Kotlin.
+            // C++ copies the struct by value. Use deep copy instead.
+            saved.set(current)
         }
 
         override fun RestoreState() {
-            current = saved
+            // FIX: Was "current = saved" which only copies the reference in Kotlin.
+            current.set(saved)
             clipModel!!.Link(Game_local.gameLocal.clip, self, 0, current.origin, clipModel!!.GetAxis())
             EvaluateContacts()
         }
@@ -715,7 +737,8 @@ object Physics_Monster {
         init {
             current = monsterPState_s()
             current.atRest = -1
-            saved = current
+            saved = monsterPState_s()
+            saved.set(current)
             delta = idVec3()
             maxStepHeight = 18.0f
             minFloorCosine = 0.7f

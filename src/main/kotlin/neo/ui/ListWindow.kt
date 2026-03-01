@@ -151,7 +151,7 @@ object ListWindow {
                                 }
                             } else {
                                 if (IsSelected(cur) && gui!!.GetTime() < clickTime + doubleClickSpeed) {
-                                    // Float-click causes ON_ENTER to get run
+                                    // Double-click causes ON_ENTER to get run
                                     RunScript(etoi(ON.ON_ENTER))
                                     return cmd.toString()
                                 }
@@ -349,22 +349,22 @@ object ListWindow {
                 r.x = tabStops[i]
                 r.w = if (i < c - 1) tabStops[i + 1] - r.x - tabBorder else -1
                 r.align = if (doAligns) tabAligns[i] else 0
-                if (tabVAligns.Num() > 0) {
+                if (tabVAligns.Num() > 0 && i < tabVAligns.Num()) {
                     r.valign = tabVAligns[i]
                 } else {
                     r.valign = 0
                 }
-                if (tabTypes.Num() > 0) {
+                if (tabTypes.Num() > 0 && i < tabTypes.Num()) {
                     r.type = tabTypes[i]
                 } else {
                     r.type = TAB_TYPE_TEXT
                 }
-                if (tabSizes.Num() > 0) {
+                if (tabSizes.Num() > 0 && i < tabSizes.Num()) {
                     r.iconSize.set(tabSizes[i])
                 } else {
                     r.iconSize.Zero()
                 }
-                if (tabIconVOffsets.Num() > 0 && i < tabVAligns.Num()) {
+                if (tabIconVOffsets.Num() > 0 && i < tabIconVOffsets.Num()) {
                     r.iconVOffset = tabIconVOffsets[i]
                 } else {
                     r.iconVOffset = 0.0f
@@ -399,7 +399,7 @@ object ListWindow {
                     rect.h = lineHeight
                     dc!!.DrawFilledRect(rect.x, rect.y + pixelOffset, rect.w, rect.h, borderColor.data)
                     if (flags and Window.WIN_FOCUS != 0) {
-                        val color2 = borderColor.data
+                        val color2 = idVec4(borderColor.data)
                         color2.w = 1.0f
                         dc!!.DrawRect(rect.x, rect.y + pixelOffset, rect.w, rect.h, 1.0f, color2)
                     }
@@ -439,7 +439,7 @@ object ListWindow {
                             var iconMat: idMaterial?
 
                             // leaving the icon name empty doesn't draw anything
-                            if (work != null && !work.IsEmpty()) {
+                            if (!work.IsEmpty()) {
                                 iconMat = if (iconMaterials.Get(work.toString(), hashMat) == false) {
                                     DeclManager.declManager.FindMaterial("_default")
                                 } else {

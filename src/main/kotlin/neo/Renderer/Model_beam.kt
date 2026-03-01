@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/Model_beam.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.Renderer.Model.dynamicModel_t
@@ -45,17 +71,12 @@ object Model_beam {
             val tri: srfTriangles_s?
             var surf: modelSurface_s? = modelSurface_s()
             if (cachedModel != null) {
-//		delete cachedModel;
                 cachedModel = null
             }
             if (renderEntity == null || viewDef == null) {
-//		delete cachedModel;
                 return null
             }
             if (cachedModel != null) {
-
-//		assert( dynamic_cast<idRenderModelStatic *>( cachedModel ) != null );
-//		assert( idStr.Icmp( cachedModel.Name(), beam_SnapshotName ) == 0 );
                 staticModel = cachedModel
                 surf = staticModel.Surface(0)
                 tri = surf!!.geometry

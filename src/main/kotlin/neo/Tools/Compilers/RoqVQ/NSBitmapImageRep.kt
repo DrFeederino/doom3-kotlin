@@ -5,7 +5,7 @@ import neo.framework.Common
 
 class NSBitmapImageRep {
     //    static class NSBitmapImageRep {
-    private var bmap: ByteArray = ByteArray(0)
+    private var bmap: ByteArray? = null
     private var height: Int
     private var   /*ID_TIME_T*/timestamp: Long = 0
     private var width: Int
@@ -22,7 +22,7 @@ class NSBitmapImageRep {
         val w = intArrayOf(0)
         val h = intArrayOf(0)
         val t = longArrayOf(0)
-        Image_files.R_LoadImage(filename, bmap, w, h, t, false)
+        bmap = Image_files.R_LoadImage(filename, w, h, t, false)?.array()
         width = w[0]
         height = h[0]
         timestamp = t[0]
@@ -45,13 +45,13 @@ class NSBitmapImageRep {
         if (this == a) {
             return this
         }
-        if (bmap.isNotEmpty()) {
-            bmap = ByteArray(0) //Mem_Free(bmap);
+        if (bmap != null) {
+            bmap = null //Mem_Free(bmap);
         }
         bmap = ByteArray(a.width * a.height * 4) // Mem_Alloc(a.width * a.height * 4);
         //        System.arraycopy(a.bmap, 0, this.bmap, 0, a.width * a.height * 4);
         for (i in 0 until a.width * a.height * 4) {
-            bmap[i] = a.bmap[i]
+            bmap!![i] = a.bmap!![i]
         }
         width = a.width
         height = a.height
@@ -72,7 +72,7 @@ class NSBitmapImageRep {
     }
 
     fun bitmapData(): ByteArray {
-        return bmap
+        return bmap!!
     }
 
     fun hasAlpha(): Boolean {

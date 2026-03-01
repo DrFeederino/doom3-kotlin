@@ -1,5 +1,22 @@
-package neo.Game
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/MultiplayerGame.cpp, neo/Game/MultiplayerGame.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
 
+package neo.Game
 import neo.Game.Entity.idEntity
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.gameSoundChannel_t
@@ -407,24 +424,24 @@ object MultiplayerGame {
         // draws mp hud, scoredboard, etc..
         fun Draw(clientNum: Int): Boolean {
             var player: idPlayer?
-            var viewPlayer: idPlayer
+            var viewPlayer: idPlayer?
 
             // clear the render entities for any players that don't need
             // icons and which might not be thinking because they weren't in
             // the last snapshot.
             for (i in 0 until Game_local.gameLocal.numClients) {
-                player = Game_local.gameLocal.entities[i] as idPlayer
+                player = Game_local.gameLocal.entities[i] as? idPlayer
                 if (player != null && !player.NeedsIcon()) {
                     player.HidePlayerIcons()
                 }
             }
-            viewPlayer = Game_local.gameLocal.entities[clientNum] as idPlayer
+            viewPlayer = Game_local.gameLocal.entities[clientNum] as? idPlayer
             player = viewPlayer
             if (player == null) {
                 return false
             }
             if (player.spectating) {
-                viewPlayer = Game_local.gameLocal.entities[player.spectator] as idPlayer
+                viewPlayer = Game_local.gameLocal.entities[player.spectator] as? idPlayer
                 if (viewPlayer == null) {
                     return false
                 }
@@ -593,7 +610,7 @@ object MultiplayerGame {
             )
             //	idStr strReady = cvarSystem.GetCVarString( "ui_ready" );
             var strReady = CVarSystem.cvarSystem.GetCVarString("ui_ready")
-            strReady = if (strReady == "ready") {
+            strReady = if (strReady.equals("ready", ignoreCase = true)) {
                 Common.common.GetLanguageDict().GetString("#str_04248")
             } else {
                 Common.common.GetLanguageDict().GetString("#str_04247")
@@ -1876,12 +1893,14 @@ object MultiplayerGame {
             i = 0
             while (i < snd_evt_t.SND_COUNT.ordinal) {
                 f = FileSystem_h.fileSystem.OpenFileRead(GlobalSoundStrings[i])
-                FileSystem_h.fileSystem.CloseFile(f!!)
+                if (f != null) {
+                    FileSystem_h.fileSystem.CloseFile(f!!)
+                }
                 i++
             }
             // MP guis. just make sure we hit all of them
             i = 0
-            while (MPGuis[i] != null) {
+            while (i < MPGuis.size) {
                 UserInterface.uiManager.FindGui(MPGuis[i], true)
                 i++
             }
@@ -1892,7 +1911,7 @@ object MultiplayerGame {
             var i: Int
             assert(Game_local.gameLocal.localClientNum >= 0)
             i = 0
-            while (ThrottleVars[i] != null) {
+            while (i < ThrottleVars.size) {
                 if (idStr.Icmp(
                         Game_local.gameLocal.userInfo[Game_local.gameLocal.localClientNum].GetString(ThrottleVars[i]),
                         CVarSystem.cvarSystem.GetCVarString(ThrottleVars[i])

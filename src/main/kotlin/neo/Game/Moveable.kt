@@ -270,7 +270,7 @@ object Moveable {
         }
 
         override fun Think() {
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 if (!FollowInitialSplinePath()) {
                     BecomeInactive(Entity.TH_THINK)
                 }
@@ -647,7 +647,7 @@ object Moveable {
         }
 
         override fun Think() {
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 if (!FollowInitialSplinePath()) {
                     BecomeInactive(Entity.TH_THINK)
                 }

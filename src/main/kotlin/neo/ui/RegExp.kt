@@ -29,11 +29,10 @@ import neo.ui.Winvar.idWinVec4
 class RegExp {
     class idRegister {
         /*unsigned*/ val regs = ShortArray(4)
-        var DBG_D3_KEY = false
 
         //
         var enabled = false
-        var name: idStr? = null
+        var name: idStr = idStr()
         var regCount = 0
         var type: Short = 0
         var `var`: idWinVar? = null
@@ -103,7 +102,6 @@ class RegExp {
         }
 
         fun GetFromRegs(registers: FloatArray) {
-            DBG_GetFromRegs++
             val v = idVec4()
             val rect = idRectangle()
             if (!enabled || `var` == null || `var` != null && (`var`!!.GetDict() != null || !`var`!!.GetEval())) {
@@ -169,7 +167,7 @@ class RegExp {
             for (i in 0..3) {
                 regs[i] = f.ReadUnsignedShort().toShort()
             }
-            name!!.set(f.ReadHashString())
+            name.set(f.ReadHashString())
         }
 
         fun WriteToDemoFile(f: idDemoFile) {
@@ -183,26 +181,24 @@ class RegExp {
         }
 
         fun WriteToSaveGame(savefile: idFile) {
-            val len: Int
             savefile.WriteBool(enabled)
             savefile.WriteShort(type)
             savefile.WriteInt(regCount)
-            savefile.WriteShort(regs[0])
-            len = name!!.Length()
-            savefile.WriteInt(len)
+            for (i in 0..3) {
+                savefile.WriteShort(regs[i])
+            }
             savefile.WriteString(name)
             `var`!!.WriteToSaveGame(savefile)
         }
 
         fun ReadFromSaveGame(savefile: idFile) {
-            val len: Int
             enabled = savefile.ReadBool()
             type = savefile.ReadShort()
             regCount = savefile.ReadInt()
-            regs[0] = savefile.ReadShort()
-            len = savefile.ReadInt()
-            name!!.Fill(' ', len)
-            savefile.ReadString(name!!)
+            for (i in 0..3) {
+                regs[i] = savefile.ReadShort()
+            }
+            savefile.ReadString(name)
             `var`!!.ReadFromSaveGame(savefile)
         }
 
@@ -220,7 +216,6 @@ class RegExp {
 
         companion object {
             val REGCOUNT = IntArray(etoi(REGTYPE.NUMTYPES))
-            private var DBG_GetFromRegs = 0
 
             init {
                 val bv = intArrayOf(4, 1, 1, 1, 0, 2, 3, 4)
@@ -253,9 +248,6 @@ class RegExp {
                 if (type == REGTYPE.STRING.ordinal) {
                     val tok = idToken()
                     if (src.ReadToken(tok)) {
-                        if ("#str_07184" == tok.toString()) {
-                            reg.DBG_D3_KEY = true
-                        }
                         tok.set(Common.common.GetLanguageDict().GetString(tok.toString()))
                         `var`.Init(tok.toString(), win)
                     }
@@ -306,8 +298,7 @@ class RegExp {
             val hash = regHash.GenerateKey(name!!, false)
             var i = regHash.First(hash)
             while (i != -1) {
-                if (regs[i].name!!.Icmp(name) == 0) {
-//                    System.out.println(regs.get(i));
+                if (regs[i].name.Icmp(name) == 0) {
                     return regs[i]
                 }
                 i = regHash.Next(i)

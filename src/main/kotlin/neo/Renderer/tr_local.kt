@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Cinematic.idCinematic
@@ -613,21 +638,16 @@ class idRenderLightLocal : idRenderLight() {
     //
     //
     init {
-        parms = renderLight_s() //memset( & parms, 0, sizeof(parms));
-        //            memset(modelMatrix, 0, sizeof(modelMatrix));
-//            memset(shadowFrustums, 0, sizeof(shadowFrustums));
+        parms = renderLight_s()
         for (s in shadowFrustums.indices) {
             shadowFrustums[s] = shadowFrustum_t()
         }
-        //            memset(lightProject, 0, sizeof(lightProject));
         for (l in lightProject.indices) {
             lightProject[l] = idPlane()
         }
-        //            memset(frustum, 0, sizeof(frustum));
         for (f in frustum.indices) {
             frustum[f] = idPlane()
         }
-        //            memset(frustumWindings, 0, sizeof(frustumWindings));
         for (f in frustumWindings.indices) {
             frustumWindings[f] = idWinding()
         }
@@ -725,8 +745,7 @@ class idRenderEntityLocal : idRenderEntity() {
     var needsPortalSky: Boolean
 
     init {
-        parms = renderEntity_s() //memset( parms, 0, sizeof( parms ) );
-        //	memset( modelMatrix, 0, sizeof( modelMatrix ) );
+        parms = renderEntity_s()
         world = null
         index = 0
         lastModifiedFrameNum = 0
@@ -734,7 +753,7 @@ class idRenderEntityLocal : idRenderEntity() {
         dynamicModel = null
         dynamicModelFrameCount = 0
         cachedDynamicModel = null
-        referenceBounds.set(bounds_zero)//TODO:replace bounds_zero with something useful?
+        referenceBounds.set(bounds_zero)
         viewCount = 0
         viewEntity = null
         visibleCount = 0
@@ -1132,7 +1151,7 @@ class frameData_t {
  */
 class performanceCounters_t {
     var c_alloc: Int = 0
-    var c_free: Int = 0 // counts for R_StaticAllc/R_StaticFree
+    var c_free: Int = 0
     var c_box_cull_in: Int = 0
     var c_box_cull_out: Int = 0
     var c_createInteractions: Int = 0 // number of calls to idInteraction::CreateInteraction
@@ -1359,45 +1378,6 @@ class idRenderSystemLocal : idRenderSystem() {
     //
     var viewportOffset: IntArray = IntArray(2) // for doing larger-than-window tiled renderings
 
-    // ~idRenderSystemLocal( void );
-    // external functions
-    // virtual void			Init( void );
-    // virtual void			Shutdown( void );
-    // virtual void			InitOpenGL( void );
-    // virtual void			ShutdownOpenGL( void );
-    // virtual bool			IsOpenGLRunning( void ) const;
-    // virtual bool			IsFullScreen( void ) const;
-    // virtual int				GetScreenWidth( void ) const;
-    // virtual int				GetScreenHeight( void ) const;
-    // virtual idRenderWorld *	AllocRenderWorld( void );
-    // virtual void			FreeRenderWorld( idRenderWorld *rw );
-    // virtual void			BeginLevelLoad( void );
-    // virtual void			EndLevelLoad( void );
-    // virtual bool			RegisterFont( const char *fontName, fontInfoEx_t &font );
-    // virtual void			SetColor( const idVec4 &rgba );
-    // virtual void			SetColor4( float r, float g, float b, float a );
-    // virtual void			DrawStretchPic ( const idDrawVert *verts, const glIndex_t *indexes, int vertCount, int indexCount, const idMaterial *material,
-    // bool clip = true, float x = 0.0f.0f, float y = 0.0f.0f, float w = 640.0f.0f, float h = 0.0f.0f );
-    // virtual void			DrawStretchPic ( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *material );
-    // virtual void			DrawStretchTri ( idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVec2 t2, idVec2 t3, const idMaterial *material );
-    // virtual void			GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
-    // virtual void			GetGLSettings( int& width, int& height );
-    // virtual void			PrintMemInfo( MemInfo_t *mi );
-    // virtual void			DrawSmallChar( int x, int y, int ch, const idMaterial *material );
-    // virtual void			DrawSmallStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material );
-    // virtual void			DrawBigChar( int x, int y, int ch, const idMaterial *material );
-    // virtual void			DrawBigStringExt( int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material );
-    // virtual void			WriteDemoPics();
-    // virtual void			DrawDemoPics();
-    // virtual void			BeginFrame( int windowWidth, int windowHeight );
-    // virtual void			EndFrame( int *frontEndMsec, int *backEndMsec );
-    // virtual void			TakeScreenshot( int width, int height, const char *fileName, int downSample, renderView_t *ref );
-    // virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false );
-    // virtual void			CaptureRenderToImage( const char *imageName );
-    // virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha );
-    // virtual void			UnCrop();
-    // virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 );
-    // virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
     // internal functions
     init {
         worlds = idList()
@@ -1427,15 +1407,11 @@ class idRenderSystemLocal : idRenderSystem() {
         testImage = null
         ambientCubeImage = null
         viewDef = null
-        //            memset(pc, 0, sizeof(pc));
         pc = performanceCounters_t()
-        //            memset(lockSurfacesCmd, 0, sizeof(lockSurfacesCmd));
         lockSurfacesCmd = drawSurfsCommand_t()
-        //            memset(identitySpace, 0, sizeof(identitySpace));
         identitySpace = viewEntity_s()
         stencilIncr = 0
         stencilDecr = 0
-        //            memset(renderCrops, 0, sizeof(renderCrops));
         renderCrops = arrayOfNulls(MAX_RENDER_CROPS)
         for (r in renderCrops.indices) {
             renderCrops[r] = renderCrop_t()
@@ -1444,7 +1420,6 @@ class idRenderSystemLocal : idRenderSystem() {
         guiRecursionLevel = 0
         guiModel = null
         demoGuiModel = null
-        //            memset(gammaTable, 0, sizeof(gammaTable));
         takingScreenshot = false
     }
 
@@ -1527,7 +1502,6 @@ class idRenderSystemLocal : idRenderSystem() {
 
         // clear all our internal state
         viewCount = 1 // so cleared structures never match viewCount
-        // we used to memset tr, but now that it is a class, we can't, so
         // there may be other state we need to reset
         ambientLightVector[0] = 0.5f
         ambientLightVector[1] = 0.5f - 0.385f
@@ -1653,7 +1627,6 @@ class idRenderSystemLocal : idRenderSystem() {
             primaryWorld = null
         }
         worlds.Remove(rw as idRenderWorldLocal)
-        //	delete rw;
     }
 
     override fun BeginLevelLoad() {
@@ -1677,41 +1650,14 @@ class idRenderSystemLocal : idRenderSystem() {
      ============
      */
     override fun RegisterFont(fontName: String?, font: fontInfoEx_t): Boolean {
-//if( BUILD_FREETYPE){
-//            FT_Face face;
-//            int j, k, xOut, yOut, lastStart, imageNumber;
-//            int scaledSize, newSize, maxHeight, left, satLevels;
-//            char[] out, imageBuff;
-//            glyphInfo_t glyph;
-//            idImage image;
-//            idMaterial h;
-//            float max;
-//}
         val faceData: Array<ByteBuffer?> = arrayOf(null)
         val fTime: LongArray = longArrayOf(0)
         var i: Int
         var len: Int
         var fontCount: Int
-        //	char name[1024];
         val name = StringBuffer(1024)
         var pointSize = 12
-        /*
-         if ( registeredFontCount >= MAX_FONTS ) {
-         common.Warning( "RegisterFont: Too many fonts registered already." );
-         return false;
-         }
 
-         int pointSize = 12;
-         idStr::snPrintf( name, sizeof(name), "%s/fontImage_%d.dat", fontName, pointSize );
-         for ( i = 0; i < registeredFontCount; i++ ) {
-         if ( idStr::Icmp(name, registeredFont[i].fontInfoSmall.name) == 0 ) {
-         memcpy( &font, &registeredFont[i], sizeof( fontInfoEx_t ) );
-         return true;
-         }
-         }
-         */
-
-//            memset(font, 0, sizeof(font));
         font.clear()
         fontCount = 0
         while (fontCount < 3) {
@@ -1762,8 +1708,7 @@ class idRenderSystemLocal : idRenderSystem() {
                 outFont.glyphs[i]!!.s2 = tr_font.readFloat()
                 outFont.glyphs[i]!!.t2 = tr_font.readFloat()
                 /* font.glyphs[i].glyph */tr_font.readInt()
-                //FIXME: the +6, -6 skips the embedded fonts/
-//                    memcpy(outFont.glyphs[i].shaderName, fdFile[fdOffset + 6], 32 - 6);
+                // the +6, -6 skips the embedded "fonts/" prefix
                 outFont.glyphs[i]!!.shaderName =
                     String(Arrays.copyOfRange(tr_font.fdFile, tr_font.fdOffset + 6, tr_font.fdOffset + 32))
                 tr_font.fdOffset += 32
@@ -1799,126 +1744,8 @@ class idRenderSystemLocal : idRenderSystem() {
             fontCount++
         }
 
-        //memcpy( &registeredFont[registeredFontCount++], &font, sizeof( fontInfoEx_t ) );
-//            return true;
-//
         if (tr_font.BUILD_FREETYPE) {
             Common.common.Warning("RegisterFont: couldn't load FreeType code %s", name)
-            //            } else {
-//
-//                if (ftLibrary == null) {
-//                    common.Warning("RegisterFont: FreeType not initialized.");
-//                    return;
-//                }
-//
-//                len = fileSystem.ReadFile(fontName, faceData, ftime);
-//                if (len <= 0) {
-//                    common.Warning("RegisterFont: Unable to read font file");
-//                    return;
-//                }
-//
-//                // allocate on the stack first in case we fail
-//                if (FT_New_Memory_Face(ftLibrary, faceData, len, 0, face)) {
-//                    common.Warning("RegisterFont: FreeType2, unable to allocate new face.");
-//                    return;
-//                }
-//
-//                if (FT_Set_Char_Size(face, pointSize << 6, pointSize << 6, dpi, dpi)) {
-//                    common.Warning("RegisterFont: FreeType2, Unable to set face char size.");
-//                    return;
-//                }
-//
-//                // font = registeredFonts[registeredFontCount++];
-//                // make a 256x256 image buffer, once it is full, register it, clean it and keep going
-//                // until all glyphs are rendered
-//                out = new char[1024 * 1024];// Mem_Alloc(1024 * 1024);
-//                if (out == null) {//TODO:remove
-//                    common.Warning("RegisterFont: Mem_Alloc failure during output image creation.");
-//                    return;
-//                }
-////                memset(out, 0, 1024 * 1024);
-//                out = new char[1024 * 1024];
-//
-//                maxHeight = 0;
-//
-//                for (i = GLYPH_START; i < GLYPH_END; i++) {
-//                    glyph = RE_ConstructGlyphInfo(out, xOut, yOut, maxHeight, face, i, qtrue);
-//                }
-//
-//                xOut = 0;
-//                yOut = 0;
-//                i = GLYPH_START;
-//                lastStart = i;
-//                imageNumber = 0;
-//
-//                while (i <= GLYPH_END) {
-//
-//                    glyph = RE_ConstructGlyphInfo(out, xOut, yOut, maxHeight, face, i, qfalse);
-//
-//                    if (xOut == -1 || yOut == -1 || i == GLYPH_END) {
-//                        // ran out of room
-//                        // we need to create an image from the bitmap, set all the handles in the glyphs to this point
-//                        //
-//
-//                        scaledSize = 256 * 256;
-//                        newSize = scaledSize * 4;
-//                        imageBuff = new char[newSize];// Mem_Alloc(newSize);
-//                        left = 0;
-//                        max = 0;
-//                        satLevels = 255;
-//                        for (k = 0; k < (scaledSize); k++) {
-//                            if (max < out[k]) {
-//                                max = out[k];
-//                            }
-//                        }
-//
-//                        if (max > 0) {
-//                            max = 255 / max;
-//                        }
-//
-//                        for (k = 0; k < (scaledSize); k++) {
-//                            imageBuff[left++] = 255;
-//                            imageBuff[left++] = 255;
-//                            imageBuff[left++] = 255;
-//                            imageBuff[left++] = (char) ((float) out[k] * max);
-//                        }
-//
-//                        idStr.snprintf(name[0], sizeof(name[0]), "fonts/fontImage_%i_%i.tga", imageNumber++, pointSize);
-//                        if (r_saveFontData.integer) {
-//                            R_WriteTGA(name[0], imageBuff, 256, 256);
-//                        }
-//
-//                        //idStr::snprintf( name, sizeof(name), "fonts/fontImage_%i_%i", imageNumber++, pointSize );
-//                        image = R_CreateImage(name[0], imageBuff, 256, 256, qfalse, qfalse, GL_CLAMP);
-//                        h = RE_RegisterShaderFromImage(name[0], LIGHTMAP_2D, image, qfalse);
-//                        for (j = lastStart; j < i; j++) {
-//                            font.glyphs[j].glyph = h;
-//                            idStr.Copynz(font.glyphs[j].shaderName, name[0], sizeof(font.glyphs[j].shaderName));
-//                        }
-//                        lastStart = i;
-////                        memset(out, 0, 1024 * 1024);
-//                        out = new char[1024 * 1024];
-//                        xOut = 0;
-//                        yOut = 0;
-//                        imageBuff = null;
-//                        i++;
-//                    } else {
-//                        memcpy(font.glyphs[i], glyph, sizeof(glyphInfo_t));
-//                        i++;
-//                    }
-//                }
-//
-//                registeredFont[registeredFontCount].glyphScale = glyphScale;
-//                font.glyphScale = glyphScale;
-//                memcpy(registeredFont[registeredFontCount++], font, sizeof(fontInfo_t));
-//
-//                if (r_saveFontData.integer) {
-//                    fileSystem.WriteFile(va("fonts/fontImage_%i.dat", pointSize), font, sizeof(fontInfo_t));
-//                }
-//
-//                out = null;
-//
-//                fileSystem.FreeFile(faceData);
         }
         return true
     }
@@ -2245,7 +2072,6 @@ class idRenderSystemLocal : idRenderSystem() {
         // the first rendering will be used for commands like
         // screenshot, rather than a possible subsequent remote
         // or mirror render
-//	primaryWorld = NULL;
 
         // set the time for shader effects in 2D rendering
         frameShaderTime = (EventLoop.eventLoop.Milliseconds() * 0.001f)
@@ -2253,7 +2079,7 @@ class idRenderSystemLocal : idRenderSystem() {
         //
         // draw buffer stuff
         //
-        RenderSystem.R_GetCommandBuffer(setBufferCommand_t().also({ cmd = it /*sizeof(cmd)*/ }))
+        RenderSystem.R_GetCommandBuffer(setBufferCommand_t().also({ cmd = it }))
         cmd.commandId = renderCommand_t.RC_SET_BUFFER
         cmd.frameCount = frameCount
         if (r_frontBuffer!!.GetBool()) {
@@ -2292,7 +2118,7 @@ class idRenderSystemLocal : idRenderSystem() {
         GL_CheckErrors()
 
         // add the swapbuffers command
-        RenderSystem.R_GetCommandBuffer(emptyCommand_t().also({ cmd = it /*sizeof(cmd)*/ }))
+        RenderSystem.R_GetCommandBuffer(emptyCommand_t().also({ cmd = it }))
         cmd.commandId = renderCommand_t.RC_SWAP_BUFFERS
 
         // start the back end up again with the new command list
@@ -2339,13 +2165,11 @@ class idRenderSystemLocal : idRenderSystem() {
         var temp: Int
         takingScreenshot = true
         val pix: Int = width * height
-        buffer = ByteArray(pix * 3 + 18) // R_StaticAlloc(pix * 3 + 18);
-        //	memset (buffer, 0, 18);
+        buffer = ByteArray(pix * 3 + 18)
         if (blends <= 1) {
             R_ReadTiledPixels(width, height, buffer, 18, ref)
         } else {
-            val shortBuffer = ShortArray(pix * 2 * 3) // R_StaticAlloc(pix * 2 * 3);
-            //		memset (shortBuffer, 0, pix*2*3);
+            val shortBuffer = ShortArray(pix * 2 * 3)
 
             // enable anti-aliasing jitter
             r_jitter!!.SetBool(true)
@@ -2367,7 +2191,6 @@ class idRenderSystemLocal : idRenderSystem() {
                 i++
             }
 
-//                R_StaticFree(shortBuffer);
             r_jitter!!.SetBool(false)
         }
 
@@ -2395,8 +2218,6 @@ class idRenderSystemLocal : idRenderSystem() {
         } else {
             fileSystem.WriteFile(fileName, ByteBuffer.wrap(buffer), c)
         }
-        //
-//            R_StaticFree(buffer);
         takingScreenshot = false
     }
 
@@ -2453,7 +2274,6 @@ class idRenderSystemLocal : idRenderSystem() {
         if (makePowerOfTwo) {
             width = MegaTexture.RoundDownToPowerOfTwo(width)
             height = MegaTexture.RoundDownToPowerOfTwo(height)
-            // FIXME: megascreenshots with offset viewports don't work right with this yet
         }
         val rc: renderCrop_t? = renderCrops[currentRenderCrop]
 
@@ -2468,8 +2288,6 @@ class idRenderSystemLocal : idRenderSystem() {
             Common.common.Error("idRenderSystemLocal::CropRenderSize: currentRenderCrop == MAX_RENDER_CROPS")
         }
         currentRenderCrop++
-
-//            rc = renderCrops[currentRenderCrop];
         renderCrops[currentRenderCrop - 1] = renderCrops[currentRenderCrop]
         rc!!.x = 0
         rc.y = 0
@@ -2503,7 +2321,7 @@ class idRenderSystemLocal : idRenderSystem() {
         )
         val rc: renderCrop_t? = renderCrops[currentRenderCrop]
         var cmd: copyRenderCommand_t
-        RenderSystem.R_GetCommandBuffer(copyRenderCommand_t().also({ cmd = it /*sizeof(cmd)*/ }))
+        RenderSystem.R_GetCommandBuffer(copyRenderCommand_t().also({ cmd = it }))
         cmd.commandId = renderCommand_t.RC_COPY_RENDER
         cmd.x = rc!!.x
         cmd.y = rc.y
@@ -2525,9 +2343,9 @@ class idRenderSystemLocal : idRenderSystem() {
 
         // include extra space for OpenGL padding to word boundaries
         val c: Int = (rc!!.width + 3) * rc.height
-        var data: ByteBuffer = BufferUtils.createByteBuffer(c * 3) // R_StaticAlloc(c * 3);
+        var data: ByteBuffer = BufferUtils.createByteBuffer(c * 3)
         qgl.qglReadPixels(rc.x, rc.y, rc.width, rc.height, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, data)
-        var data2: ByteBuffer = ByteBuffer.allocate(c * 4) // R_StaticAlloc(c * 4);
+        var data2: ByteBuffer = ByteBuffer.allocate(c * 4)
         for (i in 0 until c) {
             data2.put(i * 4, data.get(i * 3))
             data2.put(i * 4 + 1, data.get(i * 3 + 1))
@@ -2583,10 +2401,6 @@ class idRenderSystemLocal : idRenderSystem() {
     }
 }
 
-//optimizedShadow_t SuperOptimizeOccluders( idVec4 *verts, glIndex_t *indexes, int numIndexes,
-//										 idPlane projectionPlane, idVec3 projectionOrigin );
-//
-//void CleanupOptimizedShadowTris( srfTriangles_t *tri );
 /*
  ============================================================
 

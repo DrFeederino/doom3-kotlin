@@ -2,7 +2,6 @@ package neo.ui
 
 import neo.Game.Animation.Anim.idMD5Anim
 import neo.Game.GameEdit.gameEdit
-import neo.Renderer.GuiModel
 import neo.Renderer.RenderSystem
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.idRenderWorld
@@ -22,6 +21,7 @@ import neo.ui.Window.idWindow
 import neo.ui.Winvar.idWinBool
 import neo.ui.Winvar.idWinStr
 import neo.ui.Winvar.idWinVec4
+import neo.idlib.geometry.JointTransform.idJointMat
 import kotlin.math.atan
 
 class RenderWindow {
@@ -52,7 +52,6 @@ class RenderWindow {
         //
         //
         constructor(gui: idUserInterfaceLocal) : super(gui) {
-            dc = null
             this.gui = gui
             CommonInit()
         }
@@ -64,13 +63,9 @@ class RenderWindow {
         }
 
         override fun Draw(time: Int, x: Float, y: Float) {
-            if (GuiModel.idGuiModel.bla) {
-                bla1++
-            }
             PreRender()
             Render(time)
 
-//            memset(refdef, 0, sizeof(refdef));
             refdef = renderView_s()
             refdef!!.vieworg.set(viewOffset.ToVec3())
             //refdef.vieworg.Set(-128, 0, 0);
@@ -149,7 +144,7 @@ class RenderWindow {
          * @param time
          */
         private fun Render(time: Int) {
-            rLight.origin.set(lightOrigin.ToVec3()) //TODO:ref?
+            rLight.origin.set(lightOrigin.ToVec3())
             rLight.shaderParms[RenderWorld.SHADERPARM_RED] = lightColor.x()
             rLight.shaderParms[RenderWorld.SHADERPARM_GREEN] = lightColor.y()
             rLight.shaderParms[RenderWorld.SHADERPARM_BLUE] = lightColor.z()
@@ -173,7 +168,6 @@ class RenderWindow {
                     )
                 }
                 worldEntity!!.axis.set(idAngles(modelRotate.x(), modelRotate.y(), modelRotate.z()).ToMat3())
-                //                System.out.printf("x=%f, y=%f, z=%f\n", modelRotate.x(), modelRotate.y(), modelRotate.z());
                 world!!.UpdateEntityDef(modelDef, worldEntity!!)
             }
         }
@@ -216,7 +210,7 @@ class RenderWindow {
             }
             if (animName.Length() != 0 && animClass.Length() != 0) {
                 worldEntity!!.numJoints = worldEntity!!.hModel!!.NumJoints()
-                worldEntity!!.joints = arrayOfNulls(worldEntity!!.numJoints)
+                worldEntity!!.joints = Array(worldEntity!!.numJoints) { idJointMat() }
                 modelAnim = gameEdit.ANIM_GetAnimFromEntityDef(animClass.toString(), animName.toString())
                 if (modelAnim != null) {
                     animLength = gameEdit.ANIM_GetLength(modelAnim)

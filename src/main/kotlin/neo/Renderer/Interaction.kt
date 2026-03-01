@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/renderer/Interaction.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Renderer
 
 import neo.Renderer.Material.idMaterial
@@ -29,10 +55,9 @@ object Interaction {
      ===============================================================================
      */
     val LIGHT_CLIP_EPSILON: Float = 0.1f
-    var LIGHT_TRIS_DEFERRED: srfTriangles_s? = null // = -03146;//((srfTriangles_s *)-1)
+    var LIGHT_TRIS_DEFERRED: srfTriangles_s? = null
     val MAX_CLIPPED_POINTS: Int = 20
-    var LIGHT_CULL_ALL_FRONT //((byte *)-1)
-            : ByteArray? = null
+    var LIGHT_CULL_ALL_FRONT: ByteArray? = null
 
     init {
         LIGHT_TRIS_DEFERRED = srfTriangles_s()
@@ -49,17 +74,13 @@ object Interaction {
     }
 
     /**
+     * R_CalcInteractionFacing
      *
-     *//*
-     ================
-     R_CalcInteractionFacing
-
-     Determines which triangles of the surface are facing towards the light origin.
-
-     The facing array should be allocated with one extra index than
-     the number of surface triangles, which will be used to handle dangling
-     edge silhouettes.
-     ================
+     * Determines which triangles of the surface are facing towards the light origin.
+     *
+     * The facing array should be allocated with one extra index than
+     * the number of surface triangles, which will be used to handle dangling
+     * edge silhouettes.
      */
     fun R_CalcInteractionFacing(
         ent: idRenderEntityLocal?, tri: srfTriangles_s?, light: idRenderLightLocal?, cullInfo: srfCullInfo_t
@@ -71,9 +92,9 @@ object Interaction {
         tr_main.R_GlobalPointToLocal(ent!!.modelMatrix, light!!.globalLightOrigin, localLightOrigin)
         val numFaces: Int = tri!!.numIndexes / 3
         if (tri.facePlanes == null || !tri.facePlanesCalculated) {
-            R_DeriveFacePlanes( /*const_cast<srfTriangles_s *>*/(tri))
+            R_DeriveFacePlanes(tri)
         }
-        cullInfo.facing = ByteArray(numFaces + 1) // R_StaticAlloc((numFaces + 1) * sizeof(cullInfo.facing[0]));
+        cullInfo.facing = ByteArray(numFaces + 1)
 
         // calculate back face culling
         val planeSide = FloatArray(numFaces)
@@ -120,8 +141,8 @@ object Interaction {
             cullInfo.cullBits = LIGHT_CULL_ALL_FRONT
             return
         }
-        cullInfo.cullBits = ByteArray(tri!!.numVerts) // R_StaticAlloc(tri.numVerts /* sizeof(cullInfo.cullBits[0])*/);
-        SIMDProcessor!!.Memset(cullInfo.cullBits!!, 0, tri.numVerts /* sizeof(cullInfo.cullBits[0])*/)
+        cullInfo.cullBits = ByteArray(tri!!.numVerts)
+        SIMDProcessor!!.Memset(cullInfo.cullBits!!, 0, tri.numVerts)
         val planeSide = FloatArray(tri.numVerts)
 
         for (i in 0 until 6) {
@@ -142,16 +163,8 @@ object Interaction {
      ================
      */
     fun R_FreeInteractionCullInfo(cullInfo: srfCullInfo_t) {
-//        if (cullInfo.facing != null) {
-//            R_StaticFree(cullInfo.facing);
         cullInfo.facing = null
-        //        }
-//        if (cullInfo.cullBits != null) {
-//            if (cullInfo.cullBits != LIGHT_CULL_ALL_FRONT) {
-//                R_StaticFree(cullInfo.cullBits);
-//            }
         cullInfo.cullBits = null
-        //        }
     }
 
     /*
@@ -173,7 +186,6 @@ object Interaction {
         val sides = IntArray(MAX_CLIPPED_POINTS)
         val counts = IntArray(3)
         var dot: Float
-        var i: Int = 0
         val mid = idVec3()
         var front: Boolean
 
@@ -211,8 +223,8 @@ object Interaction {
         }
 
         // avoid wrapping checks by duplicating first value to end
-        sides[i] = sides[0]
-        dists[i] = dists[0]
+        sides[inClip.numVerts] = sides[0]
+        dists[inClip.numVerts] = dists[0]
         inClip.verts[inClip.numVerts].set(inClip.verts[0])
 
         out!!.numVerts = 0
@@ -303,7 +315,6 @@ object Interaction {
         c_backfaced = 0
         c_distance = 0
         numIndexes = 0
-        //	indexes = null;
 
         // it is debatable if non-shadowing lights should light back faces. we aren't at the moment
         includeBackFaces =
@@ -313,7 +324,7 @@ object Interaction {
         newTri = R_AllocStaticTriSurf()
 
         // save a reference to the original surface
-        newTri.ambientSurface =  /*const_cast<srfTriangles_s *>*/(tri)
+        newTri.ambientSurface = tri
 
         // the light surface references the verts of the ambient surface
         newTri.numVerts = tri!!.numVerts
@@ -587,7 +598,6 @@ object Interaction {
      ===========================================================================
      */
     class idInteraction {
-        private val DBG_count: Int = DBG_counter++
         private val frustum // frustum which contains the interaction
                 : idFrustum
 
@@ -659,9 +669,6 @@ object Interaction {
                 nextArea = area.next
                 area = nextArea
             }
-
-            // put it back on the free list
-//            renderWorld.interactionAllocator.Free(this);
         }
 
         /*
@@ -694,7 +701,6 @@ object Interaction {
                     R_FreeInteractionCullInfo(sint.cullInfo)
                 }
 
-//                R_StaticFree(this.surfaces);
                 surfaces = null
             }
             numSurfaces = -1
@@ -1126,8 +1132,7 @@ object Interaction {
                         sint.lightTris = R_CreateLightTris(entityDef, tri, lightDef, shader, sint.cullInfo)
                     } else {
                         // this will be calculated when sint.ambientTris is actually in view
-                        sint.lightTris =
-                            LIGHT_TRIS_DEFERRED //HACKME::1:this throws a null pointer after the planet goes out of the screen, hitting you in the head!
+                        sint.lightTris = LIGHT_TRIS_DEFERRED
                     }
                     interactionGenerated = true
                 }
@@ -1156,7 +1161,7 @@ object Interaction {
                 }
 
                 // free the cull information when it's no longer needed
-                if (sint.lightTris !== LIGHT_TRIS_DEFERRED) { //HACKME::2:related to HACKME1
+                if (sint.lightTris !== LIGHT_TRIS_DEFERRED) {
                     R_FreeInteractionCullInfo(sint.cullInfo)
                 }
             }
@@ -1272,7 +1277,7 @@ object Interaction {
                     // retrieve all the areas the interaction frustum touches
                     var ref: areaReference_s? = entityDef!!.entityRefs
                     while (ref != null) {
-                        area = areaNumRef_s() //entityDef.world.areaNumRefAllocator.Alloc();
+                        area = areaNumRef_s()
                         area.areaNum = ref.area!!.areaNum
                         area.next = frustumAreas
                         frustumAreas = area
@@ -1333,17 +1338,15 @@ object Interaction {
 
             //
             //
-            private var DBG_counter: Int = 0
-
             // because these are generated and freed each game tic for active elements all
             // over the world, we use a custom pool allocater to avoid memory allocation overhead
             // and fragmentation
             fun AllocAndLink(eDef: idRenderEntityLocal, lDef: idRenderLightLocal?): idInteraction {
-                if (eDef == null || lDef == null) {
+                if (lDef == null) {
                     Common.common.Error("idInteraction::AllocAndLink: null parm")
                 }
                 val renderWorld: idRenderWorldLocal = eDef.world!!
-                val interaction = idInteraction() //renderWorld.interactionAllocator.Alloc();
+                val interaction = idInteraction()
 
                 // link and initialize
                 interaction.dynamicModelFrameCount = 0
@@ -1390,7 +1393,6 @@ object Interaction {
     class clipTri_t {
         var numVerts: Int = 0
         val verts: Array<idVec3> = idVec3.generateArray(MAX_CLIPPED_POINTS)
-        val edgeFlags: IntArray = IntArray(MAX_CLIPPED_POINTS)
     }
 
     /*

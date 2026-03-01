@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/BrittleFracture.cpp, neo/Game/BrittleFracture.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.Entity.idEntity
@@ -61,15 +79,15 @@ object BrittleFracture {
     val brittleFracture_SnapshotName: String = "_BrittleFracture_Snapshot_"
 
     class shard_s {
-        var atEdge = true
+        var atEdge = false
         var clipModel: idClipModel? = null
         val decals: idList<idFixedWinding> = idList()
         var droppedTime = -1
         val edgeHasNeighbour: idList<Boolean> = idList()
         var islandNum = 0
         val neighbours: idList<shard_s?> = idList()
-        var physicsObj: idPhysics_RigidBody? = null
-        var winding: idFixedWinding? = null
+        val physicsObj: idPhysics_RigidBody = idPhysics_RigidBody()
+        val winding: idFixedWinding = idFixedWinding()
     }
 
     //
@@ -162,7 +180,7 @@ object BrittleFracture {
             savefile.WriteInt(shards.Num())
             i = 0
             while (i < shards.Num()) {
-                savefile.WriteWinding(shards[i]!!.winding!!)
+                savefile.WriteWinding(shards[i]!!.winding)
                 savefile.WriteInt(shards[i]!!.decals.Num())
                 j = 0
                 while (j < shards[i]!!.decals.Num()) {
@@ -186,7 +204,7 @@ object BrittleFracture {
                 savefile.WriteInt(shards[i]!!.droppedTime)
                 savefile.WriteInt(shards[i]!!.islandNum)
                 savefile.WriteBool(shards[i]!!.atEdge)
-                savefile.WriteStaticObject(shards[i]!!.physicsObj!!)
+                savefile.WriteStaticObject(shards[i]!!.physicsObj)
                 i++
             }
         }
@@ -236,7 +254,7 @@ object BrittleFracture {
             }
             i = 0
             while (i < num._val) {
-                savefile.ReadWinding(shards[i]!!.winding!!)
+                savefile.ReadWinding(shards[i]!!.winding)
                 j = savefile.ReadInt()
                 shards[i]!!.decals.SetNum(j)
                 j = 0
@@ -269,7 +287,7 @@ object BrittleFracture {
                 if (shards[i]!!.droppedTime < 0) {
                     shards[i]!!.clipModel = physicsObj.GetClipModel(i)!!
                 } else {
-                    shards[i]!!.clipModel = shards[i]!!.physicsObj!!.GetClipModel()!!
+                    shards[i]!!.clipModel = shards[i]!!.physicsObj.GetClipModel()!!
                 }
                 i++
             }
@@ -320,7 +338,7 @@ object BrittleFracture {
         override fun Present() {
 
             // don't present to the renderer if the entity hasn't changed
-            if (0 == thinkFlags and Entity.TH_UPDATEVISUALS) {
+            if (0 == (thinkFlags and Entity.TH_UPDATEVISUALS)) {
                 return
             }
             BecomeInactive(Entity.TH_UPDATEVISUALS)
@@ -368,7 +386,7 @@ object BrittleFracture {
                 PostEventMS(EV_Remove, 0)
                 return
             }
-            if (thinkFlags and Entity.TH_PHYSICS != 0) {
+            if ((thinkFlags and Entity.TH_PHYSICS) != 0) {
                 startTime = Game_local.gameLocal.previousTime
                 endTime = Game_local.gameLocal.time
 
@@ -380,8 +398,8 @@ object BrittleFracture {
                         i++
                         continue
                     }
-                    shard.physicsObj!!.Evaluate(endTime - startTime, endTime)
-                    if (!shard.physicsObj!!.IsAtRest()) {
+                    shard.physicsObj.Evaluate(endTime - startTime, endTime)
+                    if (!shard.physicsObj.IsAtRest()) {
                         atRest = false
                     }
                     i++
@@ -414,7 +432,7 @@ object BrittleFracture {
                 return
             }
             if (shards[id]!!.droppedTime != -1) {
-                shards[id]!!.physicsObj!!.ApplyImpulse(0, point, impulse)
+                shards[id]!!.physicsObj.ApplyImpulse(0, point, impulse)
             } else if (health <= 0 && !disableFracture) {
                 Shatter(point, impulse, Game_local.gameLocal.time)
             }
@@ -425,7 +443,7 @@ object BrittleFracture {
                 return
             }
             if (shards[id]!!.droppedTime != -1) {
-                shards[id]!!.physicsObj!!.AddForce(0, point, force)
+                shards[id]!!.physicsObj.AddForce(0, point, force)
             } else if (health <= 0 && !disableFracture) {
                 Shatter(point, force, Game_local.gameLocal.time)
             }
@@ -500,7 +518,7 @@ object BrittleFracture {
             textureAxis[1][3] = -point.times(textureAxis[1].Normal()) + 0.5f
             i = 0
             while (i < shards.Num()) {
-                val winding = shards[i]!!.winding!!
+                val winding = shards[i]!!.winding
                 origin.set(shards[i]!!.clipModel!!.GetOrigin())
                 axis.set(shards[i]!!.clipModel!!.GetAxis())
                 var d0: Float
@@ -622,7 +640,7 @@ object BrittleFracture {
             numDecalTris = 0
             i = 0
             while (i < shards.Num()) {
-                n = shards[i]!!.winding!!.GetNumPoints()
+                n = shards[i]!!.winding.GetNumPoints()
                 if (n > 2) {
                     numTris += n - 2
                 }
@@ -669,7 +687,7 @@ object BrittleFracture {
                         fade
                     )
                 ).toInt()
-                val winding: idWinding = shards[i]!!.winding!!
+                val winding: idWinding = shards[i]!!.winding
                 winding.GetPlane(plane)
                 tangents.set(plane.Normal().times(axis).ToMat3())
                 j = 2
@@ -680,8 +698,8 @@ object BrittleFracture {
                     v.st[0] = winding[0].s
                     v.st[1] = winding[0].t
                     v.normal.set(tangents[0])
-                    v.tangents[0] = tangents[1]
-                    v.tangents[1] = tangents[2]
+                    v.tangents[0].set(tangents[1])
+                    v.tangents[1].set(tangents[2])
                     v.SetColor(packedColor)
                     v = tris.verts!![tris.numVerts++]!!
                     v.Clear()
@@ -689,8 +707,8 @@ object BrittleFracture {
                     v.st[0] = winding[j - 1].s
                     v.st[1] = winding[j - 1].t
                     v.normal.set(tangents[0])
-                    v.tangents[0] = tangents[1]
-                    v.tangents[1] = tangents[2]
+                    v.tangents[0].set(tangents[1])
+                    v.tangents[1].set(tangents[2])
                     v.SetColor(packedColor)
                     v = tris.verts!![tris.numVerts++]!!
                     v.Clear()
@@ -698,8 +716,8 @@ object BrittleFracture {
                     v.st[0] = winding[j].s
                     v.st[1] = winding[j].t
                     v.normal.set(tangents[0])
-                    v.tangents[0] = tangents[1]
-                    v.tangents[1] = tangents[2]
+                    v.tangents[0].set(tangents[1])
+                    v.tangents[1].set(tangents[2])
                     v.SetColor(packedColor)
                     tris.indexes!![tris.numIndexes++] = tris.numVerts - 3
                     tris.indexes!![tris.numIndexes++] = tris.numVerts - 2
@@ -722,8 +740,8 @@ object BrittleFracture {
                         v.st[0] = decalWinding[0].s
                         v.st[1] = decalWinding[0].t
                         v.normal.set(tangents[0])
-                        v.tangents[0] = tangents[1]
-                        v.tangents[1] = tangents[2]
+                        v.tangents[0].set(tangents[1])
+                        v.tangents[1].set(tangents[2])
                         v.SetColor(packedColor)
                         v = decalTris.verts!![decalTris.numVerts++]!!
                         v.Clear()
@@ -731,8 +749,8 @@ object BrittleFracture {
                         v.st[0] = decalWinding[j - 1].s
                         v.st[1] = decalWinding[j - 1].t
                         v.normal.set(tangents[0])
-                        v.tangents[0] = tangents[1]
-                        v.tangents[1] = tangents[2]
+                        v.tangents[0].set(tangents[1])
+                        v.tangents[1].set(tangents[2])
                         v.SetColor(packedColor)
                         v = decalTris.verts!![decalTris.numVerts++]!!
                         v.Clear()
@@ -740,8 +758,8 @@ object BrittleFracture {
                         v.st[0] = decalWinding[j].s
                         v.st[1] = decalWinding[j].t
                         v.normal.set(tangents[0])
-                        v.tangents[0] = tangents[1]
-                        v.tangents[1] = tangents[2]
+                        v.tangents[0].set(tangents[1])
+                        v.tangents[1].set(tangents[2])
                         v.SetColor(packedColor)
                         decalTris.indexes!![decalTris.numIndexes++] = decalTris.numVerts - 3
                         decalTris.indexes!![decalTris.numIndexes++] = decalTris.numVerts - 2
@@ -787,7 +805,7 @@ object BrittleFracture {
             val shard = shard_s()
             shard.clipModel = clipModel
             shard.droppedTime = -1
-            shard.winding = w
+            shard.winding.set(w)
             shard.decals.Clear()
             shard.edgeHasNeighbour.AssureSize(w.GetNumPoints(), false)
             shard.neighbours.Clear()
@@ -857,18 +875,18 @@ object BrittleFracture {
             ))
 
             // setup the physics
-            shard.physicsObj!!.SetSelf(this)
-            shard.physicsObj!!.SetClipModel(shard.clipModel, density)
-            shard.physicsObj!!.SetMass(shardMass)
-            shard.physicsObj!!.SetOrigin(origin)
-            shard.physicsObj!!.SetAxis(axis)
-            shard.physicsObj!!.SetBouncyness(bouncyness)
-            shard.physicsObj!!.SetFriction(0.6f, 0.6f, friction)
-            shard.physicsObj!!.SetGravity(Game_local.gameLocal.GetGravity())
-            shard.physicsObj!!.SetContents(Material.CONTENTS_RENDERMODEL)
-            shard.physicsObj!!.SetClipMask(Game_local.MASK_SOLID or Material.CONTENTS_MOVEABLECLIP)
-            shard.physicsObj!!.ApplyImpulse(0, origin, dir.times(impulse * linearVelocityScale))
-            shard.physicsObj!!.SetAngularVelocity(dir.Cross(dir2).times(f * angularVelocityScale))
+            shard.physicsObj.SetSelf(this)
+            shard.physicsObj.SetClipModel(shard.clipModel, density)
+            shard.physicsObj.SetMass(shardMass)
+            shard.physicsObj.SetOrigin(origin)
+            shard.physicsObj.SetAxis(axis)
+            shard.physicsObj.SetBouncyness(bouncyness)
+            shard.physicsObj.SetFriction(0.6f, 0.6f, friction)
+            shard.physicsObj.SetGravity(Game_local.gameLocal.GetGravity())
+            shard.physicsObj.SetContents(Material.CONTENTS_RENDERMODEL)
+            shard.physicsObj.SetClipMask(Game_local.MASK_SOLID or Material.CONTENTS_MOVEABLECLIP)
+            shard.physicsObj.ApplyImpulse(0, origin, dir.times(impulse * linearVelocityScale))
+            shard.physicsObj.SetAngularVelocity(dir.Cross(dir2).times(f * angularVelocityScale))
             shard.clipModel!!.SetId(clipModelId)
             BecomeActive(Entity.TH_PHYSICS)
         }
@@ -1122,7 +1140,7 @@ object BrittleFracture {
             i = 0
             while (i < shards.Num()) {
                 val shard1 = shards[i]!!
-                val w1: idWinding = shard1.winding!!
+                val w1: idWinding = shard1.winding
                 val origin1 = shard1.clipModel!!.GetOrigin()
                 val axis1 = shard1.clipModel!!.GetAxis()
                 k = 0
@@ -1158,7 +1176,7 @@ object BrittleFracture {
                             j++
                             continue
                         }
-                        val w2: idWinding = shard2.winding!!
+                        val w2: idWinding = shard2.winding
                         val origin2 = shard2.clipModel!!.GetOrigin()
                         val axis2 = shard2.clipModel!!.GetAxis()
                         l = w2.GetNumPoints() - 1

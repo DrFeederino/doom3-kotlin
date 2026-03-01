@@ -336,7 +336,7 @@ class DeclManager {
         abstract fun FindType(type: declType_t, name: String?, makeDefault: Boolean /*= true*/): idDecl?
 
 
-        fun FindType(type: declType_t, name: idStr, makeDefault: Boolean = true): idDecl? {
+        fun FindType(type: declType_t, name: idStr?, makeDefault: Boolean = true): idDecl? {
             return FindType(type, name.toString(), makeDefault)
         }
 
@@ -396,10 +396,10 @@ class DeclManager {
 
         // Convenience functions for specific types.
         @Throws(idException::class)
-        abstract fun FindMaterial(name: idStr, makeDefault: Boolean /*= true*/): Material.idMaterial?
+        abstract fun FindMaterial(name: idStr?, makeDefault: Boolean /*= true*/): Material.idMaterial?
 
         @Throws(idException::class)
-        fun FindMaterial(name: idStr): Material.idMaterial? {
+        fun FindMaterial(name: idStr?): Material.idMaterial? {
             return FindMaterial(name, true)
         }
 
@@ -1963,7 +1963,7 @@ class DeclManager {
 
         /* *******************************************************************/
         @Throws(idException::class)
-        override fun FindMaterial(name: idStr, makeDefault: Boolean): Material.idMaterial? {
+        override fun FindMaterial(name: idStr?, makeDefault: Boolean): Material.idMaterial? {
             return FindType(declType_t.DECL_MATERIAL, name, makeDefault) as Material.idMaterial?
         }
 

@@ -1,5 +1,22 @@
-package neo.Game
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Misc.cpp, neo/Game/Misc.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
 
+package neo.Game
 import neo.Game.AFEntity.idAFEntity_Gibbable
 import neo.Game.AI.AI.idAI
 import neo.Game.AI.AI_RandomPath
@@ -349,7 +366,7 @@ object Misc {
             //
             //
             private fun Event_Activate(a: idActivator, activator: idEventArg<idEntity>) {
-                if (a.thinkFlags and TH_THINK != 0) {
+                if ((a.thinkFlags and TH_THINK) != 0) {
                     a.BecomeInactive(TH_THINK)
                 } else {
                     a.BecomeActive(TH_THINK)
@@ -395,7 +412,7 @@ object Misc {
 
         override fun Think() {
             RunPhysics()
-            if (thinkFlags and TH_THINK != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 if (TouchTriggers()) {
                     if (!stay_on._val) {
                         BecomeInactive(TH_THINK)
@@ -766,7 +783,7 @@ object Misc {
 
             // run physics
             RunPhysics()
-            if (thinkFlags and TH_THINK != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 // evaluate force
                 spring.Evaluate(Game_local.gameLocal.time)
                 start.set(p1)
@@ -900,7 +917,7 @@ object Misc {
         }
 
         override fun Think() {
-            if (thinkFlags and TH_THINK != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 // evaluate force
                 forceField.Evaluate(Game_local.gameLocal.time)
             }
@@ -908,7 +925,7 @@ object Misc {
         }
 
         private fun Toggle() {
-            if (thinkFlags and TH_THINK != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 BecomeInactive(TH_THINK)
             } else {
                 BecomeActive(TH_THINK)
@@ -1526,7 +1543,7 @@ object Misc {
 
         override fun Think() {
             super.Think()
-            if (thinkFlags and TH_THINK != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 if (runGui && renderEntity!!.gui[0] != null) {
                     val player = Game_local.gameLocal.GetLocalPlayer()
                     if (player != null) {
@@ -1780,7 +1797,7 @@ object Misc {
             if (CheckDormant() || smoke == null || smokeTime == -1) {
                 return
             }
-            if (thinkFlags and Entity.TH_UPDATEPARTICLES != 0 && !IsHidden()) {
+            if ((thinkFlags and Entity.TH_UPDATEPARTICLES) != 0 && !IsHidden()) {
                 if (!Game_local.gameLocal.smokeParticles!!.EmitSmoke(
                         smoke,
                         smokeTime,
@@ -1800,7 +1817,7 @@ object Misc {
         }
 
         fun Event_Activate(activator: idEventArg<idEntity>) {
-            if (thinkFlags and Entity.TH_UPDATEPARTICLES != 0) {
+            if ((thinkFlags and Entity.TH_UPDATEPARTICLES) != 0) {
                 restart = false
                 return
             } else {
@@ -1910,7 +1927,7 @@ object Misc {
         }
 
         override fun Think() {
-            if (thinkFlags and TH_THINK != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 Game_local.gameRenderWorld!!.DrawText(
                     text.toString(),
                     GetPhysics().GetOrigin(),
@@ -2510,7 +2527,7 @@ object Misc {
         }
 
         override fun Think() {
-            if (thinkFlags and TH_THINK != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 if (Game_local.gameLocal.time > shakeStopTime) {
                     BecomeInactive(TH_THINK)
                     if (wait <= 0.0f) {
@@ -2999,7 +3016,7 @@ object Misc {
             if (CheckDormant()) {
                 return
             }
-            if (0 == thinkFlags and TH_THINK) {
+            if (0 == (thinkFlags and TH_THINK)) {
                 BecomeInactive(thinkFlags and TH_THINK.inv())
                 return
             }
@@ -3087,7 +3104,7 @@ object Misc {
             var time: Float
             var frac: Float
             val scale: Float
-            if (thinkFlags and TH_THINK != 0) {
+            if ((thinkFlags and TH_THINK) != 0) {
                 BecomeInactive(TH_THINK)
                 return
             }

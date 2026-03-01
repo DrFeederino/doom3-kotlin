@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/FX.cpp, neo/Game/FX.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.Entity.idEntity
@@ -226,7 +244,7 @@ object FX {
             if (SysCvar.g_skipFX.GetBool()) {
                 return
             }
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 Run(Game_local.gameLocal.time)
             }
             RunPhysics()
@@ -487,9 +505,7 @@ object FX {
                         if (Game_local.gameLocal.isClient) {
                             // client never spawns entities outside of ClientReadSnapshot
                             useAction.launched = true
-                            break
-                        }
-                        if (!useAction.launched) {
+                        } else if (!useAction.launched) {
                             useAction.launched = true
                             projectile = null
                             // FIXME: may need to cache this if it is slow
@@ -509,7 +525,6 @@ object FX {
                                 }
                             }
                         }
-                        break
                     }
 
                     else -> {}
@@ -749,8 +764,8 @@ object FX {
             }
 
             init {
-                eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[EV_Activate] =
+                eventCallbacks.putAll(idEntityFx.getEventCallBacks())
+                eventCallbacks[EV_Fx_Action] =
                     eventCallback_t1<idTeleporter> { obj: idTeleporter, activator: idEventArg<*>? ->
                         obj.Event_DoAction(activator as idEventArg<idEntity>)
                     }
@@ -759,8 +774,6 @@ object FX {
 
         // teleporters to this location
         private fun Event_DoAction(activator: idEventArg<idEntity>) {
-            val angle: Float
-            angle = spawnArgs.GetFloat("angle")
             val a = idAngles(0.0f, spawnArgs.GetFloat("angle"), 0.0f)
             activator.value.Teleport(GetPhysics().GetOrigin(), a, null)
         }

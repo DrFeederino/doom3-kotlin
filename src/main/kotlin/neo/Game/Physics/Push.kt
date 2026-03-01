@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Physics/Push.h, neo/Game/Physics/Push.cpp
+ */
+
 package neo.Game.Physics
 
 import neo.Game.AFEntity.idAFEntity_Base
@@ -115,7 +123,7 @@ object Push {
 
             // discard entities we cannot or should not push
             listedEntities = DiscardEntities(entityList, listedEntities, flags, pusher)
-            if (flags and PUSHFL_CLIP != 0) {
+            if ((flags and PUSHFL_CLIP) != 0) {
 
                 // can only clip movement of a trace model
                 assert(clipModel.IsTraceModel())
@@ -196,7 +204,7 @@ object Push {
                     )
 
                     // wake up this object
-                    if (flags and PUSHFL_APPLYIMPULSE != 0) {
+                    if ((flags and PUSHFL_APPLYIMPULSE) != 0) {
                         impulse.set(dir.times(physics.GetMass()))
                     } else {
                         impulse.Zero()
@@ -221,7 +229,7 @@ object Push {
                 }
 
                 // if blocking entities should be crushed
-                if (flags and PUSHFL_CRUSH != 0) {
+                if ((flags and PUSHFL_CRUSH) != 0) {
                     check.Damage(
                         clipModel.GetEntity(),
                         clipModel.GetEntity(),
@@ -318,7 +326,7 @@ object Push {
 
             // discard entities we cannot or should not push
             listedEntities = DiscardEntities(entityList, listedEntities, flags, pusher)
-            if (flags and PUSHFL_CLIP != 0) {
+            if ((flags and PUSHFL_CLIP) != 0) {
 
                 // can only clip movement of a trace model
                 assert(clipModel.IsTraceModel())
@@ -424,7 +432,7 @@ object Push {
                 }
 
                 // if blocking entities should be crushed
-                if (flags and PUSHFL_CRUSH != 0) {
+                if ((flags and PUSHFL_CRUSH) != 0) {
                     check.Damage(
                         clipModel.GetEntity(),
                         clipModel.GetEntity(),
@@ -839,7 +847,9 @@ object Push {
                 rotationPoint.set(physics.GetOrigin())
             } else {
                 // rotate entity in reverse only colliding with pusher
-                newRotation = rotation
+                // FIX: C++ struct assignment does value copy; Kotlin = was reference alias
+                // Scale(-1) would mutate the original rotation parameter
+                newRotation.Set(rotation.GetOrigin(), rotation.GetVec(), rotation.GetAngle())
                 newRotation.Scale(-1.0f)
                 //
                 ClipEntityRotation(results, check, clipModel, null, newRotation)
@@ -966,13 +976,13 @@ object Push {
                 }
 
                 // if we should only push idMoveable entities
-                if (flags and PUSHFL_ONLYMOVEABLE != 0 && check !is idMoveable) {
+                if ((flags and PUSHFL_ONLYMOVEABLE) != 0 && check !is idMoveable) {
                     i++
                     continue
                 }
 
                 // if we shouldn't push entities the clip model rests upon
-                if (flags and PUSHFL_NOGROUNDENTITIES != 0) {
+                if ((flags and PUSHFL_NOGROUNDENTITIES) != 0) {
                     if (pusher.GetPhysics().IsGroundEntity(check.entityNumber)) {
                         i++
                         continue

@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Material.idMaterial
@@ -60,14 +85,11 @@ object Model_md3 {
     internal class md3Frame_s {
         val bounds: Array<idVec3> = idVec3.generateArray(2)
         val localOrigin: idVec3 = idVec3()
-
-        //	char		name[16];
         var name: String? = null
         var radius: Float = 0.0f
     }
 
     internal class md3Tag_s {
-        //	char		name[MAX_MD3PATH];	// tag name
         val axis: Array<idVec3> = idVec3.generateArray(3)
         var name: String? = null // tag name
         val origin: idVec3 = idVec3()
@@ -84,43 +106,25 @@ object Model_md3 {
      ** XyzNormals		sizeof( md3XyzNormal_t ) * numVerts * numFrames
      */
     internal class md3Surface_s {
-        //
         var flags: Int = 0
-        var ident: Int = 0 //
-
-        //
-        //	char		name[MAX_MD3PATH];	// polyset name
+        var ident: Int = 0
         var name: String? = null // polyset name
         var normals: Array<md3XyzNormal_t?>? = null
         var numFrames: Int = 0 // all surfaces in a model should have the same
-
-        //
         var numShaders: Int = 0 // all surfaces in a model should have the same
-
-        //
         var numTriangles: Int = 0
         var numVerts: Int = 0
         var ofsEnd: Int = 0 // next surface follows
-
-        //
         var ofsShaders: Int = 0 // offset from start of md3Surface_t
         var ofsSt: Int = 0 // texture coords are common for all frames
         var ofsTriangles: Int = 0
         var ofsXyzNormals: Int = 0 // numVerts * numFrames
-
-        //
         var shaders: Array<md3Shader_t?>? = null
-
-        //
-        //
         var triangles: Array<md3Triangle_t?>? = null
-
-        //
         var verts: Array<md3St_t?>? = null
     }
 
     internal class md3Shader_t {
-        //	char				name[MAX_MD3PATH];
         var name: String? = null
         var shader: idMaterial? = null // for in-game use
     }
@@ -139,30 +143,15 @@ object Model_md3 {
     }
 
     internal class md3Header_s : SERiAL {
-        //
         var flags: Int = 0
-
-        //
-        //
         var frames: Array<md3Frame_s?>? = null
         var ident: Int = 0
-
-        //
-        //	char		name[MAX_MD3PATH];	// model name
         var name: String? = null // model name
-
-        //
         var numFrames: Int = 0
-
-        //
         var numSkins: Int = 0
         var numSurfaces: Int = 0
         var numTags: Int = 0
-
-        //
         var ofsEnd: Int = 0 // end of file
-
-        //
         var ofsFrames: Int = 0 // offset for first frame
         var ofsSurfaces: Int = 0 // first surface, others follow
         var ofsTags: Int = 0 // numFrames * numTags
@@ -170,15 +159,15 @@ object Model_md3 {
         var tags: Array<md3Tag_s?>? = null
         var version: Int = 0
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
     }
 
@@ -195,8 +184,6 @@ object Model_md3 {
         private var md3: md3Header_s? = null // only if type == MOD_MESH
         private val numLods: Int = 0
 
-        //
-        //
         override fun InitFromFile(fileName: String?) {
             var i: Int
             var j: Int
@@ -229,10 +216,7 @@ object Model_md3 {
             }
             size = LittleLong(pinmodel.ofsEnd)
             dataSize += size
-            //            md3 = new md3Header_s[size];// Mem_Alloc(size);
 
-//            memcpy(md3, buffer, LittleLong(pinmodel.ofsEnd));
-//            for (int h = 0; h < size; h++) {
             md3 = md3Header_s()
             md3!!.Read(buffer[0]!!)
             md3!!.ident = LL(md3!!.ident)
@@ -251,7 +235,6 @@ object Model_md3 {
             }
 
             // swap all the frames
-//            frame = (md3Frame_s) ((byte[]) md3[md3.ofsFrames]);
             md3!!.frames = arrayOfNulls(md3!!.numFrames)
             i = 0
             while (i < md3!!.numFrames) {
@@ -269,7 +252,6 @@ object Model_md3 {
             }
 
             // swap all the tags
-//                tag = (md3Tag_s) ((byte[]) md3[md3.ofsTags]);
             md3!!.tags = arrayOfNulls(md3!!.numTags * md3!!.numFrames)
             i = 0
             while (i < md3!!.numTags * md3!!.numFrames) {
@@ -287,7 +269,6 @@ object Model_md3 {
             }
 
             // swap all the surfaces
-//                surf = (md3Surface_s) ((byte[]) md3[md3.ofsSurfaces]);
             md3!!.surfaces = arrayOfNulls(md3!!.numSurfaces)
             i = 0
             while (i < md3!!.numSurfaces) {
@@ -320,10 +301,6 @@ object Model_md3 {
                 surf.ident = 0 //SF_MD3;
 
                 // lowercase the surface name so skin compares are faster
-//		int slen = (int)strlen( surf.name );
-//		for( j = 0; j < slen; j++ ) {
-//			surf.name[j] = tolower( surf.name[j] );
-//		}
                 surf.name = surf.name!!.lowercase(Locale.getDefault())
 
                 // strip off a trailing _1 or _2
@@ -334,7 +311,6 @@ object Model_md3 {
                 }
 
                 // register the shaders
-//                    shader = (md3Shader_s) ((byte[]) surf[surf.ofsShaders]);
                 surf.shaders = arrayOfNulls(surf.numShaders)
                 j = 0
                 while (j < surf.numShaders) {
@@ -347,7 +323,6 @@ object Model_md3 {
                 }
 
                 // swap all the triangles
-//                    tri = (md3Triangle_t) ((byte[]) surf[surf.ofsTriangles]);
                 surf.triangles = arrayOfNulls(surf.numTriangles)
                 j = 0
                 while (j < surf.numTriangles) {
@@ -360,7 +335,6 @@ object Model_md3 {
                 }
 
                 // swap all the ST
-//                    st = (md3St_t) ((byte[]) surf + surf.ofsSt);
                 surf.verts = arrayOfNulls(surf.numVerts)
                 j = 0
                 while (j < surf.numVerts) {
@@ -372,7 +346,6 @@ object Model_md3 {
                 }
 
                 // swap all the XyzNormals
-//                    xyz = (md3XyzNormal_t) ((byte[]) surf + surf.ofsXyzNormals);
                 surf.normals = arrayOfNulls(surf.numVerts * surf.numFrames)
                 j = 0
                 while (j < surf.numVerts * surf.numFrames) {
@@ -385,13 +358,9 @@ object Model_md3 {
                     j++
                 }
 
-                // find the next surface
-//                    surf = (md3Surface_t) ((byte[]) surf[surf.ofsEnd]);//TODO: make sure the offsets are mapped correctly with the serialization
-//                    
                 md3!!.surfaces!![i] = surf
                 i++
             }
-            //            }
             fileSystem.FreeFile(buffer)
         }
 
@@ -405,42 +374,35 @@ object Model_md3 {
             cachedModel: idRenderModel?
         ): idRenderModel {
             var cachedModel: idRenderModel? = cachedModel
-            var i: Int
             var j: Int
             val backlerp: Float
-            //            md3Triangle_t triangle;
-//            float[] texCoords;
             var indexes: Int
             var numVerts: Int
-            var surface: md3Surface_s?
+            var surface: md3Surface_s
             val frame: Int
             val oldframe: Int
             val staticModel: idRenderModelStatic
             if (cachedModel != null) {
-//		delete cachedModel;
                 cachedModel = null
             }
             staticModel = idRenderModelStatic()
             staticModel.bounds.Clear()
-
-//            surface = (md3Surface_t) ((byte[]) md3[ md3.ofsSurfaces]);
-            surface = md3!!.surfaces!![0]
 
             // TODO: these need set by an entity
             frame = ent!!.shaderParms[RenderWorld.SHADERPARM_MD3_FRAME]
                 .toInt() // probably want to keep frames < 1000 or so
             oldframe = ent.shaderParms[RenderWorld.SHADERPARM_MD3_LASTFRAME].toInt()
             backlerp = ent.shaderParms[RenderWorld.SHADERPARM_MD3_BACKLERP]
-            i = 0
-            while (i < md3!!.numSurfaces /*i++*/) {
+
+            for (i in 0 until md3!!.numSurfaces) {
+                surface = md3!!.surfaces!![i]!!
                 val tri: srfTriangles_s = R_AllocStaticTriSurf()
-                R_AllocStaticTriSurfVerts(tri, surface!!.numVerts)
+                R_AllocStaticTriSurfVerts(tri, surface.numVerts)
                 R_AllocStaticTriSurfIndexes(tri, surface.numTriangles * 3)
                 tri.bounds.Clear()
                 val surf = modelSurface_s()
                 surf.geometry = tri
 
-//                md3Shader_t shaders = (md3Shader_t) ((byte[]) surface[surface.ofsShaders]);
                 val shaders: md3Shader_t? = surface.shaders!![0]
                 surf.shader = shaders!!.shader
                 LerpMeshVertexes(tri, surface, backlerp, frame, oldframe)
@@ -448,25 +410,21 @@ object Model_md3 {
                 j = 0
                 for (triangle in surface.triangles!!) {
                     tri.indexes!![j + 0] = triangle!!.indexes[0]
-                    tri.indexes!![j + 1] = triangle!!.indexes[1]
-                    tri.indexes!![j + 2] = triangle!!.indexes[2]
+                    tri.indexes!![j + 1] = triangle.indexes[1]
+                    tri.indexes!![j + 2] = triangle.indexes[2]
                     j += 3
                 }
                 tri.numIndexes += indexes
                 numVerts = surface.numVerts
-                j = 0
-                for (j in 0 until surface.numVerts) {
-                    val stri = tri.verts!![j]!!
-                    stri.st[0] = surface.verts!![j]!!.st[0]
-                    stri.st[1] = surface.verts!![j]!!.st[1]
+                for (k in 0 until surface.numVerts) {
+                    val stri = tri.verts!![k]!!
+                    stri.st[0] = surface.verts!![k]!!.st[0]
+                    stri.st[1] = surface.verts!![k]!!.st[1]
                 }
                 R_BoundTriSurf(tri)
                 staticModel.AddSurface(surf)
                 staticModel.bounds.AddPoint(surf.geometry!!.bounds[0])
                 staticModel.bounds.AddPoint(surf.geometry!!.bounds[1])
-
-                // find the next surface
-                surface = md3!!.surfaces!![++i]
             }
             return staticModel
         }
@@ -481,21 +439,18 @@ object Model_md3 {
                 return ret
             }
 
-//            md3Frame_s frame = (md3Frame_t) ((byte[]) md3 + md3.ofsFrames);
-            val frameIdx = ent!!.shaderParms[RenderWorld.SHADERPARM_MD3_FRAME].toInt()
-            val frame: md3Frame_s? = md3!!.frames!![frameIdx]
-            ret.AddPoint(frame!!.bounds[0])
+            val frameIdx = ent.shaderParms[RenderWorld.SHADERPARM_MD3_FRAME].toInt()
+            val frame: md3Frame_s = md3!!.frames!![frameIdx]!!
+            ret.AddPoint(frame.bounds[0])
             ret.AddPoint(frame.bounds[1])
             return ret
         }
 
         private fun LerpMeshVertexes(
-            tri: srfTriangles_s, surf: md3Surface_s?, backlerp: Float,  /*final*/
-            frame: Int,  /*final*/
+            tri: srfTriangles_s, surf: md3Surface_s, backlerp: Float,
+            frame: Int,
             oldframe: Int
         ) {
-            var frame: Int = frame
-            var oldframe: Int = oldframe
             var oldXyz: md3XyzNormal_t?
             var newXyz: md3XyzNormal_t?
             val oldXyzScale: Float
@@ -503,8 +458,9 @@ object Model_md3 {
             var vertNum: Int
             val numVerts: Int
 
-//            newXyz = (short[]) ((byte[]) surf + surf.ofsXyzNormals) + (frame * surf.numVerts * 4);
-            newXyz = surf!!.normals!![frame]
+            // C++: newXyz = (short *)((byte *)surf + surf->ofsXyzNormals) + (frame * surf->numVerts * 4);
+            var newXyzIdx = frame * surf.numVerts
+            newXyz = surf.normals!![newXyzIdx]
             newXyzScale = (MD3_XYZ_SCALE * (1.0f - backlerp))
             numVerts = surf.numVerts
             if (backlerp == 0.0f) {
@@ -514,32 +470,39 @@ object Model_md3 {
                 vertNum = 0
                 while (vertNum < numVerts) {
                     val outvert: idDrawVert = tri.verts!![tri.numVerts]
-                    outvert!!.xyz.x = newXyz!!.xyz[0] * newXyzScale
+                    outvert.xyz.x = newXyz!!.xyz[0] * newXyzScale
                     outvert.xyz.y = newXyz.xyz[1] * newXyzScale
                     outvert.xyz.z = newXyz.xyz[2] * newXyzScale
                     tri.numVerts++
-                    newXyz = surf.normals!![++frame]
                     vertNum++
+                    newXyzIdx++
+                    if (vertNum < numVerts) {
+                        newXyz = surf.normals!![newXyzIdx]
+                    }
                 }
             } else {
                 //
                 // interpolate and copy the vertexes
                 //
-//                oldXyz = (short[]) ((byte[]) surf + surf.ofsXyzNormals) + (oldframe * surf.numVerts * 4);
-                oldXyz = surf.normals!![oldframe]
+                var oldXyzIdx = oldframe * surf.numVerts
+                oldXyz = surf.normals!![oldXyzIdx]
                 oldXyzScale = (MD3_XYZ_SCALE * backlerp)
                 vertNum = 0
                 while (vertNum < numVerts) {
                     val outvert: idDrawVert = tri.verts!![tri.numVerts]
 
                     // interpolate the xyz
-                    outvert!!.xyz.x = oldXyz!!.xyz[0] * oldXyzScale + newXyz!!.xyz[0] * newXyzScale
+                    outvert.xyz.x = oldXyz!!.xyz[0] * oldXyzScale + newXyz!!.xyz[0] * newXyzScale
                     outvert.xyz.y = oldXyz.xyz[1] * oldXyzScale + newXyz.xyz[1] * newXyzScale
                     outvert.xyz.z = oldXyz.xyz[2] * oldXyzScale + newXyz.xyz[2] * newXyzScale
                     tri.numVerts++
                     vertNum++
-                    oldXyz = surf.normals!![++oldframe]
-                    newXyz = surf.normals!![++frame]
+                    oldXyzIdx++
+                    newXyzIdx++
+                    if (vertNum < numVerts) {
+                        oldXyz = surf.normals!![oldXyzIdx]
+                        newXyz = surf.normals!![newXyzIdx]
+                    }
                 }
             }
         }

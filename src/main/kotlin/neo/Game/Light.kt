@@ -128,8 +128,7 @@ object Light {
         }
 
         private val baseColor: idVec3 = idVec3()
-        private var breakOnTrigger //TODO:give all variables default init values like c++, opposite of lazy init?
-                : Boolean
+        private var breakOnTrigger: Boolean
         private val brokenModel: idStr
         private var count: Int
         private var currentLevel: Int
@@ -352,13 +351,13 @@ object Light {
 
         override fun Think() {
             val color: idVec4 = idVec4()
-            if (thinkFlags and Entity.TH_THINK != 0) {
+            if ((thinkFlags and Entity.TH_THINK) != 0) {
                 if (fadeEnd > 0) {
                     if (Game_local.gameLocal.time < fadeEnd) {
                         color.Lerp(
                             fadeFrom,
                             fadeTo,
-                            ((Game_local.gameLocal.time - fadeStart) / (fadeEnd - fadeStart)).toFloat()
+                            (Game_local.gameLocal.time - fadeStart).toFloat() / (fadeEnd - fadeStart).toFloat()
                         )
                     } else {
                         color.set(fadeTo)
@@ -876,7 +875,7 @@ object Light {
         }
 
         override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {

@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Physics/Physics_RigidBody.h, neo/Game/Physics/Physics_RigidBody.cpp
+ */
+
 package neo.Game.Physics
 
 import neo.Game.Entity
@@ -1517,7 +1525,7 @@ object Physics_RigidBody {
         /*friend*/   class RigidBodyDerivatives : deriveFunction_t() {
             override fun run(t: Float, clientData: Any, state: FloatArray, derivatives: FloatArray) {
                 val p = clientData as idPhysics_RigidBody
-                val s = rigidBodyIState_s(state) //TODO:from float array to object
+                val s = rigidBodyIState_s(state)
                 // NOTE: this struct should be build conform rigidBodyIState_t
                 val d = rigidBodyDerivatives_s(derivatives)
                 val angularVelocity = idVec3()
@@ -1558,7 +1566,8 @@ object Physics_RigidBody {
             current.lastTimeStep = UsercmdGen.USERCMD_MSEC.toFloat()
             current.i = rigidBodyIState_s()
             current.i.orientation.set(idMat3.getMat3_identity())
-            saved = current
+            // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
+            saved = current.copy()
             mass = 1.0f
             inverseMass = 1.0f
             centerOfMass = idVec3()

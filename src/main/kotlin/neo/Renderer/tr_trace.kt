@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Model.srfTriangles_s
@@ -299,7 +324,7 @@ object tr_trace {
      RB_DrawExpandedTriangles
      =================
      */
-    fun RB_DrawExpandedTriangles(tri: srfTriangles_s, radius: Float, vieworg: idVec3?) {
+    fun RB_DrawExpandedTriangles(tri: srfTriangles_s, radius: Float, vieworg: idVec3) {
         var i: Int
         var j: Int
         var k: Int
@@ -317,7 +342,7 @@ object tr_trace {
             dir[1].set(p[1].minus(p[2]))
             dir[2].set(p[2].minus(p[0]))
             normal.set(dir[0].Cross(dir[1]))
-            if (normal.times(p[0]) < normal.times((vieworg)!!)) {
+            if (normal.times(p[0]) < normal.times(vieworg)) {
                 i += 3
                 continue
             }
@@ -394,10 +419,6 @@ object tr_trace {
         while (i < numDrawSurfs) {
             surf = drawSurfs[i]
             tri = surf.geo
-            if (i > 211) {
-                i++
-                continue
-            }
             if (tri == null || tri.verts == null) {
                 i++
                 continue

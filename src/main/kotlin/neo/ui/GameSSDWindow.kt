@@ -249,6 +249,7 @@ object GameSSDWindow {
         }
 
         open fun ReadFromSaveGame(savefile: idFile, _game: idGameSSDWindow) {
+            game = _game
             type = SSD.values()[savefile.ReadInt()]
             game!!.ReadSaveGameString(materialName, savefile)
             SetMaterial(materialName.toString())
@@ -261,7 +262,6 @@ object GameSSDWindow {
             game!!.ReadSaveGameString(text, savefile)
             textScale = savefile.ReadFloat()
             savefile.Read(foreColor)
-            game = _game
             currentTime = savefile.ReadInt()
             lastUpdate = savefile.ReadInt()
             elapsed = savefile.ReadInt()
@@ -482,14 +482,14 @@ object GameSSDWindow {
             SetMaterial(ASTEROID_MATERIAL)
             SetSize(_size)
             SetRadius(Max(size.x, size.y), 0.3f)
-            SetRotation(idGameSSDWindow.random!!.RandomInt(360).toFloat())
+            SetRotation(idGameSSDWindow.random.RandomInt(360).toFloat())
             position.set(startPosition!!)
             health = _health
         }
 
         companion object {
             //
-            protected val asteroidPool = arrayOfNulls<SSDAsteroid>(MAX_ASTEROIDS)
+            protected val asteroidPool = Array(MAX_ASTEROIDS) { SSDAsteroid() }
             fun GetNewAsteroid(
                 _game: idGameSSDWindow?,
                 startPosition: idVec3?,
@@ -499,11 +499,11 @@ object GameSSDWindow {
                 _health: Int
             ): SSDAsteroid? {
                 for (i in 0 until MAX_ASTEROIDS) {
-                    if (!asteroidPool[i]!!.inUse) {
-                        asteroidPool[i]!!
+                    if (!asteroidPool[i].inUse) {
+                        asteroidPool[i]
                             .Init(_game, startPosition, _size, _speed, rotate, _health)
-                        asteroidPool[i]!!.inUse = true
-                        asteroidPool[i]!!.id = i
+                        asteroidPool[i].inUse = true
+                        asteroidPool[i].id = i
                         return asteroidPool[i]
                     }
                 }
@@ -517,15 +517,15 @@ object GameSSDWindow {
             fun WriteAsteroids(savefile: idFile) {
                 var count = 0
                 for (i in 0 until MAX_ASTEROIDS) {
-                    if (asteroidPool[i]!!.inUse) {
+                    if (asteroidPool[i].inUse) {
                         count++
                     }
                 }
                 savefile.WriteInt(count)
                 for (i in 0 until MAX_ASTEROIDS) {
-                    if (asteroidPool[i]!!.inUse) {
-                        savefile.WriteInt(asteroidPool[i]!!.id)
-                        asteroidPool[i]!!.WriteToSaveGame(savefile)
+                    if (asteroidPool[i].inUse) {
+                        savefile.WriteInt(asteroidPool[i].id)
+                        asteroidPool[i].WriteToSaveGame(savefile)
                     }
                 }
             }
@@ -564,14 +564,14 @@ object GameSSDWindow {
             SetMaterial(ASTRONAUT_MATERIAL)
             SetSize(idVec2(256.0f, 256.0f))
             SetRadius(Max(size.x, size.y), 0.3f)
-            SetRotation(idGameSSDWindow.random!!.RandomInt(360).toFloat())
+            SetRotation(idGameSSDWindow.random.RandomInt(360).toFloat())
             position.set(startPosition!!)
             health = _health
         }
 
         companion object {
             //
-            protected val astronautPool = arrayOfNulls<SSDAstronaut>(MAX_ASTRONAUT)
+            protected val astronautPool = Array(MAX_ASTRONAUT) { SSDAstronaut() }
             fun GetNewAstronaut(
                 _game: idGameSSDWindow?,
                 startPosition: idVec3?,
@@ -580,10 +580,10 @@ object GameSSDWindow {
                 _health: Int
             ): SSDAstronaut? {
                 for (i in 0 until MAX_ASTRONAUT) {
-                    if (!astronautPool[i]!!.inUse) {
-                        astronautPool[i]!!.Init(_game, startPosition, _speed, rotate, _health)
-                        astronautPool[i]!!.inUse = true
-                        astronautPool[i]!!.id = i
+                    if (!astronautPool[i].inUse) {
+                        astronautPool[i].Init(_game, startPosition, _speed, rotate, _health)
+                        astronautPool[i].inUse = true
+                        astronautPool[i].id = i
                         return astronautPool[i]
                     }
                 }
@@ -597,15 +597,15 @@ object GameSSDWindow {
             fun WriteAstronauts(savefile: idFile) {
                 var count = 0
                 for (i in 0 until MAX_ASTRONAUT) {
-                    if (astronautPool[i]!!.inUse) {
+                    if (astronautPool[i].inUse) {
                         count++
                     }
                 }
                 savefile.WriteInt(count)
                 for (i in 0 until MAX_ASTRONAUT) {
-                    if (astronautPool[i]!!.inUse) {
-                        savefile.WriteInt(astronautPool[i]!!.id)
-                        astronautPool[i]!!.WriteToSaveGame(savefile)
+                    if (astronautPool[i].inUse) {
+                        savefile.WriteInt(astronautPool[i].id)
+                        astronautPool[i].WriteToSaveGame(savefile)
                     }
                 }
             }
@@ -718,7 +718,7 @@ object GameSSDWindow {
             }
 
             //Scale the image based on the time
-            size.set(finalSize.times((currentTime - beginTime) / length))
+            size.set(finalSize.times((currentTime - beginTime).toFloat() / length.toFloat()))
 
             //Destroy myself after the explosion is done
             if (currentTime > endTime) {
@@ -736,7 +736,7 @@ object GameSSDWindow {
             const val EXPLOSION_TELEPORT = 1
 
             //
-            protected val explosionPool = arrayOfNulls<SSDExplosion>(MAX_EXPLOSIONS)
+            protected val explosionPool = Array(MAX_EXPLOSIONS) { SSDExplosion() }
 
             fun GetNewExplosion(
                 _game: idGameSSDWindow?,
@@ -749,10 +749,10 @@ object GameSSDWindow {
                 _followBuddy: Boolean = true /*= true*/
             ): SSDExplosion? {
                 for (i in 0 until MAX_EXPLOSIONS) {
-                    if (!explosionPool[i]!!.inUse) {
-                        explosionPool[i]!!
+                    if (!explosionPool[i].inUse) {
+                        explosionPool[i]
                             .Init(_game, _position, _size, _length, _type, _buddy, _killBuddy, _followBuddy)
-                        explosionPool[i]!!.inUse = true
+                        explosionPool[i].inUse = true
                         return explosionPool[i]
                     }
                 }
@@ -766,15 +766,15 @@ object GameSSDWindow {
             fun WriteExplosions(savefile: idFile) {
                 var count = 0
                 for (i in 0 until MAX_EXPLOSIONS) {
-                    if (explosionPool[i]!!.inUse) {
+                    if (explosionPool[i].inUse) {
                         count++
                     }
                 }
                 savefile.WriteInt(count)
                 for (i in 0 until MAX_EXPLOSIONS) {
-                    if (explosionPool[i]!!.inUse) {
-                        savefile.WriteInt(explosionPool[i]!!.id)
-                        explosionPool[i]!!.WriteToSaveGame(savefile)
+                    if (explosionPool[i].inUse) {
+                        savefile.WriteInt(explosionPool[i].id)
+                        explosionPool[i].WriteToSaveGame(savefile)
                     }
                 }
             }
@@ -885,7 +885,7 @@ object GameSSDWindow {
 
         companion object {
             //
-            protected val pointsPool = arrayOfNulls<SSDPoints>(MAX_POINTS)
+            protected val pointsPool = Array(MAX_POINTS) { SSDPoints() }
             fun GetNewPoints(
                 _game: idGameSSDWindow?,
                 _ent: SSDEntity?,
@@ -895,9 +895,9 @@ object GameSSDWindow {
                 color: idVec4
             ): SSDPoints? {
                 for (i in 0 until MAX_POINTS) {
-                    if (!pointsPool[i]!!.inUse) {
-                        pointsPool[i]!!.Init(_game, _ent, _points, _length, _distance, color)
-                        pointsPool[i]!!.inUse = true
+                    if (!pointsPool[i].inUse) {
+                        pointsPool[i].Init(_game, _ent, _points, _length, _distance, color)
+                        pointsPool[i].inUse = true
                         return pointsPool[i]
                     }
                 }
@@ -911,15 +911,15 @@ object GameSSDWindow {
             fun WritePoints(savefile: idFile) {
                 var count = 0
                 for (i in 0 until MAX_POINTS) {
-                    if (pointsPool[i]!!.inUse) {
+                    if (pointsPool[i].inUse) {
                         count++
                     }
                 }
                 savefile.WriteInt(count)
                 for (i in 0 until MAX_POINTS) {
-                    if (pointsPool[i]!!.inUse) {
-                        savefile.WriteInt(pointsPool[i]!!.id)
-                        pointsPool[i]!!.WriteToSaveGame(savefile)
+                    if (pointsPool[i].inUse) {
+                        savefile.WriteInt(pointsPool[i].id)
+                        pointsPool[i].WriteToSaveGame(savefile)
                     }
                 }
             }
@@ -1004,7 +1004,7 @@ object GameSSDWindow {
 
         companion object {
             //
-            protected val projectilePool = arrayOfNulls<SSDProjectile>(MAX_PROJECTILES)
+            protected val projectilePool = Array(MAX_PROJECTILES) { SSDProjectile() }
             fun GetNewProjectile(
                 _game: idGameSSDWindow?,
                 _beginPosition: idVec3?,
@@ -1013,10 +1013,10 @@ object GameSSDWindow {
                 _size: Float
             ): SSDProjectile? {
                 for (i in 0 until MAX_PROJECTILES) {
-                    if (!projectilePool[i]!!.inUse) {
-                        projectilePool[i]!!
+                    if (!projectilePool[i].inUse) {
+                        projectilePool[i]
                             .Init(_game, _beginPosition, _endPosition, _speed, _size)
-                        projectilePool[i]!!.inUse = true
+                        projectilePool[i].inUse = true
                         return projectilePool[i]
                     }
                 }
@@ -1030,15 +1030,15 @@ object GameSSDWindow {
             fun WriteProjectiles(savefile: idFile) {
                 var count = 0
                 for (i in 0 until MAX_PROJECTILES) {
-                    if (projectilePool[i]!!.inUse) {
+                    if (projectilePool[i].inUse) {
                         count++
                     }
                 }
                 savefile.WriteInt(count)
                 for (i in 0 until MAX_PROJECTILES) {
-                    if (projectilePool[i]!!.inUse) {
-                        savefile.WriteInt(projectilePool[i]!!.id)
-                        projectilePool[i]!!.WriteToSaveGame(savefile)
+                    if (projectilePool[i].inUse) {
+                        savefile.WriteInt(projectilePool[i].id)
+                        projectilePool[i].WriteToSaveGame(savefile)
                     }
                 }
             }
@@ -1143,7 +1143,7 @@ object GameSSDWindow {
                 }
 
                 POWERUP_TYPE_BONUS_POINTS -> {
-                    val points = (idGameSSDWindow.random!!.RandomInt(5) + 1) * 100
+                    val points = (idGameSSDWindow.random.RandomInt(5) + 1) * 100
                     game!!.AddScore(this, points)
                 }
 
@@ -1162,13 +1162,13 @@ object GameSSDWindow {
             SetRadius(Max(size.x, size.y), 0.3f)
             type = SSD.SSD_ENTITY_POWERUP
             val startPosition = idVec3()
-            startPosition.x = idGameSSDWindow.random!!.RandomInt(V_WIDTH) - V_WIDTH / 2.0f
-            startPosition.y = idGameSSDWindow.random!!.RandomInt(V_HEIGHT) - V_HEIGHT / 2.0f
+            startPosition.x = idGameSSDWindow.random.RandomInt(V_WIDTH) - V_WIDTH / 2.0f
+            startPosition.y = idGameSSDWindow.random.RandomInt(V_HEIGHT) - V_HEIGHT / 2.0f
             startPosition.z = ENTITY_START_DIST.toFloat()
             position.set(startPosition)
             //SetPosition(startPosition);
             powerupState = POWERUP_STATE_CLOSED
-            powerupType = idGameSSDWindow.random!!.RandomInt(POWERUP_TYPE_MAX + 1)
+            powerupType = idGameSSDWindow.random.RandomInt(POWERUP_TYPE_MAX + 1)
             if (powerupType >= POWERUP_TYPE_MAX) {
                 powerupType = 0
             }
@@ -1181,7 +1181,7 @@ object GameSSDWindow {
 
         companion object {
             //
-            protected val powerupPool = arrayOfNulls<SSDPowerup>(MAX_POWERUPS)
+            protected val powerupPool = Array(MAX_POWERUPS) { SSDPowerup() }
 
             //        enum POWERUP_STATE {
             const val POWERUP_STATE_CLOSED = 0
@@ -1198,9 +1198,9 @@ object GameSSDWindow {
             const val POWERUP_TYPE_SUPER_BLASTER = 1
             fun GetNewPowerup(_game: idGameSSDWindow?, _speed: Float, _rotation: Float): SSDPowerup? {
                 for (i in 0 until MAX_POWERUPS) {
-                    if (!powerupPool[i]!!.inUse) {
-                        powerupPool[i]!!.Init(_game, _speed, _rotation)
-                        powerupPool[i]!!.inUse = true
+                    if (!powerupPool[i].inUse) {
+                        powerupPool[i].Init(_game, _speed, _rotation)
+                        powerupPool[i].inUse = true
                         return powerupPool[i]
                     }
                 }
@@ -1214,15 +1214,15 @@ object GameSSDWindow {
             fun WritePowerups(savefile: idFile) {
                 var count = 0
                 for (i in 0 until MAX_POWERUPS) {
-                    if (powerupPool[i]!!.inUse) {
+                    if (powerupPool[i].inUse) {
                         count++
                     }
                 }
                 savefile.WriteInt(count)
                 for (i in 0 until MAX_POWERUPS) {
-                    if (powerupPool[i]!!.inUse) {
-                        savefile.WriteInt(powerupPool[i]!!.id)
-                        powerupPool[i]!!.WriteToSaveGame(savefile)
+                    if (powerupPool[i].inUse) {
+                        savefile.WriteInt(powerupPool[i].id)
+                        powerupPool[i].WriteToSaveGame(savefile)
                     }
                 }
             }
@@ -1244,15 +1244,15 @@ object GameSSDWindow {
         var needToWin = 0
         var spawnBuffer = 0.0f
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
     }
 
@@ -1269,15 +1269,15 @@ object GameSSDWindow {
         var speedMin = 0.0f
         var speedMax = 0.0f
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
     }
 
@@ -1292,15 +1292,15 @@ object GameSSDWindow {
         var speedMin = 0.0f
         var speedMax = 0.0f
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
     }
 
@@ -1312,15 +1312,15 @@ object GameSSDWindow {
         var speedMin = 0.0f
         var speedMax = 0.0f
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
     }
 
@@ -1329,15 +1329,15 @@ object GameSSDWindow {
         var size = 0
         var speed = 0.0f
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
     }
 
@@ -1382,22 +1382,22 @@ object GameSSDWindow {
         var health = 0
 
         //
-        var levelStats: SSDLevelStats_t? = null
+        var levelStats: SSDLevelStats_t = SSDLevelStats_t()
         var nextLevel = 0
         var prebonusscore = 0
 
         //
         var score = 0
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
     }
 
@@ -1421,7 +1421,7 @@ object GameSSDWindow {
         var continueGame: idWinBool = idWinBool()
 
         //
-        var crosshair: SSDCrossHair? = null
+        var crosshair: SSDCrossHair = SSDCrossHair()
 
         //
         var currentSound = 0
@@ -1462,11 +1462,11 @@ object GameSSDWindow {
         override fun WriteToSaveGame(savefile: idFile) {
             super.WriteToSaveGame(savefile)
             savefile.WriteInt(ssdTime)
-            beginLevel!!.WriteToSaveGame(savefile)
-            resetGame!!.WriteToSaveGame(savefile)
-            continueGame!!.WriteToSaveGame(savefile)
-            refreshGuiData!!.WriteToSaveGame(savefile)
-            crosshair!!.WriteToSaveGame(savefile)
+            beginLevel.WriteToSaveGame(savefile)
+            resetGame.WriteToSaveGame(savefile)
+            continueGame.WriteToSaveGame(savefile)
+            refreshGuiData.WriteToSaveGame(savefile)
+            crosshair.WriteToSaveGame(savefile)
             savefile.Write(screenBounds)
             savefile.WriteInt(levelCount)
             for (i in 0 until levelCount) {
@@ -1500,11 +1500,11 @@ object GameSSDWindow {
         override fun ReadFromSaveGame(savefile: idFile) {
             super.ReadFromSaveGame(savefile)
             ssdTime = savefile.ReadInt()
-            beginLevel!!.ReadFromSaveGame(savefile)
-            resetGame!!.ReadFromSaveGame(savefile)
-            continueGame!!.ReadFromSaveGame(savefile)
-            refreshGuiData!!.ReadFromSaveGame(savefile)
-            crosshair!!.ReadFromSaveGame(savefile)
+            beginLevel.ReadFromSaveGame(savefile)
+            resetGame.ReadFromSaveGame(savefile)
+            continueGame.ReadFromSaveGame(savefile)
+            refreshGuiData.ReadFromSaveGame(savefile)
+            crosshair.ReadFromSaveGame(savefile)
             savefile.Read(screenBounds)
             levelCount = savefile.ReadInt()
             for (i in 0 until levelCount) {
@@ -1530,7 +1530,7 @@ object GameSSDWindow {
             superBlasterTimeout = savefile.ReadInt()
             savefile.Read(gameStats!!)
             //Reset this because it is no longer valid
-            gameStats!!.levelStats!!.targetEnt = null
+            gameStats!!.levelStats.targetEnt = null
             SSDAsteroid.ReadAsteroids(savefile, this)
             SSDAstronaut.ReadAstronauts(savefile, this)
             SSDExplosion.ReadExplosions(savefile, this)
@@ -1611,7 +1611,7 @@ object GameSSDWindow {
                 //GetCursor(cursor);
                 cursor.x = gui!!.CursorX()
                 cursor.y = gui!!.CursorY()
-                crosshair!!.Draw(dc!!, cursor)
+                crosshair.Draw(dc!!, cursor)
             }
         }
 
@@ -1663,7 +1663,7 @@ object GameSSDWindow {
 
                     //Don't let the player hit it anymore because
                     entities[i]!!.noHit = true
-                    gameStats!!.levelStats!!.destroyedAsteroids++
+                    gameStats!!.levelStats.destroyedAsteroids++
                 }
             }
             PlaySound("arcade_explode")
@@ -1699,8 +1699,7 @@ object GameSSDWindow {
                 SSD.SSD_ENTITY_POINTS -> ent = SSDPoints.GetSpecificPoints(id)
                 SSD.SSD_ENTITY_PROJECTILE -> ent = SSDProjectile.GetSpecificProjectile(id)
                 SSD.SSD_ENTITY_POWERUP -> ent = SSDPowerup.GetSpecificPowerup(id)
-                SSD.SSD_ENTITY_BASE -> TODO()
-                null -> TODO()
+                else -> {}
             }
             return ent
         }
@@ -1717,19 +1716,19 @@ object GameSSDWindow {
         //Initialization
         override fun ParseInternalVar(_name: String?, src: idParser): Boolean {
             if (Icmp(_name!!, "beginLevel") == 0) {
-                beginLevel!!.set(src.ParseBool())
+                beginLevel.set(src.ParseBool())
                 return true
             }
             if (Icmp(_name, "resetGame") == 0) {
-                resetGame!!.set(src.ParseBool())
+                resetGame.set(src.ParseBool())
                 return true
             }
             if (Icmp(_name, "continueGame") == 0) {
-                continueGame!!.set(src.ParseBool())
+                continueGame.set(src.ParseBool())
                 return true
             }
             if (Icmp(_name, "refreshGuiData") == 0) {
-                refreshGuiData!!.set(src.ParseBool())
+                refreshGuiData.set(src.ParseBool())
                 return true
             }
             if (Icmp(_name, "levelcount") == 0) {
@@ -1859,11 +1858,11 @@ object GameSSDWindow {
         }
 
         private fun CommonInit() {
-            crosshair!!.InitCrosshairs()
-            beginLevel!!.data = false
-            resetGame!!.data = false
-            continueGame!!.data = false
-            refreshGuiData!!.data = false
+            crosshair.InitCrosshairs()
+            beginLevel.data = false
+            resetGame.data = false
+            continueGame.data = false
+            refreshGuiData.data = false
             ssdTime = 0
             levelCount = 0
             weaponCount = 0
@@ -1950,20 +1949,20 @@ object GameSSDWindow {
 
             // Add the bonuses
             val accuracy: Int
-            accuracy = if (0 == gameStats!!.levelStats!!.shotCount) {
+            accuracy = if (0 == gameStats!!.levelStats.shotCount) {
                 0
             } else {
-                (gameStats!!.levelStats!!.hitCount.toFloat() / gameStats!!.levelStats!!.shotCount.toFloat() * 100.0f).toInt()
+                (gameStats!!.levelStats.hitCount.toFloat() / gameStats!!.levelStats.shotCount.toFloat() * 100.0f).toInt()
             }
             var accuracyPoints = Max(0, accuracy - 50) * 20
             gui!!.SetStateString("player_accuracy_score", va("%d", accuracyPoints))
             gameStats!!.score += accuracyPoints
             val saveAccuracy: Int
-            val totalAst = gameStats!!.levelStats!!.savedAstronauts + gameStats!!.levelStats!!.killedAstronauts
+            val totalAst = gameStats!!.levelStats.savedAstronauts + gameStats!!.levelStats.killedAstronauts
             saveAccuracy = if (0 == totalAst) {
                 0
             } else {
-                (gameStats!!.levelStats!!.savedAstronauts.toFloat() / totalAst.toFloat() * 100.0f).toInt()
+                (gameStats!!.levelStats.savedAstronauts.toFloat() / totalAst.toFloat() * 100.0f).toInt()
             }
             accuracyPoints = Max(0, saveAccuracy - 50) * 20
             gui!!.SetStateString("save_accuracy_score", va("%d", accuracyPoints))
@@ -1990,20 +1989,20 @@ object GameSSDWindow {
         private fun UpdateGame() {
 
             //Check to see if and functions where called by the gui
-            if (beginLevel!!.data == true) {
-                beginLevel!!.data = false
+            if (beginLevel.data == true) {
+                beginLevel.data = false
                 BeginLevel(gameStats!!.nextLevel)
             }
-            if (resetGame!!.data == true) {
-                resetGame!!.data = false
+            if (resetGame.data == true) {
+                resetGame.data = false
                 ResetGameStats()
             }
-            if (continueGame!!.data == true) {
-                continueGame!!.data = false
+            if (continueGame.data == true) {
+                continueGame.data = false
                 ContinueGame()
             }
-            if (refreshGuiData!!.data == true) {
-                refreshGuiData!!.data = false
+            if (refreshGuiData.data == true) {
+                refreshGuiData.data = false
                 RefreshGuiData()
             }
             if (gameStats!!.gameRunning) {
@@ -2019,7 +2018,7 @@ object GameSSDWindow {
                 //GetCursor(cursor);
                 cursor.x = gui!!.CursorX()
                 cursor.y = gui!!.CursorY()
-                gameStats!!.levelStats!!.targetEnt = EntityHitTest(cursor)
+                gameStats!!.levelStats.targetEnt = EntityHitTest(cursor)
 
                 //Update from back to front
                 for (i in entities.Num() - 1 downTo 0) {
@@ -2100,7 +2099,7 @@ object GameSSDWindow {
 
         private fun SpawnAsteroid() {
             val currentTime = ssdTime
-            if (currentTime < gameStats!!.levelStats!!.nextAsteroidSpawnTime) {
+            if (currentTime < gameStats!!.levelStats.nextAsteroidSpawnTime) {
                 //Not time yet
                 return
             }
@@ -2108,15 +2107,15 @@ object GameSSDWindow {
             //Lets spawn it
             val startPosition = idVec3()
             val spawnBuffer = levelData[gameStats!!.currentLevel].spawnBuffer * 2.0f
-            startPosition.x = random!!.RandomInt((V_WIDTH + spawnBuffer).toInt()) - (V_WIDTH / 2.0f + spawnBuffer)
-            startPosition.y = random!!.RandomInt((V_HEIGHT + spawnBuffer).toInt()) - (V_HEIGHT / 2.0f + spawnBuffer)
+            startPosition.x = random.RandomInt((V_WIDTH + spawnBuffer).toInt()) - (V_WIDTH / 2.0f + spawnBuffer)
+            startPosition.y = random.RandomInt((V_HEIGHT + spawnBuffer).toInt()) - (V_HEIGHT / 2.0f + spawnBuffer)
             startPosition.z = ENTITY_START_DIST.toFloat()
             val speed =
-                random!!.RandomInt((asteroidData[gameStats!!.currentLevel].speedMax - asteroidData[gameStats!!.currentLevel].speedMin).toInt()) + asteroidData[gameStats!!.currentLevel].speedMin
+                random.RandomInt((asteroidData[gameStats!!.currentLevel].speedMax - asteroidData[gameStats!!.currentLevel].speedMin).toInt()) + asteroidData[gameStats!!.currentLevel].speedMin
             val size =
-                random!!.RandomInt((asteroidData[gameStats!!.currentLevel].sizeMax - asteroidData[gameStats!!.currentLevel].sizeMin).toInt()) + asteroidData[gameStats!!.currentLevel].sizeMin
+                random.RandomInt((asteroidData[gameStats!!.currentLevel].sizeMax - asteroidData[gameStats!!.currentLevel].sizeMin).toInt()) + asteroidData[gameStats!!.currentLevel].sizeMin
             val rotate =
-                random!!.RandomFloat() * (asteroidData[gameStats!!.currentLevel].rotateMax - asteroidData[gameStats!!.currentLevel].rotateMin) + asteroidData[gameStats!!.currentLevel].rotateMin
+                random.RandomFloat() * (asteroidData[gameStats!!.currentLevel].rotateMax - asteroidData[gameStats!!.currentLevel].rotateMin) + asteroidData[gameStats!!.currentLevel].rotateMin
             val asteroid = SSDAsteroid.GetNewAsteroid(
                 this,
                 startPosition,
@@ -2126,8 +2125,8 @@ object GameSSDWindow {
                 asteroidData[gameStats!!.currentLevel].asteroidHealth
             )
             entities.Append(asteroid)
-            gameStats!!.levelStats!!.nextAsteroidSpawnTime =
-                currentTime + random!!.RandomInt(asteroidData[gameStats!!.currentLevel].spawnMax - asteroidData[gameStats!!.currentLevel].spawnMin) + asteroidData[gameStats!!.currentLevel].spawnMin
+            gameStats!!.levelStats.nextAsteroidSpawnTime =
+                currentTime + random.RandomInt(asteroidData[gameStats!!.currentLevel].spawnMax - asteroidData[gameStats!!.currentLevel].spawnMin) + asteroidData[gameStats!!.currentLevel].spawnMin
         }
 
         private fun FireWeapon(key: Int) {
@@ -2137,14 +2136,14 @@ object GameSSDWindow {
             cursor.x = gui!!.CursorX()
             cursor.y = gui!!.CursorY()
             if (key == K_MOUSE1) {
-                gameStats!!.levelStats!!.shotCount++
-                if (gameStats!!.levelStats!!.targetEnt != null) {
+                gameStats!!.levelStats.shotCount++
+                if (gameStats!!.levelStats.targetEnt != null) {
                     //Aim the projectile from the bottom of the screen directly at the ent
                     //SSDProjectile* newProj = new SSDProjectile(this, idVec3(320,0,0), gameStats.levelStats.targetEnt.position, weaponData[gameStats.currentWeapon].speed, weaponData[gameStats.currentWeapon].size);
                     val newProj = SSDProjectile.GetNewProjectile(
                         this,
                         idVec3(0, -180, 0),
-                        gameStats!!.levelStats!!.targetEnt!!.position,
+                        gameStats!!.levelStats.targetEnt!!.position,
                         weaponData[gameStats!!.currentWeapon].speed,
                         weaponData[gameStats!!.currentWeapon].size.toFloat()
                     )
@@ -2153,13 +2152,13 @@ object GameSSDWindow {
                     //entities.Append(newProj);
 
                     //We hit something
-                    gameStats!!.levelStats!!.hitCount++
-                    gameStats!!.levelStats!!.targetEnt!!.OnHit(key)
-                    if (gameStats!!.levelStats!!.targetEnt!!.type == SSD.SSD_ENTITY_ASTEROID) {
-                        HitAsteroid(gameStats!!.levelStats!!.targetEnt as SSDAsteroid?, key)
-                    } else if (gameStats!!.levelStats!!.targetEnt!!.type == SSD.SSD_ENTITY_ASTRONAUT) {
-                        HitAstronaut(gameStats!!.levelStats!!.targetEnt as SSDAstronaut?, key)
-                    } else if (gameStats!!.levelStats!!.targetEnt!!.type == SSD.SSD_ENTITY_ASTRONAUT) {
+                    gameStats!!.levelStats.hitCount++
+                    gameStats!!.levelStats.targetEnt!!.OnHit(key)
+                    if (gameStats!!.levelStats.targetEnt!!.type == SSD.SSD_ENTITY_ASTEROID) {
+                        HitAsteroid(gameStats!!.levelStats.targetEnt as SSDAsteroid?, key)
+                    } else if (gameStats!!.levelStats.targetEnt!!.type == SSD.SSD_ENTITY_ASTRONAUT) {
+                        HitAstronaut(gameStats!!.levelStats.targetEnt as SSDAstronaut?, key)
+                    } else if (gameStats!!.levelStats.targetEnt!!.type == SSD.SSD_ENTITY_ASTRONAUT) {
                     }
                 } else {
                     ////Aim the projectile at the cursor position all the way to the far clipping
@@ -2219,7 +2218,7 @@ object GameSSDWindow {
 
                 //Don't let the player hit it anymore because 
                 asteroid.noHit = true
-                gameStats!!.levelStats!!.destroyedAsteroids++
+                gameStats!!.levelStats.destroyedAsteroids++
                 //if(gameStats.levelStats.destroyedAsteroids >= levelData[gameStats.currentLevel].needToWin) {
                 //	LevelComplete();
                 //}
@@ -2259,22 +2258,22 @@ object GameSSDWindow {
             gui!!.SetStateString("nextLevel", va("%d", gameStats!!.nextLevel + 1))
             gui!!.SetStateString("currentLevel", va("%d", gameStats!!.currentLevel + 1))
             val accuracy: Float
-            accuracy = if (0 == gameStats!!.levelStats!!.shotCount) {
+            accuracy = if (0 == gameStats!!.levelStats.shotCount) {
                 0.0f
             } else {
-                gameStats!!.levelStats!!.hitCount.toFloat() / gameStats!!.levelStats!!.shotCount.toFloat() * 100.0f
+                gameStats!!.levelStats.hitCount.toFloat() / gameStats!!.levelStats.shotCount.toFloat() * 100.0f
             }
             gui!!.SetStateString("player_accuracy", va("%d%%", accuracy.toInt()))
             val saveAccuracy: Float
-            val totalAst = gameStats!!.levelStats!!.savedAstronauts + gameStats!!.levelStats!!.killedAstronauts
+            val totalAst = gameStats!!.levelStats.savedAstronauts + gameStats!!.levelStats.killedAstronauts
             saveAccuracy = if (0 == totalAst) {
                 0.0f
             } else {
-                gameStats!!.levelStats!!.savedAstronauts.toFloat() / totalAst.toFloat() * 100.0f
+                gameStats!!.levelStats.savedAstronauts.toFloat() / totalAst.toFloat() * 100.0f
             }
             gui!!.SetStateString("save_accuracy", va("%d%%", saveAccuracy.toInt()))
-            if (gameStats!!.levelStats!!.targetEnt != null) {
-                var dist = (gameStats!!.levelStats!!.targetEnt!!.position.z / 100.0f).toInt()
+            if (gameStats!!.levelStats.targetEnt != null) {
+                var dist = (gameStats!!.levelStats.targetEnt!!.position.z / 100.0f).toInt()
                 dist *= 100
                 gui!!.SetStateString("target_info", va("%d meters", dist))
             } else {
@@ -2285,7 +2284,7 @@ object GameSSDWindow {
             gui!!.SetStateString("player_prebonusscore", va("%d", gameStats!!.prebonusscore))
             gui!!.SetStateString(
                 "level_complete",
-                va("%d/%d", gameStats!!.levelStats!!.savedAstronauts, levelData[gameStats!!.currentLevel].needToWin)
+                va("%d/%d", gameStats!!.levelStats.savedAstronauts, levelData[gameStats!!.currentLevel].needToWin)
             )
             if (superBlasterTimeout != 0) {
                 val timeRemaining = (superBlasterTimeout - ssdTime) / 1000.0f
@@ -2306,20 +2305,20 @@ object GameSSDWindow {
         //Astronaut Methods
         private fun SpawnAstronaut() {
             val currentTime = ssdTime
-            if (currentTime < gameStats!!.levelStats!!.nextAstronautSpawnTime) {
+            if (currentTime < gameStats!!.levelStats.nextAstronautSpawnTime) {
                 //Not time yet
                 return
             }
 
             //Lets spawn it
             val startPosition = idVec3()
-            startPosition.x = random!!.RandomInt(V_WIDTH) - V_WIDTH / 2.0f
-            startPosition.y = random!!.RandomInt(V_HEIGHT) - V_HEIGHT / 2.0f
+            startPosition.x = random.RandomInt(V_WIDTH) - V_WIDTH / 2.0f
+            startPosition.y = random.RandomInt(V_HEIGHT) - V_HEIGHT / 2.0f
             startPosition.z = ENTITY_START_DIST.toFloat()
             val speed =
-                random!!.RandomInt((astronautData[gameStats!!.currentLevel].speedMax - astronautData[gameStats!!.currentLevel].speedMin).toInt()) + astronautData[gameStats!!.currentLevel].speedMin
+                random.RandomInt((astronautData[gameStats!!.currentLevel].speedMax - astronautData[gameStats!!.currentLevel].speedMin).toInt()) + astronautData[gameStats!!.currentLevel].speedMin
             val rotate =
-                random!!.RandomFloat() * (astronautData[gameStats!!.currentLevel].rotateMax - astronautData[gameStats!!.currentLevel].rotateMin) + astronautData[gameStats!!.currentLevel].rotateMin
+                random.RandomFloat() * (astronautData[gameStats!!.currentLevel].rotateMax - astronautData[gameStats!!.currentLevel].rotateMin) + astronautData[gameStats!!.currentLevel].rotateMin
             val astronaut = SSDAstronaut.GetNewAstronaut(
                 this,
                 startPosition,
@@ -2328,15 +2327,15 @@ object GameSSDWindow {
                 astronautData[gameStats!!.currentLevel].health
             )
             entities.Append(astronaut)
-            gameStats!!.levelStats!!.nextAstronautSpawnTime =
-                currentTime + random!!.RandomInt(astronautData[gameStats!!.currentLevel].spawnMax - astronautData[gameStats!!.currentLevel].spawnMin) + astronautData[gameStats!!.currentLevel].spawnMin
+            gameStats!!.levelStats.nextAstronautSpawnTime =
+                currentTime + random.RandomInt(astronautData[gameStats!!.currentLevel].spawnMax - astronautData[gameStats!!.currentLevel].spawnMin) + astronautData[gameStats!!.currentLevel].spawnMin
         }
 
         private fun HitAstronaut(astronaut: SSDAstronaut?, key: Int) {
             if (key == K_MOUSE1) {
                 astronaut!!.health -= weaponData[gameStats!!.currentWeapon].damage
                 if (astronaut.health <= 0) {
-                    gameStats!!.levelStats!!.killedAstronauts++
+                    gameStats!!.levelStats.killedAstronauts++
 
                     //The astronaut has been destroyed
                     val explosion: SSDExplosion? = GetNewExplosion(
@@ -2373,7 +2372,7 @@ object GameSSDWindow {
         }
 
         private fun AstronautStruckPlayer(astronaut: SSDAstronaut?) {
-            gameStats!!.levelStats!!.savedAstronauts++
+            gameStats!!.levelStats.savedAstronauts++
             astronaut!!.noPlayerDamage = true
             astronaut.noHit = true
 
@@ -2391,7 +2390,7 @@ object GameSSDWindow {
 
             //Give the player points for saving the astronaut
             AddScore(astronaut, astronautData[gameStats!!.currentLevel].points)
-            if (gameStats!!.levelStats!!.savedAstronauts >= levelData[gameStats!!.currentLevel].needToWin) {
+            if (gameStats!!.levelStats.savedAstronauts >= levelData[gameStats!!.currentLevel].needToWin) {
                 LevelComplete()
             }
         }
@@ -2399,18 +2398,18 @@ object GameSSDWindow {
         //Powerup Methods
         private fun SpawnPowerup() {
             val currentTime = ssdTime
-            if (currentTime < gameStats!!.levelStats!!.nextPowerupSpawnTime) {
+            if (currentTime < gameStats!!.levelStats.nextPowerupSpawnTime) {
                 //Not time yet
                 return
             }
             val speed =
-                random!!.RandomInt((powerupData[gameStats!!.currentLevel].speedMax - powerupData[gameStats!!.currentLevel].speedMin).toInt()) + powerupData[gameStats!!.currentLevel].speedMin
+                random.RandomInt((powerupData[gameStats!!.currentLevel].speedMax - powerupData[gameStats!!.currentLevel].speedMin).toInt()) + powerupData[gameStats!!.currentLevel].speedMin
             val rotate =
-                random!!.RandomFloat() * (powerupData[gameStats!!.currentLevel].rotateMax - powerupData[gameStats!!.currentLevel].rotateMin) + powerupData[gameStats!!.currentLevel].rotateMin
+                random.RandomFloat() * (powerupData[gameStats!!.currentLevel].rotateMax - powerupData[gameStats!!.currentLevel].rotateMin) + powerupData[gameStats!!.currentLevel].rotateMin
             val powerup = SSDPowerup.GetNewPowerup(this, speed, rotate)
             entities.Append(powerup)
-            gameStats!!.levelStats!!.nextPowerupSpawnTime =
-                currentTime + random!!.RandomInt(powerupData[gameStats!!.currentLevel].spawnMax - powerupData[gameStats!!.currentLevel].spawnMin) + powerupData[gameStats!!.currentLevel].spawnMin
+            gameStats!!.levelStats.nextPowerupSpawnTime =
+                currentTime + random.RandomInt(powerupData[gameStats!!.currentLevel].spawnMax - powerupData[gameStats!!.currentLevel].spawnMin) + powerupData[gameStats!!.currentLevel].spawnMin
         }
 
         private fun StartSuperBlaster() {
@@ -2429,7 +2428,7 @@ object GameSSDWindow {
             const val MAX_SOUND_CHANNEL = 8
 
             //
-            var random: idRandom? = null
+            var random: idRandom = idRandom()
         }
     }
 }

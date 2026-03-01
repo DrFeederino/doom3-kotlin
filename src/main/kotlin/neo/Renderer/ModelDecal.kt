@@ -1,3 +1,28 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code.
+
+===========================================================================
+*/
 package neo.Renderer
 
 import neo.Renderer.Material.decalInfo_t
@@ -61,7 +86,6 @@ object ModelDecal {
         //
         //
         init {
-//	memset( &tri, 0, sizeof( tri ) );
             tri = srfTriangles_s()
             tri.verts = verts
             tri.indexes = indexes
@@ -144,8 +168,11 @@ object ModelDecal {
                             val scale = CFloat()
                             fw[j].set(stri.verts!![stri.indexes!![index + j]]!!.xyz)
                             dir.set(fw[j].ToVec3().minus(localInfo.projectionOrigin))
-                            localInfo.boundingPlanes[NUM_DECAL_BOUNDING_PLANES - 1]
-                                .RayIntersection(fw[j].ToVec3(), dir, scale)
+                            if (!localInfo.boundingPlanes[NUM_DECAL_BOUNDING_PLANES - 1]
+                                    .RayIntersection(fw[j].ToVec3(), dir, scale)
+                            ) {
+                                scale._val = 0.0f
+                            }
                             dir.set(fw[j].ToVec3().plus(dir.times(scale._val)))
                             fw[j].s = localInfo.textureAxis[0].Distance(dir)
                             fw[j].t = localInfo.textureAxis[1].Distance(dir)
@@ -284,7 +311,7 @@ object ModelDecal {
                     }
                     if (fade < 0.0f) {
                         fade = 0.0f
-                    } else if (fade > 0.99) {
+                    } else if (fade > 0.99f) {
                         fade = 1.0f
                     }
                     fade = 1.0f - fade
@@ -354,14 +381,11 @@ object ModelDecal {
             private val MAX_DECAL_INDEXES: Int = 60
             private val MAX_DECAL_VERTS: Int = 40
 
-            //								~idRenderModelDecal( void );
-            //
             fun Alloc(): idRenderModelDecal {
                 return idRenderModelDecal()
             }
 
             fun Free(decal: idRenderModelDecal?) {
-//	delete decal;
             }
 
             // Creates decal projection info.
@@ -459,7 +483,7 @@ object ModelDecal {
                 temp[2] = (d0[3] * d1[2] - d0[2] * d1[3]) * inva
                 len = temp.Normalize()
                 info.textureAxis[1].SetNormal(temp.times(1.0f / len))
-                info.textureAxis[1][3] = winding[0].s - (winding[0].ToVec3().times(info.textureAxis[1].Normal()))
+                info.textureAxis[1][3] = winding[0].t - (winding[0].ToVec3().times(info.textureAxis[1].Normal()))
                 return true
             }
 
@@ -545,7 +569,6 @@ object ModelDecal {
                 }
                 decals.tri.numIndexes = newNumIndexes
 
-//	memset( inUse, 0, sizeof( inUse ) );
                 Arrays.fill(inUse, 0)
                 i = 0
                 while (i < decals.tri.numIndexes) {

@@ -3,7 +3,6 @@ package neo.Sound
 import neo.Sound.snd_cache.idSoundSample
 import neo.Sound.snd_decoder.idSampleDecoderLocal
 import neo.TempDump.SERiAL
-import neo.TempDump.TODO_Exception
 import neo.framework.UsercmdGen
 import neo.idlib.math.MIXBUFFER_SAMPLES
 import neo.sys.win_snd.idAudioHardwareWIN32
@@ -104,7 +103,7 @@ class snd_local {
 
         override fun Write(): ByteBuffer {
             val data = ByteBuffer.allocate(BYTES)
-            data.order(ByteOrder.LITTLE_ENDIAN) //very importante.
+            data.order(ByteOrder.LITTLE_ENDIAN)
             data.putShort(wf.wFormatTag.toShort())
             data.putShort(wf.nChannels.toShort())
             data.putInt(wf.nSamplesPerSec)
@@ -194,7 +193,7 @@ class snd_local {
 
         override fun Write(): ByteBuffer {
             val data = ByteBuffer.allocate(BYTES)
-            data.order(ByteOrder.LITTLE_ENDIAN) //very importante.
+            data.order(ByteOrder.LITTLE_ENDIAN)
             data.putInt(ckid.toInt())
             data.putInt(cksize)
             data.putInt(fccType.toInt())
@@ -227,18 +226,13 @@ class snd_local {
 
         companion object {
             fun Init() {
-//            decoderMemoryAllocator.Init();
-//            decoderMemoryAllocator.SetLockMemory(true);
-//            decoderMemoryAllocator.SetFixedBlocks(idSoundSystemLocal.s_realTimeDecoding.GetBool() ? 10 : 1);
             }
 
             fun Shutdown() {
-//            decoderMemoryAllocator.Shutdown();
-//            sampleDecoderAllocator.Shutdown();
             }
 
             fun Alloc(): idSampleDecoder {
-                val decoder = idSampleDecoderLocal() //sampleDecoderAllocator.Alloc();
+                val decoder = idSampleDecoderLocal()
                 decoder.Clear()
                 return decoder
             }
@@ -246,19 +240,16 @@ class snd_local {
             fun Free(decoder: idSampleDecoder) {
                 val localDecoder = decoder as idSampleDecoderLocal
                 localDecoder.ClearDecoder()
-                //            sampleDecoderAllocator.Free(localDecoder);
             }
 
             @Deprecated("")
             fun GetNumUsedBlocks(): Int {
-                throw TODO_Exception()
-                //            return decoderMemoryAllocator.GetNumUsedBlocks();
+                return 0
             }
 
             @Deprecated("")
             fun GetUsedBlockMemory(): Int {
-                throw TODO_Exception()
-                //            return decoderMemoryAllocator.GetUsedBlockMemory();
+                return 0
             }
         }
     }

@@ -63,22 +63,7 @@ class snd_system {
         var stereo = false
     }
 
-    class idSoundSystemLocal     //        static {
-    //            if (ID_OPENAL) {//TODO: turn on the rest of our openAL extensions.
-    //                // off by default. OpenAL DLL gets loaded on-demand. EDIT: not anymore.
-    //                //s_libOpenAL = new idCVar("s_libOpenAL", "openal32.dll", CVAR_SOUND | CVAR_ARCHIVE, "OpenAL DLL name/path");
-    //                s_useOpenAL = new idCVar("s_useOpenAL", "1", CVAR_SOUND | CVAR_BOOL | CVAR_ARCHIVE, "use OpenAL");
-    //                s_useEAXReverb = new idCVar("s_useEAXReverb", "1", CVAR_SOUND | CVAR_BOOL | CVAR_ARCHIVE, "use EAX reverb");
-    //                s_muteEAXReverb = new idCVar("s_muteEAXReverb", "0", CVAR_SOUND | CVAR_BOOL, "mute eax reverb");
-    //                s_decompressionLimit = new idCVar("s_decompressionLimit", "6", CVAR_SOUND | CVAR_INTEGER | CVAR_ARCHIVE, "specifies maximum uncompressed sample length in seconds");
-    //            } else {
-    //                s_libOpenAL = new idCVar("s_libOpenAL", "openal32.dll", CVAR_SOUND | CVAR_ARCHIVE, "OpenAL is not supported in this build");
-    //                s_useOpenAL = new idCVar("s_useOpenAL", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ROM, "OpenAL is not supported in this build");
-    //                s_useEAXReverb = new idCVar("s_useEAXReverb", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ROM, "EAX not available in this build");
-    //                s_muteEAXReverb = new idCVar("s_muteEAXReverb", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ROM, "mute eax reverb");
-    //                s_decompressionLimit = new idCVar("s_decompressionLimit", "6", CVAR_SOUND | CVAR_INTEGER | CVAR_ROM, "specifies maximum uncompressed sample length in seconds");
-    //            }
-    //        }
+    class idSoundSystemLocal
         : idSoundSystem() {
         companion object {
             val s_clipVolumes: idCVar = idCVar("s_clipVolumes", "1", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL, "")
@@ -166,6 +151,16 @@ class snd_system {
             )
             val s_quadraticFalloff: idCVar =
                 idCVar("s_quadraticFalloff", "1", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL, "")
+
+            // FIX: Missing CVar from dhewm3 — allows reducing reverb effect gain globally
+            val s_alReverbGain: idCVar = idCVar(
+                "s_alReverbGain",
+                "0.5",
+                CVarSystem.CVAR_SOUND or CVarSystem.CVAR_FLOAT or CVarSystem.CVAR_ARCHIVE,
+                "reduce reverb strength (0.0 to 1.0)",
+                0.0f,
+                1.0f
+            )
             val s_realTimeDecoding: idCVar = idCVar(
                 "s_realTimeDecoding",
                 "1",
@@ -232,8 +227,13 @@ class snd_system {
             )
 
             // mark available during initialization, or through an explicit test
-            var EAXAvailable = -1
-            var useEAXReverb = true
+            // FIX: renamed from EAXAvailable to EFXAvailable to match dhewm3
+            var EFXAvailable = -1
+
+            // FIX: C++ static bools are zero-initialized to false. These are set to true during Init()
+            // after OpenAL context creation confirms the extension is present. Defaulting to true caused
+            // EFX calls before OpenAL was initialized (crash during static init / AllocSoundWorld).
+            var useEAXReverb = false
 
             // latches
             var useOpenAL = false
@@ -348,57 +348,50 @@ class snd_system {
                 soundCache = idSoundCache()
             }
 
+            // FIX: dhewm3 always uses OpenAL (no legacy mixer). Device creation should
+            // not be gated on s_useEAXReverb — only s_noSound prevents initialization.
             // set up openal device and context
             Common.common.StartupVariable("s_useOpenAL", true)
             Common.common.StartupVariable("s_useEAXReverb", true)
-            if (s_useOpenAL.GetBool() && s_useEAXReverb.GetBool()) {
+            if (!s_noSound.GetBool()) {
                 if (!win_snd.Sys_LoadOpenAL()) {
                     s_useOpenAL.SetBool(false)
                 } else {
-                    Common.common.Printf("Setup OpenAL device and context... ")
+                    Common.common.Printf("Setup OpenAL device and context\n")
                     openalDevice = ALC10.alcOpenDevice(null as ByteBuffer?)
-                    openalContext = ALC10.alcCreateContext(openalDevice, null as IntArray?)
-                    ALC10.alcMakeContextCurrent(openalContext)
-                    val alcCapabilities = ALC.createCapabilities(openalDevice)
-                    AL.createCapabilities(alcCapabilities)
-                    Common.common.Printf("Done.\n")
-
-                    // try to obtain EAX extensions
-                    if (s_useEAXReverb.GetBool() && AL10.alIsExtensionPresent( /*ID_ALCHAR*/"EAX4.0f")) {
-                        s_useOpenAL.SetBool(true) // EAX presence causes AL enable
-                        //                        alEAXSet = true;//(EAXSet) alGetProcAddress(/*ID_ALCHAR*/"EAXSet");
-//                        alEAXGet = true;//(EAXGet) alGetProcAddress(/*ID_ALCHAR*/"EAXGet");
-                        Common.common.Printf("OpenAL: found EAX 4.0f extension\n")
+                    if (openalDevice == 0L) {
+                        Common.common.Printf("OpenAL: failed to open default device, disabling sound\n")
+                        openalContext = 0
                     } else {
-                        Common.common.Printf("OpenAL: EAX 4.0f extension not found\n")
-                        s_useEAXReverb.SetBool(false)
-                        //                        alEAXSet = false;//(EAXSet) null;
-//                        alEAXGet = false;//(EAXGet) null;
+                        openalContext = ALC10.alcCreateContext(openalDevice, null as IntArray?)
+                        if (openalContext == 0L) {
+                            Common.common.Printf("OpenAL: failed to create context, disabling sound\n")
+                            ALC10.alcCloseDevice(openalDevice)
+                            openalDevice = 0
+                        }
                     }
 
-                    // try to obtain EAX-RAM extension - not required for operation
-//                    if (alIsExtensionPresent(/*ID_ALCHAR*/"EAX-RAM")) {
-//                        alEAXSetBufferMode = true;//(EAXSetBufferMode) alGetProcAddress(/*ID_ALCHAR*/"EAXSetBufferMode");
-//                        alEAXGetBufferMode = true;//(EAXGetBufferMode) alGetProcAddress(/*ID_ALCHAR*/"EAXGetBufferMode");
-//                        common.Printf("OpenAL: found EAX-RAM extension, %dkB\\%dkB\n", alGetInteger(alGetEnumValue(/*ID_ALCHAR*/"AL_EAX_RAM_FREE")) / 1024, alGetInteger(alGetEnumValue(/*ID_ALCHAR*/"AL_EAX_RAM_SIZE")) / 1024);
-//                    } else {
-//                        alEAXSetBufferMode = false;//(EAXSetBufferMode) null;
-//                        alEAXGetBufferMode = false;//(EAXGetBufferMode) null;
-//                        common.Printf("OpenAL: no EAX-RAM extension\n");
-//                    }
-                    if (!s_useOpenAL.GetBool()) {
-                        Common.common.Printf("OpenAL: disabling ( no EAX ). Using legacy mixer.\n")
+                    if (openalContext != 0L) {
                         ALC10.alcMakeContextCurrent(openalContext)
-                        ALC10.alcDestroyContext(openalContext)
-                        openalContext = 0
-                        ALC10.alcCloseDevice(openalDevice)
-                        openalDevice = 0
-                    } else {
+                        val alcCapabilities = ALC.createCapabilities(openalDevice)
+                        AL.createCapabilities(alcCapabilities)
+
+                        // FIX: dhewm3 uses ALC_EXT_EFX (standard OpenAL EFX), not proprietary EAX4.0
+                        // Also uses alcIsExtensionPresent (device-level), not alIsExtensionPresent
+                        if (ALC10.alcIsExtensionPresent(openalDevice, "ALC_EXT_EFX")) {
+                            Common.common.Printf("OpenAL: found EFX extension\n")
+                            EFXAvailable = 1
+                        } else {
+                            Common.common.Printf("OpenAL: EFX extension not found\n")
+                            EFXAvailable = 0
+                            s_useEAXReverb.SetBool(false)
+                        }
+
                         var   /*ALuint*/handle: Int
                         openalSourceCount = 0
                         while (openalSourceCount < 256) {
                             AL10.alGetError()
-                            handle = AL10.alGenSources() //alGenSources(1, handle);
+                            handle = AL10.alGenSources()
                             if (AL10.alGetError() != AL10.AL_NO_ERROR) {
                                 break
                             } else {
@@ -417,15 +410,12 @@ class snd_system {
                                 openalSourceCount++
                             }
                         }
-                        Common.common.Printf(
-                            "OpenAL: found %s\n",
-                            ALC10.alcGetString(openalDevice, ALC10.ALC_DEVICE_SPECIFIER)!!
-                        )
                         Common.common.Printf("OpenAL: found %d hardware voices\n", openalSourceCount)
 
                         // adjust source count to allow for at least eight stereo sounds to play
                         openalSourceCount -= 8
-                        EAXAvailable = 1
+
+                        s_useOpenAL.SetBool(true)
                     }
                 }
             }
@@ -479,30 +469,29 @@ class snd_system {
 
                 // adjust source count back up to allow for freeing of all resources
                 openalSourceCount += 8
-                for ( /*ALsizei*/source in openalSources) {
+                // FIX: C++ iterates i < openalSourceCount, not all 256 entries
+                for (i in 0 until openalSourceCount) {
+                    val source = openalSources[i] ?: continue
                     // stop source
-                    if (source != null) {
-                        AL10.alSourceStop(source.handle)
-                        AL10.alSourcei(source.handle, AL10.AL_BUFFER, 0)
-                        AL10.alDeleteSources(source.handle)
+                    AL10.alSourceStop(source.handle)
+                    AL10.alSourcei(source.handle, AL10.AL_BUFFER, 0)
+                    AL10.alDeleteSources(source.handle)
 
-                        // clear entry in source array
-                        source.handle = 0
-                        source.startTime = 0
-                        source.chan = null
-                        source.inUse = false
-                        source.looping = false
-                    }
+                    // clear entry in source array
+                    source.handle = 0
+                    source.startTime = 0
+                    source.chan = null
+                    source.inUse = false
+                    source.looping = false
                 }
             }
 
             // destroy all the sounds (hardware buffers as well)
-//	delete soundCache;
             soundCache = null
 
             // destroy openal device and context
             if (useOpenAL) {
-                ALC10.alcMakeContextCurrent(openalContext)
+                ALC10.alcMakeContextCurrent(0)
                 ALC10.alcDestroyContext(openalContext)
                 openalContext = 0
                 ALC10.alcCloseDevice(openalDevice)
@@ -521,14 +510,8 @@ class snd_system {
             val fBlock = intArrayOf(0)
             val   /*ulong*/fBlockLen: Int = 0
 
-            //TODO:see what this block does.
-//            if (!snd_audio_hw.Lock( /*(void **)*/fBlock, fBlockLen)) {
-//                return;
-//            }
             if (fBlock[0] != 0) {
-//                SIMDProcessor.Memset(fBlock, 0, fBlockLen);
                 Arrays.fill(fBlock, 0, fBlockLen, 0)
-                //                snd_audio_hw.Unlock(fBlock, fBlockLen);
             }
         }
 
@@ -541,22 +524,28 @@ class snd_system {
             win_main.Sys_Sleep(100) // sleep long enough to make sure any async sound talking to hardware has returned
             Common.common.Printf("Shutting down sound hardware\n")
 
-//	delete snd_audio_hw;
             snd_audio_hw = null
             isInitialized = false
             if (graph != null) {
-//                Mem_Free(graph);//TODO:remove all this memory crap.
                 graph = null
             }
             return true
         }
 
         override fun InitHW(): Boolean {
-            if (s_noSound.GetBool()) {
+            // FIX: dhewm3 validates numSpeakers and checks openalContext before proceeding
+            var numSpeakers = s_numberOfSpeakers.GetInteger()
+            if (numSpeakers != 2 && numSpeakers != 6) {
+                Common.common.Warning("invalid value for s_numberOfSpeakers. Use either 2 or 6")
+                numSpeakers = 2
+                s_numberOfSpeakers.SetInteger(numSpeakers)
+            }
+
+            // FIX: dhewm3 returns false if openalContext is NULL (no audio device)
+            if (s_noSound.GetBool() || openalContext == 0L) {
                 return false
             }
 
-//	delete snd_audio_hw;
             snd_audio_hw = idAudioHardware.Alloc()
             if (snd_audio_hw == null) {
                 return false
@@ -652,8 +641,7 @@ class snd_system {
                 ALC10.alcSuspendContext(openalContext)
             } else {
                 // clear the buffer for all the mixing output
-//                SIMDProcessor.Memset(finalMixBuffer, 0, MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
-                Arrays.fill(finalMixBuffer, 0, 0, (MIXBUFFER_SAMPLES * numSpeakers).toFloat())
+                Arrays.fill(finalMixBuffer, 0, MIXBUFFER_SAMPLES * numSpeakers, 0.0f)
             }
 
             // let the active sound world mix all the channels in unless muted or avi demo recording
@@ -723,7 +711,6 @@ class snd_system {
                 ALC10.alcSuspendContext(openalContext)
             } else {
                 // clear the buffer for all the mixing output
-//                SIMDProcessor.Memset(finalMixBuffer, 0, MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers);
                 Arrays.fill(finalMixBuffer, 0.0f)
             }
 
@@ -791,14 +778,13 @@ class snd_system {
             var i: Int
             var j: Int
             if (!isInitialized || snd_audio_hw == null) {
-//		memset( &ret, 0, sizeof( ret ) );
                 return ret
             }
             Sys_EnterCriticalSection()
             if (null == graph) {
-                graph = IntArray(256 * 128 * 4) // Mem_Alloc(256 * 128 * 4);
+                graph = IntArray(256 * 128)
             }
-            //	memset( graph, 0, 256*128 * 4 );
+            graph!!.fill(0)
             val accum = finalMixBuffer // unfortunately, these are already clamped
             val time = win_shared.Sys_Milliseconds()
             val numSpeakers = snd_audio_hw!!.GetNumberOfSpeakers()
@@ -937,7 +923,7 @@ class snd_system {
                 while (i < 256) {
                     val meter = meterTops[i]
                     for (y in -meter until meter) {
-                        graph!![(y + 64) * 256 + i] = colors[j]
+                        graph!![(y + 64) * 256 + i] = colors[j.coerceAtMost(colors.size - 1)]
                     }
                     i++
                 }
@@ -988,7 +974,7 @@ class snd_system {
                     decoderInfo.name.set(sample.name)
                     decoderInfo.format.set(if (sample.objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_OGG) "OGG" else "WAV")
                     decoderInfo.numChannels = sample.objectInfo.nChannels
-                    decoderInfo.numSamplesPerSecond = sample.objectInfo.nSamplesPerSec.toLong()
+                    decoderInfo.numSamplesPerSecond = sample.objectInfo.nSamplesPerSec
                     decoderInfo.num44kHzSamples = sample.LengthIn44kHzSamples()
                     decoderInfo.numBytes = sample.objectMemSize
                     decoderInfo.looping = chan.parms!!.soundShaderFlags and snd_shader.SSF_LOOPING != 0
@@ -1045,6 +1031,9 @@ class snd_system {
                 return
             }
             soundCache!!.EndLevelLoad()
+            if (!useEAXReverb) {
+                return
+            }
             val efxname = idStr("efxs/")
             val mapname = idStr(mapString)
             mapname.SetFileExtension(".efx")
@@ -1062,43 +1051,15 @@ class snd_system {
             soundCache!!.PrintMemInfo(mi)
         }
 
+        // FIX: dhewm3 renamed to IsEFXAvailable and returns the actual EFXAvailable field
+        // (set during Init). The old code was hardcoded to return -1 with everything commented out.
         override fun IsEAXAvailable(): Int {
-//#if !ID_OPENAL
-            return -1
-            //#else
-//	ALCdevice	*device;
-//	ALCcontext	*context;
-//
-//	if ( EAXAvailable != -1 ) {
-//		return EAXAvailable;
-//	}
-//
-//	if ( !Sys_LoadOpenAL() ) {
-//		EAXAvailable = 2;
-//		return 2;
-//	}
-//	// when dynamically loading the OpenAL subsystem, we need to get a context before alIsExtensionPresent would work
-//	device = alcOpenDevice( NULL );
-//	context = alcCreateContext( device, NULL );
-//	alcMakeContextCurrent( context );
-//	if ( alIsExtensionPresent( ID_ALCHAR "EAX4.0f" ) ) {
-//		alcMakeContextCurrent( NULL );
-//		alcDestroyContext( context );
-//		alcCloseDevice( device );
-//		EAXAvailable = 1;
-//		return 1;
-//	}
-//	alcMakeContextCurrent( NULL );
-//	alcDestroyContext( context );
-//	alcCloseDevice( device );
-//	EAXAvailable = 0;
-//	return 0;
-//#endif
+            return EFXAvailable
         }
 
         //-------------------------
         fun GetCurrent44kHzTime(): Int {
-            return if (snd_audio_hw != null) {
+            return if (isInitialized) {
                 CurrentSoundTime
             } else {
                 // NOTE: this would overflow 31bits within about 1h20 ( not that important since we get a snd_audio_hw right away pbly )
@@ -1159,9 +1120,7 @@ class snd_system {
                 var j: Int
 
                 // restore previous samples
-//		memset( in, 0, 10000 * sizeof( float ) );
                 out = FloatArray(10000)
-                //		memset( out, 0, 10000 * sizeof( float ) );
                 `in` = FloatArray(10000)
 
                 // fx loop
@@ -1194,7 +1153,7 @@ class snd_system {
                     // process fx loop
                     j = 0
                     while (j < numSamples) {
-                        fx.ProcessSample(`in`, in_p + j, out, out_p + j) //TODO:float[], int index, float[], int index
+                        fx.ProcessSample(`in`, in_p + j, out, out_p + j)
                         j++
                     }
 
@@ -1300,13 +1259,6 @@ class snd_system {
                     if (openalSources[i].chan != null) {
                         openalSources[i].chan!!.openalSource = 0
                     }
-                    // #if ID_OPENAL
-                    // // Reset source EAX ROOM level when freeing stereo source
-                    // if ( openalSources[i].stereo && alEAXSet ) {
-                    // long Room = EAXSOURCE_DEFAULTROOM;
-                    // alEAXSet( &EAXPROPERTYID_EAX_Source, EAXSOURCE_ROOM, openalSources[i].handle, &Room, sizeof(Room));
-                    // }
-// #endif
                     // Initialize structure
                     openalSources[i].startTime = 0
                     openalSources[i].chan = null

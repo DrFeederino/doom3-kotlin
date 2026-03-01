@@ -1,5 +1,22 @@
-package neo.Game
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/Mover.cpp, neo/Game/Mover.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
 
+package neo.Game
 import neo.Game.Entity.idEntity
 import neo.Game.Entity.signalNum_t
 import neo.Game.GameSys.Class.*
@@ -1794,7 +1811,7 @@ object Mover {
                 return
             }
             lastTouchTime = Game_local.gameLocal.time
-            if (thinkFlags and Entity.TH_PHYSICS != 0) {
+            if ((thinkFlags and Entity.TH_PHYSICS) != 0) {
                 return
             }
             val triggerFloor = spawnArgs.GetInt("triggerFloor")
@@ -3135,8 +3152,8 @@ object Mover {
             removeItem = savefile.ReadInt()
             savefile.ReadString(syncLock)
             normalAxisIndex = savefile.ReadInt()
-            savefile.ReadClipModel(trigger!!)
-            savefile.ReadClipModel(sndTrigger!!)
+            savefile.ReadClipModel(trigger)
+            savefile.ReadClipModel(sndTrigger)
             savefile.ReadObject( /*reinterpret_cast<idClass *&>*/companionDoor)
         }
 
@@ -3144,7 +3161,7 @@ object Mover {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
             super.Think()
-            if (thinkFlags and Entity.TH_PHYSICS != 0) {
+            if ((thinkFlags and Entity.TH_PHYSICS) != 0) {
                 // update trigger position
                 if (GetMasterPosition(masterOrigin, masterAxis)) {
                     if (trigger != null) {
@@ -3803,7 +3820,7 @@ object Mover {
         }
 
         override fun Restore(savefile: idRestoreGame) {
-            savefile.ReadClipModel(trigger!!)
+            savefile.ReadClipModel(trigger)
             savefile.ReadVec3(localTriggerOrigin)
             savefile.ReadMat3(localTriggerAxis)
         }
@@ -3812,7 +3829,7 @@ object Mover {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
             super.Think()
-            if (thinkFlags and Entity.TH_PHYSICS != 0) {
+            if ((thinkFlags and Entity.TH_PHYSICS) != 0) {
                 // update trigger position
                 if (GetMasterPosition(masterOrigin, masterAxis)) {
                     if (trigger != null) {

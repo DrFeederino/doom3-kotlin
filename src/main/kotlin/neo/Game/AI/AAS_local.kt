@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/Game/ai/AAS_local.h, neo/Game/ai/AAS.cpp, neo/Game/ai/AAS_debug.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game.AI
 
 import neo.Game.AI.AAS.aasGoal_s
@@ -24,7 +42,6 @@ import neo.Tools.Compilers.AAS.AASFile.aasTrace_s
 import neo.Tools.Compilers.AAS.AASFile.idAASFile
 import neo.Tools.Compilers.AAS.AASFile.idAASSettings
 import neo.Tools.Compilers.AAS.AASFile.idReachability
-import neo.Tools.Compilers.AAS.AASFile.idReachability_Walk
 import neo.Tools.Compilers.AAS.AASFileManager
 import neo.framework.Common
 import neo.idlib.*
@@ -878,7 +895,7 @@ class AAS_local {
                     }
 
                     // don't optimize through an area near a ledge
-                    if (file!!.GetArea(reach.toAreaNum.toInt()).flags and AASFile.AREA_LEDGE != 0) {
+                    if ((file!!.GetArea(reach.toAreaNum.toInt()).flags and AASFile.AREA_LEDGE) != 0) {
                         reach = reach.next
                         continue
                     }
@@ -890,11 +907,9 @@ class AAS_local {
                     }
 
                     // direction parallel to gravity
-                    dir.set(
-                        (file!!.GetSettings().gravityDir.timesVec(endPos.timesVec(file!!.GetSettings().gravityDir))) - (file!!.GetSettings().gravityDir.timesVec(
-                            p.timesVec(file!!.GetSettings().gravityDir)
-                        ))
-                    )
+                    // FIX: C++ uses dot product: (gravityDir * endPos) * gravityDir - (gravityDir * p) * gravityDir
+                    val g = file!!.GetSettings().gravityDir
+                    dir.set(g * (g * endPos) - g * (g * p))
                     if (dir.LengthSqr() > Square(file!!.GetSettings().maxStepHeight._val)) {
                         reach = reach.next
                         continue
@@ -1061,7 +1076,6 @@ class AAS_local {
             val travelTime = CInt()
             val reach = arrayOf<idReachability?>(null)
             val org = idVec3()
-            idVec3()
             val path = aasPath_s()
             if (file == null) {
                 return
@@ -1102,7 +1116,6 @@ class AAS_local {
             val travelTime = CInt()
             val reach = arrayOf<idReachability?>(null)
             val org = idVec3()
-            idVec3()
             val path = aasPath_s()
             if (file == null) {
                 return
@@ -1262,7 +1275,8 @@ class AAS_local {
                     v1.set(reach.end - curUpdate.start)
                     v1.Normalize()
                     v2.set(target.minus(curUpdate.start))
-                    p.set(curUpdate.start + (v2.timesVec(v1)).timesVec(v1))
+                    // FIX: C++ uses dot product (v2 * v1) * v1, not element-wise multiply
+                    p.set(curUpdate.start + v1 * (v2 * v1))
 
                     // get the point on the path closest to the target
                     j = 0
@@ -1319,9 +1333,9 @@ class AAS_local {
                     nextUpdate.start.set(reach.end)
 
                     // if we are not allowed to fly
-                    if (badTravelFlags and AASFile.TFL_FLY != 0) {
+                    if ((badTravelFlags and AASFile.TFL_FLY) != 0) {
                         // avoid areas near ledges
-                        if (file!!.GetArea(nextAreaNum).flags and AASFile.AREA_LEDGE != 0) {
+                        if ((file!!.GetArea(nextAreaNum).flags and AASFile.AREA_LEDGE) != 0) {
                             nextUpdate.tmpTravelTime += AAS_routing.LEDGE_TRAVELTIME_PANALTY
                         }
                     }
@@ -1377,9 +1391,9 @@ class AAS_local {
         private /*unsigned short*/   fun AreaTravelTime(areaNum: Int, start: idVec3, end: idVec3): Int {
             var dist: Float
             dist = end.minus(start).Length()
-            dist *= if (file!!.GetArea(areaNum).travelFlags and AASFile.TFL_CROUCH != 0) {
+            dist *= if ((file!!.GetArea(areaNum).travelFlags and AASFile.TFL_CROUCH) != 0) {
                 100.0f / 100.0f
-            } else if (file!!.GetArea(areaNum).travelFlags and AASFile.TFL_WATER != 0) {
+            } else if ((file!!.GetArea(areaNum).travelFlags and AASFile.TFL_WATER) != 0) {
                 100.0f / 150.0f
             } else {
                 100.0f / 300.0f
@@ -1807,9 +1821,9 @@ class AAS_local {
                         nextUpdate.areaTravelTimes = reach.areaTravelTimes!!
 
                         // if we are not allowed to fly
-                        if (badTravelFlags and AASFile.TFL_FLY != 0) {
+                        if ((badTravelFlags and AASFile.TFL_FLY) != 0) {
                             // avoid areas near ledges
-                            if (file!!.GetArea(nextAreaNum).flags and AASFile.AREA_LEDGE != 0) {
+                            if ((file!!.GetArea(nextAreaNum).flags and AASFile.AREA_LEDGE) != 0) {
                                 nextUpdate.tmpTravelTime += AAS_routing.LEDGE_TRAVELTIME_PANALTY
                             }
                         }
@@ -2002,7 +2016,7 @@ class AAS_local {
 
         private fun DisableArea(areaNum: Int) {
             assert(areaNum > 0 && areaNum < file!!.GetNumAreas())
-            if (file!!.GetArea(areaNum).travelFlags and AASFile.TFL_INVALID != 0) {
+            if ((file!!.GetArea(areaNum).travelFlags and AASFile.TFL_INVALID) != 0) {
                 return
             }
             file!!.SetAreaTravelFlag(areaNum, AASFile.TFL_INVALID)
@@ -2026,7 +2040,7 @@ class AAS_local {
             while (nodeNum != 0) {
                 if (nodeNum < 0) {
                     // if this area is a cluster portal
-                    if (file!!.GetArea(-nodeNum).contents and areaContents != 0) {
+                    if ((file!!.GetArea(-nodeNum).contents and areaContents) != 0) {
                         if (disabled) {
                             DisableArea(-nodeNum)
                         } else {
@@ -2085,7 +2099,7 @@ class AAS_local {
                 area = file!!.GetArea(obstacle.areas[i])
                 rev_reach = area.rev_reach
                 while (rev_reach != null) {
-                    if (rev_reach.travelType and AASFile.TFL_INVALID != 0) {
+                    if ((rev_reach.travelType and AASFile.TFL_INVALID) != 0) {
                         rev_reach = rev_reach.rev_next
                         continue
                     }
@@ -2340,7 +2354,7 @@ class AAS_local {
             mid.set(getVec3Origin())
             i = 0
             while (i < numEdges) {
-                DrawEdge(abs(file!!.GetEdgeIndex(firstEdge + i)), face.flags and AASFile.FACE_FLOOR != 0)
+                DrawEdge(abs(file!!.GetEdgeIndex(firstEdge + i)), (face.flags and AASFile.FACE_FLOOR) != 0)
                 j = file!!.GetEdgeIndex(firstEdge + i)
                 mid.plusAssign(file!!.GetVertex(file!!.GetEdge(abs(j)).vertexNum[if (j < 0) 1 else 0]))
                 i++
@@ -2397,9 +2411,6 @@ class AAS_local {
                     Game_local.gameLocal.GetLocalPlayer()!!.viewAxis
                 )
             }
-            if (reach.travelType == AASFile.TFL_WALK) {
-                reach as idReachability_Walk?
-            }
         }
 
         private fun ShowArea(origin: idVec3) {
@@ -2431,26 +2442,27 @@ class AAS_local {
             if (areaNum != lastAreaNum) {
                 area = file!!.GetArea(areaNum)
                 Game_local.gameLocal.Printf("area %d: ", areaNum)
-                if (area.flags and AASFile.AREA_LEDGE != 0) {
+                if ((area.flags and AASFile.AREA_LEDGE) != 0) {
                     Game_local.gameLocal.Printf("AREA_LEDGE ")
                 }
-                if (area.flags and AASFile.AREA_REACHABLE_WALK != 0) {
+                if ((area.flags and AASFile.AREA_REACHABLE_WALK) != 0) {
                     Game_local.gameLocal.Printf("AREA_REACHABLE_WALK ")
                 }
-                if (area.flags and AASFile.AREA_REACHABLE_FLY != 0) {
+                if ((area.flags and AASFile.AREA_REACHABLE_FLY) != 0) {
                     Game_local.gameLocal.Printf("AREA_REACHABLE_FLY ")
                 }
-                if (area.contents and AASFile.AREACONTENTS_CLUSTERPORTAL != 0) {
+                if ((area.contents and AASFile.AREACONTENTS_CLUSTERPORTAL) != 0) {
                     Game_local.gameLocal.Printf("AREACONTENTS_CLUSTERPORTAL ")
                 }
-                if (area.contents and AASFile.AREACONTENTS_OBSTACLE != 0) {
+                if ((area.contents and AASFile.AREACONTENTS_OBSTACLE) != 0) {
                     Game_local.gameLocal.Printf("AREACONTENTS_OBSTACLE ")
                 }
                 Game_local.gameLocal.Printf("\n")
                 lastAreaNum = areaNum
             }
             if (org != origin) {
-                val bnds = file!!.GetSettings().boundingBoxes[0]
+                // FIX: C++ creates a copy; Kotlin reference would corrupt the shared settings
+                val bnds = idBounds(file!!.GetSettings().boundingBoxes[0])
                 bnds[1].z = bnds[0].z
                 Game_local.gameRenderWorld!!.DebugBounds(colorYellow, bnds, org)
             }
@@ -2571,7 +2583,7 @@ class AAS_local {
                 i = 0
                 while (i < file!!.GetNumAreas()) {
                     n = (rnd + i) % file!!.GetNumAreas()
-                    if (file!!.GetArea(n).flags and (AASFile.AREA_REACHABLE_WALK or AASFile.AREA_REACHABLE_FLY) != 0) {
+                    if ((file!!.GetArea(n).flags and (AASFile.AREA_REACHABLE_WALK or AASFile.AREA_REACHABLE_FLY)) != 0) {
                         SysCvar.aas_pullPlayer.SetInteger(n)
                     }
                     i++
