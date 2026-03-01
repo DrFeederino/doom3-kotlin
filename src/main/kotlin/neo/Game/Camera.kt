@@ -3,7 +3,7 @@
  * Translated to Kotlin by Dr. Feederino with support of Claude Code
  *
  * This file is part of the Doom 3 Kotlin project.
- * Original source: neo/Game/Camera.cpp, neo/Game/Camera.h
+ * Original source: neo/game/Camera.cpp, neo/game/Camera.h
  *
  * Doom 3 Source Code is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,6 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.List
-import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.idCQuat
 import neo.idlib.math.idQuat
 import neo.idlib.math.idVec3
@@ -54,9 +53,30 @@ val EV_Camera_SetAttachments: idEventDef = idEventDef("<getattachments>", null)
 
  ===============================================================================
  */
+
+/*
+ ===============================================================================
+
+   idCamera
+
+   Base class for cameras
+
+ ===============================================================================
+ */
 abstract class idCamera : idEntity() {
-    //public	ABSTRACT_PROTOTYPE( idCamera );
+
+    /*
+     =====================
+     idCamera::GetViewParms
+     =====================
+     */
     abstract fun GetViewParms(view: renderView_s?)
+
+    /*
+     =====================
+     idCamera::GetRenderView
+     =====================
+     */
     override fun GetRenderView(): renderView_s? {
         val rv = super.GetRenderView()
         GetViewParms(rv)
@@ -67,17 +87,14 @@ abstract class idCamera : idEntity() {
 }
 
 /*
- ===============================================================================
+ ***********************************************************************
 
- idCameraView
+   idCameraView
 
- ===============================================================================
+ ***********************************************************************
  */
-class idCameraView     //
-//
-    : idCamera() {
+class idCameraView : idCamera() {
     companion object {
-        //    public	CLASS_PROTOTYPE( idCameraView );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
         fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
             return eventCallbacks
@@ -98,21 +115,35 @@ class idCameraView     //
     protected var attachedView: idEntity? = null
     protected var fov = 90.0f
 
-    // save games
-    override fun Save(savefile: idSaveGame) {                // archives object for save game file
+    /*
+     ===============
+     idCameraView::Save
+     ================
+     */
+    override fun Save(savefile: idSaveGame) {
         savefile.WriteFloat(fov)
         savefile.WriteObject(attachedTo)
         savefile.WriteObject(attachedView)
     }
 
-    override fun Restore(savefile: idRestoreGame) {                // unarchives object from save game file
+    /*
+     ===============
+     idCameraView::Restore
+     ================
+     */
+    override fun Restore(savefile: idRestoreGame) {
         val fov = CFloat(fov)
         savefile.ReadFloat(fov)
-        savefile.ReadObject( /*reinterpret_cast<idClass *&>(*/attachedTo)
-        savefile.ReadObject( /*reinterpret_cast<idClass *&>(*/attachedView)
+        savefile.ReadObject(attachedTo)
+        savefile.ReadObject(attachedView)
         this.fov = fov._val
     }
 
+    /*
+     =====================
+     idCameraView::Spawn
+     =====================
+     */
     override fun Spawn() {
         super.Spawn()
 
@@ -126,6 +157,11 @@ class idCameraView     //
         UpdateChangeableSpawnArgs(null)
     }
 
+    /*
+     =====================
+     idCameraView::GetViewParms
+     =====================
+     */
     override fun GetViewParms(view: renderView_s?) {
         assert(view != null)
         if (view == null) {
@@ -142,9 +178,11 @@ class idCameraView     //
         if (attachedView != null) {
             dir.set(attachedView!!.GetPhysics().GetOrigin().minus(view.vieworg))
             dir.Normalize()
-            view.viewaxis.set(idMat3(dir.ToMat3()))
+            // FIX: Removed unnecessary idMat3() constructor wrapping - dir.ToMat3() already returns idMat3
+            view.viewaxis.set(dir.ToMat3())
         } else {
-            view.viewaxis.set(idMat3(ent.GetPhysics().GetAxis()))
+            // FIX: Removed unnecessary idMat3() constructor wrapping - GetAxis() already returns idMat3
+            view.viewaxis.set(ent.GetPhysics().GetAxis())
         }
         val fov_x = CFloat(view.fov_x)
         val fov_y = CFloat(view.fov_y)
@@ -153,6 +191,11 @@ class idCameraView     //
         view.fov_y = fov_y._val
     }
 
+    /*
+     =====================
+     idCameraView::Stop
+     =====================
+     */
     override fun Stop() {
         if (SysCvar.g_debugCinematic.GetBool()) {
             Game_local.gameLocal.Printf("%d: '%s' stop\n", Game_local.gameLocal.framenum, GetName())
@@ -161,6 +204,11 @@ class idCameraView     //
         ActivateTargets(Game_local.gameLocal.GetLocalPlayer())
     }
 
+    /*
+     ===============
+     idCameraView::Event_Activate
+     ================
+     */
     protected fun Event_Activate(activator: idEventArg<idEntity>) {
         if (spawnArgs.GetBool("trigger")) {
             if (Game_local.gameLocal.GetCamera() !== this) {
@@ -177,6 +225,11 @@ class idCameraView     //
         }
     }
 
+    /*
+     ===============
+     idCameraView::Event_SetAttachments
+     ================
+     */
     protected fun Event_SetAttachments() {
         val attachedTo = arrayOf(attachedTo)
         val attachedView = arrayOf(attachedView)
@@ -186,15 +239,22 @@ class idCameraView     //
         this.attachedView = attachedView[0]
     }
 
+    /*
+     =====================
+     idCameraView::SetAttachment
+     =====================
+     */
     protected fun SetAttachment(e: Array<idEntity?>, p: String) {
         val cam = spawnArgs.GetString(p)
-        if (!cam.isEmpty()) {
-            e[0] = Game_local.gameLocal.FindEntity(cam)!!
+        if (cam.isNotEmpty()) {
+            // FIX: Removed !! — C++ assigns FindEntity result directly, which can be NULL.
+            // Using !! would throw NPE if the entity name doesn't resolve.
+            e[0] = Game_local.gameLocal.FindEntity(cam)
         }
     }
 
     override fun CreateInstance(): idClass {
-        throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+        throw UnsupportedOperationException("Not supported yet.")
     }
 
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
@@ -210,17 +270,22 @@ class idCameraView     //
  ===============================================================================
  */
 class cameraFrame_t {
-    var fov = 0.0f
-    var q: idCQuat = idCQuat()
+    val q: idCQuat = idCQuat()
     val t: idVec3 = idVec3()
+    var fov = 0.0f
 }
 
+/*
+ ===============================================================================
+
+   idCameraAnim
+
+ ===============================================================================
+ */
 class idCameraAnim : idCamera() {
     companion object {
-        //        public 	CLASS_PROTOTYPE( idCameraAnim );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
-        //~idCameraAnim();
         fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
             return eventCallbacks
         }
@@ -249,8 +314,12 @@ class idCameraAnim : idCamera() {
     private var starttime: Int
     private var threadNum = 0
 
-    // save games
-    override fun Save(savefile: idSaveGame) {                // archives object for save game file
+    /*
+     ===============
+     idCameraAnim::Save
+     ================
+     */
+    override fun Save(savefile: idSaveGame) {
         savefile.WriteInt(threadNum)
         savefile.WriteVec3(offset)
         savefile.WriteInt(frameRate)
@@ -259,7 +328,12 @@ class idCameraAnim : idCamera() {
         activator.Save(savefile)
     }
 
-    override fun Restore(savefile: idRestoreGame) {                // unarchives object from save game file
+    /*
+     ===============
+     idCameraAnim::Restore
+     ================
+     */
+    override fun Restore(savefile: idRestoreGame) {
         threadNum = savefile.ReadInt()
         savefile.ReadVec3(offset)
         frameRate = savefile.ReadInt()
@@ -269,6 +343,11 @@ class idCameraAnim : idCamera() {
         LoadAnim()
     }
 
+    /*
+     =====================
+     idCameraAnim::Spawn
+     =====================
+     */
     override fun Spawn() {
         super.Spawn()
         if (spawnArgs.GetVector("old_origin", "0 0 0", offset)) {
@@ -282,6 +361,11 @@ class idCameraAnim : idCamera() {
         LoadAnim()
     }
 
+    /*
+     =====================
+     idCameraAnim::GetViewParms
+     =====================
+     */
     override fun GetViewParms(view: renderView_s?) {
         val realFrame: Int
         var frame: Int
@@ -382,14 +466,14 @@ class idCameraAnim : idCamera() {
             camFrame = camera[frame]
             val nextFrame = camera[frame + 1]
             invlerp = 1.0f - lerp
-            q1.set(camFrame /*[ 0 ]*/.q.ToQuat())
+            q1.set(camFrame.q.ToQuat())
             q2.set(nextFrame.q.ToQuat())
             q3.Slerp(q1, q2, lerp)
             view.viewaxis.set(q3.ToMat3())
             view.vieworg.set(
                 camFrame.t * invlerp + nextFrame.t * lerp + offset
             )
-            view.fov_x = camFrame /*[ 0 ]*/.fov * invlerp + nextFrame.fov * lerp
+            view.fov_x = camFrame.fov * invlerp + nextFrame.fov * lerp
         }
 
         val fov_x = CFloat(view.fov_x)
@@ -401,24 +485,16 @@ class idCameraAnim : idCamera() {
         // setup the pvs for this frame
         UpdatePVSAreas(view.vieworg)
 
-// if(false){
-        // static int lastFrame = 0;
-        // static idVec3 lastFrameVec( 0.0f, 0.0f, 0.0f );
-        // if ( gameLocal.time != lastFrame ) {
-        // gameRenderWorld.DebugBounds( colorCyan, idBounds( view.vieworg ).Expand( 16.0f ), vec3_origin, gameLocal.msec );
-        // gameRenderWorld.DebugLine( colorRed, view.vieworg, view.vieworg + idVec3( 0.0f, 0.0f, 2.0f ), 10000, false );
-        // gameRenderWorld.DebugLine( colorCyan, lastFrameVec, view.vieworg, 10000, false );
-        // gameRenderWorld.DebugLine( colorYellow, view.vieworg + view.viewaxis[ 0 ] * 64.0f, view.vieworg + view.viewaxis[ 0 ] * 66.0f, 10000, false );
-        // gameRenderWorld.DebugLine( colorOrange, view.vieworg + view.viewaxis[ 0 ] * 64.0f, view.vieworg + view.viewaxis[ 0 ] * 64.0f + idVec3( 0.0f, 0.0f, 2.0f ), 10000, false );
-        // lastFrameVec = view.vieworg;
-        // lastFrame = gameLocal.time;
-        // }
-// }
         if (SysCvar.g_showcamerainfo.GetBool()) {
             Game_local.gameLocal.Printf("^5Frame: ^7%d/%d\n\n\n", realFrame + 1, camera.Num() - cameraCuts.Num())
         }
     }
 
+    /*
+     ===============
+     idCameraAnim::Start
+     ================
+     */
     private fun Start() {
         cycle = spawnArgs.GetInt("cycle")
         if (0 == cycle) {
@@ -437,6 +513,11 @@ class idCameraAnim : idCamera() {
         }
     }
 
+    /*
+     =====================
+     idCameraAnim::Stop
+     =====================
+     */
     override fun Stop() {
         if (Game_local.gameLocal.GetCamera() == this) {
             if (SysCvar.g_debugCinematic.GetBool()) {
@@ -452,11 +533,16 @@ class idCameraAnim : idCamera() {
         }
     }
 
+    /*
+     =====================
+     idCameraAnim::Think
+     =====================
+     */
     override fun Think() {
         val frame: Int
         val frameTime: Int
         if ((thinkFlags and TH_THINK) != 0) {
-            // check if we're done in the Think function when the cinematic is being skipped (obj.GetViewParms isn't called when skipping cinematics).
+            // check if we're done in the Think function when the cinematic is being skipped (idCameraAnim::GetViewParms isn't called when skipping cinematics).
             if (!Game_local.gameLocal.skipCinematic) {
                 return
             }
@@ -485,6 +571,11 @@ class idCameraAnim : idCamera() {
         }
     }
 
+    /*
+     ================
+     idCameraAnim::LoadAnim
+     ================
+     */
     private fun LoadAnim() {
         val version: Int
         val parser =
@@ -572,60 +663,31 @@ class idCameraAnim : idCamera() {
             i++
         }
         parser.ExpectTokenString("}")
-
-        /*if (false){
-         if ( !gameLocal.GetLocalPlayer() ) {
-         return;
-         }
-
-         idDebugGraph gGraph;
-         idDebugGraph tGraph;
-         idDebugGraph qGraph;
-         idDebugGraph dtGraph;
-         idDebugGraph dqGraph;
-         gGraph.SetNumSamples( numFrames );
-         tGraph.SetNumSamples( numFrames );
-         qGraph.SetNumSamples( numFrames );
-         dtGraph.SetNumSamples( numFrames );
-         dqGraph.SetNumSamples( numFrames );
-
-         gameLocal.Printf( "\n\ndelta vec:\n" );
-         float diff_t, last_t, t;
-         float diff_q, last_q, q;
-         diff_t = last_t = 0.0f;
-         diff_q = last_q = 0.0f;
-         for( i = 1; i < numFrames; i++ ) {
-         t = ( camera[ i ].t - camera[ i - 1 ].t ).Length();
-         q = ( camera[ i ].q.ToQuat() - camera[ i - 1 ].q.ToQuat() ).Length();
-         diff_t = t - last_t;
-         diff_q = q - last_q;
-         gGraph.AddValue( ( i % 10 ) == 0 );
-         tGraph.AddValue( t );
-         qGraph.AddValue( q );
-         dtGraph.AddValue( diff_t );
-         dqGraph.AddValue( diff_q );
-
-         gameLocal.Printf( "%d: %.8f  :  %.8f,     %.8f  :  %.8f\n", i, t, diff_t, q, diff_q  );
-         last_t = t;
-         last_q = q;
-         }
-
-         gGraph.Draw( colorBlue, 300.0f );
-         tGraph.Draw( colorOrange, 60.0f );
-         dtGraph.Draw( colorYellow, 6000.0f );
-         qGraph.Draw( colorGreen, 60.0f );
-         dqGraph.Draw( colorCyan, 6000.0f );
-         }*/
     }
 
+    /*
+     ===============
+     idCameraAnim::Event_Start
+     ================
+     */
     private fun Event_Start() {
         Start()
     }
 
+    /*
+     ===============
+     idCameraAnim::Event_Stop
+     ================
+     */
     private fun Event_Stop() {
         Stop()
     }
 
+    /*
+     ================
+     idCameraAnim::Event_SetCallback
+     ================
+     */
     private fun Event_SetCallback() {
         if (Game_local.gameLocal.GetCamera() == this && 0 == threadNum) {
             threadNum = idThread.CurrentThreadNum()
@@ -635,6 +697,11 @@ class idCameraAnim : idCamera() {
         }
     }
 
+    /*
+     ===============
+     idCameraAnim::Event_Activate
+     ================
+     */
     private fun Event_Activate(_activator: idEventArg<idEntity>) {
         activator.oSet(_activator.value)
         if ((thinkFlags and TH_THINK) != 0) {
@@ -645,15 +712,18 @@ class idCameraAnim : idCamera() {
     }
 
     override fun CreateInstance(): idClass {
-        throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+        throw UnsupportedOperationException("Not supported yet.")
     }
 
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]
     }
 
-    //
-    //
+    /*
+     =====================
+     idCameraAnim::idCameraAnim
+     =====================
+     */
     init {
         offset = idVec3()
         frameRate = 0
@@ -661,4 +731,8 @@ class idCameraAnim : idCamera() {
         cycle = 1
         activator = idEntityPtr()
     }
+
+    // NOTE: C++ ~idCameraAnim() clears gameLocal camera if this == active camera.
+    // Kotlin has no deterministic destructors; cameras are always explicitly stopped
+    // via Stop(), so this is safe in practice.
 }

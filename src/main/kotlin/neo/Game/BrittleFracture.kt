@@ -258,7 +258,7 @@ object BrittleFracture {
                 j = 0
                 while (j < shards[i]!!.decals.Num()) {
                     shards[i]!!.decals[j] = idFixedWinding()
-                    savefile.ReadWinding(shards[i]!!.decals[j]) //TODO:pointer of begin range?
+                    savefile.ReadWinding(shards[i]!!.decals[j])
                     j++
                 }
                 j = savefile.ReadInt()
@@ -547,7 +547,7 @@ object BrittleFracture {
                 decal.SetNumPoints(winding.GetNumPoints())
                 j = 0
                 while (j < winding.GetNumPoints()) {
-                    decal[j].set(winding[j].ToVec3()) //TODO:double check this.
+                    decal[j].set(winding[j].ToVec3())
                     decal[j].s = st[j].x
                     decal[j].t = st[j].y
                     j++
@@ -599,7 +599,6 @@ object BrittleFracture {
                     super.ClientReceiveEvent(event, time, msg)
                 }
             }
-            //            return false;
         }
 
         override fun UpdateRenderEntity(
@@ -783,14 +782,14 @@ object BrittleFracture {
                 decalTris.numVerts
             )
 
-//	memset( &surface, 0, sizeof( surface ) );
+            // C++: memset( &surface, 0, sizeof( surface ) );
             surface = modelSurface_s()
             surface.shader = material
             surface.id = 0
             surface.geometry = tris
             renderEntity.hModel!!.AddSurface(surface)
 
-//	memset( &surface, 0, sizeof( surface ) );
+            // C++: memset( &surface, 0, sizeof( surface ) );
             surface = modelSurface_s()
             surface.shader = decalMaterial
             surface.id = 1
@@ -813,8 +812,6 @@ object BrittleFracture {
 
         private fun RemoveShard(index: Int) {
             var i: Int
-
-//	delete shards[index];
 
             shards[index] = null
             shards.RemoveIndex(index)
@@ -1253,13 +1250,12 @@ object BrittleFracture {
             return eventCallbacks[event]
         }
 
-        // virtual						~idBrittleFracture( void );
+        // virtual ~idBrittleFracture( void );
         override fun _deconstructor() {
             var i: Int
             i = 0
             while (i < shards.Num()) {
                 shards[i]!!.decals.DeleteContents(true)
-                //shards[i]!!.physicsObj = null
                 shards[i] = null
                 i++
             }
@@ -1281,15 +1277,15 @@ object BrittleFracture {
             }
 
             override fun AllocBuffer(): ByteBuffer {
-                throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+                throw UnsupportedOperationException("Not supported for ModelCallback")
             }
 
             override fun Read(buffer: ByteBuffer) {
-                throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+                throw UnsupportedOperationException("Not supported for ModelCallback")
             }
 
             override fun Write(): ByteBuffer {
-                throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+                throw UnsupportedOperationException("Not supported for ModelCallback")
             }
 
             companion object {

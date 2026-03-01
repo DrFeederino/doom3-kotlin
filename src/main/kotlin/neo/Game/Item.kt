@@ -289,7 +289,7 @@ open class idItem : idEntity() {
                 ang.pitch = ang.roll
                 ang.yaw = (Game_local.gameLocal.time and 4095) * 360.0f / -4096.0f
                 SetAngles(ang)
-                val scale = 0.005 + entityNumber * 0.00001
+                val scale = 0.005f + entityNumber * 0.00001f
                 org.set(orgOrigin)
                 org.z += (4.0f + cos(((Game_local.gameLocal.time + 2000) * scale).toFloat()) * 4.0f)
                 SetOrigin(org)
@@ -493,7 +493,7 @@ open class idItem : idEntity() {
             ServerSendEvent(EVENT_RESPAWNFX, null, false, -1)
         }
         val sfx = spawnArgs.GetString("fxRespawn")
-        if (sfx != "" && !sfx.isEmpty()) {
+        if (sfx.isNotEmpty()) {
             idEntityFx.StartFx(sfx, null, null, this, true)
         }
     }
@@ -504,15 +504,15 @@ open class idItem : idEntity() {
 
     class ModelCallback private constructor() : deferredEntityCallback_t() {
         override fun run(e: renderEntity_s?, v: renderView_s?): Boolean {
-            val ent: idItem
-
             // this may be triggered by a model trace or other non-view related source
             if (null == v) {
                 return false
             }
-            ent = Game_local.gameLocal.entities[e!!.entityNum] as idItem
-            if (null == ent) {
-                idGameLocal.Error("obj.ModelCallback: callback with NULL game entity")
+            // FIX: was `as idItem` which throws ClassCastException on null instead of calling Error()
+            val ent = Game_local.gameLocal.entities[e!!.entityNum] as? idItem
+            if (ent == null) {
+                idGameLocal.Error("idItem::ModelCallback: callback with NULL game entity")
+                return false
             }
             return ent.UpdateRenderEntity(e, v)
         }
@@ -811,19 +811,13 @@ open class idMoveableItem : idItem() {
             val skin: idDeclSkin?
             var   /*jointHandle_t*/joint: Int
             var item: idEntity?
-            var length: Int
 
             // drop all items
             kv = ent.spawnArgs.MatchPrefix(Str.va("def_drop%sItem", type), null)
             while (kv != null) {
                 c = kv.GetKey().toString() // + kv.GetKey().Length();
-                length = kv.GetKey().Length()
-                if (idStr.Icmp(c.substring(length - 5), "Joint") != 0 && idStr.Icmp(
-                        c.substring(
-                            length - 8
-                        ), "Rotation"
-                    ) != 0
-                ) {
+                // FIX: was using substring(length-5) / substring(length-8) which crashes on short keys
+                if (!c.endsWith("Joint", ignoreCase = true) && !c.endsWith("Rotation", ignoreCase = true)) {
                     key = kv.GetKey().toString().substring(4)
                     key2 = key
                     key += "Joint"

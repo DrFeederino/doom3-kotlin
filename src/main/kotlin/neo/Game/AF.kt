@@ -121,6 +121,11 @@ class idAF {
     protected var self // entity using the animated model
             : idEntity?
 
+    /*
+     ================
+     idAF::Save
+     ================
+     */
     fun Save(savefile: idSaveGame) {
         savefile.WriteObject(self)
         savefile.WriteString(GetName())
@@ -134,6 +139,12 @@ class idAF {
         savefile.WriteStaticObject(physicsObj)
     }
 
+    /*
+     ================
+     idAF::Restore
+     ================
+     */
+    // NOTE: Differs from C++ — ReadBool/ReadInt return values instead of pass-by-reference
     fun Restore(savefile: idRestoreGame) {
         savefile.ReadObject(self)
         savefile.ReadString(name)
@@ -168,10 +179,20 @@ class idAF {
         }
     }
 
+    /*
+     ================
+     idAF::SetAnimator
+     ================
+     */
     fun SetAnimator(a: idAnimator?) {
         animator = a
     }
 
+    /*
+     ================
+     idAF::Load
+     ================
+     */
     fun Load(ent: idEntity, fileName: String): Boolean {
         var i: Int
         var j: Int
@@ -180,7 +201,7 @@ class idAF {
         val model: idRenderModel?
         val numJoints: Int
         val joints: Array<idJointMat>
-        assert(ent != null)
+
         self = ent
         physicsObj.SetSelf(self!!)
         if (animator == null) {
@@ -370,10 +391,20 @@ class idAF {
         return Load(ent, fileName.toString())
     }
 
+    /*
+     ================
+     idAF::IsLoaded
+     ================
+     */
     fun IsLoaded(): Boolean {
         return isLoaded && self != null
     }
 
+    /*
+     ================
+     idAF::GetName
+     ================
+     */
     fun GetName(): String {
         return name.toString()
     }
@@ -496,6 +527,11 @@ class idAF {
         physicsObj.UpdateClipModels()
     }
 
+    /*
+     ================
+     idAF::EntitiesTouchingAF
+     ================
+     */
     fun EntitiesTouchingAF(touchList: Array<afTouch_s> /*[ MAX_GENTITIES ]*/): Int {
         var i: Int
         var j: Int
@@ -552,6 +588,11 @@ class idAF {
         return numTouching
     }
 
+    /*
+     ================
+     idAF::Start
+     ================
+     */
     fun Start() {
         if (!IsLoaded()) {
             return
@@ -567,6 +608,11 @@ class idAF {
         isActive = true
     }
 
+    /*
+     ================
+     idAF::StartFromCurrentPose
+     ================
+     */
     fun StartFromCurrentPose(inheritVelocityTime: Int) {
         if (!IsLoaded()) {
             return
@@ -599,16 +645,31 @@ class idAF {
         self!!.Present()
     }
 
+    /*
+     ================
+     idAF::Stop
+     ================
+     */
     fun Stop() {
         // disable the articulated figure for collision detection
         physicsObj.UnlinkClip()
         isActive = false
     }
 
+    /*
+     ================
+     idAF::Rest
+     ================
+     */
     fun Rest() {
         physicsObj.PutToRest()
     }
 
+    /*
+     ================
+     idAF::IsActive
+     ================
+     */
     fun IsActive(): Boolean {
         return isActive
     }
@@ -653,6 +714,11 @@ class idAF {
         }
     }
 
+    /*
+     ================
+     idAF::GetPhysics
+     ================
+     */
     fun GetPhysics(): idPhysics_AF {
         return physicsObj
     }
@@ -694,6 +760,11 @@ class idAF {
         return bounds
     }
 
+    /*
+     ================
+     idAF::UpdateAnimation
+     ================
+     */
     fun UpdateAnimation(): Boolean {
         var i: Int
         val origin = idVec3()
@@ -750,26 +821,52 @@ class idAF {
         return true
     }
 
+    /*
+     ================
+     idAF::GetPhysicsToVisualTransform
+     ================
+     */
     fun GetPhysicsToVisualTransform(origin: idVec3, axis: idMat3) {
         origin.set(baseOrigin.unaryMinus())
         axis.set(baseAxis.Transpose())
     }
 
+    /*
+     ================
+     idAF::GetImpactInfo
+     ================
+     */
+    // NOTE: Differs from C++ — returns impactInfo_s instead of using output parameter
     fun GetImpactInfo(ent: idEntity?, id: Int, point: idVec3): impactInfo_s {
         SetupPose(self, Game_local.gameLocal.time)
         return physicsObj.GetImpactInfo(BodyForClipModelId(id), point)
     }
 
+    /*
+     ================
+     idAF::ApplyImpulse
+     ================
+     */
     fun ApplyImpulse(ent: idEntity?, id: Int, point: idVec3, impulse: idVec3) {
         SetupPose(self, Game_local.gameLocal.time)
         physicsObj.ApplyImpulse(BodyForClipModelId(id), point, impulse)
     }
 
+    /*
+     ================
+     idAF::AddForce
+     ================
+     */
     fun AddForce(ent: idEntity?, id: Int, point: idVec3, force: idVec3) {
         SetupPose(self, Game_local.gameLocal.time)
         physicsObj.AddForce(BodyForClipModelId(id), point, force)
     }
 
+    /*
+     ================
+     idAF::BodyForClipModelId
+     ================
+     */
     fun BodyForClipModelId(id: Int): Int {
         var id = id
         return if (id >= 0) {
@@ -784,6 +881,11 @@ class idAF {
         }
     }
 
+    /*
+     ================
+     idAF::SaveState
+     ================
+     */
     fun SaveState(args: idDict) {
         var i: Int
         var body: idAFBody
@@ -801,6 +903,11 @@ class idAF {
         }
     }
 
+    /*
+     ================
+     idAF::LoadState
+     ================
+     */
     fun LoadState(args: idDict) {
         var kv: idKeyValue?
         val name = idStr()
@@ -833,6 +940,11 @@ class idAF {
         physicsObj.UpdateClipModels()
     }
 
+    /*
+     ================
+     idAF::AddBindConstraints
+     ================
+     */
     fun AddBindConstraints() {
         var kv: idKeyValue?
         val name = idStr()
@@ -911,6 +1023,11 @@ class idAF {
         hasBindConstraints = true
     }
 
+    /*
+     ================
+     idAF::RemoveBindConstraints
+     ================
+     */
     fun RemoveBindConstraints() {
         var kv: idKeyValue?
         if (!IsLoaded()) {
@@ -982,6 +1099,11 @@ class idAF {
         jointMods[index].jointBodyAxis.set(body.GetWorldAxis().times(axis.Transpose()))
     }
 
+    /*
+     ================
+     idAF::LoadBody
+     ================
+     */
     protected fun LoadBody(fb: idDeclAF_Body, joints: Array<idJointMat>): Boolean {
         val id: Int
         var i: Int
@@ -1111,6 +1233,11 @@ class idAF {
         return true
     }
 
+    /*
+     ================
+     idAF::LoadConstraint
+     ================
+     */
     protected fun LoadConstraint(fc: idDeclAF_Constraint): Boolean {
         val body1: idAFBody?
         val body2: idAFBody?
@@ -1270,11 +1397,15 @@ class idAF {
         return true
     }
 
+    /*
+     ================
+     idAF::TestSolid
+     ================
+     */
     protected fun TestSolid(): Boolean {
         var i: Int
         var body: idAFBody?
         val trace = trace_s()
-        //	idStr str;
         var solid: Boolean
         if (!IsLoaded()) {
             return false
@@ -1315,7 +1446,11 @@ class idAF {
         return solid
     }
 
-    // ~idAF( void );
+    /*
+     ================
+     idAF::idAF
+     ================
+     */
     init {
         name = idStr()
         physicsObj = idPhysics_AF()
@@ -1338,6 +1473,7 @@ class idAF {
      GetJointTransform
      ================
      */
+    // NOTE: Differs from C++ — implemented as inner class singleton instead of static function, to match getJointTransform_t callback pattern
     internal class GetJointTransform private constructor() : getJointTransform_t() {
         override fun run(
             model: Any,

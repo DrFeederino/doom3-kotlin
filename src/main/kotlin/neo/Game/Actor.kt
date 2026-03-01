@@ -2179,8 +2179,9 @@ open class idActor : idAFEntity_Gibbable() {
         val flags: animFlags_t?
         val headEnt: idEntity?
         val anim: Int
-        // for some reason we are coming with typos in animation's name? standstand? range_attackk?
-        // UPD: Something generates an incorrect animation name in animation class, this is why animation names are duplicated and it causes GetAnim to retun a wrong channel
+        // NOTE: Differs from C++ — this hack is NOT in the original source. It works around a Kotlin-side
+        // animation name duplication bug (e.g., "standstand" instead of "stand"). The root cause should be
+        // fixed in the animation system rather than patched here.
         if (animName == "standstand") {
             animName = animName.substring(0, animName.length / 2)
         }
@@ -2783,7 +2784,8 @@ open class idActor : idAFEntity_Gibbable() {
     //
     //
     init {
-        viewAxis = idMat3.getMat3_identity()
+        viewAxis =
+            idMat3() // FIX: Was getMat3_identity() which may return shared static singleton — using viewAxis.set() later would corrupt the shared identity matrix (reference aliasing bug)
         viewAxis.Identity()
         scriptThread = null // initialized by ConstructScriptObject, which is called by idEntity::Spawn
         use_combat_bbox = false

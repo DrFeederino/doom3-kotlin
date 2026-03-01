@@ -74,9 +74,9 @@ class idAngles : SERiAL {
     //public	float &			operator[]( int index );
     operator fun set(index: Int, value: Float) {
         when (index) {
+            0 -> pitch = value
             1 -> yaw = value
             2 -> roll = value
-            else -> pitch = value
         }
     }
 

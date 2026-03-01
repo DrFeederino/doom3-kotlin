@@ -315,6 +315,29 @@ class idMoveState {
         lastMoveTime = 0
         anim = 0
     }
+
+    // Deep copy all fields from another idMoveState
+    fun copyFrom(other: idMoveState) {
+        moveType = other.moveType
+        moveCommand = other.moveCommand
+        moveStatus = other.moveStatus
+        moveDest.set(other.moveDest)
+        moveDir.set(other.moveDir)
+        goalEntity.oSet(other.goalEntity.GetEntity())
+        goalEntityOrigin.set(other.goalEntityOrigin)
+        toAreaNum = other.toAreaNum
+        startTime = other.startTime
+        duration = other.duration
+        speed = other.speed
+        range = other.range
+        wanderYaw = other.wanderYaw
+        nextWanderTime = other.nextWanderTime
+        blockTime = other.blockTime
+        obstacle.oSet(other.obstacle.GetEntity())
+        lastMoveOrigin.set(other.lastMoveOrigin)
+        lastMoveTime = other.lastMoveTime
+        anim = other.anim
+    }
 }
 
 class idAASFindCover(hideFromPos: idVec3) : AAS.idAASCallback() {
@@ -509,25 +532,32 @@ open class idAI : idActor() {
             )
 
             // get a source position outside the obstacles
+            // FIX: ToVec2() returns a disconnected copy in Kotlin. In C++, it returns a reference
+            // to the first two components of the idVec3, so modifications propagate back.
+            // Use a temp idVec2 and write back to the idVec3.
+            val startPosVec2 = path.startPosOutsideObstacles.ToVec2()
             GetPointOutsideObstacles(
                 obstacles,
                 numObstacles,
-                path.startPosOutsideObstacles.ToVec2(),
+                startPosVec2,
                 insideObstacle,
                 CInt()
             )
+            path.startPosOutsideObstacles.set(startPosVec2)
             if (insideObstacle._val != -1) {
                 path.startPosObstacle = obstacles[insideObstacle._val].entity
             }
 
             // get a goal position outside the obstacles
+            val seekPosVec2 = path.seekPosOutsideObstacles.ToVec2()
             GetPointOutsideObstacles(
                 obstacles,
                 numObstacles,
-                path.seekPosOutsideObstacles.ToVec2(),
+                seekPosVec2,
                 insideObstacle,
                 CInt()
             )
+            path.seekPosOutsideObstacles.set(seekPosVec2)
             if (insideObstacle._val != -1) {
                 path.seekPosObstacle = obstacles[insideObstacle._val].entity
             }
@@ -6858,7 +6888,9 @@ open class idAI : idActor() {
     }
 
     protected fun Event_SaveMove() {
-        savedMove = move
+        // FIX: Was `savedMove = move` which copies the reference (both point to same object).
+        // C++ performs a memberwise value copy. Use copyFrom() for deep copy.
+        savedMove.copyFrom(move)
     }
 
     protected fun Event_RestoreMove() {
@@ -7042,11 +7074,13 @@ open class idAI : idActor() {
     }
 
     protected fun Event_LookAtEntity(_ent: idEventArg<idEntity>, duration: idEventArg<Float>) {
-        var ent = _ent.value
+        var ent: idEntity? = _ent.value
+        // FIX: C++ sets ent = NULL when looking at self, then falls through to the second if.
+        // Was using else-if (mutually exclusive) and had the null assignment commented out.
         if (ent === this) {
-            // TODO: Check how it will impact us
-            //_ent.value = null
-        } else if (ent !== focusEntity.GetEntity() || focusTime < Game_local.gameLocal.time) {
+            ent = null
+        }
+        if (ent !== focusEntity.GetEntity() || focusTime < Game_local.gameLocal.time) {
             focusEntity.oSet(ent)
             alignHeadTime = Game_local.gameLocal.time
             forceAlignHeadTime = (Game_local.gameLocal.time + SEC2MS(1.0f)).toInt()
@@ -7323,15 +7357,14 @@ open class idAI : idActor() {
         val pos = idVec3()
         if (move.moveType != moveType_t.MOVETYPE_FLY) {
             if (!ent.GetFloorPos(64.0f, pos)) {
-
-                // NOTE: not a good way to return 'false'
-                /*return*/
+                // FIX: Was missing return; C++ uses `return idThread::ReturnVector(vec3_zero)`
                 idThread.ReturnVector(getVec3_zero())
+                return
             }
             if (ent is idActor && (ent as idActor).OnLadder()) {
-                /*return*/ // NOTE: not a good way to return 'false'
-                /*return*/
+                // FIX: Was missing return; C++ uses `return idThread::ReturnVector(vec3_zero)`
                 idThread.ReturnVector(getVec3_zero())
+                return
             }
         } else {
             pos.set(ent.GetPhysics().GetOrigin())

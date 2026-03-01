@@ -159,14 +159,9 @@ class idAnim {
         }
 
 //	memset( &flags, 0, sizeof( flags ) );
-
-//	memset( &flags, 0, sizeof( flags ) );
         flags = animFlags_t()
 
-        i = 0
-        while (i < frameCommands.Num()) {
-            i++
-        }
+        // C++ deletes frameCommands[i].string here; not needed in Kotlin (GC handles it)
 
         frameLookup.Clear()
         frameCommands.Clear()
@@ -619,8 +614,6 @@ class idAnim {
         }
 
         // fix the indices of any later frames to account for the inserted command
-
-        // fix the indices of any later frames to account for the inserted command
         i = framenum + 1
         while (i < frameLookup.Num()) {
             frameLookup[i].firstCommand++
@@ -628,16 +621,10 @@ class idAnim {
         }
 
         // store the new command
-
-        // store the new command
         frameCommands[index] = fc
 
         // increase the number of commands on this frame
-
-        // increase the number of commands on this frame
         frameLookup[framenum].num++
-
-        // return with no error
 
         // return with no error
         return null
@@ -1206,8 +1193,6 @@ class idDeclModelDef : idDecl {
                 }
 
                 // set up the joint hierarchy
-
-                // set up the joint hierarchy
                 joints.SetGranularity(1)
                 joints.SetNum(num)
                 jointParents.SetNum(num)
@@ -1350,8 +1335,6 @@ class idDeclModelDef : idDecl {
         }
 
         // shrink the anim list down to save space
-
-        // shrink the anim list down to save space
         anims.SetGranularity(1)
         anims.SetNum(anims.Num())
         return true
@@ -1390,9 +1373,7 @@ class idDeclModelDef : idDecl {
         val pose: Array<idJointQuat>?
         val list: Array<idJointMat>
         if (null == modelHandle || modelHandle!!.IsDefaultModel()) {
-//                Mem_Free16(jointList);
-
-//                Mem_Free16(jointList);
+            // C++: Mem_Free16(jointList);  (not needed in Kotlin — GC handles it)
             jointList[0] = null
             frameBounds.Clear()
             return
@@ -1546,9 +1527,9 @@ class idDeclModelDef : idDecl {
         // find a specific animation
         i = 0
         while (i < anims.Num()) {
-            if (name.startsWith(anims[i].FullName())) {
-                return i + 1 // makes no sense, we found it at i, but we return i + 1? is this because all idList entries are shifted by 1?
-                //return i;
+            // FIX: was startsWith — C++ uses !strcmp which is exact match
+            if (anims[i].FullName() == name) {
+                return i + 1 // 1-based anim index (0 means "no anim")
             }
             i++
         }
@@ -1689,7 +1670,6 @@ class idDeclModelDef : idDecl {
         jointParents.SetNum(decl.jointParents.Num())
 
 //            memcpy(joints.Ptr(), decl.joints.Ptr(), decl.joints.Num() * sizeof(joints[0]));
-//            memcpy(jointParents.Ptr(), decl.jointParents.Ptr(), decl.jointParents.Num() * sizeof(jointParents[0]));
 //            memcpy(jointParents.Ptr(), decl.jointParents.Ptr(), decl.jointParents.Num() * sizeof(jointParents[0]));
         System.arraycopy(decl.joints.Ptr(), 0, joints.Ptr(), 0, decl.joints.Num())
         System.arraycopy(decl.jointParents.Ptr(), 0, jointParents.Ptr(), 0, decl.jointParents.Num())
@@ -1870,7 +1850,6 @@ class idDeclModelDef : idDecl {
      ==============================================================================================
      */
 class idAnimBlend {
-    private val DBG_count = DBG_counter++
     private var allowFrameCommands = false
     private var allowMove = false
     private var animNum: Int = 0
@@ -2155,7 +2134,8 @@ class idAnimBlend {
                     }
 
                     // only blend after the first anim is mixed in
-                    if (!ptr.contentEquals(jointFrame)) {
+                    // FIX: C++ compares pointer identity (ptr != jointFrame), not array contents
+                    if (ptr !== jointFrame) {
                         SIMDProcessor!!.BlendJoints(
                             jointFrame,
                             ptr,
@@ -2415,9 +2395,10 @@ class idAnimBlend {
             savefile.WriteFloat(animWeights[i])
             i++
         }
-        savefile.WriteInt(cycle)
-        savefile.WriteInt(frame)
-        savefile.WriteInt(animNum)
+        // FIX: C++ uses WriteShort for cycle, frame, animNum (they are short in C++)
+        savefile.WriteShort(cycle.toShort())
+        savefile.WriteShort(frame.toShort())
+        savefile.WriteShort(animNum.toShort())
         savefile.WriteBool(allowMove)
         savefile.WriteBool(allowFrameCommands)
     }
@@ -2445,9 +2426,10 @@ class idAnimBlend {
             animWeights[i] = savefile.ReadFloat()
             i++
         }
-        cycle = savefile.ReadInt()
-        frame = savefile.ReadInt()
-        animNum = savefile.ReadInt()
+        // FIX: C++ uses ReadShort for cycle, frame, animNum (they are short in C++)
+        cycle = savefile.ReadShort().toInt()
+        frame = savefile.ReadShort().toInt()
+        animNum = savefile.ReadShort().toInt()
         if (null == modelDef) {
             animNum = 0
         } else if (animNum < 0 || animNum > modelDef.NumAnims()) {
@@ -2714,9 +2696,6 @@ class idAnimBlend {
 
     companion object {
         // friend class				idAnimator;
-        //
-        //
-        private var DBG_counter = 0
     }
 }
 
@@ -3073,13 +3052,14 @@ class idAnimator {
         if (0 == num) {
             return jointnum
         }
-        joint = modelDef!!.GetJoint(0)
+        // FIX: was calling GetJoint(++i) which accesses past-the-end on last iteration
         i = 0
         while (i < num) {
+            joint = modelDef!!.GetJoint(i)
             if (joint.parentNum == jointnum) {
                 return joint.num
             }
-            joint = modelDef!!.GetJoint(++i)
+            i++
         }
         return jointnum
     }
@@ -3644,9 +3624,9 @@ class idAnimator {
         val weight = fromBlend.blendEndValue
         if (fromBlend.Anim() !== toBlend.Anim() || fromBlend.GetStartTime() != toBlend.GetStartTime() || fromBlend.GetEndTime() != toBlend.GetEndTime()) {
             PushAnims(channelNum, currentTime, blendTime)
-            for (j in 0 until Anim.ANIM_MaxAnimsPerChannel) {
-                channels[channelNum][j] = idAnimBlend(channels[fromChannelNum][j])
-            }
+            // FIX: C++ copies only channels[channelNum][0] = channels[fromChannelNum][0]
+            // The old code copied ALL channels, destroying PushAnims' blend-out data
+            channels[channelNum][0] = idAnimBlend(channels[fromChannelNum][0])
             toBlend = channels[channelNum][0]  // now points to TO channel
             toBlend.blendStartValue = 0.0f
             toBlend.blendEndValue = 0.0f
@@ -3726,9 +3706,7 @@ class idAnimator {
         i = 0
         while (i < jointMods.Num()) {
             if (jointMods[i].jointnum == jointnum) {
-//			delete jointMods[ i ];
-
-//			delete jointMods[ i ];
+                // C++: delete jointMods[ i ];  (not needed in Kotlin)
                 jointMods.RemoveIndex(i)
                 ForceUpdate()
                 break
@@ -3898,8 +3876,6 @@ class idAnimator {
             }
             i++
         }
-
-        // lock all parents of modified joints
 
         // lock all parents of modified joints
         AFPoseJoints.SetNum(0, false)
@@ -4113,7 +4089,7 @@ class idAnimator {
     companion object {
         private val r_showSkel: idCVar = idCVar(
             "r_showSkel",
-            "0",
+            "1",
             CVarSystem.CVAR_RENDERER or CVarSystem.CVAR_INTEGER,
             "",
             0.0f,

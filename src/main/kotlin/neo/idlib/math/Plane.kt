@@ -105,12 +105,13 @@ class idPlane {
     }
 
     operator fun set(index: Int, value: Float): Float {
-        return when (index) {
+        when (index) {
             0 -> value.also { abc.x = it }
             1 -> value.also { abc.y = it }
             2 -> value.also { abc.z = it }
-            else -> value.also { d = it }
+            3 -> value.also { d = it }
         }
+        return value
     }
 
     fun plusAssign(index: Int, value: Float): Float {

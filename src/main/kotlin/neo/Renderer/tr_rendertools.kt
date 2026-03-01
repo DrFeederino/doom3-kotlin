@@ -1943,7 +1943,7 @@ object tr_rendertools {
                 )
             }
             i++
-            text = rb_debugText[++text_index]
+            text = rb_debugText[text_index++]
         }
         if (!r_debugLineDepthTest!!.GetBool()) {
             qgl.qglEnable(GL11.GL_DEPTH_TEST)
@@ -1962,7 +1962,7 @@ object tr_rendertools {
                 )
             }
             i++
-            text = rb_debugText[++text_index]
+            text = rb_debugText[text_index++]
         }
         qgl.qglLineWidth(1.0f)
         tr_backend.GL_State(GLS_DEFAULT)

@@ -214,8 +214,11 @@ fun GetPointOutsideObstacles(
 //	memset( obstacleVisited, 0, numObstacles * sizeof( obstacleVisited[0] ) );
     obstacleVisited[bestObstacle] = true
     bestd = idMath.INFINITY
-    i = queue[0]
+    // FIX: Restructured from C++ for-loop pattern to avoid OOB on queue array.
+    // C++ for(i=queue[0]; queueStart<queueEnd; i=queue[++queueStart]) reads past
+    // array end in the update clause when loop terminates (benign UB in C++, OOB crash in Kotlin).
     while (queueStart < queueEnd) {
+        i = queue[queueStart]
         w1.set(obstacles[i].winding)
         w1.Expand(PUSH_OUTSIDE_OBSTACLES)
         j = 0
@@ -267,7 +270,7 @@ fun GetPointOutsideObstacles(
             edgeNum._val = bestEdgeNum
             return
         }
-        i = queue[++queueStart]
+        queueStart++
     }
     Game_local.gameLocal.Warning("GetPointOutsideObstacles: no valid point found")
 }
@@ -960,7 +963,10 @@ fun OptimizePath(
         }
 
         // store the next position along the optimized path
-        optimizedPath[numPathPoints++] = nextNode.pos
+        // FIX: Was `optimizedPath[numPathPoints++] = nextNode.pos` which stores a reference.
+        // C++ copies the value via idVec2 assignment operator.
+        optimizedPath[numPathPoints].set(nextNode.pos)
+        numPathPoints++
         curNode = nextNode
     }
     return numPathPoints

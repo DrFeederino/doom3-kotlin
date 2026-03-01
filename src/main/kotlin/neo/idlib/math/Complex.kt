@@ -38,10 +38,9 @@ class idComplex {
 
     operator fun set(index: Int, value: Float) {
         assert(index in 0..1)
-        if (0 == index) {
-            r = value
-        } else {
-            i = value
+        when (index) {
+            0 -> r = value
+            1 -> i = value
         }
     }
 

@@ -47,6 +47,7 @@ import neo.Renderer.Model.idRenderModel
 import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderEntity_s
+import neo.TempDump
 import neo.cm.trace_s
 import neo.framework.Common
 import neo.framework.DeclAF.getJointTransform_t
@@ -140,6 +141,20 @@ open class idMultiModelAF : idEntity() {
     }
 
     //							~idMultiModelAF( void );
+    // FIX: Added missing destructor - C++ frees entity defs for all model handles
+    override fun _deconstructor() {
+        var i: Int
+        i = 0
+        while (i < modelDefHandles.Num()) {
+            if (modelDefHandles[i] != -1) {
+                Game_local.gameRenderWorld!!.FreeEntityDef(modelDefHandles[i])
+                modelDefHandles[i] = -1
+            }
+            i++
+        }
+        super._deconstructor()
+    }
+
     override fun Think() {
         RunPhysics()
         Present()
@@ -323,6 +338,13 @@ class idAFAttachment : idAnimatedEntity() {
     protected var idleAnim = 0
 
     // virtual					~idAFAttachment( void );
+    // FIX: Added missing destructor - C++ stops sounds and deletes combatModel
+    override fun _deconstructor() {
+        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+        combatModel = null
+        super._deconstructor()
+    }
+
     override fun Spawn() {
         super.Spawn()
         idleAnim = animator.GetAnim("idle")
@@ -556,6 +578,12 @@ open class idAFEntity_Base : idAnimatedEntity() {
             : Int
     protected val spawnAxis // rotation axis used when spawned
             : idMat3
+
+    // FIX: Added missing destructor - C++ deletes combatModel
+    override fun _deconstructor() {
+        combatModel = null
+        super._deconstructor()
+    }
 
     override fun Spawn() {
         super.Spawn()
@@ -1665,8 +1693,9 @@ class idAFEntity_VehicleFourWheels : idAFEntity_Vehicle() {
                     wheelBodyKeys[i]
                 )
             }
-            wheels[i] = af.GetPhysics().GetBody(wheelBodyName)!!
-            if (null == wheels[i]) {
+            // FIX: Removed !! that would NPE before null check could execute
+            wheels[i] = af.GetPhysics().GetBody(wheelBodyName)
+            if (wheels[i] == null) {
                 idGameLocal.Error(
                     "idAFEntity_VehicleFourWheels '%s' can't find wheel body '%s'",
                     name,
@@ -1873,7 +1902,8 @@ class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
                     wheelBodyKeys[i]
                 )
             }
-            wheels[i] = af.GetPhysics().GetBody(wheelBodyName)!!
+            // FIX: Removed !! that would NPE before null check could execute
+            wheels[i] = af.GetPhysics().GetBody(wheelBodyName)
             if (wheels[i] == null) {
                 idGameLocal.Error(
                     "idAFEntity_VehicleSixWheels '%s' can't find wheel body '%s'",
@@ -2089,6 +2119,14 @@ class idAFEntity_SteamPipe : idAFEntity_Base() {
     private var steamUpForce = 0.0f
 
     // ~idAFEntity_SteamPipe();
+    // FIX: Added missing destructor - C++ frees steamModelDefHandle entity def
+    override fun _deconstructor() {
+        if (steamModelDefHandle >= 0) {
+            Game_local.gameRenderWorld!!.FreeEntityDef(steamModelDefHandle)
+        }
+        super._deconstructor()
+    }
+
     override fun Spawn() {
         super.Spawn()
         val steamDir = idVec3()

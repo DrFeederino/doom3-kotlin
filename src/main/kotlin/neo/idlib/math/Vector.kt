@@ -201,11 +201,11 @@ class idVec2 : idVec<idVec2>, SERiAL {
     }
 
     override fun set(index: Int, value: Float): Float {
-        return if (index == 1) {
-            value.also { y = it }
-        } else {
-            value.also { x = it }
+        when (index) {
+            0 -> x = value
+            1 -> y = value
         }
+        return value
     }
 
     fun plusAssign(index: Int, value: Float): Float {
@@ -1048,12 +1048,10 @@ open class idVec3 : idVec<idVec3>, SERiAL {
 
     override fun set(i: Int, value: Float): Float {
         assert(!value.isNaN())
-        if (i == 1) {
-            y = value
-        } else if (i == 2) {
-            z = value
-        } else {
-            x = value
+        when (i) {
+            0 -> x = value
+            1 -> y = value
+            2 -> z = value
         }
         return value
     }
@@ -1414,12 +1412,14 @@ class idVec4 : idVec<idVec4>, SERiAL {
     }
 
     override fun set(i: Int, value: Float): Float {
-        return when (i) {
-            1 -> value.also { y = it }
-            2 -> value.also { z = it }
-            3 -> value.also { w = it }
-            else -> value.also { x = it }
+        when (i) {
+            0 -> x = value
+            1 -> y = value
+            2 -> z = value
+            3 -> w = value
         }
+
+        return value
     }
 
     fun plusAssign(i: Int, value: Float): Float {
@@ -1537,13 +1537,14 @@ class idVec5 : idVec<idVec5>, SERiAL {
     }
 
     override fun set(i: Int, value: Float): Float {
-        return when (i) {
-            1 -> value.also { y = it }
-            2 -> value.also { z = it }
-            3 -> value.also { s = it }
-            4 -> value.also { t = it }
-            else -> value.also { x = it }
+        when (i) {
+            0 -> x = value
+            1 -> y = value
+            2 -> z = value
+            3 -> s = value
+            4 -> t = value
         }
+        return value
     }
 
     override fun set(a: idVec5): idVec5 {
@@ -1866,7 +1867,8 @@ class idVec6 : idVec<idVec6>, SERiAL {
     }
 
     override fun set(index: Int, value: Float): Float {
-        return value.also { p[index] = it }
+        p[index] = value
+        return value
     }
 
     //
