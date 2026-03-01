@@ -592,7 +592,6 @@ object Anim_Blend {
                     fc.string.set(token)
                 }
             } else {
-                println(String.format("didnt find anim token %s", token.toString()))
                 return Str.va("Unknown command '%s'", token)
             }
 

@@ -1441,18 +1441,6 @@ object Physics_Player {
             clipModel!!.SetPosition(current.origin, clipModel!!.GetAxis())
             EvaluateContacts()
 
-            // TEMP DEBUG: Log contact info
-            if (contacts.Num() == 0) {
-                Game_local.gameLocal.Printf("CheckGround: NO contacts at origin %s\n", current.origin.ToString(2))
-            } else {
-                for (idx in 0 until contacts.Num()) {
-                    Game_local.gameLocal.Printf(
-                        "CheckGround: contact[%d] entity=%d normal=%s\n",
-                        idx, contacts[idx].entityNum, contacts[idx].normal.ToString(2)
-                    )
-                }
-            }
-            // END DEBUG
             // setup a ground trace from the contacts
             groundTrace.endpos.set(current.origin)
             groundTrace.endAxis.set(clipModel!!.GetAxis())
