@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/game/Moveable.h, neo/game/Moveable.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
 package neo.Game
 
 import neo.Game.Animation.idDeclModelDef
@@ -164,7 +181,7 @@ object Moveable {
             }
 
             // get rigid body properties
-            spawnArgs.GetFloat("density", "0.5f", density)
+            spawnArgs.GetFloat("density", "0.5", density)
             density._val = (idMath.ClampFloat(0.001f, 1000.0f, density._val))
             spawnArgs.GetFloat("friction", "0.05", friction)
             friction._val = (idMath.ClampFloat(0.0f, 1.0f, friction._val))
@@ -197,7 +214,11 @@ object Moveable {
             // setup the physics
             physicsObj.SetSelf(this)
             physicsObj.SetClipModel(idClipModel(trm), density._val)
-            physicsObj.GetClipModel()!!.SetMaterial(GetRenderModelMaterial()!!)
+            // FIX: C++ SetMaterial accepts null; Kotlin requires non-null. Guard with null check.
+            val clipMaterial = GetRenderModelMaterial()
+            if (clipMaterial != null) {
+                physicsObj.GetClipModel()!!.SetMaterial(clipMaterial)
+            }
             physicsObj.SetOrigin(GetPhysics().GetOrigin())
             physicsObj.SetAxis(GetPhysics().GetAxis())
             physicsObj.SetBouncyness(bouncyness._val)
@@ -415,11 +436,11 @@ object Moveable {
                         val dir = idVec3(initialSplineDir.times(physicsObj.GetAxis()))
                         val angularVelocity = idVec3(dir.Cross(splineDir))
                         angularVelocity.Normalize()
-                        angularVelocity.timesAssign(idMath.ACos16(dir.times(splineDir) / splineDir.Length()) * UsercmdGen.USERCMD_HZ) //TODO:back reference from ACos16
+                        angularVelocity.timesAssign(idMath.ACos16(dir.times(splineDir) / splineDir.Length()) * UsercmdGen.USERCMD_HZ)
                         physicsObj.SetAngularVelocity(angularVelocity)
                         return true
                     } else {
-//			delete initialSpline;
+                        // C++: delete initialSpline; initialSpline = NULL;
                         null
                     }
             }
@@ -472,12 +493,11 @@ object Moveable {
         }
 
         override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
-        /**
-         *
-         */
+        // NOTE: Kotlin workaround — calls grandparent idEntity.Damage() since Kotlin
+        // doesn't support skipping override levels like C++ does with idEntity::Damage(...)
         fun idEntity_Damage(
             inflictor: idEntity?,
             attacker: idEntity?,
@@ -884,7 +904,8 @@ object Moveable {
                     //}
                     dir2.Normalize()
                     Game_local.gameLocal.SpawnEntityDef(debris_args, ent, false)
-                    if (ent.isEmpty() || ent[0] !is idDebris) {
+                    // FIX: Was ent.isEmpty() which is always false since arrayOfNulls(1) has size 1
+                    if (ent[0] == null || ent[0] !is idDebris) {
                         idGameLocal.Error("'projectile_debris' is not an idDebris")
                     }
                     debris = ent[0] as idDebris
@@ -941,7 +962,6 @@ object Moveable {
                     super.ClientReceiveEvent(event, time, msg)
                 }
             }
-            //            return false;
         }
 
         private fun AddParticles(name: String?, burn: Boolean) {
@@ -949,9 +969,8 @@ object Moveable {
                 if (particleModelDefHandle >= 0) {
                     Game_local.gameRenderWorld!!.FreeEntityDef(particleModelDefHandle)
                 }
-                //		memset( &particleRenderEntity, 0, sizeof ( particleRenderEntity ) );
-                particleRenderEntity =
-                    renderEntity_s() //TODO:remove memset0 function from whatever fucking class got it!!!
+                //  memset( &particleRenderEntity, 0, sizeof( particleRenderEntity ) )
+                particleRenderEntity = renderEntity_s()
                 val modelDef = DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, name) as idDeclModelDef
                 if (modelDef != null) {
                     particleRenderEntity.origin.set(physicsObj.GetAbsBounds().GetCenter())

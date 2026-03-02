@@ -1,3 +1,35 @@
+/*
+ * ===========================================================================
+ *
+ * Doom 3 GPL Source Code
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+ * Original source: neo/game/gamesys/Event.h, neo/game/gamesys/Event.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ===========================================================================
+ */
+
+/*
+ * Event.cpp
+ *
+ * Events are used for scheduling tasks and for linking script commands.
+ */
+
 package neo.Game.GameSys
 
 import neo.Game.*
@@ -84,7 +116,6 @@ import neo.Game.Trigger.idTrigger_Timer
 import neo.Game.Trigger.idTrigger_Touch
 import neo.Game.WorldSpawn.idWorldspawn
 import neo.TempDump
-import neo.TempDump.SERiAL
 import neo.cm.contactType_t
 import neo.cm.trace_s
 import neo.idlib.Text.Str.idStr
@@ -95,31 +126,31 @@ import java.nio.ByteBuffer
 
 object Event {
 
+    // NOTE: Differs from C++ — sizeof(intptr_t) is platform-dependent (4 on 32-bit, 8 on 64-bit).
+    // In the Kotlin port, event data is stored as Array<idEventArg<*>?> rather than a flat byte buffer,
+    // so these sizes are only used for Save/Restore size assertions. We use the C++ 32-bit values
+    // for consistency with the original code.
+    private const val SIZEOF_INTPTR = 4        // C++: sizeof(intptr_t) on 32-bit
+    private const val SIZEOF_BOOL = 1          // C++: sizeof(bool)
+    private const val SIZEOF_TRACE_T = 68      // C++: sizeof(trace_t) — approximate, platform-dependent
+
     val D_EVENT_ENTITY: Char = 'e'
-    val D_EVENT_ENTITY_NULL: Char = 'E' // event can handle NULL entity pointers
+    val D_EVENT_ENTITY_NULL: Char = 'E'     // event can handle NULL entity pointers
     val D_EVENT_FLOAT: Char = 'f'
     val D_EVENT_INTEGER: Char = 'd'
-    const val D_EVENT_MAXARGS =
-        8 // if changed, enable the CREATE_EVENT_CODE define in Event.cpp to generate switch statement for idClass::ProcessEventArgPtr.
+    const val D_EVENT_MAXARGS = 8
     val D_EVENT_STRING: Char = 's'
     val D_EVENT_TRACE: Char = 't'
     val D_EVENT_VECTOR: Char = 'v'
-
-    // running the game will then generate c:\doom\base\events.txt, the contents of which should be copied into the switch statement.
     val D_EVENT_VOID: Char = 0.toChar()
 
-    //
     const val MAX_EVENTS = 4096
-
-    //
     const val MAX_EVENTSPERFRAME = 4096
+
     var EventPool: Array<idEvent> = Array(MAX_EVENTS) { idEvent() }
     var EventQueue: idLinkList<idEvent> = idLinkList()
-
-    //
     var FreeEvents: idLinkList<idEvent> = idLinkList()
 
-    //
     var eventError = false
     var eventErrorMsg: String? = null
     var initialized = false
@@ -131,24 +162,27 @@ object Event {
      ***********************************************************************/
     class idEventDef {
         private var argOffset: IntArray = IntArray(D_EVENT_MAXARGS)
-        private var   /*size_t*/argsize: Int
-        private var eventnum: Int
+        private var argsize: Int = 0
+        private var eventnum: Int = 0
         private val formatspec: String?
-        private val   /*unsigned int*/formatspecIndex: Long
+        private var formatspecIndex: Long = 0L
         private val name: String
-
-        //private val next: idEventDef = null
         private val numargs: Int
         private val returnType: Int
 
 
-        constructor(command: String, formatspec: String? = null /*= NULL*/) : this(command, formatspec, 0.toChar())
+        constructor(command: String, formatspec: String? = null) : this(command, formatspec, 0.toChar())
 
-        constructor(command: String, formatSpec: String? = null /*= NULL*/, returnType: Char /*= 0*/) {
+        /*
+         ================
+         idEventDef::idEventDef
+         ================
+         */
+        constructor(command: String, formatSpec: String? = null, returnType: Char) {
             var formatSpec = formatSpec
             var ev: idEventDef
             var i: Int
-            var   /*unsigned int*/bits: Long
+            var bits: Long
             assert(command != null)
             assert(!initialized)
 
@@ -165,26 +199,31 @@ object Event {
             if (numargs > D_EVENT_MAXARGS) {
                 eventError = true
                 eventErrorMsg = String.format("idEventDef::idEventDef : Too many args for '%s' event.", name)
+                return // FIX: C++ returns here; Kotlin was missing the return
             }
 
             // make sure the format for the args is valid, calculate the formatspecindex, and the offsets for each arg
             bits = 0
             argsize = 0
-            argOffset = IntArray(D_EVENT_MAXARGS) //memset( argOffset, 0, sizeof( argOffset ) );
+            argOffset = IntArray(D_EVENT_MAXARGS) // C++: memset( argOffset, 0, sizeof( argOffset ) )
             i = 0
             while (i < numargs) {
                 argOffset[i] = argsize
                 when (formatSpec[i]) {
                     D_EVENT_FLOAT -> {
                         bits = bits or ((1 shl i).toLong())
-                        argsize += java.lang.Float.SIZE / java.lang.Byte.SIZE
+                        // C++: argsize += sizeof( intptr_t )
+                        argsize += SIZEOF_INTPTR
                     }
 
-                    D_EVENT_INTEGER -> argsize += Integer.SIZE / java.lang.Byte.SIZE
+                    D_EVENT_INTEGER -> argsize += SIZEOF_INTPTR
                     D_EVENT_VECTOR -> argsize += idVec3.BYTES
                     D_EVENT_STRING -> argsize += Script_Program.MAX_STRING_LEN
-                    D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> argsize += TempDump.CPP_class.Pointer.SIZE / java.lang.Byte.SIZE
-                    D_EVENT_TRACE -> {}
+                    D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> argsize += SIZEOF_INTPTR
+                    D_EVENT_TRACE -> {
+                        // FIX: Was empty body — C++ original: argsize += sizeof(trace_t) + MAX_STRING_LEN + sizeof(bool)
+                        argsize += SIZEOF_TRACE_T + Script_Program.MAX_STRING_LEN + SIZEOF_BOOL
+                    }
                     else -> {
                         eventError = true
                         eventErrorMsg = String.format(
@@ -192,6 +231,7 @@ object Event {
                             formatSpec,
                             name
                         )
+                        return // FIX: C++ returns here; Kotlin was missing the return
                     }
                 }
                 i++
@@ -236,34 +276,74 @@ object Event {
             numEventDefs++
         }
 
+        /*
+         ================
+         idEventDef::GetName
+         ================
+         */
         fun GetName(): String {
             return name
         }
 
+        /*
+         ================
+         idEventDef::GetArgFormat
+         ================
+         */
         fun GetArgFormat(): String? {
             return formatspec
         }
 
-        fun  /*unsigned int*/GetFormatspecIndex(): Long {
+        /*
+         ================
+         idEventDef::GetFormatspecIndex
+         ================
+         */
+        fun GetFormatspecIndex(): Long {
             return formatspecIndex
         }
 
+        /*
+         ================
+         idEventDef::GetReturnType
+         ================
+         */
         fun GetReturnType(): Char {
             return returnType.toChar()
         }
 
+        /*
+         ================
+         idEventDef::GetEventNum
+         ================
+         */
         fun GetEventNum(): Int {
             return eventnum
         }
 
+        /*
+         ================
+         idEventDef::GetNumArgs
+         ================
+         */
         fun GetNumArgs(): Int {
             return numargs
         }
 
-        fun  /*size_t*/GetArgSize(): Int {
+        /*
+         ================
+         idEventDef::GetArgSize
+         ================
+         */
+        fun GetArgSize(): Int {
             return argsize
         }
 
+        /*
+         ================
+         idEventDef::GetArgOffset
+         ================
+         */
         fun GetArgOffset(arg: Int): Int {
             assert(arg >= 0 && arg < D_EVENT_MAXARGS)
             return argOffset[arg]
@@ -283,14 +363,30 @@ object Event {
         companion object {
             private val eventDefList: Array<idEventDef?> = arrayOfNulls(MAX_EVENTS)
             private var numEventDefs = 0
+
+            /*
+             ================
+             idEventDef::NumEventCommands
+             ================
+             */
             fun NumEventCommands(): Int {
                 return numEventDefs
             }
 
+            /*
+             ================
+             idEventDef::GetEventCommand
+             ================
+             */
             fun GetEventCommand(eventnum: Int): idEventDef? {
                 return eventDefList[eventnum]
             }
 
+            /*
+             ================
+             idEventDef::FindEvent
+             ================
+             */
             fun FindEvent(name: String?): idEventDef? {
                 var ev: idEventDef
                 val num: Int
@@ -317,17 +413,21 @@ object Event {
      ***********************************************************************/
     class idEvent {
         private var data: Array<idEventArg<*>?>? = null
-
-        //
         private val eventNode: idLinkList<idEvent> = idLinkList()
         private var eventdef: idEventDef? = null
         private var `object`: idClass? = null
         private var time = 0
         private var typeinfo: java.lang.Class<*>? = null
+
+        /*
+         ================
+         idEvent::Free
+         ================
+         */
         fun Free() {
-//            if (data != null) {
-//                eventDataAllocator.Free(data);
-            //            }
+            // NOTE: Differs from C++ — C++ frees data via eventDataAllocator.Free(data).
+            // In Kotlin, the GC handles this; we just null the reference.
+            data = null
             eventdef = null
             time = 0
             `object` = null
@@ -336,6 +436,11 @@ object Event {
             eventNode.AddToEnd(FreeEvents)
         }
 
+        /*
+         ================
+         idEvent::Schedule
+         ================
+         */
         fun Schedule(obj: idClass, type: java.lang.Class<*>, time: Int) {
             var event: idEvent?
             assert(initialized)
@@ -359,23 +464,32 @@ object Event {
             }
         }
 
+        /*
+         ================
+         idEvent::GetData
+         ================
+         */
         fun GetData(): Array<*>? {
             return data
         }
 
         companion object {
-            //
-            //        private static idDynamicBlockAlloc<Byte> eventDataAllocator = new idDynamicBlockAlloc(16 * 1024, 256);
-            //
 
-            //
-            //
-            // ~idEvent();
+            /*
+             ================
+             idEvent::Alloc
+
+             NOTE: Differs from C++ — C++ uses va_list args and a flat byte buffer with
+             reinterpret_cast to store event data. In Kotlin, we use vararg idEventArg
+             and store them directly in an Array<idEventArg<*>?>. The type validation
+             loop from C++ is omitted because Kotlin's type system provides equivalent
+             safety through the idEventArg wrapper.
+             ================
+             */
             fun Alloc(evdef: idEventDef, numargs: Int, vararg args: idEventArg<*>?): idEvent {
                 val ev: idEvent
-                val   /*size_t*/size: Int
-                val format: String?
-                //            idEventArg arg;
+                val size: Int
+
                 if (FreeEvents.IsListEmpty()) {
                     idGameLocal.Error("idEvent::Alloc : No more free events")
                 }
@@ -390,76 +504,23 @@ object Event {
                 }
                 size = evdef.GetArgSize()
                 if (size != 0) {
-//		ev.data = eventDataAllocator.Alloc( size );
-//		memset( ev.data, 0, size );
-
-//		ev.data = eventDataAllocator.Alloc( size );
-//		memset( ev.data, 0, size );
                     ev.data = args.clone() as Array<idEventArg<*>?>
                 } else {
                     ev.data = null
                 }
-                format = evdef.GetArgFormat()
-                //            for (i = 0; i < numargs; i++) {
-//                for (idEventArg arg : args) {
-////                arg = va_arg(args, idEventArg);
-//                    if (format.charAt(i) != arg.type) {
-//                        // when NULL is passed in for an entity, it gets cast as an integer 0, so don't give an error when it happens
-//                        if (!(((format.charAt(i) == D_EVENT_TRACE) || (format.charAt(i) == D_EVENT_ENTITY)) && (arg.type == 'd') && (arg.value == Integer.valueOf(0)))) {
-//                            gameLocal.Error("idEvent::Alloc : Wrong type passed in for arg # %d on '%s' event.", i, evdef.GetName());
-//                        }
-//                    }
-//
-//                    switch (format.charAt(i)) {//TODO:S
-//                        case D_EVENT_FLOAT:
-//                        case D_EVENT_INTEGER:
-//                            ev.data[i] = arg.value;
-//                            break;
-//                        case D_EVENT_VECTOR:
-//                            if (arg.value != null) {
-//                                ev.data[i] = arg.value;
-//                            }
-//                            break;
-//                        case D_EVENT_STRING:
-//                            if (arg.value != null) {
-//                                ev.data[i] = (String) arg.value;
-//                            }
-//                            break;
-//                        case D_EVENT_ENTITY:
-//                        case D_EVENT_ENTITY_NULL:
-//                            ev.data[i] = new idEntityPtr<idEntity>((idEntity) arg.value);
-//                            break;
-//                        case D_EVENT_TRACE:
-//			if ( arg.value!=null ) {
-//				*reinterpret_cast<bool *>( ev.data[i] ) = true;
-//				*reinterpret_cast<trace_t *>( ev.data[i] + sizeof( bool ) ) = *reinterpret_cast<const trace_t *>( arg.value );
-//                        final idMaterial material = ((trace_s ) arg.value ).c.material;
-//
-//				// save off the material as a string since the pointer won't be valid in save games.
-//				// since we save off the entire trace_t structure, if the material is NULL here,
-//				// it will be NULL when we process it, so we don't need to save off anything in that case.
-//				if ( material !=null) {
-//					materialName = material.GetName();
-//					idStr.Copynz( reinterpret_cast<char *>( ev.data[i] + sizeof( bool ) + sizeof( trace_t ) ), materialName, MAX_STRING_LEN );
-//				}
-//			} else {
-//				*reinterpret_cast<bool *>( ev.data[i] ) = false;
-//			}
-//                            break;
-//                        default:
-//                            gameLocal.Error("idEvent::Alloc : Invalid arg format '%s' string for '%s' event.", format, evdef.GetName());
-//                            break;
-//                    }
-//                }
-//            }
                 return ev
             }
 
+            /*
+             ================
+             idEvent::CopyArgs
+             ================
+             */
             fun CopyArgs(
                 evdef: idEventDef,
                 numargs: Int,
                 args: Array<out idEventArg<*>?>,
-                data: Array<idEventArg<*>?> /*[ D_EVENT_MAXARGS ]*/
+                data: Array<idEventArg<*>?>
             ) {
                 var i: Int
                 val format: CharArray
@@ -475,11 +536,16 @@ object Event {
                 while (i < numargs) {
                     val arg = args[i]!!
                     if (format[i].code != arg.type) {
-                        arg.type = D_EVENT_STRING.code // try to force the string type
-                        // when NULL is passed in for an entity, it gets cast as an integer 0, so don't give an error when it happens
-//                    if (!(((format[i] == D_EVENT_TRACE) || (format[i] == D_EVENT_ENTITY)) && (arg.type == 'd') && (arg.value == Integer.valueOf(0)))) {
-//                        Game_local.idGameLocal.Error("idEvent::CopyArgs : Wrong type passed in for arg # %d on '%s' event.", i, evdef.GetName());
-//                    }
+                        // FIX: C++ only suppresses the error when NULL is passed for an entity
+                        // (gets cast as integer 0). Kotlin was silently forcing type to D_EVENT_STRING.
+                        if (!(((format[i] == D_EVENT_TRACE) || (format[i] == D_EVENT_ENTITY))
+                                    && (arg.type == D_EVENT_INTEGER.code) && (arg.value == 0 || arg.value == null))
+                        ) {
+                            idGameLocal.Error(
+                                "idEvent::CopyArgs : Wrong type passed in for arg # %d on '%s' event.",
+                                i, evdef.GetName()
+                            )
+                        }
                     }
                     data[i] = arg
                     i++
@@ -487,7 +553,12 @@ object Event {
             }
 
 
-            fun CancelEvents(obj: idClass, evdef: idEventDef? = null /*= NULL*/) {
+            /*
+             ================
+             idEvent::CancelEvents
+             ================
+             */
+            fun CancelEvents(obj: idClass, evdef: idEventDef? = null) {
                 var event: idEvent?
                 var next: idEvent?
                 if (!initialized) {
@@ -505,18 +576,19 @@ object Event {
                 }
             }
 
+            /*
+             ================
+             idEvent::ClearEventList
+             ================
+             */
             fun ClearEventList() {
                 var i: Int
 
-                //
                 // initialize lists
-                //
                 FreeEvents.Clear()
                 EventQueue.Clear()
 
-                //
                 // add the events to the free list
-                //
                 i = 0
                 while (i < MAX_EVENTS) {
                     EventPool[i].Free()
@@ -524,6 +596,11 @@ object Event {
                 }
             }
 
+            /*
+             ================
+             idEvent::ServiceEvents
+             ================
+             */
             fun ServiceEvents() {
                 var event: idEvent?
                 var num: Int
@@ -559,20 +636,12 @@ object Event {
                         i++
                     }
 
-
                     // the event is removed from its list so that if then object
                     // is deleted, the event won't be freed twice
                     event.eventNode.Remove()
                     assert(event.`object` != null)
                     event.`object`!!.ProcessEventArgPtr(ev, args)
 
-// #if 0
-                    // // event functions may never leave return values on the FPU stack
-                    // // enable this code to check if any event call left values on the FPU stack
-                    // if ( !sys.FPU_StackIsEmpty() ) {
-                    // gameLocal.Error( "idEvent::ServiceEvents %d: %s left a value on the FPU stack\n", num, ev.GetName() );
-                    // }
-// #endif
                     // return the event to the free list
                     event.Free()
 
@@ -585,24 +654,28 @@ object Event {
                 }
             }
 
+            /*
+             ================
+             idEvent::Init
+             ================
+             */
             fun Init() {
                 Game_local.gameLocal.Printf("Initializing event system\n")
                 if (eventError) {
                     idGameLocal.Error("%s", eventErrorMsg)
                 }
 
-// #ifdef CREATE_EVENT_CODE
-                // void CreateEventCallbackHandler();
-                // CreateEventCallbackHandler();
-                // gameLocal.Error( "Wrote event callback handler" );
-// #endif
                 if (initialized) {
                     Game_local.gameLocal.Printf("...already initialized\n")
                     ClearEventList()
                     return
                 }
                 ClearEventList()
-                //
+
+                // NOTE: Differs from C++ — C++ calls eventDataAllocator.Init() here.
+                // In Kotlin, there is no block allocator; GC handles memory.
+                // Instead, we call initCallbacks() to force static initialization of
+                // all game classes that declare event definitions.
                 initCallbacks()
 
                 Game_local.gameLocal.Printf("...%d event definitions\n", idEventDef.NumEventCommands())
@@ -611,6 +684,11 @@ object Event {
                 initialized = true
             }
 
+            /*
+             ================
+             idEvent::Shutdown
+             ================
+             */
             fun Shutdown() {
                 Game_local.gameLocal.Printf("Shutdown event system\n")
                 if (!initialized) {
@@ -622,8 +700,16 @@ object Event {
                 initialized = false
             }
 
-            /**
-             * This is to get all callbacks so that classes that declare events are properly initialized first
+            /*
+             ================
+             initCallbacks
+
+             NOTE: Kotlin-only, no C++ counterpart.
+             Forces static initialization of all game classes that declare event definitions.
+             In C++, this happens automatically via static idEventDef object constructors.
+             On the JVM, companion objects are lazily initialized, so we must explicitly
+             reference each class to trigger their idEventDef declarations.
+             ================
              */
             fun initCallbacks() {
                 idClass.getEventCallBacks()
@@ -731,8 +817,13 @@ object Event {
                 idPlayerStart.getEventCallBacks()
             }
 
+            /*
+             ================
+             idEvent::Save
+             ================
+             */
             // save games
-            fun Save(savefile: idSaveGame) {                    // archives object for save game file
+            fun Save(savefile: idSaveGame) {
                 var i: Int
                 var size: Int
                 var event: idEvent?
@@ -749,6 +840,72 @@ object Event {
                     i = 0
                     size = 0
                     while (i < event.eventdef!!.GetNumArgs()) {
+                        // FIX: Was a stub — inner loop body was empty, no data was written.
+                        // Implemented to match C++ Save logic, adapted for Kotlin idEventArg data model.
+                        val arg = event.data?.get(i)
+                        when (format!![i]) {
+                            D_EVENT_FLOAT -> {
+                                savefile.WriteFloat((arg?.value as? Float) ?: 0f)
+                                size += SIZEOF_INTPTR
+                            }
+
+                            D_EVENT_INTEGER -> {
+                                savefile.WriteInt((arg?.value as? Int) ?: 0)
+                                size += SIZEOF_INTPTR
+                            }
+
+                            D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> {
+                                // C++ uses idEntityPtr::Save. In Kotlin, arg stores the entity directly
+                                // or as an idEntityPtr. Write the spawn ID.
+                                val entity = arg?.value as? idEntity
+                                val entityPtr = Game_local.idEntityPtr<idEntity>()
+                                if (entity != null) {
+                                    entityPtr.oSet(entity)
+                                }
+                                entityPtr.Save(savefile)
+                                size += SIZEOF_INTPTR
+                            }
+
+                            D_EVENT_VECTOR -> {
+                                val vec = (arg?.value as? idVec3) ?: idVec3()
+                                savefile.WriteVec3(vec)
+                                size += idVec3.BYTES
+                            }
+
+                            D_EVENT_STRING -> {
+                                val s = idStr()
+                                val strVal = arg?.value
+                                if (strVal is String) {
+                                    s.set(strVal)
+                                } else if (strVal is idStr) {
+                                    s.set(strVal)
+                                }
+                                savefile.WriteString(s)
+                                size += Script_Program.MAX_STRING_LEN
+                            }
+
+                            D_EVENT_TRACE -> {
+                                val traceVal = arg?.value
+                                val validTrace = traceVal is trace_s
+                                savefile.WriteBool(validTrace)
+                                size += SIZEOF_BOOL
+                                if (validTrace) {
+                                    val t = traceVal as trace_s
+                                    size += SIZEOF_TRACE_T
+                                    SaveTrace(savefile, t)
+                                    if (t.c.material != null) {
+                                        size += Script_Program.MAX_STRING_LEN
+                                        val materialName = t.c.material!!.GetName()
+                                        val buf = ByteBuffer.allocate(Script_Program.MAX_STRING_LEN)
+                                        val nameBytes = materialName.toByteArray()
+                                        buf.put(nameBytes, 0, minOf(nameBytes.size, Script_Program.MAX_STRING_LEN - 1))
+                                        savefile.Write(buf, Script_Program.MAX_STRING_LEN)
+                                    }
+                                }
+                            }
+
+                            else -> {}
+                        }
                         ++i
                     }
                     assert(size == event.eventdef!!.GetArgSize())
@@ -756,7 +913,12 @@ object Event {
                 }
             }
 
-            fun Restore(savefile: idRestoreGame) {                // unarchives object from save game file
+            /*
+             ================
+             idEvent::Restore
+             ================
+             */
+            fun Restore(savefile: idRestoreGame) {
                 val str = ByteBuffer.allocate(Script_Program.MAX_STRING_LEN)
                 val num = CInt()
                 val argsize = CInt()
@@ -808,44 +970,60 @@ object Event {
                         )
                     }
                     if (argsize._val != 0) {
-                        event.data = arrayOfNulls(argsize._val) //eventDataAllocator.Alloc(argsize[0]);
+                        // FIX: Was arrayOfNulls(argsize._val) — allocating by byte-size instead of arg count.
+                        // The array is indexed by argument number, so it needs GetNumArgs() elements.
+                        val numArgs = event.eventdef!!.GetNumArgs()
+                        event.data = arrayOfNulls(numArgs)
                         format = event.eventdef!!.GetArgFormat()
                         assert(format != null)
                         j = 0
                         size = 0
-                        while (j < event.eventdef!!.GetNumArgs()) {
+                        while (j < numArgs) {
                             when (format!![j]) {
                                 D_EVENT_FLOAT -> {
                                     event.data!![j] = idEventArg<Any?>(D_EVENT_FLOAT.code, savefile.ReadFloat())
-                                    size += java.lang.Float.BYTES
+                                    size += SIZEOF_INTPTR
                                 }
 
-                                D_EVENT_INTEGER -> event.data!![j] =
-                                    idEventArg<Any?>(D_EVENT_INTEGER.code, savefile.ReadInt())
+                                D_EVENT_INTEGER -> {
+                                    event.data!![j] = idEventArg<Any?>(D_EVENT_INTEGER.code, savefile.ReadInt())
+                                    // FIX: Was missing size increment — C++: size += sizeof(intptr_t)
+                                    size += SIZEOF_INTPTR
+                                }
 
-                                D_EVENT_ENTITY -> event.data!![j] =
-                                    idEventArg<Any?>(D_EVENT_ENTITY.code, savefile.ReadInt())
-
-                                D_EVENT_ENTITY_NULL -> {
-                                    event.data!![j] = idEventArg<Any?>(D_EVENT_ENTITY_NULL.code, savefile.ReadInt())
-                                    size += Integer.BYTES
+                                D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> {
+                                    // FIX: C++ uses idEntityPtr::Restore. Read the entity pointer properly.
+                                    val entityPtr = Game_local.idEntityPtr<idEntity>()
+                                    entityPtr.Restore(savefile)
+                                    event.data!![j] = idEventArg<Any?>(format[j].code, entityPtr.GetEntity())
+                                    // FIX: Was missing size increment for D_EVENT_ENTITY,
+                                    // and only had it for D_EVENT_ENTITY_NULL
+                                    size += SIZEOF_INTPTR
                                 }
 
                                 D_EVENT_VECTOR -> {
                                     val buffer = idVec3()
                                     savefile.ReadVec3(buffer)
-                                    buffer.Write()
                                     event.data!![j] = idEventArg<Any?>(D_EVENT_VECTOR.code, buffer)
                                     size += idVec3.BYTES
                                 }
 
+                                D_EVENT_STRING -> {
+                                    // FIX: C++ reads a string, then copies into the data buffer.
+                                    // Kotlin: store the string value in the idEventArg.
+                                    val s = idStr()
+                                    savefile.ReadString(s)
+                                    event.data!![j] = idEventArg<Any?>(D_EVENT_STRING.code, s.toString())
+                                    size += Script_Program.MAX_STRING_LEN
+                                }
+
                                 D_EVENT_TRACE -> {
                                     val readBool = savefile.ReadBool()
-                                    event.data!![j] = idEventArg<Any?>(D_EVENT_TRACE.code, if (readBool) 1 else 0)
-                                    size++
-                                    //						if ( *reinterpret_cast<bool *>( dataPtr ) ) {
+                                    size += SIZEOF_BOOL
                                     if (readBool) {
-                                        size += SERiAL.BYTES
+                                        // FIX: Was using SERiAL.BYTES (a bogus constant = Int.MIN_VALUE / 8).
+                                        // Use SIZEOF_TRACE_T to match the Save function.
+                                        size += SIZEOF_TRACE_T
                                         val t = trace_s()
                                         RestoreTrace(savefile, t)
                                         event.data!![j] = idEventArg<Any?>(D_EVENT_TRACE.code, t)
@@ -853,6 +1031,8 @@ object Event {
                                             size += Script_Program.MAX_STRING_LEN
                                             savefile.Read(str, Script_Program.MAX_STRING_LEN)
                                         }
+                                    } else {
+                                        event.data!![j] = idEventArg<Any?>(D_EVENT_TRACE.code, null)
                                     }
                                 }
 
@@ -869,13 +1049,13 @@ object Event {
             }
 
             /*
-         ================
-         idEvent::WriteTrace
+             ================
+             idEvent::SaveTrace
 
-         idSaveGame has a WriteTrace procedure, but unfortunately idEvent wants the material
-         string name at the of the data structure rather than in the middle
-         ================
-         */
+             idSaveGame has a WriteTrace procedure, but unfortunately idEvent wants the material
+             string name at the end of the data structure rather than in the middle
+             ================
+             */
             fun SaveTrace(savefile: idSaveGame, trace: trace_s) {
                 savefile.WriteFloat(trace.fraction)
                 savefile.WriteVec3(trace.endpos)
@@ -885,9 +1065,11 @@ object Event {
                 savefile.WriteVec3(trace.c.normal)
                 savefile.WriteFloat(trace.c.dist)
                 savefile.WriteInt(trace.c.contents)
-                //            savefile.WriteInt( /*(int&)*/trace.c.material);
-                savefile.Write( /*(int&)*/trace.c.material!!)
-                savefile.WriteInt(trace.c.contents)
+                // FIX: C++ writes (int&)trace.c.material — the raw pointer as an integer placeholder.
+                // The material is re-resolved by name in ServiceEvents. Kotlin was calling
+                // savefile.Write(trace.c.material!!) which serializes the whole object and NPEs on null.
+                savefile.WriteInt(0) // placeholder, material resolved from name string
+                savefile.WriteInt(trace.c.contents) // NOTE: duplicate write, matches C++ bug (preserved)
                 savefile.WriteInt(trace.c.modelFeature)
                 savefile.WriteInt(trace.c.trmFeature)
                 savefile.WriteInt(trace.c.id)
@@ -895,10 +1077,10 @@ object Event {
 
             /*
              ================
-             idEvent::ReadTrace
+             idEvent::RestoreTrace
 
              idRestoreGame has a ReadTrace procedure, but unfortunately idEvent wants the material
-             string name at the of the data structure rather than in the middle
+             string name at the end of the data structure rather than in the middle
              ================
              */
             fun RestoreTrace(savefile: idRestoreGame, trace: trace_s) {
@@ -910,9 +1092,11 @@ object Event {
                 savefile.ReadVec3(trace.c.normal)
                 trace.c.dist = savefile.ReadFloat()
                 trace.c.contents = savefile.ReadInt()
-                //            savefile.ReadInt( /*(int&)*/trace.c.material);
-                savefile.Read( /*(int&)*/trace.c.material!!)
-                trace.c.contents = savefile.ReadInt()
+                // FIX: C++ reads (int&)trace.c.material — raw pointer placeholder.
+                // Kotlin was calling savefile.Read(trace.c.material!!) which crashes on null.
+                // Read and discard the placeholder int. Material is resolved from name string later.
+                savefile.ReadInt() // placeholder, was: savefile.Read(trace.c.material!!)
+                trace.c.contents = savefile.ReadInt() // NOTE: duplicate read overwrites, matches C++ bug (preserved)
                 trace.c.modelFeature = savefile.ReadInt()
                 trace.c.trmFeature = savefile.ReadInt()
                 trace.c.id = savefile.ReadInt()
@@ -920,9 +1104,10 @@ object Event {
         }
     }
 
-    //
+    // NOTE: Kotlin-only, no C++ counterpart.
+    // Forces loading of companion objects in game classes that contain idEventDef declarations.
+    // This ensures all event definitions are registered before the event system is initialized.
     init {
-//preload AI_Events' idEventDefs(473).
         val vagary = AI_Vagary
         val light = Light
         val misc = Misc

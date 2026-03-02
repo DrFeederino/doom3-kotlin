@@ -204,7 +204,16 @@ object Game {
         abstract fun Draw(clientNum: Int): Boolean
 
         // Let the game do it's own UI when ESCAPE is used
-        abstract fun HandleESC(gui: idUserInterface?): escReply_t?
+        // C++ uses idUserInterface **gui (pointer-to-pointer) as out parameter;
+        // Kotlin: gui holder field is used instead (see _escGuiHolder)
+        val _escGuiHolder = arrayOfNulls<idUserInterface>(1)
+        var escGui: idUserInterface?
+            get() = _escGuiHolder[0]
+            set(value) {
+                _escGuiHolder[0] = value
+            }
+
+        abstract fun HandleESC(): escReply_t?
 
         // get the games menu if appropriate ( multiplayer )
         abstract fun StartMenu(): idUserInterface?

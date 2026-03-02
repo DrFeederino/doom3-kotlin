@@ -1,3 +1,15 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/game/gamesys/SysCvar.h, neo/game/gamesys/SysCvar.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ */
 package neo.Game.GameSys
 
 import neo.Game.Game_local
@@ -13,10 +25,8 @@ import java.util.*
 class SysCvar {
 
     class gameVersion_s {
-        // char	[]string = new char[256];
         val string: String
 
-        //    static final String __TIME__;
         init {
             string = String.format(
                 "%s.%d%s %s %s",
@@ -24,7 +34,7 @@ class SysCvar {
                 BUILD_NUMBER,
                 BUILD_DEBUG,
                 sys_public.BUILD_STRING,
-                __DATE__ /*, __TIME__*/
+                __DATE__
             )
         }
     }
@@ -1123,7 +1133,7 @@ class SysCvar {
         //
         //
         var BUILD_DEBUG: String = "-release"
-        val gameVersion: gameVersion_s = gameVersion_s() //TODO:static final?
+        val gameVersion: gameVersion_s = gameVersion_s()
 
         //
         val g_version: idCVar =

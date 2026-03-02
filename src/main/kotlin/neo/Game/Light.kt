@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/game/Light.h, neo/game/Light.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.GameSys.Class.*
@@ -147,10 +165,8 @@ object Light {
                 : renderLight_s
 
         //
-        //
         private var soundWasPlaying: Boolean
 
-        // ~idLight();
         private var triggercount: Int
         override fun Spawn() {
             super.Spawn()
@@ -198,7 +214,8 @@ object Light {
             // but there may still be a chance to get it wrong if the game moves
             // a light before the first present, and doesn't clear the prelight
             renderLight.prelightModel = null
-            if (name[0].code != 0) {
+            // FIX: C++ name[0] safely returns '\0' on empty string; Kotlin name[0] would throw IndexOutOfBoundsException
+            if (name.Length() > 0) {
                 // this will return 0 if not found
                 renderLight.prelightModel = ModelManager.renderModelManager.CheckModel(Str.va("_prelight_%s", name))
             }
@@ -385,7 +402,7 @@ object Light {
 
         override fun Present() {
             // don't present to the renderer if the entity hasn't changed
-            if (0 == thinkFlags and TH_UPDATEVISUALS) {
+            if ((thinkFlags and TH_UPDATEVISUALS) == 0) {
                 return
             }
 
@@ -427,6 +444,12 @@ object Light {
 
         override fun SetColor(red: Float, green: Float, blue: Float) {
             baseColor.set(red, green, blue)
+            SetLightLevel()
+        }
+
+        // FIX: Missing SetColor(idVec3) overload — C++ idLight overrides this to set baseColor and call SetLightLevel
+        override fun SetColor(color: idVec3) {
+            baseColor.set(color)
             SetLightLevel()
         }
 
@@ -489,7 +512,10 @@ object Light {
         }
 
         fun SetRadius(radius: Float) {
-            renderLight.lightRadius[0] = renderLight.lightRadius.set(1, renderLight.lightRadius.set(2, radius))
+            // FIX: Was using fragile chained set() calls; simplified to match C++ direct assignment
+            renderLight.lightRadius[0] = radius
+            renderLight.lightRadius[1] = radius
+            renderLight.lightRadius[2] = radius
             PresentLightDefChange()
         }
 
@@ -623,7 +649,6 @@ object Light {
             PresentModelDefChange()
         }
 
-        // };
         override fun ShowEditingDialog() {
             if (SysCvar.g_editEntityMode.GetInteger() == 1) {
                 idLib.common.InitTool(Common.EDITOR_LIGHT, spawnArgs)
@@ -729,7 +754,6 @@ object Light {
 
                 else -> super.ClientReceiveEvent(event, time, msg)
             }
-            //            return false;
         }
 
         private fun PresentLightDefChange() {

@@ -151,7 +151,7 @@ open class idEntityFx : idEntity() {
         if (!spawnArgs.GetBool("triggered")) {
             Setup(fx[0]!!)
             if (spawnArgs.GetBool("test") || spawnArgs.GetBool("start") || spawnArgs.GetFloat("restart") != 0.0f) {
-                PostEventMS(EV_Activate, 0.0f, this)
+                PostEventMS(EV_Activate, 0, this)
             }
         }
     }
@@ -676,7 +676,7 @@ open class idEntityFx : idEntity() {
         CleanUp()
         BecomeInactive(TH_THINK)
         if (spawnArgs.GetBool("test")) {
-            PostEventMS(EV_Activate, 0.0f, this)
+            PostEventMS(EV_Activate, 0, this)
         } else {
             if (spawnArgs.GetFloat("restart") != 0.0f || !spawnArgs.GetBool("triggered")) {
                 var rest = spawnArgs.GetFloat("restart", "0")

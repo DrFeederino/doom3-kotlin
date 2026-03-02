@@ -1206,7 +1206,7 @@ object Misc {
             animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(cycle._val)
             len = animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).PlayLength()
             if (len >= 0) {
-                PostEventMS(EV_AnimDone, len.toFloat(), current_anim_index)
+                PostEventMS(EV_AnimDone, len, current_anim_index)
             }
 
             // offset the start time of the shader to sync it to the game time
@@ -1256,7 +1256,7 @@ object Misc {
                 animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(cycle._val)
                 len = animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).PlayLength()
                 if (len >= 0) {
-                    PostEventMS(EV_AnimDone, len.toFloat(), 1)
+                    PostEventMS(EV_AnimDone, len, 1)
                 }
             }
 
@@ -2278,7 +2278,6 @@ object Misc {
 
      ===============================================================================
      */
-    @Deprecated("")
     class idLiquid : idEntity() {
         companion object {
             // CLASS_PROTOTYPE( idLiquid );

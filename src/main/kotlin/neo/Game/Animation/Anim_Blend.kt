@@ -2839,7 +2839,7 @@ class idAnimator {
         var i: Int
         var j: Int
         val num = CInt()
-        savefile.ReadModelDef(modelDef!!)
+        modelDef = savefile.ReadModelDef()
         savefile.ReadObject( /*reinterpret_cast<idClass *&>*/entity)
         savefile.ReadInt(num)
         jointMods.SetNum(num._val)

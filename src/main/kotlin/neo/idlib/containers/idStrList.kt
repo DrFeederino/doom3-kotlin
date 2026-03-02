@@ -91,7 +91,10 @@ open class idStrList : Comparator<idStr> {
     }
 
     fun add(obj: idStr): Int {
-        stringsList.add(obj)
+        // FIX: C++ idList<idStr>::Append copies by value. Must create a new idStr
+        // to avoid all elements sharing the same reference (e.g. ListWindow.UpdateList
+        // reuses one idStr in a loop — all list items ended up pointing to the same object).
+        stringsList.add(idStr(obj))
         return stringsList.size - 1
     }
 
@@ -118,7 +121,8 @@ open class idStrList : Comparator<idStr> {
     }
 
     private fun insert(i: Int, obj: idStr): Int {
-        stringsList.add(i, obj)
+        // FIX: copy by value, not reference (C++ value semantics)
+        stringsList.add(i, idStr(obj))
         return i
     }
 
@@ -190,7 +194,8 @@ open class idStrList : Comparator<idStr> {
         if (i >= stringsList.size) {
             i = if (stringsList.isEmpty()) 0 else stringsList.size - 1
         }
-        stringsList.add(i, obj)
+        // FIX: copy by value, not reference (C++ value semantics)
+        stringsList.add(i, idStr(obj))
     }
 
     fun setSize(num: Int) {

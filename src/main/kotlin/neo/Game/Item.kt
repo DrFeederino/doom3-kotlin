@@ -687,7 +687,7 @@ class idObjective : idItem() {
                 player.HideObjective()
                 PostEventMS(EV_Remove, 0)
             } else {
-                PostEventMS(EV_HideObjective, 100.0f, player)
+                PostEventMS(EV_HideObjective, 100, player)
             }
         }
     }
@@ -696,7 +696,7 @@ class idObjective : idItem() {
         val player = Game_local.gameLocal.GetLocalPlayer()
         if (player != null) {
             playerPos.set(player.GetPhysics().GetOrigin())
-            PostEventMS(EV_HideObjective, 100.0f, player)
+            PostEventMS(EV_HideObjective, 100, player)
         }
     }
 
@@ -891,7 +891,7 @@ open class idMoveableItem : idItem() {
                 item[0]!!.GetPhysics().SetLinearVelocity(velocity)
                 item[0]!!.UpdateVisuals()
                 if (activateDelay != 0) {
-                    item[0]!!.PostEventMS(EV_Activate, activateDelay.toFloat(), item[0])
+                    item[0]!!.PostEventMS(EV_Activate, activateDelay, item[0])
                 }
                 if (0 == removeDelay) {
                     removeDelay = 5 * 60 * 1000
@@ -1233,7 +1233,7 @@ class idObjectiveComplete : idItemRemover() {
                 player.hud!!.HandleNamedEvent("closeObjective")
                 PostEventMS(EV_Remove, 0)
             } else {
-                PostEventMS(EV_HideObjective, 100.0f, player)
+                PostEventMS(EV_HideObjective, 100, player)
             }
         }
     }
@@ -1242,7 +1242,7 @@ class idObjectiveComplete : idItemRemover() {
         val player = Game_local.gameLocal.GetLocalPlayer()
         if (player != null) {
             playerPos.set(player.GetPhysics().GetOrigin())
-            PostEventMS(EV_HideObjective, 100.0f, player)
+            PostEventMS(EV_HideObjective, 100, player)
         }
     }
 

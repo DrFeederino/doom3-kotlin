@@ -523,7 +523,8 @@ object ListWindow {
             }
             val vert = GetMaxCharHeight()
             val fit = (textRect.h / vert).toInt()
-            var selection = gui!!.State().GetInt(va("%s_sel_0", listName.c_str()))
+            // FIX: was listName.c_str() which returns CharArray — String.format prints it as "[C@hash"
+            var selection = gui!!.State().GetInt(va("%s_sel_0", listName))
             if (listItems.size() < fit) {
                 scroller!!.SetRange(0.0f, 0.0f, 1.0f)
                 top = 0

@@ -1,3 +1,15 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/game/gamesys/SysCmds.h, neo/game/gamesys/SysCmds.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ */
 package neo.Game.GameSys
 
 import neo.Game.*
@@ -161,14 +173,6 @@ object SysCmds {
      ==================
      */
     fun PrintFloat(f: Float) {
-//        char[] buf = new char[128];
-//        char i;
-//
-//        for (i = sprintf(buf, "%3.2f", f); i < 7; i++) {
-//            buf[i] = ' ';
-//        }
-//        buf[i] = '\0';
-//        gameLocal.Printf(buf);
         Game_local.gameLocal.Printf(String.format("%3.2f", f))
     }
 
@@ -1142,7 +1146,7 @@ object SysCmds {
                 return
             }
 
-//        delete ent;
+            // C++: delete ent — handled by garbage collection in Kotlin
         }
 
         companion object {
@@ -1305,7 +1309,7 @@ object SysCmds {
                     mapFile.RemoveEntity(mapEnt)
                 }
                 Game_local.gameLocal.Printf("Removing light %d\n", lastLight.GetLightDefHandle())
-                //            delete lastLight;
+                // C++: delete lastLight — handled by garbage collection in Kotlin
             } else {
                 Game_local.gameLocal.Printf("No lights to clear.\n")
             }
@@ -1375,7 +1379,7 @@ object SysCmds {
 
             // delete the testModel if active
             if (Game_local.gameLocal.testFx != null) {
-//            delete gameLocal.testFx;
+                // C++: delete gameLocal.testFx — handled by garbage collection in Kotlin
                 Game_local.gameLocal.testFx = null
             }
             if (args!!.Argc() < 2) {
@@ -1849,7 +1853,6 @@ object SysCmds {
                 dir.set(idVec3(d0._val, d1._val, 0.0f))
             } else {
                 dir.set(idVec3())
-                //            dir.Zero();
             }
 
             // give the player full health before and after
@@ -2620,7 +2623,6 @@ object SysCmds {
             ent = Game_local.gameLocal.lastGUIEnt.GetEntity()
 
             // see if we have any gui surfaces left to go to on the current entity.
-//        guiSurfaces = 0;
             newEnt = false
             if (ent == null) {
                 newEnt = true

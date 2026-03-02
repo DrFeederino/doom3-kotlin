@@ -88,10 +88,10 @@ class AI_Vagary {
             val enemyEnt: idEntity? = enemy.GetEntity()
             if (null == enemyEnt) {
                 idThread.ReturnEntity(null)
-                // FIX: Missing return. C++ also lacks the return (original bug), but in C++ the
-                // NULL enemyEnt is passed harmlessly to PredictTrajectory. In Kotlin, enemyEnt!!
-                // at line 140 throws NPE. Adding return to avoid Kotlin-specific crash.
-                return
+//                // FIX: Missing return. C++ also lacks the return (original bug), but in C++ the
+//                // NULL enemyEnt is passed harmlessly to PredictTrajectory. In Kotlin, enemyEnt!!
+//                // at line 140 throws NPE. Adding return to avoid Kotlin-specific crash.
+//                return
             }
             val enemyEyePos = lastVisibleEnemyPos + lastVisibleEnemyEyeOffset
             val myBounds = physicsObj.GetAbsBounds()

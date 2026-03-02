@@ -1,3 +1,39 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms.
+You should have received a copy of these additional terms immediately following
+the terms and conditions of the GNU General Public License which accompanied
+the Doom 3 Source Code.  If not, please request a copy in writing from
+id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms,
+you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120,
+Rockville, Maryland 20850 USA.
+
+===========================================================================
+
+Original source: neo/game/Weapon.cpp, neo/game/Weapon.h
+*/
 package neo.Game
 
 import neo.Game.AI.idAI
@@ -103,14 +139,18 @@ object Weapon {
      ***********************************************************************/
     class idWeapon : idAnimatedEntity() {
         companion object {
-            // enum {
             val EVENT_RELOAD: Int = idEntity.EVENT_MAXEVENTS
             val EVENT_ENDRELOAD = EVENT_RELOAD + 1
             val EVENT_CHANGESKIN = EVENT_RELOAD + 2
             val EVENT_MAXEVENTS = EVENT_RELOAD + 3
 
-            // CLASS_PROTOTYPE( idWeapon );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+
+            /*
+             ================
+             idWeapon::CacheWeapon
+             ================
+             */
             fun CacheWeapon(weaponName: String) {
                 val weaponDef: idDeclEntityDef?
                 val brassDefName: String?
@@ -146,6 +186,11 @@ object Weapon {
          Ammo
 
          ***********************************************************************/
+            /*
+             ================
+             idWeapon::GetAmmoNumForName
+             ================
+             */
             fun  /*ammo_t*/GetAmmoNumForName(ammoname: String): Int {
                 val num = CInt()
                 val ammoDict: idDict?
@@ -170,12 +215,16 @@ object Weapon {
                 return num._val
             }
 
+            /*
+             ================
+             idWeapon::GetAmmoNameForNum
+             ================
+             */
             fun GetAmmoNameForNum(   /*ammo_t*/ammonum: Int): String? {
                 var i: Int
                 val num: Int
                 val ammoDict: idDict?
                 var kv: idKeyValue?
-                //	char []text = new char[32 ];
                 val text: String
                 ammoDict = Game_local.gameLocal.FindEntityDefDict("ammo_types", false)
                 if (null == ammoDict) {
@@ -194,6 +243,11 @@ object Weapon {
                 return null
             }
 
+            /*
+             ================
+             idWeapon::GetAmmoPickupNameForNum
+             ================
+             */
             fun GetAmmoPickupNameForNum(   /*ammo_t*/ammonum: Int): String {
                 var i: Int
                 val num: Int
@@ -527,6 +581,12 @@ object Weapon {
                 = 0
 
         // Init
+
+        /*
+         ================
+         idWeapon::Spawn
+         ================
+         */
         override fun Spawn() {
             super.Spawn()
             if (!Game_local.gameLocal.isClient) {
@@ -560,6 +620,11 @@ object Weapon {
             }
         }
 
+        /*
+         ================
+         idWeapon::GetOwner
+         ================
+         */
         fun GetOwner(): idPlayer? {
             return owner
         }
@@ -572,10 +637,16 @@ object Weapon {
          Overridden by subclasses that need to spawn the script object themselves.
          ================
          */
-        fun ShouldfinalructScriptObjectAtSpawn(): Boolean {
+        // FIX: Method name was corrupted from "Construct" to "finalruct"
+        override fun ShouldConstructScriptObjectAtSpawn(): Boolean {
             return false
         }
 
+        /*
+         ================
+         idWeapon::Save
+         ================
+         */
         // save games
         override fun Save(savefile: idSaveGame) {                    // archives object for save game file
             savefile.WriteInt(TempDump.etoi(status))
@@ -669,6 +740,11 @@ object Weapon {
             savefile.WriteObject(projectileEnt)
         }
 
+        /*
+         ================
+         idWeapon::Restore
+         ================
+         */
         override fun Restore(savefile: idRestoreGame) {                    // unarchives object from save game file
             status = weaponStatus_t.values()[savefile.ReadInt()]
             savefile.ReadObject( /*reinterpret_cast<idClass *&>*/thread)
@@ -728,10 +804,22 @@ object Weapon {
             savefile.ReadString(icon)
             guiLightHandle = savefile.ReadInt()
             savefile.ReadRenderLight(guiLight)
+            // FIX: Get fresh light handle after loading (dhewm3 fix — stale handles point to wrong lights)
+            if (guiLightHandle != -1) {
+                guiLightHandle = Game_local.gameRenderWorld!!.AddLightDef(guiLight)
+            }
             muzzleFlashHandle = savefile.ReadInt()
             savefile.ReadRenderLight(muzzleFlash)
+            // FIX: Get fresh light handle after loading (dhewm3 fix)
+            if (muzzleFlashHandle != -1) {
+                muzzleFlashHandle = Game_local.gameRenderWorld!!.AddLightDef(muzzleFlash)
+            }
             worldMuzzleFlashHandle = savefile.ReadInt()
             savefile.ReadRenderLight(worldMuzzleFlash)
+            // FIX: Get fresh light handle after loading (dhewm3 fix)
+            if (worldMuzzleFlashHandle != -1) {
+                worldMuzzleFlashHandle = Game_local.gameRenderWorld!!.AddLightDef(worldMuzzleFlash)
+            }
             savefile.ReadVec3(flashColor)
             muzzleFlashEnd = savefile.ReadInt()
             flashTime = savefile.ReadInt()
@@ -762,11 +850,19 @@ object Weapon {
             barrelJointWorld = savefile.ReadJoint()
             ejectJointWorld = savefile.ReadJoint()
             hasBloodSplat = savefile.ReadBool()
-            savefile.ReadSoundShader(sndHum!!)
-            savefile.ReadParticle(weaponSmoke!!)
+            // FIX: sndHum may be null; create temp object for ReadSoundShader which requires non-null
+            val tempSndHum = savefile.ReadSoundShader()
+            sndHum = tempSndHum
+            // FIX: weaponSmoke may be null; create temp object for ReadParticle which requires non-null
+            val tempWeaponSmoke = idDeclParticle()
+            savefile.ReadParticle(tempWeaponSmoke)
+            weaponSmoke = tempWeaponSmoke
             weaponSmokeStartTime = savefile.ReadInt()
             continuousSmoke = savefile.ReadBool()
-            savefile.ReadParticle(strikeSmoke!!)
+            // FIX: strikeSmoke may be null; create temp object for ReadParticle which requires non-null
+            val tempStrikeSmoke = idDeclParticle()
+            savefile.ReadParticle(tempStrikeSmoke)
+            strikeSmoke = tempStrikeSmoke
             strikeSmokeStartTime = savefile.ReadInt()
             savefile.ReadVec3(strikePos)
             savefile.ReadMat3(strikeAxis)
@@ -776,8 +872,15 @@ object Weapon {
             lastAttack = savefile.ReadInt()
             nozzleGlowHandle = savefile.ReadInt()
             savefile.ReadRenderLight(nozzleGlow)
+            // FIX: Get fresh light handle after loading (dhewm3 fix)
+            if (nozzleGlowHandle != -1) {
+                nozzleGlowHandle = Game_local.gameRenderWorld!!.AddLightDef(nozzleGlow)
+            }
             savefile.ReadVec3(nozzleGlowColor)
-            savefile.ReadMaterial(nozzleGlowShader!!)
+            // FIX: nozzleGlowShader may be null; create temp object for ReadMaterial which requires non-null
+            val tempNozzleGlowShader = Material.idMaterial()
+            savefile.ReadMaterial(tempNozzleGlowShader)
+            nozzleGlowShader = tempNozzleGlowShader
             nozzleGlowRadius = savefile.ReadFloat()
             weaponAngleOffsetAverages = savefile.ReadInt()
             weaponAngleOffsetScale = savefile.ReadFloat()
@@ -793,6 +896,11 @@ object Weapon {
          Weapon definition management
 
          ***********************************************************************/
+        /*
+         ================
+         idWeapon::Clear
+         ================
+         */
         fun Clear() {
             CancelEvents(EV_Weapon_Clear)
             DeconstructScriptObject()
@@ -801,7 +909,10 @@ object Weapon {
             WEAPON_RELOAD.Unlink()
             WEAPON_NETRELOAD.Unlink()
             WEAPON_NETENDRELOAD.Unlink()
-            WEAPON_NETFIRING.Unlink()
+            // FIX: Added IsLinked() guard — WEAPON_NETFIRING is not linked in demo mode
+            if (WEAPON_NETFIRING.IsLinked()) {
+                WEAPON_NETFIRING.Unlink()
+            }
             WEAPON_RAISEWEAPON.Unlink()
             WEAPON_LOWERWEAPON.Unlink()
             if (muzzleFlashHandle != -1) {
@@ -825,7 +936,6 @@ object Weapon {
                 nozzleGlowHandle = -1
             }
 
-//	memset( &renderEntity, 0, sizeof( renderEntity ) );
             renderEntity = renderEntity_s()
             renderEntity!!.entityNum = entityNumber
             renderEntity!!.noShadow = true
@@ -844,7 +954,6 @@ object Weapon {
             if (refSound.referenceSound != null) {
                 refSound.referenceSound!!.Free(true)
             }
-            //	memset( &refSound, 0, sizeof( refSound_t ) );
             refSound = refSound_t()
 
             // setting diversity to 0 results in no random sound.  -1 indicates random.
@@ -939,6 +1048,11 @@ object Weapon {
             isFiring = false
         }
 
+        /*
+         ================
+         idWeapon::GetWeaponDef
+         ================
+         */
         fun GetWeaponDef(objectName: String?, ammoinclip: Int) {
             val shader = arrayOfNulls<String>(1)
             val objectType = arrayOfNulls<String>(1)
@@ -961,11 +1075,11 @@ object Weapon {
             icon.set(weaponDef!!.dict.GetString("icon"))
             silent_fire = weaponDef!!.dict.GetBool("silent_fire")
             powerAmmo = weaponDef!!.dict.GetBool("powerAmmo")
-            muzzle_kick_time = SEC2MS(weaponDef!!.dict.GetFloat("muzzle_kick_time")).toInt()
-            muzzle_kick_maxtime = SEC2MS(weaponDef!!.dict.GetFloat("muzzle_kick_maxtime")).toInt()
+            muzzle_kick_time = SEC2MS(weaponDef!!.dict.GetFloat("muzzle_kick_time"))
+            muzzle_kick_maxtime = SEC2MS(weaponDef!!.dict.GetFloat("muzzle_kick_maxtime"))
             muzzle_kick_angles.set(weaponDef!!.dict.GetAngles("muzzle_kick_angles"))
             muzzle_kick_offset.set(weaponDef!!.dict.GetVector("muzzle_kick_offset"))
-            hideTime = SEC2MS(weaponDef!!.dict.GetFloat("hide_time", "0.3")).toInt()
+            hideTime = SEC2MS(weaponDef!!.dict.GetFloat("hide_time", "0.3"))
             hideDistance = weaponDef!!.dict.GetFloat("hide_distance", "-15")
 
             // muzzle smoke
@@ -989,7 +1103,7 @@ object Weapon {
             nextStrikeFx = 0
 
             // setup gui light
-            guiLight = renderLight_s() //	memset( &guiLight, 0, sizeof( guiLight ) );
+            guiLight = renderLight_s()
             val guiLightShader = weaponDef!!.dict.GetString("mtr_guiLightShader")
             if (guiLightShader.isNotEmpty()) {
                 guiLight.shader = DeclManager.declManager.FindMaterial(guiLightShader, false)
@@ -1027,6 +1141,8 @@ object Weapon {
                     Game_local.gameLocal.Warning("Unknown projectile '%s' in weapon '%s'", projectileName, objectName)
                 } else {
                     val spawnclass = projectileDef.dict.GetString("spawnclass")
+                    // NOTE: Differs from C++ — original uses idClass::GetClass(spawnclass)->IsType() to check
+                    // type metadata without constructing an entity. Kotlin creates a throwaway entity via GetEntity().
                     val spawnEntity: idEntity = GetEntity(spawnclass)!!
                     if (spawnEntity !is idProjectile) {
                         Game_local.gameLocal.Warning(
@@ -1053,11 +1169,11 @@ object Weapon {
             flashPointLight = weaponDef!!.dict.GetBool("flashPointLight", "1")
             weaponDef!!.dict.GetVector("flashColor", "0 0 0", flashColor)
             flashRadius = weaponDef!!.dict.GetInt("flashRadius").toFloat() // if 0, no light will spawn
-            flashTime = SEC2MS(weaponDef!!.dict.GetFloat("flashTime", "0.25f")).toInt()
+            flashTime = SEC2MS(weaponDef!!.dict.GetFloat("flashTime", "0.25"))
             flashTarget.set(weaponDef!!.dict.GetVector("flashTarget"))
             flashUp.set(weaponDef!!.dict.GetVector("flashUp"))
             flashRight.set(weaponDef!!.dict.GetVector("flashRight"))
-            muzzleFlash = renderLight_s() //memset( & muzzleFlash, 0, sizeof(muzzleFlash));
+            muzzleFlash = renderLight_s()
             muzzleFlash.lightId._val = LIGHTID_VIEW_MUZZLE_FLASH + owner!!.entityNumber
             muzzleFlash.allowLightInViewID._val = owner!!.entityNumber + 1
 
@@ -1136,7 +1252,7 @@ object Weapon {
             zoomFov = weaponDef!!.dict.GetInt("zoomFov", "70")
             berserk = weaponDef!!.dict.GetInt("berserk", "2")
             weaponAngleOffsetAverages = weaponDef!!.dict.GetInt("weaponAngleOffsetAverages", "10")
-            weaponAngleOffsetScale = weaponDef!!.dict.GetFloat("weaponAngleOffsetScale", "0.25f")
+            weaponAngleOffsetScale = weaponDef!!.dict.GetFloat("weaponAngleOffsetScale", "0.25")
             weaponAngleOffsetMax = weaponDef!!.dict.GetFloat("weaponAngleOffsetMax", "10")
             weaponOffsetTime = weaponDef!!.dict.GetFloat("weaponOffsetTime", "400")
             weaponOffsetScale = weaponDef!!.dict.GetFloat("weaponOffsetScale", "0.005")
@@ -1170,10 +1286,20 @@ object Weapon {
             UpdateSkin()
         }
 
+        /*
+         ================
+         idWeapon::IsLinked
+         ================
+         */
         fun IsLinked(): Boolean {
             return isLinked
         }
 
+        /*
+         ================
+         idWeapon::IsWorldModelReady
+         ================
+         */
         fun IsWorldModelReady(): Boolean {
             return worldModel.GetEntity() != null
         }
@@ -1183,10 +1309,20 @@ object Weapon {
          GUIs
 
          ***********************************************************************/
+        /*
+         ================
+         idWeapon::Icon
+         ================
+         */
         fun Icon(): String {
             return icon.toString()
         }
 
+        /*
+         ================
+         idWeapon::UpdateGUI
+         ================
+         */
         fun UpdateGUI() {
             if (null == renderEntity!!.gui[0]) {
                 return
@@ -1232,6 +1368,11 @@ object Weapon {
             renderEntity!!.gui[0]!!.SetStateBool("player_clip_low", inclip <= lowAmmo)
         }
 
+        /*
+         ================
+         idWeapon::SetModel
+         ================
+         */
         override fun SetModel(modelname: String) {
             assert(modelname != null)
             if (modelDefHandle >= 0) {
@@ -1290,10 +1431,20 @@ object Weapon {
             return false
         }
 
+        /*
+         ================
+         idWeapon::SetPushVelocity
+         ================
+         */
         fun SetPushVelocity(pushVelocity: idVec3) {
             this.pushVelocity.set(pushVelocity)
         }
 
+        /*
+         ================
+         idWeapon::UpdateSkin
+         ================
+         */
         fun UpdateSkin(): Boolean {
             val func: function_t?
             if (!isLinked) {
@@ -1316,16 +1467,31 @@ object Weapon {
          State control/player interface
 
          ***********************************************************************/
+        /*
+         ================
+         idWeapon::Think
+         ================
+         */
         override fun Think() {
             // do nothing because the present is called from the player through PresentWeapon
         }
 
+        /*
+         ================
+         idWeapon::Raise
+         ================
+         */
         fun Raise() {
             if (isLinked) {
                 WEAPON_RAISEWEAPON.underscore(true)
             }
         }
 
+        /*
+         ================
+         idWeapon::PutAway
+         ================
+         */
         fun PutAway() {
             hasBloodSplat = false
             if (isLinked) {
@@ -1345,6 +1511,11 @@ object Weapon {
             }
         }
 
+        /*
+         ================
+         idWeapon::LowerWeapon
+         ================
+         */
         fun LowerWeapon() {
             if (!hide) {
                 hideStart = 0.0f
@@ -1358,6 +1529,11 @@ object Weapon {
             }
         }
 
+        /*
+         ================
+         idWeapon::RaiseWeapon
+         ================
+         */
         fun RaiseWeapon() {
             Show()
             if (hide) {
@@ -1372,6 +1548,11 @@ object Weapon {
             }
         }
 
+        /*
+         ================
+         idWeapon::HideWeapon
+         ================
+         */
         fun HideWeapon() {
             Hide()
             if (worldModel.GetEntity() != null) {
@@ -1380,6 +1561,11 @@ object Weapon {
             muzzleFlashEnd = 0
         }
 
+        /*
+         ================
+         idWeapon::ShowWeapon
+         ================
+         */
         fun ShowWeapon() {
             Show()
             if (worldModel.GetEntity() != null) {
@@ -1390,18 +1576,33 @@ object Weapon {
             }
         }
 
+        /*
+         ================
+         idWeapon::HideWorldModel
+         ================
+         */
         fun HideWorldModel() {
             if (worldModel.GetEntity() != null) {
                 worldModel.GetEntity()!!.Hide()
             }
         }
 
+        /*
+         ================
+         idWeapon::ShowWorldModel
+         ================
+         */
         fun ShowWorldModel() {
             if (worldModel.GetEntity() != null) {
                 worldModel.GetEntity()!!.Show()
             }
         }
 
+        /*
+         ================
+         idWeapon::OwnerDied
+         ================
+         */
         fun OwnerDied() {
             if (isLinked) {
                 SetState("OwnerDied", 0)
@@ -1417,6 +1618,11 @@ object Weapon {
             PostEventMS(EV_Weapon_Clear, 0)
         }
 
+        /*
+         ================
+         idWeapon::BeginAttack
+         ================
+         */
         fun BeginAttack() {
             if (status != weaponStatus_t.WP_OUTOFAMMO) {
                 lastAttack = Game_local.gameLocal.time
@@ -1432,6 +1638,11 @@ object Weapon {
             WEAPON_ATTACK.underscore(true)
         }
 
+        /*
+         ================
+         idWeapon::EndAttack
+         ================
+         */
         fun EndAttack() {
             if (!WEAPON_ATTACK.IsLinked()) {
                 return
@@ -1444,22 +1655,47 @@ object Weapon {
             }
         }
 
+        /*
+         ================
+         idWeapon::IsReady
+         ================
+         */
         fun IsReady(): Boolean {
             return !hide && !IsHidden() && (status == weaponStatus_t.WP_RELOAD || status == weaponStatus_t.WP_READY || status == weaponStatus_t.WP_OUTOFAMMO)
         }
 
+        /*
+         ================
+         idWeapon::IsReloading
+         ================
+         */
         fun IsReloading(): Boolean {
             return status == weaponStatus_t.WP_RELOAD
         }
 
+        /*
+         ================
+         idWeapon::IsHolstered
+         ================
+         */
         fun IsHolstered(): Boolean {
             return status == weaponStatus_t.WP_HOLSTERED
         }
 
+        /*
+         ================
+         idWeapon::ShowCrosshair
+         ================
+         */
         fun ShowCrosshair(): Boolean {
             return !(state.toString() == weaponStatus_t.WP_RISING.name || state.toString() == weaponStatus_t.WP_LOWERING.name || state.toString() == weaponStatus_t.WP_HOLSTERED.name)
         }
 
+        /*
+         =====================
+         idWeapon::DropItem
+         =====================
+         */
         fun DropItem(velocity: idVec3, activateDelay: Int, removeDelay: Int, died: Boolean): idEntity? {
             if (null == weaponDef || null == worldModel.GetEntity()) {
                 return null
@@ -1483,6 +1719,11 @@ object Weapon {
             )
         }
 
+        /*
+         =====================
+         idWeapon::CanDrop
+         =====================
+         */
         fun CanDrop(): Boolean {
             if (null == weaponDef || null == worldModel.GetEntity()) {
                 return false
@@ -1491,6 +1732,11 @@ object Weapon {
             return classname.isNotEmpty()
         }
 
+        /*
+         ================
+         idWeapon::WeaponStolen
+         ================
+         */
         fun WeaponStolen() {
             assert(!Game_local.gameLocal.isClient)
             if (projectileEnt != null) {
@@ -1546,7 +1792,8 @@ object Weapon {
          Not called during idGameLocal::MapShutdown.
          ================
          */
-        fun DefinalructScriptObject() {
+        // FIX: Method name was corrupted from "Deconstruct" to "Definalruct"
+        override fun DeconstructScriptObject() {
             val destructor: function_t?
             if (null == thread) {
                 return
@@ -1571,6 +1818,11 @@ object Weapon {
             scriptObject.ClearObject()
         }
 
+        /*
+         =====================
+         idWeapon::SetState
+         =====================
+         */
         fun SetState(statename: String, blendFrames: Int) {
             val func: function_t?
             if (!isLinked) {
@@ -1595,6 +1847,11 @@ object Weapon {
             idealState.set("")
         }
 
+        /*
+         ================
+         idWeapon::UpdateScript
+         ================
+         */
         fun UpdateScript() {
             var count: Int
             if (!isLinked) {
@@ -1620,6 +1877,11 @@ object Weapon {
             WEAPON_RELOAD.underscore(false)
         }
 
+        /*
+         ================
+         idWeapon::EnterCinematic
+         ================
+         */
         fun EnterCinematic() {
             StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
             if (isLinked) {
@@ -1629,7 +1891,10 @@ object Weapon {
                 WEAPON_RELOAD.underscore(false)
                 WEAPON_NETRELOAD.underscore(false)
                 WEAPON_NETENDRELOAD.underscore(false)
-                WEAPON_NETFIRING.underscore(false)
+                // FIX: Added IsLinked() guard — WEAPON_NETFIRING is not linked in demo mode
+                if (WEAPON_NETFIRING.IsLinked()) {
+                    WEAPON_NETFIRING.underscore(false)
+                }
                 WEAPON_RAISEWEAPON.underscore(false)
                 WEAPON_LOWERWEAPON.underscore(false)
             }
@@ -1637,6 +1902,11 @@ object Weapon {
             LowerWeapon()
         }
 
+        /*
+         ================
+         idWeapon::ExitCinematic
+         ================
+         */
         fun ExitCinematic() {
             disabled = false
             if (isLinked) {
@@ -1646,6 +1916,11 @@ object Weapon {
             RaiseWeapon()
         }
 
+        /*
+         ================
+         idWeapon::NetCatchup
+         ================
+         */
         fun NetCatchup() {
             if (isLinked) {
                 SetState("NetCatchup", 0)
@@ -1658,6 +1933,11 @@ object Weapon {
          Visual presentation
 
          ***********************************************************************/
+        /*
+         ================
+         idWeapon::PresentWeapon
+         ================
+         */
         fun PresentWeapon(showViewModel: Boolean) {
             playerViewOrigin.set(owner!!.firstPersonViewOrigin)
             playerViewAxis.set(owner!!.firstPersonViewAxis)
@@ -1729,7 +2009,9 @@ object Weapon {
             // muzzle smoke
             if (showViewModel && !disabled && weaponSmoke != null && weaponSmokeStartTime != 0) {
                 // use the barrel joint if available
-                if (barrelJointView != 0) {
+                // FIX: Was != 0 which is wrong — INVALID_JOINT is -1, so != 0 passes for invalid joints.
+                // Changed to != INVALID_JOINT for consistency with the rest of the file.
+                if (barrelJointView != Model.INVALID_JOINT) {
                     GetGlobalJointTransform(true, barrelJointView, muzzleOrigin, muzzleAxis)
                 } else {
                     // default to going straight out the view
@@ -1801,21 +2083,41 @@ object Weapon {
             UpdateSound()
         }
 
+        /*
+         ================
+         idWeapon::GetZoomFov
+         ================
+         */
         fun GetZoomFov(): Int {
             return zoomFov
         }
 
+        /*
+         ================
+         idWeapon::GetWeaponAngleOffsets
+         ================
+         */
         fun GetWeaponAngleOffsets(average: CInt, scale: CFloat, max: CFloat) {
             average._val = (weaponAngleOffsetAverages)
             scale._val = (weaponAngleOffsetScale)
             max._val = (weaponAngleOffsetMax)
         }
 
+        /*
+         ================
+         idWeapon::GetWeaponTimeOffsets
+         ================
+         */
         fun GetWeaponTimeOffsets(time: CFloat, scale: CFloat) {
             time._val = weaponOffsetTime
             scale._val = weaponOffsetScale
         }
 
+        /*
+         ================
+         idWeapon::BloodSplat
+         ================
+         */
         fun BloodSplat(size: Float): Boolean {
             val s = CFloat()
             val c = CFloat()
@@ -1861,10 +2163,20 @@ object Weapon {
             return true
         }
 
+        /*
+         ================
+         idWeapon::GetAmmoType
+         ================
+         */
         fun  /*ammo_t*/GetAmmoType(): Int {
             return ammoType
         }
 
+        /*
+         ================
+         idWeapon::AmmoAvailable
+         ================
+         */
         fun AmmoAvailable(): Int {
             return if (owner != null) {
                 owner!!.inventory.HasAmmo(ammoType, ammoRequired)
@@ -1873,26 +2185,56 @@ object Weapon {
             }
         }
 
+        /*
+         ================
+         idWeapon::AmmoInClip
+         ================
+         */
         fun AmmoInClip(): Int {
             return ammoClip
         }
 
+        /*
+         ================
+         idWeapon::ResetAmmoClip
+         ================
+         */
         fun ResetAmmoClip() {
             ammoClip = -1
         }
 
+        /*
+         ================
+         idWeapon::ClipSize
+         ================
+         */
         fun ClipSize(): Int {
             return clipSize
         }
 
+        /*
+         ================
+         idWeapon::LowAmmo
+         ================
+         */
         fun LowAmmo(): Int {
             return lowAmmo
         }
 
+        /*
+         ================
+         idWeapon::AmmoRequired
+         ================
+         */
         fun AmmoRequired(): Int {
             return ammoRequired
         }
 
+        /*
+         ================
+         idWeapon::WriteToSnapshot
+         ================
+         */
         override fun WriteToSnapshot(msg: idBitMsgDelta) {
             msg.WriteBits(ammoClip, Player.ASYNC_PLAYER_INV_CLIP_BITS)
             msg.WriteBits(worldModel.GetSpawnId(), 32)
@@ -1900,7 +2242,11 @@ object Weapon {
             msg.WriteBits(if (isFiring) 1 else 0, 1)
         }
 
-        // };
+        /*
+         ================
+         idWeapon::ReadFromSnapshot
+         ================
+         */
         override fun ReadFromSnapshot(msg: idBitMsgDelta) {
             ammoClip = msg.ReadBits(Player.ASYNC_PLAYER_INV_CLIP_BITS)
             worldModel.SetSpawnId(msg.ReadBits(32))
@@ -1926,6 +2272,11 @@ object Weapon {
             }
         }
 
+        /*
+         ================
+         idWeapon::ClientReceiveEvent
+         ================
+         */
         override fun ClientReceiveEvent(event: Int, time: Int, msg: idBitMsg): Boolean {
             return when (event) {
                 EVENT_RELOAD -> {
@@ -1962,13 +2313,22 @@ object Weapon {
                     super.ClientReceiveEvent(event, time, msg)
                 }
             }
-            //            return false;
         }
 
+        /*
+         ===============
+         idWeapon::ClientPredictionThink
+         ===============
+         */
         override fun ClientPredictionThink() {
             UpdateAnimation()
         }
 
+        /*
+         ================
+         idWeapon::AlertMonsters
+         ================
+         */
         // flashlight
         private fun AlertMonsters() {
             val tr = trace_s()
@@ -2020,6 +2380,11 @@ object Weapon {
             }
         }
 
+        /*
+         ================
+         idWeapon::InitWorldModel
+         ================
+         */
         // Visual presentation
         private fun InitWorldModel(def: idDeclEntityDef) {
             val ent: idEntity
@@ -2058,6 +2423,11 @@ object Weapon {
             ejectJointWorld = ent.GetAnimator().GetJointHandle("eject")
         }
 
+        /*
+         ================
+         idWeapon::MuzzleFlashLight
+         ================
+         */
         private fun MuzzleFlashLight() {
             if (!lightOn && (!SysCvar.g_muzzleFlash.GetBool() || 0.0f == muzzleFlash.lightRadius[0])) {
                 return
@@ -2117,6 +2487,11 @@ object Weapon {
             axis.set(ang.ToMat3().times(axis))
         }
 
+        /*
+         ================
+         idWeapon::UpdateNozzleFx
+         ================
+         */
         private fun UpdateNozzleFx() {
             if (!nozzleFx) {
                 return
@@ -2142,7 +2517,6 @@ object Weapon {
             // vent light
             //
             if (nozzleGlowHandle == -1) {
-//		memset(&nozzleGlow, 0, sizeof(nozzleGlow));
                 nozzleGlow = renderLight_s()
                 if (owner != null) {
                     nozzleGlow.allowLightInViewID._val = owner!!.entityNumber + 1
@@ -2166,6 +2540,11 @@ object Weapon {
             Game_local.gameRenderWorld!!.UpdateLightDef(nozzleGlowHandle, nozzleGlow)
         }
 
+        /*
+         ================
+         idWeapon::UpdateFlashPosition
+         ================
+         */
         private fun UpdateFlashPosition() {
             // the flash has an explicit joint for locating it
             GetGlobalJointTransform(true, flashJointView, muzzleFlash.origin, muzzleFlash.axis)
@@ -2187,17 +2566,29 @@ object Weapon {
          Script events
 
          ***********************************************************************/
+        /*
+         ===============
+         idWeapon::Event_Clear
+         ===============
+         */
         private fun Event_Clear() {
             Clear()
         }
 
+        /*
+         ===============
+         idWeapon::Event_GetOwner
+         ===============
+         */
         private fun Event_GetOwner() {
             idThread.ReturnEntity(owner)
         }
 
-        //
-        //        private void Event_SetWeaponStatus(float newStatus);
-        //
+        /*
+         ===============
+         idWeapon::Event_WeaponState
+         ===============
+         */
         private fun Event_WeaponState(_statename: idEventArg<String?>, blendFrames: idEventArg<Int>) {
             val statename = _statename.value
             val func: function_t?
@@ -2216,6 +2607,11 @@ object Weapon {
             thread!!.DoneProcessing()
         }
 
+        /*
+         ===============
+         idWeapon::Event_WeaponReady
+         ===============
+         */
         private fun Event_WeaponReady() {
             status = weaponStatus_t.WP_READY
             if (isLinked) {
@@ -2226,6 +2622,11 @@ object Weapon {
             }
         }
 
+        /*
+         ===============
+         idWeapon::Event_WeaponOutOfAmmo
+         ===============
+         */
         private fun Event_WeaponOutOfAmmo() {
             status = weaponStatus_t.WP_OUTOFAMMO
             if (isLinked) {
@@ -2233,10 +2634,20 @@ object Weapon {
             }
         }
 
+        /*
+         ===============
+         idWeapon::Event_WeaponReloading
+         ===============
+         */
         private fun Event_WeaponReloading() {
             status = weaponStatus_t.WP_RELOAD
         }
 
+        /*
+         ===============
+         idWeapon::Event_WeaponHolstered
+         ===============
+         */
         private fun Event_WeaponHolstered() {
             status = weaponStatus_t.WP_HOLSTERED
             if (isLinked) {
@@ -2244,6 +2655,11 @@ object Weapon {
             }
         }
 
+        /*
+         ===============
+         idWeapon::Event_WeaponRising
+         ===============
+         */
         private fun Event_WeaponRising() {
             status = weaponStatus_t.WP_RISING
             if (isLinked) {
@@ -2252,6 +2668,11 @@ object Weapon {
             owner!!.WeaponRisingCallback()
         }
 
+        /*
+         ===============
+         idWeapon::Event_WeaponLowering
+         ===============
+         */
         private fun Event_WeaponLowering() {
             status = weaponStatus_t.WP_LOWERING
             if (isLinked) {
@@ -2260,6 +2681,11 @@ object Weapon {
             owner!!.WeaponLoweringCallback()
         }
 
+        /*
+         ===============
+         idWeapon::Event_UseAmmo
+         ===============
+         */
         private fun Event_UseAmmo(_amount: idEventArg<Int>) {
             val amount: Int = _amount.value
             if (Game_local.gameLocal.isClient) {
@@ -2274,6 +2700,11 @@ object Weapon {
             }
         }
 
+        /*
+         ===============
+         idWeapon::Event_AddToClip
+         ===============
+         */
         private fun Event_AddToClip(amount: idEventArg<Int>) {
             val ammoAvail: Int
             if (Game_local.gameLocal.isClient) {
@@ -2289,25 +2720,50 @@ object Weapon {
             }
         }
 
+        /*
+         ===============
+         idWeapon::Event_AmmoInClip
+         ===============
+         */
         private fun Event_AmmoInClip() {
             val ammo = AmmoInClip()
             idThread.ReturnFloat(ammo.toFloat())
         }
 
+        /*
+         ===============
+         idWeapon::Event_AmmoAvailable
+         ===============
+         */
         private fun Event_AmmoAvailable() {
             val ammoAvail = owner!!.inventory.HasAmmo(ammoType, ammoRequired)
             idThread.ReturnFloat(ammoAvail.toFloat())
         }
 
+        /*
+         ===============
+         idWeapon::Event_TotalAmmoCount
+         ===============
+         */
         private fun Event_TotalAmmoCount() {
             val ammoAvail = owner!!.inventory.HasAmmo(ammoType, 1)
             idThread.ReturnFloat(ammoAvail.toFloat())
         }
 
+        /*
+         ===============
+         idWeapon::Event_ClipSize
+         ===============
+         */
         private fun Event_ClipSize() {
             idThread.ReturnFloat(clipSize.toFloat())
         }
 
+        /*
+         ===============
+         idWeapon::Event_PlayAnim
+         ===============
+         */
         private fun Event_PlayAnim(_channel: idEventArg<Int>, _animname: idEventArg<String>) {
             val channel: Int = _channel.value
             val animname = _animname.value
@@ -2335,6 +2791,11 @@ object Weapon {
             idThread.ReturnInt(0)
         }
 
+        /*
+         ===============
+         idWeapon::Event_PlayCycle
+         ===============
+         */
         private fun Event_PlayCycle(_channel: idEventArg<Int>, _animname: idEventArg<String>) {
             val channel: Int = _channel.value
             val animname = _animname.value
@@ -2360,23 +2821,48 @@ object Weapon {
             idThread.ReturnInt(0)
         }
 
+        /*
+         ===============
+         idWeapon::Event_AnimDone
+         ===============
+         */
         private fun Event_AnimDone(channel: idEventArg<Int>, blendFrames: idEventArg<Int>) {
             idThread.ReturnInt(animDoneTime - Anim.FRAME2MS(blendFrames.value) <= Game_local.gameLocal.time)
         }
 
+        /*
+         ===============
+         idWeapon::Event_SetBlendFrames
+         ===============
+         */
         private fun Event_SetBlendFrames(channel: idEventArg<Int>, blendFrames: idEventArg<Int>) {
             animBlendFrames = blendFrames.value
         }
 
+        /*
+         ===============
+         idWeapon::Event_GetBlendFrames
+         ===============
+         */
         private fun Event_GetBlendFrames(channel: idEventArg<Int>) {
             idThread.ReturnInt(animBlendFrames)
         }
 
+        /*
+         ================
+         idWeapon::Event_Next
+         ================
+         */
         private fun Event_Next() {
             // change to another weapon if possible
             owner!!.NextBestWeapon()
         }
 
+        /*
+         ================
+         idWeapon::Event_SetSkin
+         ================
+         */
         private fun Event_SetSkin(_skinname: idEventArg<String?>) {
             val skinname = _skinname.value
             val skinDecl: idDeclSkin?
@@ -2405,6 +2891,11 @@ object Weapon {
             }
         }
 
+        /*
+         ================
+         idWeapon::Event_Flashlight
+         ================
+         */
         private fun Event_Flashlight(enable: idEventArg<Int>) {
             if (enable.value != 0) {
                 lightOn = true
@@ -2415,6 +2906,11 @@ object Weapon {
             }
         }
 
+        /*
+         ================
+         idWeapon::Event_GetLightParm
+         ================
+         */
         private fun Event_GetLightParm(_parmnum: idEventArg<Int>) {
             val parmnum: Int = _parmnum.value
             if (parmnum < 0 || parmnum >= Material.MAX_ENTITY_SHADER_PARMS) {
@@ -2423,6 +2919,11 @@ object Weapon {
             idThread.ReturnFloat(muzzleFlash.shaderParms[parmnum])
         }
 
+        /*
+         ================
+         idWeapon::Event_SetLightParm
+         ================
+         */
         private fun Event_SetLightParm(_parmnum: idEventArg<Int>, _value: idEventArg<Float>) {
             val parmnum: Int = _parmnum.value
             val value: Float = _value.value
@@ -2434,6 +2935,11 @@ object Weapon {
             UpdateVisuals()
         }
 
+        /*
+         ================
+         idWeapon::Event_SetLightParms
+         ================
+         */
         private fun Event_SetLightParms(
             parm0: idEventArg<Float>,
             parm1: idEventArg<Float>,
@@ -2451,6 +2957,11 @@ object Weapon {
             UpdateVisuals()
         }
 
+        /*
+         ================
+         idWeapon::Event_LaunchProjectiles
+         ================
+         */
         private fun Event_LaunchProjectiles(
             _num_projectiles: idEventArg<Int>,
             _spread: idEventArg<Float>,
@@ -2668,6 +3179,11 @@ object Weapon {
             weaponSmokeStartTime = Game_local.gameLocal.realClientTime
         }
 
+        /*
+         ================
+         idWeapon::Event_CreateProjectile
+         ================
+         */
         private fun Event_CreateProjectile() {
             if (!Game_local.gameLocal.isClient) {
                 val projectileEnt2 = arrayOfNulls<idEntity>(1)
@@ -2731,6 +3247,11 @@ object Weapon {
             debris.GetPhysics().SetAngularVelocity(angular_velocity)
         }
 
+        /*
+         =====================
+         idWeapon::Event_Melee
+         =====================
+         */
         private fun Event_Melee() {
             val ent: idEntity?
             val tr = trace_s()
@@ -2851,14 +3372,29 @@ object Weapon {
             owner!!.WeaponFireFeedback(weaponDef!!.dict)
         }
 
+        /*
+         =====================
+         idWeapon::Event_GetWorldModel
+         =====================
+         */
         private fun Event_GetWorldModel() {
             idThread.ReturnEntity(worldModel.GetEntity())
         }
 
+        /*
+         =====================
+         idWeapon::Event_AllowDrop
+         =====================
+         */
         private fun Event_AllowDrop(allow: idEventArg<Int>) {
             allowDrop = allow.value != 0
         }
 
+        /*
+         ===============
+         idWeapon::Event_AutoReload
+         ===============
+         */
         private fun Event_AutoReload() {
             assert(owner != null)
             if (Game_local.gameLocal.isClient) {
@@ -2870,6 +3406,11 @@ object Weapon {
             )
         }
 
+        /*
+         ===============
+         idWeapon::Event_NetReload
+         ===============
+         */
         private fun Event_NetReload() {
             assert(owner != null)
             if (Game_local.gameLocal.isServer) {
@@ -2877,6 +3418,11 @@ object Weapon {
             }
         }
 
+        /*
+         ===============
+         idWeapon::Event_IsInvisible
+         ===============
+         */
         private fun Event_IsInvisible() {
             if (null == owner) {
                 idThread.ReturnFloat(0.0f)
@@ -2885,6 +3431,11 @@ object Weapon {
             idThread.ReturnFloat(if (owner!!.PowerUpActive(Player.INVISIBILITY)) 1.0f else 0.0f)
         }
 
+        /*
+         ===============
+         idWeapon::Event_NetEndReload
+         ===============
+         */
         private fun Event_NetEndReload() {
             assert(owner != null)
             if (Game_local.gameLocal.isServer) {
@@ -2893,7 +3444,7 @@ object Weapon {
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
@@ -2909,10 +3460,10 @@ object Weapon {
             worldModel = idEntityPtr()
             weaponDef = null
             thread = null
-            guiLight = renderLight_s() //memset( &guiLight, 0, sizeof( guiLight ) );
-            muzzleFlash = renderLight_s() //memset( &muzzleFlash, 0, sizeof( muzzleFlash ) );
-            worldMuzzleFlash = renderLight_s() //memset( &worldMuzzleFlash, 0, sizeof( worldMuzzleFlash ) );
-            nozzleGlow = renderLight_s() //memset( &nozzleGlow, 0, sizeof( nozzleGlow ) );
+            guiLight = renderLight_s()
+            muzzleFlash = renderLight_s()
+            worldMuzzleFlash = renderLight_s()
+            nozzleGlow = renderLight_s()
             muzzleFlashEnd = 0
             flashColor = getVec3Origin()
             muzzleFlashHandle = -1

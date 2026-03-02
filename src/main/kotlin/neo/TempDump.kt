@@ -46,15 +46,14 @@ object TempDump {
      * checks.
      *
      * @param str a char array.
-     * @return -1 if the array is NULL or the location of the first terminator.
+     * @return 0 if the array is empty or starts with null terminator, otherwise the index of the first null terminator.
      */
 
     fun strLen(str: CharArray): Int {
-        var len: Int
-        if (str.isEmpty() || '\u0000' == str[0]) {
-            return -1
+        if (str.isEmpty()) {
+            return 0
         }
-        len = 0
+        var len = 0
         while (len < str.size) {
             if (str[len] == '\u0000') {
                 break
@@ -66,11 +65,10 @@ object TempDump {
 
 
     fun strLen(str: ByteArray, offset: Int = 0): Int {
-        var len: Int
         if (str.isEmpty()) {
-            return -1
+            return 0
         }
-        len = offset
+        var len = offset
         while (len < str.size) {
             if (str[len].toInt() == 0) {
                 break

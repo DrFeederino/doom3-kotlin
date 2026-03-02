@@ -1782,8 +1782,7 @@ open class idAI : idActor() {
         projectile.Restore(savefile)
         savefile.ReadString(attack)
         // FIX: chat_snd may be null; create temp object for ReadSoundShader which requires non-null
-        val tempSoundShader = idSoundShader()
-        savefile.ReadSoundShader(tempSoundShader)
+        val tempSoundShader = savefile.ReadSoundShader()
         chat_snd = tempSoundShader
         chat_min = savefile.ReadInt()
         chat_max = savefile.ReadInt()
@@ -5756,7 +5755,7 @@ open class idAI : idActor() {
             Game_local.gameLocal.Warning("%s (%s) doesn't have a projectile specified", name, GetEntityDefName())
             // FIX: Was missing return; C++ uses `return idThread::ReturnEntity(NULL)` to exit early
             idThread.ReturnEntity(null)
-            return
+            //return
         }
         GetMuzzle(jointname, muzzle, axis)
         CreateProjectile(muzzle, viewAxis[0].times(physicsObj.GetGravityAxis()))
@@ -7118,7 +7117,7 @@ open class idAI : idActor() {
         }
         if (moveable != null) {
             moveable.Unbind()
-            moveable.PostEventMS(EV_SetOwner, 200.0f, null)
+            moveable.PostEventMS(EV_SetOwner, 200, null)
         }
     }
 
@@ -7135,7 +7134,7 @@ open class idAI : idActor() {
         }
         if (af != null) {
             af.Unbind()
-            af.PostEventMS(EV_SetOwner, 200.0f, null)
+            af.PostEventMS(EV_SetOwner, 200, null)
         }
     }
 

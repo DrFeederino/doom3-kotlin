@@ -1,3 +1,43 @@
+/*
+ * ===========================================================================
+ *
+ * Doom 3 GPL Source Code
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/game/gamesys/Class.h, neo/game/gamesys/Class.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * ===========================================================================
+ *
+ * Base class for all game objects.  Provides fast run-time type checking
+ * and run-time instancing of objects.
+ *
+ * NOTE: Differs from C++ — The C++ version uses CLASS_DECLARATION /
+ * ABSTRACT_DECLARATION macros to register static idTypeInfo instances at
+ * program startup, providing RTTI, factory instantiation, and event dispatch
+ * via eventMap arrays. The Kotlin/JVM port replaces this with:
+ *   - JVM reflection for class name / superclass queries
+ *   - Per-class Map<idEventDef, eventCallback_t> for event dispatch
+ *   - GetEntity() hardcoded factory for entity instantiation
+ *   - Virtual getEventCallBack() dispatch instead of eventMap[eventNum]
+ * The idTypeInfo infrastructure is preserved for future use and for
+ * save/restore compatibility, but is currently dormant (no idTypeInfo
+ * instances are created at class registration time).
+ */
 package neo.Game.GameSys
 
 import neo.Game.*
@@ -84,7 +124,7 @@ import neo.Game.Trigger.idTrigger_Multi
 import neo.Game.Trigger.idTrigger_Timer
 import neo.Game.Trigger.idTrigger_Touch
 import neo.Game.WorldSpawn.idWorldspawn
-import neo.TempDump.TODO_Exception
+
 import neo.cm.trace_s
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.idlib.CmdArgs
@@ -218,7 +258,6 @@ class Class {
                 else if (data is trace_s) Event.D_EVENT_TRACE.code
                 else {
                     Event.D_EVENT_VOID.code
-                    //throw new TempDump.TypeErasure_Expection();
                 }
             value = data
         }
@@ -265,51 +304,13 @@ class Class {
 
     class idAllocError(text: String /*= ""*/) : idException(text)
 
-    //    /*
-    //================
-    //ABSTRACT_PROTOTYPE
-    //
-    //This macro must be included in the definition of any abstract subclass of idClass.
-    //It prototypes variables used in class instanciation and type checking.
-    //Use this on single inheritance abstract classes only.
-    //================
-    //*/
-    //#define ABSTRACT_PROTOTYPE( nameofclass )								\
-    //public:																	\
-    //	static	idTypeInfo						Type;						\
-    //	static	idClass							*CreateInstance( void );	\
-    //	virtual	idTypeInfo						*GetType( void ) const;		\
-    //	static	idEventFunc<nameofclass>		eventCallbacks[]
-    //
-    ///*
-    //================
-    //ABSTRACT_DECLARATION
-    //
-    //This macro must be included in the code to properly initialize variables
-    //used in type checking.  It also defines the list of events that the class
-    //responds to.  Take special care to ensure that the proper superclass is
-    //indicated or the run-time tyep information will be incorrect.  Use this
-    //on abstract classes only.
-    //================
-    //*/
-    //#define ABSTRACT_DECLARATION( nameofsuperclass, nameofclass )										\
-    //	idTypeInfo nameofclass::Type( #nameofclass, #nameofsuperclass,									\
-    //		( idEventFunc<idClass> * )nameofclass::eventCallbacks, nameofclass::CreateInstance, ( void ( idClass::* )( void ) )&nameofclass::Spawn,	\
-    //		( void ( idClass::* )( idSaveGame * ) const )&nameofclass::Save, ( void ( idClass::* )( idRestoreGame * ) )&nameofclass::Restore );	\
-    //	idClass *nameofclass::CreateInstance( void ) {													\
-    //		gameLocal.Error( "Cannot instanciate abstract class %s.", #nameofclass );					\
-    //		return NULL;																				\
-    //	}																								\
-    //	idTypeInfo *nameofclass::GetType( void ) const {												\
-    //		return &( nameofclass::Type );																\
-    //	}																								\
-    //	idEventFunc<nameofclass> nameofclass::eventCallbacks[] = {
-    //
-    //typedef void ( idClass::*classSpawnFunc_t )( void );
-    //
-    //class idSaveGame;
-    //class idRestoreGame;
-    abstract class idClass /*<nameOfClass>*/ {
+    /*
+     ***********************************************************************
+
+      idClass
+
+     ***********************************************************************/
+    abstract class idClass {
         companion object {
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = run {
                 val map = HashMap<idEventDef, eventCallback_t<*>>()
@@ -320,8 +321,11 @@ class Class {
 
             //
             private var initialized = false
-            private const val memused = 0
-            private const val numobjects = 0
+
+            // FIX: Changed from const val to var — C++ modifies these in operator new/delete.
+            // In JVM we don't override new/delete, but these should still be mutable for tracking.
+            private var memused = 0
+            private var numobjects = 0
             private var typeNumBits = 0
 
             // typenum order
@@ -330,8 +334,6 @@ class Class {
             // alphabetical order
             private val types: idList<idTypeInfo> = idList()
 
-            //
-            //
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
                 return eventCallbacks
             }
@@ -388,6 +390,11 @@ class Class {
                 )
             }
 
+            /*
+             ================
+             idClass::Shutdown
+             ================
+             */
             fun Shutdown() {
                 var c: idTypeInfo?
                 c = typelist
@@ -408,14 +415,47 @@ class Class {
          so it must be called as idClass::GetClass( classname )
          ================
          */
+            // FIX: Was a hardcoded when block that always returned null.
+            // Reimplemented to match C++ — linear scan pre-init, binary search post-init.
             fun GetClass(name: String?): idTypeInfo? {
-                when (name) {
-                    "idWorldspawn" -> idWorldspawn
-                    "idThread" -> idThread
+                if (name == null) return null
+
+                if (!initialized) {
+                    // idClass::Init hasn't been called yet, so do a slow lookup
+                    var c = typelist
+                    while (c != null) {
+                        if (idStr.Cmp(c.classname, name) == 0) {
+                            return c
+                        }
+                        c = c.next
+                    }
+                } else {
+                    // do a binary search through the list of types
+                    var min = 0
+                    var max = types.Num() - 1
+                    while (min <= max) {
+                        val mid = (min + max) / 2
+                        val c = types[mid]
+                        val order = idStr.Cmp(c.classname, name)
+                        if (order == 0) {
+                            return c
+                        } else if (order > 0) {
+                            max = mid - 1
+                        } else {
+                            min = mid + 1
+                        }
+                    }
                 }
+
                 return null
             }
 
+            // NOTE: Kotlin-only, no C++ counterpart.
+            // This is a hardcoded factory that replaces the C++ CLASS_DECLARATION macro
+            // and idTypeInfo::CreateInstance() system. In C++, each class registers an
+            // idTypeInfo with a factory function; here, we use a when-block mapping class
+            // names to constructor calls. This is used by CreateInstance() as a fallback
+            // when the idTypeInfo system is not populated.
             fun GetEntity(name: String?): idEntity? {
                 return if (name == null || name.isEmpty()) {
                     null
@@ -517,28 +557,26 @@ class Class {
                 }
             }
 
-            // #ifdef ID_REDIRECT_NEWDELETE
-            // #undef new
-            // #endif
-            //public	Object						operator new( size_t );
-            //public	Object						operator new( size_t s, int, int, char *, int );
-            //public	void						operator delete( void * );
-            //public	void						operator delete( void *, int, int, char *, int );
-            // #ifdef ID_REDIRECT_NEWDELETE
-            // #define new ID_DEBUG_NEW
-            // #endif
-            fun CreateInstance(name: String?): idClass {
-//            idTypeInfo type;
-//            idClass obj;
-//
-//            type = idClass.GetClass(name);
-//            if (NOT(type)) {
-//                return null;
-//            }
-//
-//            return type.CreateInstance();
-//            return obj;
-                throw TODO_Exception()
+            /*
+             ================
+             idClass::CreateInstance
+             ================
+             */
+            // FIX: Was throwing TODO_Exception, making factory instantiation impossible.
+            // Reimplemented to match C++ — looks up idTypeInfo by name and calls its factory.
+            // Falls back to GetEntity() as a Kotlin-specific workaround when idTypeInfo
+            // system is not populated (which is the normal case in the current Kotlin port,
+            // since CLASS_DECLARATION macros don't exist and idTypeInfo instances are not
+            // created at class registration time).
+            fun CreateInstance(name: String?): idClass? {
+                val type = GetClass(name)
+                if (type != null) {
+                    return type.CreateInstance.run() as? idClass
+                }
+
+                // NOTE: Differs from C++ — fall back to GetEntity() factory when
+                // idTypeInfo system is not populated.
+                return GetEntity(name)
             }
 
             fun GetNumTypes(): Int {
@@ -549,6 +587,11 @@ class Class {
                 return typeNumBits
             }
 
+            /*
+             ================
+             idClass::GetType
+             ================
+             */
             fun GetType(typeNum: Int): idTypeInfo? {
                 var c: idTypeInfo?
                 if (!initialized) {
@@ -575,21 +618,39 @@ class Class {
         }
 
         abstract fun CreateInstance(): idClass
-        abstract fun  /*idTypeInfo*/GetType(): Class<out idClass>
+        abstract fun GetType(): Class<out idClass>
         abstract fun getEventCallBack(event: idEventDef): eventCallback_t<*>?
 
-        // virtual						~idClass();
+        /*
+         ================
+         idClass::~idClass
+
+         Destructor for object.  Cancels any events that depend on this object.
+         ================
+         */
         protected open fun _deconstructor() {
             idEvent.CancelEvents(this)
         }
 
+        /*
+         ================
+         idClass::Spawn
+         ================
+         */
         open fun Spawn() {}
+
+        /*
+         ================
+         idClass::CallSpawn
+
+         NOTE: Differs from C++ — C++ uses CallSpawnFunc to walk the idTypeInfo hierarchy
+         and call each level's Spawn() from base to derived, skipping duplicates.
+         In the Kotlin port, entity classes use super.Spawn() chains, so calling the
+         most-derived Spawn() achieves the same base-to-derived initialization order.
+         ================
+         */
         fun CallSpawn() {
-            throw TODO_Exception()
-            //            java.lang.Class/*idTypeInfo*/ type;
-//
-//            type = GetType();
-//            CallSpawnFunc(type);
+            Spawn()
         }
 
         /*
@@ -608,49 +669,54 @@ class Class {
          idClass::GetSuperclass
 
          Returns the text classname of the superclass.
+         NOTE: Differs from C++ — uses JVM reflection instead of idTypeInfo hierarchy.
          ================
          */
         fun GetSuperclass(): String {
-            throw TODO_Exception()
-            //            java.lang.Class/*idTypeInfo*/ cls;
-//
-//            cls = GetType();
-//            return cls.superclass;
+            return this.javaClass.superclass?.simpleName ?: ""
         }
 
+        /*
+         ================
+         idClass::FindUninitializedMemory
+
+         NOTE: Differs from C++ — This is a no-op on JVM. The C++ version walks
+         raw memory to detect 0xcdcdcdcd debug fill patterns. JVM initializes
+         all fields to their default values, so this check is unnecessary.
+         ================
+         */
         fun FindUninitializedMemory() {
-//#ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-//	unsigned long *ptr = ( ( unsigned long * )this ) - 1;
-//	int size = *ptr;
-//	assert( ( size & 3 ) == 0 );
-//	size >>= 2;
-//	for ( int i = 0; i < size; i++ ) {
-//		if ( ptr[i] == 0xcdcdcdcd ) {
-//			const char *varName = GetTypeVariableName( GetClassname(), i << 2 );
-//			gameLocal.Warning( "type '%s' has uninitialized variable %s (offset %d)", GetClassname(), varName, i << 2 );
-//		}
-//	}
-//#endif
+            // No-op on JVM — all fields are initialized by the runtime.
         }
 
         open fun Save(savefile: idSaveGame) {}
         open fun Restore(savefile: idRestoreGame) {}
+
+        /*
+         ================
+         idClass::RespondsTo
+         ================
+         */
         fun RespondsTo(ev: idEventDef): Boolean {
-            return getEventCallBack(ev) != null //HACKME::7
-            //            throw new TODO_Exception();
-//            final idTypeInfo c;
-//
-//            assert (idEvent.initialized);
-//            c = GetType();
-//            return c.RespondsTo(ev);
+            // NOTE: Differs from C++ — C++ delegates to GetType()->RespondsTo(ev) which checks
+            // eventMap[eventNum]. In the Kotlin port, we use the virtual getEventCallBack dispatch
+            // since the idTypeInfo eventMap system is not populated.
+            return getEventCallBack(ev) != null
         }
 
+        /*
+         ================
+         idClass::PostEventMS
+         ================
+         */
         fun PostEventMS(ev: idEventDef, time: Int): Boolean {
             return PostEventArgs(ev, time, 0)
         }
 
-        fun PostEventMS(ev: idEventDef, time: Float, arg1: Any?): Boolean {
-            return PostEventArgs(ev, time.toInt(), 1, idEventArg.toArg<Any?>(arg1))
+        // FIX: Changed time parameter from Float to Int to match C++ PostEventMS(ev, int time, idEventArg).
+        // Callers using float literals (e.g., 0.0f) need to be updated to int literals (e.g., 0).
+        fun PostEventMS(ev: idEventDef, time: Int, arg1: Any?): Boolean {
+            return PostEventArgs(ev, time, 1, idEventArg.toArg<Any?>(arg1))
         }
 
         fun PostEventMS(ev: idEventDef, time: Int, arg1: Any?, arg2: Any?): Boolean {
@@ -776,6 +842,11 @@ class Class {
             )
         }
 
+        /*
+         ================
+         idClass::PostEventSec
+         ================
+         */
         fun PostEventSec(ev: idEventDef, time: Float): Boolean {
             return PostEventArgs(ev, SEC2MS(time).toInt(), 0)
         }
@@ -917,6 +988,11 @@ class Class {
             )
         }
 
+        /*
+         ================
+         idClass::ProcessEvent
+         ================
+         */
         fun ProcessEvent(ev: idEventDef): Boolean {
             return ProcessEventArgs(ev, 0)
         }
@@ -1035,16 +1111,19 @@ class Class {
             )
         }
 
+        /*
+         ================
+         idClass::ProcessEventArgPtr
+         ================
+         */
         fun ProcessEventArgPtr(ev: idEventDef?, data: Array<idEventArg<*>?>): Boolean {
-            val num: Int
             val callback: eventCallback_t<*>?
 
             assert(ev != null)
             assert(Event.initialized)
 
             if (SysCvar.g_debugTriggers.GetBool() && ev === EV_Activate && this is idEntity) {
-                val name: String
-                name =
+                val name: String =
                     if (data[0] != null && data[0]!!.value as idClass? is idEntity) (data[0]!!.value as idEntity).GetName() else "NULL"
                 Game_local.gameLocal.Printf(
                     "%d: '%s' activated by '%s'\n",
@@ -1054,60 +1133,51 @@ class Class {
                 )
             }
 
-            num = ev!!.GetEventNum()
-            callback = getEventCallBack(ev) //callback = c.eventMap[num];
+            // NOTE: Differs from C++ — C++ uses c->eventMap[ev->GetEventNum()] via idTypeInfo.
+            // In the Kotlin port, we use getEventCallBack virtual dispatch.
+            callback = getEventCallBack(ev!!)
 
             if (callback == null) {
                 // we don't respond to this event, so ignore it
                 return false
             }
 
-////
-//// #if !CPU_EASYARGS
-//// /*
-//// on ppc architecture, floats are passed in a seperate set of registers
-//// the function prototypes must have matching float declaration
-//// http://developer.apple.com/documentation/DeveloperTools/Conceptual/MachORuntime/2rt_powerpc_abi/chapter_9_section_5.html
-//// */
-//            // switch( ev.GetFormatspecIndex() ) {
-//            // case 1 << D_EVENT_MAXARGS :
-//            // ( this.*callback )();
-//            //
-//// // generated file - see CREATE_EVENT_CODE
-//// #include "Callbacks.cpp"
-//            // default:
-//            // gameLocal.Warning( "Invalid formatspec on event '%s'", ev.GetName() );
-//            //
-//            // }
-//// #else
+            // NOTE: Differs from C++ — C++ uses a switch on ev->GetFormatspecIndex() with
+            // generated code from Callbacks.cpp to cast the callback to the right function
+            // pointer type based on the arg format. In Kotlin, we use the varargs-based
+            // eventCallback_t.accept() which handles all arg counts uniformly.
             assert(D_EVENT_MAXARGS == 8)
 
             when (ev.GetNumArgs()) {
-                0, 1, 2, 3, 4, 5, 6, 7, 8 -> ////		typedef void ( idClass.*eventCallback_8_t )( const int, const int, const int, const int, const int, const int, const int, const int );
-////		( this.*( eventCallback_8_t )callback )( data[ 0 ], data[ 1 ], data[ 2 ], data[ 3 ], data[ 4 ], data[ 5 ], data[ 6 ], data[ 7 ] );
-//                    callback.run(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+                0, 1, 2, 3, 4, 5, 6, 7, 8 ->
                     callback.accept(this, *data as Array<out idEventArg<*>>)
 
                 else -> Game_local.gameLocal.Warning("Invalid formatspec on event '%s'", ev.GetName())
             }
 
-// #endif
-
-// #endif
             return true
         }
 
+        /*
+         ================
+         idClass::CancelEvents
+         ================
+         */
         fun CancelEvents(ev: idEventDef?) {
             idEvent.CancelEvents(this, ev)
         }
 
+        /*
+         ================
+         idClass::Event_Remove
+
+         C++ original: delete this;
+         NOTE: Differs from C++ — JVM uses garbage collection. We call _deconstructor()
+         which cancels events, matching the C++ destructor behavior.
+         ================
+         */
         open fun Event_Remove() {
-            //	delete this;//if only
-            if (this is idBFGProjectile) delete(this) else if (this is idProjectile) delete(this) else if (this is idTrigger_Multi) delete(
-                this
-            ) else if (this is idTarget_Remove) delete(this) else if (this is idAI) delete(this) else if (this is idEntity) delete(
-                this
-            ) else if (this is idThread) idThread.delete(this) else throw TODO_Exception()
+            _deconstructor()
         }
 
         // Static functions
@@ -1126,9 +1196,15 @@ class Class {
         }
 
         abstract fun oSet(oGet: idClass?)
+
+        /*
+         ================
+         idClass::CallSpawnFunc
+         ================
+         */
         private fun CallSpawnFunc(cls: idTypeInfo): classSpawnFunc_t<*> {
             val func: classSpawnFunc_t<*>?
-            if (cls.zuper != null) { //TODO:rename super
+            if (cls.zuper != null) {
                 func = CallSpawnFunc(cls.zuper!!)
                 if (func === cls.Spawn) {
                     // don't call the same function twice in a row.
@@ -1142,6 +1218,11 @@ class Class {
             return cls.Spawn
         }
 
+        /*
+         ================
+         idClass::PostEventArgs
+         ================
+         */
         private fun PostEventArgs(ev: idEventDef, time: Int, numargs: Int, vararg args: idEventArg<*>?): Boolean {
             val c: Class<*>
             val event: idEvent
@@ -1150,7 +1231,8 @@ class Class {
                 return false
             }
 
-            //TODO:disabled for medicinal reasons
+            // NOTE: Differs from C++ — C++ checks c->eventMap[ev->GetEventNum()] using the
+            // idTypeInfo eventMap. In the Kotlin port, we use getEventCallBack virtual dispatch.
             c = this.javaClass
             if (getEventCallBack(ev) == null) {
                 // we don't respond to this event, so ignore it
@@ -1164,35 +1246,38 @@ class Class {
                 return true
             }
 
-//            va_start(args, numargs);
             event = idEvent.Alloc(ev, numargs, *args)
-            //            va_end(args);
-
-            //TODO:same as line #755
             event.Schedule(this, c, time)
             return true
         }
 
+        /*
+         ================
+         idClass::ProcessEventArgs
+         ================
+         */
         private fun ProcessEventArgs(ev: idEventDef, numargs: Int, vararg args: idEventArg<*>?): Boolean {
-            //val data = Array<idEventArg<*>>(Event.D_EVENT_MAXARGS) { idEventArg() }
             assert(ev != null)
             assert(Event.initialized)
-            val data: Array<idEventArg<*>?> = arrayOfNulls(D_EVENT_MAXARGS)
-            //TODO:same as PostEventArgs
-//            c = GetType();
-//            num = ev.GetEventNum();
-//            if (NOT(c.eventMap[num])) {
-//                // we don't respond to this event, so ignore it
-//                return false;
-//            }
 
-//            va_start(args, numargs);
+            // FIX: Restored the eventMap check that was commented out.
+            // C++ checks c->eventMap[ev->GetEventNum()] before copying args.
+            if (getEventCallBack(ev) == null) {
+                // we don't respond to this event, so ignore it
+                return false
+            }
+
+            val data: Array<idEventArg<*>?> = arrayOfNulls(D_EVENT_MAXARGS)
             idEvent.CopyArgs(ev, numargs, args, data)
-            //            va_end(args);
             ProcessEventArgPtr(ev, data)
             return true
         }
 
+        /*
+         ================
+         idClass::Event_SafeRemove
+         ================
+         */
         private fun Event_SafeRemove() {
             // Forces the remove to be done at a safe time
             PostEventMS(EV_Remove, 0)
@@ -1262,10 +1347,6 @@ class Class {
      * idTypeInfo
      *
      */
-    @Deprecated(
-        """use the native java classes instead.
-      *********************************************************************"""
-    )
     class idTypeInfo(
         classname: String,
         superclass: String,
@@ -1420,18 +1501,65 @@ class Class {
             return typeNum >= type.typeNum && typeNum <= type.lastChild
         }
 
+        // FIX: Was throwing TODO_Exception, causing crash in Game_local.SpawnEntityType().
+        // NOTE: Differs from C++ — C++ uses typeNum range check across idTypeInfo hierarchy.
+        // In the JVM port, we walk the superclass name chain through the typelist.
+        // This is a limited implementation: it only works when idTypeInfo instances are
+        // registered in the typelist (via INIT). When typelist is empty, falls back to
+        // single-level superclass name check.
         fun IsType(type: Class<*>?): Boolean {
-            throw TODO_Exception()
+            if (type == null) return false
+            val targetName = type.simpleName
+            // Direct match
+            if (classname == targetName) return true
+            // Walk superclass chain using zuper pointers
+            var current = zuper
+            while (current != null) {
+                if (current.classname == targetName) return true
+                current = current.zuper
+            }
+            // If zuper chain not populated, walk superclass names via typelist lookup
+            if (zuper == null) {
+                var superName: String? = this.superclass
+                while (!superName.isNullOrEmpty()) {
+                    if (superName == targetName) return true
+                    // Look up super in typelist
+                    var superType: idTypeInfo? = null
+                    var t = typelist
+                    while (t != null) {
+                        if (t.classname == superName) {
+                            superType = t; break
+                        }
+                        t = t.next
+                    }
+                    superName = superType?.superclass
+                }
+            }
+            return false
         }
 
+        /*
+         ================
+         idTypeInfo::RespondsTo
+         ================
+         */
         fun RespondsTo(ev: idEventDef): Boolean {
             assert(Event.initialized)
             // we don't respond to this event
             return null != eventMap!![ev.GetEventNum()]
         }
 
-        //
-        //
+        /*
+         ================
+         idTypeInfo::idClassType()
+
+         Constructor for class.  Should only be called from CLASS_DECLARATION macro.
+         Handles linking class definition into class hierarchy.  This should only happen
+         at startup as idTypeInfos are statically defined.  Since static variables can be
+         initialized in any order, the constructor must handle the case that subclasses
+         are initialized before superclasses.
+         ================
+         */
         init {
             var type: idTypeInfo?
             var insert: idTypeInfo?
@@ -1459,20 +1587,21 @@ class Class {
                 type = type.next
             }
 
-            // Insert sorted
-            insert = typelist
-            while (insert != null) {
-                assert(idStr.Cmp(classname, insert.classname) != 0)
-                if (idStr.Cmp(classname, insert.classname) < 0) {
-                    next = insert
-                    insert = this
-                    break
-                }
-                insert = insert.next
+            // FIX: Sorted insert was broken — local variable reassignment doesn't modify the
+            // linked list. C++ uses pointer-to-pointer (&typelist, &(*insert)->next) to modify
+            // the actual list structure. Reimplemented using prev/current pattern.
+            var prev: idTypeInfo? = null
+            var current = typelist
+            while (current != null && idStr.Cmp(classname, current.classname) >= 0) {
+                assert(idStr.Cmp(classname, current.classname) != 0)
+                prev = current
+                current = current.next
             }
-            if (null == insert) {
-                insert = this
-                next = null
+            next = current
+            if (prev == null) {
+                typelist = this
+            } else {
+                prev.next = this
             }
         }
     }

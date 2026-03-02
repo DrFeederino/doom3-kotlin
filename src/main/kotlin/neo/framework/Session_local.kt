@@ -51,7 +51,6 @@ import neo.sys.sys_public.sysEvent_s
 import neo.ui.ListGUI.idListGUI
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
-import neo.ui.UserInterfaceLocal.idUserInterfaceLocal
 import java.nio.ByteBuffer
 import java.util.*
 
@@ -873,13 +872,11 @@ object Session_local {
             ) {
                 Console.console.Close()
                 if (Game_local.game != null) {
-                    val gui: idUserInterface = idUserInterfaceLocal()
-                    val op: escReply_t?
-                    op = Game_local.game.HandleESC(gui)
+                    val op = Game_local.game.HandleESC()
                     if (op == escReply_t.ESC_IGNORE) {
                         return true
                     } else if (op == escReply_t.ESC_GUI) {
-                        SetGUI(gui, null)
+                        SetGUI(Game_local.game.escGui, null)
                         return true
                     }
                 }

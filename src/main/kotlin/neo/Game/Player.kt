@@ -2144,8 +2144,8 @@ object Player {
             weaponSwitchTime = savefile.ReadInt()
             weaponEnabled = savefile.ReadBool()
             showWeaponViewModel = savefile.ReadBool()
-            savefile.ReadSkin(skin!!)
-            savefile.ReadSkin(powerUpSkin!!)
+            skin = savefile.ReadSkin()
+            powerUpSkin = savefile.ReadSkin()
             savefile.ReadString(baseSkinName)
             numProjectilesFired = savefile.ReadInt()
             numProjectileHits = savefile.ReadInt()
@@ -2177,7 +2177,7 @@ object Player {
             influenceRadius = savefile.ReadFloat()
             savefile.ReadObject( /*reinterpret_cast<idClass *&>*/influenceEntity)
             savefile.ReadMaterial(influenceMaterial!!)
-            savefile.ReadSkin(influenceSkin!!)
+            influenceSkin = savefile.ReadSkin()
             savefile.ReadObject( /*reinterpret_cast<idClass *&>*/privateCameraView)
             i = 0
             while (i < NUM_LOGGED_VIEW_ANGLES) {
@@ -2529,7 +2529,7 @@ object Player {
             }
 
             // activate the spawn locations targets
-            spot.PostEventMS(EV_ActivateTargets, 0.0f, this)
+            spot.PostEventMS(EV_ActivateTargets, 0, this)
             origin.set(spot.GetPhysics().GetOrigin())
             origin.plusAssign(
                 2, 4.0f + CM_BOX_EPSILON
@@ -7874,7 +7874,7 @@ object Player {
             for (i in inventory.levelTriggers.Num() - 1 downTo 0) {
                 if (idStr.Icmp(mapName, inventory.levelTriggers[i].levelName) == 0) {
                     val ent = Game_local.gameLocal.FindEntity(inventory.levelTriggers[i].triggerName)!!
-                    ent.PostEventMS(EV_Activate, 1.0f, this)
+                    ent.PostEventMS(EV_Activate, 1, this)
                 }
             }
         }

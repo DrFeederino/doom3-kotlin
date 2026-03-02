@@ -1,3 +1,40 @@
+/*
+ * ===========================================================================
+ *
+ * Doom 3 GPL Source Code
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * In addition, the Doom 3 Source Code is also subject to certain additional terms.
+ * You should have received a copy of these additional terms immediately following
+ * the terms and conditions of the GNU General Public License which accompanied the
+ * Doom 3 Source Code. If not, please request a copy in writing from id Software
+ * at the address below.
+ *
+ * If you have questions concerning this license or the applicable additional terms,
+ * you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120,
+ * Rockville, Maryland 20850 USA.
+ *
+ * ===========================================================================
+ *
+ * Original source: neo/game/WorldSpawn.cpp, neo/game/WorldSpawn.h
+ */
+
 package neo.Game
 
 import neo.Game.GameSys.Class.*
@@ -11,15 +48,17 @@ import neo.Game.Game_local.idGameLocal
 import neo.Game.Script.Script_Program.function_t
 import neo.Game.Script.Script_Thread.idThread
 import neo.framework.FileSystem_h
-import neo.idlib.Dict_h.idKeyValue
+import neo.idlib.Dict_h
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 
 /*
- game_worldspawn.cpp
+ ================
+ idWorldspawn
 
  Worldspawn class.  Each map has one worldspawn which handles global spawnargs.
-
+ Every map should have exactly one worldspawn.
+ ================
  */
 class WorldSpawn {
     /*
@@ -33,7 +72,10 @@ class WorldSpawn {
      */
     class idWorldspawn : idEntity() {
         companion object {
-            //	CLASS_PROTOTYPE( idWorldspawn );
+            // CLASS_DECLARATION( idEntity, idWorldspawn )
+            //   EVENT( EV_Remove,      idWorldspawn::Event_Remove )
+            //   EVENT( EV_SafeRemove,  idWorldspawn::Event_Remove )
+            // END_CLASS
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>?> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>?> {
                 return eventCallbacks
@@ -48,15 +90,34 @@ class WorldSpawn {
             }
         }
 
-        //					~idWorldspawn();
+        /*
+         ================
+         idWorldspawn::~idWorldspawn
+         ================
+         */
+        // FIX: Added missing destructor — C++ ~idWorldspawn clears gameLocal.world
+        override fun _deconstructor() {
+            if (Game_local.gameLocal.world === this) {
+                Game_local.gameLocal.world = null
+            }
+            super._deconstructor()
+        }
+
+        /*
+         ================
+         idWorldspawn::Spawn
+         ================
+         */
         override fun Spawn() {
             super.Spawn()
             val scriptname: idStr
             var thread: idThread
             var func: function_t?
-            var kv: idKeyValue?
+            var kv: Dict_h.idKeyValue?
+
             assert(Game_local.gameLocal.world == null)
             Game_local.gameLocal.world = this
+
             SysCvar.g_gravity.SetFloat(spawnArgs.GetFloat("gravity", Str.va("%f", Game_local.DEFAULT_GRAVITY)))
 
             // disable stamina on hell levels
@@ -95,9 +156,22 @@ class WorldSpawn {
             }
         }
 
+        /*
+         ================
+         idWorldspawn::Save
+         ================
+         */
+        // NOTE: C++ header incorrectly declares Save(idRestoreGame*) — should be idSaveGame*
         override fun Save(savefile: idSaveGame) {}
+
+        /*
+         ================
+         idWorldspawn::Restore
+         ================
+         */
         override fun Restore(savefile: idRestoreGame) {
-            assert(Game_local.gameLocal.world == this)
+            assert(Game_local.gameLocal.world === this)
+
             SysCvar.g_gravity.SetFloat(spawnArgs.GetFloat("gravity", Str.va("%f", Game_local.DEFAULT_GRAVITY)))
 
             // disable stamina on hell levels
@@ -106,12 +180,17 @@ class WorldSpawn {
             }
         }
 
+        /*
+         ================
+         idWorldspawn::Event_Remove
+         ================
+         */
         override fun Event_Remove() {
             idGameLocal.Error("Tried to remove world")
         }
 
         override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.")
+            return idWorldspawn()
         }
 
         override fun oSet(oGet: idClass?) {

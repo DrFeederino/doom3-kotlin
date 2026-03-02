@@ -4020,7 +4020,6 @@ object Physics_AF {
             }
         }
 
-        @Deprecated("returns immutable response")
         fun GetResponseForce(index: Int): idVec6 {
 //            return reinterpret_cast < idVec6 > (response[ index * 8]);
             return idVec6(Arrays.copyOfRange(response, index * 8, index * 8 + 6))

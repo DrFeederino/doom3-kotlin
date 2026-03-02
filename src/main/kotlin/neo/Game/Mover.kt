@@ -2548,7 +2548,7 @@ object Mover {
                     var kv = slave.spawnArgs.MatchPrefix("triggerBlocked")
                     while (kv != null) {
                         val ent = Game_local.gameLocal.FindEntity(kv.GetValue().toString())
-                        ent?.PostEventMS(EV_Activate, 0.0f, moveMaster!!.GetActivator())
+                        ent?.PostEventMS(EV_Activate, 0, moveMaster!!.GetActivator())
                         kv = slave.spawnArgs.MatchPrefix("triggerBlocked", kv)
                     }
                 }
@@ -3106,7 +3106,7 @@ object Mover {
             val locked = spawnArgs.GetInt("locked")
             if (locked != 0) {
                 // make sure all members of the team get locked
-                PostEventMS(EV_Door_Lock, 0.0f, locked)
+                PostEventMS(EV_Door_Lock, 0, locked)
             }
             if (spawnArgs.GetBool("continuous")) {
                 PostEventSec(EV_Activate, spawnArgs.GetFloat("delay"), this)
@@ -3410,14 +3410,14 @@ object Mover {
                 var kv = spawnArgs.MatchPrefix("triggerClosed")
                 while (kv != null) {
                     val ent = Game_local.gameLocal.FindEntity(kv.GetValue().toString())
-                    ent?.PostEventMS(EV_Activate, 0.0f, moveMaster!!.GetActivator())
+                    ent?.PostEventMS(EV_Activate, 0, moveMaster!!.GetActivator())
                     kv = spawnArgs.MatchPrefix("triggerClosed", kv)
                 }
             } else if (moverState == moverState_t.MOVER_1TO2) {
                 var kv = spawnArgs.MatchPrefix("triggerOpened")
                 while (kv != null) {
                     val ent = Game_local.gameLocal.FindEntity(kv.GetValue().toString())
-                    ent?.PostEventMS(EV_Activate, 0.0f, moveMaster!!.GetActivator())
+                    ent?.PostEventMS(EV_Activate, 0, moveMaster!!.GetActivator())
                     kv = spawnArgs.MatchPrefix("triggerOpened", kv)
                 }
             }

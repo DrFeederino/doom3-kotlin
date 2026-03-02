@@ -911,7 +911,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         throw UnsupportedOperationException("Not supported yet.")
     }
 
-    override fun  /*idTypeInfo*/GetType(): Class<out idEntity> {
+    override fun GetType(): Class<out idEntity> {
         return this.javaClass
     }
 
@@ -1542,7 +1542,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         UpdateVisuals()
     }
 
-    fun SetColor(color: idVec3) {
+    open fun SetColor(color: idVec3) {
         SetColor(color[0], color[1], color[2])
         //	UpdateVisuals();
     }
@@ -2918,7 +2918,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
          Not called during idGameLocal::MapShutdown.
          ================
          */
-    fun DeconstructScriptObject() {
+    open fun DeconstructScriptObject() {
         val thread: idThread
         val destructor: function_t?
 
@@ -3114,7 +3114,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                         val ent: idEntity? = Game_local.gameLocal.FindEntity(token2)
                         if (ent != null) {
                             ent.Signal(signalNum_t.SIG_TRIGGER)
-                            ent.PostEventMS(EV_Activate, 0.0f, this)
+                            ent.PostEventMS(EV_Activate, 0, this)
                         }
                     }
                     entityGui.renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] = 1.0f

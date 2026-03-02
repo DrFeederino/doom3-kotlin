@@ -1,3 +1,29 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+Original source: neo/game/SmokeParticles.cpp, neo/game/SmokeParticles.h
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.Game
 
 import neo.Game.Game_local.idGameLocal
@@ -44,37 +70,58 @@ object SmokeParticles {
      ===============================================================================
      */
     class singleSmoke_t {
-        val axis: idMat3 = idMat3()
-        var index // particle index in system, 0 <= index < stage->totalParticles
-                = 0
         var next: singleSmoke_t? = null
-        val origin: idVec3 = idVec3()
-        var privateStartTime // start time for this particular particle
-                = 0
+        var privateStartTime: Int = 0  // start time for this particular particle
+        var index: Int = 0             // particle index in system, 0 <= index < stage->totalParticles
         var random: idRandom = idRandom()
+        val origin: idVec3 = idVec3()
+        val axis: idMat3 = idMat3()
     }
 
     class activeSmokeStage_t {
-        var smokes: singleSmoke_t? = null
         var stage: idParticleStage = idParticleStage()
+        var smokes: singleSmoke_t? = null
     }
 
     class idSmokeParticles {
-        //
-        private val activeStages: idList<activeSmokeStage_t>
-        private var currentParticleTime // don't need to recalculate if == view time
-                : Int
-        private var freeSmokes: singleSmoke_t?
-        private var initialized = false
-        private var numActiveSmokes: Int
 
-        //
-        private var renderEntity // used to present a model to the renderer
-                : renderEntity_s
-        private var renderEntityHandle // handle to static renderer model
-                : Int
+        private var initialized: Boolean = false
+
+        private var renderEntity: renderEntity_s    // used to present a model to the renderer
+        private var renderEntityHandle: Int          // handle to static renderer model
+
         private val smokes: Array<singleSmoke_t>
 
+        private val activeStages: idList<activeSmokeStage_t>
+        private var freeSmokes: singleSmoke_t?
+        private var numActiveSmokes: Int
+        private var currentParticleTime: Int         // don't need to recalculate if == view time
+
+        companion object {
+            private const val MAX_SMOKE_PARTICLES = 10000
+        }
+
+        /*
+         ================
+         idSmokeParticles::idSmokeParticles
+         ================
+         */
+        init {
+            initialized = false
+            renderEntity = renderEntity_s()
+            renderEntityHandle = -1
+            smokes = Array(MAX_SMOKE_PARTICLES) { singleSmoke_t() }
+            activeStages = idList()
+            freeSmokes = null
+            numActiveSmokes = 0
+            currentParticleTime = -1
+        }
+
+        /*
+         ================
+         idSmokeParticles::Init
+         ================
+         */
         // creats an entity covering the entire world that will call back each rendering
         fun Init() {
             if (initialized) {
@@ -88,30 +135,43 @@ object SmokeParticles {
             smokes[MAX_SMOKE_PARTICLES - 1].next = null
             freeSmokes = smokes[0]
             numActiveSmokes = 0
+
             activeStages.Clear()
-            renderEntity = renderEntity_s() //memset( &renderEntity, 0, sizeof( renderEntity ) );
+
+            renderEntity = renderEntity_s()
+
             renderEntity.bounds.Clear()
             renderEntity.axis.set(idMat3.getMat3_identity())
             renderEntity.shaderParms[RenderWorld.SHADERPARM_RED] = 1.0f
             renderEntity.shaderParms[RenderWorld.SHADERPARM_GREEN] = 1.0f
             renderEntity.shaderParms[RenderWorld.SHADERPARM_BLUE] = 1.0f
             renderEntity.shaderParms[3] = 1.0f
+
             renderEntity.hModel = ModelManager.renderModelManager.AllocModel()
             renderEntity.hModel!!.InitEmpty(smokeParticle_SnapshotName)
 
             // we certainly don't want particle shadows
-            renderEntity.noShadow = true //1;
+            renderEntity.noShadow = true
 
             // huge bounds, so it will be present in every world area
-            renderEntity.bounds.AddPoint(idVec3(-100000, -100000, -100000))
-            renderEntity.bounds.AddPoint(idVec3(100000, 100000, 100000))
+            renderEntity.bounds.AddPoint(idVec3(-100000f, -100000f, -100000f))
+            renderEntity.bounds.AddPoint(idVec3(100000f, 100000f, 100000f))
+
             renderEntity.callback = ModelCallback.getInstance()
+
             // add to renderer list
             renderEntityHandle = Game_local.gameRenderWorld!!.AddEntityDef(renderEntity)
+
             currentParticleTime = -1
+
             initialized = true
         }
 
+        /*
+         ================
+         idSmokeParticles::Shutdown
+         ================
+         */
         fun Shutdown() {
             // make sure the render entity is freed before the model is freed
             if (renderEntityHandle != -1) {
@@ -123,6 +183,57 @@ object SmokeParticles {
                 renderEntity.hModel = null
             }
             initialized = false
+        }
+
+        /*
+         ================
+         idSmokeParticles::FreeSmokes
+         ================
+         */
+        // free old smokes
+        fun FreeSmokes() {
+            var activeStageNum = 0
+            while (activeStageNum < activeStages.Num()) {
+                var smoke: singleSmoke_t?
+                var next: singleSmoke_t?
+                var last: singleSmoke_t?
+
+                val active = activeStages[activeStageNum]
+                val stage = active.stage
+
+                last = null
+                smoke = active.smokes
+                while (smoke != null) {
+                    next = smoke.next
+
+                    val frac =
+                        (Game_local.gameLocal.time - smoke.privateStartTime).toFloat() / (stage.particleLife * 1000)
+                    if (frac >= 1.0f) {
+                        // remove the particle from the stage list
+                        if (last != null) {
+                            last.next = smoke.next
+                        } else {
+                            active.smokes = smoke.next
+                        }
+                        // put the particle on the free list
+                        smoke.next = freeSmokes
+                        freeSmokes = smoke
+                        numActiveSmokes--
+                        smoke = next
+                        continue
+                    }
+
+                    last = smoke
+                    smoke = next
+                }
+
+                if (null == active.smokes) {
+                    // remove this from the activeStages list
+                    activeStages.RemoveIndex(activeStageNum)
+                    activeStageNum--
+                }
+                activeStageNum++
+            }
         }
 
         /*
@@ -141,9 +252,11 @@ object SmokeParticles {
             axis: idMat3
         ): Boolean {
             var continues = false
+
             if (null == smoke) {
                 return false
             }
+
             if (!Game_local.gameLocal.isNewFrame) {
                 return false
             }
@@ -152,21 +265,26 @@ object SmokeParticles {
             if (Game_local.gameLocal.localClientNum < 0) {
                 return false
             }
+
             assert(Game_local.gameLocal.time == 0 || systemStartTime <= Game_local.gameLocal.time)
             if (systemStartTime > Game_local.gameLocal.time) {
                 return false
             }
+
             val steppingRandom = idRandom((0xffff * diversity).toInt())
 
             // for each stage in the smoke that is still emitting particles, emit a new singleSmoke_t
             for (stageNum in 0 until smoke.stages.Num()) {
                 val stage = smoke.stages[stageNum]
+
                 if (0 == stage.cycleMsec) {
                     continue
                 }
+
                 if (null == stage.material) {
                     continue
                 }
+
                 if (stage.particleLife <= 0) {
                     continue
                 }
@@ -175,6 +293,7 @@ object SmokeParticles {
                 // FIXME: 			smoke.privateStartTime += stage.timeOffset;
                 val finalParticleTime = (stage.cycleMsec * stage.spawnBunching).toInt()
                 val deltaMsec = Game_local.gameLocal.time - systemStartTime
+
                 var nowCount = 0
                 var prevCount: Int
                 if (finalParticleTime == 0) {
@@ -198,10 +317,12 @@ object SmokeParticles {
                         prevCount = -1
                     }
                 }
+
                 if (prevCount >= stage.totalParticles) {
                     // no more particles from this stage
                     continue
                 }
+
                 if (nowCount < stage.totalParticles - 1) {
                     // the system will need to emit particles next frame as well
                     continues = true
@@ -240,6 +361,7 @@ object SmokeParticles {
                     val newSmoke = freeSmokes!!
                     freeSmokes = freeSmokes!!.next
                     numActiveSmokes++
+
                     newSmoke.index = prevCount
                     newSmoke.axis.set(axis)
                     newSmoke.origin.set(origin)
@@ -247,54 +369,20 @@ object SmokeParticles {
                     newSmoke.privateStartTime = systemStartTime + prevCount * finalParticleTime / stage.totalParticles
                     newSmoke.next = active!!.smokes
                     active.smokes = newSmoke
+
                     steppingRandom.RandomInt() // advance the random
                     prevCount++
                 }
             }
+
             return continues
         }
 
-        // free old smokes
-        fun FreeSmokes() {
-            var activeStageNum = 0
-            while (activeStageNum < activeStages.Num()) {
-                var smoke: singleSmoke_t?
-                var next: singleSmoke_t?
-                var last: singleSmoke_t?
-                val active = activeStages[activeStageNum]
-                val stage = active.stage
-                last = null
-                smoke = active.smokes
-                while (smoke != null) {
-                    next = smoke.next
-                    val frac =
-                        (Game_local.gameLocal.time - smoke.privateStartTime).toFloat() / (stage.particleLife * 1000)
-                    if (frac >= 1.0f) {
-                        // remove the particle from the stage list
-                        if (last != null) {
-                            last.next = smoke.next
-                        } else {
-                            active.smokes = smoke.next
-                        }
-                        // put the particle on the free list
-                        smoke.next = freeSmokes
-                        freeSmokes = smoke
-                        numActiveSmokes--
-                        smoke = next
-                        continue
-                    }
-                    last = smoke
-                    smoke = next
-                }
-                if (null == active.smokes) {
-                    // remove this from the activeStages list
-                    activeStages.RemoveIndex(activeStageNum)
-                    activeStageNum--
-                }
-                activeStageNum++
-            }
-        }
-
+        /*
+         ================
+         idSmokeParticles::UpdateRenderEntity
+         ================
+         */
         private fun UpdateRenderEntity(renderEntity: renderEntity_s, renderView: renderView_s?): Boolean {
 
             // FIXME: re-use model surfaces
@@ -311,16 +399,21 @@ object SmokeParticles {
                 return false
             }
             currentParticleTime = renderView.time
+
             val g = particleGen_t()
+
             g.renderEnt = renderEntity
             g.renderView = renderView
+
             var activeStageNum = 0
             while (activeStageNum < activeStages.Num()) {
                 var smoke: singleSmoke_t?
                 var next: singleSmoke_t?
                 var last: singleSmoke_t?
+
                 val active = activeStages[activeStageNum]
                 val stage = active.stage
+
                 if (null == stage.material) {
                     activeStageNum++
                     continue
@@ -345,11 +438,13 @@ object SmokeParticles {
                 tri.bounds[1, 0] = 99999.0f
                 tri.bounds[1, 1] = 99999.0f
                 tri.bounds[1, 2] = 99999.0f
+
                 tri.numVerts = 0
                 last = null
                 smoke = active.smokes
                 while (smoke != null) {
                     next = smoke.next
+
                     g.frac =
                         (Game_local.gameLocal.time - smoke.privateStartTime).toFloat() / (stage.particleLife * 1000)
                     if (g.frac >= 1.0f) {
@@ -366,26 +461,37 @@ object SmokeParticles {
                         smoke = next
                         continue
                     }
+
                     g.index = smoke.index
                     g.random = idRandom(smoke.random)
+
                     g.origin.set(smoke.origin)
                     g.axis.set(smoke.axis)
+
                     g.originalRandom = idRandom(g.random)
                     g.age = g.frac * stage.particleLife
+
+                    // NOTE: Arrays.copyOfRange creates a new array with references to the same
+                    // idDrawVert objects (not a deep copy). Since CreateParticle mutates the
+                    // existing objects (via .Clear(), .set(), etc.), the changes propagate back
+                    // to tri.verts. This is equivalent to C++ pointer arithmetic: tri->verts + tri->numVerts
                     tri.numVerts += stage.CreateParticle(
                         g,
                         Arrays.copyOfRange(tri.verts, tri.numVerts, tri.verts!!.size)
                     )
+
                     last = smoke
                     smoke = next
                 }
                 if (tri.numVerts > quads * 4) {
                     idGameLocal.Error("idSmokeParticles::UpdateRenderEntity: miscounted verts")
                 }
+
                 if (tri.numVerts == 0) {
 
                     // they were all removed
                     renderEntity.hModel!!.FreeSurfaceTriangles(tri)
+
                     if (null == active.smokes) {
                         // remove this from the activeStages list
                         activeStages.RemoveIndex(activeStageNum)
@@ -406,10 +512,12 @@ object SmokeParticles {
                         i += 4
                     }
                     tri.numIndexes = indexes
+
                     val surf = modelSurface_s()
                     surf.geometry = tri
                     surf.shader = stage.material
                     surf.id = 0
+
                     renderEntity.hModel!!.AddSurface(surf)
                 }
                 activeStageNum++
@@ -417,24 +525,33 @@ object SmokeParticles {
             return true
         }
 
+        /*
+         ================
+         idSmokeParticles::ModelCallback
+         ================
+         */
+        // NOTE: Differs from C++ — C++ uses a static function pointer; Kotlin uses a singleton
+        // implementing the deferredEntityCallback_t interface.
         private class ModelCallback private constructor() : deferredEntityCallback_t() {
             override fun run(e: renderEntity_s?, v: renderView_s?): Boolean {
                 // update the particles
                 return if (Game_local.gameLocal.smokeParticles != null) {
                     Game_local.gameLocal.smokeParticles!!.UpdateRenderEntity(e!!, v)
-                } else true
+                } else {
+                    true
+                }
             }
 
             override fun AllocBuffer(): ByteBuffer {
-                throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+                throw UnsupportedOperationException("ModelCallback does not support serialization")
             }
 
             override fun Read(buffer: ByteBuffer) {
-                throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+                throw UnsupportedOperationException("ModelCallback does not support serialization")
             }
 
             override fun Write(): ByteBuffer {
-                throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+                throw UnsupportedOperationException("ModelCallback does not support serialization")
             }
 
             companion object {
@@ -443,23 +560,6 @@ object SmokeParticles {
                     return instance
                 }
             }
-        }
-
-        companion object {
-            //
-            private const val MAX_SMOKE_PARTICLES = 10000
-        }
-
-        //
-        //
-        init {
-            renderEntity = renderEntity_s() //memset( &renderEntity, 0, sizeof( renderEntity ) );
-            renderEntityHandle = -1
-            smokes = Array(MAX_SMOKE_PARTICLES) { singleSmoke_t() }
-            activeStages = idList()
-            freeSmokes = null
-            numActiveSmokes = 0
-            currentParticleTime = -1
         }
     }
 }

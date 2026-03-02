@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/game/Trigger.h, neo/game/Trigger.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
 package neo.Game
 
 import neo.Game.GameSys.Class.*
@@ -47,6 +64,12 @@ object Trigger {
         companion object {
             // CLASS_PROTOTYPE( idTrigger );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+
+            /*
+             ================
+             idTrigger::DrawDebugInfo
+             ================
+             */
             fun DrawDebugInfo() {
                 val axis = Game_local.gameLocal.GetLocalPlayer()!!.viewAngles.ToMat3()
                 val up = idVec3(axis[2].times(5.0f))
@@ -166,6 +189,12 @@ object Trigger {
         }
 
         protected var scriptFunction: function_t? = null
+
+        /*
+         ================
+         idTrigger::Spawn
+         ================
+         */
         override fun Spawn() {
             super.Spawn()
             GetPhysics().SetContents(Material.CONTENTS_TRIGGER)
@@ -185,10 +214,20 @@ object Trigger {
             }
         }
 
+        /*
+         ================
+         idTrigger::GetScriptFunction
+         ================
+         */
         fun GetScriptFunction(): function_t? {
             return scriptFunction
         }
 
+        /*
+         ================
+         idTrigger::Save
+         ================
+         */
         override fun Save(savefile: idSaveGame) {
             if (scriptFunction != null) {
                 savefile.WriteString(scriptFunction!!.Name())
@@ -197,6 +236,11 @@ object Trigger {
             }
         }
 
+        /*
+         ================
+         idTrigger::Restore
+         ================
+         */
         override fun Restore(savefile: idRestoreGame) {
             val funcname = idStr()
             savefile.ReadString(funcname)
@@ -215,17 +259,30 @@ object Trigger {
             }
         }
 
+        /*
+         ================
+         idTrigger::Enable
+         ================
+         */
         open fun Enable() {
-            GetPhysics().SetContents(Material.CONTENTS_TRIGGER)
             GetPhysics().EnableClip()
         }
 
+        /*
+         ================
+         idTrigger::Disable
+         ================
+         */
         open fun Disable() {
-            // we may be relinked if we're bound to another object, so clear the contents as well
             GetPhysics().SetContents(0)
             GetPhysics().DisableClip()
         }
 
+        /*
+         ================
+         idTrigger::CallScript
+         ================
+         */
         protected fun CallScript() {
             val thread: idThread
             if (scriptFunction != null) {
@@ -247,11 +304,11 @@ object Trigger {
         }
 
         override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
@@ -322,7 +379,8 @@ object Trigger {
          */
         override fun Spawn() {
             super.Spawn()
-            wait = spawnArgs.GetFloat("wait", "0.5f")
+            // FIX: Default strings had trailing 'f' not in C++ originals
+            wait = spawnArgs.GetFloat("wait", "0.5")
             random = spawnArgs.GetFloat("random", "0")
             delay = spawnArgs.GetFloat("delay", "0")
             random_delay = spawnArgs.GetFloat("random_delay", "0")
@@ -413,7 +471,7 @@ object Trigger {
             CallScript()
             if (wait >= 0) {
                 nextTriggerTime =
-                    (Game_local.gameLocal.time + SEC2MS(wait + random * Game_local.gameLocal.random.CRandomFloat())).toInt()
+                    (Game_local.gameLocal.time + SEC2MS(wait + random * Game_local.gameLocal.random.CRandomFloat()))
             } else {
                 // we can't just remove (this) here, because this is a touch function
                 // called while looping through area links...
@@ -460,8 +518,9 @@ object Trigger {
             if (delay > 0) {
                 // don't allow it to trigger again until our delay has passed
                 nextTriggerTime += SEC2MS(delay + random_delay * Game_local.gameLocal.random.CRandomFloat())
-                    .toInt()
-                PostEventSec(EV_TriggerAction, delay, _activator)
+                // FIX: Was passing _activator (idEventArg wrapper) instead of activator (unwrapped entity).
+                // C++ passes the raw entity pointer to PostEventSec.
+                PostEventSec(EV_TriggerAction, delay, activator)
             } else {
                 TriggerAction(activator)
             }
@@ -502,7 +561,6 @@ object Trigger {
             if (delay > 0) {
                 // don't allow it to trigger again until our delay has passed
                 nextTriggerTime += SEC2MS(delay + random_delay * Game_local.gameLocal.random.CRandomFloat())
-                    .toInt()
                 PostEventSec(EV_TriggerAction, delay, other)
             } else {
                 TriggerAction(other)
@@ -510,7 +568,7 @@ object Trigger {
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
@@ -539,11 +597,13 @@ object Trigger {
                 eventCallbacks.putAll(idTrigger.getEventCallBacks())
                 eventCallbacks[EV_Touch] =
                     eventCallback_t2<idTrigger_EntityName> { obj: idTrigger_EntityName, _other: idEventArg<*>?, trace: idEventArg<*>? ->
-                        obj.Event_Touch(_other as idEventArg<idEntity>, trace as idEventArg<trace_s>)
+                        // FIX: Changed to nullable idEntity? to match C++ null checks
+                        obj.Event_Touch(_other as idEventArg<idEntity?>, trace as idEventArg<trace_s>)
                     }
                 eventCallbacks[EV_Activate] =
                     eventCallback_t1<idTrigger_EntityName> { obj: idTrigger_EntityName, _activator: idEventArg<*>? ->
-                        obj.Event_Trigger(_activator as idEventArg<idEntity>)
+                        // FIX: Changed to nullable idEntity? to match C++ null checks
+                        obj.Event_Trigger(_activator as idEventArg<idEntity?>)
                     }
                 eventCallbacks[EV_TriggerAction] =
                     eventCallback_t1<idTrigger_EntityName> { obj: idTrigger_EntityName, activator: idEventArg<*>? ->
@@ -581,7 +641,8 @@ object Trigger {
 
         override fun Spawn() {
             super.Spawn()
-            wait = spawnArgs.GetFloat("wait", "0.5f")
+            // FIX: Default strings had trailing 'f' not in C++ originals
+            wait = spawnArgs.GetFloat("wait", "0.5")
             random = spawnArgs.GetFloat("random", "0")
             delay = spawnArgs.GetFloat("delay", "0")
             random_delay = spawnArgs.GetFloat("random_delay", "0")
@@ -621,7 +682,7 @@ object Trigger {
             CallScript()
             if (wait >= 0) {
                 nextTriggerTime =
-                    (Game_local.gameLocal.time + SEC2MS(wait + random * Game_local.gameLocal.random.CRandomFloat())).toInt()
+                    (Game_local.gameLocal.time + SEC2MS(wait + random * Game_local.gameLocal.random.CRandomFloat()))
             } else {
                 // we can't just remove (this) here, because this is a touch function
                 // called while looping through area links...
@@ -636,7 +697,7 @@ object Trigger {
 
         /*
          ================
-         obj.Event_Trigger
+         idTrigger_EntityName::Event_Trigger
 
          the trigger was just activated
          activated should be the entity that originated the activation sequence (ie. the original target)
@@ -644,13 +705,14 @@ object Trigger {
          so wait for the delay time before firing
          ================
          */
-        private fun Event_Trigger(_activator: idEventArg<idEntity>) {
+        private fun Event_Trigger(_activator: idEventArg<idEntity?>) {
             val activator = _activator.value
             if (nextTriggerTime > Game_local.gameLocal.time) {
                 // can't retrigger until the wait is over
                 return
             }
-            if (activator.name != entityName) {
+            // FIX: Added null check for activator — C++ has: if ( !activator || ( activator->name != entityName ) )
+            if (activator == null || activator.name != entityName) {
                 return
             }
             if (triggerFirst) {
@@ -663,14 +725,18 @@ object Trigger {
             if (delay > 0) {
                 // don't allow it to trigger again until our delay has passed
                 nextTriggerTime += SEC2MS(delay + random_delay * Game_local.gameLocal.random.CRandomFloat())
-                    .toInt()
                 PostEventSec(EV_TriggerAction, delay, activator)
             } else {
                 TriggerAction(activator)
             }
         }
 
-        private fun Event_Touch(_other: idEventArg<idEntity>, trace: idEventArg<trace_s>) {
+        /*
+         ================
+         idTrigger_EntityName::Event_Touch
+         ================
+         */
+        private fun Event_Touch(_other: idEventArg<idEntity?>, trace: idEventArg<trace_s>) {
             val other = _other.value
             if (triggerFirst) {
                 return
@@ -679,14 +745,14 @@ object Trigger {
                 // can't retrigger until the wait is over
                 return
             }
-            if (other.name != entityName) {
+            // FIX: Added null check for other — C++ has: if ( !other || ( other->name != entityName ) )
+            if (other == null || other.name != entityName) {
                 return
             }
             nextTriggerTime = Game_local.gameLocal.time + 1
             if (delay > 0) {
                 // don't allow it to trigger again until our delay has passed
                 nextTriggerTime += SEC2MS(delay + random_delay * Game_local.gameLocal.random.CRandomFloat())
-                    .toInt()
                 PostEventSec(EV_TriggerAction, delay, other)
             } else {
                 TriggerAction(other)
@@ -694,7 +760,7 @@ object Trigger {
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
@@ -828,7 +894,7 @@ object Trigger {
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
@@ -912,7 +978,7 @@ object Trigger {
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
@@ -979,20 +1045,26 @@ object Trigger {
         override fun Spawn() {
             super.Spawn()
             on = spawnArgs.GetBool("on", "1")
-            delay = spawnArgs.GetFloat("delay", "1.0f")
+            delay = spawnArgs.GetFloat("delay", "1.0") // FIX: Was "1.0f" — C++ uses "1.0"
             nextTime = Game_local.gameLocal.time
             Enable()
         }
 
+        /*
+         ================
+         idTrigger_Hurt::Event_Touch
+         ================
+         */
         private fun Event_Touch(_other: idEventArg<idEntity>, trace: idEventArg<trace_s>) {
             val other = _other.value
             val damage: String
-            if (on && Game_local.gameLocal.time >= nextTime) {
+            // FIX: Added null check for other — C++ has: if ( on && other && gameLocal.time >= nextTime )
+            if (on && other != null && Game_local.gameLocal.time >= nextTime) {
                 damage = spawnArgs.GetString("def_damage", "damage_painTrigger")!!
                 other.Damage(null, null, getVec3Origin(), damage, 1.0f, Model.INVALID_JOINT)
                 ActivateTargets(other)
                 CallScript()
-                nextTime = (Game_local.gameLocal.time + SEC2MS(delay)).toInt()
+                nextTime = (Game_local.gameLocal.time + SEC2MS(delay))
             }
         }
 
@@ -1001,7 +1073,7 @@ object Trigger {
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
@@ -1040,14 +1112,14 @@ object Trigger {
             player = Game_local.gameLocal.GetLocalPlayer()
             if (player != null) {
                 fadeColor = spawnArgs.GetVec4("fadeColor", "0, 0, 0, 1")
-                fadeTime = SEC2MS(spawnArgs.GetFloat("fadeTime", "0.5f")).toInt()
+                fadeTime = SEC2MS(spawnArgs.GetFloat("fadeTime", "0.5")) // FIX: Was "0.5f" — C++ uses "0.5"
                 player.playerView.Fade(fadeColor, fadeTime)
-                PostEventMS(EV_ActivateTargets, fadeTime.toFloat(), activator.value)
+                PostEventMS(EV_ActivateTargets, fadeTime, activator.value)
             }
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
@@ -1167,7 +1239,7 @@ object Trigger {
         }
 
         override fun oSet(oGet: idClass?) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            throw UnsupportedOperationException("Not supported yet.")
         }
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {

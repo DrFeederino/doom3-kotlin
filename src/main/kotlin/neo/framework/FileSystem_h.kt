@@ -1058,7 +1058,10 @@ object FileSystem_h {
                     val gamepath = idStr(BuildOSPath(search[isearch], dirs[i].toString(), ""))
                     ListOSFiles(gamepath.toString(), ".pk4", pk4s)
                     if (pk4s.size() != 0) {
-                        if (0 == list.mods.Find(dirs[i])) {
+                        // FIX: C++ `if (!list->mods.Find(dirs[i]))` checks for NOT found (NULL pointer = falsy).
+                        // Kotlin Find() returns null when not found, not 0. Was `0 == Find()` which is always
+                        // false when null, preventing any mod from being added to the list.
+                        if (null == list.mods.Find(dirs[i])) {
                             // D3 1.3 #31, only list d3xp if the pak is present
                             if (dirs[i].Icmp("d3xp") != 0 || HasD3XP()) {
                                 list.mods.add(dirs[i])
@@ -1080,8 +1083,16 @@ object FileSystem_h {
                     val f = OpenOSFile(descfile.toString(), "r")
                     if (f != null) {
                         try {
-                            if (f.read(desc) > 0) {
-                                list.descriptions.add(idStr(String(desc.array())))
+                            // FIX: clear ByteBuffer before each read — C++ uses stack-local char[256]
+                            // that gets overwritten by fgets each iteration
+                            desc.clear()
+                            val bytesRead = f.read(desc)
+                            if (bytesRead > 0) {
+                                // FIX: use only bytes actually read, not entire 256-byte array.
+                                // Also mimic C++ fgets: only take first line, trim newlines/nulls.
+                                val descStr = String(desc.array(), 0, bytesRead)
+                                    .substringBefore('\n').trimEnd('\r', '\u0000')
+                                list.descriptions.add(idStr(descStr))
                                 f.close()
                                 break
                             } else {
@@ -2921,14 +2932,9 @@ object FileSystem_h {
          ====================
          */
         private fun ReplaceSeparators(path: idStr, sep: Char = sys_public.PATHSEPERATOR_CHAR) {
-            val s: CharArray = path.c_str()
-            var i: Int = 0
-            while (i < s.size) {
-                if (s[i] == '/' || s[i] == '\\') {
-                    s[i] = sep
-                }
-                i++
-            }
+            // c_str() returns a copy (toCharArray()), so modifying it doesn't update the idStr.
+            // Use string replacement directly on the idStr's data field instead.
+            path.data = path.data.replace('/', sep).replace('\\', sep)
         }
 
         /*
@@ -3273,7 +3279,9 @@ object FileSystem_h {
                     // exclude any extra packs if we have server paks to search
                     if (serverPaks.Num() != 0) {
                         GetPackStatus(search.pack!!)
-                        if (search.pack!!.pureStatus != pureStatus_t.PURE_NEVER && 0 == serverPaks.Find(search.pack!!)) {
+                        // FIX: C++ `!serverPaks.Find()` checks for NOT found (NULL = falsy).
+                        // Kotlin Find() returns null when not found, not 0.
+                        if (search.pack!!.pureStatus != pureStatus_t.PURE_NEVER && null == serverPaks.Find(search.pack!!)) {
                             search = search.next
                             continue  // not on the pure server pak list
                         }

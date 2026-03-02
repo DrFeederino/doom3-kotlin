@@ -1,3 +1,15 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/game/gamesys/SaveGame.h, neo/game/gamesys/SaveGame.cpp
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ */
 package neo.Game.GameSys
 
 import neo.Game.Animation.idDeclModelDef
@@ -17,7 +29,7 @@ import neo.Renderer.RenderWorld.renderLight_s
 import neo.Renderer.RenderWorld.renderView_s
 import neo.Sound.snd_shader.idSoundShader
 import neo.TempDump.SERiAL
-import neo.TempDump.TODO_Exception
+
 import neo.cm.contactInfo_t
 import neo.cm.contactType_t
 import neo.cm.trace_s
@@ -47,43 +59,47 @@ import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
+import java.lang.Class
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
 object SaveGame {
     /*
-     Save game related helper classes.
+    Save game related helper classes.
 
-     Save games are implemented in two classes, idSaveGame and idRestoreGame, that implement write/read functions for 
-     common types.  They're passed in to each entity and object for them to archive themselves.  Each class
-     implements save/restore functions for it's own data.  When restoring, all the objects are instantiated,
-     then the restore function is called on each, superclass first, then subclasses.
+    Save games are implemented in two classes, idSaveGame and idRestoreGame, that implement write/read functions for
+    common types.  They're passed in to each entity and object for them to archive themselves.  Each class
+    implements save/restore functions for it's own data.  When restoring, all the objects are instantiated,
+    then the restore function is called on each, superclass first, then subclasses.
 
-     Pointers are restored by saving out an object index for each unique object pointer and adding them to a list of
-     objects that are to be saved.  Restore instantiates all the objects in the list before calling the Restore function
-     on each object so that the pointers returned are valid.  No object's restore function should rely on any other objects
-     being fully instantiated until after the restore process is complete.  Post restore fixup should be done by posting
-     events with 0 delay.
+    Pointers are restored by saving out an object index for each unique object pointer and adding them to a list of
+    objects that are to be saved.  Restore instantiates all the objects in the list before calling the Restore function
+    on each object so that the pointers returned are valid.  No object's restore function should rely on any other objects
+    being fully instantiated until after the restore process is complete.  Post restore fixup should be done by posting
+    events with 0 delay.
 
-     The savegame header will have the Game Name, Version, Map Name, and Player Persistent Info.
+    The savegame header will have the Game Name, Version, Map Name, and Player Persistent Info.
 
-     Changes in version make savegames incompatible, and the game will start from the beginning of the level with
-     the player's persistent info.
+    Changes in version make savegames incompatible, and the game will start from the beginning of the level with
+    the player's persistent info.
 
-     Changes to classes that don't need to break compatibilty can use the build number as the savegame version.
-     Later versions are responsible for restoring from previous versions by ignoring any unused data and initializing
-     variables that weren't in previous versions with safe information.
+    Changes to classes that don't need to break compatibilty can use the build number as the savegame version.
+    Later versions are responsible for restoring from previous versions by ignoring any unused data and initializing
+    variables that weren't in previous versions with safe information.
 
-     At the head of the save game is enough information to restore the player to the beginning of the level should the
-     file be unloadable in some way (for example, due to script changes).
-     */
+    At the head of the save game is enough information to restore the player to the beginning of the level should the
+    file be unloadable in some way (for example, due to script changes).
+    */
     const val INITIAL_RELEASE_BUILD_NUMBER = 1262
 
     class idSaveGame(private val file: idFile) {
-        //
         private val objects: idList<idClass?>
 
-        // ~idSaveGame();
+        /*
+        ================
+        idSaveGame::Close
+        ================
+        */
         fun Close() {
             var i: Int
             WriteSoundCommands()
@@ -104,10 +120,20 @@ object SaveGame {
 // #endif
         }
 
+        /*
+        ================
+        idSaveGame::AddObject
+        ================
+        */
         fun AddObject(obj: idClass) {
             objects.AddUnique(obj)
         }
 
+        /*
+        ================
+        idSaveGame::WriteObjectList
+        ================
+        */
         fun WriteObjectList() {
             var i: Int
             WriteInt(objects.Num() - 1)
@@ -118,6 +144,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idSaveGame::Write
+        ================
+        */
         fun Write(buffer: ByteBuffer, len: Int) {
             file.Write(buffer, len)
         }
@@ -126,38 +157,79 @@ object SaveGame {
             file.Write(buffer)
         }
 
+        /*
+        ================
+        idSaveGame::WriteInt
+        ================
+        */
         fun WriteInt(value: Int) {
             file.WriteInt(value)
         }
 
+        /*
+        ================
+        idSaveGame::WriteJoint
+        ================
+        */
         fun WriteJoint(   /*jointHandle_t*/value: Int) {
             file.WriteInt(value)
         }
 
+        /*
+        ================
+        idSaveGame::WriteShort
+        ================
+        */
         fun WriteShort(value: Short) {
             file.WriteShort(value)
         }
 
+        /*
+        ================
+        idSaveGame::WriteByte
+        ================
+        */
         fun WriteByte(value: Byte) {
             val buffer = ByteBuffer.allocate(1)
             buffer.put(value)
-            file.Write(buffer, 1) //sizeof(value));
+            file.Write(buffer, 1)
         }
 
+        /*
+        ================
+        idSaveGame::WriteSignedChar
+        ================
+        */
         fun WriteSignedChar(   /*signed char*/value: Short) {
-            val buffer = ByteBuffer.allocate(java.lang.Short.BYTES)
-            buffer.putShort(value)
-            file.Write(buffer, java.lang.Short.BYTES) //sizeof(value));
+            // FIX: C++ writes sizeof(signed char) = 1 byte, not sizeof(short) = 2 bytes
+            val buffer = ByteBuffer.allocate(1)
+            buffer.put(value.toByte())
+            file.Write(buffer, 1)
         }
 
+        /*
+        ================
+        idSaveGame::WriteFloat
+        ================
+        */
         fun WriteFloat(value: Float) {
             file.WriteFloat(value)
         }
 
+        /*
+        ================
+        idSaveGame::WriteBool
+        ================
+        */
         fun WriteBool(value: Boolean) {
             file.WriteBool(value)
         }
 
+        /*
+        ================
+        idSaveGame::WriteString
+        ================
+        */
         fun WriteString(string: String) {
             val len: Int
             len = string.length
@@ -169,22 +241,47 @@ object SaveGame {
             this.WriteString(string.toString())
         }
 
+        /*
+        ================
+        idSaveGame::WriteVec2
+        ================
+        */
         fun WriteVec2(vec: idVec2) {
             file.WriteVec2(vec)
         }
 
+        /*
+        ================
+        idSaveGame::WriteVec3
+        ================
+        */
         fun WriteVec3(vec: idVec3) {
             file.WriteVec3(vec)
         }
 
+        /*
+        ================
+        idSaveGame::WriteVec4
+        ================
+        */
         fun WriteVec4(vec: idVec4) {
             file.WriteVec4(vec)
         }
 
+        /*
+        ================
+        idSaveGame::WriteVec6
+        ================
+        */
         fun WriteVec6(vec: idVec6) {
             file.WriteVec6(vec)
         }
 
+        /*
+        ================
+        idSaveGame::WriteWinding
+        ================
+        */
         fun WriteWinding(w: idWinding) {
             var i: Int
             val num: Int
@@ -199,20 +296,40 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idSaveGame::WriteBounds
+        ================
+        */
         fun WriteBounds(bounds: idBounds) {
             LittleRevBytes(bounds /*, sizeof(float), sizeof(b) / sizeof(float)*/)
             file.Write(bounds /*, sizeof(b)*/)
         }
 
+        /*
+        ================
+        idSaveGame::WriteMat3
+        ================
+        */
         fun WriteMat3(mat: idMat3) {
             file.WriteMat3(mat)
         }
 
+        /*
+        ================
+        idSaveGame::WriteAngles
+        ================
+        */
         fun WriteAngles(angles: idAngles) {
             LittleRevBytes(angles /*, sizeof(float), sizeof(v) / sizeof(float)*/)
             file.Write(angles /*, sizeof(v)*/)
         }
 
+        /*
+        ================
+        idSaveGame::WriteObject
+        ================
+        */
         fun WriteObject(obj: idClass?) {
             var index: Int
             index = objects.FindIndex(obj)
@@ -225,10 +342,20 @@ object SaveGame {
             WriteInt(index)
         }
 
+        /*
+        ================
+        idSaveGame::WriteStaticObject
+        ================
+        */
         fun WriteStaticObject(obj: idClass) {
             CallSave_r(obj.GetType(), obj)
         }
 
+        /*
+        ================
+        idSaveGame::WriteDict
+        ================
+        */
         fun WriteDict(dict: idDict?) {
             val num: Int
             var i: Int
@@ -248,6 +375,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idSaveGame::WriteMaterial
+        ================
+        */
         fun WriteMaterial(material: Material.idMaterial?) {
             if (null == material) {
                 WriteString("")
@@ -256,6 +388,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idSaveGame::WriteSkin
+        ================
+        */
         fun WriteSkin(skin: idDeclSkin?) {
             if (null == skin) {
                 WriteString("")
@@ -264,6 +401,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idSaveGame::WriteParticle
+        ================
+        */
         fun WriteParticle(particle: idDeclParticle?) {
             if (null == particle) {
                 WriteString("")
@@ -272,6 +414,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idSaveGame::WriteFX
+        ================
+        */
         fun WriteFX(fx: idDeclFX?) {
             if (null == fx) {
                 WriteString("")
@@ -280,6 +427,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idSaveGame::WriteSoundShader
+        ================
+        */
         fun WriteSoundShader(shader: idSoundShader?) {
             val name: String?
             if (null == shader) {
@@ -290,6 +442,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idSaveGame::WriteModelDef
+        ================
+        */
         fun WriteModelDef(modelDef: idDeclModelDef?) {
             if (null == modelDef) {
                 WriteString("")
@@ -298,6 +455,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idSaveGame::WriteModel
+        ================
+        */
         fun WriteModel(model: idRenderModel?) {
             val name: String?
             if (null == model) {
@@ -308,6 +470,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idSaveGame::WriteUserInterface
+        ================
+        */
         fun WriteUserInterface(ui: idUserInterface?, unique: Boolean) {
             val name: String?
             if (null == ui) {
@@ -322,6 +489,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idSaveGame::WriteRenderEntity
+        ================
+        */
         fun WriteRenderEntity(renderEntity: renderEntity_s) {
             var i: Int
             WriteModel(renderEntity.hModel)
@@ -351,9 +523,11 @@ object SaveGame {
             }
             i = 0
             while (i < RenderWorld.MAX_RENDERENTITY_GUI) {
+                // FIX: C++ passes gui[i] which may be NULL; WriteUserInterface handles NULL.
+                // Kotlin !! would NPE on null gui slots.
                 WriteUserInterface(
-                    renderEntity.gui[i]!!,
-                    renderEntity.gui[i] != null && renderEntity.gui[i]!!.IsUniqued()
+                    renderEntity.gui[i],
+                    renderEntity.gui[i]?.IsUniqued() ?: false
                 )
                 i++
             }
@@ -365,6 +539,11 @@ object SaveGame {
             WriteInt(renderEntity.forceUpdate)
         }
 
+        /*
+        ================
+        idSaveGame::WriteRenderLight
+        ================
+        */
         fun WriteRenderLight(renderLight: renderLight_s) {
             var i: Int
             WriteMat3(renderLight.axis)
@@ -399,6 +578,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idSaveGame::WriteRefSound
+        ================
+        */
         fun WriteRefSound(refSound: refSound_t) {
             if (refSound.referenceSound != null) {
                 WriteInt(refSound.referenceSound!!.Index())
@@ -418,6 +602,11 @@ object SaveGame {
             WriteInt(refSound.parms.soundClass)
         }
 
+        /*
+        ================
+        idSaveGame::WriteRenderView
+        ================
+        */
         fun WriteRenderView(view: renderView_s) {
             var i: Int
             WriteInt(view.viewID)
@@ -438,6 +627,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ===================
+        idSaveGame::WriteUsercmd
+        ===================
+        */
         fun WriteUsercmd(usercmd: usercmd_t) {
             WriteInt(usercmd.gameFrame)
             WriteInt(usercmd.gameTime)
@@ -456,6 +650,11 @@ object SaveGame {
             WriteInt(usercmd.sequence)
         }
 
+        /*
+        ===================
+        idSaveGame::WriteContactInfo
+        ===================
+        */
         fun WriteContactInfo(contactInfo: contactInfo_t) {
             WriteInt(contactInfo.type.ordinal)
             WriteVec3(contactInfo.point)
@@ -469,6 +668,11 @@ object SaveGame {
             WriteInt(contactInfo.id)
         }
 
+        /*
+        ===================
+        idSaveGame::WriteTrace
+        ===================
+        */
         fun WriteTrace(trace: trace_s) {
             WriteFloat(trace.fraction)
             WriteVec3(trace.endpos)
@@ -476,6 +680,11 @@ object SaveGame {
             WriteContactInfo(trace.c)
         }
 
+        /*
+        ===================
+        idSaveGame::WriteTraceModel
+        ===================
+        */
         fun WriteTraceModel(trace: idTraceModel) {
             var j: Int
             var k: Int
@@ -512,12 +721,16 @@ object SaveGame {
             WriteBounds(trace.bounds)
             WriteBool(trace.isConvex)
             // padding win32 native structs
-//            char[] tmp = new char[3];
-            val tmp = ByteBuffer.allocate(6)
-            //	memset( tmp, 0, sizeof( tmp ) );
+            // C++: char tmp[3]; memset(tmp, 0, sizeof(tmp)); file->Write(tmp, 3);
+            val tmp = ByteBuffer.allocate(3)
             file.Write(tmp, 3)
         }
 
+        /*
+        ===================
+        idSaveGame::WriteClipModel
+        ===================
+        */
         fun WriteClipModel(clipModel: idClipModel?) {
             if (clipModel != null) {
                 WriteBool(true)
@@ -527,34 +740,47 @@ object SaveGame {
             }
         }
 
+        /*
+        ===================
+        idSaveGame::WriteSoundCommands
+        ===================
+        */
         fun WriteSoundCommands() {
             Game_local.gameSoundWorld!!.WriteToSaveGame(file)
         }
 
+        /*
+        ======================
+        idSaveGame::WriteBuildNumber
+        ======================
+        */
         fun WriteBuildNumber(value: Int) {
             file.WriteInt(BUILD_NUMBER)
         }
 
-        private fun CallSave_r(cls: idTypeInfo, obj: idClass?) {
-            if (cls.zuper != null) {
-                CallSave_r(cls.zuper!!, obj)
-                if (cls.zuper!!.Save == cls.Save) {
-                    // don't call save on this inheritance level since the function was called in the super class
-                    return
-                }
-            }
-            //            (obj.cls.Save) (this);
-            cls.Save.run(this)
-        }
-
-        private fun CallSave_r(   /*idTypeInfo*/cls: java.lang.Class<out idClass?>?, obj: idClass?) {
+        /*
+        ================
+        idSaveGame::CallSave_r
+        ================
+        */
+        private fun CallSave_r(cls: Class<out idClass>, obj: idClass?) {
             TODO()
+//            if (cls.zuper != null) {
+//                CallSave_r(cls.zuper!!, obj)
+//                if (cls.zuper!!.Save == cls.Save) {
+//                    // don't call save on this inheritance level since the function was called in the super class
+//                    return
+//                }
+//            }
+//            ( /* obj->*cls-> */ cls.Save).run(this)
         }
 
-        //
-        //
+        /*
+        ================
+        idSaveGame::idSaveGame
+        ================
+        */
         init {
-
             // Put NULL at the start of the list so we can skip over it.
             objects = idList()
             objects.Append(null as idClass?)
@@ -564,16 +790,14 @@ object SaveGame {
     /* **********************************************************************
 
      idRestoreGame
-	
+
      ***********************************************************************/
-    class idRestoreGame(  //
+    class idRestoreGame(
         private val file: idFile
     ) {
         private var buildNumber = 0
         private var internalSavegameVersion = 0 // DG added this
 
-
-        //
         private val objects: idList<idClass> = idList()
 
         // DG: added these methods, internalSavegameVersion makes us independent of the global BUILD_NUMBER
@@ -590,6 +814,11 @@ object SaveGame {
         }
         // DG end
 
+        /*
+        ================
+        idRestoreGame::CreateObjects
+        ================
+        */
         fun CreateObjects() {
             var i: Int
             val num = CInt()
@@ -612,6 +841,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idRestoreGame::RestoreObjects
+        ================
+        */
         fun RestoreObjects() {
             var i: Int
             ReadSoundCommands()
@@ -646,6 +880,11 @@ object SaveGame {
 // #endif
         }
 
+        /*
+        ====================
+        idRestoreGame::DeleteObjects
+        ====================
+        */
         fun DeleteObjects() {
 
             // Remove the NULL object before deleting
@@ -653,11 +892,21 @@ object SaveGame {
             objects.DeleteContents(true)
         }
 
+        /*
+        ================
+        idRestoreGame::Error
+        ================
+        */
         fun Error(fmt: String, vararg objects: Any?) { // id_attribute((format(printf,2,3)));
             this.objects.DeleteContents(true)
             idGameLocal.Error(fmt, objects)
         }
 
+        /*
+        ================
+        idRestoreGame::Read
+        ================
+        */
         fun Read(buffer: ByteBuffer, len: Int) {
             file.Read(buffer, len)
         }
@@ -666,6 +915,11 @@ object SaveGame {
             file.Read(buffer)
         }
 
+        /*
+        ================
+        idRestoreGame::ReadInt
+        ================
+        */
         fun ReadInt(value: CInt) {
             file.ReadInt(value)
         }
@@ -676,6 +930,11 @@ object SaveGame {
             return value._val
         }
 
+        /*
+        ================
+        idRestoreGame::ReadJoint
+        ================
+        */
         fun ReadJoint(jointHandle_t: CInt) {
             file.ReadInt(jointHandle_t)
         }
@@ -686,6 +945,11 @@ object SaveGame {
             return jointHandle_t._val
         }
 
+        /*
+        ================
+        idRestoreGame::ReadShort
+        ================
+        */
         fun ReadShort(value: ShortArray) {
             file.ReadShort(value)
         }
@@ -696,6 +960,11 @@ object SaveGame {
             return value[0]
         }
 
+        /*
+        ================
+        idRestoreGame::ReadByte
+        ================
+        */
         fun ReadByte(value: ByteArray?) {
             file.Read(ByteBuffer.wrap(value) /*, sizeof(value)*/)
         }
@@ -706,8 +975,16 @@ object SaveGame {
             return value[0]
         }
 
+        /*
+        ================
+        idRestoreGame::ReadSignedChar
+        ================
+        */
         fun ReadSignedChar(value: CharArray) {
-            file.ReadUnsignedChar(value /*, sizeof(value)*/)
+            // FIX: C++ reads sizeof(signed char) = 1 byte
+            val buffer = ByteBuffer.allocate(1)
+            file.Read(buffer, 1)
+            value[0] = buffer[0].toInt().toChar()
         }
 
         fun ReadSignedChar(): Char {
@@ -716,6 +993,11 @@ object SaveGame {
             return c[0]
         }
 
+        /*
+        ================
+        idRestoreGame::ReadFloat
+        ================
+        */
         fun ReadFloat(value: CFloat) {
             file.ReadFloat(value)
         }
@@ -726,6 +1008,11 @@ object SaveGame {
             return value._val
         }
 
+        /*
+        ================
+        idRestoreGame::ReadBool
+        ================
+        */
         fun ReadBool(value: CBool) {
             file.ReadBool(value)
         }
@@ -736,6 +1023,11 @@ object SaveGame {
             return value._val
         }
 
+        /*
+        ================
+        idRestoreGame::ReadString
+        ================
+        */
         fun ReadString(string: idStr) {
             val len = CInt()
             ReadInt(len)
@@ -746,22 +1038,47 @@ object SaveGame {
             file.Read(string, len._val)
         }
 
+        /*
+        ================
+        idRestoreGame::ReadVec2
+        ================
+        */
         fun ReadVec2(vec: idVec2) {
             file.ReadVec2(vec)
         }
 
+        /*
+        ================
+        idRestoreGame::ReadVec3
+        ================
+        */
         fun ReadVec3(vec: idVec3) {
             file.ReadVec3(vec)
         }
 
+        /*
+        ================
+        idRestoreGame::ReadVec4
+        ================
+        */
         fun ReadVec4(vec: idVec4) {
             file.ReadVec4(vec)
         }
 
+        /*
+        ================
+        idRestoreGame::ReadVec6
+        ================
+        */
         fun ReadVec6(vec: idVec6) {
             file.ReadVec6(vec)
         }
 
+        /*
+        ================
+        idRestoreGame::ReadWinding
+        ================
+        */
         fun ReadWinding(w: idWinding) {
             var i: Int
             val num = CInt()
@@ -775,36 +1092,76 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idRestoreGame::ReadBounds
+        ================
+        */
         fun ReadBounds(bounds: idBounds) {
             file.Read(bounds /*, sizeof(bounds)*/)
-            //            LittleRevBytes(bounds, sizeof(float), sizeof(bounds) / sizeof(float));
             LittleRevBytes(bounds /*, sizeof(float), sizeof(bounds) / sizeof(float)*/)
         }
 
+        /*
+        ================
+        idRestoreGame::ReadMat3
+        ================
+        */
         fun ReadMat3(mat: idMat3) {
             file.ReadMat3(mat)
         }
 
+        /*
+        ================
+        idRestoreGame::ReadAngles
+        ================
+        */
         fun ReadAngles(angles: idAngles) {
             file.Read(angles /*, sizeof(angles)*/)
             LittleRevBytes(angles /*, sizeof(float), sizeof(idAngles) / sizeof(float)*/)
         }
 
+        /*
+        ================
+        idRestoreGame::ReadObject
+        ================
+        */
         fun ReadObject(obj: idClass?) {
-            throw TODO_Exception() //TODO:remove the parameter, and return obj instead
-            //            int[] index = {0};
-//
-//            ReadInt(index);
-//            if ((index[0] < 0) || (index[0] >= objects.Num())) {
-//                Error("idRestoreGame::ReadObject: invalid object index");
-//            }
-//            obj.oSet(objects.oGet(index[0]));
+            // NOTE: Differs from C++ — C++ takes idClass*& (pointer by reference) and modifies the caller's pointer.
+            // Kotlin cannot modify a passed parameter reference. This overload reads and discards the index for
+            // format compatibility. Callers should migrate to the return-value overload below.
+            val index = ReadInt()
+            if (index < 0 || index >= objects.Num()) {
+                Error("idRestoreGame::ReadObject: invalid object index")
+            }
+            // Cannot assign to 'obj' parameter in Kotlin — value is discarded.
+            // Callers that need the result should use: val obj = savefile.ReadObject()
         }
 
+        // NOTE: Differs from C++ — return-value overload for Kotlin callers
+        fun ReadObject(): idClass? {
+            val index = ReadInt()
+            if (index < 0 || index >= objects.Num()) {
+                Error("idRestoreGame::ReadObject: invalid object index")
+                return null
+            }
+            return objects[index]
+        }
+
+        /*
+        ================
+        idRestoreGame::ReadStaticObject
+        ================
+        */
         fun ReadStaticObject(obj: idClass?) {
             CallRestore_r(obj!!.GetType(), obj)
         }
 
+        /*
+        ================
+        idRestoreGame::ReadDict
+        ================
+        */
         fun ReadDict(dict: idDict) {
             val num = CInt()
             var i: Int
@@ -812,7 +1169,7 @@ object SaveGame {
             val value = idStr()
             ReadInt(num)
             if (num._val < 0) {
-                //dict.set(null)
+                // C++: dict = NULL — cannot reassign parameter in Kotlin
             } else {
                 dict.Clear()
                 i = 0
@@ -825,6 +1182,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idRestoreGame::ReadMaterial
+        ================
+        */
         fun ReadMaterial(material: Material.idMaterial) {
             val name = idStr()
             ReadString(name)
@@ -835,27 +1197,42 @@ object SaveGame {
             }
         }
 
-        fun ReadSkin(skin: idDeclSkin) {
+        /*
+        ================
+        idRestoreGame::ReadSkin
+        ================
+        */
+        fun ReadSkin(): idDeclSkin? {
             val name = idStr()
             ReadString(name)
             if (0 == name.Length()) {
-                //need to find out why setting null if = is overloaded
-                //skin.oSet(null)
+                return null
             } else {
-                DeclManager.declManager.FindSkin(name)
+                // FIX: was discarding the FindSkin result — skin was never assigned
+                return DeclManager.declManager.FindSkin(name)
             }
         }
 
+        /*
+        ================
+        idRestoreGame::ReadParticle
+        ================
+        */
         fun ReadParticle(particle: idDeclParticle) {
             val name = idStr()
             ReadString(name)
             if (0 == name.Length()) {
-                //particle.oSet(null)
+                // C++: particle = NULL — cannot reassign parameter in Kotlin
             } else {
                 particle.oSet(DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, name) as idDeclParticle)
             }
         }
 
+        /*
+        ================
+        idRestoreGame::ReadFX
+        ================
+        */
         fun ReadFX(): idDeclFX? {
             val name = idStr()
             ReadString(name)
@@ -866,41 +1243,62 @@ object SaveGame {
             }
         }
 
-        fun ReadSoundShader(shader: idSoundShader) {
+        /*
+        ================
+        idRestoreGame::ReadSoundShader
+        ================
+        */
+        fun ReadSoundShader(): idSoundShader? {
             val name = idStr()
             ReadString(name)
             if (0 == name.Length()) {
-                //shader.oSet(null)
+                return null
             } else {
-                shader.oSet(DeclManager.declManager.FindSound(name)!!)
+                return DeclManager.declManager.FindSound(name)
             }
         }
 
-        fun ReadModelDef(modelDef: idDeclModelDef) {
+        /*
+        ================
+        idRestoreGame::ReadModelDef
+        ================
+        */
+        fun ReadModelDef(): idDeclModelDef? {
             val name = idStr()
             ReadString(name)
             if (0 == name.Length()) {
-                //modelDef = null;
+                return null
             } else {
-                //modelDef.set((idDeclModelDef) declManager.FindType(DECL_MODELDEF, name, false));
+                // FIX: was completely unimplemented — body was commented out
+                return DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, name, false) as idDeclModelDef?
             }
         }
 
+        /*
+        ================
+        idRestoreGame::ReadModel
+        ================
+        */
         fun ReadModel(model: idRenderModel) {
             val name = idStr()
             ReadString(name)
             if (0 == name.Length()) {
-                //model.oSet(null)
+                // C++: model = NULL — cannot reassign parameter in Kotlin
             } else {
                 model.oSet(ModelManager.renderModelManager.FindModel(name.toString())!!)
             }
         }
 
+        /*
+        ================
+        idRestoreGame::ReadUserInterface
+        ================
+        */
         fun ReadUserInterface(ui: idUserInterface) {
             val name = idStr()
             ReadString(name)
             if (0 == name.Length()) {
-                //ui.oSet(null)
+                // C++: ui = NULL — cannot reassign parameter in Kotlin
             } else {
                 val unique = CBool(false)
                 ReadBool(unique)
@@ -915,6 +1313,11 @@ object SaveGame {
             }
         }
 
+        /*
+        ================
+        idRestoreGame::ReadRenderEntity
+        ================
+        */
         fun ReadRenderEntity(renderEntity: renderEntity_s) {
             var i: Int
             val index = CInt()
@@ -934,7 +1337,7 @@ object SaveGame {
             ReadMat3(renderEntity.axis)
             ReadMaterial(renderEntity.customShader!!)
             ReadMaterial(renderEntity.referenceShader!!)
-            ReadSkin(renderEntity.customSkin!!)
+            renderEntity.customSkin = ReadSkin()
             ReadInt(index)
             renderEntity.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index._val)
             i = 0
@@ -960,6 +1363,11 @@ object SaveGame {
             renderEntity.forceUpdate = ReadInt()
         }
 
+        /*
+        ================
+        idRestoreGame::ReadRenderLight
+        ================
+        */
         fun ReadRenderLight(renderLight: renderLight_s) {
             val index = CInt()
             var i: Int
@@ -993,13 +1401,18 @@ object SaveGame {
             renderLight.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index._val)
         }
 
+        /*
+        ================
+        idRestoreGame::ReadRefSound
+        ================
+        */
         fun ReadRefSound(refSound: refSound_t) {
             val index = CInt()
             ReadInt(index)
             refSound.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index._val)
             ReadVec3(refSound.origin)
             refSound.listenerId = ReadInt()
-            ReadSoundShader(refSound.shader!!)
+            refSound.shader = ReadSoundShader()
             refSound.diversity = ReadFloat()
             refSound.waitfortrigger = ReadBool()
             refSound.parms.minDistance = ReadFloat()
@@ -1010,6 +1423,11 @@ object SaveGame {
             refSound.parms.soundClass = ReadInt()
         }
 
+        /*
+        ================
+        idRestoreGame::ReadRenderView
+        ================
+        */
         fun ReadRenderView(view: renderView_s) {
             var i: Int
             view.viewID = ReadInt()
@@ -1030,6 +1448,11 @@ object SaveGame {
             }
         }
 
+        /*
+        =================
+        idRestoreGame::ReadUsercmd
+        =================
+        */
         fun ReadUsercmd(usercmd: usercmd_t) {
             usercmd.gameFrame = ReadInt()
             usercmd.gameTime = ReadInt()
@@ -1048,6 +1471,11 @@ object SaveGame {
             usercmd.sequence = ReadInt()
         }
 
+        /*
+        ===================
+        idRestoreGame::ReadContactInfo
+        ===================
+        */
         fun ReadContactInfo(contactInfo: contactInfo_t) {
             contactInfo.type = contactType_t.entries.toTypedArray()[ReadInt()]
             ReadVec3(contactInfo.point)
@@ -1061,6 +1489,11 @@ object SaveGame {
             contactInfo.id = ReadInt()
         }
 
+        /*
+        ===================
+        idRestoreGame::ReadTrace
+        ===================
+        */
         fun ReadTrace(trace: trace_s) {
             trace.fraction = ReadFloat()
             ReadVec3(trace.endpos)
@@ -1068,6 +1501,11 @@ object SaveGame {
             ReadContactInfo(trace.c)
         }
 
+        /*
+        ===================
+        idRestoreGame::ReadTraceModel
+        ===================
+        */
         fun ReadTraceModel(trace: idTraceModel) {
             var j: Int
             var k: Int
@@ -1104,51 +1542,73 @@ object SaveGame {
             ReadBounds(trace.bounds)
             trace.isConvex = ReadBool()
             // padding win32 native structs
-            val tmp = ByteBuffer.allocate(3 * 2)
+            // C++: char tmp[3]; file->Read(tmp, 3);
+            val tmp = ByteBuffer.allocate(3)
             file.Read(tmp, 3)
         }
 
+        /*
+        =====================
+        idRestoreGame::ReadClipModel
+        =====================
+        */
         fun ReadClipModel(clipModel: idClipModel?) {
             val restoreClipModel: Boolean
             restoreClipModel = ReadBool()
             if (restoreClipModel) {
-//                clipModel.oSet(new idClipModel());
+                // NOTE: Differs from C++ — C++ creates new idClipModel() here; Kotlin reuses the passed-in instance
                 clipModel?.Restore(this)
             } else {
-                clipModel?.oSet(null) //TODO:
+                clipModel?.oSet(null)
             }
         }
 
+        /*
+        =====================
+        idRestoreGame::ReadSoundCommands
+        =====================
+        */
         fun ReadSoundCommands() {
             Game_local.gameSoundWorld!!.StopAllSounds()
             Game_local.gameSoundWorld!!.ReadFromSaveGame(file)
         }
 
+        /*
+        =====================
+        idRestoreGame::ReadBuildNumber
+        =====================
+        */
         fun ReadBuildNumber() {
             val buildNumber = CInt()
             file.ReadInt(buildNumber)
             this.buildNumber = buildNumber._val
         }
 
+        /*
+        =====================
+        idRestoreGame::GetBuildNumber
+        =====================
+        */
         //						Used to retrieve the saved game buildNumber from within class Restore methods
         fun GetBuildNumber(): Int {
             return buildNumber
         }
 
-        private fun CallRestore_r(cls: idTypeInfo, obj: idClass?) {
-            if (cls.zuper != null) {
-                CallRestore_r(cls.zuper!!, obj)
-                if (cls.zuper!!.Restore === cls.Restore) {
-                    // don't call save on this inheritance level since the function was called in the super class
-                    return
-                }
-            }
-            //            (obj.cls.Restore) (this);
-            cls.Restore.run(this)
-        }
-
-        private fun CallRestore_r(cls: java.lang.Class<out idClass>, obj: idClass?) {
+        /*
+        ================
+        idRestoreGame::CallRestore_r
+        ================
+        */
+        private fun CallRestore_r(cls: Class<out idClass>, obj: idClass?) {
             TODO()
+//            if (cls.zuper != null) {
+//                CallRestore_r(cls.zuper!!, obj)
+//                if (cls.zuper!!.Restore === cls.Restore) {
+//                    // don't call save on this inheritance level since the function was called in the super class
+//                    return
+//                }
+//            }
+//            ( /* obj->*cls-> */ cls.Restore).run(this)
         }
     }
 }

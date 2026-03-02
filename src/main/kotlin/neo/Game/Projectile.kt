@@ -2067,7 +2067,7 @@ object Projectile {
             RestorePhysics(physicsObj)
             savefile.ReadParticle(smokeFly!!)
             smokeFlyTime = savefile.ReadInt()
-            savefile.ReadSoundShader(sndBounce!!)
+            sndBounce = savefile.ReadSoundShader()
         }
 
         override fun Spawn() {

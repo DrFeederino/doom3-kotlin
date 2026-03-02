@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/game/Target.cpp, neo/game/Target.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
+
 package neo.Game
 
 import neo.Game.GameSys.Class.*
@@ -1167,7 +1185,7 @@ object Target {
                 PostEventSec(EV_Flash, 0.0f, flashOut, 1)
             }
             if (switchToCamera != null) {
-                switchToCamera!!.PostEventMS(EV_Activate, 0.0f, this)
+                switchToCamera!!.PostEventMS(EV_Activate, 0, this)
             }
             i = 0
             while (i < genericList.Num()) {
@@ -1313,7 +1331,6 @@ object Target {
                     }
                     if (ent is idStaticEntity && ent.spawnArgs.FindKey("color_demonic") != null) {
                         genericList.Append(ent.entityNumber)
-                        //                        continue;
                     }
                 }
                 i++
@@ -1900,7 +1917,7 @@ object Target {
      */
     class idTarget_LevelTrigger : idTarget() {
         companion object {
-            // CLASS_PROTOTYPE( idTarget_LevelTrigger );//TODO:understand this fucking macro
+            // CLASS_PROTOTYPE( idTarget_LevelTrigger );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
                 return eventCallbacks

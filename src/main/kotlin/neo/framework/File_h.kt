@@ -349,10 +349,13 @@ object File_h {
         }
 
         // Endian portable alternatives to Write(...)
+        // FIX: added LITTLE_ENDIAN to match ReadInt, and flip() to reset position after putInt
+        // (putInt advances position to 4, so Write would write 0 bytes without flip)
         fun WriteInt(value: Int): Int {
-            val intBytes = ByteBuffer.allocate(4)
+            val intBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
             val v: Int = LittleLong(value)
             intBytes.putInt(v)
+            intBytes.flip()
             return Write(intBytes)
         }
 
@@ -368,10 +371,12 @@ object File_h {
         }
 
         // FIX: was allocating 2 bytes instead of 4 (sizeof(unsigned int)) — would throw BufferOverflowException
+        // FIX: added LITTLE_ENDIAN and flip() (same ByteBuffer position bug as WriteInt)
         fun WriteUnsignedInt(value: Long): Int {
-            val uintBytes = ByteBuffer.allocate(4)
+            val uintBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
             val v: Int = LittleLong(value.toInt())
             uintBytes.putInt(v)
+            uintBytes.flip()
             return Write(uintBytes)
         }
 
@@ -389,10 +394,12 @@ object File_h {
             return value[0]
         }
 
+        // FIX: added LITTLE_ENDIAN to match ReadShort, and flip() to reset position
         fun WriteShort(value: Short): Int {
-            val shortBytes = ByteBuffer.allocate(2)
+            val shortBytes = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
             val v: Short = LittleShort(value)
             shortBytes.putShort(v)
+            shortBytes.flip()
             return Write(shortBytes)
         }
 
@@ -409,10 +416,12 @@ object File_h {
             return value[0]
         }
 
+        // FIX: added LITTLE_ENDIAN and flip() to reset position
         fun WriteUnsignedShort(value: Int): Int {
-            val ushortBytes = ByteBuffer.allocate(2)
+            val ushortBytes = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
             val v: Short = LittleShort(value.toShort())
             ushortBytes.putShort(v)
+            ushortBytes.flip()
             return Write(ushortBytes)
         }
 
@@ -430,9 +439,11 @@ object File_h {
             return value[0]
         }
 
+        // FIX: added flip() to reset position after put
         fun WriteChar(value: Short): Int {
             val charBytes = ByteBuffer.allocate(1)
             charBytes.put(value.toByte())
+            charBytes.flip()
             return Write(charBytes)
         }
 
@@ -447,9 +458,11 @@ object File_h {
             return result
         }
 
+        // FIX: added flip() to reset position after put
         fun WriteUnsignedChar(value: Char): Int {
             val ucharBytes = ByteBuffer.allocate(1)
             ucharBytes.put(value.code.toByte())
+            ucharBytes.flip()
             return Write(ucharBytes)
         }
 
@@ -467,10 +480,12 @@ object File_h {
             return value._val
         }
 
+        // FIX: added LITTLE_ENDIAN to match ReadFloat, and flip() to reset position
         fun WriteFloat(value: Float): Int {
-            val floatBytes = ByteBuffer.allocate(4)
+            val floatBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
             val v: Float = LittleFloat(value)
             floatBytes.putFloat(v)
+            floatBytes.flip()
             return Write(floatBytes)
         }
 

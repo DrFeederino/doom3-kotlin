@@ -501,7 +501,8 @@ class Game_local {
         override fun Init() {
             val dict: idDict?
             var aas: idAAS
-            if (GAME_DLL) {
+            // FIX: Was inverted — C++ uses #ifndef GAME_DLL for TestGameAPI, #else for idLib init
+            if (!GAME_DLL) {
                 TestGameAPI()
             } else {
 
@@ -1511,8 +1512,9 @@ class Game_local {
 
                     // display how long it took to calculate the current game frame
                     if (SysCvar.g_frametime.GetBool()) {
+                        // FIX: Was %.1f (float) — C++ uses %u (unsigned int); Milliseconds() returns Long
                         Printf(
-                            "game %d: all:%.1f th:%.1f ev:%.1f %d ents \n",
+                            "game %d: all:%d th:%d ev:%d %d ents \n",
                             time, timer_think.Milliseconds() + timer_events.Milliseconds(),
                             timer_think.Milliseconds(), timer_events.Milliseconds(), num
                         )
@@ -1581,10 +1583,9 @@ class Game_local {
             return true
         }
 
-        override fun HandleESC(gui: idUserInterface?): escReply_t {
-            var gui = gui
+        override fun HandleESC(): escReply_t {
             if (isMultiplayer) {
-                gui = StartMenu()
+                escGui = StartMenu()
                 // we may set the gui back to NULL to hide it
                 return escReply_t.ESC_GUI
             }
@@ -2877,7 +2878,6 @@ class Game_local {
             return obj as idEntity?
         }
 
-        @Deprecated("")
         fun SpawnEntityType(classdef: idTypeInfo, args: idDict? /*= NULL*/): idEntity? {
             return SpawnEntityType(classdef, args, false)
         }
@@ -2902,7 +2902,6 @@ class Game_local {
             return obj
         }
 
-        @Deprecated("")
         fun SpawnEntityType(classdef: idTypeInfo): idEntity? {
             return SpawnEntityType(classdef, null)
         }
@@ -3216,8 +3215,8 @@ class Game_local {
         fun CalcFov(base_fov: Float, fov_x: CFloat, fov_y: CFloat) {
             var x: Float
             var y: Float
-            val ratio_x: Float
-            val ratio_y: Float
+            var ratio_x: Float
+            var ratio_y: Float
 
 //            if (!sys.FPU_StackIsEmpty()) {
 //                Printf(sys.FPU_GetState());
@@ -3253,8 +3252,16 @@ class Game_local {
                 }
 
                 else -> {
-                    fov_x._val = (base_fov)
-                    return
+                    // FIX: Was returning base_fov — C++ default/-1 case uses auto mode from screen resolution
+                    // auto mode => use aspect ratio from resolution, assuming screen's pixels are squares
+                    ratio_x = RenderSystem.renderSystem.GetScreenWidth().toFloat()
+                    ratio_y = RenderSystem.renderSystem.GetScreenHeight().toFloat()
+                    if (ratio_x <= 0.0f || ratio_y <= 0.0f) {
+                        // for some reason (maybe this is a dedicated server?) GetScreenWidth()/Height()
+                        // returned 0. Assume default 4:3 to avoid assert()/Error() below.
+                        fov_x._val = base_fov
+                        return
+                    }
                 }
             }
             y = (ratio_y / tan((fov_y._val / 360.0f * idMath.PI)))
@@ -3558,11 +3565,11 @@ class Game_local {
                     e++
                     continue
                 }
-                if (ent == inflictor || ent is idAFAttachment && ent.GetBody() == inflictor) {
+                if (ent === inflictor || ent is idAFAttachment && ent.GetBody() === inflictor) {
                     e++
                     continue
                 }
-                if (ent == ignoreDamage || ent is idAFAttachment && ent.GetBody() === ignoreDamage) {
+                if (ent === ignoreDamage || ent is idAFAttachment && ent.GetBody() === ignoreDamage) {
                     e++
                     continue
                 }
@@ -4290,7 +4297,7 @@ class Game_local {
             }
             //	memset( entities, 0, sizeof( entities ) );
             entities.fill(null)
-            spawnIds = IntArray(spawnIds.size)
+            // FIX: Was creating new array — use fill() to clear in-place and preserve references
             spawnIds.fill(-1) //	memset( spawnIds, -1, sizeof( spawnIds ) );
             firstFreeIndex = 0
             num_entities = 0
@@ -4300,8 +4307,8 @@ class Game_local {
             sortPushers = false
             sortTeamMasters = false
             persistentLevelInfo.Clear()
-            globalShaderParms =
-                FloatArray(globalShaderParms.size) //memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
+            // FIX: Was creating new array — use fill() to clear in-place and preserve references
+            globalShaderParms.fill(0f) //memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
             random.SetSeed(0)
             world = null
             frameCommandThread = null
@@ -4353,24 +4360,23 @@ class Game_local {
             lastGUI = 0
 
 //	memset( clientEntityStates, 0, sizeof( clientEntityStates ) );
+            // FIX: C++ zeroes pointers (= NULL), not creates new objects
             for (a in 0 until MAX_CLIENTS) {
-                for (b in 0 until MAX_GENTITIES) {
-                    clientEntityStates[a][b] = entityState_s()
-                }
+                clientEntityStates[a].fill(null)
             }
-            clientPVS =
-                Array(clientPVS.size) { IntArray(clientPVS[0].size) } //memset( clientPVS, 0, sizeof( clientPVS ) );
+            // FIX: Was creating new array — use fill() to clear in-place and preserve references
+            for (a in 0 until MAX_CLIENTS) {
+                clientPVS[a].fill(0)
+            } //memset( clientPVS, 0, sizeof( clientPVS ) );
             //	memset( clientSnapshots, 0, sizeof( clientSnapshots ) );
-            for (c in 0 until MAX_CLIENTS) {
-                clientSnapshots[c] = snapshot_s()
-            }
+            // FIX: C++ zeroes pointers (= NULL), not creates new objects
+            clientSnapshots.fill(null)
             eventQueue.Init()
             savedEventQueue.Init()
-            lagometer = Array(lagometer.size) {
-                Array(lagometer[0].size) {
-                    ByteArray(
-                        lagometer[0][0].size
-                    )
+            // FIX: Was creating new array — clear in-place to preserve references
+            for (row in lagometer) {
+                for (col in row) {
+                    col.fill(0)
                 }
             } //memset(lagometer, 0, sizeof(lagometer));
         }
