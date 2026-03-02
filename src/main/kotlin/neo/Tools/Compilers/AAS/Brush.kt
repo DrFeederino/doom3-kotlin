@@ -64,7 +64,7 @@ object Brush {
 //            va_start(argPtr, string);
 //            vsprintf(buf, string, argPtr);
 //            va_end(argPtr);
-            buf = String.format(format, args.contentToString())
+            buf = String.format(format, *args)
             Common.common.Printf(buf)
             lastUpdateTime = time
         }

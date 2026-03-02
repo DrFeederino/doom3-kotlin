@@ -56,9 +56,9 @@ object Model_ma {
 
      ======================================================================
      */
-    fun MA_VERBOSE(fmt: String?, vararg x: Any?) {
+    fun MA_VERBOSE(fmt: String?, vararg x: Any) {
         if (maGlobal!!.verbose) {
-            Common.common.Printf((fmt)!!, x)
+            Common.common.Printf((fmt)!!, *x)
         }
     }
 

@@ -589,7 +589,7 @@ object Script_Interpreter {
          ============
          */
         fun Error(fmt: String, vararg objects: Any?) { // id_attribute((format(printf,2,3)));
-            val text = String.format(fmt, objects)
+            val text = String.format(fmt, *objects)
             StackTrace()
             if (instructionPointer >= 0 && instructionPointer < Game_local.gameLocal.program.NumStatements()) {
                 val line = Game_local.gameLocal.program.GetStatement(instructionPointer)

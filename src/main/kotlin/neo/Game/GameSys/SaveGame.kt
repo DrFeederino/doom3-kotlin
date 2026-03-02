@@ -899,7 +899,9 @@ object SaveGame {
         */
         fun Error(fmt: String, vararg objects: Any?) { // id_attribute((format(printf,2,3)));
             this.objects.DeleteContents(true)
-            idGameLocal.Error(fmt, objects)
+            // FIX: must spread vararg with * — without it, the entire Array is passed as a single
+            // argument, producing "[Ljava.lang.Object;@hash" instead of the actual values
+            idGameLocal.Error(fmt, *objects)
         }
 
         /*

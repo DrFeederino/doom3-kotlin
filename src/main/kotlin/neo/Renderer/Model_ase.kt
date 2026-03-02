@@ -132,9 +132,9 @@ object Model_ase {
 
      ======================================================================
      */
-    fun VERBOSE(fmt: String?, vararg x: Any?) {
+    fun VERBOSE(fmt: String?, vararg x: Any) {
         if (ase!!.verbose) {
-            Common.common.Printf((fmt)!!, x)
+            Common.common.Printf((fmt)!!, *x)
         }
     }
 
@@ -440,7 +440,7 @@ object Model_ase {
         override fun run(token: String?) {
             if (("*MATERIAL_COUNT" == token)) {
                 ASE_GetToken(false)
-                VERBOSE("..num materials: %s\n", ase!!.token)
+                VERBOSE("..num materials: %s\n", ase!!.token!!)
             } else if (("*MATERIAL" == token)) {
                 VERBOSE("..material %d\n", ase!!.model!!.materials.Num())
 
@@ -887,7 +887,7 @@ object Model_ase {
             when ("" + token) {
                 "*NODE_NAME" -> {
                     ASE_GetToken(true)
-                    VERBOSE(" %s\n", ase!!.token)
+                    VERBOSE(" %s\n", ase!!.token!!)
                     Copynz(`object`!!.name, (ase!!.token)!!, `object`.name.size)
                 }
 
