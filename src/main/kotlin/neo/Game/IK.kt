@@ -1,3 +1,24 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/game/IK.cpp, neo/game/IK.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package neo.Game
 
 import neo.Game.Animation.Anim.jointModTransform_t
@@ -23,11 +44,12 @@ import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idMath
 import neo.idlib.math.idVec3
 
-object IK /*ea*/ {
+object IK {
+
     /*
      ===============================================================================
 
-     IK base class with a simple fast two bone solver.
+       IK base class with a simple fast two bone solver.
 
      ===============================================================================
      */
@@ -36,22 +58,23 @@ object IK /*ea*/ {
     /*
      ===============================================================================
 
-     idIK
+       idIK
 
      ===============================================================================
      */
     open class idIK {
         protected val modelOffset: idVec3
-        protected var animator // animator on entity
-                : idAnimator? = null
+        protected var animator: idAnimator? = null   // animator on entity
         protected var ik_activate = false
         protected var initialized = false
-        protected var modifiedAnim // animation modified by the IK
-                = 0
-        protected var self // entity using the animated model
-                : idEntity? = null
+        protected var modifiedAnim = 0               // animation modified by the IK
+        protected var self: idEntity? = null          // entity using the animated model
 
-        // virtual					~idIK( void );
+        /*
+         ================
+         idIK::Save
+         ================
+         */
         open fun Save(savefile: idSaveGame) {
             savefile.WriteBool(initialized)
             savefile.WriteBool(ik_activate)
@@ -64,6 +87,11 @@ object IK /*ea*/ {
             savefile.WriteVec3(modelOffset)
         }
 
+        /*
+         ================
+         idIK::Restore
+         ================
+         */
         open fun Restore(savefile: idRestoreGame) {
             val anim = idStr()
             initialized = savefile.ReadBool()
@@ -92,12 +120,22 @@ object IK /*ea*/ {
             }
         }
 
+        /*
+         ================
+         idIK::IsInitialized
+         ================
+         */
         fun IsInitialized(): Boolean {
             return initialized && SysCvar.ik_enable.GetBool()
         }
 
+        /*
+         ================
+         idIK::Init
+         ================
+         */
         open fun Init(self: idEntity?, anim: String, modelOffset: idVec3): Boolean {
-            val model: idRenderModel? //TODO:finalize objects that can be finalized. hint <- <- <-
+            val model: idRenderModel?
             if (self == null) {
                 return false
             }
@@ -137,11 +175,27 @@ object IK /*ea*/ {
             return true
         }
 
+        /*
+         ================
+         idIK::Evaluate
+         ================
+         */
         open fun Evaluate() {}
+
+        /*
+         ================
+         idIK::ClearJointMods
+         ================
+         */
         open fun ClearJointMods() {
             ik_activate = false
         }
 
+        /*
+         ================
+         idIK::SolveTwoBones
+         ================
+         */
         fun SolveTwoBones(
             startPos: idVec3,
             endPos: idVec3,
@@ -176,6 +230,11 @@ object IK /*ea*/ {
             return true
         }
 
+        /*
+         ================
+         idIK::GetBoneAxis
+         ================
+         */
         fun GetBoneAxis(startPos: idVec3, endPos: idVec3, dir: idVec3, axis: idMat3): Float {
             val length: Float
             axis[0] = endPos.minus(startPos)
@@ -186,8 +245,11 @@ object IK /*ea*/ {
             return length
         }
 
-        //
-        //
+        /*
+         ================
+         idIK::idIK
+         ================
+         */
         init {
             modelOffset = idVec3()
         }
@@ -196,14 +258,15 @@ object IK /*ea*/ {
     /*
      ===============================================================================
 
-     IK controller for a walking character with an arbitrary number of legs.	
+       IK controller for a walking character with an arbitrary number of legs.
 
      ===============================================================================
      */
+
     /*
      ===============================================================================
 
-     idIK_Walk
+       idIK_Walk
 
      ===============================================================================
      */
@@ -218,7 +281,7 @@ object IK /*ea*/ {
         private val kneeForward: Array<idVec3> = idVec3.generateArray(MAX_LEGS)
         private val kneeJoints: IntArray = IntArray(MAX_LEGS)
         private val lowerLegLength: FloatArray = FloatArray(MAX_LEGS)
-        private val lowerLegToKneeJoint: Array<idMat3> = Array<idMat3>(MAX_LEGS) { idMat3() }
+        private val lowerLegToKneeJoint: Array<idMat3> = Array(MAX_LEGS) { idMat3() }
         private val oldAnkleHeights: FloatArray = FloatArray(MAX_LEGS)
         private val pivotPos: idVec3
 
@@ -258,6 +321,12 @@ object IK /*ea*/ {
         //
         //
         private var waistSmoothing: Float
+
+        /*
+         ================
+         idIK_Walk::Save
+         ================
+         */
         override fun Save(savefile: idSaveGame) {
             var i: Int
             super.Save(savefile)
@@ -343,10 +412,16 @@ object IK /*ea*/ {
             savefile.WriteVec3(waistOffset)
         }
 
+        /*
+         ================
+         idIK_Walk::Restore
+         ================
+         */
         override fun Restore(savefile: idRestoreGame) {
             var i: Int
             super.Restore(savefile)
-            savefile.ReadClipModel(footModel!!)
+            // FIX: was footModel!! which would NPE when footModel is null (always null after construction)
+            savefile.ReadClipModel(footModel)
             numLegs = savefile.ReadInt()
             enabledLegs = savefile.ReadInt()
             i = 0
@@ -428,6 +503,11 @@ object IK /*ea*/ {
             savefile.ReadVec3(waistOffset)
         }
 
+        /*
+         ================
+         idIK_Walk::Init
+         ================
+         */
         override fun Init(self: idEntity?, anim: String, modelOffset: idVec3): Boolean {
             var i: Int
             val footSize: Float
@@ -545,7 +625,7 @@ object IK /*ea*/ {
 
             // setup a clip model for the feet
             footSize = self.spawnArgs.GetFloat("ik_footSize", "4") * 0.5f
-            if (footSize > 0) {
+            if (footSize > 0.0f) {
                 i = 0
                 while (i < 4) {
                     verts[i].set(footWinding[i].times(footSize))
@@ -558,6 +638,11 @@ object IK /*ea*/ {
             return true
         }
 
+        /*
+         ================
+         idIK_Walk::Evaluate
+         ================
+         */
         override fun Evaluate() {
             var i: Int
             var newPivotFoot = 0
@@ -587,16 +672,16 @@ object IK /*ea*/ {
             val modelAxis: idMat3
             val waistAxis = idMat3()
             val axis = idMat3()
-            val hipAxis = Array<idMat3>(MAX_LEGS) { idMat3() }
-            val kneeAxis = Array<idMat3>(MAX_LEGS) { idMat3() }
-            val ankleAxis = Array<idMat3>(MAX_LEGS) { idMat3() }
+            val hipAxis = Array(MAX_LEGS) { idMat3() }
+            val kneeAxis = Array(MAX_LEGS) { idMat3() }
+            val ankleAxis = Array(MAX_LEGS) { idMat3() }
             val results = trace_s()
             if (null == self || !Game_local.gameLocal.isNewFrame) {
                 return
             }
 
             // if no IK enabled on any legs
-            if (0 == enabledLegs) { //TODO:make booleans out of ints that are boolean anyways. damn you C programmers!!
+            if (0 == enabledLegs) {
                 return
             }
             normal.set(self!!.GetPhysics().GetGravityNormal().unaryMinus())
@@ -694,7 +779,6 @@ object IK /*ea*/ {
                 if (shift < smallestShift) {
                     smallestShift = shift
                 }
-                ankleAxis[i] = idMat3()
                 animator!!.GetJointTransform(ankleJoints[i], Game_local.gameLocal.time, ankleOrigin, ankleAxis[i])
                 jointOrigins[i] = modelOrigin.plus(ankleOrigin.times(modelAxis))
                 height = jointOrigins[i].times(normal)
@@ -717,7 +801,7 @@ object IK /*ea*/ {
             waistOffset.set(normal.times(smallestShift + waistShift))
 
             // if the waist should be at least a certain distance above the floor
-            if (minWaistFloorDist > 0 && waistOffset.times(normal) < 0) {
+            if (minWaistFloorDist > 0.0f && waistOffset.times(normal) < 0.0f) {
                 start.set(waistOrigin)
                 end.set(waistOrigin.plus(waistOffset.minus(normal.times(minWaistFloorDist))))
                 Game_local.gameLocal.clip.Translation(
@@ -736,7 +820,7 @@ object IK /*ea*/ {
             }
 
             // if the waist should be at least a certain distance above the ankles
-            if (minWaistAnkleDist > 0) {
+            if (minWaistAnkleDist > 0.0f) {
                 height = waistOrigin.plus(waistOffset).times(normal)
                 if (height - largestAnkleHeight < minWaistAnkleDist) {
                     waistOffset.plusAssign(normal.times(minWaistAnkleDist - (height - largestAnkleHeight)))
@@ -759,7 +843,6 @@ object IK /*ea*/ {
             // solve IK
             i = 0
             while (i < numLegs) {
-
 
                 // get the position of the hip in world space
                 animator!!.GetJointTransform(hipJoints[i], Game_local.gameLocal.time, hipOrigin, axis)
@@ -821,6 +904,11 @@ object IK /*ea*/ {
             ik_activate = true
         }
 
+        /*
+         ================
+         idIK_Walk::ClearJointMods
+         ================
+         */
         override fun ClearJointMods() {
             var i: Int
             if (null == self || !ik_activate) {
@@ -850,20 +938,40 @@ object IK /*ea*/ {
             ik_activate = false
         }
 
+        /*
+         ================
+         idIK_Walk::EnableAll
+         ================
+         */
         fun EnableAll() {
             enabledLegs = (1 shl numLegs) - 1
             oldHeightsValid = false
         }
 
+        /*
+         ================
+         idIK_Walk::DisableAll
+         ================
+         */
         fun DisableAll() {
             enabledLegs = 0
             oldHeightsValid = false
         }
 
+        /*
+         ================
+         idIK_Walk::EnableLeg
+         ================
+         */
         fun EnableLeg(num: Int) {
             enabledLegs = enabledLegs or (1 shl num)
         }
 
+        /*
+         ================
+         idIK_Walk::DisableLeg
+         ================
+         */
         fun DisableLeg(num: Int) {
             enabledLegs = enabledLegs and (1 shl num).inv()
         }
@@ -878,7 +986,11 @@ object IK /*ea*/ {
             )
         }
 
-        // virtual					~idIK_Walk( void );
+        /*
+         ================
+         idIK_Walk::idIK_Walk
+         ================
+         */
         init {
             var i: Int
             initialized = false
@@ -894,8 +1006,10 @@ object IK /*ea*/ {
                 dirJoints[i] = Model.INVALID_JOINT
                 upperLegLength[i] = 0.0f
                 lowerLegLength[i] = 0.0f
-                upperLegToHipJoint[i] = idMat3.getMat3_identity()
-                lowerLegToKneeJoint[i] = idMat3.getMat3_identity()
+                // FIX: was = idMat3.getMat3_identity() which assigns shared constant reference
+                // C++ calls .Identity() in-place
+                upperLegToHipJoint[i].Identity()
+                lowerLegToKneeJoint[i].Identity()
                 oldAnkleHeights[i] = 0.0f
                 i++
             }
@@ -922,14 +1036,15 @@ object IK /*ea*/ {
     /*
      ===============================================================================
 
-     IK controller for reaching a position with an arm or leg.
+       IK controller for reaching a position with an arm or leg.
 
      ===============================================================================
      */
+
     /*
      ===============================================================================
 
-     idIK_Reach
+       idIK_Reach
 
      ===============================================================================
      */
@@ -939,7 +1054,7 @@ object IK /*ea*/ {
         private val elbowJoints: IntArray = IntArray(MAX_ARMS)
         private val handJoints: IntArray = IntArray(MAX_ARMS)
         private val lowerArmLength: FloatArray = FloatArray(MAX_ARMS)
-        private val lowerArmToElbowJoint: Array<idMat3> = Array<idMat3>(MAX_ARMS) { idMat3() }
+        private val lowerArmToElbowJoint: Array<idMat3> = Array(MAX_ARMS) { idMat3() }
 
         //
         private val shoulderForward: Array<idVec3> = idVec3.generateArray(MAX_ARMS)
@@ -949,13 +1064,17 @@ object IK /*ea*/ {
         private val upperArmLength: FloatArray = FloatArray(MAX_ARMS)
 
         //
-        private val upperArmToShoulderJoint: Array<idMat3> = Array<idMat3>(MAX_ARMS) { idMat3() }
+        private val upperArmToShoulderJoint: Array<idMat3> = Array(MAX_ARMS) { idMat3() }
         private var enabledArms: Int
 
         //
         private var numArms: Int
 
-        // virtual					~idIK_Reach( void );
+        /*
+         ================
+         idIK_Reach::Save
+         ================
+         */
         override fun Save(savefile: idSaveGame) {
             var i: Int
             super.Save(savefile)
@@ -1013,6 +1132,11 @@ object IK /*ea*/ {
             }
         }
 
+        /*
+         ================
+         idIK_Reach::Restore
+         ================
+         */
         override fun Restore(savefile: idRestoreGame) {
             var i: Int
             super.Restore(savefile)
@@ -1070,6 +1194,11 @@ object IK /*ea*/ {
             }
         }
 
+        /*
+         ================
+         idIK_Reach::Init
+         ================
+         */
         override fun Init(self: idEntity?, anim: String, modelOffset: idVec3): Boolean {
             var i: Int
             var jointName: String
@@ -1093,7 +1222,7 @@ object IK /*ea*/ {
                 return false
             }
             val numJoints = animator!!.NumJoints()
-            val joints = Array<idJointMat>(numJoints) { idJointMat() }
+            val joints = Array(numJoints) { idJointMat() }
 
             // create the animation frame used to setup the IK
             GameEdit.gameEdit.ANIM_CreateAnimFrame(
@@ -1151,7 +1280,7 @@ object IK /*ea*/ {
                 shoulderForward[i].set(dir.times(shoulderAxis.Transpose()))
                 elbowForward[i].set(dir.times(elbowAxis.Transpose()))
 
-                // conversion from upper arm bone axis to should joint axis
+                // conversion from upper arm bone axis to shoulder joint axis
                 upperArmLength[i] = GetBoneAxis(shoulderOrigin, elbowOrigin, dir, axis)
                 upperArmToShoulderJoint[i] = shoulderAxis.times(axis.Transpose())
 
@@ -1164,6 +1293,11 @@ object IK /*ea*/ {
             return true
         }
 
+        /*
+         ================
+         idIK_Reach::Evaluate
+         ================
+         */
         override fun Evaluate() {
             var i: Int
             val modelOrigin = idVec3()
@@ -1174,8 +1308,8 @@ object IK /*ea*/ {
             val elbowDir = idVec3()
             val modelAxis: idMat3
             val axis = idMat3()
-            val shoulderAxis = Array<idMat3>(MAX_ARMS) { idMat3() }
-            val elbowAxis = Array<idMat3>(MAX_ARMS) { idMat3() }
+            val shoulderAxis = Array(MAX_ARMS) { idMat3() }
+            val elbowAxis = Array(MAX_ARMS) { idMat3() }
             val trace = trace_s()
             modelOrigin.set(self!!.GetRenderEntity()!!.origin)
             modelAxis = self!!.GetRenderEntity()!!.axis
@@ -1183,7 +1317,6 @@ object IK /*ea*/ {
             // solve IK
             i = 0
             while (i < numArms) {
-
 
                 // get the position of the shoulder in world space
                 animator!!.GetJointTransform(shoulderJoints[i], Game_local.gameLocal.time, shoulderOrigin, axis)
@@ -1248,6 +1381,11 @@ object IK /*ea*/ {
             ik_activate = true
         }
 
+        /*
+         ================
+         idIK_Reach::ClearJointMods
+         ================
+         */
         override fun ClearJointMods() {
             var i: Int
             if (null == self || !ik_activate) {
@@ -1279,8 +1417,11 @@ object IK /*ea*/ {
             private const val MAX_ARMS = 2
         }
 
-        //
-        //
+        /*
+         ================
+         idIK_Reach::idIK_Reach
+         ================
+         */
         init {
             var i: Int
             initialized = false

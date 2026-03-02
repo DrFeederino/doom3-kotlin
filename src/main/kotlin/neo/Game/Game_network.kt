@@ -3,7 +3,7 @@
  * Translated to Kotlin by Dr. Feederino with support of Claude Code
  *
  * This file is part of the Doom 3 Kotlin project.
- * Original source: neo/Game/Game_network.cpp
+ * Original source: neo/game/Game_network.cpp
  *
  * Doom 3 Source Code is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,34 +24,81 @@ import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_Integer
 import neo.idlib.idLib
 
+/*
+===============================================================================
+
+    Client running game code:
+    - entity events don't work and should not be issued
+    - entities should never be spawned outside idGameLocal::ClientReadSnapshot
+
+===============================================================================
+*/
+
+// adds tags to the network protocol to detect when things go bad ( internal consistency )
+// NOTE: this changes the network protocol
+
 class Game_network {
-    class idEventQueue  //        private idBlockAlloc<entityNetEvent_s> eventAllocator = new idBlockAlloc<>(32);
-    {
-        private var end: entityNetEvent_s? = null
+
+    /*
+    ===============
+    idEventQueue
+    ===============
+    */
+    class idEventQueue {
         private var start: entityNetEvent_s? = null
+        private var end: entityNetEvent_s? = null
+
+        /*
+        ===============
+        idEventQueue::Alloc
+        ===============
+        */
         fun Alloc(): entityNetEvent_s {
-            val event = entityNetEvent_s() // eventAllocator.Alloc();
+            // NOTE: Differs from C++ — C++ uses idBlockAlloc<entityNetEvent_s>(32) for pooled allocation.
+            // Kotlin uses standard heap allocation since JVM handles memory management via GC.
+            val event = entityNetEvent_s()
             event.prev = null
             event.next = null
             return event
         }
 
+        /*
+        ===============
+        idEventQueue::Free
+        ===============
+        */
         fun Free(event: entityNetEvent_s) {
             // should only be called on an unlinked event!
             assert(null == event.next && null == event.prev)
-            //            eventAllocator.Free(event);
+            // NOTE: Differs from C++ — C++ calls eventAllocator.Free(event) to return to pool.
+            // Kotlin relies on GC to reclaim the object.
         }
 
+        /*
+        ===============
+        idEventQueue::Shutdown
+        ===============
+        */
         fun Shutdown() {
-//            eventAllocator.Shutdown();
+            // NOTE: Differs from C++ — C++ calls eventAllocator.Shutdown() to release pool memory.
             Init()
         }
 
+        /*
+        ===============
+        idEventQueue::Init
+        ===============
+        */
         fun Init() {
             start = null
             end = null
         }
 
+        /*
+        ===============
+        idEventQueue::Enqueue
+        ===============
+        */
         fun Enqueue(event: entityNetEvent_s, oooBehaviour: outOfOrderBehaviour_t) {
             if (oooBehaviour == outOfOrderBehaviour_t.OUTOFORDER_DROP) {
                 // go backwards through the queue and determine if there are
@@ -70,8 +117,8 @@ class Game_network {
                 }
             } else if (oooBehaviour == outOfOrderBehaviour_t.OUTOFORDER_SORT && end != null) {
                 // NOT TESTED -- sorting out of order packets hasn't been
-                //				 tested yet... wasn't strictly necessary for
-                //				 the patch fix.
+                //               tested yet... wasn't strictly necessary for
+                //               the patch fix.
                 var cur = end
                 // iterate until we find a time < the new event's
                 while (cur != null && cur.time > event.time) {
@@ -103,6 +150,11 @@ class Game_network {
             end = event
         }
 
+        /*
+        ===============
+        idEventQueue::Dequeue
+        ===============
+        */
         fun Dequeue(): entityNetEvent_s? {
             val event = start ?: return null
             start = start!!.next
@@ -116,6 +168,11 @@ class Game_network {
             return event
         }
 
+        /*
+        ===============
+        idEventQueue::RemoveLast
+        ===============
+        */
         fun RemoveLast(): entityNetEvent_s? {
             val event = end ?: return null
             end = event.prev
@@ -129,6 +186,11 @@ class Game_network {
             return event
         }
 
+        /*
+        ===============
+        idEventQueue::Start
+        ===============
+        */
         fun Start(): entityNetEvent_s? {
             return start
         }
@@ -136,44 +198,11 @@ class Game_network {
         enum class outOfOrderBehaviour_t {
             OUTOFORDER_IGNORE, OUTOFORDER_DROP, OUTOFORDER_SORT
         }
-    } //============================================================================
+    }
 
-    /*
-             ===============================================================================
-
-             Client running game code:
-             - entity events don't work and should not be issued
-             - entities should never be spawned outside idGameLocal::ClientReadSnapshot
-
-             ===============================================================================
-             */
-    // adds tags to the network protocol to detect when things go bad ( internal consistency )
-    // NOTE: this changes the network protocol
-    //#ifndef ASYNC_WRITE_TAGS
     companion object {
-        val net_clientLagOMeter: idCVar = idCVar(
-            "net_clientLagOMeter",
-            "1",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_NOCHEAT or CVarSystem.CVAR_ARCHIVE,
-            "draw prediction graph"
-        )
-        val net_clientMaxPrediction: idCVar = idCVar(
-            "net_clientMaxPrediction",
-            "1000",
-            CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_NOCHEAT,
-            "maximum number of milliseconds a client can predict ahead of server."
-        )
-        val net_clientSelfSmoothing: idCVar = idCVar(
-            "net_clientSelfSmoothing",
-            "0.6",
-            CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT,
-            "smooth self position if network causes prediction error.",
-            0.0f,
-            0.95f
-        )
+        const val ASYNC_WRITE_TAGS = false
 
-        //#endif
-        //
         val net_clientShowSnapshot: idCVar = idCVar(
             "net_clientShowSnapshot",
             "0",
@@ -193,6 +222,25 @@ class Game_network {
             0.0f,
             0.95f
         )
-        const val ASYNC_WRITE_TAGS = false
+        val net_clientSelfSmoothing: idCVar = idCVar(
+            "net_clientSelfSmoothing",
+            "0.6",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT,
+            "smooth self position if network causes prediction error.",
+            0.0f,
+            0.95f
+        )
+        val net_clientMaxPrediction: idCVar = idCVar(
+            "net_clientMaxPrediction",
+            "1000",
+            CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_NOCHEAT,
+            "maximum number of milliseconds a client can predict ahead of server."
+        )
+        val net_clientLagOMeter: idCVar = idCVar(
+            "net_clientLagOMeter",
+            "1",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_NOCHEAT or CVarSystem.CVAR_ARCHIVE,
+            "draw prediction graph"
+        )
     }
 }
