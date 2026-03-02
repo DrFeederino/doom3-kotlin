@@ -40,7 +40,12 @@ class SimpleWindow {
         protected var backGroundName = idWinBackground()
 
         //
+        private val _backgroundHolder = arrayOfNulls<idMaterial>(1)
         protected var background: idMaterial?
+            get() = _backgroundHolder[0]
+            set(value) {
+                _backgroundHolder[0] = value
+            }
         var borderColor = idWinVec4()
         protected var borderSize: Float
         protected val clientRect = idRectangle() // client area
@@ -108,7 +113,7 @@ class SimpleWindow {
                 background!!.SetSort(Material.SS_GUI.toFloat())
                 background!!.SetImageClassifications(1) // just for resource tracking
             }
-            backGroundName.SetMaterialPtr(background)
+            backGroundName.SetMaterialPtr(_backgroundHolder)
 
             // 
             //  added parent

@@ -155,7 +155,6 @@ object Anim {
         private var numJoints = 0
         private var ref_count = 0
 
-        // ~idMD5Anim();
         fun Free() {
             numFrames = 0
             numJoints = 0
@@ -177,6 +176,11 @@ object Anim {
 
         fun  /*size_t*/Allocated(): Int {
             return bounds.Allocated() + jointInfo.Allocated() + componentFrames.Allocated() + name.Allocated()
+        }
+
+        // FIX: Added missing Size() method — C++ Anim.h defines it inline as sizeof(*this) + Allocated()
+        fun  /*size_t*/Size(): Int {
+            return Allocated()
         }
 
         @Throws(idException::class)
@@ -232,8 +236,6 @@ object Anim {
             }
 
             // parse the hierarchy
-
-            // parse the hierarchy
             jointInfo.SetGranularity(1)
             jointInfo.SetNum(numJoints)
             parser.ExpectTokenString("hierarchy")
@@ -269,8 +271,6 @@ object Anim {
             parser.ExpectTokenString("}")
 
             // parse bounds
-
-            // parse bounds
             parser.ExpectTokenString("bounds")
             parser.ExpectTokenString("{")
             bounds.SetGranularity(1)
@@ -283,8 +283,6 @@ object Anim {
                 i++
             }
             parser.ExpectTokenString("}")
-
-            // parse base frame
 
             // parse base frame
             baseFrame.SetGranularity(1)
@@ -301,8 +299,6 @@ object Anim {
                 i++
             }
             parser.ExpectTokenString("}")
-
-            // parse frames
 
             // parse frames
             componentFrames.SetGranularity(1)
@@ -326,10 +322,6 @@ object Anim {
                 parser.ExpectTokenString("}")
                 i++
             }
-
-
-            // get total move delta
-
 
             // get total move delta
             if (0 == numAnimatedComponents) {
@@ -375,8 +367,6 @@ object Anim {
                 }
             }
             baseFrame[0].t.Zero()
-
-            // we don't count last frame because it would cause a 1 frame pause at the end
 
             // we don't count last frame because it would cause a 1 frame pause at the end
             animLength = ((numFrames - 1) * 1000 + frameRate - 1) / frameRate
@@ -446,8 +436,6 @@ object Anim {
             var animBits: Int
             var jointPtr: idJointQuat
             var blendPtr: idJointQuat
-
-            // copy the baseframe
 
             // copy the baseframe
             SIMDProcessor!!.Memcpy(
@@ -981,9 +969,6 @@ object Anim {
             val animPtr = arrayOf<idMD5Anim?>(null)
             var anim: idMD5Anim?
 
-
-            // see if it has been asked for before
-
             // see if it has been asked for before
             if (animations.Get(name, animPtr)) {
                 anim = animPtr[0]
@@ -997,7 +982,6 @@ object Anim {
                 anim = idMD5Anim()
                 if (!anim.LoadAnim(filename)) {
                     Game_local.gameLocal.Warning("Couldn't load anim: '%s'", filename)
-                    //                    delete anim;
                     anim = null
                 }
                 animations.Set(filename.toString(), anim)
@@ -1013,7 +997,7 @@ object Anim {
             i = 0
             while (i < animations.Num()) {
                 animptr = animations.GetIndex(i)
-                if (animptr != null) { // && *animptr ) {
+                if (animptr != null) {
                     animptr.Reload()
                 }
                 i++
@@ -1032,9 +1016,9 @@ object Anim {
             i = 0
             while (i < animations.Num()) {
                 animptr = animations.GetIndex(i)
-                if (animptr != null) { // && *animptr ) {//TODO:check this locl shit
+                if (animptr != null) {
                     anim = animptr
-                    s = 0
+                    s = anim.Size()
                     Game_local.gameLocal.Printf("%8d bytes : %2d refs : %s\n", s, anim.NumRefs(), anim.Name())
                     size += s
                     num++
@@ -1072,9 +1056,6 @@ object Anim {
             return jointnames[index].toString()
         }
 
-        //
-        //        public void ClearAnimsInUse();
-        //
         fun FlushUnusedAnims() {
             var animptr: idMD5Anim?
             val removeAnims = List.idList<idMD5Anim>()
@@ -1082,7 +1063,7 @@ object Anim {
             i = 0
             while (i < animations.Num()) {
                 animptr = animations.GetIndex(i)
-                if (animptr != null) { //&& *animptr ) {
+                if (animptr != null) {
                     if (animptr.NumRefs() <= 0) {
                         removeAnims.Append(animptr)
                     }
@@ -1098,7 +1079,6 @@ object Anim {
         }
 
         companion object {
-            // ~idAnimManager();
             var forceExport = false
         }
 

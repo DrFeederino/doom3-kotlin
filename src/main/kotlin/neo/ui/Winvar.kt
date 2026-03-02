@@ -1171,11 +1171,8 @@ object Winvar {
             return sz + data!!.Allocated()
         }
 
-        fun SetMaterialPtr(m: idMaterial?) {
-            if (mat == null) {
-                mat = arrayOfNulls(1)
-            }
-            mat!![0] = m
+        fun SetMaterialPtr(m: Array<idMaterial?>) {
+            mat = m
         }
 
         override fun WriteToSaveGame(savefile: idFile) {

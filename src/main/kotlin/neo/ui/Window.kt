@@ -252,7 +252,12 @@ object Window {
         protected var actualY = 0.0f // ''
         var backColor = idWinVec4()
         var backGroundName = idWinBackground()
-        var background: idMaterial? = null // background asset
+        private val _backgroundHolder = arrayOfNulls<idMaterial>(1)
+        var background: idMaterial? // background asset
+            get() = _backgroundHolder[0]
+            set(value) {
+                _backgroundHolder[0] = value
+            }
         var borderColor = idWinVec4()
         var borderSize = 0.0f
         protected var captureChild: idWindow? = null // if a child window has mouse capture
@@ -481,7 +486,7 @@ object Window {
                     background!!.SetSort(Material.SS_GUI.toFloat())
                 }
             }
-            backGroundName.SetMaterialPtr(background)
+            backGroundName.SetMaterialPtr(_backgroundHolder)
         }
 
         fun FindChildByName(_name: String?): drawWin_t? {

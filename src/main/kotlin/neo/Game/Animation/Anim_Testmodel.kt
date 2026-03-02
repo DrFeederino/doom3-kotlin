@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/game/anim/Anim_Testmodel.cpp, neo/game/anim/Anim_Testmodel.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
 package neo.Game.Animation
 
 import neo.Game.*
@@ -99,10 +116,47 @@ class Anim_Testmodel {
         private var mode = 0
         private val physicsObj: idPhysics_Parametric = idPhysics_Parametric()
         private var startTime = 0
+
+        /*
+         ================
+         idTestModel::Save
+         ================
+         */
         override fun Save(savefile: idSaveGame) {}
+
+        /*
+         ================
+         idTestModel::Restore
+         ================
+         */
         override fun Restore(savefile: idRestoreGame) {
             // FIXME: one day we may actually want to save/restore test models, but for now we'll just delete them
-//	delete this;
+            // FIX: Was missing cleanup logic — C++ calls `delete this` which triggers the destructor
+            cleanup()
+            PostEventMS(EV_Remove, 0)
+        }
+
+        /*
+         ================
+         idTestModel::~idTestModel
+         // NOTE: Differs from C++ — Kotlin/JVM has no deterministic destructor,
+         // so this is called explicitly before entity removal.
+         ================
+         */
+        fun cleanup() {
+            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+            if (renderEntity?.hModel != null) {
+                Game_local.gameLocal.Printf("Removing testmodel %s\n", renderEntity!!.hModel!!.Name())
+            } else {
+                Game_local.gameLocal.Printf("Removing testmodel\n")
+            }
+            if (Game_local.gameLocal.testmodel === this) {
+                Game_local.gameLocal.testmodel = null
+            }
+            if (head.GetEntity() != null) {
+                head.GetEntity()!!.StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+                head.GetEntity()!!.PostEventMS(EV_Remove, 0)
+            }
         }
 
         override fun Spawn() {
@@ -799,7 +853,6 @@ class Anim_Testmodel {
          */
         class TestSkin_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
-                idVec3()
                 val name = idStr()
                 val player: idPlayer?
                 player = Game_local.gameLocal.GetLocalPlayer()
@@ -838,7 +891,6 @@ class Anim_Testmodel {
          */
         class TestShaderParm_f private constructor() : cmdFunction_t() {
             override fun run(args: CmdArgs.idCmdArgs?) {
-                idVec3()
                 val player: idPlayer?
                 player = Game_local.gameLocal.GetLocalPlayer()
                 if (null == player || !Game_local.gameLocal.CheatsOk()) {
@@ -898,8 +950,12 @@ class Anim_Testmodel {
 
                 // delete the testModel if active
                 if (Game_local.gameLocal.testmodel != null) {
-//		delete gameLocal.testmodel;
-                    Game_local.gameLocal.testmodel = null
+                    // FIX: Was just nulling the reference — C++ `delete` calls the destructor
+                    // which stops sounds, removes head entity, and prints removal message
+                    val oldModel = Game_local.gameLocal.testmodel!!
+                    oldModel.cleanup()
+                    // NOTE: Differs from C++ — deferred removal via EV_Remove instead of immediate delete
+                    oldModel.PostEventMS(EV_Remove, 0)
                 }
                 if (args!!.Argc() < 2) {
                     return
