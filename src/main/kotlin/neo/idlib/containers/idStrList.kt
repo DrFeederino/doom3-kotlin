@@ -117,10 +117,10 @@ open class idStrList : Comparator<idStr> {
     }
 
     fun insert(obj: idStr): Int {            // insert the element at the given index
-        return insert(0, obj)
+        return insert(obj, 0)
     }
 
-    private fun insert(i: Int, obj: idStr): Int {
+    fun insert(obj: idStr, i: Int): Int {
         // FIX: copy by value, not reference (C++ value semantics)
         stringsList.add(i, idStr(obj))
         return i

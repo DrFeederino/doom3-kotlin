@@ -1445,7 +1445,7 @@ object Physics_RigidBody {
         private fun DebugDraw() {
             if (SysCvar.rb_showBodies.GetBool() || SysCvar.rb_showActive.GetBool() && current.atRest < 0) {
                 collisionModelManager.DrawModel(
-                    clipModel!!.Handle(), clipModel!!.GetOrigin(), clipModel!!.GetAxis(), getVec3Origin(), 0.0f
+                    clipModel!!.Handle(), clipModel!!.GetOrigin(), clipModel!!.GetAxis(), vec3_origin, 0.0f
                 )
             }
             if (SysCvar.rb_showMass.GetBool()) {

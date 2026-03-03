@@ -39,10 +39,10 @@ import neo.idlib.containers.List.idList
 import neo.idlib.containers.idHashIndex
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.math.SIMDProcessor
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idMath.RSqrt
 import neo.idlib.math.idPlane
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_origin
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.min
@@ -1701,7 +1701,7 @@ fun R_ReverseTriangles(tri: srfTriangles_s) {
     // but if it has explicit normals, this will keep it on the correct side
     i = 0
     while (i < tri.numVerts) {
-        tri.verts!![i]!!.normal.set(getVec3Origin().minus(tri.verts!![i]!!.normal))
+        tri.verts!![i]!!.normal.set(vec3_origin.minus(tri.verts!![i]!!.normal))
         i++
     }
 

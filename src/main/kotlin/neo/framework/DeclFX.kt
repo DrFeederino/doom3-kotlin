@@ -33,9 +33,9 @@ import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List.idList
 import neo.idlib.idException
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idAngles
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_origin
 
 class DeclFX {
     /*
@@ -253,8 +253,8 @@ class DeclFX {
             FXAction.random1 = 0.0f
             FXAction.random2 = 0.0f
 
-            FXAction.lightColor.set(getVec3Origin())
-            FXAction.offset.set(getVec3Origin())
+            FXAction.lightColor.set(vec3_origin)
+            FXAction.offset.set(vec3_origin)
             FXAction.axis.set(idMat3.getMat3_identity())
 
             FXAction.bindParticles = false

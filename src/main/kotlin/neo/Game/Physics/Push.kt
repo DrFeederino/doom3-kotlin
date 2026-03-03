@@ -20,10 +20,10 @@ import neo.cm.contactInfo_t
 import neo.cm.trace_s
 import neo.idlib.BV.idBounds
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idAngles
 import neo.idlib.math.idRotation
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_origin
 
 object Push {
     const val PUSHFL_APPLYIMPULSE = 16 // apply impulse to pushed entities
@@ -94,7 +94,7 @@ object Push {
             results.endpos.set(newOrigin)
             results.endAxis.set(clipModel.GetAxis())
             results.c = contactInfo_t() //memset( &results.c, 0, sizeof( results.c ) );//TODO:
-            if (translation == getVec3Origin()) {
+            if (translation == vec3_origin) {
                 return totalMass
             }
             dir.set(translation)
@@ -227,7 +227,7 @@ object Push {
                     check.Damage(
                         clipModel.GetEntity(),
                         clipModel.GetEntity(),
-                        getVec3Origin(),
+                        vec3_origin,
                         "damage_crush",
                         1.0f,
                         Clip.CLIPMODEL_ID_TO_JOINT_HANDLE(pushResults.c.id)
@@ -405,7 +405,7 @@ object Push {
                         clipModel.GetEntity(),
                         clipModel.GetId(),
                         clipModel.GetOrigin(),
-                        getVec3Origin()
+                        vec3_origin
                     )
 
                     // add mass of pushed entity
@@ -430,7 +430,7 @@ object Push {
                     check.Damage(
                         clipModel.GetEntity(),
                         clipModel.GetEntity(),
-                        getVec3Origin(),
+                        vec3_origin,
                         "damage_crush",
                         1.0f,
                         Clip.CLIPMODEL_ID_TO_JOINT_HANDLE(pushResults.c.id)
@@ -494,7 +494,7 @@ object Push {
             translation.set(newOrigin.minus(oldOrigin))
 
             // if the pusher translates
-            if (translation != getVec3Origin()) {
+            if (translation != vec3_origin) {
                 mass += ClipTranslationalPush(results, pusher, flags, newOrigin, translation)
                 if (results.fraction < 1.0f) {
                     newOrigin.set(oldOrigin)

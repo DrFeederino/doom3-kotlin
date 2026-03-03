@@ -613,7 +613,7 @@ object TraceModel {
             polys[1].dist = -polys[0].dist
             // setup verts, edges and polygons
             polys[0].bounds.Clear()
-            mid.set(getVec3Origin())
+            mid.set(vec3_origin)
             i = 0
             j = 1
             while (i < numVerts) {

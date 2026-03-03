@@ -47,8 +47,8 @@ import java.util.*
 object Clip {
     const val MAX_SECTOR_DEPTH = 12
     const val MAX_SECTORS = (1 shl MAX_SECTOR_DEPTH + 1) - 1
-    val vec3_boxEpsilon: idVec3 =
-        idVec3(CM_BOX_EPSILON, CM_BOX_EPSILON, CM_BOX_EPSILON)
+    val vec3_boxEpsilon: idVec3
+        get() = idVec3(CM_BOX_EPSILON, CM_BOX_EPSILON, CM_BOX_EPSILON)
 
     //    public static final idBlockAlloc<clipLink_s> clipLinkAllocator = new idBlockAlloc<>(1024);
     /*
@@ -709,7 +709,7 @@ object Clip {
         fun Init() {
             val   /*cmHandle_t*/h: Int
             val size = idVec3()
-            val maxSector = getVec3Origin()
+            val maxSector = vec3_origin
 
             // clear clip sectors
             clipSectors = Array(MAX_SECTORS) { clipSector_s() }
@@ -794,7 +794,7 @@ object Clip {
                     trmAxis,
                     contentMask,
                     0,
-                    getVec3Origin(),
+                    vec3_origin,
                     idMat3.getMat3_default()
                 )
                 results.c.entityNum =
@@ -875,7 +875,7 @@ object Clip {
                     trmAxis,
                     contentMask,
                     0,
-                    getVec3Origin(),
+                    vec3_origin,
                     idMat3.getMat3_default()
                 )
                 results.c.entityNum =
@@ -954,7 +954,7 @@ object Clip {
             if (TestHugeTranslation(results, mdl, start, end, trmAxis)) {
                 return true
             }
-            if (mdl != null && rotation.GetAngle() != 0.0f && rotation.GetVec() != getVec3Origin()) {
+            if (mdl != null && rotation.GetAngle() != 0.0f && rotation.GetVec() != vec3_origin) {
                 // if no translation
                 if (start == end) {
                     // pure rotation
@@ -983,7 +983,7 @@ object Clip {
                     trmAxis,
                     contentMask,
                     0,
-                    getVec3Origin(),
+                    vec3_origin,
                     idMat3.getMat3_default()
                 )
                 translationalTrace.c.entityNum =
@@ -1059,7 +1059,7 @@ object Clip {
                     trmAxis,
                     contentMask,
                     0,
-                    getVec3Origin(),
+                    vec3_origin,
                     idMat3.getMat3_default()
                 )
                 rotationalTrace.c.entityNum =
@@ -1149,7 +1149,7 @@ object Clip {
                     trmAxis,
                     contentMask,
                     0,
-                    getVec3Origin(),
+                    vec3_origin,
                     idMat3.getMat3_default()
                 )
             } else {
@@ -1231,7 +1231,7 @@ object Clip {
                     trmAxis,
                     contentMask,
                     0,
-                    getVec3Origin(),
+                    vec3_origin,
                     idMat3.getMat3_default()
                 )
             } else {

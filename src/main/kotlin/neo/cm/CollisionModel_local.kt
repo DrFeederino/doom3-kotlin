@@ -561,7 +561,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             results.fraction = 0.0f
             results.endpos.set(start)
             results.endAxis.set(trmAxis)
-            results.c.normal.set(getVec3Origin())
+            results.c.normal.set(vec3_origin)
             results.c.material = null
             results.c.point.set(start)
             // FIX: C++ checks if ( session->rw ) before calling. rw is lateinit and may not be initialized.
@@ -772,7 +772,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     i++
                 }
             }
-            if (modelOrigin != getVec3Origin()) {
+            if (modelOrigin != vec3_origin) {
                 i = 0
                 while (i < tw.numContacts) {
                     tw.contacts!![i].point.plusAssign(modelOrigin)
@@ -1107,7 +1107,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 boxAxis,
                 Material.CONTENTS_SOLID or Material.CONTENTS_PLAYERCLIP,
                 cm_testModel.GetInteger(),
-                getVec3Origin(),
+                vec3_origin,
                 modelAxis
             )
             i++
@@ -1163,7 +1163,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             // rotational collision detection
             val vec = idVec3(random.CRandomFloat(), random.CRandomFloat(), random.RandomFloat())
             vec.Normalize()
-            val rotation = idRotation(getVec3Origin(), vec, cm_testAngle.GetFloat())
+            val rotation = idRotation(vec3_origin, vec, cm_testAngle.GetFloat())
             timer.Clear()
             timer.Start()
             i = 0
@@ -1177,7 +1177,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     boxAxis,
                     Material.CONTENTS_SOLID or Material.CONTENTS_PLAYERCLIP,
                     cm_testModel.GetInteger(),
-                    getVec3Origin(),
+                    vec3_origin,
                     modelAxis
                 )
                 i++
@@ -7378,7 +7378,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             model.edges!![i].sideSet = 0
             model.edges!![i].internal = src.ParseInt() == 1
             model.edges!![i].numUsers = src.ParseInt().toShort()
-            model.edges!![i].normal.set(getVec3Origin())
+            model.edges!![i].normal.set(vec3_origin)
             model.edges!![i].checkcount = 0
             model.numInternalEdges += if (model.edges!![i].internal) 1 else 0
             i++
@@ -7677,7 +7677,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             }
         }
         if (cm_drawNormals.GetBool()) {
-            center.set(getVec3Origin())
+            center.set(vec3_origin)
             i = 0
             while (i < p.numEdges) {
                 edgeNum = p.edges[i]

@@ -677,9 +677,9 @@ object Physics_Parametric {
                 0,
                 current.origin,
                 newLinearVelocity,
-                getVec3Origin()
+                vec3_origin
             )
-            current.linearInterpolation.Init(0.0f, 0.0f, 0.0f, 0.0f, getVec3_zero(), getVec3_zero())
+            current.linearInterpolation.Init(0.0f, 0.0f, 0.0f, 0.0f, vec3_zero, vec3_zero)
             Activate()
         }
 
@@ -688,7 +688,7 @@ object Physics_Parametric {
             val vec = idVec3(newAngularVelocity)
             val angle: Float
             angle = vec.Normalize()
-            rotation.Set(getVec3Origin(), vec, RAD2DEG(angle))
+            rotation.Set(vec3_origin, vec, RAD2DEG(angle))
             SetAngularExtrapolation(
                 Extrapolate.EXTRAPOLATION_LINEAR or Extrapolate.EXTRAPOLATION_NOSTOP,
                 Game_local.gameLocal.time,
@@ -758,8 +758,8 @@ object Physics_Parametric {
                         0,
                         0,
                         current.origin,
-                        getVec3Origin(),
-                        getVec3Origin()
+                        vec3_origin,
+                        vec3_origin
                     )
                     SetAngularExtrapolation(
                         Extrapolate.EXTRAPOLATION_NONE,
@@ -1005,9 +1005,9 @@ object Physics_Parametric {
             current.linearExtrapolation.Init(
                 0.0f,
                 0.0f,
-                getVec3_zero(),
-                getVec3_zero(),
-                getVec3_zero(),
+                vec3_zero,
+                vec3_zero,
+                vec3_zero,
                 Extrapolate.EXTRAPOLATION_NONE
             )
             current.angularExtrapolation = idExtrapolate()
@@ -1020,7 +1020,7 @@ object Physics_Parametric {
                 Extrapolate.EXTRAPOLATION_NONE
             )
             current.linearInterpolation = idInterpolateAccelDecelLinear()
-            current.linearInterpolation.Init(0.0f, 0.0f, 0.0f, 0.0f, getVec3_zero(), getVec3_zero())
+            current.linearInterpolation.Init(0.0f, 0.0f, 0.0f, 0.0f, vec3_zero, vec3_zero)
             current.angularInterpolation = idInterpolateAccelDecelLinear()
             current.angularInterpolation.Init(0.0f, 0.0f, 0.0f, 0.0f, ang_zero, ang_zero)
             current.spline = null

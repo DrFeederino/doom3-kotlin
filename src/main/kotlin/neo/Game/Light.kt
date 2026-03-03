@@ -914,13 +914,13 @@ object Light {
 
         init {
             renderLight = renderLight_s()
-            localLightOrigin.set(getVec3_zero())
+            localLightOrigin.set(vec3_zero)
             localLightAxis.set(idMat3.getMat3_identity())
             lightDefHandle = -1
             brokenModel = idStr()
             levels._val = 0
             currentLevel = 0
-            baseColor.set(getVec3_zero())
+            baseColor.set(vec3_zero)
             breakOnTrigger = false
             count = 0
             triggercount = 0

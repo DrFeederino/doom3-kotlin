@@ -213,7 +213,7 @@ class idAnim {
 
     fun TotalMovementDelta(): idVec3 {
         return if (null == anims[0]) {
-            getVec3_zero()
+            vec3_zero
         } else anims[0]!!.TotalMovementDelta()
 
     }
@@ -4041,7 +4041,7 @@ class idAnimator {
         return if (anim != null) {
             anim.TotalMovementDelta()
         } else {
-            getVec3Origin()
+            vec3_origin
         }
     }
 

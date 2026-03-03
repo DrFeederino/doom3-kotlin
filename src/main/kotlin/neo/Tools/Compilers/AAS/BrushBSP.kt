@@ -313,7 +313,7 @@ internal class idBrushBSPNode {
         val center = idVec3()
         var plane: idPlane
         n = 0
-        center.set(getVec3Origin())
+        center.set(vec3_origin)
         p = portals
         while (p != null) {
             s = if (p.nodes[1] === this) 1 else 0
@@ -1208,7 +1208,7 @@ internal class idBrushBSP {
             return
         }
         numSplits++
-        normal.set(getVec3Origin())
+        normal.set(vec3_origin)
         normal[axis] = 1.0f
         node.plane.SetNormal(normal)
         node.plane.SetDist(dist)
@@ -1309,7 +1309,7 @@ internal class idBrushBSP {
             j = 0
             while (j < 2) {
                 p = idBrushBSPPortal()
-                normal.set(getVec3Origin())
+                normal.set(vec3_origin)
                 normal.set(i, if (j != 0) -1.0f else 1.0f)
                 p.plane.SetNormal(normal)
                 p.plane.SetDist(if (j != 0) -bounds[j, i] else bounds[j, i])

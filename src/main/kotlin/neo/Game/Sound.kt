@@ -39,9 +39,9 @@ import neo.idlib.Dict_h.idDict
 import neo.idlib.containers.CInt
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.ang_zero
-import neo.idlib.math.getVec3_zero
 import neo.idlib.math.idAngles
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_zero
 
 /*
 ===============================================================================
@@ -195,7 +195,7 @@ object Sound {
             soundVol = 0.0f
             lastSoundVol = 0.0f
 
-            if (shakeRotate != ang_zero || shakeTranslate != getVec3_zero()) {
+            if (shakeRotate != ang_zero || shakeTranslate != vec3_zero) {
                 BecomeActive(TH_THINK)
             }
 

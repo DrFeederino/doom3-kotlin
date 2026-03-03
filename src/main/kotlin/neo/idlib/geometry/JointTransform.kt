@@ -46,12 +46,12 @@ class JointTransform {
      */
     class idJointMat {
         private val DBG_count = DBG_counter++
-        private val mat: FloatArray = FloatArray(3 * 4)
+        private var mat: FloatArray = FloatArray(3 * 4)
 
         constructor()
 
         constructor(mat: FloatArray) {
-            System.arraycopy(mat, 0, this.mat, 0, this.mat.size)
+            this.mat = mat.copyOf()
         }
 
         constructor(mat: idJointMat) : this(mat.mat)
@@ -96,6 +96,7 @@ class JointTransform {
         // transform
         fun timesAssign(a: idJointMat): idJointMat {
             val dst = FloatArray(3)
+
             dst[0] =
                 mat[0 * 4 + 0] * a.mat[0 * 4 + 0] + mat[1 * 4 + 0] * a.mat[0 * 4 + 1] + mat[2 * 4 + 0] * a.mat[0 * 4 + 2]
             dst[1] =
@@ -105,6 +106,7 @@ class JointTransform {
             mat[0 * 4 + 0] = dst[0]
             mat[1 * 4 + 0] = dst[1]
             mat[2 * 4 + 0] = dst[2]
+
             dst[0] =
                 mat[0 * 4 + 1] * a.mat[0 * 4 + 0] + mat[1 * 4 + 1] * a.mat[0 * 4 + 1] + mat[2 * 4 + 1] * a.mat[0 * 4 + 2]
             dst[1] =
@@ -114,6 +116,7 @@ class JointTransform {
             mat[0 * 4 + 1] = dst[0]
             mat[1 * 4 + 1] = dst[1]
             mat[2 * 4 + 1] = dst[2]
+
             dst[0] =
                 mat[0 * 4 + 2] * a.mat[0 * 4 + 0] + mat[1 * 4 + 2] * a.mat[0 * 4 + 1] + mat[2 * 4 + 2] * a.mat[0 * 4 + 2]
             dst[1] =
@@ -123,6 +126,7 @@ class JointTransform {
             mat[0 * 4 + 2] = dst[0]
             mat[1 * 4 + 2] = dst[1]
             mat[2 * 4 + 2] = dst[2]
+
             dst[0] =
                 mat[0 * 4 + 3] * a.mat[0 * 4 + 0] + mat[1 * 4 + 3] * a.mat[0 * 4 + 1] + mat[2 * 4 + 3] * a.mat[0 * 4 + 2]
             dst[1] =
@@ -132,9 +136,11 @@ class JointTransform {
             mat[0 * 4 + 3] = dst[0]
             mat[1 * 4 + 3] = dst[1]
             mat[2 * 4 + 3] = dst[2]
+
             mat[0 * 4 + 3] += a.mat[0 * 4 + 3]
             mat[1 * 4 + 3] += a.mat[1 * 4 + 3]
             mat[2 * 4 + 3] += a.mat[2 * 4 + 3]
+
             return this
         }
 
@@ -144,6 +150,7 @@ class JointTransform {
             mat[0 * 4 + 3] -= a.mat[0 * 4 + 3]
             mat[1 * 4 + 3] -= a.mat[1 * 4 + 3]
             mat[2 * 4 + 3] -= a.mat[2 * 4 + 3]
+
             dst[0] =
                 mat[0 * 4 + 0] * a.mat[0 * 4 + 0] + mat[1 * 4 + 0] * a.mat[1 * 4 + 0] + mat[2 * 4 + 0] * a.mat[2 * 4 + 0]
             dst[1] =
@@ -153,6 +160,7 @@ class JointTransform {
             mat[0 * 4 + 0] = dst[0]
             mat[1 * 4 + 0] = dst[1]
             mat[2 * 4 + 0] = dst[2]
+
             dst[0] =
                 mat[0 * 4 + 1] * a.mat[0 * 4 + 0] + mat[1 * 4 + 1] * a.mat[1 * 4 + 0] + mat[2 * 4 + 1] * a.mat[2 * 4 + 0]
             dst[1] =
@@ -162,6 +170,7 @@ class JointTransform {
             mat[0 * 4 + 1] = dst[0]
             mat[1 * 4 + 1] = dst[1]
             mat[2 * 4 + 1] = dst[2]
+
             dst[0] =
                 mat[0 * 4 + 2] * a.mat[0 * 4 + 0] + mat[1 * 4 + 2] * a.mat[1 * 4 + 0] + mat[2 * 4 + 2] * a.mat[2 * 4 + 0]
             dst[1] =
@@ -171,6 +180,7 @@ class JointTransform {
             mat[0 * 4 + 2] = dst[0]
             mat[1 * 4 + 2] = dst[1]
             mat[2 * 4 + 2] = dst[2]
+
             dst[0] =
                 mat[0 * 4 + 3] * a.mat[0 * 4 + 0] + mat[1 * 4 + 3] * a.mat[1 * 4 + 0] + mat[2 * 4 + 3] * a.mat[2 * 4 + 0]
             dst[1] =
@@ -180,6 +190,7 @@ class JointTransform {
             mat[0 * 4 + 3] = dst[0]
             mat[1 * 4 + 3] = dst[1]
             mat[2 * 4 + 3] = dst[2]
+
             return this
         }
 

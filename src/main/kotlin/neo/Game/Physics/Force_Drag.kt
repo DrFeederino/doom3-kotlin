@@ -29,11 +29,11 @@ class Force_Drag {
         // properties
         private var damping = 0.5f
         private val dragPosition // drag towards this position
-                : idVec3 = getVec3_zero()
+                : idVec3 = vec3_zero
         private var id // clip model id of physics object
                 = 0
         private val p // position on clip model
-                : idVec3 = getVec3_zero()
+                : idVec3 = vec3_zero
 
         //
         // positioning

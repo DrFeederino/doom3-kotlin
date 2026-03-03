@@ -18,7 +18,8 @@ import kotlin.math.floor
 const val PITCH = 0 // up / down
 const val ROLL = 2 // fall over
 const val YAW = 1 // left / right
-val ang_zero: idAngles = idAngles(0.0f, 0.0f, 0.0f)
+val ang_zero: idAngles
+    get() = idAngles(0.0f, 0.0f, 0.0f)
 
 class idAngles : SERiAL {
     var pitch = 0.0f
@@ -50,11 +51,6 @@ class idAngles : SERiAL {
         this.roll = roll
     }
 
-    /**
-     * @return @deprecated for post constructor use. seeing as how the
-     * constructor sets everything to zero anyways.
-     */
-    @Deprecated("")
     fun Zero(): idAngles {
         pitch = 0.0f
         yaw = 0.0f
@@ -65,9 +61,10 @@ class idAngles : SERiAL {
     operator fun get(index: Int): Float {
         assert(index in 0..2)
         return when (index) {
+            0 -> pitch
             1 -> yaw
             2 -> roll
-            else -> pitch
+            else -> throw Error("Invalid index $index")
         }
     }
 
@@ -82,17 +79,19 @@ class idAngles : SERiAL {
 
     fun plusAssign(index: Int, value: Float): Float {
         return when (index) {
+            0 -> value.let { pitch += it; pitch }
             1 -> value.let { yaw += it; yaw }
             2 -> value.let { roll += it; roll }
-            else -> value.let { pitch += it; pitch }
+            else -> throw Error("Invalid index $index")
         }
     }
 
     fun minusAssign(index: Int, value: Float): Float {
         return when (index) {
+            0 -> value.let { pitch -= it; pitch }
             1 -> value.let { yaw -= it; yaw }
             2 -> value.let { roll -= it; roll }
-            else -> value.let { pitch -= it; pitch }
+            else -> throw Error("Invalid index $index")
         }
     }
 
@@ -345,13 +344,13 @@ class idAngles : SERiAL {
         val cxsy: Float
         if (pitch == 0.0f) {
             if (yaw == 0.0f) {
-                return idRotation(getVec3Origin(), idVec3(-1.0f, 0.0f, 0.0f), roll)
+                return idRotation(vec3_origin, idVec3(-1.0f, 0.0f, 0.0f), roll)
             }
             if (roll == 0.0f) {
-                return idRotation(getVec3Origin(), idVec3(0.0f, 0.0f, -1.0f), yaw)
+                return idRotation(vec3_origin, idVec3(0.0f, 0.0f, -1.0f), yaw)
             }
         } else if (yaw == 0.0f && roll == 0.0f) {
-            return idRotation(getVec3Origin(), idVec3(0.0f, -1.0f, 0.0f), pitch)
+            return idRotation(vec3_origin, idVec3(0.0f, -1.0f, 0.0f), pitch)
         }
         idMath.SinCos(DEG2RAD(yaw) * 0.5f, sz, cz)
         idMath.SinCos(DEG2RAD(pitch) * 0.5f, sy, cy)
@@ -373,7 +372,7 @@ class idAngles : SERiAL {
             vec.FixDegenerateNormal()
             angle *= 2.0f * idMath.M_RAD2DEG
         }
-        return idRotation(getVec3Origin(), vec, angle)
+        return idRotation(vec3_origin, vec, angle)
     }
 
     fun ToMat3(): idMat3 {

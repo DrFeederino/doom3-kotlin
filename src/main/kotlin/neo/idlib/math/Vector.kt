@@ -12,55 +12,60 @@ import java.nio.ByteBuffer
 import java.util.*
 import kotlin.math.*
 
-private val vec2_origin: idVec2 = idVec2(0.0f, 0.0f)
+private val vec2_origin: idVec2 get() = idVec2(0.0f, 0.0f)
+val vec3_origin: idVec3 get() = idVec3(0.0f, 0.0f, 0.0f)
+val vec3_zero: idVec3 get() = vec3_origin
+val vec4_origin: idVec4 get() = idVec4(0.0f, 0.0f, 0.0f, 0.0f)
+val vec4_zero: idVec4 get() = vec4_origin
+val vec5_origin: idVec5 get() = idVec5(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+val vec6_infinity: idVec6
+    get() = idVec6(
+        idMath.INFINITY,
+        idMath.INFINITY,
+        idMath.INFINITY,
+        idMath.INFINITY,
+        idMath.INFINITY,
+        idMath.INFINITY
+    )
+val vec6_origin: idVec6 get() = idVec6(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+val vec6_zero: idVec6 get() = vec6_origin
 
-
-val vec3_origin: idVec3 = idVec3(0.0f, 0.0f, 0.0f)
-private val vec3_zero: idVec3 = getVec3Origin()
-private val vec4_origin: idVec4 = idVec4(0.0f, 0.0f, 0.0f, 0.0f)
-private val vec4_zero: idVec4 = vec4_origin
-private val vec5_origin: idVec5 = idVec5(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
-private val vec6_infinity: idVec6 =
-    idVec6(idMath.INFINITY, idMath.INFINITY, idMath.INFINITY, idMath.INFINITY, idMath.INFINITY, idMath.INFINITY)
-private val vec6_origin: idVec6 = idVec6(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
-private val vec6_zero: idVec6 = vec6_origin
-
-fun getVec2_origin(): idVec2 {
-    return idVec2(vec2_origin)
-}
-
-fun getVec3Origin(): idVec3 {
-    return idVec3(0.0f, 0.0f, 0.0f)
-}
-
-
-fun getVec3_zero(): idVec3 {
-    return idVec3(vec3_zero)
-}
-
-fun getVec4_origin(): idVec4 {
-    return idVec4(vec4_origin)
-}
-
-fun getVec4_zero(): idVec4 {
-    return idVec4(vec4_zero)
-}
-
-fun getVec5_origin(): idVec5 {
-    return idVec5(vec5_origin)
-}
-
-fun getVec6_origin(): idVec6 {
-    return idVec6(vec6_origin.p)
-}
-
-fun getVec6_zero(): idVec6 {
-    return idVec6(vec6_zero.p)
-}
-
-fun getVec6_infinity(): idVec6 {
-    return idVec6(vec6_infinity.p)
-}
+//fun getVec2_origin(): idVec2 {
+//    return idVec2(vec2_origin)
+//}
+//
+//fun getVec3Origin(): idVec3 {
+//    return idVec3(0.0f, 0.0f, 0.0f)
+//}
+//
+//
+//fun vec3_zero: idVec3 {
+//    return idVec3(vec3_zero)
+//}
+//
+//fun getVec4_origin(): idVec4 {
+//    return idVec4(vec4_origin)
+//}
+//
+//fun getVec4_zero(): idVec4 {
+//    return idVec4(vec4_zero)
+//}
+//
+//fun getVec5_origin(): idVec5 {
+//    return idVec5(vec5_origin)
+//}
+//
+//fun getVec6_origin(): idVec6 {
+//    return idVec6(vec6_origin.p)
+//}
+//
+//fun getVec6_zero(): idVec6 {
+//    return idVec6(vec6_zero.p)
+//}
+//
+//fun getVec6_infinity(): idVec6 {
+//    return idVec6(vec6_infinity.p)
+//}
 
 /*
  ===============================================================================

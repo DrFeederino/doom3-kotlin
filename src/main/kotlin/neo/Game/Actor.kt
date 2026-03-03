@@ -1742,7 +1742,7 @@ open class idActor : idAFEntity_Gibbable() {
 
     override fun Teleport(origin: idVec3, angles: idAngles, destination: idEntity?) {
         GetPhysics().SetOrigin(origin.plus(idVec3(0.0f, 0.0f, CM_CLIP_EPSILON)))
-        GetPhysics().SetLinearVelocity(getVec3Origin())
+        GetPhysics().SetLinearVelocity(vec3_origin)
         viewAxis.set(angles.ToMat3())
         UpdateVisuals()
         if (!IsHidden()) {

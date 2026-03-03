@@ -198,7 +198,7 @@ class Physics_Base {
         }
 
         override fun GetOrigin(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun GetAxis(id: Int /*= 0*/): idMat3 {
@@ -208,11 +208,11 @@ class Physics_Base {
         override fun SetLinearVelocity(newLinearVelocity: idVec3, id: Int /*= 0*/) {}
         override fun SetAngularVelocity(newAngularVelocity: idVec3, id: Int /*= 0*/) {}
         override fun GetLinearVelocity(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun GetAngularVelocity(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun SetGravity(newGravity: idVec3) {
@@ -232,14 +232,14 @@ class Physics_Base {
         override fun ClipTranslation(results: trace_s, translation: idVec3, model: idClipModel?) {
             results.fraction = 0.0f
             results.endAxis.set(idMat3())
-            results.endpos.set(getVec3Origin())
+            results.endpos.set(vec3_origin)
             results.c = contactInfo_t()
         }
 
         override fun ClipRotation(results: trace_s, rotation: idRotation, model: idClipModel?) {
             results.fraction = 0.0f
             results.endAxis.set(idMat3())
-            results.endpos.set(getVec3Origin())
+            results.endpos.set(vec3_origin)
             results.c = contactInfo_t()
         }
 
@@ -357,11 +357,11 @@ class Physics_Base {
 
         override fun SetPushed(deltaTime: Int) {}
         override fun GetPushedLinearVelocity(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun GetPushedAngularVelocity(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun SetMaster(master: idEntity?, orientated: Boolean /*= true*/) {}
@@ -393,7 +393,7 @@ class Physics_Base {
             contacts.SetNum(index + 10, false)
             val contactz = Array(10) { contactInfo_t() }
             dir.SubVec3_oSet(0, gravityNormal)
-            dir.SubVec3_oSet(1, getVec3Origin())
+            dir.SubVec3_oSet(1, vec3_origin)
             num = gameLocal.clip.Contacts(
                 contactz,
                 10,
@@ -480,12 +480,12 @@ class Physics_Base {
                 start.set(org + vec)
                 a = 20.0f
                 while (a < length) {
-                    end.set(org + idRotation(getVec3Origin(), dir, -a).ToMat3() * vec)
+                    end.set(org + idRotation(vec3_origin, dir, -a).ToMat3() * vec)
                     Game_local.gameRenderWorld!!.DebugLine(colorBlue, start, end, 1)
                     start.set(end)
                     a += 20.0f
                 }
-                end.set(org + (idRotation(getVec3Origin(), dir, -length).ToMat3() * vec))
+                end.set(org + (idRotation(vec3_origin, dir, -length).ToMat3() * vec))
                 Game_local.gameRenderWorld!!.DebugArrow(colorBlue, start, end, 1)
             }
         }

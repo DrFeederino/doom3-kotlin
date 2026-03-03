@@ -24,10 +24,10 @@ import neo.idlib.BV.bounds_zero
 import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsgDelta
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idCQuat
 import neo.idlib.math.idRotation
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_origin
 
 class Physics_Static {
     /*
@@ -257,11 +257,11 @@ class Physics_Static {
         override fun SetLinearVelocity(newLinearVelocity: idVec3, id: Int /*= 0*/) {}
         override fun SetAngularVelocity(newAngularVelocity: idVec3, id: Int /*= 0*/) {}
         override fun GetLinearVelocity(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun GetAngularVelocity(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun SetGravity(newGravity: idVec3) {}
@@ -371,11 +371,11 @@ class Physics_Static {
 
         override fun SetPushed(deltaTime: Int) {}
         override fun GetPushedLinearVelocity(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun GetPushedAngularVelocity(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun SetMaster(master: idEntity?, orientated: Boolean /*= true*/) {

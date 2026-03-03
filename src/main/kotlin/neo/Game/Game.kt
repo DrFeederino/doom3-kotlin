@@ -582,11 +582,11 @@ object Game {
             val modelDef: idDeclModelDef?
             args = Game_local.gameLocal.FindEntityDefDict(classname, false)
             if (null == args) {
-                return getVec3Origin()
+                return vec3_origin
             }
             modelDef = ANIM_GetModelDefFromEntityDef(args)
             return if (null == modelDef) {
-                getVec3Origin()
+                vec3_origin
             } else modelDef.GetVisualOffset()
         }
 

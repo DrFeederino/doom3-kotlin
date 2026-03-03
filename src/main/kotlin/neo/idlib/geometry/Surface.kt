@@ -624,25 +624,29 @@ object Surface {
                 ) shl 2) xor 7) {
                     0 -> {
                         // no edges split
-                        if (((sides[v0] or sides[v1] or sides[v2]) and SIDE_BACK) != 0) {
-                            break
-                        }
-                        if (((sides[v0] and sides[v1] and sides[v2]) and SIDE_ON) != 0) {
-                            // coplanar
-                            if (!keepOn) {
-                                break
+                        if (((sides[v0] or sides[v1] or sides[v2]) and SIDE_BACK) == 0) {
+                            var addTriangle = true
+                            if (((sides[v0] and sides[v1] and sides[v2]) and SIDE_ON) != 0) {
+                                // coplanar
+                                if (!keepOn) {
+                                    addTriangle = false
+                                } else {
+                                    f =
+                                        (verts[v1].xyz - verts[v0].xyz).Cross(verts[v0].xyz - verts[v2].xyz) * plane.Normal()
+                                    if (FLOATSIGNBITSET(f) != 0) {
+                                        addTriangle = false
+                                    }
+                                }
                             }
-                            f = (verts[v1].xyz - verts[v0].xyz).Cross(verts[v0].xyz - verts[v2].xyz) * plane.Normal()
-                            if (FLOATSIGNBITSET(f) != 0) {
-                                break
+                            if (addTriangle) {
+                                indexPtr[indexNum++] =
+                                    UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
+                                indexPtr[indexNum++] =
+                                    UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
+                                indexPtr[indexNum++] =
+                                    UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
                             }
                         }
-                        indexPtr[indexNum++] =
-                            UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v0)
-                        indexPtr[indexNum++] =
-                            UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v1)
-                        indexPtr[indexNum++] =
-                            UpdateVertexIndex(vertexIndexNum, vertexRemap, vertexCopyIndex, v2)
                     }
 
                     1 -> {

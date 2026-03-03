@@ -1062,8 +1062,8 @@ object FileSystem_h {
                         // Kotlin Find() returns null when not found, not 0. Was `0 == Find()` which is always
                         // false when null, preventing any mod from being added to the list.
                         if (null == list.mods.Find(dirs[i])) {
-                            // D3 1.3 #31, only list d3xp if the pak is present
-                            if (dirs[i].Icmp("d3xp") != 0 || HasD3XP()) {
+                            // DG: ignore d3xp, it's added explicitly later, if available
+                            if (dirs[i].Icmp("d3xp") == 0) {
                                 list.mods.add(dirs[i])
                             }
                         }
@@ -1112,6 +1112,17 @@ object FileSystem_h {
                 }
                 i++
             }
+
+            list.mods.insert(idStr(""))
+            list.descriptions.insert(idStr("Doom 3 (base game)"))
+
+            // DG: if installed, add d3xp with useful description, right below the base game
+            if (HasD3XP()) {
+                list.mods.insert(idStr("d3xp"), 1)
+                list.descriptions.insert(idStr("Resurrection Of Evil (d3xp)"), 1)
+            }
+
+            assert(list.mods.size() == list.descriptions.size())
             list.mods.insert(idStr(""))
             list.descriptions.insert(idStr("Doom 3"))
             assert(list.mods.size() == list.descriptions.size())
@@ -2563,22 +2574,7 @@ object FileSystem_h {
             } else if (d3xp == 1) {
                 return true
             }
-            //
-//#if 0
-            /*// check for a d3xp directory with a pk4 file
-             * // copied over from ListMods - only looks in basepath
-             * ListOSFiles( fs_basepath.GetString(), "/", dirs );
-             * for ( i = 0; i < dirs.Num(); i++ ) {
-             * if ( dirs[i].Icmp( "d3xp" ) == 0 ) {
-             * gamepath = BuildOSPath( fs_basepath.GetString(), dirs[ i ], "" );
-             * ListOSFiles( gamepath, ".pk4", pk4s );
-             * if ( pk4s.Num() ) {
-             * d3xp = 1;
-             * return true;
-             * }
-             * }
-             * }*/
-//#elif ID_ALLOW_D3XP
+
             // check for d3xp's d3xp/pak000.pk4 in any search path
             // checking wether the pak is loaded by checksum wouldn't be enough:
             // we may have a different fs_game right now but still need to reply that it's installed
@@ -2599,9 +2595,6 @@ object FileSystem_h {
                 }
                 i++
             }
-            //#endif
-//
-//#if ID_ALLOW_D3XP
             // if we didn't find a pk4 file then the user might have unpacked so look for default.cfg file
             // that's the old way mostly used during developement. don't think it hurts to leave it there
             ListOSFiles(fs_basepath.GetString()!!, "/", dirs)

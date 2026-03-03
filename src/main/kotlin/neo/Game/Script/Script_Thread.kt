@@ -1200,7 +1200,7 @@ object Script_Thread {
             ) {
                 val color = idVec3(colorA.value)
                 Game_local.gameRenderWorld!!.DebugBounds(
-                    idVec4(color.x, color.y, color.z, 0.0f), idBounds(mins.value, maxs.value), getVec3Origin(),
+                    idVec4(color.x, color.y, color.z, 0.0f), idBounds(mins.value, maxs.value), vec3_origin,
                     SEC2MS(lifetime.value).toInt()
                 )
             }
@@ -1430,7 +1430,7 @@ object Script_Thread {
                 val passEntity = p.value
                 run {
                     val trace = trace
-                    if (mins == getVec3Origin() && maxs == getVec3Origin()) {
+                    if (mins == vec3_origin && maxs == vec3_origin) {
                         gameLocal.clip.TracePoint(trace, start, end, contents_mask, passEntity)
                     } else {
                         gameLocal.clip.TraceBounds(

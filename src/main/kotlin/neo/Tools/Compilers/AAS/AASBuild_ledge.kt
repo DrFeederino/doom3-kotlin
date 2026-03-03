@@ -3,9 +3,9 @@ package neo.Tools.Compilers.AAS
 import neo.idlib.BV.idBounds
 import neo.idlib.geometry.Winding.idWinding
 import neo.idlib.math.ON_EPSILON
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idPlane
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_origin
 
 const val LEDGE_EPSILON = 0.1f
 
@@ -78,7 +78,7 @@ internal class idLedge {
         planes[0].FitThroughPoint(start)
         // axial bevels at start and end point
         i = if (size[1] > size[0]) 1 else 0
-        normal.set(getVec3Origin())
+        normal.set(vec3_origin)
         normal[i] = 1.0f
         j = if (end[i] > start[i]) 1 else 0
         planes[1 + j].SetNormal(normal)
@@ -88,7 +88,7 @@ internal class idLedge {
         numExpandedPlanes = 3
         // if additional bevels are required
         if (Math.abs(size[1 xor i]) > 0.01) {
-            normal.set(getVec3Origin())
+            normal.set(vec3_origin)
             normal[1 xor i] = 1.0f
             j = if (end[1 xor i] > start[1 xor i]) 1 else 0
             planes[3 + j].SetNormal(normal)

@@ -33,10 +33,10 @@ import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.idException
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Random.idRandom
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idMath
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
+import neo.idlib.math.vec3_origin
 import java.util.*
 import kotlin.math.sqrt
 
@@ -1067,7 +1067,7 @@ object DeclParticle {
                 bounds.AddBounds(stages[i].bounds)
             }
             if (bounds.GetVolume() <= 0.1f) {
-                bounds.set(idBounds(getVec3Origin()).Expand(8.0f))
+                bounds.set(idBounds(vec3_origin).Expand(8.0f))
             }
             return true
         }

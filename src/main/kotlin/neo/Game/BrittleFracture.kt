@@ -1072,7 +1072,9 @@ object BrittleFracture {
             origin.set(w.GetCenter())
             j = 0
             while (j < w.GetNumPoints()) {
-                w[j].ToVec3().minusAssign(origin)
+                w[j][0] = w[j][0] - origin[0]
+                w[j][1] = w[j][1] - origin[1]
+                w[j][2] = w[j][2] - origin[2]
                 j++
             }
             w.RemoveEqualPoints()

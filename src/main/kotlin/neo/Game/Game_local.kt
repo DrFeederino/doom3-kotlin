@@ -651,7 +651,7 @@ class Game_local {
             var modifiedInfo = false
             this.isClient = isClient
             if (clientNum >= 0 && clientNum < MAX_CLIENTS) {
-                this.userInfo[clientNum] = userInfo
+                this.userInfo[clientNum].set(userInfo)
 
                 // server sanity
                 if (canModify) {
@@ -712,7 +712,7 @@ class Game_local {
         override fun SetServerInfo(_serverInfo: idDict) {
             val outMsg = idBitMsg()
             val msgBuf = ByteBuffer.allocate(MAX_GAME_MESSAGE_SIZE)
-            serverInfo = _serverInfo
+            serverInfo.set(_serverInfo)
             UpdateServerInfoFlags()
             if (!isClient) {
                 // Let our clients know the server info changed
@@ -734,7 +734,7 @@ class Game_local {
         }
 
         override fun SetPersistentPlayerInfo(clientNum: Int, playerInfo: idDict) {
-            persistentPlayerInfo[clientNum] = playerInfo
+            persistentPlayerInfo[clientNum].set(playerInfo)
         }
 
         override fun InitFromNewMap(
@@ -2934,7 +2934,7 @@ class Game_local {
 
             // check if we should spawn a class object
             spawnArgs.GetString("spawnclass", "", spawn)
-            if (spawn.isNotEmpty() && !spawn[0].isNullOrEmpty()) {
+            if (!spawn[0].isNullOrEmpty()) {
                 val obj: idEntity? = idClass.GetEntity(spawn[0])
                 if (obj == null) {
                     Error("Could not spawn '%s'. Instance could not be created%s.", spawn[0], classname[0])
@@ -2952,7 +2952,7 @@ class Game_local {
 
             // check if we should call a script function to spawn
             spawnArgs.GetString("spawnfunc", "", spawn)
-            if (spawn.isNotEmpty() && spawn[0]!!.isNotEmpty()) {
+            if (spawn[0] != null) {
                 val func = program.FindFunction(spawn[0])
                 if (null == func) {
                     Warning("Could not spawn '%s'.  Script function '%s' not found%s.", classname[0], spawn[0], error)
@@ -3490,7 +3490,7 @@ class Game_local {
                 if (hit is idPlayer && hit.IsInTeleport()) {
                     hit.TeleportDeath(ent.entityNumber)
                 } else if (!catch_teleport) {
-                    hit.Damage(ent, ent, getVec3Origin(), "damage_telefrag", 1.0f, Model.INVALID_JOINT)
+                    hit.Damage(ent, ent, vec3_origin, "damage_telefrag", 1.0f, Model.INVALID_JOINT)
                 }
                 if (!gameLocal.isMultiplayer) {
                     // let the mapper know about it
@@ -4893,7 +4893,7 @@ class Game_local {
             if (SysCvar.g_showCollisionWorld.GetBool()) {
                 collisionModelManager.DrawModel(
                     0,
-                    getVec3Origin(),
+                    vec3_origin,
                     idMat3.getMat3_identity(),
                     origin,
                     128.0f
@@ -6422,7 +6422,7 @@ class Game_local {
 
 
         //============================================================================
-        const val GAME_DLL = true //TODO:find correct location
+        const val GAME_DLL = false // Kotlin is monolithic (no DLL boundary), so game must not manage idLib lifecycle
 
         //
         val com_forceGenericSIMD: idCVar = idCVar(

@@ -27,10 +27,10 @@ import neo.idlib.BitMsg.idBitMsgDelta
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idCQuat
 import neo.idlib.math.idRotation
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_origin
 
 object Physics_StaticMulti {
     var defaultState: staticPState_s = staticPState_s()
@@ -443,7 +443,7 @@ object Physics_StaticMulti {
             return if (clipModels.Num() != 0) {
                 current[0].origin
             } else {
-                getVec3Origin()
+                vec3_origin
             }
         }
 
@@ -461,11 +461,11 @@ object Physics_StaticMulti {
         override fun SetLinearVelocity(newLinearVelocity: idVec3, id: Int /*= 0*/) {}
         override fun SetAngularVelocity(newAngularVelocity: idVec3, id: Int /*= 0*/) {}
         override fun GetLinearVelocity(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun GetAngularVelocity(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun SetGravity(newGravity: idVec3) {}
@@ -480,14 +480,14 @@ object Physics_StaticMulti {
         override fun ClipTranslation(results: trace_s, translation: idVec3, model: idClipModel?) {
             results.fraction = 0.0f
             results.endAxis.set(idMat3())
-            results.endpos.set(getVec3Origin())
+            results.endpos.set(vec3_origin)
             results.c = contactInfo_t()
         }
 
         override fun ClipRotation(results: trace_s, rotation: idRotation, model: idClipModel?) {
             results.fraction = 0.0f
             results.endAxis.set(idMat3())
-            results.endpos.set(getVec3Origin())
+            results.endpos.set(vec3_origin)
             results.c = contactInfo_t()
         }
 
@@ -586,11 +586,11 @@ object Physics_StaticMulti {
 
         override fun SetPushed(deltaTime: Int) {}
         override fun GetPushedLinearVelocity(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun GetPushedAngularVelocity(id: Int /*= 0*/): idVec3 {
-            return getVec3Origin()
+            return vec3_origin
         }
 
         override fun SetMaster(master: idEntity?, orientated: Boolean /*= true*/) {

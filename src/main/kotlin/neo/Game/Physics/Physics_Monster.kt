@@ -176,7 +176,7 @@ object Physics_Monster {
         // set delta for next move
         fun SetDelta(d: idVec3) {
             delta.set(d)
-            if (delta != getVec3Origin()) {
+            if (delta != vec3_origin) {
                 Activate()
             }
         }
@@ -258,7 +258,7 @@ object Physics_Monster {
 
             // if not on the ground or moving upwards
             val upspeed: Float
-            upspeed = if (gravityNormal != getVec3_zero()) {
+            upspeed = if (gravityNormal != vec3_zero) {
                 -current.velocity.times(gravityNormal)
             } else {
                 current.velocity.z
@@ -271,7 +271,7 @@ object Physics_Monster {
                     moveResult = monsterMoveResult_t.MM_OK
                 }
                 delta.set(current.velocity.times(timeStep))
-                if (delta != getVec3Origin()) {
+                if (delta != vec3_origin) {
                     moveResult = SlideMove(current.origin, current.velocity, delta)
                     delta.Zero()
                 }
@@ -285,7 +285,7 @@ object Physics_Monster {
                     current.velocity.set(delta.div(timeStep))
                 }
                 current.velocity.minusAssign(gravityNormal.times(current.velocity.times(gravityNormal)))
-                if (delta == getVec3Origin()) {
+                if (delta == vec3_origin) {
                     Rest()
                 } else {
                     // try moving into the desired direction
@@ -542,7 +542,7 @@ object Physics_Monster {
         private fun CheckGround(state: monsterPState_s) {
             val groundTrace = trace_s()
             val down = idVec3()
-            if (gravityNormal == getVec3_zero()) {
+            if (gravityNormal == vec3_zero) {
                 state.onGround = false
                 groundEntityPtr.oSet(null)
                 return
@@ -637,7 +637,7 @@ object Physics_Monster {
             val result2: monsterMoveResult_t
             val stepdist: Float
             val nostepdist: Float
-            if (delta == getVec3Origin()) {
+            if (delta == vec3_origin) {
                 return monsterMoveResult_t.MM_OK
             }
 
@@ -647,7 +647,7 @@ object Physics_Monster {
             result1 = SlideMove(noStepPos, noStepVel, delta)
             if (result1 == monsterMoveResult_t.MM_OK) {
                 velocity.set(noStepVel)
-                if (gravityNormal == getVec3_zero()) {
+                if (gravityNormal == vec3_zero) {
                     start.set(noStepPos)
                     return monsterMoveResult_t.MM_OK
                 }
@@ -687,7 +687,7 @@ object Physics_Monster {
                 velocity.set(noStepVel)
                 return monsterMoveResult_t.MM_BLOCKED
             }
-            if (gravityNormal == getVec3_zero()) {
+            if (gravityNormal == vec3_zero) {
                 return result1
             }
 

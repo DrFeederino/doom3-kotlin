@@ -6,7 +6,6 @@ import neo.Renderer.Image
 import neo.Renderer.RenderSystem
 import neo.Sound.snd_system
 import neo.TempDump
-import neo.TempDump.TODO_Exception
 import neo.TempDump.void_callback
 import neo.Tools.Compilers.AAS.AASBuild.RunAASDir_f
 import neo.Tools.Compilers.AAS.AASBuild.RunAAS_f
@@ -58,8 +57,6 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 class Common {
-
-
     internal enum class errorParm_t {
         ERP_NONE, ERP_FATAL,  // exit the entire game with a popup window
         ERP_DROP,  // print to console and disconnect from game
@@ -68,34 +65,23 @@ class Common {
 
     class MemInfo_t {
         var assetTotals = 0
-
-
         val filebase: idStr = idStr()
 
-        //
         // subsystem totals
         var gameSubsystemTotal = 0
 
-        //
         // asset totals
-
         var imageAssetsTotal = 0
 
-        //
         // memory manager totals
         var memoryManagerTotal = 0
-
-
         var modelAssetsTotal = 0
         var renderSubsystemTotal = 0
         var soundAssetsTotal = 0
-
-        //
         var total = 0
     }
 
     abstract class idCommon {
-        //	public abstract						~idCommon( ) {}
         // Initialize everything.
         // if the OS allows, pass argc/argv directly (without executable name)
         // otherwise pass the command line in a single string (without executable name)
@@ -200,7 +186,6 @@ class Common {
     }
 
     class version_s {
-        //        char[] string = new char[256];
         val string: String
 
         init {
@@ -210,54 +195,33 @@ class Common {
                 BUILD_NUMBER,
                 BUILD_DEBUG,
                 sys_public.BUILD_STRING,
-                SysCvar.__DATE__ /*, __TIME__*/
+                SysCvar.__DATE__
             )
         }
     }
 
     class idCommonLocal : idCommon() {
-        private val com_asyncStats // indexed by com_ticNumber
-                : Array<asyncStats_t>
+        private val com_asyncStats: Array<asyncStats_t> // indexed by com_ticNumber
         var com_consoleLines: Array<CmdArgs.idCmdArgs>
         var com_numConsoleLines = 0
-
-        //#ifdef ID_WRITE_VERSION
         var config_compressor: idCompressor? = null
-        private var com_errorEntered // 0, ERP_DROP, etc
-                = 0
+        private var com_errorEntered = 0 // 0, ERP_DROP, etc
         private var com_fullyInitialized = false
-        private var com_refreshOnPrint // update the screen every print for dmap
-                = false
+        private var com_refreshOnPrint = false // update the screen every print for dmap
         private var com_shuttingDown = false
-
-        //#endif
-        //        private static final Lock SINGLE_ASYNC_TIC_LOCK = new ReentrantLock();//TODO:collect the locks into a single bundle.
-        //
-        //
         private val errorList: idStrList
-
-        //
         private val errorMessage: Array<String> = arrayOf("") //new char[MAX_PRINT_MSG_SIZE];
-
-        //
         private val gameDLL: Int
-
-        //
         private val languageDict: idLangDict
         private var lastTicMsec = 0
-
-        //
         private var logFile: idFile? = null
         private val prevAsyncMsec = 0
-
-        //
         private var rd_buffer: StringBuilder? = null
-
-        //
         private var rd_buffersize = 0
         private var rd_flush /*)( const char *buffer )*/: void_callback<String>? = null
         private val warningCaption: idStr = idStr()
         private val warningList: idStrList = idStrList()
+
         override fun Init(argc: Int, argv: Array<String>?, cmdline: String) {
             var argc = argc
             var argv = argv
@@ -319,9 +283,7 @@ class Common {
 
                 // override cvars from command line
                 StartupVariable(null, false)
-                if (
-                    idAsyncNetwork.serverDedicated.GetInteger() == 0 && win_main.Sys_AlreadyRunning()
-                ) {
+                if (idAsyncNetwork.serverDedicated.GetInteger() == 0 && win_main.Sys_AlreadyRunning()) {
                     win_main.Sys_Quit()
                 }
 
@@ -338,9 +300,7 @@ class Common {
                 InitGame()
 
                 // don't add startup commands if no CD key is present
-                if (ID_ENFORCE_KEY && (!Session.session.CDKeysAreValid(false) || !AddStartupCommands())
-                    || !AddStartupCommands()
-                ) {
+                if (ID_ENFORCE_KEY && (!Session.session.CDKeysAreValid(false) || !AddStartupCommands()) || !AddStartupCommands()) {
 
                     // if the user didn't give any commands, run default action
                     Session.session.StartMenu(true)
@@ -370,9 +330,8 @@ class Common {
             // game specific shut down
             ShutdownGame(false)
 
-//            // shut down non-portable system services
+            // shut down non-portable system services
             Sys_Shutdown()
-//
             // shut down the console
             console.Shutdown()
 
@@ -397,8 +356,6 @@ class Common {
             // free language dictionary
             languageDict.Clear()
 
-            // enable leak test
-//            Mem_EnableLeakTest("doom");
             // shutdown idLib
             idLib.ShutDown()
         }
@@ -442,7 +399,6 @@ class Common {
             try {
                 // pump all the events
                 Sys_GenerateEvents()
-//
                 // write config file if anything changed
                 WriteConfiguration()
 
@@ -468,7 +424,6 @@ class Common {
 
                 // report timing information
                 if (com_speeds.GetBool()) {
-//			 int	lastTime;
                     val nowTime = win_shared.Sys_Milliseconds()
                     val com_frameMsec = nowTime - lastTime
                     lastTime = nowTime
@@ -487,12 +442,6 @@ class Common {
 
                 // set idLib frame number for frame based memory dumps
                 idLib.frameNumber = com_frameNumber
-                //
-//                // the FPU stack better be empty at this point or some bad code or compiler bug left values on the stack
-//                if (!Sys_FPU_StackIsEmpty()) {
-//                    Printf(Sys_FPU_GetState());
-//                    FatalError("idCommon::Frame: the FPU stack is not empty at the end of the frame\n");
-//                }
             } catch (ex: idException) {
                 return  // an ERP_DROP was thrown
             }
@@ -528,7 +477,6 @@ class Common {
          =================
          */
         override fun Async() {
-//            System.out.println(">>>>>>"+System.nanoTime());
             if (com_shuttingDown) {
                 return
             }
@@ -563,7 +511,6 @@ class Common {
                 SingleAsyncTic()
                 lastTicMsec += ticMsec
             }
-            //            System.out.println("<<<<<<<"+System.nanoTime());
         }
 
         /*
@@ -633,13 +580,12 @@ class Common {
 
         override fun WriteConfigToFile(filename: String) {
             val f: idFile?
-            f = FileSystem_h.fileSystem.OpenFileWrite(filename)
+            f = FileSystem_h.fileSystem.OpenFileWrite(filename, "fs_configpath") // FIX: C++ uses "fs_configpath"
             if (null == f) {
                 Printf("Couldn't write %s.\n", filename)
                 return
             }
             if (ID_WRITE_VERSION) {
-//                long ID_TIME_T;
                 val curTime: String
                 val runtag: String
                 val compressed = idFile_Memory("compressed")
@@ -662,7 +608,7 @@ class Common {
         @Throws(idException::class)
         override fun WriteFlaggedCVarsToFile(filename: String, flags: Int, setCmd: String) {
             val f: idFile?
-            f = FileSystem_h.fileSystem.OpenFileWrite(filename)
+            f = FileSystem_h.fileSystem.OpenFileWrite(filename, "fs_configpath") // FIX: C++ uses "fs_configpath"
             if (null == f) {
                 Printf("Couldn't write %s.\n", filename)
                 return
@@ -679,7 +625,7 @@ class Common {
             rd_buffersize = buffersize
             rd_flush = flush
 
-//	*rd_buffer = 0;
+            buffer.setLength(0) // FIX: C++ does *rd_buffer = 0; clear the buffer at start of redirect
         }
 
         override fun EndRedirect() {
@@ -705,10 +651,7 @@ class Common {
          ==================
          */
         override fun Printf(fmt: String, vararg args: Any) {
-//	va_list argptr;
-//	va_start( argptr, fmt );
             VPrintf(fmt, *args)
-            //	va_end( argptr );
         }
 
         /*
@@ -744,8 +687,6 @@ class Common {
             // don't overflow
             if (idStr.vsnPrintf(msg, MAX_PRINT_MSG_SIZE - timeLength - 1, fmt, *args) < 0) {
                 msg[0] = "\n"
-                //                msg[0][msg[0].length - 2] = '\n';
-//                msg[0][msg[0].length - 1] = '\0'; // avoid output garbling
                 win_main.Sys_Printf("idCommon::VPrintf: truncated to %d characters\n", msg[0].length /*- 1*/)
             }
             if (rd_buffer != null) {
@@ -762,20 +703,13 @@ class Common {
             console.Print(msg[0])
 
             // remove any color codes
-            idStr.RemoveColors(msg[0])
+            msg[0] = idStr.RemoveColors(msg[0]) // FIX: RemoveColors returns new String; must assign back
 
             // echo to dedicated console and early console
             win_main.Sys_Printf("%s", msg[0])
 
             // print to script debugger server
             // DebuggerServerPrint( msg );
-//#if 0	// !@#
-//#if defined(_DEBUG) && defined(WIN32)
-//	if ( strlen( msg ) < 512 ) {
-//		TRACE( msg );
-//	}
-//#endif
-//#endif
             // logFile
             if (com_logFile.GetInteger() != 0 && !logFileFailed && FileSystem_h.fileSystem.IsInitialized()) {
 //		static bool recursing;
@@ -815,25 +749,6 @@ class Common {
                 // let session redraw the animated loading screen if necessary
                 Session.session.PacifierUpdate()
             }
-
-//            if (_WIN32) {
-//
-//                if (com_outputMsg ) {
-//                    if (com_msgID == -1) {
-//                        com_msgID = ::RegisterWindowMessage(DMAP_MSGID);
-//                        if (!FindEditor()) {
-//                            com_outputMsg = false;
-//                        } else {
-//                            Sys_ShowWindow(false);
-//                        }
-//                    }
-//                    if (com_hwndMsg) {
-//                        ATOM atom = ::GlobalAddAtom(msg);
-//                        ::PostMessage(com_hwndMsg, com_msgID, 0, static_cast < LPARAM > (atom));
-//                    }
-//                }
-//
-//            }
         }
 
         /*
@@ -844,17 +759,11 @@ class Common {
          ==================
          */
         override fun DPrintf(fmt: String, vararg args: Any) {
-//	va_list		argptr;
             val msg = arrayOf<String>("") //new char[MAX_PRINT_MSG_SIZE];
             if (!cvarSystem.IsInitialized() || !com_developer.GetBool()) {
                 return  // don't confuse non-developers with techie stuff...
             }
-
-//	va_start( argptr, fmt );
             idStr.vsnPrintf(msg, MAX_PRINT_MSG_SIZE, fmt, *args)
-            //	va_end( argptr );
-//            msg[MAX_PRINT_MSG_SIZE - 1] = '\0';
-//
             // never refresh the screen, which could cause reentrency problems
             val temp = com_refreshOnPrint
             com_refreshOnPrint = false
@@ -871,11 +780,7 @@ class Common {
          */
         override fun Warning(fmt: String, vararg args: Any) {
             val msg = arrayOf<String>("") //[MAX_PRINT_MSG_SIZE];
-
-//	va_start( argptr, fmt );
             idStr.vsnPrintf(msg, MAX_PRINT_MSG_SIZE, fmt, *args)
-            //	va_end( argptr );
-//            msg[MAX_PRINT_MSG_SIZE - 1] = 0;
             Printf(
                 """
     ${Str.S_COLOR_YELLOW}WARNING: ${Str.S_COLOR_RED}%s
@@ -896,16 +801,12 @@ class Common {
          */
         @Throws(idException::class)
         override fun DWarning(fmt: String, vararg args: Any) {
-//	va_list		argptr;
             val msg = arrayOf<String>("") //new char[MAX_PRINT_MSG_SIZE];
             if (!com_developer.GetBool()) {
                 return  // don't confuse non-developers with techie stuff...
             }
 
-//	va_start( argptr, fmt );
             idStr.vsnPrintf(msg, MAX_PRINT_MSG_SIZE, fmt, *args)
-            //	va_end( argptr );
-//            msg[MAX_PRINT_MSG_SIZE - 1] = '\0';
             Printf(
                 """
     ${Str.S_COLOR_YELLOW}WARNING: %s
@@ -949,7 +850,6 @@ class Common {
 
         @Throws(idException::class)
         override fun Error(fmt: String, vararg args: Any) {
-//	va_list		argptr;
             val currentTime: Int
             var code = TempDump.etoi(errorParm_t.ERP_DROP)
 
@@ -992,10 +892,7 @@ class Common {
             lastErrorTime = currentTime
             com_errorEntered = code
 
-//	va_start (argptr,fmt);
             idStr.vsnPrintf(errorMessage, MAX_PRINT_MSG_SIZE, fmt, *args)
-            //	va_end (argptr);
-//            errorMessage[errorMessage[.length - 1] = '\0';//TODO:is this needed?
 
             // copy the error message to the clip board
             win_main.Sys_SetClipboardData(errorMessage[0])
@@ -1037,8 +934,6 @@ class Common {
          */
         @Throws(idException::class)
         override fun FatalError(fmt: String, vararg args: Any) {
-//	va_list		argptr;
-
             // if we got a recursive error, make it fatal
             if (com_errorEntered != 0) {
                 // if we are recursively erroring while exiting
@@ -1048,24 +943,20 @@ class Common {
                 // error dialog
                 win_main.Sys_Printf("FATAL: recursed fatal error:\n%s\n", errorMessage[0])
 
-//		va_start( argptr, fmt );
                 idStr.vsnPrintf(errorMessage, MAX_PRINT_MSG_SIZE, fmt, *args)
-                //		va_end( argptr );
-//                errorMessage[errorMessage.length - 1] = '\0';//TODO:useless
                 win_main.Sys_Printf("%s\n", errorMessage[0])
-
                 // write the console to a log file?
                 win_main.Sys_Quit()
             }
             com_errorEntered = TempDump.etoi(errorParm_t.ERP_FATAL)
 
-//	va_start( argptr, fmt );
             idStr.vsnPrintf(errorMessage, MAX_PRINT_MSG_SIZE, fmt, *args)
-            //	va_end( argptr );
-//            errorMessage[errorMessage.length - 1] = '\0';
             if (cvarSystem.GetCVarBool("r_fullscreen")) {
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "vid_restart partial windowed\n")
             }
+            win_main.Sys_Printf(
+                "shutting down: %s\n", errorMessage[0]
+            ) // FIX: was missing — C++ prints this before shutdown
             win_main.Sys_SetFatalError(errorMessage[0])
             Shutdown()
             win_main.Sys_Error("%s", errorMessage[0])
@@ -1075,9 +966,6 @@ class Common {
             return languageDict
         }
 
-        //
-        //
-        //
         /*
          ===============
          KeysFromBinding()
@@ -1098,9 +986,6 @@ class Common {
             return idKeyInput.BindingFromKey(key)!!
         }
 
-        //
-        //
-        //
         /*
          ===============
          ButtonState()
@@ -1133,8 +1018,7 @@ class Common {
             CheckToolMode()
             var file = FileSystem_h.fileSystem.OpenExplicitFileRead(
                 FileSystem_h.fileSystem.RelativePathToOSPath(
-                    Licensee.CONFIG_SPEC,
-                    "fs_savepath"
+                    Licensee.CONFIG_SPEC, "fs_savepath"
                 )
             )
             val sysDetect = null == file
@@ -1292,7 +1176,6 @@ class Common {
         // localization
         @Throws(idException::class)
         fun InitLanguageDict() {
-//            idStr fileName;
             languageDict.Clear()
 
             //D3XP: Instead of just loading a single lang file for each language
@@ -1303,8 +1186,7 @@ class Common {
             langFiles = FileSystem_h.fileSystem.ListFilesTree("strings", ".lang", true)
             val langList = langFiles.GetList()
             StartupVariable(
-                "sys_lang",
-                false
+                "sys_lang", false
             ) // let it be set on the command line - this is needed because this init happens very early
             var langName = idStr(cvarSystem.GetCVarString("sys_lang"))
 
@@ -1457,7 +1339,6 @@ class Common {
 
         @Throws(idException::class)
         fun LocalizeSpecificMapData(fileName: String, langDict: idLangDict, replaceArgs: idLangDict) {
-//	idStr out, ws, work;
             val map = idMapFile()
             if (map.Parse(fileName, false, false)) {
                 val count = map.GetNumEntities()
@@ -1494,7 +1375,11 @@ class Common {
 	%d MB of System memory
 	%d MB of Video memory on %s
 
-""", cores, ghz, sysRam, vidRam,
+""",
+                cores,
+                ghz,
+                sysRam,
+                vidRam,
                 if (oldCard[0]) "a less than optimal video architecture" else "an optimal video architecture"
             )
             val cpuGhz = if (cpuid_t and sys_public.CPUID_AMD != 0) 1.9 else 2.19
@@ -1518,16 +1403,10 @@ class Common {
         @Throws(idException::class)
         private fun InitCommands() {
             CmdSystem.cmdSystem.AddCommand(
-                "error",
-                Com_Error_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
-                "causes an error"
+                "error", Com_Error_f.getInstance(), CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT, "causes an error"
             )
             CmdSystem.cmdSystem.AddCommand(
-                "crash",
-                Com_Crash_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
-                "causes a crash"
+                "crash", Com_Crash_f.getInstance(), CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT, "causes a crash"
             )
             CmdSystem.cmdSystem.AddCommand(
                 "freeze",
@@ -1538,10 +1417,7 @@ class Common {
             CmdSystem.cmdSystem.AddCommand("quit", Com_Quit_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "quits the game")
             CmdSystem.cmdSystem.AddCommand("exit", Com_Quit_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "exits the game")
             CmdSystem.cmdSystem.AddCommand(
-                "writeConfig",
-                Com_WriteConfig_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "writes a config file"
+                "writeConfig", Com_WriteConfig_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "writes a config file"
             )
             CmdSystem.cmdSystem.AddCommand(
                 "reloadEngine",
@@ -1606,19 +1482,13 @@ class Common {
                     ArgCompletion_MapName.getInstance()
                 )
                 CmdSystem.cmdSystem.AddCommand(
-                    "roq",
-                    RoQFileEncode_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "encodes a roq file"
+                    "roq", RoQFileEncode_f.getInstance(), CmdSystem.CMD_FL_TOOL, "encodes a roq file"
                 )
             }
             if (ID_ALLOW_TOOLS) {
                 // editors
                 CmdSystem.cmdSystem.AddCommand(
-                    "editor",
-                    Com_Editor_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "launches the level editor Radiant"
+                    "editor", Com_Editor_f.getInstance(), CmdSystem.CMD_FL_TOOL, "launches the level editor Radiant"
                 )
                 CmdSystem.cmdSystem.AddCommand(
                     "editLights",
@@ -1657,16 +1527,10 @@ class Common {
                     "launches the in-game Script Editor"
                 )
                 CmdSystem.cmdSystem.AddCommand(
-                    "editGUIs",
-                    Com_EditGUIs_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "launches the GUI Editor"
+                    "editGUIs", Com_EditGUIs_f.getInstance(), CmdSystem.CMD_FL_TOOL, "launches the GUI Editor"
                 )
                 CmdSystem.cmdSystem.AddCommand(
-                    "editPDAs",
-                    Com_EditPDAs_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "launches the in-game PDA Editor"
+                    "editPDAs", Com_EditPDAs_f.getInstance(), CmdSystem.CMD_FL_TOOL, "launches the in-game PDA Editor"
                 )
                 CmdSystem.cmdSystem.AddCommand(
                     "debugger",
@@ -1684,15 +1548,10 @@ class Common {
                 )
             }
             CmdSystem.cmdSystem.AddCommand(
-                "printMemInfo",
-                PrintMemInfo_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "prints memory debugging data"
+                "printMemInfo", PrintMemInfo_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "prints memory debugging data"
             )
 
             // idLib commands
-//            cmdSystem.AddCommand("memoryDump", Mem_Dump_f.getInstance(), CMD_FL_SYSTEM | CMD_FL_CHEAT, "creates a memory dump");
-//            cmdSystem.AddCommand("memoryDumpCompressed", Mem_DumpCompressed_f.getInstance(), CMD_FL_SYSTEM | CMD_FL_CHEAT, "creates a compressed memory dump");
             CmdSystem.cmdSystem.AddCommand(
                 "showStringMemory",
                 idStr.ShowMemoryUsage_f.getInstance(),
@@ -1732,10 +1591,7 @@ class Common {
                 "localize maps"
             )
             CmdSystem.cmdSystem.AddCommand(
-                "reloadLanguage",
-                Com_ReloadLanguage_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "reload language dict"
+                "reloadLanguage", Com_ReloadLanguage_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "reload language dict"
             )
 
             //D3XP Localization
@@ -1855,8 +1711,9 @@ class Common {
             var i: Int
             i = 0
             while (i < com_numConsoleLines) {
-                if (0 == idStr.Icmp(com_consoleLines[i].Argv(0), "safe")
-                    || 0 == idStr.Icmp(com_consoleLines[i].Argv(0), "cvar_restart")
+                if (0 == idStr.Icmp(com_consoleLines[i].Argv(0), "safe") || 0 == idStr.Icmp(
+                        com_consoleLines[i].Argv(0), "cvar_restart"
+                    )
                 ) {
                     com_consoleLines[i].Clear()
                     return true
@@ -1889,20 +1746,15 @@ class Common {
                     com_editors = com_editors or EDITOR_MATERIAL
                 }
                 if (0 == idStr.Icmp(
-                        com_consoleLines[i].Argv(0),
-                        "renderbump"
+                        com_consoleLines[i].Argv(0), "renderbump"
                     ) || 0 == idStr.Icmp(
-                        com_consoleLines[i].Argv(0),
-                        "editor"
+                        com_consoleLines[i].Argv(0), "editor"
                     ) || 0 == idStr.Icmp(
-                        com_consoleLines[i].Argv(0),
-                        "guieditor"
+                        com_consoleLines[i].Argv(0), "guieditor"
                     ) || 0 == idStr.Icmp(
-                        com_consoleLines[i].Argv(0),
-                        "debugger"
+                        com_consoleLines[i].Argv(0), "debugger"
                     ) || 0 == idStr.Icmp(
-                        com_consoleLines[i].Argv(0),
-                        "dmap"
+                        com_consoleLines[i].Argv(0), "dmap"
                     ) || 0 == idStr.Icmp(com_consoleLines[i].Argv(0), "materialEditor")
                 ) {
                     cvarSystem.SetCVarBool("r_fullscreen", false)
@@ -1984,7 +1836,6 @@ class Common {
                     val osPath: String?
                     osPath = FileSystem_h.fileSystem.RelativePathToOSPath("warnings.txt", "fs_savepath")
                     try {
-//                    WinExec(va("Notepad.exe %s", osPath.c_str()), SW_SHOW);
                         Runtime.getRuntime().exec(Str.va("Notepad.exe %s", osPath))
                     } catch (ex: IOException) {
                         Logger.getLogger(Common::class.java.name).log(Level.SEVERE, null, ex)
@@ -1993,16 +1844,12 @@ class Common {
             }
         }
 
-        /*synchronized*/   fun SingleAsyncTic() {
+        fun SingleAsyncTic() {
             // main thread code can prevent this from happening while modifying
             // critical data structures
-//            Sys_EnterCriticalSection()
-//            try {
-            val stat =
-                com_asyncStats[com_ticNumber and MAX_ASYNC_STATS - 1] //memset( stat, 0, sizeof( *stat ) );
+            val stat = com_asyncStats[com_ticNumber and MAX_ASYNC_STATS - 1] //memset( stat, 0, sizeof( *stat ) );
             stat.milliseconds = win_shared.Sys_Milliseconds()
-            stat.deltaMsec =
-                stat.milliseconds - com_asyncStats[com_ticNumber - 1 and MAX_ASYNC_STATS - 1].milliseconds
+            stat.deltaMsec = stat.milliseconds - com_asyncStats[com_ticNumber - 1 and MAX_ASYNC_STATS - 1].milliseconds
             if (UsercmdGen.usercmdGen != null && com_asyncInput.GetBool()) {
                 UsercmdGen.usercmdGen.UsercmdInterrupt()
             }
@@ -2016,93 +1863,20 @@ class Common {
             // have completed their work for this tic
             com_ticNumber++
             stat.timeConsumed = win_shared.Sys_Milliseconds() - stat.milliseconds
-//            } finally {
-//                Sys_LeaveCriticalSection()
-//            }
         }
 
         @Throws(idException::class)
         private fun LoadGameDLL() {
-//            if (__DOOM_DLL__) {
-//                char[] dllPath = new char[MAX_OSPATH];
-//
-//                gameImport_t gameImport = new gameImport_t();
-//                gameExport_t gameExport;
-//                GetGameAPI_t GetGameAPI;
-//
-//                fileSystem.FindDLL("game", dllPath, true);
-//
-//                if ('\0' == dllPath[0]) {
-//                    common.FatalError("couldn't find game dynamic library");
-//                    return;
-//                }
-//                common.DPrintf("Loading game DLL: '%s'\n", new String(dllPath));
-//                gameDLL = sys.DLL_Load(new String(dllPath));
-//                if (0 == gameDLL) {
-//                    common.FatalError("couldn't load game dynamic library");
-//                    return;
-//                }
-//
-//                GetGameAPI = Sys_DLL_GetProcAddress(gameDLL, "GetGameAPI");
-//                if (!GetGameAPI) {
-//                    Sys_DLL_Unload(gameDLL);
-//                    gameDLL = 0;
-//                    common.FatalError("couldn't find game DLL API");
-//                    return;
-//                }
-//
-//                gameImport.version = GAME_API_VERSION;
-//                gameImport.sys = sys;
-//                gameImport.common = common;
-//                gameImport.cmdSystem = cmdSystem;
-//                gameImport.cvarSystem = cvarSystem;
-//                gameImport.fileSystem = fileSystem;
-//                gameImport.networkSystem = networkSystem;
-//                gameImport.renderSystem = renderSystem;
-//                gameImport.soundSystem = soundSystem;
-//                gameImport.renderModelManager = renderModelManager;
-//                gameImport.uiManager = uiManager;
-//                gameImport.declManager = declManager;
-//                gameImport.AASFileManager = AASFileManager;
-//                gameImport.collisionModelManager = collisionModelManager;
-//
-//                gameExport = GetGameAPI(gameImport);
-//
-//                if (gameExport.version != GAME_API_VERSION) {
-//                    Sys_DLL_Unload(gameDLL);
-//                    gameDLL = 0;
-//                    common.FatalError("wrong game DLL API version");
-//                    return;
-//                }
-//
-//                game = gameExport.game;
-//                gameEdit = gameExport.gameEdit;
-//
-//            }
-
-            // initialize the game object
             if (Game_local.game != null) {
                 Game_local.game.Init()
             }
         }
 
         private fun UnloadGameDLL() {
-
             // shut down the game object
             if (Game_local.game != null) {
                 Game_local.game.Shutdown()
             }
-
-//            if (__DOOM_DLL__) {
-//
-//                if (gameDLL) {
-//                    Sys_DLL_Unload(gameDLL);
-//                    gameDLL = null;
-//                }
-//                game = null;
-//                gameEdit = null;
-//
-//            }
         }
 
         private fun PrintLoadingMessage(msg: String?) {
@@ -2110,8 +1884,7 @@ class Common {
                 return
             }
             RenderSystem.renderSystem.BeginFrame(
-                RenderSystem.renderSystem.GetScreenWidth(),
-                RenderSystem.renderSystem.GetScreenHeight()
+                RenderSystem.renderSystem.GetScreenWidth(), RenderSystem.renderSystem.GetScreenHeight()
             )
             RenderSystem.renderSystem.DrawStretchPic(
                 0.0f,
@@ -2126,8 +1899,12 @@ class Common {
             )
             val len = msg.length
             RenderSystem.renderSystem.DrawSmallStringExt(
-                (640 - len * RenderSystem.SMALLCHAR_WIDTH) / 2, 410, msg.toCharArray(),
-                idVec4(0.0f, 0.81f, 0.94f, 1.0f), true, DeclManager.declManager.FindMaterial("textures/bigchars")
+                (640 - len * RenderSystem.SMALLCHAR_WIDTH) / 2,
+                410,
+                msg.toCharArray(),
+                idVec4(0.0f, 0.81f, 0.94f, 1.0f),
+                true,
+                DeclManager.declManager.FindMaterial("textures/bigchars")
             )
             RenderSystem.renderSystem.EndFrame(null, null)
         }
@@ -2149,14 +1926,11 @@ class Common {
 
         internal class asyncStats_t {
             var clientPacketsReceived = 0
-            var deltaMsec // should always be 16
-                    = 0
-            var milliseconds // should always be incremeting by 60hz
-                    = 0
+            var deltaMsec = 0 // should always be 16
+            var milliseconds = 0 // should always be incremeting by 60hz
             var mostRecentServerPacketSequence = 0
             var serverPacketsReceived = 0
-            var timeConsumed // msec spent in Com_AsyncThread()
-                    = 0
+            var timeConsumed = 0// msec spent in Com_AsyncThread()
         }
 
         companion object {
@@ -2172,8 +1946,6 @@ class Common {
         }
 
         init {
-
-//	strcpy( errorMessage, "" );
             errorList = idStrList()
             languageDict = idLangDict()
             gameDLL = 0
@@ -2491,7 +2263,7 @@ class Common {
                 commonLocal.Printf("freeze may only be used in developer mode\n")
                 return
             }
-            s = args.Argv(1).toInt().toFloat()
+            s = args.Argv(1).toFloat() // FIX: C++ uses atof(); toInt().toFloat() truncated fractional seconds
             start = EventLoop.eventLoop.Milliseconds()
             while (true) {
                 now = EventLoop.eventLoop.Milliseconds()
@@ -2605,10 +2377,6 @@ class Common {
      Com_ExecMachineSpecs_f
      =================
      */
-    // #ifdef MACOS_X
-    // void OSX_GetVideoCard( int& outVendorId, int& outDeviceId );
-    // boolean OSX_GetCPUIdentification( int& cpuId, boolean& oldArchitecture );
-    // #endif
     internal class Com_ExecMachineSpec_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
             if (com_machineSpec.GetInteger() == 3) {
@@ -2730,20 +2498,6 @@ class Common {
             if (nv10or20[0]) {
                 cvarSystem.SetCVarInteger("image_useNormalCompression", 1, CVarSystem.CVAR_ARCHIVE)
             }
-
-//if( MACOS_X){
-//	// On low settings, G4 systems & 64MB FX5200/NV34 Systems should default shadows off
-//	boolean oldArch;
-//	int vendorId, deviceId, cpuId;
-//	OSX_GetVideoCard( vendorId, deviceId );
-//	OSX_GetCPUIdentification( cpuId, oldArch );
-//	boolean isFX5200 = vendorId == 0x10DE && ( deviceId & 0x0FF0 ) == 0x0320;
-//	if ( ( oldArch || ( isFX5200 && Sys_GetVideoRam() < 128 ) ) && com_machineSpec.GetInteger() == 0 ) {
-//		cvarSystem.SetCVarBool( "r_shadows", false, CVAR_ARCHIVE );
-//	} else {
-//		cvarSystem.SetCVarBool( "r_shadows", true, CVAR_ARCHIVE );
-//	}
-//}
         }
 
         companion object {
@@ -3139,16 +2893,11 @@ class Common {
             "0: mix sound inline, 1: memory mapped async mix, 2: callback mixing, 3: write async mix"
         const val DMAP_DONE: String = "DMAPDone"
         const val EDITOR_NONE = 0
-
-        //
-        //#ifdef _WIN32
         val DMAP_MSGID: String = "DMAPOutput"
         val EDITOR_AAS: Int = BIT(11)
         val EDITOR_AF: Int = BIT(8)
         val EDITOR_DEBUGGER: Int = BIT(3)
         val EDITOR_DECL: Int = BIT(7)
-
-
         val EDITOR_GUI: Int = BIT(2)
         val EDITOR_LIGHT: Int = BIT(5)
         val EDITOR_MATERIAL: Int = BIT(12)
@@ -3157,13 +2906,7 @@ class Common {
         val EDITOR_RADIANT: Int = BIT(1)
         val EDITOR_SCRIPT: Int = BIT(4)
         val EDITOR_SOUND: Int = BIT(6)
-
-        //
-        //
-
         val STRTABLE_ID: String = "#str_"
-
-
         val STRTABLE_ID_LENGTH = STRTABLE_ID.length //5
         val com_allowConsole: idCVar = idCVar(
             "com_allowConsole",
@@ -3172,13 +2915,8 @@ class Common {
             "allow toggling console with the tilde key"
         )
         val com_asyncInput: idCVar = idCVar(
-            "com_asyncInput",
-            "0",
-            CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM,
-            "sample input from the async thread"
+            "com_asyncInput", "0", CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM, "sample input from the async thread"
         )
-
-        //
         val com_asyncSound: idCVar = if (MACOS_X) idCVar(
             "com_asyncSound",
             "2",
@@ -3197,16 +2935,12 @@ class Common {
             0.0f,
             3.0f // FIX: was 1.0f — dhewm3 allows values 0-3
         )
-
-
         val com_developer: idCVar = idCVar(
             "developer",
             "1",
             CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_NOCHEAT,
             "developer mode"
         )
-
-        //
         val com_forceGenericSIMD: idCVar = idCVar(
             "com_forceGenericSIMD",
             "1",
@@ -3228,16 +2962,12 @@ class Common {
             CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_NOCHEAT,
             "name of log file, if empty, qconsole.log will be used"
         )
-
-
         val com_machineSpec: idCVar = idCVar(
             "com_machineSpec",
             "-1",
             CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_SYSTEM,
             "hardware classification, -1 = not detected, 0 = low quality, 1 = medium quality, 2 = high quality, 3 = ultra quality"
         )
-
-
         val com_makingBuild: idCVar =
             idCVar("com_makingBuild", "0", CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM, "1 when making a build")
         val com_memoryMarker: idCVar = idCVar(
@@ -3252,8 +2982,6 @@ class Common {
             CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM,
             "run one game tick every async thread update"
         )
-
-        //
         val com_product_lang_ext: idCVar = idCVar(
             "com_product_lang_ext",
             "1",
@@ -3292,13 +3020,9 @@ class Common {
             CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_NOCHEAT,
             "show sound decoders"
         )
-        val com_skipRenderer: idCVar =
-            idCVar(
-                "com_skipRenderer",
-                "0",
-                CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM,
-                "skip the renderer completely"
-            )
+        val com_skipRenderer: idCVar = idCVar(
+            "com_skipRenderer", "0", CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM, "skip the renderer completely"
+        )
         val com_speeds: idCVar = idCVar(
             "com_speeds",
             "0",
@@ -3322,8 +3046,6 @@ class Common {
             CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_NOCHEAT,
             "update the load size after loading a map"
         )
-
-
         val com_videoRam: idCVar = idCVar(
             "com_videoRam",
             "512",
@@ -3335,10 +3057,6 @@ class Common {
         const val MAX_PRINT_MSG_SIZE = 4096
         const val MAX_WARNING_LIST = 256
         val version: version_s = version_s()
-
-        //
-        //
-        //
         val com_version: idCVar = idCVar(
             "si_version",
             version.string,
@@ -3347,91 +3065,74 @@ class Common {
         )
         var com_editorActive // true if an editor has focus
                 = false
-
-
-        var com_editors // currently opened editor(s)
-                = 0
-        var com_frameNumber // variable frame number
-                = 0
+        var com_editors = 0 // currently opened editor(s)
+        var com_frameNumber = 0 // variable frame number
 
         @Volatile
-
-        var com_frameTime // time for the current frame in milliseconds
-                = 0
+        var com_frameTime = 0// time for the current frame in milliseconds
         var   /*HWND*/com_hwndMsg: Long = 0
         var com_outputMsg = false
 
         @Volatile
+        var com_ticNumber = 0// 60 hz tics
+        var time_backend = 0 // renderSystem backend time
+        var time_frontend = 0 // renderSystem frontend time
+        var time_gameDraw = 0 // FIX: C++ uses int, not long
 
-        var com_ticNumber // 60 hz tics
-                = 0
-        var time_backend // renderSystem backend time
-                = 0
-        var time_frontend // renderSystem frontend time
-                = 0
-        var time_gameDraw = 0L
-
-        //
-        //
         // com_speeds times
-        var time_gameFrame = 0L
+        var time_gameFrame = 0 // FIX: C++ uses int, not long
         var com_msgID: Long = -1
-
-        //
         private var commonLocal: idCommonLocal = idCommonLocal()
-
-
         var common: /*final*/idCommon = commonLocal
 
         fun LoadMapLocalizeData(listHash: ListHash) {
-            throw TODO_Exception()
-            //        String fileName = "map_localize.cfg";
-//        Object[] buffer = {null};
-//        idLexer src = new idLexer(LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT);
-//
-//        if (fileSystem.ReadFile(fileName, buffer) > 0) {
-//            src.LoadMemory(buffer, strlen(buffer), fileName);
-//            if (src.IsLoaded()) {
-//                String classname;
-//                idToken token = new idToken();
-//
-//                while (src.ReadToken(token)) {
-//                    classname = token.toString();
-//                    src.ExpectTokenString("{");
-//
-//                    idStrList list = new idStrList();
-//                    while (src.ReadToken(token)) {
-//                        if (token.equals("}")) {
-//                            break;
-//                        }
-//                        list.Append(token);
-//                    }
-//
-//                    listHash.Set(classname, list);
-//                }
-//            }
-//            fileSystem.FreeFile(buffer);
-//        }
+            val fileName = "map_localize.cfg"
+            val buffer = arrayOfNulls<ByteBuffer>(1)
+            val src =
+                idLexer(Lexer.LEXFL_NOFATALERRORS or Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT)
+
+            if (FileSystem_h.fileSystem.ReadFile(fileName, buffer) > 0) {
+                src.LoadMemory(TempDump.bbtocb(buffer[0]!!), TempDump.bbtocb(buffer[0]!!).capacity(), fileName)
+                if (src.IsLoaded()) {
+                    var classname: String
+                    val token = idToken()
+
+                    while (src.ReadToken(token)) {
+                        classname = token.toString()
+                        src.ExpectTokenString("{")
+
+                        val list = idStrList()
+                        while (src.ReadToken(token)) {
+                            if (token.toString() == "}") {
+                                break
+                            }
+                            list.add(idStr(token))
+                        }
+
+                        listHash[classname] = list
+                    }
+                }
+                FileSystem_h.fileSystem.FreeFile(buffer)
+            }
         }
 
         fun LoadGuiParmExcludeList(list: idStrList) {
-            throw TODO_Exception()
-            //        String fileName = "guiparm_exclude.cfg";
-//        Object[] buffer = {null};
-//        idLexer src = new idLexer(LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT);
-//
-//        if (fileSystem.ReadFile(fileName, buffer) > 0) {
-//            src.LoadMemory(buffer, strlen(buffer), fileName);
-//            if (src.IsLoaded()) {
-////			idStr classname;
-//                idToken token = new idToken();
-//
-//                while (src.ReadToken(token)) {
-//                    list.Append(token);
-//                }
-//            }
-//            fileSystem.FreeFile(buffer);
-//        }
+            val fileName = "guiparm_exclude.cfg"
+            val buffer = arrayOfNulls<ByteBuffer>(1)
+            val src =
+                idLexer(Lexer.LEXFL_NOFATALERRORS or Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT)
+
+            if (FileSystem_h.fileSystem.ReadFile(fileName, buffer) > 0) {
+                src.LoadMemory(TempDump.bbtocb(buffer[0]!!), TempDump.bbtocb(buffer[0]!!).capacity(), fileName)
+                if (src.IsLoaded()) {
+                    val token = idToken()
+
+                    while (src.ReadToken(token)) {
+                        list.add(idStr(token))
+                    }
+                }
+                FileSystem_h.fileSystem.FreeFile(buffer)
+            }
         }
 
         fun TestMapVal(str: idStr): Boolean {
@@ -3500,89 +3201,79 @@ class Common {
         }
 
         fun LocalizeMap(
-            mapName: String,
-            langDict: idLangDict,
-            listHash: ListHash,
-            excludeList: idStrList,
-            writeFile: Boolean
+            mapName: String, langDict: idLangDict, listHash: ListHash, excludeList: idStrList, writeFile: Boolean
         ): Int {
-            throw TODO_Exception()
-            //	common.Printf("Localizing Map '%s'\n", mapName);
-//
-//	int strCount = 0;
-//
-//	idMapFile map = new idMapFile();
-//	if ( map.Parse(mapName, false, false ) ) {
-//		int count = map.GetNumEntities();
-//		for ( int j = 0; j < count; j++ ) {
-//			idMapEntity ent = map.GetEntity( j );
-//			if ( ent !=null) {
-//
-//				String className = ent.epairs.GetString("classname");
-//
-//				//Hack: for info_location
-//				boolean hasLocation = false;
-//
-//				idStrList []list={null};
-//				listHash.Get(className, list);
-//				if(list[0]!=null) {
-//
-//					for(int k = 0; k < list[0].Num(); k++) {
-//
-//						String val = ent.epairs.GetString(list[0].oGet(k).toString(), "");
-//
-//						if(val.Length() && className == "info_location" && (*list[0])[k] == "location") {
-//							hasLocation = true;
-//						}
-//
-//						if(val.Length() && TestMapVal(val)) {
-//
-//							if(!hasLocation || (*list[0])[k] == "location") {
-//								//Localize it!!!
-//								strCount++;
-//								ent.epairs.Set( (*list[0])[k], langDict.AddString( val ) );
-//							}
-//						}
-//					}
-//				}
-//
-//				listHash.Get("all", &list[0]);
-//				if(list[0]) {
-//					for(int k = 0; k < list[0].Num(); k++) {
-//						idStr val = ent.epairs.GetString((*list[0])[k], "");
-//						if(val.Length() && TestMapVal(val)) {
-//							//Localize it!!!
-//							strCount++;
-//							ent.epairs.Set( (*list[0])[k], langDict.AddString( val ) );
-//						}
-//					}
-//				}
-//
-//				//Localize the gui_parms
-//				const idKeyValue* kv = ent.epairs.MatchPrefix("gui_parm");
-//				while( kv ) {
-//					if(TestGuiParm(kv.GetKey(), kv.GetValue(), excludeList)) {
-//						//Localize It!
-//						strCount++;
-//						ent.epairs.Set( kv.GetKey(), langDict.AddString( kv.GetValue() ) );
-//					}
-//					kv = ent.epairs.MatchPrefix( "gui_parm", kv );
-//				}
-//			}
-//		}
-//		if(writeFile && strCount > 0)  {
-//			//Before we write the map file lets make a backup of the original
-//			idStr file =  fileSystem.RelativePathToOSPath(mapName);
-//			idStr bak = file.Left(file.Length() - 4);
-//			bak.Append(".bak_loc");
-//			fileSystem.CopyFile( file, bak );
-//
-//			map.Write( mapName, ".map" );
-//		}
-//	}
-//
-//	common.Printf("Count: %d\n", strCount);
-//	return strCount;
+            common.Printf("Localizing Map '%s'\n", mapName)
+
+            var strCount = 0
+
+            val map = idMapFile()
+            if (map.Parse(mapName, false, false)) {
+                val count = map.GetNumEntities()
+                for (j in 0 until count) {
+                    val ent = map.GetEntity(j)
+                    if (ent != null) {
+                        val className = ent.epairs.GetString("classname")
+
+                        // Hack: for info_location
+                        var hasLocation = false
+
+                        val list = listHash[className]
+                        if (list != null) {
+                            for (k in 0 until list.size()) {
+                                val `val` = ent.epairs.GetString(list[k].toString(), "")!!
+
+                                if (`val`.isNotEmpty() && className == "info_location" && list[k].toString() == "location") {
+                                    hasLocation = true
+                                }
+
+                                if (`val`.isNotEmpty() && TestMapVal(`val`)) {
+                                    if (!hasLocation || list[k].toString() == "location") {
+                                        // Localize it!
+                                        strCount++
+                                        ent.epairs.Set(list[k].toString(), langDict.AddString(`val`))
+                                    }
+                                }
+                            }
+                        }
+
+                        val allList = listHash["all"]
+                        if (allList != null) {
+                            for (k in 0 until allList.size()) {
+                                val `val` = ent.epairs.GetString(allList[k].toString(), "")!!
+                                if (`val`.isNotEmpty() && TestMapVal(`val`)) {
+                                    // Localize it!
+                                    strCount++
+                                    ent.epairs.Set(allList[k].toString(), langDict.AddString(`val`))
+                                }
+                            }
+                        }
+
+                        // Localize the gui_parms
+                        var kv = ent.epairs.MatchPrefix("gui_parm")
+                        while (kv != null) {
+                            if (TestGuiParm(kv.GetKey(), kv.GetValue(), excludeList)) {
+                                // Localize it!
+                                strCount++
+                                ent.epairs.Set(kv.GetKey(), langDict.AddString(kv.GetValue().toString()))
+                            }
+                            kv = ent.epairs.MatchPrefix("gui_parm", kv)
+                        }
+                    }
+                }
+                if (writeFile && strCount > 0) {
+                    // Before we write the map file lets make a backup of the original
+                    val file = idStr(FileSystem_h.fileSystem.RelativePathToOSPath(mapName))
+                    val bak = file.Left(file.Length() - 4)
+                    bak.Append(".bak_loc")
+                    FileSystem_h.fileSystem.CopyFile(file.toString(), bak.toString())
+
+                    map.Write(mapName, ".map")
+                }
+            }
+
+            common.Printf("Count: %d\n", strCount)
+            return strCount
         }
 
         fun setCommons(common: idCommon) {

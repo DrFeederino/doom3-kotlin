@@ -1360,12 +1360,12 @@ class DeclAF {
             // via (arg as Number).toLong(), which throws ClassCastException for Boolean.
             // C++ implicitly promotes bool to int for variadic args; Kotlin needs explicit conversion.
             f.WriteFloatString("\tselfCollision %d\n", if (body.selfCollision) 1 else 0)
-            if (body.frictionDirection.ToVec3() != getVec3Origin()) {
+            if (body.frictionDirection.ToVec3() != vec3_origin) {
                 f.WriteFloatString("\tfrictionDirection ")
                 body.frictionDirection.Write(f)
                 f.WriteFloatString("\n")
             }
-            if (body.contactMotorDirection.ToVec3() != getVec3Origin()) {
+            if (body.contactMotorDirection.ToVec3() != vec3_origin) {
                 f.WriteFloatString("\tcontactMotorDirection ")
                 body.contactMotorDirection.Write(f)
                 f.WriteFloatString("\n")

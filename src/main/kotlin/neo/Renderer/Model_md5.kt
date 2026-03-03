@@ -834,7 +834,7 @@ object Model_md5 {
                 i++
             }
             val bounds = idBounds()
-            bounds.FromTransformedBounds(ent.bounds, getVec3_zero(), ent.axis)
+            bounds.FromTransformedBounds(ent.bounds, vec3_zero, ent.axis)
             Session.session.rw.DebugBounds(colorMagenta, bounds, ent.origin)
             if ((r_jointNameScale!!.GetFloat() != 0.0f) && (bounds.Expand(128.0f).ContainsPoint(
                     view.renderView.vieworg.minus(

@@ -149,12 +149,18 @@ class Dict_h {
                 return this
             }
             Clear()
-            args.set(other.args)
             argHash.set(other.argHash)
+            // C++ args = other.args copies idKeyValue structs by value.
+            // Kotlin idList.set() copies references, which causes both dicts to
+            // share the same idKeyValue objects. Any Set() call on either dict
+            // then corrupts the other's pool string reference counts.
+            // Fix: create new idKeyValue objects with properly ref-counted pool strings.
             i = 0
-            while (i < args.Num()) {
-                args[i].key = globalKeys.CopyString(args[i].key)
-                args[i].value = globalValues.CopyString(args[i].value)
+            while (i < other.args.Num()) {
+                val kv = idKeyValue()
+                kv.key = globalKeys.CopyString(other.args[i].key)
+                kv.value = globalValues.CopyString(other.args[i].value)
+                args.Append(kv)
                 i++
             }
             return this

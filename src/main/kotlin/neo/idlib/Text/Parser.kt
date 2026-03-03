@@ -2097,83 +2097,73 @@ object Parser {
                         if (negativevalue) {
                             this.Error("misplaced minus sign in #if/#elif")
                             error = true
-                            break
-                        }
-                        if (t.subtype == Lexer.P_PARENTHESESOPEN) {
+                        } else if (t.subtype == Lexer.P_PARENTHESESOPEN) {
                             parentheses++
-                            break
                         } else if (t.subtype == Lexer.P_PARENTHESESCLOSE) {
                             parentheses--
                             if (parentheses < 0) {
                                 this.Error("too many ) in #if/#elsif")
                                 error = true
                             }
-                            break
-                        }
-                        //check for invalid operators on floating point values
-                        if (0 == integer) {
-                            if (t.subtype == Lexer.P_BIN_NOT || t.subtype == Lexer.P_MOD || t.subtype == Lexer.P_RSHIFT || t.subtype == Lexer.P_LSHIFT || t.subtype == Lexer.P_BIN_AND || t.subtype == Lexer.P_BIN_OR || t.subtype == Lexer.P_BIN_XOR) {
-                                this.Error("illigal operator '%s' on floating point operands\n", t)
-                                error = true
-                                break
-                            }
-                        }
-                        when (t.subtype) {
-                            Lexer.P_LOGIC_NOT, Lexer.P_BIN_NOT -> {
-                                if (lastwasvalue) {
-                                    this.Error("! or ~ after value in #if/#elif")
+                        } else {
+                            //check for invalid operators on floating point values
+                            if (0 == integer) {
+                                if (t.subtype == Lexer.P_BIN_NOT || t.subtype == Lexer.P_MOD || t.subtype == Lexer.P_RSHIFT || t.subtype == Lexer.P_LSHIFT || t.subtype == Lexer.P_BIN_AND || t.subtype == Lexer.P_BIN_OR || t.subtype == Lexer.P_BIN_XOR) {
+                                    this.Error("illigal operator '%s' on floating point operands\n", t)
                                     error = true
-                                    break
                                 }
                             }
+                            if (!error) {
+                                // In C++, P_SUB with !lastwasvalue breaks out of the inner switch
+                                // (sets negativevalue, does NOT create an operator).
+                                // With lastwasvalue, P_SUB falls through to the operator cases.
+                                if (t.subtype == Lexer.P_SUB && !lastwasvalue) {
+                                    negativevalue = true
+                                } else {
+                                    when (t.subtype) {
+                                        Lexer.P_LOGIC_NOT, Lexer.P_BIN_NOT -> {
+                                            if (lastwasvalue) {
+                                                this.Error("! or ~ after value in #if/#elif")
+                                                error = true
+                                            }
+                                        }
 
-                            Lexer.P_INC, Lexer.P_DEC -> {
-                                this.Error("++ or -- used in #if/#elif")
-                            }
+                                        Lexer.P_INC, Lexer.P_DEC -> {
+                                            this.Error("++ or -- used in #if/#elif")
+                                        }
 
-                            Lexer.P_SUB -> {
-                                run {
-                                    if (!lastwasvalue) {
-                                        negativevalue = true
+                                        // P_SUB reaches here only when lastwasvalue is true (binary minus),
+                                        // matching C++ fall-through from case P_SUB to the operator cases
+                                        Lexer.P_SUB, Lexer.P_MUL, Lexer.P_DIV, Lexer.P_MOD, Lexer.P_ADD, Lexer.P_LOGIC_AND, Lexer.P_LOGIC_OR, Lexer.P_LOGIC_GEQ, Lexer.P_LOGIC_LEQ, Lexer.P_LOGIC_EQ, Lexer.P_LOGIC_UNEQ, Lexer.P_LOGIC_GREATER, Lexer.P_LOGIC_LESS, Lexer.P_RSHIFT, Lexer.P_LSHIFT, Lexer.P_BIN_AND, Lexer.P_BIN_OR, Lexer.P_BIN_XOR, Lexer.P_COLON, Lexer.P_QUESTIONMARK -> {
+                                            if (!lastwasvalue) {
+                                                this.Error("operator '%s' after operator in #if/#elif", t)
+                                                error = true
+                                            }
+                                        }
+
+                                        else -> {
+                                            this.Error("invalid operator '%s' in #if/#elif", t)
+                                            error = true
+                                        }
                                     }
                                 }
-                                run {
-                                    if (!lastwasvalue) {
-                                        this.Error("operator '%s' after operator in #if/#elif", t)
-                                        error = true
+                                if (!error && !negativevalue) {
+                                    //o = (operator_t *) GetClearedMemory(sizeof(operator_t));
+                                    error = AllocOperator(o, operator_heap, numoperators)
+                                    o!!.op = t.subtype
+                                    o.priority = PC_OperatorPriority(t.subtype)
+                                    o.parentheses = parentheses
+                                    o.next = null
+                                    o.prev = lastOperator
+                                    if (lastOperator != null) {
+                                        lastOperator.next = o
+                                    } else {
+                                        firstOperator = o
                                     }
-                                }
-                                break
-                            }
-
-                            Lexer.P_MUL, Lexer.P_DIV, Lexer.P_MOD, Lexer.P_ADD, Lexer.P_LOGIC_AND, Lexer.P_LOGIC_OR, Lexer.P_LOGIC_GEQ, Lexer.P_LOGIC_LEQ, Lexer.P_LOGIC_EQ, Lexer.P_LOGIC_UNEQ, Lexer.P_LOGIC_GREATER, Lexer.P_LOGIC_LESS, Lexer.P_RSHIFT, Lexer.P_LSHIFT, Lexer.P_BIN_AND, Lexer.P_BIN_OR, Lexer.P_BIN_XOR, Lexer.P_COLON, Lexer.P_QUESTIONMARK -> {
-                                if (!lastwasvalue) {
-                                    this.Error("operator '%s' after operator in #if/#elif", t)
-                                    error = true
-                                    break
+                                    lastOperator = o
+                                    lastwasvalue = false
                                 }
                             }
-
-                            else -> {
-                                this.Error("invalid operator '%s' in #if/#elif", t)
-                                error = true
-                            }
-                        }
-                        if (!error && !negativevalue) {
-                            //o = (operator_t *) GetClearedMemory(sizeof(operator_t));
-                            error = AllocOperator(o, operator_heap, numoperators)
-                            o!!.op = t.subtype
-                            o.priority = PC_OperatorPriority(t.subtype)
-                            o.parentheses = parentheses
-                            o.next = null
-                            o.prev = lastOperator
-                            if (lastOperator != null) {
-                                lastOperator.next = o
-                            } else {
-                                firstOperator = o
-                            }
-                            lastOperator = o
-                            lastwasvalue = false
                         }
                     }
 

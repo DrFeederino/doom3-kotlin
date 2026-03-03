@@ -19,9 +19,9 @@ import neo.Game.idEntity
 import neo.cm.trace_s
 import neo.idlib.BV.idBounds
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.getVec3_zero
 import neo.idlib.math.idRotation
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_zero
 
 class Physics_Actor {
     /*
@@ -96,7 +96,7 @@ class Physics_Actor {
         // align the clip model with the gravity direction
         fun SetClipModelAxis() {
             // align clip model to gravity direction
-            if (gravityNormal[2] == -1.0f || gravityNormal == getVec3_zero()) {
+            if (gravityNormal[2] == -1.0f || gravityNormal == vec3_zero) {
                 clipModelAxis.Identity()
             } else {
                 clipModelAxis[2] = gravityNormal.unaryMinus()

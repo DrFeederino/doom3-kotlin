@@ -163,7 +163,7 @@ class RenderWindow {
                         worldEntity!!.numJoints,
                         worldEntity!!.joints,
                         animLength - (animEndTime - time),
-                        getVec3Origin(),
+                        vec3_origin,
                         false
                     )
                 }

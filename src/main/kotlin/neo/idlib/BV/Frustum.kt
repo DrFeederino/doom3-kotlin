@@ -749,7 +749,7 @@ object Frustum {
         // returns true if the projection origin is far enough away from the bounding volume to create a valid frustum
         fun FromProjection(bounds: idBounds, projectionOrigin: idVec3, dFar: Float): Boolean {
             return FromProjection(
-                idBox(bounds, getVec3Origin(), idMat3.getMat3_identity()),
+                idBox(bounds, vec3_origin, idMat3.getMat3_identity()),
                 projectionOrigin,
                 dFar
             )
@@ -1111,7 +1111,7 @@ object Frustum {
         // calculates the bounds for the projection in this frustum
         fun ProjectionBounds(bounds: idBounds, projectionBounds: idBounds): Boolean {
             return ProjectionBounds(
-                idBox(bounds, getVec3Origin(), idMat3.getMat3_identity()),
+                idBox(bounds, vec3_origin, idMat3.getMat3_identity()),
                 projectionBounds
             )
         }

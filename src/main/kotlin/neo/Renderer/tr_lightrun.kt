@@ -44,10 +44,10 @@ import neo.framework.Session
 import neo.idlib.CmdArgs
 import neo.idlib.geometry.Winding.idWinding
 import neo.idlib.idException
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idPlane
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
+import neo.idlib.math.vec3_origin
 
 object tr_lightrun {
     /*
@@ -353,7 +353,7 @@ object tr_lightrun {
         if (!light.parms.pointLight._val) {
             // projected light
             R_SetLightProject(
-                light.lightProject, getVec3Origin() /* light.parms.origin */, light.parms.target,
+                light.lightProject, vec3_origin /* light.parms.origin */, light.parms.target,
                 light.parms.right, light.parms.up, light.parms.start, light.parms.end
             )
         } else {

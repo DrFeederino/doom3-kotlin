@@ -33,9 +33,9 @@ import neo.idlib.Text.Lexer.LEXFL_NOSTRINGCONCAT
 import neo.idlib.Text.Lexer.LEXFL_NOSTRINGESCAPECHARS
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Token.idToken
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idMath.Sqrt
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_origin
 import org.lwjgl.BufferUtils
 import java.nio.ByteBuffer
 
@@ -444,7 +444,7 @@ object Image_program {
         while (i < width) {
             j = 0
             while (j < height) {
-                normal.set(getVec3Origin())
+                normal.set(vec3_origin)
                 k = -1
                 while (k < 2) {
                     l = -1

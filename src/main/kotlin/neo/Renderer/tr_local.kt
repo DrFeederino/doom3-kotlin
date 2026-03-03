@@ -659,7 +659,7 @@ class idRenderLightLocal : idRenderLight() {
         archived = false
         lightShader = null
         falloffImage = null
-        globalLightOrigin = getVec3_zero()
+        globalLightOrigin = vec3_zero
         frustumTris = null
         numShadowFrustums = 0
         viewCount = 0

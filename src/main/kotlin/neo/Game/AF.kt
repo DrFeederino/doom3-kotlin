@@ -1208,10 +1208,10 @@ class idAF {
             }
             AddBody(body, joints, fb.jointName.toString(), mod)
         }
-        if (fb.frictionDirection.ToVec3() != getVec3Origin()) {
+        if (fb.frictionDirection.ToVec3() != vec3_origin) {
             body.SetFrictionDirection(fb.frictionDirection.ToVec3())
         }
-        if (fb.contactMotorDirection.ToVec3() != getVec3Origin()) {
+        if (fb.contactMotorDirection.ToVec3() != vec3_origin) {
             body.SetContactMotorDirection(fb.contactMotorDirection.ToVec3())
         }
 
@@ -1344,14 +1344,14 @@ class idAF {
                         axis2.set(
                             left.times(
                                 idRotation(
-                                    getVec3Origin(), fc.axis.ToVec3(), fc.limitAngles[0]
+                                    vec3_origin, fc.axis.ToVec3(), fc.limitAngles[0]
                                 )
                             )
                         )
                         shaft.set(
                             left.times(
                                 idRotation(
-                                    getVec3Origin(), fc.axis.ToVec3(), fc.limitAngles[2]
+                                    vec3_origin, fc.axis.ToVec3(), fc.limitAngles[2]
                                 )
                             )
                         )

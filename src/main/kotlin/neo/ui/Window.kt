@@ -1722,7 +1722,7 @@ object Window {
                 || (flags and WIN_DESKTOP != 0 && 0 == flags and WIN_NOCURSOR && !hideCursor.data
                         && (gui!!.Active() || flags and WIN_MENUGUI != 0))
             ) {
-                dc!!.SetTransformInfo(getVec3Origin(), getMat3_identity())
+                dc!!.SetTransformInfo(vec3_origin, getMat3_identity())
                 gui!!.DrawCursor()
             }
             if (gui_debug.GetInteger() != 0 && flags and WIN_DESKTOP != 0) {

@@ -311,7 +311,7 @@ class idMoveState {
         nextWanderTime = 0
         blockTime = 0
         obstacle = idEntityPtr()
-        lastMoveOrigin = getVec3Origin()
+        lastMoveOrigin = vec3_origin
         lastMoveTime = 0
         anim = 0
     }
@@ -903,7 +903,7 @@ open class idAI : idActor() {
                     Game_local.gameRenderWorld!!.DebugBounds(
                         if (result) colorGreen else colorYellow,
                         bnds,
-                        getVec3_zero(),
+                        vec3_zero,
                         drawtime
                     )
                 }
@@ -959,7 +959,7 @@ open class idAI : idActor() {
             }
 
             // if no velocity or the projectile is not affected by gravity
-            if (projectileSpeed <= 0.0f || projGravity == getVec3Origin()) {
+            if (projectileSpeed <= 0.0f || projGravity == vec3_origin) {
                 aimDir.set(target.minus(firePos))
                 aimDir.Normalize()
                 Game_local.gameLocal.clip.Translation(
@@ -981,7 +981,7 @@ open class idAI : idActor() {
                             ) === targetEntity
                         ) colorGreen else colorYellow,
                         bnds,
-                        getVec3_zero(),
+                        vec3_zero,
                         drawtime
                     )
                 }
@@ -2008,7 +2008,7 @@ open class idAI : idActor() {
         // move up to make sure the monster is at least an epsilon above the floor
         physicsObj.SetOrigin(GetPhysics().GetOrigin().plus(idVec3(0.0f, 0.0f, CM_CLIP_EPSILON)))
         if (num_cinematics != 0) {
-            physicsObj.SetGravity(getVec3Origin())
+            physicsObj.SetGravity(vec3_origin)
         } else {
             val gravity = idVec3(spawnArgs.GetVector("gravityDir", "0 0 -1"))
             gravity.timesAssign(SysCvar.g_gravity.GetFloat())
@@ -2026,7 +2026,7 @@ open class idAI : idActor() {
         val projectileName = idStr()
         if (spawnArgs.GetString("def_projectile", "", projectileName) && projectileName.Length() != 0) {
             projectileDef = Game_local.gameLocal.FindEntityDefDict(projectileName)
-            CreateProjectile(getVec3Origin(), viewAxis[0])
+            CreateProjectile(vec3_origin, viewAxis[0])
             projectileRadius = projectile.GetEntity()!!.GetPhysics().GetClipModel()!!.GetBounds().GetRadius()
             projectileVelocity.set(idProjectile.GetVelocity(projectileDef!!))
             projectileGravity.set(idProjectile.GetGravity(projectileDef!!))
@@ -2670,7 +2670,7 @@ open class idAI : idActor() {
         val modelOrigin = idVec3()
         animator.GetDelta(Game_local.gameLocal.time - idGameLocal.msec, Game_local.gameLocal.time, delta)
         delta.set(axis.times(delta))
-        if (modelOffset != getVec3_zero()) {
+        if (modelOffset != vec3_zero) {
             // the pivot of the monster's model is around its origin, and not around the bounding
             // box's origin, so we have to compensate for this when the model is offset so that
             // the monster still appears to rotate around it's origin.
@@ -3200,7 +3200,7 @@ open class idAI : idActor() {
         oldorigin.set(physicsObj.GetOrigin())
         physicsObj.UseFlyMove(true)
         physicsObj.UseVelocityMove(false)
-        physicsObj.SetDelta(getVec3_zero())
+        physicsObj.SetDelta(vec3_zero)
         physicsObj.ForceDeltaMove(disableGravity)
         RunPhysics()
         val moveResult = physicsObj.GetMoveResult()
@@ -3404,7 +3404,7 @@ open class idAI : idActor() {
             renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
                 -MS2SEC(Game_local.gameLocal.time.toFloat())
             SetModel(modelDeath[0]!!)
-            physicsObj.SetLinearVelocity(getVec3_zero())
+            physicsObj.SetLinearVelocity(vec3_zero)
             physicsObj.PutToRest()
             physicsObj.DisableImpact()
         }
@@ -4759,7 +4759,7 @@ open class idAI : idActor() {
     // attacks
     protected fun CreateProjectileClipModel() {
         if (projectileClipModel == null) {
-            val projectileBounds = idBounds(getVec3Origin())
+            val projectileBounds = idBounds(vec3_origin)
             projectileBounds.ExpandSelf(projectileRadius)
             projectileClipModel = idClipModel(idTraceModel(projectileBounds))
         }
@@ -4912,7 +4912,7 @@ open class idAI : idActor() {
                 CreateProjectile(muzzle, dir)
             }
             lastProjectile = projectile.GetEntity()!!
-            lastProjectile.Launch(muzzle, dir, getVec3Origin())
+            lastProjectile.Launch(muzzle, dir, vec3_origin)
             projectile.oSet(null)
             i++
         }
@@ -5016,7 +5016,7 @@ open class idAI : idActor() {
             Game_local.gameRenderWorld!!.DebugBounds(
                 colorYellow,
                 bounds,
-                getVec3_zero(),
+                vec3_zero,
                 idGameLocal.msec
             )
         }
@@ -5836,7 +5836,7 @@ open class idAI : idActor() {
 
         // launch the projectile
         idThread.ReturnEntity(projectile.GetEntity())
-        projectile.GetEntity()!!.Launch(tr.endpos, axis[0], getVec3Origin())
+        projectile.GetEntity()!!.Launch(tr.endpos, axis[0], vec3_origin)
         projectile.oSet(null)
         TriggerWeaponEffects(tr.endpos)
         lastAttackTime = Game_local.gameLocal.time
@@ -6216,7 +6216,7 @@ open class idAI : idActor() {
         val result: Boolean
         val enemyEnt: idEntity? = enemy.GetEntity()
         if (null == enemyEnt) {
-            idThread.ReturnVector(getVec3_zero())
+            idThread.ReturnVector(vec3_zero)
             return
         }
         if (speed <= 0.0f) {
@@ -6246,7 +6246,7 @@ open class idAI : idActor() {
         if (result) {
             idThread.ReturnVector(dir.times(speed))
         } else {
-            idThread.ReturnVector(getVec3_zero())
+            idThread.ReturnVector(vec3_zero)
         }
     }
 
@@ -7156,7 +7156,7 @@ open class idAI : idActor() {
             // physics is turned off by calling af.Rest()
             BecomeActive(TH_PHYSICS)
         }
-        Killed(this, this, 0, getVec3_zero(), Model.INVALID_JOINT)
+        Killed(this, this, 0, vec3_zero, Model.INVALID_JOINT)
     }
 
     protected fun Event_Kill() {
@@ -7357,12 +7357,12 @@ open class idAI : idActor() {
         if (move.moveType != moveType_t.MOVETYPE_FLY) {
             if (!ent.GetFloorPos(64.0f, pos)) {
                 // FIX: Was missing return; C++ uses `return idThread::ReturnVector(vec3_zero)`
-                idThread.ReturnVector(getVec3_zero())
+                idThread.ReturnVector(vec3_zero)
                 return
             }
             if (ent is idActor && (ent as idActor).OnLadder()) {
                 // FIX: Was missing return; C++ uses `return idThread::ReturnVector(vec3_zero)`
-                idThread.ReturnVector(getVec3_zero())
+                idThread.ReturnVector(vec3_zero)
                 return
             }
         } else {
@@ -7478,8 +7478,8 @@ open class idAI : idActor() {
         projectile = idEntityPtr()
         projectileClipModel = null
         projectileRadius = 0.0f
-        projectileVelocity = getVec3Origin()
-        projectileGravity = getVec3Origin()
+        projectileVelocity = vec3_origin
+        projectileGravity = vec3_origin
         projectileSpeed = 0.0f
         chat_snd = null
         chat_min = 0

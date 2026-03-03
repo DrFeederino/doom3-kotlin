@@ -14,8 +14,10 @@ import neo.TempDump.TODO_Exception
 import neo.framework.Async.AsyncNetwork
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.framework.Async.ServerScan.serverSort_t
+import neo.framework.CVarSystem.cvarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.cmdExecution_t
+import neo.framework.CmdSystem.cmdSystem
 import neo.framework.CmdSystem.idCmdSystem.*
 import neo.framework.DeclEntityDef.idDeclEntityDef
 import neo.framework.DeclManager.declType_t
@@ -265,7 +267,7 @@ object Session_local {
         @Throws(idException::class)
         override fun Init() {
             Common.common.Printf("-------- Initializing Session --------\n")
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "writePrecache",
                 Sess_WritePrecache_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
@@ -273,104 +275,104 @@ object Session_local {
             )
 
 //            if (ID_DEDICATED) {
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "map",
                 Session_Map_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "loads a map",
                 ArgCompletion_MapName.getInstance()
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "devmap",
                 Session_DevMap_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "loads a map in developer mode",
                 ArgCompletion_MapName.getInstance()
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "testmap",
                 Session_TestMap_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "tests a map",
                 ArgCompletion_MapName.getInstance()
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "writeCmdDemo",
                 Session_WriteCmdDemo_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "writes a command demo"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "playCmdDemo",
                 Session_PlayCmdDemo_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "plays back a command demo"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "timeCmdDemo",
                 Session_TimeCmdDemo_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "times a command demo"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "exitCmdDemo",
                 Session_ExitCmdDemo_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "exits a command demo"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "aviCmdDemo",
                 Session_AVICmdDemo_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "writes AVIs for a command demo"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "aviGame",
                 Session_AVIGame_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "writes AVIs for the current game"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "recordDemo",
                 Session_RecordDemo_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "records a demo"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "stopRecording",
                 Session_StopRecordingDemo_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "stops demo recording"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "playDemo",
                 Session_PlayDemo_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "plays back a demo",
                 ArgCompletion_DemoName.getInstance()
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "timeDemo",
                 Session_TimeDemo_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "times a demo",
                 ArgCompletion_DemoName.getInstance()
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "timeDemoQuit",
                 Session_TimeDemoQuit_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "times a demo and quits",
                 ArgCompletion_DemoName.getInstance()
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "aviDemo",
                 Session_AVIDemo_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "writes AVIs for a demo",
                 ArgCompletion_DemoName.getInstance()
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "compressDemo",
                 Session_CompressDemo_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
@@ -378,70 +380,70 @@ object Session_local {
                 ArgCompletion_DemoName.getInstance()
             )
             //            }
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "disconnect",
                 Session_Disconnect_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "disconnects from a game"
             )
             if (ID_DEMO_BUILD) {
-                CmdSystem.cmdSystem.AddCommand(
+                cmdSystem.AddCommand(
                     "endOfDemo",
                     Session_EndOfDemo_f.getInstance(),
                     CmdSystem.CMD_FL_SYSTEM,
                     "ends the demo version of the game"
                 )
             }
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "demoShot",
                 Session_DemoShot_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "writes a screenshot for a demo"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "testGUI",
                 Session_TestGUI_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "tests a gui"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "saveGame",
                 SaveGame_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
                 "saves a game"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "loadGame",
                 LoadGame_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
                 "loads a game",
                 ArgCompletion_SaveGame.getInstance()
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "takeViewNotes",
                 TakeViewNotes_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "take notes about the current map from the current view"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "takeViewNotes2",
                 TakeViewNotes2_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "extended take view notes"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "rescanSI",
                 Session_RescanSI_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "internal - rescan serverinfo cvars and tell game"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "promptKey",
                 Session_PromptKey_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM,
                 "prompt and sets the CD Key"
             )
-            CmdSystem.cmdSystem.AddCommand(
+            cmdSystem.AddCommand(
                 "hitch",
                 Session_Hitch_f.getInstance(),
                 CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
@@ -788,10 +790,10 @@ object Session_local {
             }
 
             // check for user info changes
-            if (CVarSystem.cvarSystem.GetModifiedFlags() and CVarSystem.CVAR_USERINFO != 0) {
-                mapSpawnData.userInfo[0] = CVarSystem.cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_USERINFO)
+            if (cvarSystem.GetModifiedFlags() and CVarSystem.CVAR_USERINFO != 0) {
+                mapSpawnData.userInfo[0] = cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_USERINFO)
                 Game_local.game.SetUserInfo(0, mapSpawnData.userInfo[0], false, false)
-                CVarSystem.cvarSystem.ClearModifiedFlags(CVarSystem.CVAR_USERINFO)
+                cvarSystem.ClearModifiedFlags(CVarSystem.CVAR_USERINFO)
             }
 
             // see how many usercmds we are going to run
@@ -1376,7 +1378,7 @@ object Session_local {
             // OpenFileWrite advertises creating directories to the path if needed, but that won't work with a '..' in the path
             // occasionally on windows, but mostly on Linux and OSX, the fs_savepath/base may not exist in full
             OSPath = FileSystem_h.fileSystem.BuildOSPath(
-                CVarSystem.cvarSystem.GetCVarString("fs_savepath"),
+                cvarSystem.GetCVarString("fs_savepath"),
                 Licensee.BASE_GAMEDIR,
                 Licensee.CDKEY_FILE
             )
@@ -1698,8 +1700,8 @@ object Session_local {
                             }
                         }
                         if (prompt) {
-                            CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "promptKey force")
-                            CmdSystem.cmdSystem.ExecuteCommandBuffer()
+                            cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "promptKey force")
+                            cmdSystem.ExecuteCommandBuffer()
                         }
                     }
                 }
@@ -1715,9 +1717,9 @@ object Session_local {
                 // clear the userInfo so the player starts out with the defaults
                 mapSpawnData.userInfo[0].Clear()
                 mapSpawnData.persistentPlayerInfo[0].Clear()
-                mapSpawnData.userInfo[0].set(CVarSystem.cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_USERINFO))
+                mapSpawnData.userInfo[0].set(cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_USERINFO))
                 mapSpawnData.serverInfo.Clear()
-                mapSpawnData.serverInfo.set(CVarSystem.cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_SERVERINFO))
+                mapSpawnData.serverInfo.set(cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_SERVERINFO))
                 mapSpawnData.serverInfo.Set("si_gameType", "singleplayer")
 
                 // set the devmap key so any play testing items will be given at
@@ -1726,7 +1728,7 @@ object Session_local {
                     mapSpawnData.serverInfo.Set("devmap", "1")
                 }
                 mapSpawnData.syncedCVars.Clear()
-                mapSpawnData.syncedCVars.set(CVarSystem.cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_NETWORKSYNC))
+                mapSpawnData.syncedCVars.set(cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_NETWORKSYNC))
                 MoveToNewMap(mapName)
             }
         }
@@ -1890,7 +1892,7 @@ object Session_local {
 
             // Open savegame file
             // only allow loads from the game directory because we don't want a base game to load
-            val game = idStr(CVarSystem.cvarSystem.GetCVarString("fs_game"))
+            val game = idStr(cvarSystem.GetCVarString("fs_game"))
             savegameFile = FileSystem_h.fileSystem.OpenFileRead(
                 saveFilePath.toString(),
                 true,
@@ -1949,13 +1951,13 @@ object Session_local {
                 // Start loading map
                 mapSpawnData.serverInfo.Clear()
 
-                mapSpawnData.serverInfo.set(CVarSystem.cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_SERVERINFO))
+                mapSpawnData.serverInfo.set(cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_SERVERINFO))
                 mapSpawnData.serverInfo.Set("si_gameType", "singleplayer")
 
                 mapSpawnData.serverInfo.Set("si_map", saveMap.toString())
 
                 mapSpawnData.syncedCVars.Clear()
-                mapSpawnData.syncedCVars.set(CVarSystem.cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_NETWORKSYNC))
+                mapSpawnData.syncedCVars.set(cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_NETWORKSYNC))
 
                 mapSpawnData.mapSpawnUsercmd[0] = UsercmdGen.usercmdGen.TicCmd(latchedTicNumber)
                 // make sure no buttons are pressed
@@ -1982,7 +1984,7 @@ object Session_local {
             ScrubSaveGameFileName(saveFilePathBase)
             saveFilePathBase.set("savegames/" + saveFilePathBase)
 
-            var game: String? = CVarSystem.cvarSystem.GetCVarString("fs_game")
+            var game: String? = cvarSystem.GetCVarString("fs_game")
             // FIX: C++ checks `game != NULL && game[0] == '\0'` meaning "if game is not null AND is empty".
             // Kotlin had `isNotEmpty()` which is the opposite.
             if (game != null && game.isEmpty()) {
@@ -2180,7 +2182,7 @@ object Session_local {
             ScrubSaveGameFileName(saveFilePathBase)
             saveFilePathBase.set("savegames/" + saveFilePathBase)
 
-            var game: String? = CVarSystem.cvarSystem.GetCVarString("fs_game")
+            var game: String? = cvarSystem.GetCVarString("fs_game")
             // FIX: Same as QuickLoad — C++ checks if game string is empty to set null
             if (game != null && game.isEmpty()) {
                 game = null
@@ -2694,7 +2696,7 @@ object Session_local {
 
                 Common.common.Printf("%s", message)
                 if (timeDemo == timeDemo_t.TD_YES_THEN_QUIT) {
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "quit\n")
+                    cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "quit\n")
                 } else {
                     snd_system.soundSystem.SetMute(true)
                     MessageBox(msgBoxType_t.MSG_OK, message, "Time Demo Results", true)
@@ -2710,10 +2712,10 @@ object Session_local {
             fullDemoName.DefaultFileExtension(".demo")
             fullDemoName.StripFileExtension()
             fullDemoName.Append("_compressed.demo")
-            val savedCompression = CVarSystem.cvarSystem.GetCVarInteger("com_compressDemos")
-            val savedPreload = CVarSystem.cvarSystem.GetCVarBool("com_preloadDemos")
-            CVarSystem.cvarSystem.SetCVarBool("com_preloadDemos", false)
-            CVarSystem.cvarSystem.SetCVarInteger("com_compressDemos", scheme.toInt())
+            val savedCompression = cvarSystem.GetCVarInteger("com_compressDemos")
+            val savedPreload = cvarSystem.GetCVarBool("com_preloadDemos")
+            cvarSystem.SetCVarBool("com_preloadDemos", false)
+            cvarSystem.SetCVarInteger("com_compressDemos", scheme.toInt())
             val demoread = idDemoFile()
             val demowrite = idDemoFile()
             if (!demoread.OpenForReading(fullDemoName.toString())) {
@@ -2723,8 +2725,8 @@ object Session_local {
             if (!demowrite.OpenForWriting(fullDemoName.toString())) {
                 Common.common.Printf("Could not open %s for writing\n", fullDemoName.toString())
                 demoread.Close()
-                CVarSystem.cvarSystem.SetCVarBool("com_preloadDemos", savedPreload)
-                CVarSystem.cvarSystem.SetCVarInteger("com_compressDemos", savedCompression)
+                cvarSystem.SetCVarBool("com_preloadDemos", savedPreload)
+                cvarSystem.SetCVarInteger("com_compressDemos", savedCompression)
                 return
             }
             Common.common.SetRefreshOnPrint(true)
@@ -2737,8 +2739,8 @@ object Session_local {
             }
             demoread.Close()
             demowrite.Close()
-            CVarSystem.cvarSystem.SetCVarBool("com_preloadDemos", savedPreload)
-            CVarSystem.cvarSystem.SetCVarInteger("com_compressDemos", savedCompression)
+            cvarSystem.SetCVarBool("com_preloadDemos", savedPreload)
+            cvarSystem.SetCVarInteger("com_compressDemos", savedCompression)
             Common.common.Printf("Done\n")
             Common.common.SetRefreshOnPrint(false)
         }
@@ -2986,7 +2988,7 @@ object Session_local {
                 if (0 == idStr.Icmp(args.Argv(0), "map")) {
                     // get current player states
                     for (i in 0 until numClients) {
-                        mapSpawnData.persistentPlayerInfo[i] = Game_local.game.GetPersistentPlayerInfo(i)
+                        mapSpawnData.persistentPlayerInfo[i].set(Game_local.game.GetPersistentPlayerInfo(i))
                     }
                     // clear the devmap key on serverinfo, so player spawns
                     // won't get the map testing items
@@ -3002,9 +3004,9 @@ object Session_local {
                     UnloadMap()
                     SetGUI(guiRestartMenu, null)
                 } else if (0 == idStr.Icmp(args.Argv(0), "disconnect")) {
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_INSERT, "stoprecording ; disconnect")
+                    cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_INSERT, "stoprecording ; disconnect")
                 } else if (0 == idStr.Icmp(args.Argv(0), "endOfDemo")) {
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "endOfDemo")
+                    cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "endOfDemo")
                 }
             }
         }
@@ -3471,7 +3473,7 @@ object Session_local {
                         Session.sessLocal.ScrubSaveGameFileName(saveFileName)
                         saveFileName = idStr("savegames/$saveFileName")
                         saveFileName.SetFileExtension(".save")
-                        val game = idStr(CVarSystem.cvarSystem.GetCVarString("fs_game"))
+                        val game = idStr(cvarSystem.GetCVarString("fs_game"))
                         val file: idFile?
                         file = if (game.Length() != 0) {
                             FileSystem_h.fileSystem.OpenFileRead(saveFileName.toString(), true, game.toString())
@@ -3618,7 +3620,7 @@ object Session_local {
                     Game_local.game.HandleMainMenuCommands(cmd, guiActive)
                 }
                 if (0 == idStr.Icmp(cmd, "startGame")) {
-                    CVarSystem.cvarSystem.SetCVarInteger("g_skill", guiMainMenu!!.State().GetInt("skill"))
+                    cvarSystem.SetCVarInteger("g_skill", guiMainMenu!!.State().GetInt("skill"))
                     if (icmd._val < args.Argc()) {
                         StartNewGame(args.Argv(icmd.increment()))
                     } else {
@@ -3645,14 +3647,17 @@ object Session_local {
                 }
                 if (0 == idStr.Icmp(cmd, "loadMod")) {
                     val choice = guiActive!!.State().GetInt("modsList_sel_0")
+//                    if (choice >= 0 && choice < modsList.size()) {
+//                        CVarSystem.cvarSystem.SetCVarString("fs_game", modsList[choice].toString())
+//                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "reloadEngine menu\n")
+//                    }
                     if (choice >= 0 && choice < modsList.size()) {
-                        CVarSystem.cvarSystem.SetCVarString("fs_game", modsList[choice].toString())
-                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "reloadEngine menu\n")
+                        loadMod(modsList[choice])
                     }
                 }
                 if (0 == idStr.Icmp(cmd, "UpdateServers")) {
                     if (guiActive!!.State().GetBool("lanSet")) {
-                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "LANScan")
+                        cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "LANScan")
                     } else {
                         idAsyncNetwork.GetNETServers()
                     }
@@ -3660,7 +3665,7 @@ object Session_local {
                 }
                 if (0 == idStr.Icmp(cmd, "RefreshServers")) {
                     if (guiActive!!.State().GetBool("lanSet")) {
-                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "LANScan")
+                        cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "LANScan")
                     } else {
                         idAsyncNetwork.client.serverList.NetScan()
                     }
@@ -3700,18 +3705,18 @@ object Session_local {
                 }
                 if (0 == idStr.Icmp(cmd, "LANConnect")) {
                     val sel = guiActive!!.State().GetInt("serverList_selid_0")
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, Str.va("Connect %d\n", sel))
+                    cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, Str.va("Connect %d\n", sel))
                     return
                 }
                 if (0 == idStr.Icmp(cmd, "MAPScan")) {
                     /*final*/
-                    var gametype = CVarSystem.cvarSystem.GetCVarString("si_gameType")
+                    var gametype = cvarSystem.GetCVarString("si_gameType")
                     if (gametype == null || gametype.isEmpty() || idStr.Icmp(gametype, "singleplayer") == 0) {
                         gametype = "Deathmatch"
                     }
                     var i: Int
                     var num: Int
-                    val si_map = idStr(CVarSystem.cvarSystem.GetCVarString("si_map"))
+                    val si_map = idStr(cvarSystem.GetCVarString("si_map"))
                     var dict: idDict?
                     guiMainMenu_MapList.Clear()
                     guiMainMenu_MapList.SetSelection(0)
@@ -3739,7 +3744,7 @@ object Session_local {
                     } else {
                         null
                     }
-                    CVarSystem.cvarSystem.SetCVarString("si_map", if (dict != null) dict.GetString("path") else "")
+                    cvarSystem.SetCVarString("si_map", if (dict != null) dict.GetString("path") else "")
 
                     // set the current level shot
                     UpdateMPLevelShot()
@@ -3749,7 +3754,7 @@ object Session_local {
                     val mapNum = guiMainMenu_MapList.GetSelection(null, 0)
                     val dict = FileSystem_h.fileSystem.GetMapDecl(mapNum)
                     if (dict != null) {
-                        CVarSystem.cvarSystem.SetCVarString("si_map", dict.GetString("path"))
+                        cvarSystem.SetCVarString("si_map", dict.GetString("path"))
                     }
                     UpdateMPLevelShot()
                     continue
@@ -3760,19 +3765,19 @@ object Session_local {
                         // don't put the menu away if there isn't a valid selection
                         continue
                     }
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, Str.va("connect %s", s))
+                    cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, Str.va("connect %s", s))
                     return
                 }
                 if (0 == idStr.Icmp(cmd, "startMultiplayer")) {
                     val dedicated = guiActive!!.State().GetInt("dedicated")
-                    CVarSystem.cvarSystem.SetCVarBool("net_LANServer", guiActive!!.State().GetBool("server_type"))
+                    cvarSystem.SetCVarBool("net_LANServer", guiActive!!.State().GetBool("server_type"))
                     if (gui_configServerRate.GetInteger() > 0) {
                         // guess the best rate for upstream, number of internet clients
-                        if (gui_configServerRate.GetInteger() == 5 || CVarSystem.cvarSystem.GetCVarBool("net_LANServer")) {
-                            CVarSystem.cvarSystem.SetCVarInteger("net_serverMaxClientRate", 25600)
+                        if (gui_configServerRate.GetInteger() == 5 || cvarSystem.GetCVarBool("net_LANServer")) {
+                            cvarSystem.SetCVarInteger("net_serverMaxClientRate", 25600)
                         } else {
                             // internet players
-                            var n_clients = CVarSystem.cvarSystem.GetCVarInteger("si_maxPlayers")
+                            var n_clients = cvarSystem.GetCVarInteger("si_maxPlayers")
                             if (0 == dedicated) {
                                 n_clients--
                             }
@@ -3780,25 +3785,25 @@ object Session_local {
                             when (gui_configServerRate.GetInteger()) {
                                 1 -> {
                                     // 128 kbits
-                                    CVarSystem.cvarSystem.SetCVarInteger("net_serverMaxClientRate", 8000)
+                                    cvarSystem.SetCVarInteger("net_serverMaxClientRate", 8000)
                                     maxclients = 2
                                 }
 
                                 2 -> {
                                     // 256 kbits
-                                    CVarSystem.cvarSystem.SetCVarInteger("net_serverMaxClientRate", 9500)
+                                    cvarSystem.SetCVarInteger("net_serverMaxClientRate", 9500)
                                     maxclients = 3
                                 }
 
                                 3 -> {
                                     // 384 kbits
-                                    CVarSystem.cvarSystem.SetCVarInteger("net_serverMaxClientRate", 10500)
+                                    cvarSystem.SetCVarInteger("net_serverMaxClientRate", 10500)
                                     maxclients = 4
                                 }
 
                                 4 -> {
                                     // 512 and above..
-                                    CVarSystem.cvarSystem.SetCVarInteger("net_serverMaxClientRate", 14000)
+                                    cvarSystem.SetCVarInteger("net_serverMaxClientRate", 14000)
                                     maxclients = 4
                                 }
                             }
@@ -3819,14 +3824,14 @@ object Session_local {
                                 ) { //[0] == '\0') {
                                     continue
                                 }
-                                CVarSystem.cvarSystem.SetCVarInteger(
+                                cvarSystem.SetCVarInteger(
                                     "si_maxPlayers",
                                     if (dedicated != 0) maxclients else Min(8, maxclients + 1)
                                 )
                             }
                         }
                     }
-                    if (0 == dedicated && !CVarSystem.cvarSystem.GetCVarBool("net_LANServer") && CVarSystem.cvarSystem.GetCVarInteger(
+                    if (0 == dedicated && !cvarSystem.GetCVarBool("net_LANServer") && cvarSystem.GetCVarInteger(
                             "si_maxPlayers"
                         ) > 4
                     ) {
@@ -3844,20 +3849,20 @@ object Session_local {
                         }
                     }
                     if (dedicated != 0) {
-                        CVarSystem.cvarSystem.SetCVarInteger("net_serverDedicated", 1)
+                        cvarSystem.SetCVarInteger("net_serverDedicated", 1)
                     } else {
-                        CVarSystem.cvarSystem.SetCVarInteger("net_serverDedicated", 0)
+                        cvarSystem.SetCVarInteger("net_serverDedicated", 0)
                     }
                     ExitMenu()
                     // may trigger a reloadEngine - APPEND
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "SpawnServer\n")
+                    cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "SpawnServer\n")
                     return
                 }
                 if (0 == idStr.Icmp(cmd, "mpSkin")) {
                     var skin: idStr
                     if (args.Argc() - icmd._val >= 1) {
                         skin = idStr(args.Argv(icmd.increment()))
-                        CVarSystem.cvarSystem.SetCVarString("ui_skin", skin.toString())
+                        cvarSystem.SetCVarString("ui_skin", skin.toString())
                         SetMainMenuSkin()
                     }
                     continue
@@ -3870,7 +3875,7 @@ object Session_local {
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "resetdefaults")) {
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "exec default.cfg")
+                    cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "exec default.cfg")
                     guiMainMenu!!.SetKeyBindingNames()
                     continue
                 }
@@ -3914,9 +3919,9 @@ object Session_local {
                         vcmd = idStr(args.Argv(icmd.increment()))
                     }
                     if (0 == vcmd.Length() || 0 == vcmd.Icmp("speakers")) {
-                        val old = CVarSystem.cvarSystem.GetCVarInteger("s_numberOfSpeakers")
-                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "s_restart\n")
-                        if (old != CVarSystem.cvarSystem.GetCVarInteger("s_numberOfSpeakers")) {
+                        val old = cvarSystem.GetCVarInteger("s_numberOfSpeakers")
+                        cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "s_restart\n")
+                        if (old != cvarSystem.GetCVarInteger("s_numberOfSpeakers")) {
                             if (_WIN32) {
                                 MessageBox(
                                     msgBoxType_t.MSG_OK,
@@ -3936,7 +3941,7 @@ object Session_local {
                         }
                     }
                     if (0 == vcmd.Icmp("eax")) {
-                        if (CVarSystem.cvarSystem.GetCVarBool("s_useEAXReverb")) {
+                        if (cvarSystem.GetCVarBool("s_useEAXReverb")) {
                             val eax = snd_system.soundSystem.IsEAXAvailable()
                             when (eax) {
                                 2 ->                                     // OpenAL subsystem load failed
@@ -3956,7 +3961,7 @@ object Session_local {
                                     )
 
                                 -1 -> {
-                                    CVarSystem.cvarSystem.SetCVarBool("s_useEAXReverb", false)
+                                    cvarSystem.SetCVarBool("s_useEAXReverb", false)
                                     // disabled
                                     MessageBox(
                                         msgBoxType_t.MSG_OK,
@@ -3967,7 +3972,7 @@ object Session_local {
                                 }
 
                                 0 -> {
-                                    CVarSystem.cvarSystem.SetCVarBool("s_useEAXReverb", false)
+                                    cvarSystem.SetCVarBool("s_useEAXReverb", false)
                                     // not available
                                     MessageBox(
                                         msgBoxType_t.MSG_OK,
@@ -3979,7 +3984,7 @@ object Session_local {
                             }
                         } else {
                             // also turn off OpenAL so we fully go back to legacy mixer
-                            CVarSystem.cvarSystem.SetCVarBool("s_useOpenAL", false)
+                            cvarSystem.SetCVarBool("s_useOpenAL", false)
                             // when you restart
                             MessageBox(
                                 msgBoxType_t.MSG_OK,
@@ -3990,7 +3995,7 @@ object Session_local {
                         }
                     }
                     if (0 == vcmd.Icmp("drivar")) {
-                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "s_restart\n")
+                        cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "s_restart\n")
                     }
                     continue
                 }
@@ -4009,16 +4014,16 @@ object Session_local {
                     } else if (idStr.Icmp(vcmd.toString(), "ultra") == 0) {
                         Common.com_machineSpec.SetInteger(3)
                     } else if (idStr.Icmp(vcmd.toString(), "recommended") == 0) {
-                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "setMachineSpec\n")
+                        cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "setMachineSpec\n")
                     }
                     if (oldSpec != Common.com_machineSpec.GetInteger()) {
                         guiActive!!.SetStateInt("com_machineSpec", Common.com_machineSpec.GetInteger())
                         guiActive!!.StateChanged(Common.com_frameTime)
-                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "execMachineSpec\n")
+                        cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "execMachineSpec\n")
                     }
                     if (idStr.Icmp(vcmd.toString(), "restart") == 0) {
                         guiActive!!.HandleNamedEvent("cvar write render")
-                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "vid_restart\n")
+                        cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "vid_restart\n")
                     }
                     continue
                 }
@@ -4040,25 +4045,25 @@ object Session_local {
                 if (0 == idStr.Icmp(cmd, "exec")) {
 
                     //Backup the language so we can restore it after defaults.
-                    val lang = idStr(CVarSystem.cvarSystem.GetCVarString("sys_lang"))
+                    val lang = idStr(cvarSystem.GetCVarString("sys_lang"))
                     // FIX: C++ does `args.Argv( icmd++ )` — post-increments icmd.
                     // Then compares `args.Argv( icmd - 1 )` which is the same executed command.
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, args.Argv(icmd.increment()))
+                    cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, args.Argv(icmd.increment()))
                     if (idStr.Icmp("cvar_restart", args.Argv(icmd._val - 1)) == 0) {
-                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "exec default.cfg")
-                        CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "setMachineSpec\n")
+                        cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "exec default.cfg")
+                        cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "setMachineSpec\n")
 
                         //Make sure that any r_brightness changes take effect
-                        val bright = CVarSystem.cvarSystem.GetCVarFloat("r_brightness")
-                        CVarSystem.cvarSystem.SetCVarFloat("r_brightness", 0.0f)
-                        CVarSystem.cvarSystem.SetCVarFloat("r_brightness", bright)
+                        val bright = cvarSystem.GetCVarFloat("r_brightness")
+                        cvarSystem.SetCVarFloat("r_brightness", 0.0f)
+                        cvarSystem.SetCVarFloat("r_brightness", bright)
 
                         //Force user info modified after a reset to defaults
-                        CVarSystem.cvarSystem.SetModifiedFlags(CVarSystem.CVAR_USERINFO)
+                        cvarSystem.SetModifiedFlags(CVarSystem.CVAR_USERINFO)
                         guiActive!!.SetStateInt("com_machineSpec", Common.com_machineSpec.GetInteger())
 
                         //Restore the language
-                        CVarSystem.cvarSystem.SetCVarString("sys_lang", lang.toString())
+                        cvarSystem.SetCVarString("sys_lang", lang.toString())
                     }
                     continue
                 }
@@ -4073,7 +4078,7 @@ object Session_local {
                 }
                 if (0 == idStr.Icmp(cmd, "SetCDKey")) {
                     // we can't do this from inside the HandleMainMenuCommands code, otherwise the message box stuff gets confused
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "promptKey\n")
+                    cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "promptKey\n")
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "CheckUpdate")) {
@@ -4088,8 +4093,8 @@ object Session_local {
                     if (ID_ENFORCE_KEY) {
                         // not a strict check so you silently auth in the background without bugging the user
                         if (!Session.session.CDKeysAreValid(false)) {
-                            CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "promptKey force")
-                            CmdSystem.cmdSystem.ExecuteCommandBuffer()
+                            cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "promptKey force")
+                            cmdSystem.ExecuteCommandBuffer()
                         }
                     }
                     continue
@@ -4107,6 +4112,33 @@ object Session_local {
                     continue
                 }
             }
+        }
+
+        private fun loadMod(modName: idStr) {
+            val d3xpMods = arrayOf(
+                // TODO: if there are more mods that need d3xp as base
+                // (and that are supported by dhewm3), add them here
+                "bloodmod_roe",
+                "d3le", // The Lost Mission
+                "librecoopd3xp",
+                "perfected_roe",
+                "sikkmodd3xp",
+                // Doom 3: Phobos (they haven't released source yet, so it won't work yet,
+                //                 but ain't I ever the optimist..)
+                "tfphobos"
+            )
+            var baseMod = ""
+            for (i in 0 until d3xpMods.size) {
+                if (modName.Icmp(d3xpMods[i]) != 0) {
+                    baseMod = "d3xp"
+                    break
+                }
+            }
+
+            cvarSystem.SetCVarString("fs_game", modName.toString())
+            cvarSystem.SetCVarString("fs_game_base", baseMod)
+
+            cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "reloadEngine menu\n")
         }
 
         /*
@@ -4133,12 +4165,12 @@ object Session_local {
                     continue
                 }
                 if (idStr.Icmp(cmd, "netready") == 0) {
-                    val b = CVarSystem.cvarSystem.GetCVarBool("ui_ready")
-                    CVarSystem.cvarSystem.SetCVarBool("ui_ready", !b)
+                    val b = cvarSystem.GetCVarBool("ui_ready")
+                    cvarSystem.SetCVarBool("ui_ready", !b)
                     continue
                 }
                 if (idStr.Icmp(cmd, "netstart") == 0) {
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "netcommand start\n")
+                    cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "netcommand start\n")
                     continue
                 }
             }
@@ -4206,7 +4238,7 @@ object Session_local {
                     return
                 }
                 if (0 == idStr.Icmp(cmd, "exec")) {
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, args.Argv(icmd.increment()))
+                    cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, args.Argv(icmd.increment()))
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "play")) {
@@ -4275,7 +4307,7 @@ object Session_local {
                 var severity: String? = null
                 var p = guiTakeNotes!!.State().GetString("notefile")
                 if (p == null || p.isEmpty()) {
-                    p = CVarSystem.cvarSystem.GetCVarString("ui_name")
+                    p = cvarSystem.GetCVarString("ui_name")
                 }
                 val extended = guiTakeNotes!!.State().GetBool("extended")
                 if (extended) {
@@ -4318,8 +4350,8 @@ object Session_local {
                     fileName.StripFileExtension()
                     fileList.add(fileName)
                 }
-                val bCon = CVarSystem.cvarSystem.GetCVarBool("con_noPrint")
-                CVarSystem.cvarSystem.SetCVarBool("con_noPrint", true)
+                val bCon = cvarSystem.GetCVarBool("con_noPrint")
+                cvarSystem.SetCVarBool("con_noPrint", true)
                 i = 0
                 while (i < fileList.size()) {
                     workName = fileList[i]
@@ -4342,8 +4374,8 @@ object Session_local {
                             guiTakeNotes!!.State().GetString("note")
                         )
                     )
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, str.toString())
-                    CmdSystem.cmdSystem.ExecuteCommandBuffer()
+                    cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, str.toString())
+                    cmdSystem.ExecuteCommandBuffer()
                     UpdateScreen()
                     RenderSystem.renderSystem.TakeScreenshot(
                         RenderSystem.renderSystem.GetScreenWidth(),
@@ -4366,8 +4398,8 @@ object Session_local {
                     file.WriteInt(noteNumber._val) //, 4);
                     FileSystem_h.fileSystem.CloseFile(file)
                 }
-                CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "closeViewNotes\n")
-                CVarSystem.cvarSystem.SetCVarBool("con_noPrint", bCon)
+                cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "closeViewNotes\n")
+                cvarSystem.SetCVarBool("con_noPrint", bCon)
             }
         }
 
@@ -4376,7 +4408,7 @@ object Session_local {
             val files: idFileList
 
             // NOTE: no fs_game_base for savegames
-            val game = idStr(CVarSystem.cvarSystem.GetCVarString("fs_game"))
+            val game = idStr(cvarSystem.GetCVarString("fs_game"))
             files = if (game.Length() != 0) {
                 FileSystem_h.fileSystem.ListFiles("savegames", ".save", false, false, game.toString())
             } else {
@@ -4444,7 +4476,7 @@ object Session_local {
         fun UpdateMPLevelShot() {
             val screenshot = StringBuffer()
             FileSystem_h.fileSystem.FindMapScreenshot(
-                CVarSystem.cvarSystem.GetCVarString("si_map"),
+                cvarSystem.GetCVarString("si_map"),
                 screenshot,
                 MAX_STRING_CHARS
             )
@@ -4504,7 +4536,7 @@ object Session_local {
             } else {
                 guiMainMenu!!.SetStateString(
                     "nightmare",
-                    if (CVarSystem.cvarSystem.GetCVarBool("g_nightmare")) "1" else "0"
+                    if (cvarSystem.GetCVarBool("g_nightmare")) "1" else "0"
                 )
             }
             guiMainMenu!!.SetStateString("browser_levelshot", "guis/assets/splash/pdtempa")
@@ -4526,21 +4558,21 @@ object Session_local {
             modsList.setSize(list.GetNumMods())
 
             // Build the gui list
-            i = 0
-            while (i < list.GetNumMods()) {
+            for (i in 0 until list.GetNumMods()) {
                 guiActive!!.SetStateString(Str.va("modsList_item_%d", i), list.GetDescription(i))
-                modsList[i] = list.GetMod(i)
-                i++
+                modsList[i] = idStr(list.GetMod(i))
             }
+
             guiActive!!.DeleteStateVar(Str.va("modsList_item_%d", list.GetNumMods()))
             guiActive!!.SetStateString("modsList_sel_0", "-1")
+
             FileSystem_h.fileSystem.FreeModList(list)
         }
 
         fun SetMainMenuSkin() {
             // skins
-            var str: idStr = idStr(CVarSystem.cvarSystem.GetCVarString("mod_validSkins"))
-            val uiSkin = idStr(CVarSystem.cvarSystem.GetCVarString("ui_skin"))
+            var str: idStr = idStr(cvarSystem.GetCVarString("mod_validSkins"))
+            val uiSkin = idStr(cvarSystem.GetCVarString("ui_skin"))
             var skin: idStr
             var skinId = 1
             var count = 1
@@ -4577,7 +4609,7 @@ object Session_local {
                 Common.common.DPrintf("message box sanity check: recursed\n")
                 return false
             }
-            if (CVarSystem.cvarSystem.GetCVarInteger("net_serverDedicated") != 0) {
+            if (cvarSystem.GetCVarInteger("net_serverDedicated") != 0) {
                 Common.common.DPrintf("message box sanity check: not compatible with dedicated server\n")
                 return false
             }

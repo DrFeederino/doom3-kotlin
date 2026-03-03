@@ -987,13 +987,13 @@ object Projectile {
             while (state != newState) {
                 when (state) {
                     projectileState_t.SPAWNED -> {
-                        Create(owner.GetEntity(), getVec3Origin(), idVec3(1, 0, 0))
+                        Create(owner.GetEntity(), vec3_origin, idVec3(1, 0, 0))
                     }
 
                     projectileState_t.CREATED -> {
 
                         // the right origin and direction are required if you want bullet traces
-                        Launch(getVec3Origin(), idVec3(1, 0, 0), getVec3Origin())
+                        Launch(vec3_origin, idVec3(1, 0, 0), vec3_origin)
                     }
 
                     projectileState_t.LAUNCHED -> {
@@ -1224,10 +1224,10 @@ object Projectile {
             smokeFly = null
             smokeFlyTime = 0
             state = projectileState_t.SPAWNED
-            lightOffset = getVec3_zero()
+            lightOffset = vec3_zero
             lightStartTime = 0
             lightEndTime = 0
-            lightColor = getVec3_zero()
+            lightColor = vec3_zero
             state = projectileState_t.SPAWNED
             damagePower = 1.0f
             projectileFlags = projectileFlags_s() //memset( &projectileFlags, 0, sizeof( projectileFlags ) );
@@ -1589,7 +1589,7 @@ object Projectile {
                 out.set(act.GetEyePosition())
                 return
             }
-            if (destOrg != getVec3_zero()) {
+            if (destOrg != vec3_zero) {
                 out.set(destOrg)
                 return
             }

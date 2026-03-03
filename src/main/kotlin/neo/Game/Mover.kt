@@ -377,8 +377,8 @@ object Mover {
                 0,
                 0,
                 dest_position,
-                getVec3Origin(),
-                getVec3Origin()
+                vec3_origin,
+                vec3_origin
             )
             physicsObj.SetAngularExtrapolation(
                 Extrapolate.EXTRAPOLATION_NONE,
@@ -608,7 +608,7 @@ object Mover {
                 blockingEntity.value.Damage(
                     this,
                     this,
-                    getVec3Origin(),
+                    vec3_origin,
                     "damage_moverCrush",
                     damage,
                     Model.INVALID_JOINT
@@ -727,8 +727,8 @@ object Mover {
                     0,
                     0,
                     dest_position,
-                    getVec3Origin(),
-                    getVec3Origin()
+                    vec3_origin,
+                    vec3_origin
                 )
             }
             lastCommand = moverCommand_t.MOVER_NONE
@@ -756,7 +756,7 @@ object Mover {
             move_thread = 0
             physicsObj.GetLocalOrigin(org)
             move_delta.set(dest_position.minus(org))
-            if (move_delta.Compare(getVec3_zero())) {
+            if (move_delta.Compare(vec3_zero)) {
                 DoneMoving()
                 return
             }
@@ -826,7 +826,7 @@ object Mover {
                 move_time = 1
             }
             physicsObj.GetLocalAngles(ang)
-            angle_delta.set(dest_angles.minus(ang))
+            angle_delta.set(dest_angles - ang)
             if (angle_delta == ang_zero) {
                 // set our final angles so that we get rid of any numerical inaccuracy
                 dest_angles.Normalize360()
@@ -866,7 +866,7 @@ object Mover {
                 at = idPhysics.SnapTimeToPhysicsFrame(at * move_time / (at + dt))
                 dt = move_time - at
             }
-            angle_delta.set(angle_delta.times(1000.0f / (move_time.toFloat() - (at + dt) * 0.5f)))
+            angle_delta.set(angle_delta * (1000.0f / (move_time.toFloat() - (at + dt) * 0.5f)))
             stopRotation = stopwhendone || dt != 0
             rot.stage = stage
             rot.acceleration = at
@@ -999,7 +999,7 @@ object Mover {
                         move.acceleration,
                         org,
                         move.dir,
-                        getVec3Origin()
+                        vec3_origin
                     )
                     if (move.movetime > 0) {
                         move.stage = moveStage_t.LINEAR_STAGE
@@ -1017,7 +1017,7 @@ object Mover {
                         move.movetime,
                         org,
                         move.dir,
-                        getVec3Origin()
+                        vec3_origin
                     )
                     if (move.deceleration != 0) {
                         move.stage = moveStage_t.DECELERATION_STAGE
@@ -1033,7 +1033,7 @@ object Mover {
                         move.deceleration,
                         org,
                         move.dir,
-                        getVec3Origin()
+                        vec3_origin
                     )
                     move.stage = moveStage_t.FINISHED_STAGE
                 }
@@ -1311,9 +1311,7 @@ object Mover {
                 DoneRotating()
             }
             physicsObj.GetLocalAngles(ang)
-            dest_angles.set(
-                ang.plus(angles.value.times((move_time - (acceltime + deceltime) / 2).toFloat()).times(0.001f))
-            )
+            dest_angles.set(ang + angles.value * (move_time - (acceltime + deceltime) / 2) * 0.001f)
             BeginRotation(idThread.CurrentThread(), false)
         }
 
@@ -1336,7 +1334,7 @@ object Mover {
                 (speed.value * 500).toInt(),
                 org,
                 depth.value.times(2.0f),
-                getVec3Origin()
+                vec3_origin
             )
         }
 
@@ -1437,8 +1435,8 @@ object Mover {
                 0,
                 0,
                 dest_position,
-                getVec3Origin(),
-                getVec3Origin()
+                vec3_origin,
+                vec3_origin
             )
         }
 
@@ -1472,8 +1470,8 @@ object Mover {
                 0,
                 0,
                 dest_position,
-                getVec3Origin(),
-                getVec3Origin()
+                vec3_origin,
+                vec3_origin
             )
         }
 
@@ -2148,8 +2146,8 @@ object Mover {
                 0,
                 0,
                 GetPhysics().GetOrigin(),
-                getVec3Origin(),
-                getVec3Origin()
+                vec3_origin,
+                vec3_origin
             )
             physicsObj.SetAngularExtrapolation(
                 Extrapolate.EXTRAPOLATION_NONE,
@@ -2320,10 +2318,10 @@ object Mover {
                 0,
                 0,
                 pos1,
-                getVec3Origin(),
-                getVec3Origin()
+                vec3_origin,
+                vec3_origin
             )
-            physicsObj.SetLinearInterpolation(0, 0, 0, 0, getVec3Origin(), getVec3Origin())
+            physicsObj.SetLinearInterpolation(0, 0, 0, 0, vec3_origin, vec3_origin)
             SetOrigin(pos1)
             PostEventMS(EV_Mover_InitGuiTargets, 0)
         }
@@ -2350,10 +2348,10 @@ object Mover {
                 0,
                 0,
                 pos1,
-                getVec3Origin(),
-                getVec3Origin()
+                vec3_origin,
+                vec3_origin
             )
-            physicsObj.SetLinearInterpolation(0, 0, 0, 0, getVec3Origin(), getVec3Origin())
+            physicsObj.SetLinearInterpolation(0, 0, 0, 0, vec3_origin, vec3_origin)
             SetOrigin(pos1)
             PostEventMS(EV_Mover_InitGuiTargets, 0)
         }
@@ -2656,8 +2654,8 @@ object Mover {
                         time,
                         0,
                         pos1,
-                        getVec3Origin(),
-                        getVec3Origin()
+                        vec3_origin,
+                        vec3_origin
                     )
                 }
 
@@ -2668,8 +2666,8 @@ object Mover {
                         time,
                         0,
                         pos2,
-                        getVec3Origin(),
-                        getVec3Origin()
+                        vec3_origin,
+                        vec3_origin
                     )
                 }
 
@@ -2681,7 +2679,7 @@ object Mover {
                         duration,
                         pos1,
                         pos2.minus(pos1).times(1000.0f).div(duration.toFloat()),
-                        getVec3Origin()
+                        vec3_origin
                     )
                     if (accelTime != 0 || decelTime != 0) {
                         physicsObj.SetLinearInterpolation(time, accelTime, decelTime, duration, pos1, pos2)
@@ -2698,7 +2696,7 @@ object Mover {
                         duration,
                         pos2,
                         pos1.minus(pos2).times(1000.0f).div(duration.toFloat()),
-                        getVec3Origin()
+                        vec3_origin
                     )
                     if (accelTime != 0 || decelTime != 0) {
                         physicsObj.SetLinearInterpolation(time, accelTime, decelTime, duration, pos2, pos1)
@@ -3442,7 +3440,7 @@ object Mover {
                 blockingEntity.value.Damage(
                     this,
                     this,
-                    getVec3Origin(),
+                    vec3_origin,
                     "damage_moverCrush",
                     damage,
                     Model.INVALID_JOINT
@@ -3914,7 +3912,7 @@ object Mover {
                 blockingEntity.value.Damage(
                     this,
                     this,
-                    getVec3Origin(),
+                    vec3_origin,
                     "damage_moverCrush",
                     damage,
                     Model.INVALID_JOINT
@@ -4036,7 +4034,7 @@ object Mover {
                 blockingEntity.value.Damage(
                     this,
                     this,
-                    getVec3Origin(),
+                    vec3_origin,
                     "damage_moverCrush",
                     damage._val,
                     Model.INVALID_JOINT
@@ -4103,8 +4101,8 @@ object Mover {
                 Game_local.gameLocal.time,
                 0,
                 GetPhysics().GetOrigin(),
-                getVec3Origin(),
-                getVec3Origin()
+                vec3_origin,
+                vec3_origin
             )
             physicsObj.SetAngularExtrapolation(
                 Extrapolate.EXTRAPOLATION_LINEAR or Extrapolate.EXTRAPOLATION_NOSTOP,
@@ -4197,7 +4195,7 @@ object Mover {
             spawnArgs.GetBool("y_axis", "0", y_axis)
 
             // set the axis of bobbing
-            delta.set(getVec3Origin())
+            delta.set(vec3_origin)
             if (x_axis._val) {
                 delta[0] = height._val
             } else if (y_axis._val) {
@@ -4219,7 +4217,7 @@ object Mover {
                 (speed._val * 500).toInt(),
                 GetPhysics().GetOrigin(),
                 delta.times(2.0f),
-                getVec3Origin()
+                vec3_origin
             )
             SetPhysics(physicsObj)
         }
@@ -4269,8 +4267,8 @@ object Mover {
                 0,
                 0,
                 GetPhysics().GetOrigin(),
-                getVec3Origin(),
-                getVec3Origin()
+                vec3_origin,
+                vec3_origin
             )
             physicsObj.SetAngularExtrapolation(
                 Extrapolate.EXTRAPOLATION_DECELSINE or Extrapolate.EXTRAPOLATION_NOSTOP,
@@ -4325,8 +4323,8 @@ object Mover {
                 0,
                 0,
                 GetPhysics().GetOrigin(),
-                getVec3Origin(),
-                getVec3Origin()
+                vec3_origin,
+                vec3_origin
             )
             SetPhysics(physicsObj)
         }
@@ -4341,7 +4339,7 @@ object Mover {
                 val delta = idVec3()
                 spawnArgs.GetFloat("time", "4", time)
                 spawnArgs.GetFloat("height", "32", height)
-                delta.set(getVec3Origin())
+                delta.set(vec3_origin)
                 delta[2] = height._val
                 physicsObj.SetLinearExtrapolation(
                     Extrapolate.EXTRAPOLATION_LINEAR,
@@ -4349,7 +4347,7 @@ object Mover {
                     (time._val * 1000).toInt(),
                     physicsObj.GetOrigin(),
                     delta,
-                    getVec3Origin()
+                    vec3_origin
                 )
             }
         }

@@ -40,9 +40,9 @@ import neo.idlib.geometry.JointTransform.idJointMat
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idMath
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_origin
 
 object IK {
 
@@ -669,7 +669,7 @@ object IK {
             val kneeOrigin = idVec3()
             val hipOrigin = idVec3()
             val waistOrigin = idVec3()
-            val modelAxis: idMat3
+            val modelAxis: idMat3 = idMat3()
             val waistAxis = idMat3()
             val axis = idMat3()
             val hipAxis = Array(MAX_LEGS) { idMat3() }
@@ -686,7 +686,7 @@ object IK {
             }
             normal.set(self!!.GetPhysics().GetGravityNormal().unaryMinus())
             modelOrigin.set(self!!.GetPhysics().GetOrigin())
-            modelAxis = self!!.GetRenderEntity()!!.axis
+            modelAxis.set(self!!.GetRenderEntity()!!.axis)
             modelHeight = modelOrigin.times(normal)
             modelOrigin.plusAssign(modelOffset.times(modelAxis))
 
@@ -698,8 +698,8 @@ object IK {
             i = 0
             while (i < numLegs) {
                 animator!!.GetJointTransform(footJoints[i], Game_local.gameLocal.time, footOrigin, axis)
-                jointOrigins[i].set(modelOrigin.plus(footOrigin.times(modelAxis)))
-                jointHeight = jointOrigins[i].times(normal)
+                jointOrigins[i].set(modelOrigin + footOrigin * modelAxis)
+                jointHeight = jointOrigins[i] * normal
                 if (jointHeight < lowestHeight) {
                     lowestHeight = jointHeight
                     newPivotFoot = i
@@ -728,7 +728,7 @@ object IK {
                     i++
                     continue
                 }
-                start.set(jointOrigins[i].plus(normal.times(footUpTrace)))
+                start.set(jointOrigins[i] + normal * footUpTrace)
                 end.set(jointOrigins[i].minus(normal.times(footDownTrace)))
                 Game_local.gameLocal.clip.Translation(
                     results,
@@ -915,7 +915,7 @@ object IK {
                 return
             }
             animator!!.SetJointAxis(waistJoint, jointModTransform_t.JOINTMOD_NONE, idMat3.getMat3_identity())
-            animator!!.SetJointPos(waistJoint, jointModTransform_t.JOINTMOD_NONE, getVec3Origin())
+            animator!!.SetJointPos(waistJoint, jointModTransform_t.JOINTMOD_NONE, vec3_origin)
             i = 0
             while (i < numLegs) {
                 animator!!.SetJointAxis(

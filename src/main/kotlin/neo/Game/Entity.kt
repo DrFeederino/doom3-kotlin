@@ -2304,7 +2304,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             if (bindJoint != Model.INVALID_JOINT) {
                 masterAnimator = bindMaster!!.GetAnimator()
                 if (null == masterAnimator) {
-                    masterOrigin.set(getVec3Origin())
+                    masterOrigin.set(vec3_origin)
                     masterAxis.set(idMat3.getMat3_identity())
                     return false
                 } else {
@@ -2321,7 +2321,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             }
             true
         } else {
-            masterOrigin.set(getVec3Origin())
+            masterOrigin.set(vec3_origin)
             masterAxis.set(idMat3.getMat3_identity())
             false
         }
@@ -4490,9 +4490,6 @@ open class idAnimatedEntity : idEntity() {
                 }
         }
     }
-
-    // };
-    //
     protected var animator: idAnimator
     protected var damageEffects: damageEffect_s?
 

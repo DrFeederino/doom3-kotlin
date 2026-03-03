@@ -48,10 +48,10 @@ import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.geometry.Winding.idWinding
 import neo.idlib.idException
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idPlane
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
+import neo.idlib.math.vec3_origin
 import neo.ui.UserInterface.idUserInterface
 import java.nio.*
 import java.util.*
@@ -956,7 +956,7 @@ object RenderWorld {
         )
 
 
-        fun DebugBounds(color: idVec4, bounds: idBounds, org: idVec3 = getVec3Origin()) {
+        fun DebugBounds(color: idVec4, bounds: idBounds, org: idVec3 = vec3_origin) {
             DebugBounds(color, bounds, org, 0)
         }
 

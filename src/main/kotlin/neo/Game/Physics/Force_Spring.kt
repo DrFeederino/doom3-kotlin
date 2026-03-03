@@ -13,9 +13,9 @@ import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Physics.Physics.impactInfo_s
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Square
-import neo.idlib.math.getVec3Origin
-import neo.idlib.math.getVec3_zero
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_origin
+import neo.idlib.math.vec3_zero
 
 class Force_Spring {
     /*
@@ -34,9 +34,9 @@ class Force_Spring {
         private var id2 // clip model id of second physics object
                 : Int = 0
         private val p1 // position on clip model
-                : idVec3 = getVec3_zero()
+                : idVec3 = vec3_zero
         private val p2 // position on clip model
-                : idVec3 = getVec3_zero()
+                : idVec3 = vec3_zero
 
         // positioning
         private var physics1 // first physics object
@@ -77,8 +77,8 @@ class Force_Spring {
             var info = impactInfo_s()
             pos1.set(p1)
             pos2.set(p2)
-            velocity2.set(getVec3Origin())
-            velocity1.set(getVec3Origin())
+            velocity2.set(vec3_origin)
+            velocity1.set(vec3_origin)
             if (physics1 != null) {
                 axis.set(physics1!!.GetAxis(id1))
                 pos1.set(physics1!!.GetOrigin(id1))

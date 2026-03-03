@@ -24,6 +24,7 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local.Companion.gameLocal
 import neo.Game.Game_local.Companion.gameRenderWorld
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Game_local.idGameLocal
@@ -57,10 +58,10 @@ import neo.idlib.containers.CInt
 import neo.idlib.containers.List
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idAngles
 import neo.idlib.math.idMath
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_origin
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.math.ceil
@@ -178,8 +179,8 @@ open class idItem : idEntity() {
         }
         if (spawnArgs.GetFloat("triggersize", "0", tsize)) {
             GetPhysics().GetClipModel()!!
-                .LoadModel(idTraceModel(idBounds(getVec3Origin()).Expand(tsize._val)))
-            GetPhysics().GetClipModel()!!.Link(Game_local.gameLocal.clip)
+                .LoadModel(idTraceModel(idBounds(vec3_origin).Expand(tsize._val)))
+            GetPhysics().GetClipModel()!!.Link(gameLocal.clip)
         }
         if (spawnArgs.GetBool("start_off")) {
             GetPhysics().SetContents(0)
@@ -189,13 +190,13 @@ open class idItem : idEntity() {
         }
         giveTo = spawnArgs.GetString("owner")
         if (giveTo.length != 0) {
-            ent = Game_local.gameLocal.FindEntity(giveTo)
+            ent = gameLocal.FindEntity(giveTo)
             if (ent == null) {
                 idGameLocal.Error("Item couldn't find owner '%s'", giveTo)
             }
             PostEventMS(EV_Touch, 0, ent, null)
         }
-        if (spawnArgs.GetBool("spin") || Game_local.gameLocal.isMultiplayer) {
+        if (spawnArgs.GetBool("spin") || gameLocal.isMultiplayer) {
             spin = true
             BecomeActive(TH_THINK)
         }
@@ -236,7 +237,7 @@ open class idItem : idEntity() {
         if (!GiveToPlayer(player)) {
             return false
         }
-        if (Game_local.gameLocal.isServer) {
+        if (gameLocal.isServer) {
             ServerSendEvent(EVENT_PICKUP, null, false, -1)
         }
 
@@ -260,7 +261,7 @@ open class idItem : idEntity() {
         var respawn = spawnArgs.GetFloat("respawn")
         val dropped = spawnArgs.GetBool("dropped")
         val no_respawn = spawnArgs.GetBool("no_respawn")
-        if (Game_local.gameLocal.isMultiplayer && respawn == 0.0f) {
+        if (gameLocal.isMultiplayer && respawn == 0.0f) {
             respawn = 20.0f
         }
         if (respawn != 0.0f && !dropped && !no_respawn) {
@@ -287,11 +288,11 @@ open class idItem : idEntity() {
                 val org = idVec3()
                 ang.roll = 0.0f
                 ang.pitch = ang.roll
-                ang.yaw = (Game_local.gameLocal.time and 4095) * 360.0f / -4096.0f
+                ang.yaw = (gameLocal.time and 4095) * 360.0f / -4096.0f
                 SetAngles(ang)
                 val scale = 0.005f + entityNumber * 0.00001f
                 org.set(orgOrigin)
-                org.z += (4.0f + cos(((Game_local.gameLocal.time + 2000) * scale).toFloat()) * 4.0f)
+                org.z += (4.0f + cos(((gameLocal.time + 2000) * scale).toFloat()) * 4.0f)
                 SetOrigin(org)
             }
         }
@@ -329,7 +330,7 @@ open class idItem : idEntity() {
 
     override fun ClientPredictionThink() {
         // only think forward because the state is not synced through snapshots
-        if (!Game_local.gameLocal.isNewFrame) {
+        if (!gameLocal.isNewFrame) {
             return
         }
         Think()
@@ -444,7 +445,7 @@ open class idItem : idEntity() {
         if (GetBindMaster() != null && GetBindMaster() != this) {
             return
         }
-        Game_local.gameLocal.clip.TraceBounds(
+        gameLocal.clip.TraceBounds(
             trace,
             renderEntity!!.origin,
             renderEntity!!.origin.minus(idVec3(0, 0, 64)),
@@ -475,7 +476,7 @@ open class idItem : idEntity() {
     }
 
     private fun Event_Respawn() {
-        if (Game_local.gameLocal.isServer) {
+        if (gameLocal.isServer) {
             ServerSendEvent(EVENT_RESPAWN, null, false, -1)
         }
         BecomeActive(TH_THINK)
@@ -489,7 +490,7 @@ open class idItem : idEntity() {
     }
 
     private fun Event_RespawnFx() {
-        if (Game_local.gameLocal.isServer) {
+        if (gameLocal.isServer) {
             ServerSendEvent(EVENT_RESPAWNFX, null, false, -1)
         }
         val sfx = spawnArgs.GetString("fxRespawn")
@@ -509,7 +510,7 @@ open class idItem : idEntity() {
                 return false
             }
             // FIX: was `as idItem` which throws ClassCastException on null instead of calling Error()
-            val ent = Game_local.gameLocal.entities[e!!.entityNum] as? idItem
+            val ent = gameLocal.entities[e!!.entityNum] as? idItem
             if (ent == null) {
                 idGameLocal.Error("idItem::ModelCallback: callback with NULL game entity")
                 return false
@@ -639,13 +640,13 @@ class idObjective : idItem() {
     }
 
     private fun Event_Trigger(activator: idEventArg<idEntity>) {
-        val player = Game_local.gameLocal.GetLocalPlayer()
+        val player = gameLocal.GetLocalPlayer()
         if (player != null) {
 
             //Pickup( player );
             if (spawnArgs.GetString("inv_objective", null) != null) {
                 if ( /*player &&*/player.hud != null) {
-                    val shotName = idStr(Game_local.gameLocal.GetMapName())
+                    val shotName = idStr(gameLocal.GetMapName())
                     shotName.StripFileExtension()
                     shotName.plusAssign("/")
                     shotName.plusAssign(spawnArgs.GetString("screenshot"))
@@ -661,14 +662,14 @@ class idObjective : idItem() {
                     )
 
                     // a tad slow but keeps from having to update all objectives in all maps with a name ptr
-                    for (i in 0 until Game_local.gameLocal.num_entities) {
-                        if (Game_local.gameLocal.entities[i] != null && Game_local.gameLocal.entities[i] is idObjectiveComplete) {
+                    for (i in 0 until gameLocal.num_entities) {
+                        if (gameLocal.entities[i] != null && gameLocal.entities[i] is idObjectiveComplete) {
                             if (idStr.Icmp(
                                     spawnArgs.GetString("objectivetitle"),
-                                    Game_local.gameLocal.entities[i]!!.spawnArgs.GetString("objectivetitle")
+                                    gameLocal.entities[i]!!.spawnArgs.GetString("objectivetitle")
                                 ) == 0
                             ) {
-                                Game_local.gameLocal.entities[i]!!.spawnArgs.SetBool("objEnabled", true)
+                                gameLocal.entities[i]!!.spawnArgs.SetBool("objEnabled", true)
                                 break
                             }
                         }
@@ -680,7 +681,7 @@ class idObjective : idItem() {
     }
 
     private fun Event_HideObjective(e: idEventArg<idEntity>) {
-        val player = Game_local.gameLocal.GetLocalPlayer()
+        val player = gameLocal.GetLocalPlayer()
         if (player != null) {
             val v = player.GetPhysics().GetOrigin() - playerPos
             if (v.Length() > 64.0f) {
@@ -693,7 +694,7 @@ class idObjective : idItem() {
     }
 
     private fun Event_GetPlayerPos() {
-        val player = Game_local.gameLocal.GetLocalPlayer()
+        val player = gameLocal.GetLocalPlayer()
         if (player != null) {
             playerPos.set(player.GetPhysics().GetOrigin())
             PostEventMS(EV_HideObjective, 100, player)
@@ -702,13 +703,13 @@ class idObjective : idItem() {
 
     private fun Event_CamShot() {
         val camName = arrayOfNulls<String>(1)
-        val shotName = idStr(Game_local.gameLocal.GetMapName())
+        val shotName = idStr(gameLocal.GetMapName())
         shotName.StripFileExtension()
         shotName.plusAssign("/")
         shotName.plusAssign(spawnArgs.GetString("screenshot"))
         shotName.SetFileExtension(".tga")
         if (spawnArgs.GetString("camShot", "", camName)) {
-            val ent = Game_local.gameLocal.FindEntity(camName[0]!!)
+            val ent = gameLocal.FindEntity(camName[0]!!)
             if (ent != null && ent.cameraTarget != null) {
                 val view = ent.cameraTarget!!.GetRenderView()
                 val fullView = renderView_s(view!!)
@@ -824,8 +825,8 @@ open class idMoveableItem : idItem() {
                     key2 += "Offset"
                     jointName = ent.spawnArgs.GetString(key)
                     joint = ent.GetAnimator().GetJointHandle(jointName)
-                    if (!ent.GetJointWorldTransform(joint, Game_local.gameLocal.time, origin, axis)) {
-                        Game_local.gameLocal.Warning(
+                    if (!ent.GetJointWorldTransform(joint, gameLocal.time, origin, axis)) {
+                        gameLocal.Warning(
                             "%s refers to invalid joint '%s' on entity '%s'\n",
                             key,
                             jointName,
@@ -848,7 +849,7 @@ open class idMoveableItem : idItem() {
                     }
                     axis.set(angles.ToMat3().times(axis))
                     origin.plusAssign(ent.spawnArgs.GetVector(key2, "0 0 0"))
-                    item = DropItem(kv.GetValue().toString(), origin, axis, getVec3Origin(), 0, 0)
+                    item = DropItem(kv.GetValue().toString(), origin, axis, vec3_origin, 0, 0)
                     if (list != null && item != null) {
                         list.Append(item)
                     }
@@ -883,7 +884,7 @@ open class idMoveableItem : idItem() {
             if (activateDelay != 0) {
                 args.SetBool("triggerFirst", true)
             }
-            Game_local.gameLocal.SpawnEntityDef(args, item)
+            gameLocal.SpawnEntityDef(args, item)
             if (item.isNotEmpty() && item[0] != null) {
                 // set item position
                 item[0]!!.GetPhysics().SetOrigin(origin)
@@ -956,8 +957,8 @@ open class idMoveableItem : idItem() {
 
         // create a trigger for item pickup
         spawnArgs.GetFloat("triggersize", "16.0f", tsize)
-        trigger = idClipModel(idTraceModel(idBounds(getVec3Origin()).Expand(tsize._val)))
-        trigger!!.Link(Game_local.gameLocal.clip, this, 0, GetPhysics().GetOrigin(), GetPhysics().GetAxis())
+        trigger = idClipModel(idTraceModel(idBounds(vec3_origin).Expand(tsize._val)))
+        trigger!!.Link(gameLocal.clip, this, 0, GetPhysics().GetOrigin(), GetPhysics().GetAxis())
         trigger!!.SetContents(Material.CONTENTS_TRIGGER)
 
         // check if a clip model is set
@@ -992,7 +993,7 @@ open class idMoveableItem : idItem() {
         physicsObj.SetAxis(GetPhysics().GetAxis())
         physicsObj.SetBouncyness(bouncyness._val)
         physicsObj.SetFriction(0.6f, 0.6f, friction._val)
-        physicsObj.SetGravity(Game_local.gameLocal.GetGravity())
+        physicsObj.SetGravity(gameLocal.GetGravity())
         physicsObj.SetContents(Material.CONTENTS_RENDERMODEL)
         physicsObj.SetClipMask(Game_local.MASK_SOLID or Material.CONTENTS_MOVEABLECLIP)
         SetPhysics(physicsObj)
@@ -1001,7 +1002,7 @@ open class idMoveableItem : idItem() {
         val smokeName = spawnArgs.GetString("smoke_trail")
         if (!smokeName.isEmpty()) { // != '\0' ) {
             smoke = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, smokeName) as idDeclParticle
-            smokeTime = Game_local.gameLocal.time
+            smokeTime = gameLocal.time
             BecomeActive(TH_UPDATEPARTICLES)
         }
     }
@@ -1011,7 +1012,7 @@ open class idMoveableItem : idItem() {
         if ((thinkFlags and TH_PHYSICS) != 0) {
             // update trigger position
             trigger!!.Link(
-                Game_local.gameLocal.clip,
+                gameLocal.clip,
                 this,
                 0,
                 GetPhysics().GetOrigin(),
@@ -1019,10 +1020,10 @@ open class idMoveableItem : idItem() {
             )
         }
         if ((thinkFlags and TH_UPDATEPARTICLES) != 0) {
-            if (!Game_local.gameLocal.smokeParticles!!.EmitSmoke(
+            if (!gameLocal.smokeParticles!!.EmitSmoke(
                     smoke,
                     smokeTime,
-                    Game_local.gameLocal.random.CRandomFloat(),
+                    gameLocal.random.CRandomFloat(),
                     GetPhysics().GetOrigin(),
                     GetPhysics().GetAxis()
                 )
@@ -1058,10 +1059,10 @@ open class idMoveableItem : idItem() {
         val smokeName = spawnArgs.GetString("smoke_gib")
         if (!smokeName.isEmpty()) { // != '\0' ) {
             val smoke = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, smokeName) as idDeclParticle
-            Game_local.gameLocal.smokeParticles!!.EmitSmoke(
+            gameLocal.smokeParticles!!.EmitSmoke(
                 smoke,
-                Game_local.gameLocal.time,
-                Game_local.gameLocal.random.CRandomFloat(),
+                gameLocal.time,
+                gameLocal.random.CRandomFloat(),
                 renderEntity!!.origin,
                 renderEntity!!.axis
             )
@@ -1210,7 +1211,7 @@ class idObjectiveComplete : idItemRemover() {
         if (!spawnArgs.GetBool("objEnabled")) {
             return
         }
-        val player = Game_local.gameLocal.GetLocalPlayer()
+        val player = gameLocal.GetLocalPlayer()
         if (player != null) {
             RemoveItem(player)
             if (spawnArgs.GetString("inv_objective", null) != null) {
@@ -1226,7 +1227,7 @@ class idObjectiveComplete : idItemRemover() {
     }
 
     private fun Event_HideObjective(e: idEventArg<idEntity>) {
-        val player = Game_local.gameLocal.GetLocalPlayer()
+        val player = gameLocal.GetLocalPlayer()
         if (player != null) {
             val v = player.GetPhysics().GetOrigin() - playerPos
             if (v.Length() > 64.0f) {
@@ -1239,7 +1240,7 @@ class idObjectiveComplete : idItemRemover() {
     }
 
     private fun Event_GetPlayerPos() {
-        val player = Game_local.gameLocal.GetLocalPlayer()
+        val player = gameLocal.GetLocalPlayer()
         if (player != null) {
             playerPos.set(player.GetPhysics().GetOrigin())
             PostEventMS(EV_HideObjective, 100, player)

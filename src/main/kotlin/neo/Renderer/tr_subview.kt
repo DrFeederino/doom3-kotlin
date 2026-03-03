@@ -34,9 +34,9 @@ import neo.idlib.BV.idBounds
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idPlane
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_origin
 
 object tr_subview {
     /*
@@ -50,7 +50,7 @@ object tr_subview {
         val transformed = idVec3()
         var d: Float
         local.set(`in`.minus(surface.origin))
-        transformed.set(getVec3Origin())
+        transformed.set(vec3_origin)
         i = 0
         while (i < 3) {
             d = local.times(surface.axis[i])
@@ -68,7 +68,7 @@ object tr_subview {
     fun R_MirrorVector(`in`: idVec3, surface: orientation_t, camera: orientation_t, out: idVec3) {
         var i: Int
         var d: Float
-        out.set(getVec3Origin())
+        out.set(vec3_origin)
         i = 0
         while (i < 3) {
             d = `in`.times(surface.axis[i])

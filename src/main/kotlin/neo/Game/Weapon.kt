@@ -2403,7 +2403,7 @@ object Weapon {
                 ent.GetPhysics().SetContents(0)
                 ent.GetPhysics().SetClipModel(null, 1.0f)
                 ent.BindToJoint(owner!!, attach, true)
-                ent.GetPhysics().SetOrigin(getVec3Origin())
+                ent.GetPhysics().SetOrigin(vec3_origin)
                 ent.GetPhysics().SetAxis(idMat3.getMat3_identity())
 
                 // supress model in player views, but allow it in mirrors and remote views
@@ -2468,7 +2468,7 @@ object Weapon {
         private fun MuzzleRise(origin: idVec3, axis: idMat3) {
             var time: Int
             val amount: Float
-            val ang: idAngles?
+            val ang: idAngles = idAngles()
             val offset = idVec3()
             time = kick_endtime - Game_local.gameLocal.time
             if (time <= 0) {
@@ -2480,11 +2480,13 @@ object Weapon {
             if (time > muzzle_kick_maxtime) {
                 time = muzzle_kick_maxtime
             }
+
             amount = time.toFloat() / muzzle_kick_maxtime.toFloat()
-            ang = muzzle_kick_angles.times(amount)
-            offset.set(muzzle_kick_offset.times(amount))
-            origin.set(origin.minus(axis.times(offset)))
-            axis.set(ang.ToMat3().times(axis))
+            ang.set(muzzle_kick_angles * amount)
+            offset.set(muzzle_kick_offset * amount)
+
+            origin.set(origin - axis * offset)
+            axis.set(ang.ToMat3() * axis)
         }
 
         /*
@@ -3089,7 +3091,7 @@ object Weapon {
                                 this,
                                 projectileDict,
                                 tr,
-                                getVec3Origin(),
+                                vec3_origin,
                                 true
                             )
                         }
@@ -3465,7 +3467,7 @@ object Weapon {
             worldMuzzleFlash = renderLight_s()
             nozzleGlow = renderLight_s()
             muzzleFlashEnd = 0
-            flashColor = getVec3Origin()
+            flashColor = vec3_origin
             muzzleFlashHandle = -1
             worldMuzzleFlashHandle = -1
             guiLightHandle = -1

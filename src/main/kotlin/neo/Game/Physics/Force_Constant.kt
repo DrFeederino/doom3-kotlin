@@ -12,8 +12,8 @@ import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Physics.Force.idForce
 import neo.Game.Physics.Physics.idPhysics
-import neo.idlib.math.getVec3_zero
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_zero
 
 class Force_Constant {
     /*
@@ -26,7 +26,7 @@ class Force_Constant {
     class idForce_Constant : idForce() {
         // CLASS_PROTOTYPE( idForce_Constant );
         // force properties
-        private val force: idVec3 = getVec3_zero()
+        private val force: idVec3 = vec3_zero
         private var id: Int
         private var physics: idPhysics? = null
         private val point: idVec3
@@ -79,7 +79,7 @@ class Force_Constant {
 
         init {
             id = 0
-            point = getVec3_zero()
+            point = vec3_zero
         }
     }
 }

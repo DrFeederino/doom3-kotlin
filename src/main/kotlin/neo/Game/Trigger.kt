@@ -1061,7 +1061,7 @@ object Trigger {
             // FIX: Added null check for other — C++ has: if ( on && other && gameLocal.time >= nextTime )
             if (on && other != null && Game_local.gameLocal.time >= nextTime) {
                 damage = spawnArgs.GetString("def_damage", "damage_painTrigger")!!
-                other.Damage(null, null, getVec3Origin(), damage, 1.0f, Model.INVALID_JOINT)
+                other.Damage(null, null, vec3_origin, damage, 1.0f, Model.INVALID_JOINT)
                 ActivateTargets(other)
                 CallScript()
                 nextTime = (Game_local.gameLocal.time + SEC2MS(delay))

@@ -55,7 +55,7 @@ object AASFile_local {
             var edgeNum: Int
             val face: aasFace_s
             var edge: aasEdge_s
-            val center = idVec3(getVec3Origin())
+            val center = idVec3(vec3_origin)
             face = faces[faceNum]
             if (face.numEdges > 0) {
                 i = 0
@@ -74,7 +74,7 @@ object AASFile_local {
             var i: Int
             var faceNum: Int
             val area: aasArea_s
-            val center = idVec3(getVec3Origin())
+            val center = idVec3(vec3_origin)
             area = areas[areaNum]
             if (area.numFaces > 0) {
                 i = 0
@@ -291,7 +291,7 @@ object AASFile_local {
                     if (areas[-nodeNum].flags and trace.flags != 0 || areas[-nodeNum].travelFlags and trace.travelFlags != 0) {
                         if (trace.lastAreaNum == 0) {
                             trace.fraction = 0.0f
-                            v1.set(getVec3Origin())
+                            v1.set(vec3_origin)
                         } else {
                             v1.set(end.minus(start))
                             v2.set(tracestack[tstack_p].start.minus(start))
@@ -324,7 +324,7 @@ object AASFile_local {
                 if (0 == nodeNum) {
                     if (0 == trace.lastAreaNum) {
                         trace.fraction = 0.0f
-                        v1.set(getVec3Origin())
+                        v1.set(vec3_origin)
                     } else {
                         v1.set(end.minus(start))
                         v2.set(tracestack[tstack_p].start.minus(start))
@@ -1236,7 +1236,7 @@ object AASFile_local {
             if (0 == area.flags and (AASFile.AREA_REACHABLE_WALK or AASFile.AREA_REACHABLE_FLY) || area.flags and AASFile.AREA_LIQUID != 0) {
                 return AreaCenter(areaNum)
             }
-            center.set(getVec3Origin())
+            center.set(vec3_origin)
             numFaces = 0
             i = 0
             while (i < area.numFaces) {

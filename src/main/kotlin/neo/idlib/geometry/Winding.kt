@@ -284,11 +284,11 @@ object Winding {
                     continue
                 }
                 if (sides[i] == SIDE_FRONT) {
-                    f.p[f.numPoints] = p1
+                    f.p[f.numPoints].set(p1)
                     f.numPoints++
                 }
                 if (sides[i] == SIDE_BACK) {
-                    b.p[b.numPoints] = p1
+                    b.p[b.numPoints].set(p1)
                     b.numPoints++
                 }
                 if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) {
@@ -336,9 +336,9 @@ object Winding {
                     mid.s = p2.s + dot * (p1.s - p2.s)
                     mid.t = p2.t + dot * (p1.t - p2.t)
                 }
-                f.p[f.numPoints] = mid
+                f.p[f.numPoints].set(mid)
                 f.numPoints++
-                b.p[b.numPoints] = mid
+                b.p[b.numPoints].set(mid)
                 b.numPoints++
                 i++
             }
@@ -444,7 +444,7 @@ object Winding {
                 }
                 mid.s = p1.s + dot * (p2.s - p1.s)
                 mid.t = p1.t + dot * (p2.t - p1.t)
-                newPoints[newNumPoints] = mid
+                newPoints[newNumPoints].set(mid)
                 newNumPoints++
                 i++
             }
@@ -454,7 +454,7 @@ object Winding {
             numPoints = newNumPoints
             i = 0
             while (i < newNumPoints) {
-                p[i] = newPoints[i]
+                p[i].set(newPoints[i])
                 i++
             }
             return this
@@ -610,7 +610,6 @@ object Winding {
         fun RemoveEqualPoints(epsilon: Float = ON_EPSILON) {
             var i: Int
             var j: Int
-            println("RemoveEqualPoints numPoints = $numPoints")
             i = 0
             while (i < numPoints) {
                 if ((p[i].ToVec3() - p[(i + numPoints - 1) % numPoints].ToVec3()).LengthSqr() >= Square(epsilon)) {
@@ -626,7 +625,6 @@ object Winding {
                 i--
                 i++
             }
-            println("RemoveEqualPoints numPoints = $numPoints")
         }
 
         fun RemoveColinearPoints(normal: idVec3, epsilon: Float = ON_EPSILON) {
@@ -1180,10 +1178,10 @@ object Winding {
             var i: Int
             val center = idVec3()
             center.Zero()
-            i = 0
-            while (i < numPoints) {
+
+            for (i in 0 until numPoints) {
                 center.plusAssign(p[i].ToVec3())
-                i++
+
             }
             center.timesAssign(1.0f / numPoints)
             return center
@@ -1204,6 +1202,7 @@ object Winding {
                 }
                 i++
             }
+            println("Radius is $radius")
             return idMath.Sqrt(radius)
         }
 
@@ -1246,7 +1245,8 @@ object Winding {
                 bounds.Clear()
                 return
             }
-            bounds[0] = bounds.set(1, p[0].ToVec3())
+            bounds[0] = p[0].ToVec3()
+            bounds[1] = p[0].ToVec3()
             i = 1
             while (i < numPoints) {
                 if (p[i].x < bounds[0].x) {
@@ -1740,15 +1740,15 @@ object Winding {
                 }
                 mid.s = p1.s + dot * (p2.s - p1.s)
                 mid.t = p1.t + dot * (p2.t - p1.t)
-                out.p[out.numPoints] = mid
+                out.p[out.numPoints].set(mid)
                 out.numPoints++
-                back.p[back.numPoints] = mid
+                back.p[back.numPoints].set(mid)
                 back.numPoints++
                 i++
             }
             i = 0
             while (i < out.numPoints) {
-                p[i] = out.p[i]
+                p[i].set(out.p[i])
                 i++
             }
             numPoints = out.numPoints

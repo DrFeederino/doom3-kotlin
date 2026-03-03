@@ -524,7 +524,7 @@ object Moveable {
             nextDamageTime = 0
             nextSoundTime = 0
             initialSpline = null
-            initialSplineDir = getVec3_zero()
+            initialSplineDir = vec3_zero
             explode = false
             unbindOnDeath = false
             allowStep = false
@@ -650,9 +650,9 @@ object Moveable {
                             } else {
                                 additionalRotation -= angle
                             }
-                            dir.set(getVec3Origin())
+                            dir.set(vec3_origin)
                             dir[barrelAxis] = 1.0f
-                            additionalAxis.set(idRotation(getVec3Origin(), dir, additionalRotation).ToMat3())
+                            additionalAxis.set(idRotation(vec3_origin, dir, additionalRotation).ToMat3())
                         }
                     }
                 }
@@ -674,7 +674,7 @@ object Moveable {
         }
 
         override fun GetPhysicsToVisualTransform(origin: idVec3, axis: idMat3): Boolean {
-            origin.set(getVec3Origin())
+            origin.set(vec3_origin)
             axis.set(additionalAxis)
             return true
         }
@@ -1050,7 +1050,7 @@ object Moveable {
         }
 
         public override fun Event_Activate(activator: idEventArg<idEntity>) {
-            Killed(activator.value, activator.value, 0, getVec3Origin(), 0)
+            Killed(activator.value, activator.value, 0, vec3_origin, 0)
         }
 
         private fun Event_Respawn() {
@@ -1096,7 +1096,7 @@ object Moveable {
         private fun Event_Explode() {
             if (state == explode_state_t.NORMAL || state == explode_state_t.BURNING) {
                 state = explode_state_t.BURNEXPIRED
-                Killed(null, null, 0, getVec3_zero(), 0)
+                Killed(null, null, 0, vec3_zero, 0)
             }
         }
 

@@ -2579,7 +2579,7 @@ object Player {
             if (!spectating) {
                 SetCombatContents(true)
             }
-            physicsObj.SetLinearVelocity(getVec3Origin())
+            physicsObj.SetLinearVelocity(vec3_origin)
 
             // setup our initial view
             if (!spectating) {
@@ -2652,7 +2652,7 @@ object Player {
         fun SetClipModel() {
             val bounds = idBounds()
             if (spectating) {
-                bounds.set(idBounds(getVec3Origin()).Expand(SysCvar.pm_spectatebbox.GetFloat() * 0.5f))
+                bounds.set(idBounds(vec3_origin).Expand(SysCvar.pm_spectatebbox.GetFloat() * 0.5f))
             } else {
                 bounds[0].set(-SysCvar.pm_bboxwidth.GetFloat() * 0.5f, -SysCvar.pm_bboxwidth.GetFloat() * 0.5f, 0.0f)
                 bounds[1].set(
@@ -2848,7 +2848,7 @@ object Player {
             if (hud != null) {
                 hud!!.HandleNamedEvent("radioChatterDown")
             }
-            physicsObj.SetLinearVelocity(getVec3Origin())
+            physicsObj.SetLinearVelocity(vec3_origin)
             SetState("EnterCinematic")
             UpdateScript()
             if (weaponEnabled && weapon.GetEntity() != null) {
@@ -3303,7 +3303,7 @@ object Player {
 
             // clear the ik heights so model doesn't appear in the wrong place
             walkIK.EnableAll()
-            GetPhysics().SetLinearVelocity(getVec3Origin())
+            GetPhysics().SetLinearVelocity(vec3_origin)
             SetViewAngles(angles)
             legsYaw = 0.0f
             idealLegsYaw = 0.0f
@@ -3333,7 +3333,7 @@ object Player {
                     ServerSpectate(true)
                     forceRespawn = true
                 } else {
-                    Damage(this, this, getVec3Origin(), "damage_suicide", 1.0f, Model.INVALID_JOINT)
+                    Damage(this, this, vec3_origin, "damage_suicide", 1.0f, Model.INVALID_JOINT)
                     if (delayRespawn) {
                         forceRespawn = false
                         val delay = spawnArgs.GetFloat("respawn_delay")
@@ -4459,7 +4459,7 @@ object Player {
             val item: idEntity?
             item = if (died) {
                 // ain't gonna throw you no weapon if I'm dead
-                weapon.GetEntity()!!.DropItem(getVec3Origin(), 0, WEAPON_DROP_TIME, died)
+                weapon.GetEntity()!!.DropItem(vec3_origin, 0, WEAPON_DROP_TIME, died)
             } else {
                 viewAngles.ToVectors(forward, null, up)
                 weapon.GetEntity()!!.DropItem(forward.times(250.0f).plus(up.times(150.0f)), 500, WEAPON_DROP_TIME, died)
@@ -4792,7 +4792,7 @@ object Player {
                     val dmgTiming: Int =
                         (1000 * (if (damageDef != null) damageDef.GetFloat("delay", "3.0f").toInt() else 3))
                     if (Game_local.gameLocal.time > lastAirDamage + dmgTiming) {
-                        Damage(null, null, getVec3Origin(), "damage_noair", 1.0f, 0)
+                        Damage(null, null, vec3_origin, "damage_noair", 1.0f, 0)
                         lastAirDamage = Game_local.gameLocal.time
                     }
                 }
@@ -5233,7 +5233,7 @@ object Player {
                         weapon.GetEntity()!!.EnterCinematic()
                     }
                 } else {
-                    physicsObj.SetLinearVelocity(getVec3Origin())
+                    physicsObj.SetLinearVelocity(vec3_origin)
                     if (weaponEnabled && weapon.GetEntity() != null) {
                         weapon.GetEntity()!!.ExitCinematic()
                     }
@@ -6267,7 +6267,7 @@ object Player {
                         newOrig.plusAssign(2, SysCvar.pm_normalviewheight.GetFloat())
                     }
                     newOrig.plusAssign(2, SPECTATE_RAISE.toFloat())
-                    val b = idBounds(getVec3Origin()).Expand(SysCvar.pm_spectatebbox.GetFloat() * 0.5f)
+                    val b = idBounds(vec3_origin).Expand(SysCvar.pm_spectatebbox.GetFloat() * 0.5f)
                     val start = idVec3(player.GetPhysics().GetOrigin())
                     start.plusAssign(2, SysCvar.pm_spectatebbox.GetFloat() * 0.5f)
                     val t = trace_s()
@@ -7850,7 +7850,7 @@ object Player {
                 Damage(
                     Game_local.gameLocal.entities[teleportKiller],
                     Game_local.gameLocal.entities[teleportKiller],
-                    getVec3Origin(),
+                    vec3_origin,
                     "damage_telefrag",
                     1.0f,
                     Model.INVALID_JOINT
@@ -7935,14 +7935,14 @@ object Player {
             forceRespawn = false
             spectating = false
             spectator = 0
-            colorBar = getVec3_zero()
+            colorBar = vec3_zero
             colorBarIndex = 0
             forcedReady = false
             wantSpectate = false
             lastHitToggle = false
             minRespawnTime = 0
             maxRespawnTime = 0
-            firstPersonViewOrigin = getVec3_zero()
+            firstPersonViewOrigin = vec3_zero
             firstPersonViewAxis.set(idMat3.getMat3_identity())
             dragEntity = idDragEntity()
             physicsObj = idPhysics_Player()
@@ -7962,7 +7962,7 @@ object Player {
             legsForward = true
             oldViewYaw = 0.0f
             viewBobAngles = idAngles()
-            viewBob = getVec3_zero()
+            viewBob = vec3_zero
             landChange = 0
             landTime = 0
             currentWeapon = -1
@@ -7984,7 +7984,7 @@ object Player {
             lastAirDamage = 0
             gibDeath = false
             gibsLaunched = false
-            gibsDir = getVec3_zero()
+            gibsDir = vec3_zero
             zoomFov = idInterpolate()
             zoomFov.Init(0.0f, 0.0f, 0.0f, 0.0f)
             centerView = idInterpolate()
@@ -8016,11 +8016,11 @@ object Player {
             pdaVideo = idStr("")
             pdaVideoWave = idStr("")
             lastDamageDef = 0
-            lastDamageDir = getVec3_zero()
+            lastDamageDir = vec3_zero
             lastDamageLocation = 0
             smoothedFrame = 0
             smoothedOriginUpdated = false
-            smoothedOrigin = getVec3_zero()
+            smoothedOrigin = vec3_zero
             smoothedAngles = idAngles()
             fl.networkSync = true
             latchedTeam = -1

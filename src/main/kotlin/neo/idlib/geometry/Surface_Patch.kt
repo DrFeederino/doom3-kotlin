@@ -7,8 +7,8 @@ import neo.idlib.geometry.Surface.idSurface
 import neo.idlib.idException
 import neo.idlib.idLib
 import neo.idlib.math.Square
-import neo.idlib.math.getVec3Origin
 import neo.idlib.math.idVec3
+import neo.idlib.math.vec3_origin
 import kotlin.math.abs
 
 class Surface_Patch {
@@ -641,7 +641,7 @@ class Surface_Patch {
                     base.set(verts[j * width + i].xyz)
                     k = 0
                     while (k < 8) {
-                        around[k].set(getVec3Origin())
+                        around[k].set(vec3_origin)
                         good[k] = false
                         dist = 1
                         while (dist <= 3) {
@@ -677,7 +677,7 @@ class Surface_Patch {
                         }
                         k++
                     }
-                    sum.set(getVec3Origin())
+                    sum.set(vec3_origin)
                     k = 0
                     while (k < 8) {
                         if (!good[k] || !good[k + 1 and 7]) {

@@ -843,7 +843,7 @@ object Physics_Player {
                 if (numplanes >= MAX_CLIP_PLANES) {
                     // MrElusive: I think we have some relatively high poly LWO models with a lot of slanted tris
                     // where it may hit the max clip planes
-                    current.velocity.set(getVec3Origin())
+                    current.velocity.set(vec3_origin)
                     return true
                 }
 
@@ -932,7 +932,7 @@ object Physics_Player {
                             }
 
                             // stop dead at a tripple plane interaction
-                            current.velocity.set(getVec3Origin())
+                            current.velocity.set(vec3_origin)
                             return true
                             k++
                         }
@@ -1112,7 +1112,7 @@ object Physics_Player {
             Friction()
             scale = CmdScale(command)
             if (0.0f == scale) {
-                wishvel.set(getVec3Origin())
+                wishvel.set(vec3_origin)
             } else {
                 wishvel.set(
                     viewForward.times(command.forwardmove.toFloat())
@@ -1265,7 +1265,7 @@ object Physics_Player {
             forward = current.velocity.Length()
             forward -= 20.0f
             if (forward <= 0) {
-                current.velocity.set(getVec3Origin())
+                current.velocity.set(vec3_origin)
             } else {
                 current.velocity.Normalize()
                 current.velocity.timesAssign(forward)
@@ -1285,7 +1285,7 @@ object Physics_Player {
             // friction
             speed = current.velocity.Length()
             if (speed < 20.0f) {
-                current.velocity.set(getVec3Origin())
+                current.velocity.set(vec3_origin)
             } else {
                 stopspeed = playerSpeed * 0.3f
                 if (speed < stopspeed) {
@@ -1325,7 +1325,7 @@ object Physics_Player {
             Friction()
             scale = CmdScale(command)
             if (0.0f == scale) {
-                wishvel.set(getVec3Origin())
+                wishvel.set(vec3_origin)
             } else {
                 wishvel.set(
                     viewForward.times(command.forwardmove.toFloat())

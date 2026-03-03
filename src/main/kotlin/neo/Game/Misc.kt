@@ -387,7 +387,7 @@ object Misc {
             val start_off = CBool(false)
             spawnArgs.GetBool("stay_on", "0", stay_on)
             spawnArgs.GetBool("start_off", "0", start_off)
-            GetPhysics().SetClipBox(idBounds(getVec3Origin()).Expand(4.0f), 1.0f)
+            GetPhysics().SetClipBox(idBounds(vec3_origin).Expand(4.0f), 1.0f)
             GetPhysics().SetContents(0)
             if (!start_off._val) {
                 BecomeActive(TH_THINK)
@@ -1383,7 +1383,7 @@ object Misc {
             }
             projectile = ent[0] as idProjectile
             projectile.Create(this, launchPos, dir)
-            projectile.Launch(launchPos, dir, getVec3Origin())
+            projectile.Launch(launchPos, dir, vec3_origin)
             if (numshots.value > 0) {
                 PostEventMS(
                     EV_LaunchMissilesUpdate,

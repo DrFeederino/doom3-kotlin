@@ -133,12 +133,12 @@ class idBounds : SERiAL {
 
     operator fun times(r: idMat3): idBounds {
         val bounds = idBounds()
-        bounds.FromTransformedBounds(this, getVec3Origin(), r)
+        bounds.FromTransformedBounds(this, vec3_origin, r)
         return bounds
     }
 
     fun timesAssign(r: idMat3): idBounds {
-        FromTransformedBounds(this, getVec3Origin(), r)
+        FromTransformedBounds(this, vec3_origin, r)
         return this
     }
 
@@ -440,13 +440,13 @@ class idBounds : SERiAL {
     // return rotated bounds
     fun Rotate(rotation: idMat3): idBounds {
         val bounds = idBounds()
-        bounds.FromTransformedBounds(this, getVec3Origin(), rotation)
+        bounds.FromTransformedBounds(this, vec3_origin, rotation)
         return bounds
     }
 
     // rotate this bounds
     fun RotateSelf(rotation: idMat3): idBounds {
-        FromTransformedBounds(this, getVec3Origin(), rotation)
+        FromTransformedBounds(this, vec3_origin, rotation)
         return this
     }
 

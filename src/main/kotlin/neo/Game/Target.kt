@@ -194,7 +194,7 @@ object Target {
             i = 0
             while (i < targets.Num()) {
                 ent = targets[i].GetEntity()
-                ent?.Damage(this, this, getVec3Origin(), damage, 1.0f, Model.INVALID_JOINT)
+                ent?.Damage(this, this, vec3_origin, damage, 1.0f, Model.INVALID_JOINT)
                 i++
             }
         }
@@ -1359,7 +1359,7 @@ object Target {
 
         private fun Event_ClearFlash(flash: idEventArg<Float>) {
             val player = Game_local.gameLocal.GetLocalPlayer()!!
-            player.playerView.Fade(getVec4_zero(), flash.value.toInt())
+            player.playerView.Fade(vec4_zero, flash.value.toInt())
         }
 
         override fun Think() {
