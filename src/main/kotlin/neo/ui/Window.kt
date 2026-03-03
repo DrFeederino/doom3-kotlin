@@ -3455,9 +3455,7 @@ object Window {
                     wexpOpType_t.WOP_TYPE_VAR -> {
                         if (op.a == null) {
                             registers[op.c] = 0.0f
-                            break
-                        }
-                        if (op.b >= 0 && registers[op.b] >= 0 && registers[op.b] < 4) {
+                        } else if (op.b >= 0 && registers[op.b] >= 0 && registers[op.b] < 4) {
                             // grabs vector components
                             val `var` = op.a as idWinVec4?
                             registers[op.c] = `var`!!.data[registers[op.b].toInt()]
