@@ -609,13 +609,10 @@ class idBounds : SERiAL {
         val rotatedExtents = idVec3()
         center.set((bounds[0] + bounds[1]) * 0.5f)
         extents.set(bounds[1] - center)
-        i = 0
-        while (i < 3) {
-            rotatedExtents[i] =
-                (abs(extents[0] * axis[0][i]) +
-                        abs(extents[1] * axis[1][i]) +
-                        abs(extents[2] * axis[2][i]))
-            i++
+        for (i in 0 until 3) {
+            rotatedExtents[i] = idMath.Fabs(extents[0] * axis[0][i]) +
+                    idMath.Fabs(extents[1] * axis[1][i]) +
+                    idMath.Fabs(extents[2] * axis[2][i])
         }
         center.set(origin + center * axis)
         b[0].set(center - rotatedExtents)
@@ -642,8 +639,7 @@ class idBounds : SERiAL {
      */
     fun FromPointTranslation(point: idVec3, translation: idVec3) { // most tight bounds for a translation
         var i: Int
-        i = 0
-        while (i < 3) {
+        for (i in 0 until 3) {
             if (translation[i] < 0.0f) {
                 b[0][i] = point[i] + translation[i]
                 b[1][i] = point[i]
@@ -651,7 +647,6 @@ class idBounds : SERiAL {
                 b[0][i] = point[i]
                 b[1][i] = point[i] + translation[i]
             }
-            i++
         }
     }
 

@@ -22,10 +22,10 @@ class Interpolate {
         fun Init(startTime: Float, duration: Float, startValue: T, endValue: T) {
             this.startTime = startTime
             this.duration = duration
-            this.startValue = startValue
-            this.endValue = endValue
+            this.startValue = _Copy(startValue)
+            this.endValue = _Copy(endValue)
             currentTime = startTime - 1
-            currentValue = startValue
+            currentValue = _Copy(startValue)
         }
 
         fun SetStartTime(time: Float) {
@@ -37,11 +37,11 @@ class Interpolate {
         }
 
         fun SetStartValue(startValue: T) {
-            this.startValue = startValue
+            this.startValue = _Copy(startValue)
         }
 
         fun SetEndValue(endValue: T) {
-            this.endValue = endValue
+            this.endValue = _Copy(endValue)
         }
 
         fun GetCurrentValue(time: Float): T {
@@ -117,6 +117,16 @@ class Interpolate {
             }
         }
 
+        private fun _Copy(t: T?): T? {
+            if (t == null) return null
+            return when (t) {
+                is idVec3 -> idVec3(t) as T
+                is idVec4 -> idVec4(t) as T
+                is idAngles -> idAngles(t) as T
+                else -> t // Float, Int are immutable
+            }
+        }
+
         init {
             startTime = 0.0f
             duration = 0.0f
@@ -156,8 +166,8 @@ class Interpolate {
             this.startTime = startTime
             this.accelTime = accelTime
             this.decelTime = decelTime
-            this.startValue = startValue
-            this.endValue = endValue
+            this.startValue = _Copy(startValue)
+            this.endValue = _Copy(endValue)
             if (duration <= 0) {
                 return
             }
@@ -206,12 +216,12 @@ class Interpolate {
         }
 
         fun SetStartValue(startValue: T) {
-            this.startValue = startValue
+            this.startValue = _Copy(startValue)
             Invalidate()
         }
 
         fun SetEndValue(endValue: T) {
-            this.endValue = endValue
+            this.endValue = _Copy(endValue)
             Invalidate()
         }
 
@@ -351,6 +361,17 @@ class Interpolate {
             }
         }
 
+        @Suppress("UNCHECKED_CAST")
+        private fun _Copy(t: T?): T? {
+            if (t == null) return null
+            return when (t) {
+                is idVec3 -> idVec3(t) as T
+                is idVec4 -> idVec4(t) as T
+                is idAngles -> idAngles(t) as T
+                else -> t // Float, Int are immutable
+            }
+        }
+
         init {
             linearTime = 0f
             decelTime = 0f
@@ -389,8 +410,8 @@ class Interpolate {
             this.startTime = startTime
             this.accelTime = accelTime
             this.decelTime = decelTime
-            this.startValue = startValue
-            this.endValue = endValue
+            this.startValue = _Copy(startValue)
+            this.endValue = _Copy(endValue)
             if (duration <= 0) {
                 return
             }
@@ -439,12 +460,12 @@ class Interpolate {
         }
 
         fun SetStartValue(startValue: T) {
-            this.startValue = startValue
+            this.startValue = _Copy(startValue)
             Invalidate()
         }
 
         fun SetEndValue(endValue: T) {
-            this.endValue = endValue
+            this.endValue = _Copy(endValue)
             Invalidate()
         }
 
@@ -575,6 +596,17 @@ class Interpolate {
                 t1 is Float && t2 is Float -> (t1 - t2) as T
                 t1 is Int && t2 is Int -> (t1 - t2) as T
                 else -> t1
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun _Copy(t: T?): T? {
+            if (t == null) return null
+            return when (t) {
+                is idVec3 -> idVec3(t) as T
+                is idVec4 -> idVec4(t) as T
+                is idAngles -> idAngles(t) as T
+                else -> t // Float, Int are immutable
             }
         }
 

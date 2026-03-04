@@ -321,18 +321,21 @@ object tr_main {
 
     //==========================================================================
     fun R_AxisToModelMatrix(axis: idMat3, origin: idVec3, modelMatrix: FloatArray /*[16]*/) {
-        modelMatrix[0] = axis[0, 0]
-        modelMatrix[4] = axis[1, 0]
-        modelMatrix[8] = axis[2, 0]
+        modelMatrix[0] = axis[0][0]
+        modelMatrix[4] = axis[1][0]
+        modelMatrix[8] = axis[2][0]
         modelMatrix[12] = origin[0]
-        modelMatrix[1] = axis[0, 1]
-        modelMatrix[5] = axis[1, 1]
-        modelMatrix[9] = axis[2, 1]
+
+        modelMatrix[1] = axis[0][1]
+        modelMatrix[5] = axis[1][1]
+        modelMatrix[9] = axis[2][1]
         modelMatrix[13] = origin[1]
-        modelMatrix[2] = axis[0, 2]
-        modelMatrix[6] = axis[1, 2]
-        modelMatrix[10] = axis[2, 2]
+
+        modelMatrix[2] = axis[0][2]
+        modelMatrix[6] = axis[1][2]
+        modelMatrix[10] = axis[2][2]
         modelMatrix[14] = origin[2]
+
         modelMatrix[3] = 0.0f
         modelMatrix[7] = 0.0f
         modelMatrix[11] = 0.0f
@@ -363,8 +366,8 @@ object tr_main {
         val temp = FloatArray(4)
         VectorSubtract(`in`.ToFloatPtr(), Arrays.copyOfRange(modelMatrix, 12, 16), temp)
         out[0] = DotProduct(temp, (modelMatrix)!!)
-        out[1] = DotProduct(temp, Arrays.copyOfRange(modelMatrix, 4, 8))
-        out[2] = DotProduct(temp, Arrays.copyOfRange(modelMatrix, 8, 12))
+        out[1] = DotProduct(temp, modelMatrix.copyOfRange(4, 8))
+        out[2] = DotProduct(temp, modelMatrix.copyOfRange(8, 12))
     }
 
     fun R_GlobalPointToLocal(modelMatrix: FloatArray? /*[16]*/, `in`: idVec3, out: FloatArray) {

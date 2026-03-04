@@ -1819,7 +1819,7 @@ fun R_BuildDeformInfo(
 
 fun R_BuildDeformInfo(
     numVerts: Int,
-    verts: Array<idDrawVert?>?,
+    verts: Array<idDrawVert>?,
     numIndexes: Int,
     indexes: idList<Int>,
     useUnsmoothedTangents: Boolean

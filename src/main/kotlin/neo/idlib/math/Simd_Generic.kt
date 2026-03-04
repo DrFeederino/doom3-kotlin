@@ -3227,8 +3227,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
         var i: Int
         val jointsPtr = jmtobb(joints)
         var j = 0
-        i = 0
-        while (i < numVerts) {
+        for (i in 0 until numVerts) {
             val v = idVec3()
             v.set(toIdJointMat(jointsPtr, index[j * 2 + 0]) * weights[j])
             while (index[j * 2 + 1] == 0) {
@@ -3236,11 +3235,8 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                 v.plusAssign(toIdJointMat(jointsPtr, index[j * 2 + 0]) * weights[j])
             }
             j++
-            if (verts[i] == null) {
-                verts[i] = idDrawVert()
-            }
+
             verts[i].xyz.set(v)
-            i++
         }
     }
 

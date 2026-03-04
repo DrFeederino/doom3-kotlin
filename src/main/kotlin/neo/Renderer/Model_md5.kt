@@ -233,12 +233,11 @@ object Model_md5 {
             // build the information that will be common to all animations of this mesh:
             // silhouette edge connectivity and normal / tangent generation information
             //
-            val verts: Array<idDrawVert?> = arrayOfNulls(texCoords.Num())
+            val verts: Array<idDrawVert> = Array(texCoords.Num()) { idDrawVert() }
             i = 0
             while (i < texCoords.Num()) {
-                verts[i] = idDrawVert()
-                verts[i]!!.Clear()
-                verts[i]!!.st.set(texCoords[i])
+                verts[i].Clear()
+                verts[i].st.set(texCoords[i])
                 i++
             }
             TransformVerts(verts, joints)
@@ -299,7 +298,7 @@ object Model_md5 {
                     ent.shaderParms[RenderWorld.SHADERPARM_MD5_SKINSCALE]
                 )
             } else {
-                TransformVerts(tri.verts as Array<idDrawVert?>?, entJoints)
+                TransformVerts(tri.verts, entJoints)
             }
 
             // replicate the mirror seam vertexes
@@ -323,7 +322,7 @@ object Model_md5 {
 
         fun CalcBounds(entJoints: Array<idJointMat?>): idBounds {
             val bounds = idBounds()
-            val verts: Array<idDrawVert?> = arrayOfNulls(texCoords.Num())
+            val verts: Array<idDrawVert> = Array(texCoords.Num()) { idDrawVert() }
             TransformVerts(verts, entJoints)
             SIMDProcessor!!.MinMax(bounds[0], bounds[1], verts as Array<idDrawVert>, texCoords.Num())
             return bounds
@@ -381,7 +380,7 @@ object Model_md5 {
             return numWeights
         }
 
-        private fun TransformVerts(verts: Array<idDrawVert?>?, entJoints: Array<idJointMat?>) {
+        private fun TransformVerts(verts: Array<idDrawVert>?, entJoints: Array<idJointMat?>) {
             SIMDProcessor!!.TransformVerts(
                 verts as Array<idDrawVert>,
                 texCoords.Num(),
@@ -445,7 +444,7 @@ object Model_md5 {
         override fun Bounds(ent: renderEntity_s?): idBounds {
             if (null == ent) {
                 // this is the bounds for the reference pose
-                return (bounds)
+                return bounds
             }
             return ent.bounds
         }
@@ -780,10 +779,8 @@ object Model_md5 {
         private fun CalculateBounds(entJoints: Array<idJointMat?>) {
             var i: Int
             bounds.Clear()
-            i = 0
-            while (i < meshes.Num()) {
+            for (i in 0 until meshes.Num()) {
                 bounds.AddBounds(meshes[i].CalcBounds(entJoints))
-                ++i
             }
         }
 

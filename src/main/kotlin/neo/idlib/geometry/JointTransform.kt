@@ -147,6 +147,7 @@ class JointTransform {
         // untransform
         fun oDivSet(a: idJointMat): idJointMat {
             val dst = FloatArray(3)
+
             mat[0 * 4 + 3] -= a.mat[0 * 4 + 3]
             mat[1 * 4 + 3] -= a.mat[1 * 4 + 3]
             mat[2 * 4 + 3] -= a.mat[2 * 4 + 3]

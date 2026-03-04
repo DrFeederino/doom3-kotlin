@@ -210,7 +210,7 @@ object Model_liquid {
             // build the information that will be common to all animations of this mesh:
             // sil edge connectivity and normal / tangent generation information
             deformInfo =
-                R_BuildDeformInfo(verts.Num(), verts.getList() as Array<idDrawVert?>, tris.Num(), tris, true)
+                R_BuildDeformInfo(verts.Num(), verts.getList(), tris.Num(), tris, true)
             bounds.Clear()
             bounds.AddPoint(idVec3(0.0f, 0.0f, drop_height * -10.0f))
             bounds.AddPoint(idVec3((verts_x - 1) * scale_x, (verts_y - 1) * scale_y, drop_height * 10.0f))

@@ -43,11 +43,11 @@ object Extrapolate {
             this.extrapolationType = extrapolationType
             this.startTime = startTime
             this.duration = duration
-            this.startValue = startValue
-            this.baseSpeed = baseSpeed
-            this.speed = speed
+            this.startValue = _Copy(startValue)
+            this.baseSpeed = _Copy(baseSpeed)
+            this.speed = _Copy(speed)
             currentTime = -1.0f
-            currentValue = startValue
+            currentValue = _Copy(startValue)
         }
 
         fun GetCurrentValue(time: Float): T {
@@ -202,7 +202,7 @@ object Extrapolate {
         }
 
         fun SetStartValue(value: T?) {
-            startValue = value
+            startValue = _Copy(value)
             currentTime = -1.0f
         }
 
@@ -252,6 +252,17 @@ object Extrapolate {
                 t1 is Float && t2 is Float -> (t1 - t2) as T
                 t1 is Int && t2 is Int -> (t1 - t2) as T
                 else -> t1
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun _Copy(t: T?): T? {
+            if (t == null) return null
+            return when (t) {
+                is idVec3 -> idVec3(t) as T
+                is idVec4 -> idVec4(t) as T
+                is idAngles -> idAngles(t) as T
+                else -> t // Float, Int are immutable
             }
         }
 

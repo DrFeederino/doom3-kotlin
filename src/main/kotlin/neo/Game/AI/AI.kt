@@ -5250,10 +5250,7 @@ open class idAI : idActor() {
                     muzzle,
                     worldMuzzleFlash.axis
                 )
-                muzzle.set(
-                    physicsObj.GetOrigin()
-                        .plus(muzzle.plus(modelOffset).times(viewAxis.times(physicsObj.GetGravityAxis())))
-                )
+                muzzle.set(physicsObj.GetOrigin() + (muzzle + modelOffset) * viewAxis * physicsObj.GetGravityAxis())
                 worldMuzzleFlash.origin.set(muzzle)
                 Game_local.gameRenderWorld!!.UpdateLightDef(worldMuzzleFlashHandle, worldMuzzleFlash)
             }
