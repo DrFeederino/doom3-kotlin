@@ -4404,7 +4404,8 @@ open class idAnimatedEntity : idEntity() {
             angles: idEventArg<idVec3>
         ) {
             val mat: idMat3
-            mat = angles.value.ToMat3()
+            val ang = idAngles(angles.value[0], angles.value[1], angles.value[2])
+            mat = ang.ToMat3()
             e.animator.SetJointAxis(jointnum.value, jointModTransform_t.entries.get(transform_type.value), mat)
         }
 
