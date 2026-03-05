@@ -1771,6 +1771,7 @@ fun R_BuildDeformInfo(
     tri = srfTriangles_s()
     tri.numVerts = numVerts
     R_AllocStaticTriSurfVerts(tri, tri.numVerts)
+    // deep copy - C++ memcpy copies bytes, Kotlin must copy objects
     SIMDProcessor!!.Memcpy(tri.verts as Array<idDrawVert>, verts as Array<idDrawVert>, tri.numVerts)
     tri.numIndexes = numIndexes
     R_AllocStaticTriSurfIndexes(tri, tri.numIndexes)
@@ -1830,7 +1831,9 @@ fun R_BuildDeformInfo(
     tri = srfTriangles_s()
     tri.numVerts = numVerts
     R_AllocStaticTriSurfVerts(tri, tri.numVerts)
+    // deep copy - C++ memcpy copies bytes, Kotlin must copy objects
     SIMDProcessor!!.Memcpy(tri.verts as Array<idDrawVert>, verts as Array<idDrawVert>, tri.numVerts)
+
     tri.numIndexes = numIndexes
     R_AllocStaticTriSurfIndexes(tri, tri.numIndexes)
 

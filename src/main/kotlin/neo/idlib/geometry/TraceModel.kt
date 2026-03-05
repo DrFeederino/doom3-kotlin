@@ -59,6 +59,13 @@ object TraceModel {
         val edges: IntArray = IntArray(MAX_TRACEMODEL_POLYEDGES)
         val normal: idVec3 = idVec3()
         var numEdges = 0
+        fun set(t: traceModelPoly_t) {
+            bounds.set(t.bounds)
+            dist = t.dist
+            System.arraycopy(t.edges, 0, edges, 0, MAX_TRACEMODEL_POLYEDGES)
+            normal.set(t.normal)
+            numEdges = t.numEdges
+        }
     }
 
     class idTraceModel() {
@@ -1349,16 +1356,22 @@ object TraceModel {
             isConvex = true
         }
 
-        private fun set(trm: idTraceModel) {
+        // FIX: was private with reference-copy for edges/polys.
+        // C++ operator= does deep struct copy; Kotlin needs explicit element-wise copy.
+        fun set(trm: idTraceModel) {
             type = trm.type
             numVerts = trm.numVerts
             for (i in 0 until numVerts) {
                 verts[i].set(trm.verts[i])
             }
             numEdges = trm.numEdges
-            edges = trm.edges
+            for (i in 0..numEdges) {
+                edges[i].set(trm.edges[i])
+            }
             numPolys = trm.numPolys
-            polys = trm.polys
+            for (i in 0 until numPolys) {
+                polys[i].set(trm.polys[i])
+            }
             offset.set(trm.offset)
             bounds.set(trm.bounds)
             isConvex = trm.isConvex

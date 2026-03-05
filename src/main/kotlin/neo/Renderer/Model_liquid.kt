@@ -48,6 +48,7 @@ import neo.idlib.idException
 import neo.idlib.math.Random.idRandom
 import neo.idlib.math.SEC2MS
 import neo.idlib.math.SIMDProcessor
+
 import neo.idlib.math.idMath
 import neo.idlib.math.idMath.Cos16
 import neo.idlib.math.idMath.Sqrt
@@ -375,6 +376,7 @@ object Model_liquid {
             tri.dominantTris = deformInfo!!.dominantTris as Array<Model.dominantTri_s?>
             tri.numVerts = deformInfo!!.numOutputVerts
             R_AllocStaticTriSurfVerts(tri, tri.numVerts)
+            // deep copy - C++ memcpy copies bytes, Kotlin must copy objects
             SIMDProcessor!!.Memcpy(
                 tri.verts as Array<idDrawVert>,
                 verts.getList() as Array<idDrawVert>,

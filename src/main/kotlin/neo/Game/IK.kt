@@ -636,6 +636,7 @@ object IK {
                 footModel = idClipModel(trm)
             }
             initialized = true
+
             return true
         }
 
@@ -857,6 +858,7 @@ object IK {
                 SolveTwoBones(
                     hipOrigin, jointOrigins[i], kneeDir, upperLegLength[i], lowerLegLength[i], kneeOrigin
                 )
+
                 if (SysCvar.ik_debug.GetBool()) {
                     Game_local.gameRenderWorld!!.DebugLine(colorCyan, hipOrigin, kneeOrigin)
                     Game_local.gameRenderWorld!!.DebugLine(colorRed, kneeOrigin, jointOrigins[i])
@@ -889,6 +891,7 @@ object IK {
                 animator!!.SetJointAxis(kneeJoints[i], jointModTransform_t.JOINTMOD_WORLD_OVERRIDE, kneeAxis[i])
                 animator!!.SetJointAxis(ankleJoints[i], jointModTransform_t.JOINTMOD_WORLD_OVERRIDE, ankleAxis[i])
             }
+
             ik_activate = true
         }
 

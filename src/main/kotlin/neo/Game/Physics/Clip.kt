@@ -136,7 +136,7 @@ object Clip {
         val centerOfMass: idVec3 = idVec3()
         val inertiaTensor: idMat3 = idMat3()
         var refCount = 0
-        var trm: idTraceModel = idTraceModel()
+        val trm: idTraceModel = idTraceModel()
         var volume = 0.0f
     }
 
@@ -648,7 +648,7 @@ object Clip {
                     i = traceModelHash.Next(i)
                 }
                 entry = trmCache_s()
-                entry.trm = trm
+                entry.trm.set(trm)
                 val volume = CFloat()
                 entry.trm.GetMassProperties(1.0f, volume, entry.centerOfMass, entry.inertiaTensor)
                 entry.volume = volume._val
