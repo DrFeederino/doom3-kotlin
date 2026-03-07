@@ -162,11 +162,11 @@ object DemoFile {
             } else {
                 // Ideally we would error out if the magic string isn't there,
                 // but for backwards compatibility we are going to assume it's just an uncompressed demo file
-                compression._val = 0
+                compression.integerValue = 0
                 f!!.Rewind()
             }
 
-            compressor = AllocCompressor(compression._val)
+            compressor = AllocCompressor(compression.integerValue)
             compressor!!.Init(f!!, false, 8)
 
             return true
@@ -254,7 +254,7 @@ object DemoFile {
 
             ReadInt(index)
 
-            if (index._val == -1) {
+            if (index.integerValue == -1) {
                 // read a new string for the table
                 val data = idStr()
                 ReadString(data)
@@ -262,12 +262,12 @@ object DemoFile {
                 return data.toString()
             }
 
-            if (index._val < -1 || index._val >= demoStrings.Num()) {
+            if (index.integerValue < -1 || index.integerValue >= demoStrings.Num()) {
                 Close()
                 Common.common.Error("demo hash index out of range")
             }
 
-            return demoStrings[index._val].toString()
+            return demoStrings[index.integerValue].toString()
         }
 
         /*
@@ -311,7 +311,7 @@ object DemoFile {
 
             dict.Clear()
             ReadInt(c)
-            for (i in 0 until c._val) {
+            for (i in 0 until c.integerValue) {
                 val key = ReadHashString()
                 val `val` = ReadHashString()
                 dict.Set(key, `val`)

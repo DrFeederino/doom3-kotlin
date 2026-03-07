@@ -9,6 +9,7 @@
 package neo.Game.Physics
 
 import neo.Game.GameSys.Class
+import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local
@@ -64,7 +65,7 @@ object Physics_Monster {
         savefile.ReadBool(onGround)
         savefile.ReadInt(atRest)
         state.onGround = onGround._val
-        state.atRest = atRest._val
+        state.atRest = atRest.integerValue
     }
 
     //
@@ -132,7 +133,13 @@ object Physics_Monster {
         private var saved: monsterPState_s
         private var useVelocityMove: Boolean
 
+        /*
+         ================
+         idPhysics_Monster::Save
+         ================
+         */
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             idPhysics_Monster_SavePState(savefile, current)
             idPhysics_Monster_SavePState(savefile, saved)
             savefile.WriteFloat(maxStepHeight)
@@ -146,9 +153,17 @@ object Physics_Monster {
             savefile.WriteObject(blockingEntity as Class.idClass?)
         }
 
+        /*
+         ================
+         idPhysics_Monster::Restore
+         ================
+         */
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
+
             idPhysics_Monster_RestorePState(savefile, current)
             idPhysics_Monster_RestorePState(savefile, saved)
+
             maxStepHeight = savefile.ReadFloat()
             minFloorCosine = savefile.ReadFloat()
             savefile.ReadVec3(delta)
@@ -157,9 +172,14 @@ object Physics_Monster {
             useVelocityMove = savefile.ReadBool()
             noImpact = savefile.ReadBool()
             moveResult = monsterMoveResult_t.entries.toTypedArray()[savefile.ReadInt()]
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/blockingEntity)
+            blockingEntity = savefile.ReadObject() as idEntity?
         }
 
+        /*
+         ================
+         idPhysics_Monster::SetMaxStepHeight
+         ================
+         */
         // maximum step up the monster can take, default 18 units
         fun SetMaxStepHeight(newMaxStepHeight: Float) {
             maxStepHeight = newMaxStepHeight
@@ -169,10 +189,20 @@ object Physics_Monster {
         //        // minimum cosine of floor angle to be able to stand on the floor
         //        public void SetMinFloorCosine(final float newMinFloorCosine);
         //
+        /*
+         ================
+         idPhysics_Monster::GetMaxStepHeight
+         ================
+         */
         fun GetMaxStepHeight(): Float {
             return maxStepHeight
         }
 
+        /*
+         ================
+         idPhysics_Monster::SetDelta
+         ================
+         */
         // set delta for next move
         fun SetDelta(d: idVec3) {
             delta.set(d)
@@ -181,45 +211,90 @@ object Physics_Monster {
             }
         }
 
+        /*
+         ================
+         idPhysics_Monster::OnGround
+         ================
+         */
         // returns true if monster is standing on the ground
         fun OnGround(): Boolean {
             return current.onGround
         }
 
+        /*
+         ================
+         idPhysics_Monster::GetMoveResult
+         ================
+         */
         // returns the movement result
         fun GetMoveResult(): monsterMoveResult_t {
             return moveResult
         }
 
+        /*
+         ================
+         idPhysics_Monster::ForceDeltaMove
+         ================
+         */
         // overrides any velocity for pure delta movement
         fun ForceDeltaMove(force: Boolean) {
             forceDeltaMove = force
         }
 
+        /*
+         ================
+         idPhysics_Monster::UseFlyMove
+         ================
+         */
         // whether velocity should be affected by gravity
         fun UseFlyMove(force: Boolean) {
             fly = force
         }
 
+        /*
+         ================
+         idPhysics_Monster::UseVelocityMove
+         ================
+         */
         // don't use delta movement
         fun UseVelocityMove(force: Boolean) {
             useVelocityMove = force
         }
 
+        /*
+         ================
+         idPhysics_Monster::GetSlideMoveEntity
+         ================
+         */
         // get entity blocking the move
         fun GetSlideMoveEntity(): idEntity? {
             return blockingEntity
         }
 
+        /*
+         ================
+         idPhysics_Monster::EnableImpact
+         ================
+         */
         // enable/disable activation by impact
         fun EnableImpact() {
             noImpact = false
         }
 
+        /*
+         ================
+         idPhysics_Monster::DisableImpact
+         ================
+         */
         fun DisableImpact() {
             noImpact = true
         }
 
+        /*
+         ================
+         idPhysics_Monster::Evaluate
+         ================
+         */
         // common physics interface
         override fun Evaluate(timeStepMSec: Int, endTimeMSec: Int): Boolean {
             val masterOrigin = idVec3()
@@ -312,11 +387,27 @@ object Physics_Monster {
             return current.origin != oldOrigin
         }
 
+        /*
+         ================
+         idPhysics_Monster::UpdateTime
+         ================
+         */
         override fun UpdateTime(endTimeMSec: Int) {}
+
+        /*
+         ================
+         idPhysics_Monster::GetTime
+         ================
+         */
         override fun GetTime(): Int {
             return Game_local.gameLocal.time
         }
 
+        /*
+         ================
+         idPhysics_Monster::GetImpactInfo
+         ================
+         */
         override fun GetImpactInfo(id: Int, point: idVec3): impactInfo_s {
             val info = impactInfo_s()
             info.invMass = invMass
@@ -326,6 +417,11 @@ object Physics_Monster {
             return info
         }
 
+        /*
+         ================
+         idPhysics_Monster::ApplyImpulse
+         ================
+         */
         override fun ApplyImpulse(id: Int, point: idVec3, impulse: idVec3) {
             if (noImpact) {
                 return
@@ -334,31 +430,61 @@ object Physics_Monster {
             Activate()
         }
 
+        /*
+         ================
+         idPhysics_Monster::Activate
+         ================
+         */
         override fun Activate() {
             current.atRest = -1
             self!!.BecomeActive(TH_PHYSICS)
         }
 
+        /*
+         ================
+         idPhysics_Monster::PutToRest
+         ================
+         */
         override fun PutToRest() {
             current.atRest = Game_local.gameLocal.time
             current.velocity.Zero()
             self!!.BecomeInactive(TH_PHYSICS)
         }
 
+        /*
+         ================
+         idPhysics_Monster::IsAtRest
+         ================
+         */
         override fun IsAtRest(): Boolean {
             return current.atRest >= 0
         }
 
+        /*
+         ================
+         idPhysics_Monster::GetRestStartTime
+         ================
+         */
         override fun GetRestStartTime(): Int {
             return current.atRest
         }
 
+        /*
+         ================
+         idPhysics_Monster::SaveState
+         ================
+         */
         override fun SaveState() {
             // FIX: Was "saved = current" which only copies the reference in Kotlin.
             // C++ copies the struct by value. Use deep copy instead.
             saved.set(current)
         }
 
+        /*
+         ================
+         idPhysics_Monster::RestoreState
+         ================
+         */
         override fun RestoreState() {
             // FIX: Was "current = saved" which only copies the reference in Kotlin.
             current.set(saved)
@@ -366,6 +492,11 @@ object Physics_Monster {
             EvaluateContacts()
         }
 
+        /*
+         ================
+         idPhysics_Player::SetOrigin
+         ================
+         */
         override fun SetOrigin(newOrigin: idVec3, id: Int /*= -1*/) {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
@@ -380,11 +511,21 @@ object Physics_Monster {
             Activate()
         }
 
+        /*
+         ================
+         idPhysics_Player::SetAxis
+         ================
+         */
         override fun SetAxis(newAxis: idMat3, id: Int /*= -1*/) {
             clipModel!!.Link(Game_local.gameLocal.clip, self, 0, clipModel!!.GetOrigin(), newAxis)
             Activate()
         }
 
+        /*
+         ================
+         idPhysics_Monster::Translate
+         ================
+         */
         override fun Translate(translation: idVec3, id: Int /*= -1*/) {
             current.localOrigin.plusAssign(translation)
             current.origin.plusAssign(translation)
@@ -392,6 +533,11 @@ object Physics_Monster {
             Activate()
         }
 
+        /*
+         ================
+         idPhysics_Monster::Rotate
+         ================
+         */
         override fun Rotate(rotation: idRotation, id: Int /*= -1*/) {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
@@ -412,20 +558,40 @@ object Physics_Monster {
             Activate()
         }
 
+        /*
+         ================
+         idPhysics_Monster::SetLinearVelocity
+         ================
+         */
         override fun SetLinearVelocity(newLinearVelocity: idVec3, id: Int /*= 0*/) {
             current.velocity.set(newLinearVelocity)
             Activate()
         }
 
+        /*
+         ================
+         idPhysics_Monster::GetLinearVelocity
+         ================
+         */
         override fun GetLinearVelocity(id: Int /*= 0*/): idVec3 {
             return current.velocity
         }
 
+        /*
+         ================
+         idPhysics_Monster::SetPushed
+         ================
+         */
         override fun SetPushed(deltaTime: Int) {
             // velocity with which the monster is pushed
             current.pushVelocity.plusAssign(current.origin.minus(saved.origin).div(deltaTime * idMath.M_MS2SEC))
         }
 
+        /*
+         ================
+         idPhysics_Monster::GetPushedLinearVelocity
+         ================
+         */
         override fun GetPushedLinearVelocity(id: Int /*= 0*/): idVec3 {
             return current.pushVelocity
         }
@@ -457,6 +623,11 @@ object Physics_Monster {
             }
         }
 
+        /*
+         ================
+         idPhysics_Monster::WriteToSnapshot
+         ================
+         */
         override fun WriteToSnapshot(msg: idBitMsgDelta) {
             msg.WriteFloat(current.origin[0])
             msg.WriteFloat(current.origin[1])
@@ -501,6 +672,11 @@ object Physics_Monster {
             msg.WriteBits(TempDump.btoi(current.onGround), 1)
         }
 
+        /*
+         ================
+         idPhysics_Monster::ReadFromSnapshot
+         ================
+         */
         override fun ReadFromSnapshot(msg: idBitMsgDelta) {
             current.origin[0] = msg.ReadFloat()
             current.origin[1] = msg.ReadFloat()
@@ -539,6 +715,11 @@ object Physics_Monster {
             current.onGround = msg.ReadBits(1) != 0
         }
 
+        /*
+         =====================
+         idPhysics_Monster::CheckGround
+         =====================
+         */
         private fun CheckGround(state: monsterPState_s) {
             val groundTrace = trace_s()
             val down = idVec3()
@@ -582,6 +763,11 @@ object Physics_Monster {
             }
         }
 
+        /*
+         =====================
+         idPhysics_Monster::SlideMove
+         =====================
+         */
         private fun SlideMove(start: idVec3, velocity: idVec3, delta: idVec3): monsterMoveResult_t {
             var i: Int
             val tr = trace_s()
@@ -728,12 +914,29 @@ object Physics_Monster {
             return monsterMoveResult_t.MM_STEPPED
         }
 
+        /*
+         ================
+         idPhysics_Monster::Rest
+         ================
+         */
         private fun Rest() {
             current.atRest = Game_local.gameLocal.time
             current.velocity.Zero()
             self!!.BecomeInactive(TH_PHYSICS)
         }
 
+        companion object {
+            val Type = idTypeInfo("idPhysics_Monster", "idPhysics_Actor") { idPhysics_Monster() }
+        }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): Class.idClass = idPhysics_Monster()
+
+        /*
+         ================
+         idPhysics_Monster::idPhysics_Monster
+         ================
+         */
         init {
             current = monsterPState_s()
             current.atRest = -1

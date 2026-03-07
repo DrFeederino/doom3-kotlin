@@ -140,6 +140,12 @@ object Clip {
         var volume = 0.0f
     }
 
+    //===============================================================
+    //
+    //	idClipModel
+    //
+    //===============================================================
+
     class idClipModel {
         val absBounds: idBounds = idBounds() // absolute bounds
         val axis: idMat3 = idMat3() // orientation of clip model
@@ -168,27 +174,52 @@ object Clip {
                 = 0
 
         // friend class idClip;
+
+        /*
+        ================
+        idClipModel::idClipModel
+        ================
+        */
         constructor() {
             Init()
         }
 
+        /*
+        ================
+        idClipModel::idClipModel
+        ================
+        */
         constructor(name: String) {
             Init()
             LoadModel(name)
         }
 
+        /*
+        ================
+        idClipModel::idClipModel
+        ================
+        */
         constructor(trm: idTraceModel) {
             Init()
             LoadModel(trm)
         }
 
-        // ~idClipModel( void );
+        /*
+        ================
+        idClipModel::idClipModel
+        ================
+        */
         constructor(renderModelHandle: Int) {
             Init()
             contents = Material.CONTENTS_RENDERMODEL
             LoadModel(renderModelHandle)
         }
 
+        /*
+        ================
+        idClipModel::idClipModel
+        ================
+        */
         constructor(model: idClipModel) {
             enabled = model.enabled
             entity = model.entity
@@ -210,6 +241,11 @@ object Clip {
             touchCount = -1
         }
 
+        /*
+        ================
+        idClipModel::LoadModel
+        ================
+        */
         fun LoadModel(name: String): Boolean {
             renderModelHandle = -1
             if (traceModelIndex != -1) {
@@ -222,7 +258,7 @@ object Clip {
                 run {
                     val contents = CInt()
                     collisionModelManager.GetModelContents(collisionModelHandle, contents)
-                    this.contents = contents._val
+                    this.contents = contents.integerValue
                 }
                 true
             } else {
@@ -231,6 +267,11 @@ object Clip {
             }
         }
 
+        /*
+        ================
+        idClipModel::LoadModel
+        ================
+        */
         fun LoadModel(trm: idTraceModel) {
             collisionModelHandle = 0
             renderModelHandle = -1
@@ -241,6 +282,11 @@ object Clip {
             bounds.set(trm.bounds)
         }
 
+        /*
+        ================
+        idClipModel::LoadModel
+        ================
+        */
         fun LoadModel(renderModelHandle: Int) {
             collisionModelHandle = 0
             this.renderModelHandle = renderModelHandle
@@ -256,6 +302,11 @@ object Clip {
             }
         }
 
+        /*
+        ================
+        idClipModel::Save
+        ================
+        */
         fun Save(savefile: idSaveGame) {
             savefile.WriteBool(enabled)
             savefile.WriteObject(entity as Class.idClass?)
@@ -278,18 +329,23 @@ object Clip {
             savefile.WriteInt(touchCount)
         }
 
+        /*
+        ================
+        idClipModel::Restore
+        ================
+        */
         fun Restore(savefile: idRestoreGame) {
             val collisionModelName = idStr()
             val linked = CBool(false)
             enabled = savefile.ReadBool()
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/entity)
+            entity = savefile.ReadObject() as idEntity?
             id = savefile.ReadInt()
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/owner)
+            owner = savefile.ReadObject() as idEntity?
             savefile.ReadVec3(origin)
             savefile.ReadMat3(axis)
             savefile.ReadBounds(bounds)
             savefile.ReadBounds(absBounds)
-            savefile.ReadMaterial(material!!)
+            material = savefile.ReadMaterial()
             contents = savefile.ReadInt()
             savefile.ReadString(collisionModelName)
             collisionModelHandle = if (collisionModelName.Length() != 0) {
@@ -314,6 +370,11 @@ object Clip {
             }
         }
 
+        /*
+        ===============
+        idClipModel::Link
+        ===============
+        */
         fun Link(clp: idClip) {                // must have been linked with an entity and id before
             assert(entity != null)
             if (null == entity) {
@@ -344,6 +405,11 @@ object Clip {
         }
 
 
+        /*
+        ===============
+        idClipModel::Link
+        ===============
+        */
         fun Link(
             clp: idClip,
             ent: idEntity?,
@@ -366,6 +432,11 @@ object Clip {
             this.Link(clp)
         }
 
+        /*
+        ===============
+        idClipModel::Unlink
+        ===============
+        */
         fun Unlink() {                        // unlink from sectors
             var link: clipLink_s?
             link = clipLinks
@@ -383,6 +454,11 @@ object Clip {
             }
         }
 
+        /*
+        ================
+        idClipModel::SetPosition
+        ================
+        */
         fun SetPosition(newOrigin: idVec3, newAxis: idMat3) {    // unlinks the clip model
             if (clipLinks != null) {
                 Unlink() // unlink from old position
@@ -487,6 +563,11 @@ object Clip {
             return traceModelIndex != -1 && GetCachedTraceModel(traceModelIndex) == trm
         }
 
+        /*
+        ================
+        idClipModel::Handle
+        ================
+        */
         fun  /*cmHandle_t*/Handle(): Int {                // returns handle used to collide vs this model
             assert(renderModelHandle == -1)
             return if (collisionModelHandle != 0) {
@@ -514,6 +595,11 @@ object Clip {
             } else GetCachedTraceModel(traceModelIndex)
         }
 
+        /*
+        ================
+        idClipModel::GetMassProperties
+        ================
+        */
         fun GetMassProperties(density: Float, mass: CFloat, centerOfMass: idVec3, inertiaTensor: idMat3) {
             if (traceModelIndex == -1) {
                 idGameLocal.Error(
@@ -528,7 +614,11 @@ object Clip {
             inertiaTensor.set(entry.inertiaTensor * density)
         }
 
-        // initialize(or does it?)
+        /*
+        ================
+        idClipModel::Init
+        ================
+        */
         private fun Init() {
             enabled = true
             entity = null
@@ -547,6 +637,11 @@ object Clip {
             touchCount = -1
         }
 
+        /*
+        ===============
+        idClipModel::Link_r
+        ===============
+        */
         private fun Link_r(node: clipSector_s) {
             var node = node
             val link: clipLink_s
@@ -577,6 +672,11 @@ object Clip {
             throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
         }
 
+        /*
+        ================
+        idClipModel::~idClipModel
+        ================
+        */
         protected fun _deconstructor() {
             // make sure the clip model is no longer linked
             Unlink()
@@ -586,6 +686,11 @@ object Clip {
         }
 
         companion object {
+            /*
+            ============
+            idClipModel::CheckModel
+            ============
+            */
             fun  /*cmHandle_t*/CheckModel(name: String): Int {
                 return collisionModelManager.LoadModel(name, false)
             }
@@ -594,11 +699,21 @@ object Clip {
                 return CheckModel(name.toString())
             }
 
+            /*
+            ===============
+            idClipModel::ClearTraceModelCache
+            ===============
+            */
             fun ClearTraceModelCache() {
                 traceModelCache.DeleteContents(true)
                 traceModelHash.Free()
             }
 
+            /*
+            ===============
+            idClipModel::SaveTraceModels
+            ===============
+            */
             fun SaveTraceModels(savefile: idSaveGame) {
                 var i: Int
                 savefile.WriteInt(traceModelCache.Num())
@@ -613,14 +728,19 @@ object Clip {
                 }
             }
 
+            /*
+            ===============
+            idClipModel::RestoreTraceModels
+            ===============
+            */
             fun RestoreTraceModels(savefile: idRestoreGame) {
                 var i: Int
                 val num = CInt()
                 ClearTraceModelCache()
                 savefile.ReadInt(num)
-                traceModelCache.SetNum(num._val)
+                traceModelCache.SetNum(num.integerValue)
                 i = 0
-                while (i < num._val) {
+                while (i < num.integerValue) {
                     val entry = trmCache_s()
                     savefile.ReadTraceModel(entry.trm)
                     entry.volume = savefile.ReadFloat()
@@ -633,6 +753,11 @@ object Clip {
                 }
             }
 
+            /*
+            ===============
+            idClipModel::AllocTraceModel
+            ===============
+            */
             private fun AllocTraceModel(trm: idTraceModel): Int {
                 var i: Int
                 val hashKey: Int
@@ -658,6 +783,11 @@ object Clip {
                 return traceModelIndex
             }
 
+            /*
+            ===============
+            idClipModel::FreeTraceModel
+            ===============
+            */
             fun FreeTraceModel(traceModelIndex: Int) {
                 if (traceModelIndex < 0 || traceModelIndex >= traceModelCache.Num() || traceModelCache[traceModelIndex].refCount <= 0
                 ) {
@@ -667,10 +797,20 @@ object Clip {
                 traceModelCache[traceModelIndex].refCount--
             }
 
+            /*
+            ===============
+            idClipModel::GetCachedTraceModel
+            ===============
+            */
             fun GetCachedTraceModel(traceModelIndex: Int): idTraceModel {
                 return traceModelCache[traceModelIndex].trm
             }
 
+            /*
+            ===============
+            idClipModel::GetTraceModelHashKey
+            ===============
+            */
             private fun GetTraceModelHashKey(trm: idTraceModel): Int {
                 val v = trm.bounds[0]
                 return trm.type.ordinal shl 8 xor (trm.numVerts shl 4) xor (trm.numEdges shl 2) xor (trm.numPolys shl 0) xor idMath.FloatHash(
@@ -706,6 +846,12 @@ object Clip {
         // statistics
         private var numTranslations: Int
         private var touchCount = 0
+
+        /*
+        ===============
+        idClip::Init
+        ===============
+        */
         fun Init() {
             val   /*cmHandle_t*/h: Int
             val size = idVec3()
@@ -747,6 +893,11 @@ object Clip {
             numRotations = numTranslations
         }
 
+        /*
+        ===============
+        idClip::Shutdown
+        ===============
+        */
         fun Shutdown() {
 //	delete[] clipSectors;
             clipSectors = Array(0) { clipSector_s() }
@@ -766,6 +917,11 @@ object Clip {
 //            clipLinkAllocator.Shutdown();
         }
 
+        /*
+        ============
+        idClip::Translation
+        ============
+        */
         // clip versus the rest of the world
         fun Translation(
             results: trace_s, start: idVec3, end: idVec3,
@@ -852,6 +1008,11 @@ object Clip {
             return results.fraction < 1.0f
         }
 
+        /*
+        ============
+        idClip::Rotation
+        ============
+        */
         fun Rotation(
             results: trace_s, start: idVec3, rotation: idRotation,
             mdl: idClipModel?, trmAxis: idMat3, contentMask: Int, passEntity: idEntity?
@@ -933,6 +1094,11 @@ object Clip {
             return results.fraction < 1.0f
         }
 
+        /*
+        ============
+        idClip::Motion
+        ============
+        */
         fun Motion(
             results: trace_s, start: idVec3, end: idVec3, rotation: idRotation,
             mdl: idClipModel?, trmAxis: idMat3, contentMask: Int, passEntity: idEntity?
@@ -948,7 +1114,6 @@ object Clip {
             var translationalTrace = trace_s()
             var rotationalTrace = trace_s()
             val trace = trace_s()
-            val endRotation: idRotation
             val trm: idTraceModel?
             assert(rotation.GetOrigin() == start)
             if (TestHugeTranslation(results, mdl, start, end, trmAxis)) {
@@ -1033,7 +1198,7 @@ object Clip {
                         )
                     }
                     if (trace.fraction < translationalTrace.fraction) {
-                        translationalTrace = trace
+                        translationalTrace.set(trace)
                         translationalTrace.c.entityNum = touch.entity!!.entityNumber
                         translationalTrace.c.id = touch.id
                         if (translationalTrace.fraction == 0.0f) {
@@ -1046,8 +1211,9 @@ object Clip {
                 num = -1
             }
             endPosition.set(translationalTrace.endpos)
-            endRotation = rotation
-            endRotation.SetOrigin(endPosition)
+            // Create a copy of rotation with the new origin — C++ copies by value,
+            // Kotlin would alias the caller's rotation parameter if we did endRotation = rotation
+            val endRotation = idRotation(endPosition, rotation.GetVec(), rotation.GetAngle())
             if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
                 // rotational collision with world
                 numRotations++
@@ -1122,6 +1288,11 @@ object Clip {
             return translationalTrace.fraction < 1.0f || rotationalTrace.fraction < 1.0f
         }
 
+        /*
+        ============
+        idClip::Contacts
+        ============
+        */
         fun Contacts(
             contacts: Array<contactInfo_t>, maxContacts: Int, start: idVec3, dir: idVec6, depth: Float,
             mdl: idClipModel?, trmAxis: idMat3, contentMask: Int, passEntity: idEntity?
@@ -1207,6 +1378,11 @@ object Clip {
             return numContacts
         }
 
+        /*
+        ============
+        idClip::Contents
+        ============
+        */
         fun Contents(
             start: idVec3,
             mdl: idClipModel?,
@@ -1323,6 +1499,11 @@ object Clip {
             return results.fraction < 1.0f
         }
 
+        /*
+        ============
+        idClip::TranslationModel
+        ============
+        */
         // clip versus a specific model
         fun TranslationModel(
             results: trace_s,
@@ -1350,6 +1531,11 @@ object Clip {
             )
         }
 
+        /*
+        ============
+        idClip::RotationModel
+        ============
+        */
         fun RotationModel(
             results: trace_s,
             start: idVec3,
@@ -1376,6 +1562,11 @@ object Clip {
             )
         }
 
+        /*
+        ============
+        idClip::ContactsModel
+        ============
+        */
         fun ContactsModel(
             contacts: Array<contactInfo_t>,
             maxContacts: Int,
@@ -1406,6 +1597,11 @@ object Clip {
             )
         }
 
+        /*
+        ============
+        idClip::ContentsModel
+        ============
+        */
         fun ContentsModel(
             start: idVec3, mdl: idClipModel?, trmAxis: idMat3, contentMask: Int,
             /*cmHandle_t*/model: Int, modelOrigin: idVec3, modelAxis: idMat3
@@ -1423,6 +1619,11 @@ object Clip {
             )
         }
 
+        /*
+        ============
+        idClip::TranslationEntities
+        ============
+        */
         // clip versus all entities but not the world
         fun TranslationEntities(
             results: trace_s, start: idVec3, end: idVec3,
@@ -1480,6 +1681,11 @@ object Clip {
             }
         }
 
+        /*
+        ============
+        idClip::GetModelContactFeature
+        ============
+        */
         // get a contact feature
         fun GetModelContactFeature(
             contact: contactInfo_t,
@@ -1557,6 +1763,11 @@ object Clip {
             return true
         }
 
+        /*
+        ================
+        idClip::EntitiesTouchingBounds
+        ================
+        */
         // get entities/clip models within or touching the given bounds
         fun EntitiesTouchingBounds(
             bounds: idBounds,
@@ -1595,6 +1806,11 @@ object Clip {
             return entCount
         }
 
+        /*
+        ================
+        idClip::ClipModelsTouchingBounds
+        ================
+        */
         fun ClipModelsTouchingBounds(
             bounds: idBounds,
             contentMask: Int,
@@ -1627,6 +1843,11 @@ object Clip {
             return defaultClipModel
         }
 
+        /*
+        ============
+        idClip::PrintStatistics
+        ============
+        */
         // stats and debug drawing
         fun PrintStatistics() {
             Game_local.gameLocal.Printf(
@@ -1641,6 +1862,11 @@ object Clip {
             numRotations = numTranslations
         }
 
+        /*
+        ============
+        idClip::DrawClipModels
+        ============
+        */
         fun DrawClipModels(eye: idVec3, radius: Float, passEntity: idEntity?) {
             var i: Int
             val num: Int
@@ -1671,6 +1897,11 @@ object Clip {
             }
         }
 
+        /*
+        ============
+        idClip::DrawModelContactFeature
+        ============
+        */
         fun DrawModelContactFeature(contact: contactInfo_t, clipModel: idClipModel?, lifetime: Int): Boolean {
             var i: Int
             val axis: idMat3
@@ -1770,6 +2001,11 @@ object Clip {
             return anode
         }
 
+        /*
+        ====================
+        idClip::ClipModelsTouchingBounds_r
+        ====================
+        */
         private fun ClipModelsTouchingBounds_r(node: clipSector_s, parms: listParms_s) {
             var node = node
             while (node.axis != -1) {
@@ -1821,6 +2057,11 @@ object Clip {
             }
         }
 
+        /*
+        ============
+        idClip::TraceModelForClipModel
+        ============
+        */
         private fun TraceModelForClipModel(mdl: idClipModel?): idTraceModel? {
             return if (null == mdl) {
                 null
@@ -1894,6 +2135,11 @@ object Clip {
             return num
         }
 
+        /*
+        ============
+        idClip::TraceRenderModel
+        ============
+        */
         private fun TraceRenderModel(
             trace: trace_s,
             start: idVec3,
@@ -1927,11 +2173,6 @@ object Clip {
             }
         }
 
-        /*
-         ====================
-         idClip::ClipModelsTouchingBounds_r
-         ====================
-         */
         private class listParms_s {
             val bounds: idBounds = idBounds()
             var contentMask = 0
@@ -1942,6 +2183,11 @@ object Clip {
 
         //
         //
+        /*
+        ===============
+        idClip::idClip
+        ===============
+        */
         init {
             numClipSectors = 0
             clipSectors = null

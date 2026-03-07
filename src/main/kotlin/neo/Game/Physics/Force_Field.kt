@@ -8,6 +8,8 @@
 
 package neo.Game.Physics
 
+import neo.Game.GameSys.Class
+import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local
@@ -57,6 +59,13 @@ class Force_Field {
     }
 
     class idForce_Field : idForce() {
+        companion object {
+            val Type = idTypeInfo("idForce_Field", "idForce") { idForce_Field() }
+        }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): Class.idClass = idForce_Field()
+
         //	CLASS_PROTOTYPE( idForce_Field );
         private var applyType: forceFieldApplyType
         private var clipModel: idClipModel?
@@ -68,7 +77,14 @@ class Force_Field {
 
         // force properties
         private var type: forceFieldType
+
+        /*
+        ================
+        idForce_Field::Save
+        ================
+        */
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteInt(TempDump.etoi(type))
             savefile.WriteInt(applyType.ordinal)
             savefile.WriteFloat(magnitude)
@@ -79,7 +95,13 @@ class Force_Field {
             savefile.WriteClipModel(clipModel)
         }
 
+        /*
+        ================
+        idForce_Field::Restore
+        ================
+        */
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             type = forceFieldType.entries.toTypedArray()[savefile.ReadInt()]
             applyType = forceFieldApplyType.entries.toTypedArray()[savefile.ReadInt()]
             magnitude = savefile.ReadFloat()
@@ -87,10 +109,15 @@ class Force_Field {
             randomTorque = savefile.ReadFloat()
             playerOnly = savefile.ReadBool()
             monsterOnly = savefile.ReadBool()
-            savefile.ReadClipModel(clipModel!!)
+            clipModel = savefile.ReadClipModel()
         }
 
         //	virtual				~idForce_Field( void );
+        /*
+        ================
+        idForce_Field::Uniform
+        ================
+        */
         // uniform constant force
         fun Uniform(force: idVec3) {
             dir.set(force)
@@ -98,19 +125,34 @@ class Force_Field {
             type = forceFieldType.FORCEFIELD_UNIFORM
         }
 
-        // explosion from clip model origin	
+        /*
+        ================
+        idForce_Field::Explosion
+        ================
+        */
+        // explosion from clip model origin
         fun Explosion(force: Float) {
             magnitude = force
             type = forceFieldType.FORCEFIELD_EXPLOSION
         }
 
-        // implosion towards clip model origin	
+        /*
+        ================
+        idForce_Field::Implosion
+        ================
+        */
+        // implosion towards clip model origin
         fun Implosion(force: Float) {
             magnitude = force
             type = forceFieldType.FORCEFIELD_IMPLOSION
         }
 
-        // add random torque	
+        /*
+        ================
+        idForce_Field::RandomTorque
+        ================
+        */
+        // add random torque
         fun RandomTorque(force: Float) {
             randomTorque = force
         }
@@ -130,7 +172,12 @@ class Force_Field {
             monsterOnly = set
         }
 
-        // clip model describing the extents of the force field	
+        /*
+        ================
+        idForce_Field::SetClipModel
+        ================
+        */
+        // clip model describing the extents of the force field
         fun SetClipModel(clipModel: idClipModel) {
             if (this.clipModel != null && clipModel !== this.clipModel) {
                 idClipModel.delete(this.clipModel!!)
@@ -138,6 +185,11 @@ class Force_Field {
             this.clipModel = clipModel
         }
 
+        /*
+        ================
+        idForce_Field::Evaluate
+        ================
+        */
         // common force interface
         override fun Evaluate(time: Int) {
             val numClipModels: Int
@@ -273,6 +325,11 @@ class Force_Field {
             }
         }
 
+        /*
+        ================
+        idForce_Field::idForce_Field
+        ================
+        */
         init {
             type = forceFieldType.FORCEFIELD_UNIFORM
             applyType = forceFieldApplyType.FORCEFIELD_APPLY_FORCE

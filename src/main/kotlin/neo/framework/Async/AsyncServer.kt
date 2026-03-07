@@ -694,7 +694,7 @@ object AsyncServer {
                     )
                     if (newPacket) {
                         msg.Init(msgBuf, msgBuf.capacity())
-                        msg.SetSize(size._val)
+                        msg.SetSize(size.integerValue)
                         msg.BeginReading()
                         if (ProcessMessage(from, msg)) {
                             return  // return because rcon was used
@@ -850,7 +850,7 @@ object AsyncServer {
             }
             while (serverPort.GetPacket(from, msgBuf, size, msgBuf.capacity())) {
                 msg.Init(msgBuf, msgBuf.capacity())
-                msg.SetSize(size._val)
+                msg.SetSize(size.integerValue)
                 msg.BeginReading()
                 id = msg.ReadShort().toInt()
                 if (id == MsgChannel.CONNECTIONLESS_MESSAGE_ID) {
@@ -2405,7 +2405,7 @@ object AsyncServer {
             outMsg.WriteLong(0)
 
             // write the pak checksum for game code
-            outMsg.WriteLong(gamePakChecksum._val)
+            outMsg.WriteLong(gamePakChecksum.integerValue)
             serverPort.SendPacket(to, outMsg.GetData()!!, outMsg.GetSize())
             return true
         }
@@ -2505,7 +2505,7 @@ object AsyncServer {
                 msg.WriteLong(serverChecksums[i++])
             }
             msg.WriteLong(0)
-            msg.WriteLong(gamePakChecksum._val)
+            msg.WriteLong(gamePakChecksum.integerValue)
             SendReliableMessage(clientNum, msg)
             return true
         }
@@ -2580,7 +2580,7 @@ object AsyncServer {
             assert(serverChecksums[0] != 0)
 
             // compare the lists
-            if (serverGamePakChecksum._val != gamePakChecksum) {
+            if (serverGamePakChecksum.integerValue != gamePakChecksum) {
                 Common.common.Printf(
                     "client %s: invalid game code pak ( 0x%x )\n",
                     if (from != null) win_net.Sys_NetAdrToString(from) else Str.va("%d", clientNum),

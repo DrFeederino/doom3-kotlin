@@ -477,8 +477,8 @@ object win_main {
     fun  /*ID_TIME_T*/Sys_FileTimeStamp(fp: String): Long {
         val st = Paths.get(fp).toFile()
         return if (st.exists()) {
-//        Files.getLastModifiedTime(Paths.get(fp), LinkOption.NOFOLLOW_LINKS).toMillis();
-            st.lastModified()
+            // C++ returns time_t (seconds since epoch), Java's lastModified() returns milliseconds
+            st.lastModified() / 1000
         } else 0
     }
 

@@ -64,6 +64,11 @@ val EV_Camera_SetAttachments: idEventDef = idEventDef("<getattachments>", null)
  ===============================================================================
  */
 abstract class idCamera : idEntity() {
+    companion object {
+        val Type = idTypeInfo("idCamera", "idEntity")
+    }
+
+    override fun GetType(): idTypeInfo = Type
 
     /*
      =====================
@@ -95,6 +100,8 @@ abstract class idCamera : idEntity() {
  */
 class idCameraView : idCamera() {
     companion object {
+        val Type = idTypeInfo("idCameraView", "idCamera") { idCameraView() }
+
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
         fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
             return eventCallbacks
@@ -121,6 +128,7 @@ class idCameraView : idCamera() {
      ================
      */
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         savefile.WriteFloat(fov)
         savefile.WriteObject(attachedTo)
         savefile.WriteObject(attachedView)
@@ -132,10 +140,11 @@ class idCameraView : idCamera() {
      ================
      */
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         val fov = CFloat(fov)
         savefile.ReadFloat(fov)
-        savefile.ReadObject(attachedTo)
-        savefile.ReadObject(attachedView)
+        attachedTo = savefile.ReadObject() as idEntity?
+        attachedView = savefile.ReadObject() as idEntity?
         this.fov = fov._val
     }
 
@@ -253,9 +262,8 @@ class idCameraView : idCamera() {
         }
     }
 
-    override fun CreateInstance(): idClass {
-        throw UnsupportedOperationException("Not supported yet.")
-    }
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idCameraView()
 
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]
@@ -284,6 +292,8 @@ class cameraFrame_t {
  */
 class idCameraAnim : idCamera() {
     companion object {
+        val Type = idTypeInfo("idCameraAnim", "idCamera") { idCameraAnim() }
+
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
         fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -320,6 +330,7 @@ class idCameraAnim : idCamera() {
      ================
      */
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         savefile.WriteInt(threadNum)
         savefile.WriteVec3(offset)
         savefile.WriteInt(frameRate)
@@ -334,6 +345,7 @@ class idCameraAnim : idCamera() {
      ================
      */
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         threadNum = savefile.ReadInt()
         savefile.ReadVec3(offset)
         frameRate = savefile.ReadInt()
@@ -711,9 +723,8 @@ class idCameraAnim : idCamera() {
         }
     }
 
-    override fun CreateInstance(): idClass {
-        throw UnsupportedOperationException("Not supported yet.")
-    }
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idCameraAnim()
 
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]

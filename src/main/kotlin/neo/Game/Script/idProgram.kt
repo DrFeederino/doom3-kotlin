@@ -19,6 +19,7 @@ import neo.Game.Script.Script_Program.idVarDefName
 import neo.Game.Script.Script_Program.statement_s
 import neo.Game.Script.Script_Thread.idThread
 import neo.Game.idEntity
+import neo.framework.Common
 import neo.framework.FileSystem_h.fileSystem
 import neo.framework.FileSystem_h.fsMode_t
 import neo.framework.File_h.idFile
@@ -32,6 +33,7 @@ import neo.idlib.containers.idStrList
 import neo.idlib.hashing.MD4_BlockChecksum
 import neo.idlib.math.idVec3
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.*
 
 /* **********************************************************************
@@ -70,8 +72,8 @@ class idProgram {
     private val varDefNameHash = idHashIndex()
     private val varDefNames = idList<idVarDefName>()
     private val varDefs = idList<idVarDef>()
-    private val variableDefaults = idStaticList<Byte>(Script_Program.MAX_GLOBALS)
-    private var variables = ByteArray(Script_Program.MAX_GLOBALS)
+    private val variableDefaults = idStaticList<UByte>(Script_Program.MAX_GLOBALS)
+    private var variables = UByteArray(Script_Program.MAX_GLOBALS)
 
     //
     //
@@ -159,7 +161,7 @@ class idProgram {
             savefile.WriteByte(variables[i])
             i++
         }
-        val checksum = CalculateChecksum()
+        val checksum = CalculateChecksum().toInt()
         savefile.WriteInt(checksum)
     }
 
@@ -169,83 +171,71 @@ class idProgram {
         val index = CInt()
         var result = true
         val scriptname = idStr()
+
         savefile.ReadInt(num)
-        i = 0
-        while (i < num._val) {
+        for (i in 0 until num.integerValue) {
             savefile.ReadString(scriptname)
             CompileFile(scriptname.toString())
-            i++
         }
+
         savefile.ReadInt(index)
-        while (index._val >= 0) {
-            variables[index._val] = savefile.ReadByte()
+        while (index.integerValue >= 0) {
+            variables[index.integerValue] = savefile.ReadByte()
+            Common.common.Printf("Readbyte returned %d\n", variables[index.integerValue].toInt())
             savefile.ReadInt(index)
+            Common.common.Printf("ReadInt returned %d\n", index.integerValue)
         }
+
         savefile.ReadInt(num)
-        i = variableDefaults.Num()
-        while (i < num._val) {
+        for (i in variableDefaults.Num() until num.integerValue) {
             variables[i] = savefile.ReadByte()
-            i++
         }
+
         val saved_checksum = CInt()
-        val checksum: Int
+        val checksum: Long
+
         savefile.ReadInt(saved_checksum)
         checksum = CalculateChecksum()
-        if (saved_checksum._val != checksum) {
+
+        if (saved_checksum.integerValue.toLong() != checksum) {
+            Game_local.gameLocal.Warning("WARNING: Real Script checksum didn't match the one from the savegame!")
             result = false
         }
+
         return result
     }
 
-    // Used to insure program code has not
-    fun CalculateChecksum(): Int {
-        var i: Int
-        val result: Int
+    // Used to insure program code has not changed between savegames
+    fun CalculateChecksum(): Long {
+        // C++ statementBlock_t layout (natural alignment, sizeof = 20):
+        //   unsigned short op;         // offset 0,  size 2
+        //   (2 bytes padding)          // offset 2,  size 2 (align int a to 4)
+        //   int a;                     // offset 4,  size 4
+        //   int b;                     // offset 8,  size 4
+        //   int c;                     // offset 12, size 4
+        //   unsigned short linenumber; // offset 16, size 2
+        //   unsigned short file;       // offset 18, size 2
+        val SIZEOF_STATEMENT_BLOCK = 20
+        val numStatements = statements.Num()
+        val totalBytes = SIZEOF_STATEMENT_BLOCK * numStatements
+        val buffer = ByteBuffer.allocate(totalBytes).order(ByteOrder.LITTLE_ENDIAN)
 
-        class statementBlock_t {
-            var a = 0
-            var b = 0
-            var c = 0
-            var file = 0
-            var lineNumber = 0
-            var   /*unsigned short*/op = 0
-            fun toArray(): IntArray {
-                return intArrayOf(op, a, b, c, lineNumber, file)
-            }
-        }
+        // memset equivalent — ByteBuffer.allocate() already zero-fills
 
-        val statementList = arrayOfNulls<statementBlock_t>(statements.Num())
-        val statementIntArray = IntArray(statements.Num() * 6)
-
-//	memset( statementList, 0, ( sizeof(statementBlock_t) * statements.Num() ) );
         // Copy info into new list, using the variable numbers instead of a pointer to the variable
-        i = 0
-        while (i < statements.Num()) {
-            statementList[i] = statementBlock_t()
-            statementList[i]!!.op = statements[i].op
-            if (statements[i].a != null) {
-                statementList[i]!!.a = statements[i].a!!.num
-            } else {
-                statementList[i]!!.a = -1
-            }
-            if (statements[i].b != null) {
-                statementList[i]!!.b = statements[i].b!!.num
-            } else {
-                statementList[i]!!.b = -1
-            }
-            if (statements[i].c != null) {
-                statementList[i]!!.c = statements[i].c!!.num
-            } else {
-                statementList[i]!!.c = -1
-            }
-            statementList[i]!!.lineNumber = statements[i].linenumber
-            statementList[i]!!.file = statements[i].file
-            System.arraycopy(statementList[i]!!.toArray(), 0, statementIntArray, i * 6, 6)
-            i++
+        for (i in 0 until numStatements) {
+            val st = statements[i]
+            buffer.putShort((st.op and 0xFFFF).toShort())  // op (unsigned short)
+            buffer.putShort(0)                              // padding (2 bytes)
+            buffer.putInt(if (st.a != null) st.a!!.num else -1)  // a
+            buffer.putInt(if (st.b != null) st.b!!.num else -1)  // b
+            buffer.putInt(if (st.c != null) st.c!!.num else -1)  // c
+            buffer.putShort((st.linenumber and 0xFFFF).toShort()) // linenumber (unsigned short)
+            buffer.putShort((st.file and 0xFFFF).toShort())       // file (unsigned short)
         }
-        result = MD4_BlockChecksum(statementIntArray, statementIntArray.size).toInt()
 
-        return result
+        buffer.flip()
+        return MD4_BlockChecksum(buffer, totalBytes)
     }
 
     //    changed between savegames
@@ -514,7 +504,7 @@ class idProgram {
         filenum = 0
         numVariables = 0
         //	memset( variables, 0, sizeof( variables ) );
-        variables = ByteArray(variables.size)
+        variables = UByteArray(variables.size)
 
         // clear all the strings in the functions so that it doesn't look like we're leaking memory.
         i = 0
@@ -625,6 +615,19 @@ class idProgram {
         return null
     }
 
+    fun AllocVarDef(type: idTypeDef?, name: String?, scope: idVarDef?): idVarDef {
+        val def = idVarDef(type)
+        def.scope = scope
+        def.numUsers = 1
+        def.num = varDefs.Append(def)
+        def.value = Script_Program.varEval_s()
+
+        // add the def to the list with defs with this name and set the name pointer
+        AddDefToNameList(def, name)
+
+        return def
+    }
+
     fun AllocDef(type: idTypeDef?, name: String?, scope: idVarDef?, constant: Boolean): idVarDef {
         val def: idVarDef
         var element: String
@@ -671,18 +674,46 @@ class idProgram {
                 def_z = AllocDef(type2, element, scope, constant)
                 def_z.value!!.ptrOffset = def_y.value!!.ptrOffset + Script_Program.type_float.Size()
             } else {
+                val newtype = idTypeDef(Script_Program.ev_float, null, "vector float", 0, null)
+                val ftype = GetType(newtype, true)
+
                 // make automatic defs for the vectors elements
                 // origin can be accessed as origin_x, origin_y, and origin_z
                 element = String.format("%s_x", def.Name())
-                def_x = AllocDef(Script_Program.type_float, element, scope, constant)
+                def_x = AllocVarDef(ftype, element, scope)
                 element = String.format("%s_y", def.Name())
-                def_y = AllocDef(Script_Program.type_float, element, scope, constant)
+                def_y = AllocVarDef(ftype, element, scope)
                 element = String.format("%s_z", def.Name())
-                def_z = AllocDef(Script_Program.type_float, element, scope, constant)
+                def_z = AllocVarDef(ftype, element, scope)
 
-                // point the vector def to the x coordinate
-                def.value = def_x.value
-                def.initialized = def_x.initialized
+                // get the memory for the full vector and point the _x, _y and _z
+                // defs at the vector member offsets
+                if (scope!!.Type() == Script_Program.ev_function) {
+                    // vector on stack
+                    def.value!!.stackOffset = scope.value!!.functionPtr!!.locals
+                    def.initialized = initialized_t.stackVariable
+                    scope.value!!.functionPtr!!.locals += type.Size()
+
+                    def_x.value!!.stackOffset = def.value!!.stackOffset
+                    def_y.value!!.stackOffset = def_x.value!!.stackOffset + java.lang.Float.BYTES
+                    def_z.value!!.stackOffset = def_y.value!!.stackOffset + java.lang.Float.BYTES
+                } else {
+                    // global vector
+                    val baseOffset = numVariables
+                    def.value!!.setBytePtr(variables, baseOffset)
+                    numVariables += type.Size()
+                    if (numVariables > variables.size) {
+                        throw idCompileError(String.format("Exceeded global memory size (%d bytes)", variables.size))
+                    }
+
+                    def_x.value!!.setBytePtr(variables, baseOffset)
+                    def_y.value!!.setBytePtr(variables, baseOffset + java.lang.Float.BYTES)
+                    def_z.value!!.setBytePtr(variables, baseOffset + java.lang.Float.BYTES * 2)
+                }
+
+                def_x.initialized = def.initialized
+                def_y.initialized = def.initialized
+                def_z.initialized = def.initialized
             }
         } else if (scope!!.TypeDef()!!.Inherits(Script_Program.type_object)) {
             //
@@ -714,7 +745,7 @@ class idProgram {
             if (numVariables > variables.size) {
                 throw idCompileError(String.format("Exceeded global memory size (%d bytes)", variables.size))
             }
-            Arrays.fill(variables, numVariables, variables.size, 0.toByte())
+            variables.fill(0.toUByte(), numVariables, variables.size)
             //                memset(def.value.bytePtr, 0, def.TypeDef().Size());
         }
         return def

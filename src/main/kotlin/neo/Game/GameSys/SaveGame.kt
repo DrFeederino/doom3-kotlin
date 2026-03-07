@@ -29,12 +29,11 @@ import neo.Renderer.RenderWorld.renderLight_s
 import neo.Renderer.RenderWorld.renderView_s
 import neo.Sound.snd_shader.idSoundShader
 import neo.TempDump.SERiAL
-
 import neo.cm.contactInfo_t
 import neo.cm.contactType_t
 import neo.cm.trace_s
 import neo.framework.BUILD_NUMBER
-
+import neo.framework.Common
 import neo.framework.DeclFX.idDeclFX
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
@@ -59,8 +58,8 @@ import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
-import java.lang.Class
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.charset.StandardCharsets
 
 object SaveGame {
@@ -189,9 +188,9 @@ object SaveGame {
         idSaveGame::WriteByte
         ================
         */
-        fun WriteByte(value: Byte) {
+        fun WriteByte(value: UByte) {
             val buffer = ByteBuffer.allocate(1)
-            buffer.put(value)
+            buffer.put(value.toByte())
             file.Write(buffer, 1)
         }
 
@@ -548,8 +547,8 @@ object SaveGame {
             var i: Int
             WriteMat3(renderLight.axis)
             WriteVec3(renderLight.origin)
-            WriteInt(renderLight.suppressLightInViewID._val)
-            WriteInt(renderLight.allowLightInViewID._val)
+            WriteInt(renderLight.suppressLightInViewID.integerValue)
+            WriteInt(renderLight.allowLightInViewID.integerValue)
             WriteBool(renderLight.noShadows._val)
             WriteBool(renderLight.noSpecular._val)
             WriteBool(renderLight.pointLight._val)
@@ -564,7 +563,7 @@ object SaveGame {
 
             // only idLight has a prelightModel and it's always based on the entityname, so we'll restore it there
             // WriteModel( renderLight.prelightModel );
-            WriteInt(renderLight.lightId._val)
+            WriteInt(renderLight.lightId.integerValue)
             WriteMaterial(renderLight.shader)
             i = 0
             while (i < Material.MAX_ENTITY_SHADER_PARMS) {
@@ -636,7 +635,7 @@ object SaveGame {
             WriteInt(usercmd.gameFrame)
             WriteInt(usercmd.gameTime)
             WriteInt(usercmd.duplicateCount)
-            WriteByte(usercmd.buttons)
+            WriteByte(usercmd.buttons.toUByte())
             WriteSignedChar(usercmd.forwardmove.toShort())
             WriteSignedChar(usercmd.rightmove.toShort())
             WriteSignedChar(usercmd.upmove.toShort())
@@ -646,7 +645,7 @@ object SaveGame {
             WriteShort(usercmd.mx)
             WriteShort(usercmd.my)
             WriteSignedChar(usercmd.impulse.toShort())
-            WriteByte(usercmd.flags)
+            WriteByte(usercmd.flags.toUByte())
             WriteInt(usercmd.sequence)
         }
 
@@ -763,16 +762,8 @@ object SaveGame {
         idSaveGame::CallSave_r
         ================
         */
-        private fun CallSave_r(cls: Class<out idClass>, obj: idClass?) {
-            TODO()
-//            if (cls.zuper != null) {
-//                CallSave_r(cls.zuper!!, obj)
-//                if (cls.zuper!!.Save == cls.Save) {
-//                    // don't call save on this inheritance level since the function was called in the super class
-//                    return
-//                }
-//            }
-//            ( /* obj->*cls-> */ cls.Save).run(this)
+        private fun CallSave_r(cls: idTypeInfo, obj: idClass?) {
+            obj?.Save(this)
         }
 
         /*
@@ -804,7 +795,7 @@ object SaveGame {
         fun ReadInternalSavegameVersion() {
             val readVersion = CInt()
             ReadInt(readVersion)
-            internalSavegameVersion = readVersion._val
+            internalSavegameVersion = readVersion.integerValue
         }
 
         // if it's 0, this is from a GetBuildNumber() < 1305 savegame
@@ -826,18 +817,14 @@ object SaveGame {
             var type: idTypeInfo?
             ReadInt(num)
 
-            // create all the objects
-            objects.SetNum(num._val + 1)
-            //            memset(objects.Ptr(), 0, sizeof(objects[ 0]) * objects.Num());
-            i = 1
-            while (i < objects.Num()) {
+            objects.SetNum(num.integerValue + 1)
+            for (i in 1 until objects.Num()) {
                 ReadString(className)
                 type = idClass.GetClass(className.toString())
-                if (null == type) {
-                    Error("idRestoreGame::CreateObjects: Unknown class '%s'", className.toString())
+                if (type == null) {
+                    Error("idRestoreGame::CreateObjects: Unknown class '${className}'")
                 }
-                objects[i] = type!!.CreateInstance.run() as idClass
-                i++
+                objects[i] = type!!.createInstance()
             }
         }
 
@@ -854,10 +841,9 @@ object SaveGame {
             idClipModel.RestoreTraceModels(this)
 
             // restore all the objects
-            i = 1
-            while (i < objects.Num()) {
+            for (i in 1 until objects.Num()) {
+                Common.common.Printf("CallRestore_r %d %s\n", i, objects[i].GetType().classname);
                 CallRestore_r(objects[i].GetType(), objects[i])
-                i++
             }
 
             // regenerate render entities and render lights because are not saved
@@ -871,13 +857,6 @@ object SaveGame {
                 i++
             }
 
-// #ifdef ID_DEBUG_MEMORY
-            // idStr gameState = file.GetName();
-            // gameState.StripFileExtension();
-            // WriteGameState_f( idCmdArgs( va( "test %s_restore", gameState.c_str() ), false ) );
-            // //CompareGameState_f( idCmdArgs( va( "test %s_save", gameState.c_str() ) ) );
-            // gameLocal.Error( "dumped game states" );
-// #endif
         }
 
         /*
@@ -886,7 +865,6 @@ object SaveGame {
         ====================
         */
         fun DeleteObjects() {
-
             // Remove the NULL object before deleting
             objects.RemoveIndex(0)
             objects.DeleteContents(true)
@@ -929,7 +907,7 @@ object SaveGame {
         fun ReadInt(): Int {
             val value = CInt()
             this.ReadInt(value)
-            return value._val
+            return value.integerValue
         }
 
         /*
@@ -944,7 +922,7 @@ object SaveGame {
         fun ReadJoint(): Int {
             val jointHandle_t = CInt()
             this.ReadJoint(jointHandle_t)
-            return jointHandle_t._val
+            return jointHandle_t.integerValue
         }
 
         /*
@@ -952,14 +930,10 @@ object SaveGame {
         idRestoreGame::ReadShort
         ================
         */
-        fun ReadShort(value: ShortArray) {
-            file.ReadShort(value)
-        }
-
         fun ReadShort(): Short {
-            val value = shortArrayOf(0)
-            this.ReadShort(value)
-            return value[0]
+            val value = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
+            file.Read(value, 2)
+            return value.getShort()
         }
 
         /*
@@ -967,14 +941,10 @@ object SaveGame {
         idRestoreGame::ReadByte
         ================
         */
-        fun ReadByte(value: ByteArray?) {
-            file.Read(ByteBuffer.wrap(value) /*, sizeof(value)*/)
-        }
-
-        fun ReadByte(): Byte {
-            val value = byteArrayOf(0)
-            this.ReadByte(value)
-            return value[0]
+        fun ReadByte(): UByte {
+            val value = ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN)
+            file.Read(value, 1)
+            return value.get().toUByte()
         }
 
         /*
@@ -984,7 +954,7 @@ object SaveGame {
         */
         fun ReadSignedChar(value: CharArray) {
             // FIX: C++ reads sizeof(signed char) = 1 byte
-            val buffer = ByteBuffer.allocate(1)
+            val buffer = ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN)
             file.Read(buffer, 1)
             value[0] = buffer[0].toInt().toChar()
         }
@@ -1033,11 +1003,11 @@ object SaveGame {
         fun ReadString(string: idStr) {
             val len = CInt()
             ReadInt(len)
-            if (len._val < 0) {
+            if (len.integerValue < 0) {
                 Error("idRestoreGame::ReadString: invalid length")
             }
-            string.Fill(' ', len._val)
-            file.Read(string, len._val)
+            string.Fill(' ', len.integerValue)
+            file.Read(string, len.integerValue)
         }
 
         /*
@@ -1085,11 +1055,11 @@ object SaveGame {
             var i: Int
             val num = CInt()
             file.ReadInt(num)
-            w.SetNumPoints(num._val)
+            w.SetNumPoints(num.integerValue)
             i = 0
-            while (i < num._val) {
-                file.Read(w.get(i) /*, sizeof(idVec5)*/)
-                LittleRevBytes(w.get(i) /*, sizeof(float), sizeof(idVec5) / sizeof(float)*/)
+            while (i < num.integerValue) {
+                file.Read(w[i])
+                LittleRevBytes(w[i])
                 i++
             }
         }
@@ -1100,8 +1070,8 @@ object SaveGame {
         ================
         */
         fun ReadBounds(bounds: idBounds) {
-            file.Read(bounds /*, sizeof(bounds)*/)
-            LittleRevBytes(bounds /*, sizeof(float), sizeof(bounds) / sizeof(float)*/)
+            file.Read(bounds)
+            LittleRevBytes(bounds)
         }
 
         /*
@@ -1123,22 +1093,6 @@ object SaveGame {
             LittleRevBytes(angles /*, sizeof(float), sizeof(idAngles) / sizeof(float)*/)
         }
 
-        /*
-        ================
-        idRestoreGame::ReadObject
-        ================
-        */
-        fun ReadObject(obj: idClass?) {
-            // NOTE: Differs from C++ — C++ takes idClass*& (pointer by reference) and modifies the caller's pointer.
-            // Kotlin cannot modify a passed parameter reference. This overload reads and discards the index for
-            // format compatibility. Callers should migrate to the return-value overload below.
-            val index = ReadInt()
-            if (index < 0 || index >= objects.Num()) {
-                Error("idRestoreGame::ReadObject: invalid object index")
-            }
-            // Cannot assign to 'obj' parameter in Kotlin — value is discarded.
-            // Callers that need the result should use: val obj = savefile.ReadObject()
-        }
 
         // NOTE: Differs from C++ — return-value overload for Kotlin callers
         fun ReadObject(): idClass? {
@@ -1164,23 +1118,25 @@ object SaveGame {
         idRestoreGame::ReadDict
         ================
         */
-        fun ReadDict(dict: idDict) {
+        fun ReadDict(): idDict? {
             val num = CInt()
             var i: Int
             val key = idStr()
             val value = idStr()
             ReadInt(num)
-            if (num._val < 0) {
-                // C++: dict = NULL — cannot reassign parameter in Kotlin
+            if (num.integerValue < 0) {
+                return null
             } else {
+                val dict = idDict()
                 dict.Clear()
                 i = 0
-                while (i < num._val) {
+                while (i < num.integerValue) {
                     ReadString(key)
                     ReadString(value)
                     dict.Set(key, value)
                     i++
                 }
+                return dict
             }
         }
 
@@ -1189,13 +1145,13 @@ object SaveGame {
         idRestoreGame::ReadMaterial
         ================
         */
-        fun ReadMaterial(material: Material.idMaterial) {
+        fun ReadMaterial(): Material.idMaterial? {
             val name = idStr()
             ReadString(name)
             if (0 == name.Length()) {
-                material.oSet(null)
+                return null
             } else {
-                material.oSet(DeclManager.declManager.FindMaterial(name))
+                return DeclManager.declManager.FindMaterial(name)
             }
         }
 
@@ -1220,13 +1176,13 @@ object SaveGame {
         idRestoreGame::ReadParticle
         ================
         */
-        fun ReadParticle(particle: idDeclParticle) {
+        fun ReadParticle(): idDeclParticle? {
             val name = idStr()
             ReadString(name)
             if (0 == name.Length()) {
-                // C++: particle = NULL — cannot reassign parameter in Kotlin
+                return null
             } else {
-                particle.oSet(DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, name) as idDeclParticle)
+                return DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, name) as idDeclParticle?
             }
         }
 
@@ -1281,13 +1237,13 @@ object SaveGame {
         idRestoreGame::ReadModel
         ================
         */
-        fun ReadModel(model: idRenderModel) {
+        fun ReadModel(): idRenderModel? {
             val name = idStr()
             ReadString(name)
             if (0 == name.Length()) {
-                // C++: model = NULL — cannot reassign parameter in Kotlin
+                return null
             } else {
-                model.oSet(ModelManager.renderModelManager.FindModel(name.toString())!!)
+                return ModelManager.renderModelManager.FindModel(name.toString())!!
             }
         }
 
@@ -1296,15 +1252,15 @@ object SaveGame {
         idRestoreGame::ReadUserInterface
         ================
         */
-        fun ReadUserInterface(ui: idUserInterface) {
+        fun ReadUserInterface(): idUserInterface? {
             val name = idStr()
             ReadString(name)
             if (0 == name.Length()) {
-                // C++: ui = NULL — cannot reassign parameter in Kotlin
+                return null
             } else {
                 val unique = CBool(false)
                 ReadBool(unique)
-                ui.oSet(UserInterface.uiManager.FindGui(name.toString(), true, unique._val)!!)
+                val ui = UserInterface.uiManager.FindGui(name.toString(), true, unique._val)
                 if (ui != null) {
                     if (ui.ReadFromSaveGame(file) == false) {
                         Error("idSaveGame::ReadUserInterface: ui failed to read properly\n")
@@ -1312,6 +1268,7 @@ object SaveGame {
                         ui.StateChanged(Game_local.gameLocal.time)
                     }
                 }
+                return ui
             }
         }
 
@@ -1320,10 +1277,12 @@ object SaveGame {
         idRestoreGame::ReadRenderEntity
         ================
         */
-        fun ReadRenderEntity(renderEntity: renderEntity_s) {
+        fun ReadRenderEntity(): renderEntity_s {
             var i: Int
             val index = CInt()
-            ReadModel(renderEntity.hModel!!)
+            val renderEntity = renderEntity_s()
+
+            renderEntity.hModel = ReadModel()
             renderEntity.entityNum = ReadInt()
             renderEntity.bodyId = ReadInt()
             ReadBounds(renderEntity.bounds)
@@ -1337,11 +1296,11 @@ object SaveGame {
             renderEntity.allowSurfaceInViewID = ReadInt()
             ReadVec3(renderEntity.origin)
             ReadMat3(renderEntity.axis)
-            ReadMaterial(renderEntity.customShader!!)
-            ReadMaterial(renderEntity.referenceShader!!)
+            renderEntity.customShader = ReadMaterial()
+            renderEntity.referenceShader = ReadMaterial()
             renderEntity.customSkin = ReadSkin()
             ReadInt(index)
-            renderEntity.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index._val)
+            renderEntity.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index.integerValue)
             i = 0
             while (i < Material.MAX_ENTITY_SHADER_PARMS) {
                 renderEntity.shaderParms[i] = ReadFloat()
@@ -1349,7 +1308,7 @@ object SaveGame {
             }
             i = 0
             while (i < RenderWorld.MAX_RENDERENTITY_GUI) {
-                ReadUserInterface(renderEntity.gui[i]!!)
+                renderEntity.gui[i] = ReadUserInterface()
                 i++
             }
 
@@ -1363,6 +1322,8 @@ object SaveGame {
             renderEntity.noDynamicInteractions = ReadBool()
             renderEntity.weaponDepthHack = ReadBool()
             renderEntity.forceUpdate = ReadInt()
+
+            return renderEntity
         }
 
         /*
@@ -1375,8 +1336,8 @@ object SaveGame {
             var i: Int
             ReadMat3(renderLight.axis)
             ReadVec3(renderLight.origin)
-            renderLight.suppressLightInViewID._val = ReadInt()
-            renderLight.allowLightInViewID._val = ReadInt()
+            renderLight.suppressLightInViewID.integerValue = ReadInt()
+            renderLight.allowLightInViewID.integerValue = ReadInt()
             renderLight.noShadows._val = ReadBool()
             renderLight.noSpecular._val = ReadBool()
             renderLight.pointLight._val = ReadBool()
@@ -1392,15 +1353,15 @@ object SaveGame {
             // only idLight has a prelightModel and it's always based on the entityname, so we'll restore it there
             // ReadModel( renderLight.prelightModel );
             renderLight.prelightModel = null
-            renderLight.lightId._val = ReadInt()
-            ReadMaterial(renderLight.shader!!)
+            renderLight.lightId.integerValue = ReadInt()
+            renderLight.shader = ReadMaterial()
             i = 0
             while (i < Material.MAX_ENTITY_SHADER_PARMS) {
                 renderLight.shaderParms[i] = ReadFloat()
                 i++
             }
             ReadInt(index)
-            renderLight.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index._val)
+            renderLight.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index.integerValue)
         }
 
         /*
@@ -1411,7 +1372,7 @@ object SaveGame {
         fun ReadRefSound(refSound: refSound_t) {
             val index = CInt()
             ReadInt(index)
-            refSound.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index._val)
+            refSound.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index.integerValue)
             ReadVec3(refSound.origin)
             refSound.listenerId = ReadInt()
             refSound.shader = ReadSoundShader()
@@ -1459,7 +1420,7 @@ object SaveGame {
             usercmd.gameFrame = ReadInt()
             usercmd.gameTime = ReadInt()
             usercmd.duplicateCount = ReadInt()
-            usercmd.buttons = ReadByte()
+            usercmd.buttons = ReadByte().toByte()
             usercmd.forwardmove = ReadSignedChar().code.toByte()
             usercmd.rightmove = ReadSignedChar().code.toByte()
             usercmd.upmove = ReadSignedChar().code.toByte()
@@ -1469,7 +1430,7 @@ object SaveGame {
             usercmd.mx = ReadShort()
             usercmd.my = ReadShort()
             usercmd.impulse = ReadSignedChar().code.toByte()
-            usercmd.flags = ReadByte()
+            usercmd.flags = ReadByte().toByte()
             usercmd.sequence = ReadInt()
         }
 
@@ -1484,7 +1445,7 @@ object SaveGame {
             ReadVec3(contactInfo.normal)
             contactInfo.dist = ReadFloat()
             contactInfo.contents = ReadInt()
-            ReadMaterial(contactInfo.material!!)
+            contactInfo.material = ReadMaterial()
             contactInfo.modelFeature = ReadInt()
             contactInfo.trmFeature = ReadInt()
             contactInfo.entityNum = ReadInt()
@@ -1554,14 +1515,16 @@ object SaveGame {
         idRestoreGame::ReadClipModel
         =====================
         */
-        fun ReadClipModel(clipModel: idClipModel?) {
+        fun ReadClipModel(): idClipModel? {
             val restoreClipModel: Boolean
             restoreClipModel = ReadBool()
             if (restoreClipModel) {
                 // NOTE: Differs from C++ — C++ creates new idClipModel() here; Kotlin reuses the passed-in instance
-                clipModel?.Restore(this)
+                val clipModel = idClipModel()
+                clipModel.Restore(this)
+                return clipModel
             } else {
-                clipModel?.oSet(null)
+                return null
             }
         }
 
@@ -1583,7 +1546,7 @@ object SaveGame {
         fun ReadBuildNumber() {
             val buildNumber = CInt()
             file.ReadInt(buildNumber)
-            this.buildNumber = buildNumber._val
+            this.buildNumber = buildNumber.integerValue
         }
 
         /*
@@ -1601,16 +1564,8 @@ object SaveGame {
         idRestoreGame::CallRestore_r
         ================
         */
-        private fun CallRestore_r(cls: Class<out idClass>, obj: idClass?) {
-            TODO()
-//            if (cls.zuper != null) {
-//                CallRestore_r(cls.zuper!!, obj)
-//                if (cls.zuper!!.Restore === cls.Restore) {
-//                    // don't call save on this inheritance level since the function was called in the super class
-//                    return
-//                }
-//            }
-//            ( /* obj->*cls-> */ cls.Restore).run(this)
+        private fun CallRestore_r(cls: idTypeInfo, obj: idClass?) {
+            obj?.Restore(this)
         }
     }
 }

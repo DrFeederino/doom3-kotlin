@@ -139,7 +139,7 @@ fun CM_FindSplitter(node: cm_node_s, bounds: idBounds, planeType: CInt, planeDis
                     t = abs((bounds[1, type] - dist) - (dist - bounds[0, type]))
                     if (t < bestt) {
                         bestt = t
-                        planeType._val = type
+                        planeType.integerValue = type
                         planeDist._val = dist
                     }
                 }
@@ -164,7 +164,7 @@ fun CM_FindSplitter(node: cm_node_s, bounds: idBounds, planeType: CInt, planeDis
                     t = abs((bounds[1, type] - dist) - (dist - bounds[0, type]))
                     if (t < bestt) {
                         bestt = t
-                        planeType._val = type
+                        planeType.integerValue = type
                         planeDist._val = dist
                     }
                 }
@@ -232,23 +232,23 @@ CM_EstimateVertsAndEdges
 fun CM_EstimateVertsAndEdges(mapEnt: idMapEntity, numVerts: CInt, numEdges: CInt) {
     var width: Int
     var height: Int
-    numVerts._val = 0
-    numEdges._val = 0
+    numVerts.integerValue = 0
+    numEdges.integerValue = 0
     for (j in 0 until mapEnt.GetNumPrimitives()) {
         val mapPrim: idMapPrimitive = mapEnt.GetPrimitive(j)
         if (mapPrim.GetType() == idMapPrimitive.TYPE_PATCH) {
             // assume maximum tesselation without adding verts
             width = (mapPrim as idMapPatch).GetWidth()
             height = mapPrim.GetHeight()
-            numVerts._val = width * height + numVerts._val
-            numEdges._val =
-                (width - 1) * height + width * (height - 1) + (width - 1) * (height - 1) + numEdges._val
+            numVerts.integerValue = width * height + numVerts.integerValue
+            numEdges.integerValue =
+                (width - 1) * height + width * (height - 1) + (width - 1) * (height - 1) + numEdges.integerValue
             continue
         }
         if (mapPrim.GetType() == idMapPrimitive.TYPE_BRUSH) {
             // assume cylinder with a polygon with (numSides - 2) edges ontop and on the bottom
-            numVerts._val = ((mapPrim as idMapBrush).GetNumSides() - 2) * 2 + numVerts._val
-            numEdges._val = (mapPrim.GetNumSides() - 2) * 3 + numEdges._val
+            numVerts.integerValue = ((mapPrim as idMapBrush).GetNumSides() - 2) * 2 + numVerts.integerValue
+            numEdges.integerValue = (mapPrim.GetNumSides() - 2) * 3 + numEdges.integerValue
             continue
         }
     }

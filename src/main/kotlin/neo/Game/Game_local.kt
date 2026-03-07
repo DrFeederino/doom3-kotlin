@@ -88,6 +88,7 @@ import neo.Game.GameSys.SysCvar
 import neo.Game.GameSys.TypeInfo.ListTypeInfo_f
 import neo.Game.GameSys.TypeInfo.TestSaveGame_f
 import neo.Game.GameSys.TypeInfo.WriteGameState_f
+import neo.Game.GameSys.registerAllTypes
 import neo.Game.Game_network.idEventQueue
 import neo.Game.Game_network.idEventQueue.outOfOrderBehaviour_t
 import neo.Game.Misc.idLocationEntity
@@ -244,7 +245,7 @@ class Game_local {
         fun Restore(savefile: idRestoreGame) {                    // unarchives object from save game file
             val spawnId = CInt()
             savefile.ReadInt(spawnId)
-            this.spawnId = spawnId._val
+            this.spawnId = spawnId.integerValue
         }
 
         fun oSet(ent: idEntity?): idEntityPtr<idEntity> {
@@ -552,6 +553,7 @@ class Game_local {
             )
             Clear()
             idEvent.Init()
+            registerAllTypes()
             idClass.INIT()
             InitConsoleCommands()
 
@@ -775,7 +777,7 @@ class Game_local {
         ): Boolean {
             var i: Int
             var num: Int
-            val ent = idEntity()
+            var ent: idEntity? = null
             val si = idDict()
             if (mapFileName.Length() != 0) {
                 MapShutdown()
@@ -801,13 +803,12 @@ class Game_local {
                 var osType = idStr()
                 var cpuArch = idStr()
                 var engineVersion = idStr()
-                val ptrSize = ShortArray(1)
-                val byteorder = ShortArray(1)
                 savegame.ReadString(osType) // operating system the savegame was crated on (written from D3_OSTYPE)
                 savegame.ReadString(cpuArch) // written from D3_ARCH (which is set in CMake), like "x86" or "x86_64"
                 savegame.ReadString(engineVersion) // written from ENGINE_VERSION
-                savegame.ReadShort(ptrSize) // sizeof(void*) of system that created the savegame, 4 on 32bit systems, 8 on 64bit systems
-                savegame.ReadShort(byteorder) // SDL_LIL_ENDIAN or SDL_BIG_ENDIAN
+                val ptrSize =
+                    savegame.ReadShort() // sizeof(void*) of system that created the savegame, 4 on 32bit systems, 8 on 64bit systems
+                val byteorder = savegame.ReadShort() // SDL_LIL_ENDIAN or SDL_BIG_ENDIAN
                 Printf(
                     "Savegame was created by %s on %s %s. BuildNumber was %d, savegameversion %d\n",
                     engineVersion.toString(), osType.toString(), cpuArch.toString(), savegame.GetBuildNumber(),
@@ -853,19 +854,19 @@ class Game_local {
                 }
                 i++
             }
-            savegame.ReadDict(si)
+            si.set(savegame.ReadDict()!!)
             SetServerInfo(si)
             numClients = savegame.ReadInt()
             i = 0
             while (i < numClients) {
-                savegame.ReadDict(userInfo[i])
+                userInfo[i].set(savegame.ReadDict()!!)
                 savegame.ReadUsercmd(usercmds[i])
-                savegame.ReadDict(persistentPlayerInfo[i])
+                persistentPlayerInfo[i].set(savegame.ReadDict()!!)
                 i++
             }
             i = 0
             while (i < MAX_GENTITIES) {
-                savegame.ReadObject( /*reinterpret_cast<idClass *&>*/entities[i])
+                entities[i] = savegame.ReadObject() as idEntity?
                 spawnIds[i] = savegame.ReadInt()
 
                 // restore the entityNumber
@@ -878,13 +879,13 @@ class Game_local {
             num_entities = savegame.ReadInt()
 
             // enityHash is restored by idEntity.Restore setting the entity name.
-            savegame.ReadObject( /*reinterpret_cast<idClass *&>*/world)
+            world = savegame.ReadObject() as idWorldspawn
             num = savegame.ReadInt()
             i = 0
             while (i < num) {
-                savegame.ReadObject( /*reinterpret_cast<idClass *&>*/ent)
-                assert(!ent.isNULL())
-                if (!ent.isNULL()) {
+                ent = savegame.ReadObject() as idEntity?
+                assert(ent != null)
+                if (ent != null) {
                     ent.spawnNode.AddToEnd(spawnedEntities)
                 }
                 i++
@@ -892,9 +893,9 @@ class Game_local {
             num = savegame.ReadInt()
             i = 0
             while (i < num) {
-                savegame.ReadObject( /*reinterpret_cast<idClass *&>*/ent)
-                assert(!ent.isNULL())
-                if (!ent.isNULL()) {
+                ent = savegame.ReadObject() as idEntity?
+                assert(ent != null)
+                if (ent != null) {
                     ent.activeNode.AddToEnd(activeEntities)
                 }
                 i++
@@ -902,7 +903,7 @@ class Game_local {
             numEntitiesToDeactivate = savegame.ReadInt()
             sortPushers = savegame.ReadBool()
             sortTeamMasters = savegame.ReadBool()
-            savegame.ReadDict(persistentLevelInfo)
+            persistentLevelInfo.set(savegame.ReadDict()!!)
             i = 0
             while (i < RenderWorld.MAX_GLOBAL_SHADER_PARMS) {
                 globalShaderParms[i] = savegame.ReadFloat()
@@ -910,7 +911,7 @@ class Game_local {
             }
             i = savegame.ReadInt()
             random.SetSeed(i)
-            savegame.ReadObject( /*reinterpret_cast<idClass *&>*/frameCommandThread)
+            frameCommandThread = savegame.ReadObject() as idThread?
 
             // clip
             // push
@@ -951,15 +952,15 @@ class Game_local {
 
                 i = 0
                 while (i < num) {
-                    savegame.ReadObject( /*reinterpret_cast<idClass *&>*/locationEntities!![i])
+                    locationEntities!![i] = savegame.ReadObject() as idLocationEntity?
                     i++
                 }
             }
-            savegame.ReadObject( /*reinterpret_cast<idClass *&>*/camera)
-            savegame.ReadMaterial(globalMaterial!!)
+            camera = savegame.ReadObject() as idCamera?
+            globalMaterial = savegame.ReadMaterial()
             lastAIAlertEntity.Restore(savegame)
             lastAIAlertTime = savegame.ReadInt()
-            savegame.ReadDict(spawnArgs)
+            spawnArgs.set(savegame.ReadDict()!!)
             playerPVS.i = savegame.ReadInt()
             playerPVS.h = savegame.ReadInt()
             playerConnectedAreas.i = savegame.ReadInt()
@@ -977,8 +978,11 @@ class Game_local {
             // makingBuild
             // shakeSounds
             // Read out pending events
+            Printf("Calling idEvent::Restore\n")
             idEvent.Restore(savegame)
+            Printf("Calling RestoreObjects\n")
             savegame.RestoreObjects()
+
             mpGame.Reset()
             mpGame.Precache()
 
@@ -1897,7 +1901,7 @@ class Game_local {
                 // write the class specific data to the snapshot
                 ent.WriteToSnapshot(deltaMsg)
                 if (!deltaMsg.HasChanged()) {
-                    msg.RestoreWriteState(msgSize._val, msgWriteBit._val)
+                    msg.RestoreWriteState(msgSize.integerValue, msgWriteBit.integerValue)
                     //                    entityStateAllocator.Free(newBase);
                 } else {
                     newBase.next = snapshot.firstEntityState
@@ -2860,7 +2864,7 @@ class Game_local {
             if (_DEBUG) {
                 assert(!isClient || bIsClientReadSnapshot)
             }
-            if (!classdef.IsType(idEntity::class.java)) {
+            if (!classdef.IsType(idEntity.Type)) {
                 Error("Attempted to spawn non-entity class '%s'", classdef.classname)
             }
             try {
@@ -2869,7 +2873,7 @@ class Game_local {
                 } else {
                     spawnArgs.Clear()
                 }
-                obj = classdef.CreateInstance.run() as idClass
+                obj = classdef.createInstance.invoke()
                 obj.CallSpawn()
             } catch (ex: idAllocError) {
                 obj = null
@@ -2882,25 +2886,6 @@ class Game_local {
             return SpawnEntityType(classdef, args, false)
         }
 
-
-        fun SpawnEntityType(classdef: Class<*>, args: idDict? = null /*= NULL*/): idEntity? {
-            var obj: idEntity? = null
-            if (!idEntity::class.java.isAssignableFrom(classdef)) {
-                Error("Attempted to spawn non-entity class '%s'", classdef)
-            }
-            if (args != null) {
-                spawnArgs.set(args)
-            } else {
-                spawnArgs.Clear()
-            }
-            try {
-                obj = classdef.newInstance() as idEntity
-                obj.Spawn()
-            } catch (ex: InstantiationException) {
-            } catch (ex: IllegalAccessException) {
-            }
-            return obj
-        }
 
         fun SpawnEntityType(classdef: idTypeInfo): idEntity? {
             return SpawnEntityType(classdef, null)
@@ -2935,17 +2920,15 @@ class Game_local {
             // check if we should spawn a class object
             spawnArgs.GetString("spawnclass", "", spawn)
             if (!spawn[0].isNullOrEmpty()) {
-                val obj: idEntity? = idClass.GetEntity(spawn[0])
-                if (obj == null) {
-                    Error("Could not spawn '%s'. Instance could not be created%s.", spawn[0], classname[0])
+                val cls = idClass.GetClass(spawn[0])
+                if (cls == null) {
+                    Warning("Could not spawn '%s'. Class '%s' not found%s.", classname[0], spawn[0], error.toString())
                     return false
                 }
-
-                // many objects rely on spawn args and default state may break spawns for many classes.
-                obj.spawnArgs?.set(args)
-                obj.Spawn()
-                if (ent != null && obj is idEntity) {
-                    ent[0] = obj
+                val obj = cls.createInstance()
+                obj.CallSpawn()
+                if (ent != null && obj.IsType(idEntity.Type)) {
+                    ent[0] = obj as idEntity
                 }
                 return true
             }
@@ -3004,14 +2987,14 @@ class Game_local {
                 if (firstFreeIndex >= ENTITYNUM_MAX_NORMAL) {
                     Error("no free entities")
                 }
-                spawn_entnum._val = (firstFreeIndex++)
+                spawn_entnum.integerValue = (firstFreeIndex++)
             }
-            entities[spawn_entnum._val] = ent
-            spawnIds[spawn_entnum._val] = spawnCount++
-            ent.entityNumber = spawn_entnum._val
+            entities[spawn_entnum.integerValue] = ent
+            spawnIds[spawn_entnum.integerValue] = spawnCount++
+            ent.entityNumber = spawn_entnum.integerValue
             ent.spawnNode.AddToEnd(spawnedEntities)
             ent.spawnArgs.TransferKeyValues(spawnArgs)
-            if (spawn_entnum._val >= num_entities) {
+            if (spawn_entnum.integerValue >= num_entities) {
                 num_entities++
             }
         }
@@ -3349,7 +3332,7 @@ class Game_local {
          the line start,end
          =============
          */
-        fun FindTraceEntity(start: idVec3, end: idVec3,    /*idTypeInfo*/c: Class<*>, skip: idEntity?): idEntity? {
+        fun FindTraceEntity(start: idVec3, end: idVec3, c: idTypeInfo, skip: idEntity?): idEntity? {
             var ent: idEntity?
             var bestEnt: idEntity?
             val scale = CFloat()
@@ -3359,7 +3342,7 @@ class Game_local {
             bestScale = 1.0f
             ent = spawnedEntities.Next()
             while (ent != null) {
-                if (c.isInstance(ent) && ent !== skip) {
+                if (ent.IsType(c) && ent !== skip) {
                     b.set(ent.GetPhysics().GetAbsBounds().Expand(16.0f))
                     if (b.RayIntersection(start, end.minus(start), scale)) {
                         if (scale._val >= 0.0f && scale._val < bestScale) {
@@ -3536,13 +3519,13 @@ class Game_local {
             }
             damageDef.GetInt("damage", "20", damage)
             damageDef.GetInt("radius", "50", radius)
-            damageDef.GetInt("push", Str.va("%d", damage._val * 100), push)
+            damageDef.GetInt("push", Str.va("%d", damage.integerValue * 100), push)
             damageDef.GetFloat("attackerDamageScale", "0.5f", attackerDamageScale)
             damageDef.GetFloat("attackerPushScale", "0", attackerPushScale)
-            if (radius._val < 1) {
-                radius._val = (1)
+            if (radius.integerValue < 1) {
+                radius.integerValue = (1)
             }
-            bounds = idBounds(origin).Expand(radius._val.toFloat())
+            bounds = idBounds(origin).Expand(radius.integerValue.toFloat())
 
             // get all entities touching the bounds
             numListedEntities = clip.EntitiesTouchingBounds(bounds, -1, entityList, MAX_GENTITIES)
@@ -3593,7 +3576,7 @@ class Game_local {
                     i++
                 }
                 dist = v.Length()
-                if (dist >= radius._val) {
+                if (dist >= radius.integerValue) {
                     e++
                     continue
                 }
@@ -3604,7 +3587,7 @@ class Game_local {
                     dir.plusAssign(2, 24.0f)
 
                     // get the damage scale
-                    damageScale = dmgPower * (1.0f - dist / radius._val)
+                    damageScale = dmgPower * (1.0f - dist / radius.integerValue)
                     if (ent === attacker || ent is idAFAttachment && ent.GetBody() === attacker) {
                         damageScale *= attackerDamageScale._val
                     }
@@ -3614,11 +3597,11 @@ class Game_local {
             }
 
             // push physics objects
-            if (push._val != 0) {
+            if (push.integerValue != 0) {
                 RadiusPush(
                     origin,
-                    radius._val.toFloat(),
-                    push._val * dmgPower,
+                    radius.integerValue.toFloat(),
+                    push.integerValue * dmgPower,
                     attacker,
                     ignorePush,
                     attackerPushScale._val,

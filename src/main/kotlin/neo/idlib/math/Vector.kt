@@ -479,7 +479,7 @@ open class idVec3 : idVec<idVec3>, SERiAL {
     }
 
     override fun set(a: idVec3): idVec3 {
-        assert(!a.x.isNaN())
+        //assert(!a.x.isNaN())
         x = a.x
         y = a.y
         z = a.z

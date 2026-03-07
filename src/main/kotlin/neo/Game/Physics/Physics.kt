@@ -10,6 +10,7 @@ package neo.Game.Physics
 
 import neo.Game.GameSys.Class.eventCallback_t
 import neo.Game.GameSys.Class.idClass
+import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -73,8 +74,23 @@ object Physics {
     abstract class idPhysics : idClass() {
 
         // Must not be virtual
-        override fun Save(savefile: idSaveGame) {}
-        override fun Restore(savefile: idRestoreGame) {}
+        /*
+        ================
+        idPhysics::Save
+        ================
+        */
+        override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
+        }
+
+        /*
+        ================
+        idPhysics::Restore
+        ================
+        */
+        override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
+        }
 
         // common physics interface
         // set pointer to entity using physics
@@ -88,7 +104,12 @@ object Physics {
             SetClipModel(model, density, id, true)
         }
 
-        fun SetClipBox(bounds: idBounds, density: Float) {
+        /*
+        ================
+        idPhysics::SetClipBox
+        ================
+        */
+        open fun SetClipBox(bounds: idBounds, density: Float) {
             SetClipModel(idClipModel(idTraceModel(bounds)), density)
         }
 
@@ -278,7 +299,13 @@ object Physics {
         }
 
         companion object {
-            // ABSTRACT_PROTOTYPE( idPhysics );
+            val Type = idTypeInfo("idPhysics", "idClass")
+
+            /*
+            ================
+            idPhysics::SnapTimeToPhysicsFrame
+            ================
+            */
             fun SnapTimeToPhysicsFrame(t: Int): Int {
                 val s: Int
                 s = t + UsercmdGen.USERCMD_MSEC - 1

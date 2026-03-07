@@ -2091,11 +2091,31 @@ internal class idCompiler {
         if (!CheckToken("{")) {
             // it's just a prototype, so get the ; and move on
             ExpectToken(";")
+
+            // DG: calculate parmTotal for prototype so calling this function before
+            // the implementation is parsed works without assertions in the interpreter.
+            // Don't set parmSize[] yet and don't define the parms yet,
+            // otherwise they're defined in a different order than before,
+            // so their .num is different which breaks compat with savegames.
+            val numParms: Int = type!!.NumParameters()
+            func!!.parmTotal = 0
+            i = 0
+            while (i < numParms) {
+                parmType = type.GetParmType(i)
+                val size = if (parmType!!.Inherits(Script_Program.type_object)) {
+                    Script_Program.type_object.Size()
+                } else {
+                    parmType.Size()
+                }
+                func.parmTotal += size
+                i++
+            }
             return
         }
 
         // calculate stack space used by parms
         val numParms: Int = type!!.NumParameters()
+        var totalSize = 0
         func!!.parmSize.SetNum(numParms)
         i = 0
         while (i < numParms) {
@@ -2105,9 +2125,14 @@ internal class idCompiler {
             } else {
                 func.parmSize[i] = parmType.Size()
             }
-            func.parmTotal += func.parmSize[i]
+            totalSize += func.parmSize[i]
             i++
         }
+        // DG: if parmTotal has been calculated before (prototype), it shouldn't have changed
+        assert(func.parmTotal == 0 || totalSize == func.parmTotal) {
+            "function parameter sizes differ between prototype vs implementation!"
+        }
+        func.parmTotal = totalSize
 
         // define the parms
         i = 0

@@ -6,7 +6,6 @@ import neo.idlib.math.idVec3
 import org.lwjgl.BufferUtils
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import kotlin.math.abs
 
 
 object DrawVert {
@@ -146,7 +145,7 @@ object DrawVert {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            return ByteBuffer.allocate(BYTES).order(java.nio.ByteOrder.LITTLE_ENDIAN)
         }
 
         override fun Read(buffer: ByteBuffer) {
@@ -192,7 +191,7 @@ object DrawVert {
                 data.putFloat(tan[2])
             }
             for (colour in color) {
-                data.put(abs(colour.toInt()).toByte())
+                data.put(colour)
             }
             return data
         }

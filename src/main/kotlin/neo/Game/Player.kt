@@ -422,8 +422,7 @@ object Player {
             num = savefile.ReadInt()
             i = 0
             while (i < num) {
-                val itemdict = idDict()
-                savefile.ReadDict(itemdict)
+                val itemdict = savefile.ReadDict()!!
                 items.Append(itemdict)
                 i++
             }
@@ -895,7 +894,7 @@ object Player {
                         if ((weapons and (1 shl i)) == 0 || Game_local.gameLocal.isMultiplayer) {
                             if (owner.GetUserInfo().GetBool("ui_autoSwitch") && idealWeapon != null) {
                                 assert(!Game_local.gameLocal.isClient)
-                                idealWeapon._val = (i)
+                                idealWeapon.integerValue = (i)
                             }
                             if (owner.hud != null && updateHud && lastGiveTime + 1000 < Game_local.gameLocal.time) {
                                 owner.hud!!.SetStateInt("newWeapon", i)
@@ -1098,6 +1097,8 @@ object Player {
 
     class idPlayer : idActor() {
         companion object {
+            val Type = idTypeInfo("idPlayer", "idActor") { idPlayer() }
+
             // enum {
             val EVENT_IMPULSE: Int = idEntity.EVENT_MAXEVENTS
             val EVENT_EXIT_TELEPORTER = EVENT_IMPULSE + 1
@@ -1850,6 +1851,7 @@ object Player {
 
         // save games
         override fun Save(savefile: idSaveGame) {                    // archives object for save game file
+            super.Save(savefile)
             var i: Int
             savefile.WriteUsercmd(usercmd)
             playerView.Save(savefile)
@@ -2024,6 +2026,7 @@ object Player {
         }
 
         override fun Restore(savefile: idRestoreGame) {                    // unarchives object from save game file
+            super.Restore(savefile)
             var i: Int
             val num = CInt()
             val set = CFloat()
@@ -2055,8 +2058,8 @@ object Player {
                 GetPDA()!!.AddEmail(inventory.emails[i].toString())
                 i++
             }
-            savefile.ReadUserInterface(hud!!)
-            savefile.ReadUserInterface(objectiveSystem!!)
+            hud = savefile.ReadUserInterface()
+            objectiveSystem = savefile.ReadUserInterface()
             objectiveSystemOpen = savefile.ReadBool()
             weapon_soulcube = savefile.ReadInt()
             weapon_pda = savefile.ReadInt()
@@ -2116,9 +2119,9 @@ object Player {
             RestorePhysics(physicsObj)
             savefile.ReadInt(num)
             aasLocation.SetGranularity(1)
-            aasLocation.SetNum(num._val)
+            aasLocation.SetNum(num.integerValue)
             i = 0
-            while (i < num._val) {
+            while (i < num.integerValue) {
                 aasLocation[i].areaNum = savefile.ReadInt()
                 savefile.ReadVec3(aasLocation[i].pos)
                 i++
@@ -2175,10 +2178,10 @@ object Player {
             influenceFov = savefile.ReadFloat()
             influenceActive = savefile.ReadInt()
             influenceRadius = savefile.ReadFloat()
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/influenceEntity)
-            savefile.ReadMaterial(influenceMaterial!!)
+            influenceEntity = savefile.ReadObject() as idEntity?
+            influenceMaterial = savefile.ReadMaterial()
             influenceSkin = savefile.ReadSkin()
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/privateCameraView)
+            privateCameraView = savefile.ReadObject() as idCamera?
             i = 0
             while (i < NUM_LOGGED_VIEW_ANGLES) {
                 savefile.ReadAngles(loggedViewAngles[i])
@@ -2191,14 +2194,14 @@ object Player {
                 i++
             }
             currentLoggedAccel = savefile.ReadInt()
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/focusGUIent)
+            focusGUIent = savefile.ReadObject() as idEntity?
             // can't save focusUI
             focusUI = null
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/focusCharacter)
+            focusCharacter = savefile.ReadObject() as idAI?
             talkCursor = savefile.ReadInt()
             focusTime = savefile.ReadInt()
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/focusVehicle)
-            savefile.ReadUserInterface(cursor!!)
+            focusVehicle = savefile.ReadObject() as idAFEntity_Vehicle?
+            cursor = savefile.ReadUserInterface()
             oldMouseX = savefile.ReadInt()
             oldMouseY = savefile.ReadInt()
             savefile.ReadString(pdaAudio)
@@ -2496,7 +2499,7 @@ object Player {
                 weapon.GetEntity()!!.Clear()
                 currentWeapon = -1
             } else if (!Game_local.gameLocal.isClient) {
-                weapon.oSet(Game_local.gameLocal.SpawnEntityType(idWeapon::class.java, null) as idWeapon)
+                weapon.oSet(Game_local.gameLocal.SpawnEntityType(idWeapon.Type, null) as idWeapon)
                 weapon.GetEntity()!!.SetOwner(this)
                 currentWeapon = -1
             }
@@ -2983,14 +2986,14 @@ object Player {
                 i = 0
                 while (i < aasLocation.Num()) {
                     if (aas === Game_local.gameLocal.GetAAS(i)) {
-                        areaNum._val = (aasLocation[i].areaNum)
+                        areaNum.integerValue = (aasLocation[i].areaNum)
                         pos.set(aasLocation[i].pos)
                         return
                     }
                     i++
                 }
             }
-            areaNum._val = (0)
+            areaNum.integerValue = (0)
             pos.set(physicsObj.GetOrigin())
         }
 
@@ -3021,8 +3024,8 @@ object Player {
          */
         override fun DamageFeedback(victim: idEntity?, inflictor: idEntity?, damage: CInt) {
             assert(!Game_local.gameLocal.isClient)
-            damage._val = ((PowerUpModifier(BERSERK) * damage._val).toInt())
-            if (damage._val != 0 && victim !== this && victim is idActor) {
+            damage.integerValue = ((PowerUpModifier(BERSERK) * damage.integerValue).toInt())
+            if (damage.integerValue != 0 && victim !== this && victim is idActor) {
                 SetLastHitTime(Game_local.gameLocal.time)
             }
         }
@@ -3048,33 +3051,34 @@ object Player {
             val damage = CInt()
             var armorSave: Int
             damageDef.GetInt("damage", "20", damage)
-            damage._val = (GetDamageForLocation(damage._val, location))
+            damage.integerValue = (GetDamageForLocation(damage.integerValue, location))
             val player = if (attacker is idPlayer) attacker else null
             if (!Game_local.gameLocal.isMultiplayer) {
                 if (inflictor !== Game_local.gameLocal.world) {
                     when (SysCvar.g_skill.GetInteger()) {
                         0 -> {
-                            damage._val = ((damage._val * 0.80).toInt())
-                            if (damage._val < 1) {
-                                damage._val = (1)
+                            damage.integerValue = ((damage.integerValue * 0.80).toInt())
+                            if (damage.integerValue < 1) {
+                                damage.integerValue = (1)
                             }
                         }
 
-                        2 -> damage._val = ((damage._val * 1.70).toInt())
-                        3 -> damage._val = ((damage._val * 3.5).toInt())
+                        2 -> damage.integerValue = ((damage.integerValue * 1.70).toInt())
+                        3 -> damage.integerValue = ((damage.integerValue * 3.5).toInt())
                         else -> {}
                     }
                 }
             }
-            damage._val = ((damage._val * damageScale).toInt())
+            damage.integerValue = ((damage.integerValue * damageScale).toInt())
 
             // always give half damage if hurting self
             if (attacker == this) {
                 if (Game_local.gameLocal.isMultiplayer) {
                     // only do this in mp so single player plasma and rocket splash is very dangerous in close quarters
-                    damage._val = ((damage._val * damageDef.GetFloat("selfDamageScale", "0.5f")).toInt())
+                    damage.integerValue =
+                        ((damage.integerValue * damageDef.GetFloat("selfDamageScale", "0.5f")).toInt())
                 } else {
-                    damage._val = ((damage._val * damageDef.GetFloat("selfDamageScale", "1")).toInt())
+                    damage.integerValue = ((damage.integerValue * damageDef.GetFloat("selfDamageScale", "1")).toInt())
                 }
             }
 
@@ -3082,7 +3086,7 @@ object Player {
             if (!damageDef.GetBool("noGod")) {
                 // check for godmode
                 if (godmode) {
-                    damage._val = (0)
+                    damage.integerValue = (0)
                 }
             }
 
@@ -3094,17 +3098,17 @@ object Player {
                 val armor_protection: Float
                 armor_protection =
                     if (Game_local.gameLocal.isMultiplayer) SysCvar.g_armorProtectionMP.GetFloat() else SysCvar.g_armorProtection.GetFloat()
-                armorSave = ceil((damage._val * armor_protection)).toInt()
+                armorSave = ceil((damage.integerValue * armor_protection)).toInt()
                 if (armorSave >= inventory.armor) {
                     armorSave = inventory.armor
                 }
-                if (0 == damage._val) {
+                if (0 == damage.integerValue) {
                     armorSave = 0
-                } else if (armorSave >= damage._val) {
-                    armorSave = damage._val - 1
-                    damage._val = (1)
+                } else if (armorSave >= damage.integerValue) {
+                    armorSave = damage.integerValue - 1
+                    damage.integerValue = (1)
                 } else {
-                    damage._val = (damage._val - armorSave)
+                    damage.integerValue = (damage.integerValue - armorSave)
                 }
             } else {
                 armorSave = 0
@@ -3116,10 +3120,10 @@ object Player {
                 ) && player != null && player != this // you get self damage no matter what
                 && player.team == team
             ) {
-                damage._val = (0)
+                damage.integerValue = (0)
             }
-            health._val = (damage._val)
-            armor._val = (armorSave)
+            health.integerValue = (damage.integerValue)
+            armor.integerValue = (armorSave)
         }
 
         /*
@@ -3191,7 +3195,7 @@ object Player {
 
             // determine knockback
             damageDef.dict.GetInt("knockback", "20", knockback)
-            if (knockback._val != 0 && !fl.noknockback) {
+            if (knockback.integerValue != 0 && !fl.noknockback) {
                 if (attacker === this) {
                     damageDef.dict.GetFloat("attackerPushScale", "0", attackerPushScale)
                 } else {
@@ -3199,16 +3203,16 @@ object Player {
                 }
                 kick.set(dir)
                 kick.Normalize()
-                kick.timesAssign(SysCvar.g_knockback.GetFloat() * knockback._val * attackerPushScale._val / 200)
+                kick.timesAssign(SysCvar.g_knockback.GetFloat() * knockback.integerValue * attackerPushScale._val / 200)
                 physicsObj.SetLinearVelocity(physicsObj.GetLinearVelocity().plus(kick))
 
                 // set the timer so that the player can't cancel out the movement immediately
-                physicsObj.SetKnockBack(idMath.ClampInt(50, 200, knockback._val * 2))
+                physicsObj.SetKnockBack(idMath.ClampInt(50, 200, knockback.integerValue * 2))
             }
 
             // give feedback on the player view and audibly when armor is helping
-            if (armorSave._val != 0) {
-                inventory.armor -= armorSave._val
+            if (armorSave.integerValue != 0) {
+                inventory.armor -= armorSave.integerValue
                 if (Game_local.gameLocal.time > lastArmorPulse + 200) {
                     StartSound("snd_hitArmor", gameSoundChannel_t.SND_CHANNEL_ITEM, 0, false)
                 }
@@ -3217,13 +3221,17 @@ object Player {
             if (damageDef.dict.GetBool("burn")) {
                 StartSound("snd_burn", gameSoundChannel_t.SND_CHANNEL_BODY3, 0, false)
             } else if (damageDef.dict.GetBool("no_air")) {
-                if (0 == armorSave._val && health > 0) {
+                if (0 == armorSave.integerValue && health > 0) {
                     StartSound("snd_airGasp", gameSoundChannel_t.SND_CHANNEL_ITEM, 0, false)
                 }
             }
             if (SysCvar.g_debugDamage.GetInteger() != 0) {
                 Game_local.gameLocal.Printf(
-                    "client:%d health:%d damage:%d armor:%d\n", entityNumber, health, damage._val, armorSave._val
+                    "client:%d health:%d damage:%d armor:%d\n",
+                    entityNumber,
+                    health,
+                    damage.integerValue,
+                    armorSave.integerValue
                 )
             }
 
@@ -3240,7 +3248,7 @@ object Player {
             }
 
             // do the damage
-            if (damage._val > 0) {
+            if (damage.integerValue > 0) {
                 if (!Game_local.gameLocal.isMultiplayer) {
                     var scale = SysCvar.g_damageScale.GetFloat()
                     if (SysCvar.g_useDynamicProtection.GetBool() && SysCvar.g_skill.GetInteger() < 2) {
@@ -3250,27 +3258,27 @@ object Player {
                         }
                     }
                     if (scale > 0) {
-                        damage._val = ((damage._val * scale).toInt())
+                        damage.integerValue = ((damage.integerValue * scale).toInt())
                     }
                 }
-                if (damage._val < 1) {
-                    damage._val = (1)
+                if (damage.integerValue < 1) {
+                    damage.integerValue = (1)
                 }
                 health
-                health -= damage._val
+                health -= damage.integerValue
                 if (health <= 0) {
                     if (health < -999) {
                         health = -999
                     }
                     isTelefragged = damageDef.dict.GetBool("telefrag")
                     lastDmgTime = Game_local.gameLocal.time
-                    Killed(inflictor, attacker, damage._val, dir, location)
+                    Killed(inflictor, attacker, damage.integerValue, dir, location)
                 } else {
                     // force a blink
                     blink_time = 0
 
                     // let the anim script know we took damage
-                    AI_PAIN.underscore(Pain(inflictor, attacker, damage._val, dir, location))
+                    AI_PAIN.underscore(Pain(inflictor, attacker, damage.integerValue, dir, location))
                     if (!SysCvar.g_testDeath.GetBool()) {
                         lastDmgTime = Game_local.gameLocal.time
                     }
@@ -3848,7 +3856,7 @@ object Player {
             } else {
                 val idealWeapon = CInt(idealWeapon)
                 val result = inventory.Give(this, spawnArgs, statname, value, idealWeapon, true)
-                this.idealWeapon = idealWeapon._val
+                this.idealWeapon = idealWeapon.integerValue
                 return result
             }
             return true
@@ -4767,7 +4775,7 @@ object Player {
                     // otherwise a rotating player box may poke into an outside area
                     areaNum = if (num == 1) {
                         val pvsAreas = CInt(GetPVSAreas()[0])
-                        pvsAreas._val
+                        pvsAreas.integerValue
                     } else {
                         Game_local.gameRenderWorld!!.PointInArea(GetPhysics().GetOrigin())
                     }
@@ -4887,7 +4895,7 @@ object Player {
                     StartSoundShader(shader, gameSoundChannel_t.SND_CHANNEL_PDA, 0, false, ms)
                     StartAudioLog()
                     CancelEvents(EV_Player_StopAudioLog)
-                    PostEventMS(EV_Player_StopAudioLog, ms._val + 150)
+                    PostEventMS(EV_Player_StopAudioLog, ms.integerValue + 150)
                 }
                 return true
             }
@@ -6332,7 +6340,7 @@ object Player {
             av = idAngles(current)
 
             // calcualte this so the wrap arounds work properly
-            for (j in 1 until weaponAngleOffsetAverages._val) {
+            for (j in 1 until weaponAngleOffsetAverages.integerValue) {
                 val a2 = loggedViewAngles[Game_local.gameLocal.framenum - j and NUM_LOGGED_VIEW_ANGLES - 1]
                 val delta = a2.minus(current)
                 if (delta[1] > 180) {
@@ -6340,7 +6348,7 @@ object Player {
                 } else if (delta[1] < -180) {
                     delta.plusAssign(1, 360.0f)
                 }
-                av.plusAssign(delta.times(1.0f / weaponAngleOffsetAverages._val))
+                av.plusAssign(delta.times(1.0f / weaponAngleOffsetAverages.integerValue))
             }
             a.set(av.minus(current).times(weaponAngleOffsetScale._val))
             for (i in 0..2) {
@@ -7889,6 +7897,9 @@ object Player {
                 idThread.ReturnString("")
             }
         }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idPlayer()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]

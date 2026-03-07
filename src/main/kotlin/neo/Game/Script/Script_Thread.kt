@@ -369,6 +369,7 @@ object Script_Thread {
 
         // save games
         override fun Save(savefile: idSaveGame) {                // archives object for save game file
+            super.Save(savefile)
 
             // We will check on restore that threadNum is still the same,
             // threads should have been restored in the same order.
@@ -385,12 +386,13 @@ object Script_Thread {
         }
 
         override fun Restore(savefile: idRestoreGame) {                // unarchives object from save game file
+            super.Restore(savefile)
             threadNum = savefile.ReadInt()
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/waitingForThread)
+            waitingForThread = savefile.ReadObject() as idThread?
             waitingFor = savefile.ReadInt()
             waitingUntil = savefile.ReadInt()
             interpreter.Restore(savefile)
-            savefile.ReadDict(spawnArgs!!)
+            spawnArgs = savefile.ReadDict()
             savefile.ReadString(threadName)
             lastExecuteTime = savefile.ReadInt()
             creationTime = savefile.ReadInt()
@@ -494,13 +496,9 @@ object Script_Thread {
             gameLocal.Printf("\n")
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idThread()
 
-        override fun  /*idTypeInfo*/GetType(): Class<out idClass> {
-            return javaClass
-        }
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -695,6 +693,8 @@ object Script_Thread {
         }
 
         companion object {
+            val Type = idTypeInfo("idThread", "idClass") { idThread() }
+
             const val BYTES = Integer.BYTES * 14 //TODO
             protected var eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 

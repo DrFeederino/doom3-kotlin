@@ -72,9 +72,13 @@ object Target {
      ===============================================================================
      */
     open class idTarget : idEntity() {
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+        companion object {
+            val Type = idTypeInfo("idTarget", "idEntity") { idTarget() }
         }
+
+        override fun CreateInstance(): idClass = idTarget()
+
+        override fun GetType(): idTypeInfo = Type
     }
 
     /*
@@ -86,6 +90,7 @@ object Target {
      */
     class idTarget_Remove : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_Remove", "idTarget") { idTarget_Remove() }
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
                 return eventCallbacks
@@ -114,6 +119,10 @@ object Target {
             PostEventMS(EV_Remove, 0)
         }
 
+        override fun CreateInstance(): idClass = idTarget_Remove()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -128,6 +137,8 @@ object Target {
      */
     class idTarget_Show : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_Show", "idTarget") { idTarget_Show() }
+
             // CLASS_PROTOTYPE( idTarget_Show );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -157,6 +168,10 @@ object Target {
             PostEventMS(EV_Remove, 0)
         }
 
+        override fun CreateInstance(): idClass = idTarget_Show()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -171,6 +186,8 @@ object Target {
      */
     class idTarget_Damage : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_Damage", "idTarget") { idTarget_Damage() }
+
             // CLASS_PROTOTYPE( idTarget_Damage );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -199,6 +216,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_Damage()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -213,6 +234,8 @@ object Target {
      */
     class idTarget_SessionCommand : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_SessionCommand", "idTarget") { idTarget_SessionCommand() }
+
             //	CLASS_PROTOTYPE(idTarget_SessionCommand );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -232,6 +255,10 @@ object Target {
             Game_local.gameLocal.sessionCommand.set(spawnArgs.GetString("command"))
         }
 
+        override fun CreateInstance(): idClass = idTarget_SessionCommand()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -247,6 +274,8 @@ object Target {
      */
     class idTarget_EndLevel : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_EndLevel", "idTarget") { idTarget_EndLevel() }
+
             // CLASS_PROTOTYPE( idTarget_EndLevel );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -281,6 +310,10 @@ object Target {
             Game_local.gameLocal.sessionCommand.plusAssign(nextMap[0]!!)
         }
 
+        override fun CreateInstance(): idClass = idTarget_EndLevel()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -295,6 +328,8 @@ object Target {
      */
     class idTarget_WaitForButton : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_WaitForButton", "idTarget") { idTarget_WaitForButton() }
+
             // CLASS_PROTOTYPE( idTarget_WaitForButton );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -334,6 +369,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_WaitForButton()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -348,6 +387,8 @@ object Target {
      */
     class idTarget_SetGlobalShaderTime : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_SetGlobalShaderTime", "idTarget") { idTarget_SetGlobalShaderTime() }
+
             // CLASS_PROTOTYPE( idTarget_SetGlobalShaderTime );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -371,6 +412,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_SetGlobalShaderTime()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -385,6 +430,8 @@ object Target {
      */
     class idTarget_SetShaderParm : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_SetShaderParm", "idTarget") { idTarget_SetShaderParm() }
+
             // CLASS_PROTOTYPE( idTarget_SetShaderParm );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -438,6 +485,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_SetShaderParm()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -452,6 +503,8 @@ object Target {
      */
     class idTarget_SetShaderTime : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_SetShaderTime", "idTarget") { idTarget_SetShaderTime() }
+
             // CLASS_PROTOTYPE( idTarget_SetShaderTime );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -485,6 +538,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_SetShaderTime()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -499,6 +556,8 @@ object Target {
      */
     class idTarget_FadeEntity : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_FadeEntity", "idTarget") { idTarget_FadeEntity() }
+
             // CLASS_PROTOTYPE( idTarget_FadeEntity );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -518,12 +577,14 @@ object Target {
         private val fadeFrom: idVec4
         private var fadeStart: Int
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteVec4(fadeFrom)
             savefile.WriteInt(fadeStart)
             savefile.WriteInt(fadeEnd)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             savefile.ReadVec4(fadeFrom)
             fadeStart = savefile.ReadInt()
             fadeEnd = savefile.ReadInt()
@@ -582,6 +643,10 @@ object Target {
             fadeEnd = (Game_local.gameLocal.time + SEC2MS(spawnArgs.GetFloat("fadetime")))
         }
 
+        override fun CreateInstance(): idClass = idTarget_FadeEntity()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -604,6 +669,8 @@ object Target {
      */
     class idTarget_LightFadeIn : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_LightFadeIn", "idTarget") { idTarget_LightFadeIn() }
+
             // CLASS_PROTOTYPE( idTarget_LightFadeIn );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -646,6 +713,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_LightFadeIn()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -660,6 +731,8 @@ object Target {
      */
     class idTarget_LightFadeOut : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_LightFadeOut", "idTarget") { idTarget_LightFadeOut() }
+
             // CLASS_PROTOTYPE( idTarget_LightFadeOut );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -702,6 +775,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_LightFadeOut()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -716,6 +793,8 @@ object Target {
      */
     class idTarget_Give : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_Give", "idTarget") { idTarget_Give() }
+
             // CLASS_PROTOTYPE( idTarget_Give );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             private var giveNum = 0
@@ -763,6 +842,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_Give()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -777,6 +860,8 @@ object Target {
      */
     class idTarget_GiveEmail : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_GiveEmail", "idTarget") { idTarget_GiveEmail() }
+
             // CLASS_PROTOTYPE( idTarget_GiveEmail );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -802,6 +887,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_GiveEmail()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -816,6 +905,8 @@ object Target {
      */
     class idTarget_SetModel : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_SetModel", "idTarget") { idTarget_SetModel() }
+
             // CLASS_PROTOTYPE( idTarget_SetModel );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -850,6 +941,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_SetModel()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -864,6 +959,8 @@ object Target {
      */
     class idTarget_SetInfluence : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_SetInfluence", "idTarget") { idTarget_SetInfluence() }
+
             // CLASS_PROTOTYPE( idTarget_SetInfluence );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -905,6 +1002,7 @@ object Target {
         private val soundList: idList<Int>
         private var switchToCamera: idEntity?
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             var i: Int
             savefile.WriteInt(lightList.Num())
             i = 0
@@ -945,36 +1043,37 @@ object Target {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             var i: Int
             val num = CInt()
             val itemNum = CInt()
             val set = CFloat()
             savefile.ReadInt(num)
             i = 0
-            while (i < num._val) {
+            while (i < num.integerValue) {
                 savefile.ReadInt(itemNum)
-                lightList.Append(itemNum._val)
+                lightList.Append(itemNum.integerValue)
                 i++
             }
             savefile.ReadInt(num)
             i = 0
-            while (i < num._val) {
+            while (i < num.integerValue) {
                 savefile.ReadInt(itemNum)
-                guiList.Append(itemNum._val)
+                guiList.Append(itemNum.integerValue)
                 i++
             }
             savefile.ReadInt(num)
             i = 0
-            while (i < num._val) {
+            while (i < num.integerValue) {
                 savefile.ReadInt(itemNum)
-                soundList.Append(itemNum._val)
+                soundList.Append(itemNum.integerValue)
                 i++
             }
             savefile.ReadInt(num)
             i = 0
-            while (i < num._val) {
+            while (i < num.integerValue) {
                 savefile.ReadInt(itemNum)
-                genericList.Append(itemNum._val)
+                genericList.Append(itemNum.integerValue)
                 i++
             }
             flashIn = savefile.ReadFloat()
@@ -982,7 +1081,7 @@ object Target {
             delay = savefile.ReadFloat()
             savefile.ReadString(flashInSound)
             savefile.ReadString(flashOutSound)
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/switchToCamera)
+            switchToCamera = savefile.ReadObject() as idEntity?
             savefile.ReadFloat(set)
             fovSetting.SetStartTime(set._val)
             savefile.ReadFloat(set)
@@ -1377,6 +1476,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_SetInfluence()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1406,6 +1509,8 @@ object Target {
      */
     class idTarget_SetKeyVal : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_SetKeyVal", "idTarget") { idTarget_SetKeyVal() }
+
             // CLASS_PROTOTYPE( idTarget_SetKeyVal );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1458,6 +1563,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_SetKeyVal()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1472,6 +1581,8 @@ object Target {
      */
     class idTarget_SetFov : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_SetFov", "idTarget") { idTarget_SetFov() }
+
             // CLASS_PROTOTYPE( idTarget_SetFov );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -1492,6 +1603,7 @@ object Target {
 
         private val fovSetting: idInterpolate<Int> = idInterpolate()
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteFloat(fovSetting.GetStartTime())
             savefile.WriteFloat(fovSetting.GetDuration())
             savefile.WriteFloat(fovSetting.GetStartValue().toFloat())
@@ -1499,6 +1611,7 @@ object Target {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val setting = CFloat()
             savefile.ReadFloat(setting)
             fovSetting.SetStartTime(setting._val)
@@ -1535,6 +1648,10 @@ object Target {
             BecomeActive(TH_THINK)
         }
 
+        override fun CreateInstance(): idClass = idTarget_SetFov()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1549,6 +1666,8 @@ object Target {
      */
     class idTarget_SetPrimaryObjective : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_SetPrimaryObjective", "idTarget") { idTarget_SetPrimaryObjective() }
+
             // CLASS_PROTOTYPE( idTarget_SetPrimaryObjective );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1574,6 +1693,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_SetPrimaryObjective()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1588,6 +1711,8 @@ object Target {
      */
     class idTarget_LockDoor : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_LockDoor", "idTarget") { idTarget_LockDoor() }
+
             // CLASS_PROTOTYPE( idTarget_LockDoor );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1622,6 +1747,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_LockDoor()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1636,6 +1765,8 @@ object Target {
      */
     class idTarget_CallObjectFunction : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_CallObjectFunction", "idTarget") { idTarget_CallObjectFunction() }
+
             // CLASS_PROTOTYPE( idTarget_CallObjectFunction );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1696,6 +1827,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_CallObjectFunction()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1710,6 +1845,8 @@ object Target {
      */
     class idTarget_EnableLevelWeapons : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_EnableLevelWeapons", "idTarget") { idTarget_EnableLevelWeapons() }
+
             // CLASS_PROTOTYPE( idTarget_EnableLevelWeapons );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1752,6 +1889,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_EnableLevelWeapons()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1766,6 +1907,8 @@ object Target {
      */
     class idTarget_Tip : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_Tip", "idTarget") { idTarget_Tip() }
+
             // CLASS_PROTOTYPE( idTarget_Tip );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1787,10 +1930,12 @@ object Target {
 
         private val playerPos: idVec3 = idVec3()
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteVec3(playerPos)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             savefile.ReadVec3(playerPos)
         }
 
@@ -1826,6 +1971,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_Tip()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1840,6 +1989,8 @@ object Target {
      */
     class idTarget_GiveSecurity : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_GiveSecurity", "idTarget") { idTarget_GiveSecurity() }
+
             // CLASS_PROTOTYPE( idTarget_GiveSecurity );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1860,6 +2011,10 @@ object Target {
             player?.GiveSecurity(spawnArgs.GetString("text_security"))
         }
 
+        override fun CreateInstance(): idClass = idTarget_GiveSecurity()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1874,6 +2029,8 @@ object Target {
      */
     class idTarget_RemoveWeapons : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_RemoveWeapons", "idTarget") { idTarget_RemoveWeapons() }
+
             // CLASS_PROTOTYPE( idTarget_RemoveWeapons );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1903,6 +2060,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_RemoveWeapons()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1917,6 +2078,8 @@ object Target {
      */
     class idTarget_LevelTrigger : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_LevelTrigger", "idTarget") { idTarget_LevelTrigger() }
+
             // CLASS_PROTOTYPE( idTarget_LevelTrigger );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1941,6 +2104,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_LevelTrigger()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1955,6 +2122,8 @@ object Target {
      */
     class idTarget_EnableStamina : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_EnableStamina", "idTarget") { idTarget_EnableStamina() }
+
             // CLASS_PROTOTYPE( idTarget_EnableStamina );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1983,6 +2152,10 @@ object Target {
             }
         }
 
+        override fun CreateInstance(): idClass = idTarget_EnableStamina()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1997,6 +2170,8 @@ object Target {
      */
     class idTarget_FadeSoundClass : idTarget() {
         companion object {
+            val Type = idTypeInfo("idTarget_FadeSoundClass", "idTarget") { idTarget_FadeSoundClass() }
+
             // CLASS_PROTOTYPE( idTarget_FadeSoundClass );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2038,6 +2213,10 @@ object Target {
             // restore volume
             Game_local.gameSoundWorld!!.FadeSoundClasses(0, fadeDB, fadeTime)
         }
+
+        override fun CreateInstance(): idClass = idTarget_FadeSoundClass()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]

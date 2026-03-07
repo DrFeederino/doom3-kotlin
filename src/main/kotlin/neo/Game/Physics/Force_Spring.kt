@@ -8,6 +8,8 @@
 
 package neo.Game.Physics
 
+import neo.Game.GameSys.Class.idClass
+import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.Physics.Force.idForce
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Physics.Physics.impactInfo_s
@@ -25,7 +27,19 @@ class Force_Spring {
 
      ===============================================================================
      */
+    /*
+    ================
+    idForce_Spring::idForce_Spring
+    ================
+    */
     class idForce_Spring : idForce() {
+        companion object {
+            val Type = idTypeInfo("idForce_Spring", "idForce") { idForce_Spring() }
+        }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idForce_Spring()
+
         private var Kcompress = 100.0f
         private var Kstretch = 100.0f
         private var damping = 0.0f
@@ -46,6 +60,11 @@ class Force_Spring {
         private var restLength = 0.0f
 
         //	virtual				~idForce_Spring( void );
+        /*
+        ================
+        idForce_Spring::InitSpring
+        ================
+        */
         // initialize the spring
         fun InitSpring(Kstretch: Float, Kcompress: Float, damping: Float, restLength: Float) {
             this.Kstretch = Kstretch
@@ -54,6 +73,11 @@ class Force_Spring {
             this.restLength = restLength
         }
 
+        /*
+        ================
+        idForce_Spring::SetPosition
+        ================
+        */
         // set the entities and positions on these entities the spring is attached to
         fun SetPosition(physics1: idPhysics?, id1: Int, p1: idVec3, physics2: idPhysics?, id2: Int, p2: idVec3) {
             this.physics1 = physics1
@@ -64,6 +88,11 @@ class Force_Spring {
             this.p2.set(p2)
         }
 
+        /*
+        ================
+        idForce_Spring::Evaluate
+        ================
+        */
         // common force interface
         override fun Evaluate(time: Int) {
             val length: Float
@@ -127,6 +156,11 @@ class Force_Spring {
             }
         }
 
+        /*
+        ================
+        idForce_Spring::RemovePhysics
+        ================
+        */
         override fun RemovePhysics(phys: idPhysics) {
             if (physics1 == phys) {
                 physics1 = null

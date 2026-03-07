@@ -199,7 +199,7 @@ object ModelOverlay {
                     continue
                 }
                 val s = overlaySurface_s()
-                s.surfaceNum._val = surfNum
+                s.surfaceNum.integerValue = surfNum
                 s.surfaceId = surf.id
                 s.verts = arrayOfNulls(numVerts)
                 i = 0
@@ -283,7 +283,7 @@ object ModelOverlay {
                     i++
                 }
                 if (staticModel.FindSurfaceWithId(-1 - k, surfaceNum)) {
-                    newSurf = staticModel.surfaces[surfaceNum._val]
+                    newSurf = staticModel.surfaces[surfaceNum.integerValue]
                 } else {
                     newSurf = staticModel.surfaces.Alloc()
                     newSurf!!.geometry = null
@@ -307,8 +307,8 @@ object ModelOverlay {
                     surf = materials[k]!!.surfaces[i]
 
                     // get the model surface for this overlay surface
-                    if (surf!!.surfaceNum._val < staticModel.NumSurfaces()) {
-                        baseSurf = staticModel.Surface(surf.surfaceNum._val)
+                    if (surf!!.surfaceNum.integerValue < staticModel.NumSurfaces()) {
+                        baseSurf = staticModel.Surface(surf.surfaceNum.integerValue)
                     } else {
                         baseSurf = null
                     }
@@ -317,7 +317,7 @@ object ModelOverlay {
                     if (null == baseSurf || baseSurf.id != surf.surfaceId) {
                         // find the surface with the correct id
                         if (staticModel.FindSurfaceWithId(surf.surfaceId, surf.surfaceNum)) {
-                            baseSurf = staticModel.Surface(surf.surfaceNum._val)
+                            baseSurf = staticModel.Surface(surf.surfaceNum.integerValue)
                         } else {
                             // the surface with this id no longer exists
                             FreeSurface(surf)

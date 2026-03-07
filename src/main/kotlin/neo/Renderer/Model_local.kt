@@ -619,21 +619,21 @@ object Model_local {
             val vert = CInt()
             f.ReadInt(numSurfaces)
             i = 0
-            while (i < numSurfaces._val) {
+            while (i < numSurfaces.integerValue) {
                 val surf = modelSurface_s()
                 surf.shader = DeclManager.declManager.FindMaterial(f.ReadHashString())
                 val tri: srfTriangles_s = R_AllocStaticTriSurf()
                 f.ReadInt(index)
-                tri.numIndexes = index._val
+                tri.numIndexes = index.integerValue
                 R_AllocStaticTriSurfIndexes(tri, tri.numIndexes)
                 j = 0
                 while (j < tri.numIndexes) {
                     f.ReadInt(index)
-                    tri.indexes!![j] = index._val
+                    tri.indexes!![j] = index.integerValue
                     ++j
                 }
                 f.ReadInt(vert)
-                tri.numVerts = vert._val
+                tri.numVerts = vert.integerValue
                 R_AllocStaticTriSurfVerts(tri, tri.numVerts)
                 j = 0
                 while (j < tri.numVerts) {
@@ -2186,7 +2186,7 @@ object Model_local {
             i = 0
             while (i < surfaces.Num()) {
                 if (surfaces[i]!!.id == id) {
-                    surfaceNum._val = i
+                    surfaceNum.integerValue = i
                     return true
                 }
                 i++

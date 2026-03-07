@@ -1244,15 +1244,27 @@ object GameSSDWindow {
         var needToWin = 0
         var spawnBuffer = 0.0f
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            return ByteBuffer.allocate(BYTES)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            needToWin = buffer.int
+            spawnBuffer = buffer.float
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            val buffer = AllocBuffer()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.putInt(needToWin)
+            buffer.putFloat(spawnBuffer)
+            buffer.flip()
+            return buffer
+        }
+
+        companion object {
+            @Transient
+            val BYTES = 8
         }
     }
 
@@ -1269,15 +1281,45 @@ object GameSSDWindow {
         var speedMin = 0.0f
         var speedMax = 0.0f
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            return ByteBuffer.allocate(BYTES)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            asteroidDamage = buffer.int
+            asteroidHealth = buffer.int
+            asteroidPoints = buffer.int
+            rotateMin = buffer.float
+            rotateMax = buffer.float
+            sizeMin = buffer.float
+            sizeMax = buffer.float
+            spawnMin = buffer.int
+            spawnMax = buffer.int
+            speedMin = buffer.float
+            speedMax = buffer.float
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            val buffer = AllocBuffer()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.putInt(asteroidDamage)
+            buffer.putInt(asteroidHealth)
+            buffer.putInt(asteroidPoints)
+            buffer.putFloat(rotateMin)
+            buffer.putFloat(rotateMax)
+            buffer.putFloat(sizeMin)
+            buffer.putFloat(sizeMax)
+            buffer.putInt(spawnMin)
+            buffer.putInt(spawnMax)
+            buffer.putFloat(speedMin)
+            buffer.putFloat(speedMax)
+            buffer.flip()
+            return buffer
+        }
+
+        companion object {
+            @Transient
+            val BYTES = 44
         }
     }
 
@@ -1292,15 +1334,41 @@ object GameSSDWindow {
         var speedMin = 0.0f
         var speedMax = 0.0f
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            return ByteBuffer.allocate(BYTES)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            health = buffer.int
+            penalty = buffer.int
+            points = buffer.int
+            rotateMin = buffer.float
+            rotateMax = buffer.float
+            spawnMin = buffer.int
+            spawnMax = buffer.int
+            speedMin = buffer.float
+            speedMax = buffer.float
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            val buffer = AllocBuffer()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.putInt(health)
+            buffer.putInt(penalty)
+            buffer.putInt(points)
+            buffer.putFloat(rotateMin)
+            buffer.putFloat(rotateMax)
+            buffer.putInt(spawnMin)
+            buffer.putInt(spawnMax)
+            buffer.putFloat(speedMin)
+            buffer.putFloat(speedMax)
+            buffer.flip()
+            return buffer
+        }
+
+        companion object {
+            @Transient
+            val BYTES = 36
         }
     }
 
@@ -1312,15 +1380,35 @@ object GameSSDWindow {
         var speedMin = 0.0f
         var speedMax = 0.0f
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            return ByteBuffer.allocate(BYTES)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            rotateMin = buffer.float
+            rotateMax = buffer.float
+            spawnMin = buffer.int
+            spawnMax = buffer.int
+            speedMin = buffer.float
+            speedMax = buffer.float
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            val buffer = AllocBuffer()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.putFloat(rotateMin)
+            buffer.putFloat(rotateMax)
+            buffer.putInt(spawnMin)
+            buffer.putInt(spawnMax)
+            buffer.putFloat(speedMin)
+            buffer.putFloat(speedMax)
+            buffer.flip()
+            return buffer
+        }
+
+        companion object {
+            @Transient
+            val BYTES = 24
         }
     }
 
@@ -1329,15 +1417,29 @@ object GameSSDWindow {
         var size = 0
         var speed = 0.0f
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            return ByteBuffer.allocate(BYTES)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            damage = buffer.int
+            size = buffer.int
+            speed = buffer.float
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            val buffer = AllocBuffer()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.putInt(damage)
+            buffer.putInt(size)
+            buffer.putFloat(speed)
+            buffer.flip()
+            return buffer
+        }
+
+        companion object {
+            @Transient
+            val BYTES = 12
         }
     }
 
@@ -1389,15 +1491,55 @@ object GameSSDWindow {
         //
         var score = 0
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            return ByteBuffer.allocate(BYTES)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            currentLevel = buffer.int
+            currentWeapon = buffer.int
+            gameRunning = buffer.int != 0
+            health = buffer.int
+            nextLevel = buffer.int
+            prebonusscore = buffer.int
+            score = buffer.int
+            levelStats.destroyedAsteroids = buffer.int
+            levelStats.hitCount = buffer.int
+            levelStats.killedAstronauts = buffer.int
+            levelStats.nextAsteroidSpawnTime = buffer.int
+            levelStats.nextAstronautSpawnTime = buffer.int
+            levelStats.nextPowerupSpawnTime = buffer.int
+            levelStats.savedAstronauts = buffer.int
+            levelStats.shotCount = buffer.int
+            buffer.int // targetEnt pointer, skip
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            val buffer = AllocBuffer()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.putInt(currentLevel)
+            buffer.putInt(currentWeapon)
+            buffer.putInt(if (gameRunning) 1 else 0)
+            buffer.putInt(health)
+            buffer.putInt(nextLevel)
+            buffer.putInt(prebonusscore)
+            buffer.putInt(score)
+            buffer.putInt(levelStats.destroyedAsteroids)
+            buffer.putInt(levelStats.hitCount)
+            buffer.putInt(levelStats.killedAstronauts)
+            buffer.putInt(levelStats.nextAsteroidSpawnTime)
+            buffer.putInt(levelStats.nextAstronautSpawnTime)
+            buffer.putInt(levelStats.nextPowerupSpawnTime)
+            buffer.putInt(levelStats.savedAstronauts)
+            buffer.putInt(levelStats.shotCount)
+            buffer.putInt(0) // targetEnt pointer
+            buffer.flip()
+            return buffer
+        }
+
+        companion object {
+            @Transient
+            val BYTES = 72
         }
     }
 

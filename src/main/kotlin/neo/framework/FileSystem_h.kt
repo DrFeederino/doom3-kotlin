@@ -1769,9 +1769,9 @@ object FileSystem_h {
             checksums[i] = 0
             if (_gamePakChecksum != null) {
                 if (OS >= 0) {
-                    _gamePakChecksum._val = gamePakForOS[OS]
+                    _gamePakChecksum.integerValue = gamePakForOS[OS]
                 } else {
-                    _gamePakChecksum._val = gamePakChecksum
+                    _gamePakChecksum.integerValue = gamePakChecksum
                 }
             }
         }
@@ -1860,23 +1860,23 @@ object FileSystem_h {
                     loadCount++
                     loadStack++
                     idLib.common.DPrintf("Loading %s from journal file.\n", relativePath)
-                    len._val = 0
+                    len.integerValue = 0
                     r = EventLoop.eventLoop.com_journalDataFile!!.ReadInt(len)
                     val r_bits = r * 8
                     if (r_bits != Integer.SIZE) {
                         buffer!![0] = null
                         return -1
                     }
-                    buf = ByteBuffer.allocate(len._val + 1) // Heap.Mem_ClearedAlloc(len + 1);
+                    buf = ByteBuffer.allocate(len.integerValue + 1) // Heap.Mem_ClearedAlloc(len + 1);
                     buffer!![0] = buf
-                    r = EventLoop.eventLoop.com_journalDataFile!!.Read(buf, len._val)
-                    if (r != len._val) {
+                    r = EventLoop.eventLoop.com_journalDataFile!!.Read(buf, len.integerValue)
+                    if (r != len.integerValue) {
                         idLib.common.FatalError("Read from journalDataFile failed")
                     }
 
                     // guarantee that it will have a trailing 0 for string operations
-                    buf.put(len._val, 0.toByte())
-                    return len._val
+                    buf.put(len.integerValue, 0.toByte())
+                    return len.integerValue
                 }
             } else {
                 isConfig = false
@@ -1890,19 +1890,19 @@ object FileSystem_h {
                 }
                 return -1
             }
-            len._val = f.Length()
+            len.integerValue = f.Length()
             if (timestamp != null) {
                 timestamp[0] = f.Timestamp()
             }
             if (null == buffer) {
                 CloseFile(f)
-                return len._val
+                return len.integerValue
             }
             loadCount++
             loadStack++
-            buf = ByteBuffer.allocate(len._val + 1) // Heap.Mem_ClearedAlloc(len + 1);
+            buf = ByteBuffer.allocate(len.integerValue + 1) // Heap.Mem_ClearedAlloc(len + 1);
             buffer[0] = buf
-            f.Read(buf, len._val)
+            f.Read(buf, len.integerValue)
 
             // guarantee that it will have a trailing 0 for string operations
 //            buf.put(len[0], (byte) 0);
@@ -1911,11 +1911,11 @@ object FileSystem_h {
             // if we are journalling and it is a config file, write it to the journal file
             if (isConfig && EventLoop.eventLoop.JournalLevel() == 1) {
                 idLib.common.DPrintf("Writing %s to journal file.\n", relativePath)
-                EventLoop.eventLoop.com_journalDataFile!!.WriteInt(len._val)
-                EventLoop.eventLoop.com_journalDataFile!!.Write(buf, len._val)
+                EventLoop.eventLoop.com_journalDataFile!!.WriteInt(len.integerValue)
+                EventLoop.eventLoop.com_journalDataFile!!.Write(buf, len.integerValue)
                 EventLoop.eventLoop.com_journalDataFile!!.Flush()
             }
-            return len._val
+            return len.integerValue
         }
 
         override fun ReadFile(relativePath: String, buffer: Array<ByteBuffer?>?): Int {

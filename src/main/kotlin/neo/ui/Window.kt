@@ -2,12 +2,14 @@ package neo.ui
 
 import neo.Renderer.Material
 import neo.Renderer.Material.idMaterial
+import neo.Renderer.r_scaleMenusTo43
 import neo.Renderer.r_skipGuiShaders
 import neo.TempDump.atof
 import neo.TempDump.atoi
 import neo.TempDump.btoi
 import neo.TempDump.etoi
 import neo.TempDump.itob
+import neo.framework.CVarSystem.CVAR_ARCHIVE
 import neo.framework.CVarSystem.CVAR_BOOL
 import neo.framework.CVarSystem.CVAR_GUI
 import neo.framework.CVarSystem.idCVar
@@ -26,6 +28,7 @@ import neo.framework.KeyInput.K_SHIFT
 import neo.framework.KeyInput.K_TAB
 import neo.framework.KeyInput.idKeyInput.IsDown
 import neo.framework.Session
+import neo.framework.Session.Companion.session
 import neo.framework.UsercmdGen.USERCMD_MSEC
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
@@ -55,6 +58,7 @@ import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
 import neo.ui.BindWindow.idBindWindow
 import neo.ui.ChoiceWindow.idChoiceWindow
+import neo.ui.DeviceContext.CstGetParams
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.DeviceContext.idDeviceContext.CURSOR
 import neo.ui.EditWindow.idEditWindow
@@ -276,8 +280,8 @@ object Window {
         //
         protected var focusedChild: idWindow? = null // if a child window has the focus
         /*unsigned*/ var fontNum = 0.toChar()
-        protected var forceAspectHeight = 0.0f
-        protected var forceAspectWidth = 0.0f
+        var forceAspectHeight = 0.0f
+        var forceAspectWidth = 0.0f
         var foreColor = idWinVec4()
 
         //
@@ -323,6 +327,13 @@ object Window {
         protected var xOffset = 0.0f
         protected var yOffset = 0.0f
 
+        //#modified-fva; BEGIN
+        val cstAnchor = idWinInt()
+        val cstAnchorTo = idWinInt()        // for anchor transitions
+        val cstAnchorFactor = idWinFloat()    // for anchor transitions
+        var cstNoClipBackground = false
+        //#modified-fva; END
+
         constructor(gui: idUserInterfaceLocal?) {
             dc = null
             this.gui = gui
@@ -347,6 +358,15 @@ object Window {
             //if (flags & WIN_DESKTOP) {
             dc!!.SetSize(forceAspectWidth, forceAspectHeight)
             //}
+
+            //#modified-fva; BEGIN
+            if (parent != null && parent!!.cstAnchor.data != DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) {
+                cstAnchor.set(parent!!.cstAnchor)
+                cstAnchorTo.set(parent!!.cstAnchorTo)
+                cstAnchorFactor.set(parent!!.cstAnchorFactor)
+            }
+            //#modified-fva; END
+
             val c = children.Num()
             for (i in 0 until c) {
                 children[i]!!.SetDC(d)
@@ -530,6 +550,20 @@ object Window {
             val r = idRectangle(drawRect)
             r.x = actualX
             r.y = actualY
+
+            // DG: if cstAnchor is used, the coordinates must adjusted
+            if (cstAnchor.data != DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) {
+                // adjust r like idDeviceContext does for drawing
+                val scale = idVec2()
+                val offset = idVec2()
+                if (CstGetParams(cstAnchor.data, cstAnchorTo.data, cstAnchorFactor.data, scale, offset)) {
+                    r.x = r.x * scale.x + offset.x
+                    r.y = r.y * scale.y + offset.y
+                    r.w *= scale.x
+                    r.h *= scale.y
+                }
+            }
+
             return r.Contains(x, y)
         }
 
@@ -600,7 +634,8 @@ object Window {
             }
             if (Icmp(_name!!, "notime") == 0) {
                 retVar = noTime
-            }
+            }// FIXME: why does all this code not use "else if"?!
+            // You tell me lol
             if (Icmp(_name, "background") == 0) {
                 retVar = backGroundName
             }
@@ -643,6 +678,16 @@ object Window {
             if (Icmp(_name, "hidecursor") == 0) {
                 retVar = hideCursor
             }
+            //#modified-fva; BEGIN
+            if (Icmp(_name, "cstAnchor") == 0) {
+                retVar = cstAnchor
+            } else if (Icmp(_name, "cstAnchorTo") == 0) {
+                retVar = cstAnchorTo
+            } else if (Icmp(_name, "cstAnchorFactor") == 0) {
+                retVar = cstAnchorFactor
+            }
+            //#modified-fva; END
+
             val key = idStr(_name)
             val guiVar = key.Find(Winvar.VAR_GUIPREFIX) >= 0
             val c = definedVars.Num()
@@ -699,37 +744,44 @@ object Window {
         fun GetWinVarOffset(wv: idWinVar?, owner: drawWin_t): Int {
             var ret = -1
 
-//	if ( wv == rect ) {
-//		ret = (int)&( ( idWindow * ) 0 ).rect;
-//	}
-//
-//	if ( wv == &backColor ) {
-//		ret = (int)&( ( idWindow * ) 0 ).backColor;
-//	}
-//
-//	if ( wv == &matColor ) {
-//		ret = (int)&( ( idWindow * ) 0 ).matColor;
-//	}
-//
-//	if ( wv == &foreColor ) {
-//		ret = (int)&( ( idWindow * ) 0 ).foreColor;
-//	}
-//
-//	if ( wv == &hoverColor ) {
-//		ret = (int)&( ( idWindow * ) 0 ).hoverColor;
-//	}
-//
-//	if ( wv == &borderColor ) {
-//		ret = (int)&( ( idWindow * ) 0 ).borderColor;
-//	}
-//
-//	if ( wv == &textScale ) {
-//		ret = (int)&( ( idWindow * ) 0 ).textScale;
-//	}
-//
-//	if ( wv == &rotate ) {
-//		ret = (int)&( ( idWindow * ) 0 ).rotate;
-//	}
+            if (wv == rect) {
+                ret = TransiotonalDataOffset.RECT_OFFSET.offset
+            }
+
+            if (wv == backColor) {
+                ret = TransiotonalDataOffset.BACKCOLOR_OFFSET.offset
+            }
+
+            if (wv == matColor) {
+                ret = TransiotonalDataOffset.MATCOLOR_OFFSET.offset
+            }
+
+            if (wv == foreColor) {
+                ret = TransiotonalDataOffset.FORECOLOR_OFFSET.offset
+            }
+
+            if (wv == hoverColor) {
+                // TODO: Figure it out in the vanilla.
+                //ret = TransiotonalDataOffset.HOVERCOLOR_OFFSET.offset
+            }
+
+            if (wv == borderColor) {
+                ret = TransiotonalDataOffset.BORDERCOLOR_OFFSET.offset
+            }
+
+            if (wv == textScale) {
+                ret = TransiotonalDataOffset.TEXTSCALE_OFFSET.offset
+            }
+
+            if (wv == rotate) {
+                ret = TransiotonalDataOffset.ROTATE_OFFSET.offset
+            }
+
+            //#modified-fva; BEGIN
+            if (wv == cstAnchorFactor) {
+                ret = TransiotonalDataOffset.CSTANCHORFACTOR_OFFSET.offset
+            }
+            //#modified-fva; END
             if (ret != -1) {
                 owner.win = this
                 return ret
@@ -906,6 +958,13 @@ object Window {
                 scripts[i] = null
             }
             hideCursor.data = false
+
+            //#modified-fva; BEGIN
+            cstAnchor.set(DeviceContext.CstAnchor.CST_ANCHOR_NONE.value)
+            cstAnchorTo.set(DeviceContext.CstAnchor.CST_ANCHOR_NONE.value)
+            cstAnchorFactor.set(0.0f)
+            cstNoClipBackground = false
+            //#modified-fva; END
         }
 
         fun CleanUp() {
@@ -973,6 +1032,18 @@ object Window {
             val r = idRectangle(sr)
             r.x += actualX - drawRect.x
             r.y += actualY - drawRect.y
+            // DG: if cstAnchor is used, the coordinates must adjusted
+            if (cstAnchor.data != DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) {
+                // adjust r like idDeviceContext does for drawing
+                val scale = idVec2()
+                val offset = idVec2()
+                if (CstGetParams(cstAnchor.data, cstAnchorTo.data, cstAnchorFactor.data, scale, offset)) {
+                    r.x = r.x * scale.x + offset.x
+                    r.y = r.y * scale.y + offset.y
+                    r.w *= scale.x
+                    r.h *= scale.y
+                }
+            }
             return r.Contains(x, y)
         }
 
@@ -1643,6 +1714,18 @@ object Window {
             if (r_skipGuiShaders.GetInteger() == 2) {
                 return
             }
+
+            // DG: allow scaling menus to 4:3
+            var fixupFor43 = false
+            if (flags and WIN_DESKTOP != 0) {
+                // only scale desktop windows (will automatically scale its sub-windows)
+                // that EITHER have the scaleto43 flag set OR are fullscreen menus and r_scaleMenusTo43 is 1
+                if ((flags and WIN_SCALETO43 != 0) || ((flags and WIN_MENUGUI) != 0 && r_scaleMenusTo43.GetBool() && (flags and WIN_NO_SCALETO43) == 0)) {
+                    fixupFor43 = true
+                    dc!!.SetMenuScaleFix(true)
+                }
+            }
+
             if (flags and WIN_SHOWTIME != 0) {
                 dc!!.DrawText(
                     va(
@@ -1674,14 +1757,36 @@ object Window {
                 dc!!.EnableClipping(true)
             }
             if (!visible.data) {
+                if (fixupFor43) { // DG: gotta reset that before returning this function
+                    dc!!.SetMenuScaleFix(false)
+                }
                 return
             }
+
             CalcClientRect(0.0f, 0.0f)
+
             SetFont()
+
+            //#modified-fva; BEGIN
             //if (flags & WIN_DESKTOP) {
             // see if this window forces a new aspect ratio
-            dc!!.SetSize(forceAspectWidth, forceAspectHeight)
+            //dc!!.SetSize(forceAspectWidth, forceAspectHeight)
             //}
+            if (parent != null && parent!!.cstAnchor.data != DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) {
+                cstAnchor.set(parent!!.cstAnchor)
+                cstAnchorTo.set(parent!!.cstAnchorTo)
+                cstAnchorFactor.set(parent!!.cstAnchorFactor)
+            }
+            if (!cst_hudAdjustAspect.GetBool() || cstAnchor.data == DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) {
+                dc?.SetSize(forceAspectWidth, forceAspectHeight)
+            } else {
+                // DG: if this Window uses anchors, it already is aspect-ratio-aware
+                //     so a potentially active menuscalefix must be disabled
+                //    (else it's "fixed" twice => wrong ratio in other direction)
+                dc?.SetMenuScaleFix(false)
+                dc?.CstSetSize(cstAnchor.data, cstAnchorTo.data, cstAnchorFactor.data)
+            }
+            //#modified-fva; END
 
             //FIXME: go to screen coord tracking
             drawRect.Offset(x, y)
@@ -1693,7 +1798,22 @@ object Window {
             val oldTrans = idMat3()
             dc!!.GetTransformInfo(oldOrg, oldTrans)
             SetupTransforms(x, y)
+
+            //#modified-fva; BEGIN
+            if (cstNoClipBackground) {
+                dc?.EnableClipping(false)
+            }
+            //#modified-fva; END
+
             DrawBackground(drawRect)
+
+
+            //#modified-fva; BEGIN
+            if (cstNoClipBackground) {
+                dc?.EnableClipping(true)
+            }
+            //#modified-fva; END
+
             DrawBorderAndCaption(drawRect)
             if (0 == flags and WIN_NOCLIP) {
                 dc!!.PushClipRect(clientRect)
@@ -1746,6 +1866,11 @@ object Window {
                 )
                 dc!!.EnableClipping(true)
             }
+
+            if (fixupFor43) { // DG: gotta reset that before returning this function
+                dc?.SetMenuScaleFix(false)
+            }
+
             drawRect.Offset(-x, -y)
             clientRect.Offset(-x, -y)
             textRect.Offset(-x, -y)
@@ -1876,8 +2001,10 @@ object Window {
                 val scalex: Float
                 val scaley: Float
                 if (flags and WIN_NATURALMAT != 0) {
-                    scalex = drawRect.w / background!!.GetImageWidth()
-                    scaley = drawRect.h / background!!.GetImageHeight()
+                    // DG: now also multiplied with matScalex/y, don't see a reason not to support that
+                    //     (it allows scaling a tiled background image)
+                    scalex = (drawRect.w / background!!.GetImageWidth()) * matScalex
+                    scaley = (drawRect.h / background!!.GetImageHeight()) * matScaley
                 } else {
                     scalex = matScalex
                     scaley = matScaley
@@ -2065,6 +2192,13 @@ object Window {
             backGroundName.WriteToSaveGame(savefile)
             hideCursor.WriteToSaveGame(savefile)
 
+            //#modified-fva; BEGIN // FIXME: savegame version?
+            cstAnchor.WriteToSaveGame(savefile)
+            cstAnchorTo.WriteToSaveGame(savefile)
+            cstAnchorFactor.WriteToSaveGame(savefile)
+            savefile.WriteBool(cstNoClipBackground)
+            //#modified-fva; END
+
             // Defined Vars
             i = 0
             while (i < definedVars.Num()) {
@@ -2142,13 +2276,12 @@ object Window {
         }
 
         fun ReadSaveGameString(string: idStr?, savefile: idFile) {
-            val len: Int
-            len = savefile.ReadInt()
+            val len: Int = savefile.ReadInt()
             if (len < 0) {
                 Common.common.Warning("idWindow::ReadSaveGameString: invalid length")
             }
             string!!.Fill(' ', len)
-            savefile.ReadString(string)
+            savefile.Read(string, len)
         }
 
         fun ReadSaveGameTransition(trans: idTransitionData, savefile: idFile) {
@@ -2217,6 +2350,17 @@ object Window {
             } else {
                 hideCursor.data = false
             }
+
+
+            //#modified-fva; BEGIN
+            // TODO: why does this have to be read from the savegame anyway, does it change?
+            if (session.GetSaveGameVersion() >= 18) {
+                cstAnchor.ReadFromSaveGame(savefile)
+                cstAnchorTo.ReadFromSaveGame(savefile)
+                cstAnchorFactor.ReadFromSaveGame(savefile)
+                cstNoClipBackground = savefile.ReadBool()
+            } // else keep default values, I guess
+            //#modified-fva; END
 
             // Defined Vars
             i = 0
@@ -2344,9 +2488,9 @@ object Window {
                         } else if (transitions[i].offset == TransiotonalDataOffset.ROTATE_OFFSET.offset) {
                             transitions[i].data = dw.win?.rotate
                         } //#modified-fva; BEGIN
-//                        else if ( transitions[i].offset == TransiotonalDataOffset.CSTANCHORFACTOR_OFFSET.offset ) {
-//                            transitions[i].data = dw.win?.cstAnchorFactor
-//                        }
+                        else if (transitions[i].offset == TransiotonalDataOffset.CSTANCHORFACTOR_OFFSET.offset) {
+                            transitions[i].data = dw.win?.cstAnchorFactor
+                        }
                         //#modified-fva; END
                     } else {
                         if (transitions[i].offset == TransiotonalDataOffset.RECT_OFFSET.offset) {
@@ -2365,9 +2509,9 @@ object Window {
                             transitions[i].data = dw.simp?.rotate
                         }
                         //#modified-fva; BEGIN
-//                        else if ( transitions[i].offset == (ptrdiff_t)&this->cstAnchorFactor - (ptrdiff_t)this ) {
-//                            transitions[i].data = dw.simp?.cstAnchorFactor
-//                        }
+                        else if (transitions[i].offset == TransiotonalDataOffset.CSTANCHORFACTOR_OFFSET.offset) {
+                            transitions[i].data = dw.simp?.cstAnchorFactor
+                        }
                         //#modified-fva; END
                     }
                 }
@@ -3067,7 +3211,12 @@ object Window {
                     }
                 }
             }
-            if (gui!!.Active()) {
+            if (gui!!.Active() && cmd.Length() > 0) {
+                // DG: can't just append the command, must separate commands with " ; "
+                val pend = gui!!.GetPendingCmd()
+                if (pend.Length() > 0) {
+                    pend.plusAssign(" ; ")
+                }
                 gui!!.GetPendingCmd().plusAssign(cmd)
             }
         }
@@ -3544,8 +3693,8 @@ object Window {
 
             // not predefined so just read the next token and add it to the state
             val tok = idToken()
-            val vari = idWinInt()
-            val varf = idWinFloat()
+            var vari = idWinInt()
+            var varf = idWinFloat()
             var vars = idWinStr()
             if (src.ReadToken(tok)) {
                 if (`var` != null) {
@@ -3554,25 +3703,25 @@ object Window {
                 }
                 when (tok.type) {
                     TT_NUMBER -> if (tok.subtype and TT_INTEGER != 0) {
-//                            vari = new idWinInt();
-                        vari.data = atoi(tok)
+                        vari = idWinInt()
+                        vari.set(atoi(tok))
                         vari.SetName(work.toString())
                         definedVars.Append(vari)
                     } else if (tok.subtype and TT_FLOAT != 0) {
-//                            varf = new idWinFloat();
-                        varf.data = atof(tok)
+                        varf = idWinFloat()
+                        varf.set(atof(tok))
                         varf.SetName(work.toString())
                         definedVars.Append(varf)
                     } else {
-//                            vars = new idWinStr();
-                        vars.data = tok
+                        vars = idWinStr()
+                        vars.set(tok)
                         vars.SetName(work.toString())
                         definedVars.Append(vars)
                     }
 
                     else -> {
                         vars = idWinStr()
-                        vars.data = tok
+                        vars.set(tok)
                         vars.SetName(work.toString())
                         definedVars.Append(vars)
                     }
@@ -3594,6 +3743,18 @@ object Window {
                 }
                 return true
             }
+            // DG: added this window flag for Windows that should be scaled to 4:3
+            //     (with "empty" bars left/right or above/below)
+            if (Icmp(_name, "scaleto43") == 0) {
+                val scaleTo43 = src.ParseInt()
+                if (scaleTo43 > 0) {
+                    flags = flags or WIN_SCALETO43
+                } else if (scaleTo43 == 0) {
+                    flags = flags or WIN_NO_SCALETO43
+                }
+                return true
+            }
+            // DG end
             if (Icmp(_name, "forceaspectwidth") == 0) {
                 forceAspectWidth = src.ParseFloat()
                 return true
@@ -3709,6 +3870,14 @@ object Window {
                 fontNum = dc!!.FindFont(fontStr.toString()).toChar()
                 return true
             }
+
+            //#modified-fva; BEGIN
+            if (Icmp(_name, "cstNoClipBackground") == 0) {
+                cstNoClipBackground = src.ParseBool()
+                return true
+            }
+            //#modified-fva; END
+
             return false
         }
 
@@ -3788,6 +3957,15 @@ object Window {
                 idRegEntry("choices", REGTYPE.STRING),
                 idRegEntry("choiceVar", REGTYPE.STRING),
                 idRegEntry("bind", REGTYPE.STRING),
+                //#modified-fva; BEGIN - FIXME: why not at the end of the list?
+                idRegEntry("cstLayer", REGTYPE.INT),
+                idRegEntry("cstPseudoBit", REGTYPE.INT),
+                idRegEntry("cstResetScrollbar", REGTYPE.BOOL),
+                idRegEntry("cstWriteTop", REGTYPE.BOOL),
+                idRegEntry("cstAnchor", REGTYPE.INT),
+                idRegEntry("cstAnchorTo", REGTYPE.INT),
+                idRegEntry("cstAnchorFactor", REGTYPE.FLOAT),
+                //#modified-fva; END
                 idRegEntry("modelRotate", REGTYPE.VEC4),
                 idRegEntry("modelOrigin", REGTYPE.VEC4),
                 idRegEntry("lightOrigin", REGTYPE.VEC4),
@@ -3815,6 +3993,16 @@ object Window {
             //
             protected val gui_debug = idCVar("gui_debug", "0", CVAR_GUI or CVAR_BOOL, "")
             protected val gui_edit = idCVar("gui_edit", "0", CVAR_GUI or CVAR_BOOL, "")
+
+            //#modified-fva; BEGIN
+            val cst_hudAdjustAspect = idCVar(
+                "cst_hudAdjustAspect",
+                "1",
+                CVAR_GUI or CVAR_BOOL or CVAR_ARCHIVE,
+                "adjust the HUD's aspect when the screen aspect ratio isn't 4:3"
+            )
+
+            //#modified-fva; END
             private val dw = drawWin_t()
             private val vec = idVec3(0, 0, 1)
 

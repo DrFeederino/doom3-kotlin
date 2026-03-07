@@ -736,7 +736,7 @@ internal class idAASReach {
                 walkReach.edgeNum = abs(floor_bestArea1FloorEdgeNum)
                 walkReach.travelTime = 0
                 if (area2.flags and AASFile.AREA_CROUCH != 0) {
-                    walkReach.travelTime += file.settings.tt_startCrouching._val
+                    walkReach.travelTime += file.settings.tt_startCrouching.integerValue
                 }
                 AddReachabilityToArea(walkReach, fromAreaNum)
                 return true
@@ -780,7 +780,7 @@ internal class idAASReach {
                         waterJumpReach.start.set(water_bestStart)
                         waterJumpReach.end.set(water_bestEnd.plus(water_bestNormal.times(INSIDEUNITS_WATERJUMP)))
                         waterJumpReach.edgeNum = abs(floor_bestArea1FloorEdgeNum)
-                        waterJumpReach.travelTime = file.settings.tt_waterJump._val
+                        waterJumpReach.travelTime = file.settings.tt_waterJump.integerValue
                         AddReachabilityToArea(waterJumpReach, fromAreaNum)
                         return true
                     }
@@ -826,7 +826,7 @@ internal class idAASReach {
                         )
                         barrierJumpReach.end.set(floor_bestEnd.plus(floor_bestNormal.times(INSIDEUNITS_WALKEND)))
                         barrierJumpReach.edgeNum = abs(floor_bestArea1FloorEdgeNum)
-                        barrierJumpReach.travelTime = file.settings.tt_barrierJump._val
+                        barrierJumpReach.travelTime = file.settings.tt_barrierJump.integerValue
                         AddReachabilityToArea(barrierJumpReach, fromAreaNum)
                         return true
                     }
@@ -903,7 +903,7 @@ internal class idAASReach {
                                 walkOffLedgeReach.end.set(floor_bestEnd)
                                 walkOffLedgeReach.edgeNum = abs(floor_bestArea1FloorEdgeNum)
                                 walkOffLedgeReach.travelTime =
-                                    (file.settings.tt_startWalkOffLedge._val + abs(floor_bestDist) * 50 / file.settings.gravityValue).toInt()
+                                    (file.settings.tt_startWalkOffLedge.integerValue + abs(floor_bestDist) * 50 / file.settings.gravityValue).toInt()
                                 AddReachabilityToArea(walkOffLedgeReach, fromAreaNum)
                                 return true
                             }
@@ -1008,7 +1008,7 @@ internal class idAASReach {
                 reach.end.set(trace.endpos)
                 reach.edgeNum = abs(edgeNum)
                 reach.travelTime =
-                    (file.settings.tt_startWalkOffLedge._val + abs(mid[2] - trace.endpos[2]) * 50 / file.settings.gravityValue).toInt()
+                    (file.settings.tt_startWalkOffLedge.integerValue + abs(mid[2] - trace.endpos[2]) * 50 / file.settings.gravityValue).toInt()
                 AddReachabilityToArea(reach, areaNum)
                 j++
             }

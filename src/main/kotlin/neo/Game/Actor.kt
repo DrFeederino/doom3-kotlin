@@ -61,7 +61,6 @@ import neo.idlib.math.Matrix.idMat3
 import kotlin.collections.HashMap
 import kotlin.collections.MutableMap
 import kotlin.collections.set
-import kotlin.collections.toTypedArray
 import kotlin.math.ceil
 import kotlin.math.cos
 
@@ -139,13 +138,12 @@ class idAnimState {
     }
 
     fun Restore(savefile: idRestoreGame) {
-        savefile.ReadObject( /*reinterpret_cast<idClass *&>*/self)
-        val animOwner = idEntity()
-        savefile.ReadObject( /*reinterpret_cast<idClass *&>*/animOwner)
+        self = savefile.ReadObject() as idActor?
+        val animOwner = savefile.ReadObject() as idEntity?
         if (animOwner != null) {
             animator = animOwner.GetAnimator()
         }
-        savefile.ReadObject( /*reinterpret_cast<idClass *&>*/thread)
+        thread = savefile.ReadObject() as idThread?
         savefile.ReadString(state)
         animBlendFrames = savefile.ReadInt()
         lastAnimBlendFrames = savefile.ReadInt()
@@ -309,6 +307,8 @@ class copyJoints_t {
  ***********************************************************************/
 open class idActor : idAFEntity_Gibbable() {
     companion object {
+        val Type = idTypeInfo("idActor", "idAFEntity_Gibbable") { idActor() }
+
         //public	CLASS_PROTOTYPE( idActor );
         //        public static idTypeInfo Type;
         //
@@ -558,8 +558,8 @@ open class idActor : idAFEntity_Gibbable() {
 
         spawnArgs.GetInt("rank", "0", rank)
         spawnArgs.GetInt("team", "0", team)
-        this.rank = rank._val
-        this.team = team._val
+        this.rank = rank.integerValue
+        this.team = team.integerValue
         spawnArgs.GetVector("offsetModel", "0 0 0", modelOffset)
         spawnArgs.GetBool("use_combat_bbox", "0", use_combat_bbox)
         this.use_combat_bbox = use_combat_bbox._val
@@ -625,15 +625,15 @@ open class idActor : idAFEntity_Gibbable() {
                     jointName.StripLeadingOnce("copy_joint ")
                     copyJoint.mod = jointModTransform_t.JOINTMOD_LOCAL_OVERRIDE
                 }
-                copyJoint.from._val = (animator.GetJointHandle(jointName))
-                if (copyJoint.from._val == Model.INVALID_JOINT) {
+                copyJoint.from.integerValue = (animator.GetJointHandle(jointName))
+                if (copyJoint.from.integerValue == Model.INVALID_JOINT) {
                     Game_local.gameLocal.Warning("Unknown copy_joint '%s' on entity %s", jointName, name)
                     kv = spawnArgs.MatchPrefix("copy_joint", kv)
                     continue
                 }
                 jointName.set(kv.GetValue())
-                copyJoint.to._val = (headAnimator!!.GetJointHandle(jointName))
-                if (copyJoint.to._val == Model.INVALID_JOINT) {
+                copyJoint.to.integerValue = (headAnimator!!.GetJointHandle(jointName))
+                if (copyJoint.to.integerValue == Model.INVALID_JOINT) {
                     Game_local.gameLocal.Warning("Unknown copy_joint '%s' on head of entity %s", jointName, name)
                     kv = spawnArgs.MatchPrefix("copy_joint", kv)
                     continue
@@ -687,6 +687,7 @@ open class idActor : idAFEntity_Gibbable() {
      ================
      */
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         var ent: idActor?
         var i: Int
         savefile.WriteInt(team)
@@ -723,8 +724,8 @@ open class idActor : idAFEntity_Gibbable() {
         i = 0
         while (i < copyJoints.Num()) {
             savefile.WriteInt(TempDump.etoi(copyJoints[i].mod))
-            savefile.WriteJoint(copyJoints[i].from._val)
-            savefile.WriteJoint(copyJoints[i].to._val)
+            savefile.WriteJoint(copyJoints[i].from.integerValue)
+            savefile.WriteJoint(copyJoints[i].to.integerValue)
             i++
         }
         savefile.WriteJoint(leftEyeJoint)
@@ -786,16 +787,17 @@ open class idActor : idAFEntity_Gibbable() {
      ================
      */
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         var i: Int
         val num = CInt()
-        val ent = idActor()
+        var ent: idActor?
         team = savefile.ReadInt()
         rank = savefile.ReadInt()
         savefile.ReadMat3(viewAxis)
         savefile.ReadInt(num)
         i = 0
-        while (i < num._val) {
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/ent)
+        while (i < num.integerValue) {
+            ent = savefile.ReadObject() as idActor?
             assert(ent != null)
             if (ent != null) {
                 ent.enemyNode.AddToEnd(enemyList)
@@ -811,28 +813,30 @@ open class idActor : idAFEntity_Gibbable() {
         pain_threshold = savefile.ReadInt()
         savefile.ReadInt(num)
         damageGroups.SetGranularity(1)
-        damageGroups.setSize(num._val)
+        damageGroups.setSize(num.integerValue)
         i = 0
-        while (i < num._val) {
+        while (i < num.integerValue) {
             savefile.ReadString(damageGroups[i])
             i++
         }
         savefile.ReadInt(num)
-        damageScale.SetNum(num._val)
+        damageScale.SetNum(num.integerValue)
         i = 0
-        while (i < num._val) {
+        while (i < num.integerValue) {
             damageScale[i] = savefile.ReadFloat()
             i++
         }
         use_combat_bbox = savefile.ReadBool()
         head.Restore(savefile)
         savefile.ReadInt(num)
-        copyJoints.SetNum(num._val)
+        copyJoints.SetNum(num.integerValue)
         i = 0
-        while (i < num._val) {
+        while (i < num.integerValue) {
             val `val` = CInt()
             savefile.ReadInt(`val`)
-            copyJoints[i].mod = jointModTransform_t.entries.toTypedArray()[`val`._val]
+
+            copyJoints[i] = copyJoints_t()
+            copyJoints[i].mod = jointModTransform_t.entries[`val`.integerValue]
             savefile.ReadJoint(copyJoints[i].from)
             savefile.ReadJoint(copyJoints[i].to)
             i++
@@ -847,7 +851,7 @@ open class idActor : idAFEntity_Gibbable() {
         blink_time = savefile.ReadInt()
         blink_min = savefile.ReadInt()
         blink_max = savefile.ReadInt()
-        savefile.ReadObject( /*reinterpret_cast<idClass *&>*/scriptThread)
+        scriptThread = savefile.ReadObject() as idThread?
         savefile.ReadString(waitState)
         headAnim.Restore(savefile)
         torsoAnim.Restore(savefile)
@@ -857,7 +861,7 @@ open class idActor : idAFEntity_Gibbable() {
         painTime = savefile.ReadInt()
         savefile.ReadInt(num)
         i = 0
-        while (i < num._val) {
+        while (i < num.integerValue) {
             val attach = attachments.Alloc()!!
             attach.ent.Restore(savefile)
             attach.channel = savefile.ReadInt()
@@ -1385,22 +1389,22 @@ open class idActor : idAFEntity_Gibbable() {
             return
         }
         val damage = CInt((damageDef.GetInt("damage") * damageScale).toInt())
-        damage._val = (GetDamageForLocation(damage._val, location))
+        damage.integerValue = (GetDamageForLocation(damage.integerValue, location))
 
         // inform the attacker that they hit someone
         attacker!!.DamageFeedback(this, inflictor, damage)
-        if (damage._val > 0) {
-            health -= damage._val
+        if (damage.integerValue > 0) {
+            health -= damage.integerValue
             if (health <= 0) {
                 if (health < -999) {
                     health = -999
                 }
-                Killed(inflictor, attacker, damage._val, dir, location)
+                Killed(inflictor, attacker, damage.integerValue, dir, location)
                 if (health < -20 && spawnArgs.GetBool("gib") && damageDef.GetBool("gib")) {
                     Gib(dir, damageDefName)
                 }
             } else {
-                Pain(inflictor, attacker, damage._val, dir, location)
+                Pain(inflictor, attacker, damage.integerValue, dir, location)
             }
         } else {
             // don't accumulate knockback
@@ -1699,16 +1703,16 @@ open class idActor : idAFEntity_Gibbable() {
         val bounds = idBounds()
         GetFloorPos(64.0f, pos)
         if (null == aas) {
-            areaNum._val = 0
+            areaNum.integerValue = 0
             return
         }
         size.set(aas.GetSettings()!!.boundingBoxes[0][1])
         bounds[0] = size.unaryMinus()
         size.z = 32.0f
         bounds[1] = size
-        areaNum._val = aas.PointReachableAreaNum(pos, bounds, AASFile.AREA_REACHABLE_WALK)
-        if (areaNum._val != 0) {
-            aas.PushPointIntoAreaNum(areaNum._val, pos)
+        areaNum.integerValue = aas.PointReachableAreaNum(pos, bounds, AASFile.AREA_REACHABLE_WALK)
+        if (areaNum.integerValue != 0) {
+            aas.PushPointIntoAreaNum(areaNum.integerValue, pos)
         }
     }
 
@@ -1933,18 +1937,18 @@ open class idActor : idAFEntity_Gibbable() {
         while (i < copyJoints.Num()) {
             if (copyJoints[i].mod == jointModTransform_t.JOINTMOD_WORLD_OVERRIDE) {
                 mat.set(headEnt.GetPhysics().GetAxis().Transpose())
-                GetJointWorldTransform(copyJoints[i].from._val, Game_local.gameLocal.time, pos, axis)
+                GetJointWorldTransform(copyJoints[i].from.integerValue, Game_local.gameLocal.time, pos, axis)
                 pos.minusAssign(headEnt.GetPhysics().GetOrigin())
-                headAnimator!!.SetJointPos(copyJoints[i].to._val, copyJoints[i].mod, pos.times(mat))
+                headAnimator!!.SetJointPos(copyJoints[i].to.integerValue, copyJoints[i].mod, pos.times(mat))
                 headAnimator.SetJointAxis(
-                    copyJoints[i].to._val, copyJoints[i].mod, axis.times(mat)
+                    copyJoints[i].to.integerValue, copyJoints[i].mod, axis.times(mat)
                 )
             } else {
                 animator.GetJointLocalTransform(
-                    copyJoints[i].from._val, Game_local.gameLocal.time, pos, axis
+                    copyJoints[i].from.integerValue, Game_local.gameLocal.time, pos, axis
                 )
-                headAnimator!!.SetJointPos(copyJoints[i].to._val, copyJoints[i].mod, pos)
-                headAnimator.SetJointAxis(copyJoints[i].to._val, copyJoints[i].mod, axis)
+                headAnimator!!.SetJointPos(copyJoints[i].to.integerValue, copyJoints[i].mod, pos)
+                headAnimator.SetJointAxis(copyJoints[i].to.integerValue, copyJoints[i].mod, axis)
             }
             i++
         }
@@ -2055,7 +2059,7 @@ open class idActor : idAFEntity_Gibbable() {
                 args.Set(sndKV.GetKey(), sndKV.GetValue())
                 sndKV = spawnArgs.MatchPrefix("snd_", sndKV)
             }
-            headEnt = Game_local.gameLocal.SpawnEntityType(idAFAttachment::class.java, args) as idAFAttachment
+            headEnt = Game_local.gameLocal.SpawnEntityType(idAFAttachment.Type, args) as idAFAttachment
             headEnt.SetName(Str.va("%s_head", name))
             headEnt.SetBody(this, headModel, damageJoint)
             head.oSet(headEnt)
@@ -2750,6 +2754,9 @@ open class idActor : idAFEntity_Gibbable() {
     private fun Event_GetHead() {
         idThread.ReturnEntity(head.GetEntity())
     }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idActor()
 
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]

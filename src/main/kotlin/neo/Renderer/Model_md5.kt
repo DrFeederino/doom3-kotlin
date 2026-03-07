@@ -714,8 +714,8 @@ object Model_md5 {
                 }
                 var surf: modelSurface_s?
                 if (staticModel.FindSurfaceWithId(i, surfaceNum)) {
-                    mesh.surfaceNum = surfaceNum._val
-                    surf = staticModel.surfaces[surfaceNum._val]
+                    mesh.surfaceNum = surfaceNum.integerValue
+                    surf = staticModel.surfaces[surfaceNum.integerValue]
                 } else {
 
                     // Remove Overlays before adding new surfaces

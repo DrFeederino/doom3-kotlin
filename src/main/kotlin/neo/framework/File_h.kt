@@ -212,14 +212,14 @@ object File_h {
         }
 
         // Read data from the file to the buffer.
-        open fun Read(buffer: ByteBuffer /*, int len*/): Int {
+        open fun Read(buffer: ByteBuffer): Int {
             return Read(buffer, buffer.capacity())
         }
 
-        fun Read(`object`: SERiAL): Int {
-            val buffer = `object`.AllocBuffer()
+        fun Read(classObject: SERiAL): Int {
+            val buffer = classObject.AllocBuffer()
             val reads = Read(buffer, buffer.capacity())
-            `object`.Read(buffer)
+            classObject.Read(buffer)
             return reads
         }
 
@@ -320,9 +320,7 @@ object File_h {
             val buf = CharArray(MAX_PRINT_MSG)
             val len: Int
 
-//            va_start(argPtr, fmt);
             len = FS_WriteFloatString(buf, fmt, *args)
-            //            va_end(argPtr);
             return Write(TempDump.atobb(buf)!!, len)
         }
 
@@ -330,29 +328,29 @@ object File_h {
         fun ReadInt(value: CInt): Int {
             val intBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
             val result = Read(intBytes)
-            value._val = (LittleLong(intBytes.getInt(0)))
+            value.integerValue = (LittleLong(intBytes.getInt()))
             return result
         }
 
         // Endian portable alternatives to Read(...)
         fun ReadInt(value: CLong): Int {
-            val intBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+            val intBytes = ByteBuffer.allocate(4)
             val result = Read(intBytes)
-            value._val = (LittleLong(intBytes.getInt(0)).toLong())
+            value._val = (LittleLong(intBytes.getInt()).toLong())
             return result
         }
 
         fun ReadInt(): Int {
             val value = CInt()
             this.ReadInt(value)
-            return value._val
+            return value.integerValue
         }
 
         // Endian portable alternatives to Write(...)
         // FIX: added LITTLE_ENDIAN to match ReadInt, and flip() to reset position after putInt
         // (putInt advances position to 4, so Write would write 0 bytes without flip)
         fun WriteInt(value: Int): Int {
-            val intBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+            val intBytes = ByteBuffer.allocate(4)
             val v: Int = LittleLong(value)
             intBytes.putInt(v)
             intBytes.flip()
@@ -363,17 +361,10 @@ object File_h {
             return WriteInt(value.ordinal)
         }
 
-        fun ReadUnsignedInt(value: CLong): Int {
-            val uintBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(uintBytes)
-            value._val = (LittleLong(uintBytes.getInt(0)).toLong() and 0xFFFFFFFF)
-            return result
-        }
-
         // FIX: was allocating 2 bytes instead of 4 (sizeof(unsigned int)) — would throw BufferOverflowException
         // FIX: added LITTLE_ENDIAN and flip() (same ByteBuffer position bug as WriteInt)
         fun WriteUnsignedInt(value: Long): Int {
-            val uintBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+            val uintBytes = ByteBuffer.allocate(4)
             val v: Int = LittleLong(value.toInt())
             uintBytes.putInt(v)
             uintBytes.flip()
@@ -382,9 +373,9 @@ object File_h {
 
         // FIX: was allocating 1 byte instead of 2 (sizeof(short)), and reading a single byte
         fun ReadShort(value: ShortArray): Int {
-            val shortBytes = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
+            val shortBytes = ByteBuffer.allocate(2)
             val result = Read(shortBytes)
-            value[0] = LittleShort(shortBytes.getShort(0))
+            value[0] = LittleShort(shortBytes.short)
             return result
         }
 
@@ -396,17 +387,16 @@ object File_h {
 
         // FIX: added LITTLE_ENDIAN to match ReadShort, and flip() to reset position
         fun WriteShort(value: Short): Int {
-            val shortBytes = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
+            val shortBytes = ByteBuffer.allocate(2)
             val v: Short = LittleShort(value)
             shortBytes.putShort(v)
-            shortBytes.flip()
             return Write(shortBytes)
         }
 
         fun ReadUnsignedShort(value: IntArray): Int {
-            val ushortBytes = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
+            val ushortBytes = ByteBuffer.allocate(2)
             val result = Read(ushortBytes)
-            value[0] = LittleShort(ushortBytes.getShort(0)).toInt() and 0xFFFF
+            value[0] = LittleShort(ushortBytes.short).toInt() and 0xFFFF
             return result
         }
 
@@ -418,7 +408,7 @@ object File_h {
 
         // FIX: added LITTLE_ENDIAN and flip() to reset position
         fun WriteUnsignedShort(value: Int): Int {
-            val ushortBytes = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
+            val ushortBytes = ByteBuffer.allocate(2)
             val v: Short = LittleShort(value.toShort())
             ushortBytes.putShort(v)
             ushortBytes.flip()
@@ -468,9 +458,9 @@ object File_h {
 
         // FIX: added LITTLE_ENDIAN byte order and absolute getFloat(0) to avoid position issues
         fun ReadFloat(value: CFloat): Int {
-            val floatBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+            val floatBytes = ByteBuffer.allocate(4)
             val result = Read(floatBytes)
-            value._val = (LittleFloat(floatBytes.getFloat(0)))
+            value._val = (LittleFloat(floatBytes.getFloat()))
             return result
         }
 
@@ -482,7 +472,7 @@ object File_h {
 
         // FIX: added LITTLE_ENDIAN to match ReadFloat, and flip() to reset position
         fun WriteFloat(value: Float): Int {
-            val floatBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+            val floatBytes = ByteBuffer.allocate(4)
             val v: Float = LittleFloat(value)
             floatBytes.putFloat(v)
             floatBytes.flip()
@@ -512,9 +502,10 @@ object File_h {
             val len = CInt()
             var result = 0
             ReadInt(len)
-            if (len._val > 0) {
-                string.Fill(' ', len._val)
-                result = Read(string, len._val)
+            if (len.integerValue > 0) {
+                assert(len.integerValue <= 1000000)
+                string.Fill(' ', len.integerValue)
+                result = Read(string, len.integerValue)
                 string.set(string)
             }
             return result
@@ -536,14 +527,14 @@ object File_h {
         }
 
         fun ReadVec2(vec: idVec2): Int {
-            val buffer = ByteBuffer.allocate(idVec2.BYTES).order(ByteOrder.LITTLE_ENDIAN)
+            val buffer = ByteBuffer.allocate(idVec2.BYTES)
             val result = Read(buffer)
-            vec.set(idVec2(buffer.getFloat(0), buffer.getFloat(4)))
+            vec.set(idVec2(buffer.float, buffer.float))
             return result
         }
 
         fun WriteVec2(vec: idVec2): Int {
-            val buffer = ByteBuffer.allocate(idVec2.BYTES).order(ByteOrder.LITTLE_ENDIAN)
+            val buffer = ByteBuffer.allocate(idVec2.BYTES)
             buffer.asFloatBuffer()
                 .put(vec.ToFloatPtr())
                 .flip()
@@ -551,14 +542,14 @@ object File_h {
         }
 
         fun ReadVec3(vec: idVec3): Int {
-            val buffer = ByteBuffer.allocate(idVec3.BYTES).order(ByteOrder.LITTLE_ENDIAN)
+            val buffer = ByteBuffer.allocate(idVec3.BYTES)
             val result = Read(buffer)
-            vec.set(idVec3(buffer.getFloat(0), buffer.getFloat(4), buffer.getFloat(8)))
+            vec.set(idVec3(buffer.float, buffer.float, buffer.float))
             return result
         }
 
         fun WriteVec3(vec: idVec3): Int {
-            val buffer = ByteBuffer.allocate(idVec3.BYTES).order(ByteOrder.LITTLE_ENDIAN)
+            val buffer = ByteBuffer.allocate(idVec3.BYTES)
             buffer.asFloatBuffer()
                 .put(vec.ToFloatPtr())
                 .flip()
@@ -566,14 +557,14 @@ object File_h {
         }
 
         fun ReadVec4(vec: idVec4): Int {
-            val buffer = ByteBuffer.allocate(idVec4.BYTES).order(ByteOrder.LITTLE_ENDIAN)
+            val buffer = ByteBuffer.allocate(idVec4.BYTES)
             val result = Read(buffer)
             vec.set(idVec4(buffer.getFloat(0), buffer.getFloat(4), buffer.getFloat(8), buffer.getFloat(12)))
             return result
         }
 
         fun WriteVec4(vec: idVec4): Int {
-            val buffer = ByteBuffer.allocate(idVec4.BYTES).order(ByteOrder.LITTLE_ENDIAN)
+            val buffer = ByteBuffer.allocate(idVec4.BYTES)
             buffer.asFloatBuffer()
                 .put(vec.ToFloatPtr())
                 .flip()
@@ -581,7 +572,7 @@ object File_h {
         }
 
         fun ReadVec6(vec: idVec6): Int {
-            val buffer = ByteBuffer.allocate(idVec6.BYTES).order(ByteOrder.LITTLE_ENDIAN)
+            val buffer = ByteBuffer.allocate(idVec6.BYTES)
             val result = Read(buffer)
             vec.set(
                 idVec6(
@@ -593,7 +584,7 @@ object File_h {
         }
 
         fun WriteVec6(vec: idVec6): Int {
-            val buffer = ByteBuffer.allocate(idVec6.BYTES).order(ByteOrder.LITTLE_ENDIAN)
+            val buffer = ByteBuffer.allocate(idVec6.BYTES)
             buffer.asFloatBuffer()
                 .put(vec.ToFloatPtr())
                 .flip()
@@ -601,7 +592,7 @@ object File_h {
         }
 
         fun ReadMat3(mat: idMat3): Int {
-            val buffer = ByteBuffer.allocate(idMat3.BYTES).order(ByteOrder.LITTLE_ENDIAN)
+            val buffer = ByteBuffer.allocate(idMat3.BYTES)
             val result = Read(buffer)
             mat.set(
                 idMat3(
@@ -614,7 +605,7 @@ object File_h {
         }
 
         fun WriteMat3(mat: idMat3): Int {
-            val buffer = ByteBuffer.allocate(idMat3.BYTES).order(ByteOrder.LITTLE_ENDIAN)
+            val buffer = ByteBuffer.allocate(idMat3.BYTES)
             buffer.asFloatBuffer()
                 .put(mat[0].ToFloatPtr())
                 .put(mat[1].ToFloatPtr())
@@ -702,6 +693,7 @@ object File_h {
 
         override fun Read(buffer: ByteBuffer, len: Int): Int {
             var len = len
+
             if (0 == mode and (1 shl TempDump.etoi(fsMode_t.FS_READ))) {
                 idLib.common.FatalError("idFile_Memory::Read: %s not opened in read mode", name)
                 return 0
@@ -895,6 +887,7 @@ object File_h {
         }
 
         override fun Read(buffer: ByteBuffer, len: Int): Int {
+            //buffer.order(ByteOrder.LITTLE_ENDIAN) //TODO: make sure BitMsg also need little endianness
             if (0 == mode and (1 shl fsMode_t.FS_READ.ordinal)) {
                 idLib.common.FatalError("idFile_BitMsg::Read: %s not opened in read mode", name)
                 return 0
@@ -999,35 +992,44 @@ object File_h {
 
             remaining = len
             tries = false
+
+            // force little endian
+            buffer.order(ByteOrder.LITTLE_ENDIAN)
+
+            val position = o!!.position()
+            Common.common.Printf("Current position is %d\n", position);
             try {
                 while (remaining != 0) {
                     read = o!!.read(buffer)
-                    // FIX: Java FileChannel.read returns -1 for EOF (C++ fread returns 0).
-                    // Both 0 and -1 should be treated as "no more data" with retry logic.
                     if (read == -1 || read == 0) {
+                        // we might have been trying to read from a CD, which
+                        // sometimes returns a 0 read on windows
                         if (!tries) {
                             tries = true
                         } else {
                             FileSystem_h.fileSystem.AddToReadCount(len - remaining)
                             return len - remaining
                         }
-                    } else {
-                        remaining -= read
                     }
+
+//                    if ( read == -1 ) {
+//                        Common.common.FatalError( "idFile_Permanent::Read: -1 bytes read from %s", name.c_str() );
+//                    }
+
+                    remaining -= read
                 }
             } catch (ex: IOException) {
                 Logger.getLogger(File_h::class.java.name).log(Level.SEVERE, null, ex)
             }
-            FileSystem_h.fileSystem.AddToReadCount(len)
-            return len
-        }
 
-        fun ByteBuffer.convertByteBufferToString(): String {
-            val str = StringBuilder()
-            for (i in 0 until this.limit()) {
-                str.append(Char(this[i].toInt()))
+            FileSystem_h.fileSystem.AddToReadCount(len)
+            // Kotlin specific bytbuffer shenanigans to reset position in buffer
+            if (buffer.capacity() == len) {
+                buffer.flip()// need to return at initial position
+
             }
-            return str.toString()
+
+            return len
         }
 
         /*
@@ -1230,6 +1232,9 @@ object File_h {
         override fun Read(buffer: ByteBuffer, len: Int): Int {
             var l = 0
             var len = len
+
+            //buffer.order(ByteOrder.LITTLE_ENDIAN)
+
             try {
                 if (inputStream == null) {
                     inputStream = ZipFile(fullPath.toString()).getInputStream(z)
@@ -1246,6 +1251,7 @@ object File_h {
             }
             FileSystem_h.fileSystem.AddToReadCount(l)
             byteCounter += l
+
             return l
         }
 

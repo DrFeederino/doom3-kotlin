@@ -121,15 +121,69 @@ class trace_s : SERiAL {
     var c: contactInfo_t = contactInfo_t() // contact information, only valid if fraction < 1.0
 
     override fun AllocBuffer(): ByteBuffer {
-        throw UnsupportedOperationException("Not supported yet.")
+        return ByteBuffer.allocate(BYTES)
     }
 
     override fun Read(buffer: ByteBuffer) {
-        throw UnsupportedOperationException("Not supported yet.")
+        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        fraction = buffer.float
+        endpos[0] = buffer.float
+        endpos[1] = buffer.float
+        endpos[2] = buffer.float
+        for (i in 0 until 3) {
+            for (j in 0 until 3) {
+                endAxis[i][j] = buffer.float
+            }
+        }
+        c.type = contactType_t.entries[buffer.int]
+        c.point[0] = buffer.float
+        c.point[1] = buffer.float
+        c.point[2] = buffer.float
+        c.normal[0] = buffer.float
+        c.normal[1] = buffer.float
+        c.normal[2] = buffer.float
+        c.dist = buffer.float
+        c.contents = buffer.int
+        buffer.int // material pointer, skip
+        c.modelFeature = buffer.int
+        c.trmFeature = buffer.int
+        c.entityNum = buffer.int
+        c.id = buffer.int
     }
 
     override fun Write(): ByteBuffer {
-        throw UnsupportedOperationException("Not supported yet.")
+        val buffer = AllocBuffer()
+        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        buffer.putFloat(fraction)
+        buffer.putFloat(endpos[0])
+        buffer.putFloat(endpos[1])
+        buffer.putFloat(endpos[2])
+        for (i in 0 until 3) {
+            for (j in 0 until 3) {
+                buffer.putFloat(endAxis[i][j])
+            }
+        }
+        buffer.putInt(c.type.ordinal)
+        buffer.putFloat(c.point[0])
+        buffer.putFloat(c.point[1])
+        buffer.putFloat(c.point[2])
+        buffer.putFloat(c.normal[0])
+        buffer.putFloat(c.normal[1])
+        buffer.putFloat(c.normal[2])
+        buffer.putFloat(c.dist)
+        buffer.putInt(c.contents)
+        buffer.putInt(0) // material pointer
+        buffer.putInt(c.modelFeature)
+        buffer.putInt(c.trmFeature)
+        buffer.putInt(c.entityNum)
+        buffer.putInt(c.id)
+        buffer.flip()
+        return buffer
+    }
+
+    companion object {
+        @Transient
+        val BYTES = 120
     }
 
     fun set(s: trace_s) {

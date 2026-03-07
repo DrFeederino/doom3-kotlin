@@ -96,6 +96,8 @@ object Moveable {
 
     open class idMoveable : idEntity() {
         companion object {
+            val Type = idTypeInfo("idMoveable", "idEntity") { idMoveable() }
+
             // CLASS_PROTOTYPE( idMoveable );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -246,6 +248,7 @@ object Moveable {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteString(brokenModel)
             savefile.WriteString(damage)
             savefile.WriteString(fxCollide)
@@ -264,6 +267,7 @@ object Moveable {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val initialSplineTime = CInt()
             savefile.ReadString(brokenModel)
             savefile.ReadString(damage)
@@ -279,8 +283,8 @@ object Moveable {
             nextSoundTime = savefile.ReadInt()
             savefile.ReadInt(initialSplineTime)
             savefile.ReadVec3(initialSplineDir)
-            if (initialSplineTime._val != -1) {
-                InitInitialSpline(initialSplineTime._val)
+            if (initialSplineTime.integerValue != -1) {
+                InitInitialSpline(initialSplineTime.integerValue)
             } else {
                 initialSpline = null
             }
@@ -492,9 +496,8 @@ object Moveable {
             canDamage = enable.value != 0.0f
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idMoveable()
 
         // NOTE: Kotlin workaround — calls grandparent idEntity.Damage() since Kotlin
         // doesn't support skipping override levels like C++ does with idEntity::Damage(...)
@@ -548,6 +551,13 @@ object Moveable {
      ===============================================================================
      */
     open class idBarrel : idMoveable() {
+        companion object {
+            val Type = idTypeInfo("idBarrel", "idMoveable") { idBarrel() }
+        }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idBarrel()
+
         // CLASS_PROTOTYPE( idBarrel );
         private val lastOrigin // origin of the barrel the last think frame
                 : idVec3
@@ -578,6 +588,7 @@ object Moveable {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteFloat(radius)
             savefile.WriteInt(barrelAxis)
             savefile.WriteVec3(lastOrigin)
@@ -587,6 +598,7 @@ object Moveable {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             radius = savefile.ReadFloat()
             barrelAxis = savefile.ReadInt()
             savefile.ReadVec3(lastOrigin)
@@ -701,6 +713,8 @@ object Moveable {
      */
     class idExplodingBarrel : idBarrel() {
         companion object {
+            val Type = idTypeInfo("idExplodingBarrel", "idBarrel") { idExplodingBarrel() }
+
             // enum {
             val EVENT_EXPLODE: Int = idEntity.EVENT_MAXEVENTS
             val EVENT_MAXEVENTS = EVENT_EXPLODE + 1
@@ -769,6 +783,7 @@ object Moveable {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteVec3(spawnOrigin)
             savefile.WriteMat3(spawnAxis)
             savefile.WriteInt(TempDump.etoi(state))
@@ -782,12 +797,13 @@ object Moveable {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             savefile.ReadVec3(spawnOrigin)
             savefile.ReadMat3(spawnAxis)
             state = explode_state_t.values()[savefile.ReadInt()]
             particleModelDefHandle = savefile.ReadInt()
             lightDefHandle = savefile.ReadInt()
-            savefile.ReadRenderEntity(particleRenderEntity)
+            particleRenderEntity = savefile.ReadRenderEntity()
             savefile.ReadRenderLight(light)
             particleTime = savefile.ReadInt()
             lightTime = savefile.ReadInt()
@@ -1103,6 +1119,9 @@ object Moveable {
         private fun Event_TriggerTargets() {
             ActivateTargets(this)
         }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idExplodingBarrel()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]

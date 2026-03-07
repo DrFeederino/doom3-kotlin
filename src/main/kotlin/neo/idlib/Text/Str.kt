@@ -1411,7 +1411,7 @@ object Str {
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            return AllocBuffer()
         }
 
         fun DynamicMemoryUsed(): Int {

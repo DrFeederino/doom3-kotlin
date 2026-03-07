@@ -307,11 +307,11 @@ object sys_public {
                 }
 
                 packetsRead++
-                bytesRead += size._val
+                bytesRead += size.integerValue
 
                 if (net_forceLatency.GetInteger() > 0) {
                     val msg: win_net.udpMsg_s = udpPorts[bound_to.port].Alloc()
-                    msg.size = size._val
+                    msg.size = size.integerValue
                     msg.address = from
                     msg.time = Sys_Milliseconds()
                     msg.next = null

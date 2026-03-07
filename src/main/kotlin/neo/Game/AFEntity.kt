@@ -125,6 +125,11 @@ fun GetArgString(args: idDict, defArgs: idDict?, key: String?): String {
 }
 
 open class idMultiModelAF : idEntity() {
+    companion object {
+        val Type = idTypeInfo("idMultiModelAF", "idEntity") { idMultiModelAF() }
+    }
+
+    override fun GetType(): idTypeInfo = Type
 
     //        public CLASS_PROTOTYPE(idMultiModelAF );//TODO:include this?
     protected var physicsObj: idPhysics_AF = idPhysics_AF()
@@ -195,9 +200,7 @@ open class idMultiModelAF : idEntity() {
         modelHandles[id] = ModelManager.renderModelManager.FindModel(modelName)
     }
 
-    override fun CreateInstance(): idClass {
-        throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-    }
+    override fun CreateInstance(): idClass = idMultiModelAF()
 }
 
 //
@@ -212,6 +215,13 @@ open class idMultiModelAF : idEntity() {
  ===============================================================================
  */
 class idChain : idMultiModelAF() {
+    companion object {
+        val Type = idTypeInfo("idChain", "idMultiModelAF") { idChain() }
+    }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idChain()
+
     //public	CLASS_PROTOTYPE( idChain );
     override fun Spawn() {
         super.Spawn()
@@ -224,10 +234,10 @@ class idChain : idMultiModelAF() {
         val origin = idVec3()
         spawnArgs.GetBool("drop", "0", drop)
         spawnArgs.GetInt("links", "3", numLinks)
-        spawnArgs.GetFloat("length", "" + numLinks._val * 32.0f, length)
+        spawnArgs.GetFloat("length", "" + numLinks.integerValue * 32.0f, length)
         spawnArgs.GetFloat("width", "8", linkWidth)
         spawnArgs.GetFloat("density", "0.2f", density)
-        linkLength = length._val / numLinks._val
+        linkLength = length._val / numLinks.integerValue
         origin.set(GetPhysics().GetOrigin())
 
         // initialize physics
@@ -235,7 +245,7 @@ class idChain : idMultiModelAF() {
         physicsObj.SetGravity(Game_local.gameLocal.GetGravity())
         physicsObj.SetClipMask(Game_local.MASK_SOLID or Material.CONTENTS_BODY)
         SetPhysics(physicsObj)
-        BuildChain("link", origin, linkLength, linkWidth._val, density._val, numLinks._val, !drop._val)
+        BuildChain("link", origin, linkLength, linkWidth._val, density._val, numLinks.integerValue, !drop._val)
     }
 
     /*
@@ -330,6 +340,13 @@ class idChain : idMultiModelAF() {
  ===============================================================================
  */
 class idAFAttachment : idAnimatedEntity() {
+    companion object {
+        val Type = idTypeInfo("idAFAttachment", "idAnimatedEntity") { idAFAttachment() }
+    }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idAFAttachment()
+
     // public	CLASS_PROTOTYPE( idAFAttachment );
     protected var   /*jointHandle_t*/attachJoint: Int
     protected var body: idEntity? = null
@@ -358,6 +375,7 @@ class idAFAttachment : idAnimatedEntity() {
      ================
      */
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         savefile.WriteObject(body as idClass?)
         savefile.WriteInt(idleAnim)
         savefile.WriteJoint(attachJoint)
@@ -371,7 +389,8 @@ class idAFAttachment : idAnimatedEntity() {
      ================
      */
     override fun Restore(savefile: idRestoreGame) {
-        savefile.ReadObject( /*reinterpret_cast<idClass*&>*/body)
+        super.Restore(savefile)
+        body = savefile.ReadObject() as idEntity?
         idleAnim = savefile.ReadInt()
         attachJoint = savefile.ReadJoint()
         SetCombatModel()
@@ -519,6 +538,8 @@ class idAFAttachment : idAnimatedEntity() {
 
 open class idAFEntity_Base : idAnimatedEntity() {
     companion object {
+        val Type = idTypeInfo("idAFEntity_Base", "idAnimatedEntity") { idAFEntity_Base() }
+
         // public	CLASS_PROTOTYPE( idAFEntity_Base );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -593,6 +614,7 @@ open class idAFEntity_Base : idAnimatedEntity() {
     }
 
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         savefile.WriteInt(combatModelContents)
         savefile.WriteClipModel(combatModel)
         savefile.WriteVec3(spawnOrigin)
@@ -602,8 +624,9 @@ open class idAFEntity_Base : idAnimatedEntity() {
     }
 
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         combatModelContents = savefile.ReadInt()
-        savefile.ReadClipModel(combatModel!!)
+        combatModel = savefile.ReadClipModel()
         savefile.ReadVec3(spawnOrigin)
         savefile.ReadMat3(spawnAxis)
         nextSoundTime = savefile.ReadInt()
@@ -822,6 +845,9 @@ open class idAFEntity_Base : idAnimatedEntity() {
         af.SetConstraintPosition(name.value, pos.value)
     }
 
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idAFEntity_Base()
+
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]
     }
@@ -840,6 +866,8 @@ open class idAFEntity_Base : idAnimatedEntity() {
 
 open class idAFEntity_Gibbable : idAFEntity_Base() {
     companion object {
+        val Type = idTypeInfo("idAFEntity_Gibbable", "idAFEntity_Base") { idAFEntity_Gibbable() }
+
         // CLASS_PROTOTYPE( idAFEntity_Gibbable );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -869,11 +897,13 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
     }
 
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         savefile.WriteBool(gibbed)
         savefile.WriteBool(combatModel != null)
     }
 
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         val hasCombatModel = CBool(false)
         val gibbed = CBool(false)
         savefile.ReadBool(gibbed)
@@ -1056,6 +1086,9 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
         return super.UpdateAnimationControllers()
     }
 
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idAFEntity_Gibbable()
+
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]
     }
@@ -1085,6 +1118,8 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
  */
 class idAFEntity_Generic : idAFEntity_Gibbable() {
     companion object {
+        val Type = idTypeInfo("idAFEntity_Generic", "idAFEntity_Gibbable") { idAFEntity_Generic() }
+
         // CLASS_PROTOTYPE( idAFEntity_Generic );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -1118,10 +1153,12 @@ class idAFEntity_Generic : idAFEntity_Gibbable() {
     }
 
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         savefile.WriteBool(keepRunningPhysics._val)
     }
 
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         savefile.ReadBool(keepRunningPhysics)
     }
 
@@ -1159,6 +1196,9 @@ class idAFEntity_Generic : idAFEntity_Gibbable() {
         }
     }
 
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idAFEntity_Generic()
+
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]
     }
@@ -1179,6 +1219,8 @@ class idAFEntity_Generic : idAFEntity_Gibbable() {
  */
 class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
     companion object {
+        val Type = idTypeInfo("idAFEntity_WithAttachedHead", "idAFEntity_Gibbable") { idAFEntity_WithAttachedHead() }
+
         // CLASS_PROTOTYPE( idAFEntity_WithAttachedHead );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
         fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1230,10 +1272,12 @@ class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
     }
 
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         head.Save(savefile)
     }
 
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         head.Restore(savefile)
     }
 
@@ -1255,7 +1299,7 @@ class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
                     name.toString()
                 )
             }
-            headEnt = Game_local.gameLocal.SpawnEntityType(idAFAttachment::class.java, null) as idAFAttachment
+            headEnt = Game_local.gameLocal.SpawnEntityType(idAFAttachment.Type, null) as idAFAttachment
             headEnt.SetName(Str.va("%s_head", name))
             headEnt.SetBody(this, headModel, joint)
             headEnt.SetCombatModel()
@@ -1361,6 +1405,9 @@ class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
         }
     }
 
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idAFEntity_WithAttachedHead()
+
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]
     }
@@ -1380,6 +1427,13 @@ class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
  ===============================================================================
  */
 open class idAFEntity_Vehicle : idAFEntity_Base() {
+    companion object {
+        val Type = idTypeInfo("idAFEntity_Vehicle", "idAFEntity_Base") { idAFEntity_Vehicle() }
+    }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idAFEntity_Vehicle()
+
     // CLASS_PROTOTYPE( idAFEntity_Vehicle );
     protected var dustSmoke: idDeclParticle?
     protected var   /*jointHandle_t*/eyesJoint: Int
@@ -1647,6 +1701,8 @@ class idAFEntity_VehicleSimple : idAFEntity_Vehicle() {
     }
 
     companion object {
+        val Type = idTypeInfo("idAFEntity_VehicleSimple", "idAFEntity_Vehicle") { idAFEntity_VehicleSimple() }
+
         // ~idAFEntity_VehicleSimple();
         private val wheelJointKeys: Array<String> = arrayOf(
             "wheelJointFrontLeft",
@@ -1664,6 +1720,9 @@ class idAFEntity_VehicleSimple : idAFEntity_Vehicle() {
 
     // public:
     // CLASS_PROTOTYPE( idAFEntity_VehicleSimple );
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idAFEntity_VehicleSimple()
 }
 
 /*
@@ -1844,6 +1903,8 @@ class idAFEntity_VehicleFourWheels : idAFEntity_Vehicle() {
     }
 
     companion object {
+        val Type = idTypeInfo("idAFEntity_VehicleFourWheels", "idAFEntity_Vehicle") { idAFEntity_VehicleFourWheels() }
+
         private val steeringHingeKeys: Array<String> = arrayOf(
             "steeringHingeFrontLeft",
             "steeringHingeFrontRight"
@@ -1873,6 +1934,9 @@ class idAFEntity_VehicleFourWheels : idAFEntity_Vehicle() {
             i++
         }
     }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idAFEntity_VehicleFourWheels()
 }
 
 /*
@@ -2063,6 +2127,8 @@ class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
     }
 
     companion object {
+        val Type = idTypeInfo("idAFEntity_VehicleSixWheels", "idAFEntity_Vehicle") { idAFEntity_VehicleSixWheels() }
+
         private val steeringHingeKeys: Array<String> = arrayOf(
             "steeringHingeFrontLeft",
             "steeringHingeFrontRight",
@@ -2102,6 +2168,9 @@ class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
         steering[2] = null
         steering[3] = null
     }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idAFEntity_VehicleSixWheels()
 }
 
 /*
@@ -2110,6 +2179,13 @@ class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
  ===============================================================================
  */
 class idAFEntity_SteamPipe : idAFEntity_Base() {
+    companion object {
+        val Type = idTypeInfo("idAFEntity_SteamPipe", "idAFEntity_Base") { idAFEntity_SteamPipe() }
+    }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idAFEntity_SteamPipe()
+
     // CLASS_PROTOTYPE( idAFEntity_SteamPipe );
     private val force: idForce_Constant = idForce_Constant()
     private var steamBody = 0
@@ -2146,8 +2222,11 @@ class idAFEntity_SteamPipe : idAFEntity_Base() {
         BecomeActive(TH_THINK)
     }
 
-    override fun Save(savefile: idSaveGame) {}
+    override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
+    }
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         Spawn()
     }
 
@@ -2219,6 +2298,8 @@ class idAFEntity_SteamPipe : idAFEntity_Base() {
  */
 class idAFEntity_ClawFourFingers : idAFEntity_Base() {
     companion object {
+        val Type = idTypeInfo("idAFEntity_ClawFourFingers", "idAFEntity_Base") { idAFEntity_ClawFourFingers() }
+
         // public:
         // CLASS_PROTOTYPE( idAFEntity_ClawFourFingers );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
@@ -2264,6 +2345,7 @@ class idAFEntity_ClawFourFingers : idAFEntity_Base() {
     }
 
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         var i: Int
         i = 0
         while (i < 4) {
@@ -2275,6 +2357,7 @@ class idAFEntity_ClawFourFingers : idAFEntity_Base() {
     //
     //
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         var i: Int
         i = 0
         while (i < 4) {
@@ -2305,6 +2388,9 @@ class idAFEntity_ClawFourFingers : idAFEntity_Base() {
             i++
         }
     }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idAFEntity_ClawFourFingers()
 
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]

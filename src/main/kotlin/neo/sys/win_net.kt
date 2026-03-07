@@ -234,7 +234,7 @@ class win_net {
                 return false
             }
             buf.clear().append(src.substring(0, p))
-            port._val = src.substring(p + 1).toIntOrNull() ?: return false
+            port.integerValue = src.substring(p + 1).toIntOrNull() ?: return false
             return true
         }
 
@@ -262,7 +262,7 @@ class win_net {
                 }
                 try {
                     val addr = Inet4Address.getByName(buf.toString())
-                    sadr[0] = InetSocketAddress(addr, port._val)
+                    sadr[0] = InetSocketAddress(addr, port.integerValue)
                     return true
                 } catch (_: Exception) {
                     return false
@@ -270,7 +270,7 @@ class win_net {
             } else if (doDNSResolve) {
                 // hostname — strip port first so DNS doesn't get confused
                 Net_ExtractPort(s, buf, port)
-                val h = InetSocketAddress(buf.toString(), port._val)
+                val h = InetSocketAddress(buf.toString(), port.integerValue)
                 if (h.isUnresolved) {
                     return false
                 }
@@ -352,7 +352,7 @@ class win_net {
                     )
                     return false
                 }
-                size._val = datagramPacket.length
+                size.integerValue = datagramPacket.length
                 return true
             } catch (e: SocketTimeoutException) {
                 // no data available — equivalent to C++ WSAEWOULDBLOCK

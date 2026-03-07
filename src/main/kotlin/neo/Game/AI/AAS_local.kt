@@ -91,6 +91,11 @@ class AAS_local {
         private var totalCacheMemory // total cache memory used
                 = 0
 
+        /*
+         ============
+         idAASLocal::Init
+         ============
+         */
         override fun Init(
             mapName: idStr,  /*unsigned int*/
             mapFileCRC: Long
@@ -110,6 +115,11 @@ class AAS_local {
             return true
         }
 
+        /*
+         ============
+         idAASLocal::Shutdown
+         ============
+         */
         fun Shutdown() {
             if (file != null) {
                 ShutdownRouting()
@@ -119,6 +129,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::Stats
+         ============
+         */
         override fun Stats() {
             if (null == file) {
                 return
@@ -128,6 +143,11 @@ class AAS_local {
             RoutingStats()
         }
 
+        /*
+         ============
+         idAASLocal::Test
+         ============
+         */
         override fun Test(origin: idVec3) {
             if (file == null) {
                 return
@@ -163,30 +183,55 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::GetSettings
+         ============
+         */
         override fun GetSettings(): idAASSettings? {
             return if (null == file) {
                 null
             } else file!!.GetSettings()
         }
 
+        /*
+         ============
+         idAASLocal::PointAreaNum
+         ============
+         */
         override fun PointAreaNum(origin: idVec3): Int {
             return if (file == null) {
                 0
             } else file!!.PointAreaNum(origin)
         }
 
+        /*
+         ============
+         idAASLocal::PointReachableAreaNum
+         ============
+         */
         override fun PointReachableAreaNum(origin: idVec3, searchBounds: idBounds, areaFlags: Int): Int {
             return if (file == null) {
                 0
             } else file!!.PointReachableAreaNum(origin, searchBounds, areaFlags, AASFile.TFL_INVALID)
         }
 
+        /*
+         ============
+         idAASLocal::BoundsReachableAreaNum
+         ============
+         */
         override fun BoundsReachableAreaNum(bounds: idBounds, areaFlags: Int): Int {
             return if (file == null) {
                 0
             } else file!!.BoundsReachableAreaNum(bounds, areaFlags, AASFile.TFL_INVALID)
         }
 
+        /*
+         ============
+         idAASLocal::PushPointIntoAreaNum
+         ============
+         */
         override fun PushPointIntoAreaNum(areaNum: Int, origin: idVec3) {
             if (file == null) {
                 return
@@ -194,24 +239,44 @@ class AAS_local {
             file!!.PushPointIntoAreaNum(areaNum, origin)
         }
 
+        /*
+         ============
+         idAASLocal::AreaCenter
+         ============
+         */
         override fun AreaCenter(areaNum: Int): idVec3 {
             return if (null == file) {
                 vec3_origin
             } else file!!.GetArea(areaNum).center
         }
 
+        /*
+         ============
+         idAASLocal::AreaFlags
+         ============
+         */
         override fun AreaFlags(areaNum: Int): Int {
             return if (file == null) {
                 0
             } else file!!.GetArea(areaNum).flags
         }
 
+        /*
+         ============
+         idAASLocal::AreaTravelFlags
+         ============
+         */
         override fun AreaTravelFlags(areaNum: Int): Int {
             return if (file == null) {
                 0
             } else file!!.GetArea(areaNum).travelFlags
         }
 
+        /*
+         ============
+         idAASLocal::Trace
+         ============
+         */
         override fun Trace(trace: aasTrace_s, start: idVec3, end: idVec3): Boolean {
             if (file == null) {
                 trace.fraction = 0.0f
@@ -222,12 +287,22 @@ class AAS_local {
             return file!!.Trace(trace, start, end)
         }
 
+        /*
+         ============
+         idAASLocal::GetPlane
+         ============
+         */
         override fun GetPlane(planeNum: Int): idPlane {
             return if (file == null) {
                 dummy
             } else file!!.GetPlane(planeNum)
         }
 
+        /*
+         ============
+         idAASLocal::GetWallEdges
+         ============
+         */
         override fun GetWallEdges(
             areaNum: Int, bounds: idBounds, travelFlags: Int, edges: IntArray, maxEdges: Int
         ): Int {
@@ -368,6 +443,11 @@ class AAS_local {
             return numEdges
         }
 
+        /*
+         ============
+         idAASLocal::SortWallEdges
+         ============
+         */
         override fun SortWallEdges(edges: IntArray, numEdges: Int) {
             var i: Int
             var j: Int
@@ -430,6 +510,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::GetEdgeVertexNumbers
+         ============
+         */
         override fun GetEdgeVertexNumbers(edgeNum: Int, verts: IntArray /*[2]*/) {
             if (file == null) {
                 verts[1] = 0
@@ -441,6 +526,11 @@ class AAS_local {
             verts[1] = v[INTSIGNBITNOTSET(edgeNum)]
         }
 
+        /*
+         ============
+         idAASLocal::GetEdge
+         ============
+         */
         override fun GetEdge(edgeNum: Int, start: idVec3, end: idVec3) {
             if (file == null) {
                 start.Zero()
@@ -452,6 +542,11 @@ class AAS_local {
             end.set(file!!.GetVertex(v[INTSIGNBITNOTSET(edgeNum)]))
         }
 
+        /*
+         ============
+         idAASLocal::SetAreaState
+         ============
+         */
         override fun SetAreaState(bounds: idBounds, areaContents: Int, disabled: Boolean): Boolean {
             val expBounds = idBounds()
             if (file == null) {
@@ -464,6 +559,11 @@ class AAS_local {
             return SetAreaState_r(1, expBounds, areaContents, disabled)
         }
 
+        /*
+         ============
+         idAASLocal::AddObstacle
+         ============
+         */
         override fun  /*aasHandle_t*/AddObstacle(bounds: idBounds): Int {
             val obstacle: idRoutingObstacle
             if (file == null) {
@@ -478,6 +578,11 @@ class AAS_local {
             return obstacleList.Num() - 1
         }
 
+        /*
+         ============
+         idAASLocal::RemoveObstacle
+         ============
+         */
         override fun RemoveObstacle(   /*aasHandle_t*/handle: Int) {
             if (file == null) {
                 return
@@ -490,6 +595,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::RemoveAllObstacles
+         ============
+         */
         override fun RemoveAllObstacles() {
             var i: Int
             if (file == null) {
@@ -503,6 +613,11 @@ class AAS_local {
             obstacleList.Clear()
         }
 
+        /*
+         ============
+         idAASLocal::TravelTimeToGoalArea
+         ============
+         */
         override fun TravelTimeToGoalArea(areaNum: Int, origin: idVec3, goalAreaNum: Int, travelFlags: Int): Int {
             val travelTime = CInt()
             val reach = arrayOf<idReachability?>(null)
@@ -511,9 +626,14 @@ class AAS_local {
             }
             return if (!RouteToGoalArea(areaNum, origin, goalAreaNum, travelFlags, travelTime, reach)) {
                 0
-            } else travelTime._val
+            } else travelTime.integerValue
         }
 
+        /*
+         ============
+         idAASLocal::RouteToGoalArea
+         ============
+         */
         override fun RouteToGoalArea(
             areaNum: Int,
             origin: idVec3,
@@ -538,7 +658,7 @@ class AAS_local {
             var bestReach: idReachability?
             var r: idReachability?
             var nextr: idReachability?
-            travelTime._val = 0
+            travelTime.integerValue = 0
             reach[0] = null
             if (file == null) {
                 return false
@@ -572,7 +692,7 @@ class AAS_local {
                 portalCache = GetPortalRoutingCache(goalClusterNum, goalAreaNum, travelFlags)
                 // FIX: mask with 0xFF to prevent byte sign extension (C++ uses unsigned char)
                 reach[0] = GetAreaReachability(areaNum, portalCache.reachabilities[-clusterNum].toInt() and 0xFF)
-                travelTime._val = (portalCache.travelTimes[-clusterNum] + AreaTravelTime(
+                travelTime.integerValue = (portalCache.travelTimes[-clusterNum] + AreaTravelTime(
                     areaNum, origin, reach[0]!!.start
                 ))
                 return true
@@ -675,7 +795,7 @@ class AAS_local {
                 return false
             }
             reach[0] = bestReach
-            travelTime._val = bestTime
+            travelTime.integerValue = bestTime
             return true
         }
 
@@ -732,7 +852,7 @@ class AAS_local {
                                     areaNum, origin, path.moveGoal, reach[0]!!.start, travelFlags, moveAreaNum
                                 )
                             )
-                            path.moveAreaNum = moveAreaNum._val
+                            path.moveAreaNum = moveAreaNum.integerValue
                         }
                         return true
                     }
@@ -743,7 +863,7 @@ class AAS_local {
                                     areaNum, origin, path.moveGoal, reach[0]!!.start, travelFlags, moveAreaNum
                                 )
                             )
-                            path.moveAreaNum = moveAreaNum._val
+                            path.moveAreaNum = moveAreaNum.integerValue
                         }
                         return true
                     }
@@ -766,7 +886,7 @@ class AAS_local {
                                     areaNum, origin, path.moveGoal, goalOrigin, travelFlags, moveAreaNum
                                 )
                             )
-                            path.moveAreaNum = moveAreaNum._val
+                            path.moveAreaNum = moveAreaNum.integerValue
                         }
                         return true
                     }
@@ -843,7 +963,7 @@ class AAS_local {
             val dir = idVec3()
             if (file == null) {
                 endPos.set(goalOrigin)
-                endAreaNum._val = 0
+                endAreaNum.integerValue = 0
                 return true
             }
             lastAreas[3] = areaNum
@@ -936,7 +1056,7 @@ class AAS_local {
                 lastAreaIndex = lastAreaIndex + 1 and 3
                 curAreaNum = reach.toAreaNum.toInt()
             }
-            endAreaNum._val = curAreaNum
+            endAreaNum.integerValue = curAreaNum
             return true
         }
 
@@ -992,7 +1112,7 @@ class AAS_local {
                                     areaNum, origin, path.moveGoal, reach[0]!!.start, travelFlags, moveAreaNum
                                 )
                             )
-                            path.moveAreaNum = moveAreaNum._val
+                            path.moveAreaNum = moveAreaNum.integerValue
                         }
                         return true
                     }
@@ -1003,7 +1123,7 @@ class AAS_local {
                                     areaNum, origin, path.moveGoal, reach[0]!!.start, travelFlags, moveAreaNum
                                 )
                             )
-                            path.moveAreaNum = moveAreaNum._val
+                            path.moveAreaNum = moveAreaNum.integerValue
                         }
                         return true
                     }
@@ -1023,7 +1143,7 @@ class AAS_local {
                                     areaNum, origin, path.moveGoal, goalOrigin, travelFlags, moveAreaNum
                                 )
                             )
-                            path.moveAreaNum = moveAreaNum._val
+                            path.moveAreaNum = moveAreaNum.integerValue
                         }
                         return true
                     }
@@ -1066,15 +1186,20 @@ class AAS_local {
             val trace = aasTrace_s()
             if (file == null) {
                 endPos.set(goalOrigin)
-                endAreaNum._val = 0
+                endAreaNum.integerValue = 0
                 return true
             }
             file!!.Trace(trace, origin, goalOrigin)
             endPos.set(trace.endpos)
-            endAreaNum._val = trace.lastAreaNum
+            endAreaNum.integerValue = trace.lastAreaNum
             return trace.fraction >= 1.0f
         }
 
+        /*
+         ============
+         idAASLocal::ShowWalkPath
+         ============
+         */
         override fun ShowWalkPath(origin: idVec3, goalAreaNum: Int, goalOrigin: idVec3) {
             var i: Int
             val areaNum: Int
@@ -1115,6 +1240,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::ShowFlyPath
+         ============
+         */
         override fun ShowFlyPath(origin: idVec3, goalAreaNum: Int, goalOrigin: idVec3) {
             var i: Int
             val areaNum: Int
@@ -1168,6 +1298,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::FindNearestGoal
+         ============
+         */
         override fun FindNearestGoal(
             goal: aasGoal_s,
             areaNum: Int,
@@ -1382,18 +1517,32 @@ class AAS_local {
             return false
         }
 
-        // routing
+        /*
+         ============
+         idAASLocal::SetupRouting
+         ============
+         */
         private fun SetupRouting(): Boolean {
             CalculateAreaTravelTimes()
             SetupRoutingCache()
             return true
         }
 
+        /*
+         ============
+         idAASLocal::ShutdownRouting
+         ============
+         */
         private fun ShutdownRouting() {
             DeleteAreaTravelTimes()
             ShutdownRoutingCache()
         }
 
+        /*
+         ============
+         idAASLocal::AreaTravelTime
+         ============
+         */
         private /*unsigned short*/   fun AreaTravelTime(areaNum: Int, start: idVec3, end: idVec3): Int {
             var dist: Float
             dist = end.minus(start).Length()
@@ -1409,6 +1558,11 @@ class AAS_local {
             } else idMath.FtoiFast(dist)
         }
 
+        /*
+         ============
+         idAASLocal::CalculateAreaTravelTimes
+         ============
+         */
         private fun CalculateAreaTravelTimes() {
             var n: Int
             var i: Int
@@ -1477,7 +1631,7 @@ class AAS_local {
                         rev_reach = rev_reach.rev_next
                         j++
                     }
-                    bytePtr += j // * sizeof( unsigned short );//TODO:double check the increment size.
+                    bytePtr += j // * sizeof( unsigned short )
                     reach = reach.next
                     i++
                 }
@@ -1493,12 +1647,22 @@ class AAS_local {
 //	assert( ( (unsigned int) bytePtr - (unsigned int) areaTravelTimes ) <= numAreaTravelTimes * sizeof( unsigned short ) );
         }
 
+        /*
+         ============
+         idAASLocal::DeleteAreaTravelTimes
+         ============
+         */
         private fun DeleteAreaTravelTimes() {
 //            Mem_Free(areaTravelTimes);
             areaTravelTimes = null
             numAreaTravelTimes = 0
         }
 
+        /*
+         ============
+         idAASLocal::SetupRoutingCache
+         ============
+         */
         private fun SetupRoutingCache() {
             var i: Int
             areaCacheIndexSize = 0
@@ -1528,6 +1692,11 @@ class AAS_local {
             totalCacheMemory = 0
         }
 
+        /*
+         ============
+         idAASLocal::DeleteClusterCache
+         ============
+         */
         private fun DeleteClusterCache(clusterNum: Int) {
             var i: Int
             var cache: idRoutingCache?
@@ -1543,6 +1712,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::DeletePortalCache
+         ============
+         */
         private fun DeletePortalCache() {
             var i: Int
             var cache: idRoutingCache?
@@ -1558,6 +1732,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::ShutdownRoutingCache
+         ============
+         */
         private fun ShutdownRoutingCache() {
             var i: Int
             i = 0
@@ -1584,6 +1763,11 @@ class AAS_local {
             totalCacheMemory = 0
         }
 
+        /*
+         ============
+         idAASLocal::RoutingStats
+         ============
+         */
         private fun RoutingStats() {
             var cache: idRoutingCache?
             var numAreaCache: Int
@@ -1656,6 +1840,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::UnlinkCache
+         ============
+         */
         private fun UnlinkCache(cache: idRoutingCache) {
             totalCacheMemory -= cache.Size()
 
@@ -1674,6 +1863,11 @@ class AAS_local {
             cache.time_next = cache.time_prev
         }
 
+        /*
+         ============
+         idAASLocal::DeleteOldestCache
+         ============
+         */
         private fun DeleteOldestCache() {
             val cache: idRoutingCache
             assert(cacheListStart != null)
@@ -1697,6 +1891,11 @@ class AAS_local {
 //	delete cache;
         }
 
+        /*
+         ============
+         idAASLocal::GetAreaReachability
+         ============
+         */
         private fun GetAreaReachability(areaNum: Int, reachabilityNum: Int): idReachability? {
             var reachabilityNum = reachabilityNum
             var reach: idReachability?
@@ -1710,6 +1909,11 @@ class AAS_local {
             return null
         }
 
+        /*
+         ============
+         idAASLocal::ClusterAreaNum
+         ============
+         */
         private fun ClusterAreaNum(clusterNum: Int, areaNum: Int): Int {
             val side: Int
             val areaCluster: Int
@@ -1722,6 +1926,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::UpdateAreaRoutingCache
+         ============
+         */
         private fun UpdateAreaRoutingCache(areaCache: idRoutingCache?) {
             var i: Int
             var nextAreaNum: Int
@@ -1850,6 +2059,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::GetAreaRoutingCache
+         ============
+         */
         private fun GetAreaRoutingCache(clusterNum: Int, areaNum: Int, travelFlags: Int): idRoutingCache {
             val clusterAreaNum: Int
             var cache: idRoutingCache?
@@ -1887,6 +2101,11 @@ class AAS_local {
             return cache
         }
 
+        /*
+         ============
+         idAASLocal::UpdatePortalRoutingCache
+         ============
+         */
         private fun UpdatePortalRoutingCache(portalCache: idRoutingCache) {
             var i: Int
             var portalNum: Int
@@ -1974,6 +2193,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::GetPortalRoutingCache
+         ============
+         */
         private fun GetPortalRoutingCache(clusterNum: Int, areaNum: Int, travelFlags: Int): idRoutingCache {
             var cache: idRoutingCache?
 
@@ -2005,6 +2229,11 @@ class AAS_local {
             return cache
         }
 
+        /*
+         ============
+         idAASLocal::RemoveRoutingCacheUsingArea
+         ============
+         */
         private fun RemoveRoutingCacheUsingArea(areaNum: Int) {
             val clusterNum: Int
             clusterNum = file!!.GetArea(areaNum).cluster.toInt()
@@ -2019,6 +2248,11 @@ class AAS_local {
             DeletePortalCache()
         }
 
+        /*
+         ============
+         idAASLocal::DisableArea
+         ============
+         */
         private fun DisableArea(areaNum: Int) {
             assert(areaNum > 0 && areaNum < file!!.GetNumAreas())
             if ((file!!.GetArea(areaNum).travelFlags and AASFile.TFL_INVALID) != 0) {
@@ -2028,6 +2262,11 @@ class AAS_local {
             RemoveRoutingCacheUsingArea(areaNum)
         }
 
+        /*
+         ============
+         idAASLocal::EnableArea
+         ============
+         */
         private fun EnableArea(areaNum: Int) {
             assert(areaNum > 0 && areaNum < file!!.GetNumAreas())
             if (0 == (file!!.GetArea(areaNum).travelFlags and AASFile.TFL_INVALID)) {
@@ -2037,6 +2276,11 @@ class AAS_local {
             RemoveRoutingCacheUsingArea(areaNum)
         }
 
+        /*
+         ============
+         idAASLocal::SetAreaState_r
+         ============
+         */
         private fun SetAreaState_r(nodeNum: Int, bounds: idBounds, areaContents: Int, disabled: Boolean): Boolean {
             var nodeNum = nodeNum
             var res: Int
@@ -2070,6 +2314,11 @@ class AAS_local {
             return foundClusterPortal
         }
 
+        /*
+         ============
+         idAASLocal::GetBoundsAreas_r
+         ============
+         */
         private fun GetBoundsAreas_r(nodeNum: Int, bounds: idBounds, areas: idList<Int>) {
             var nodeNum = nodeNum
             var res: Int
@@ -2092,6 +2341,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::SetObstacleState
+         ============
+         */
         private fun SetObstacleState(obstacle: idRoutingObstacle, enable: Boolean) {
             var i: Int
             var area: aasArea_s?
@@ -2139,7 +2393,6 @@ class AAS_local {
             }
         }
 
-        // pathing
         /*
          ============
          idAASLocal::EdgeSplitPoint
@@ -2232,6 +2485,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::SubSampleWalkPath
+         ============
+         */
         private fun SubSampleWalkPath(
             areaNum: Int, origin: idVec3, start: idVec3, end: idVec3, travelFlags: Int, endAreaNum: CInt
         ): idVec3 {
@@ -2255,12 +2513,17 @@ class AAS_local {
                     return point
                 }
                 point.set(nextPoint)
-                endAreaNum._val = curAreaNum._val
+                endAreaNum.integerValue = curAreaNum.integerValue
                 i++
             }
             return point
         }
 
+        /*
+         ============
+         idAASLocal::SubSampleFlyPath
+         ============
+         */
         private fun SubSampleFlyPath(
             areaNum: Int, origin: idVec3, start: idVec3, end: idVec3, travelFlags: Int, endAreaNum: CInt
         ): idVec3 {
@@ -2284,17 +2547,26 @@ class AAS_local {
                     return point
                 }
                 point.set(nextPoint)
-                endAreaNum._val = curAreaNum._val
+                endAreaNum.integerValue = curAreaNum.integerValue
                 i++
             }
             return point
         }
 
-        // debug
+        /*
+         ============
+         idAASLocal::DefaultSearchBounds
+         ============
+         */
         private fun DefaultSearchBounds(): idBounds {
             return file!!.GetSettings().boundingBoxes[0]
         }
 
+        /*
+         ============
+         idAASLocal::DrawCone
+         ============
+         */
         private fun DrawCone(origin: idVec3, dir: idVec3, radius: Float, color: idVec4) {
             var i: Int
             val axis = idMat3()
@@ -2318,6 +2590,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::DrawArea
+         ============
+         */
         private fun DrawArea(areaNum: Int) {
             var i: Int
             val numFaces: Int
@@ -2342,6 +2619,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::DrawFace
+         ============
+         */
         private fun DrawFace(faceNum: Int, side: Boolean) {
             var i: Int
             var j: Int
@@ -2373,6 +2655,11 @@ class AAS_local {
             Game_local.gameRenderWorld!!.DebugArrow(colorGreen, mid, end, 1)
         }
 
+        /*
+         ============
+         idAASLocal::DrawEdge
+         ============
+         */
         private fun DrawEdge(edgeNum: Int, arrow: Boolean) {
             val edge: aasEdge_s
             val color: idVec4 = idVec4()
@@ -2405,6 +2692,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::DrawReachability
+         ============
+         */
         private fun DrawReachability(reach: idReachability) {
             Game_local.gameRenderWorld!!.DebugArrow(colorCyan, reach.start, reach.end, 2)
             if (Game_local.gameLocal.GetLocalPlayer() != null) {
@@ -2418,6 +2710,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::ShowArea
+         ============
+         */
         private fun ShowArea(origin: idVec3) {
             val areaNum: Int
             val area: aasArea_s
@@ -2438,7 +2735,7 @@ class AAS_local {
                     travelTime,
                     reach
                 )
-                Game_local.gameLocal.Printf("\rtt = %4d", travelTime._val)
+                Game_local.gameLocal.Printf("\rtt = %4d", travelTime.integerValue)
                 if (reach[0] != null) {
                     Game_local.gameLocal.Printf(" to area %4d", reach[0]!!.toAreaNum)
                     DrawArea(reach[0]!!.toAreaNum.toInt())
@@ -2474,6 +2771,11 @@ class AAS_local {
             DrawArea(areaNum)
         }
 
+        /*
+         ============
+         idAASLocal::ShowWallEdges
+         ============
+         */
         private fun ShowWallEdges(origin: idVec3) {
             var i: Int
             val areaNum: Int
@@ -2501,6 +2803,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::ShowHideArea
+         ============
+         */
         private fun ShowHideArea(origin: idVec3, targetAreaNum: Int) {
             val areaNum: Int
             val numObstacles: Int
@@ -2534,6 +2841,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::PullPlayer
+         ============
+         */
         private fun PullPlayer(origin: idVec3, toAreaNum: Int): Boolean {
             val areaNum: Int
             val areaCenter = idVec3()
@@ -2579,6 +2891,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::RandomPullPlayer
+         ============
+         */
         private fun RandomPullPlayer(origin: idVec3) {
             val rnd: Int
             var i: Int
@@ -2600,6 +2917,11 @@ class AAS_local {
             }
         }
 
+        /*
+         ============
+         idAASLocal::ShowPushIntoArea
+         ============
+         */
         private fun ShowPushIntoArea(origin: idVec3) {
             val areaNum: Int
             val target = idVec3()

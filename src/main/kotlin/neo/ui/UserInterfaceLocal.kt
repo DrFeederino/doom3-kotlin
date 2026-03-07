@@ -434,12 +434,13 @@ class UserInterfaceLocal {
             state.Clear()
             i = 0
             while (i < num) {
+                // Length and filling with empty strings are done in ReadString() when val > 0
                 len = savefile.ReadInt()
                 key.Fill(' ', len)
-                savefile.ReadString(key)
+                savefile.Read(key, len)
                 len = savefile.ReadInt()
                 value.Fill(' ', len)
-                savefile.ReadString(value)
+                savefile.Read(value, len)
                 state.Set(key, value)
                 i++
             }
@@ -449,13 +450,13 @@ class UserInterfaceLocal {
             time = savefile.ReadInt()
             len = savefile.ReadInt()
             activateStr.Fill(' ', len)
-            savefile.ReadString(activateStr)
+            savefile.Read(activateStr, len)
             len = savefile.ReadInt()
             pendingCmd.Fill(' ', len)
-            savefile.ReadString(pendingCmd)
+            savefile.Read(pendingCmd, len)
             len = savefile.ReadInt()
             returnCmd.Fill(' ', len)
-            savefile.ReadString(returnCmd)
+            savefile.Read(returnCmd, len)
             cursorX = savefile.ReadFloat()
             cursorY = savefile.ReadFloat()
             desktop!!.ReadFromSaveGame(savefile)

@@ -2371,9 +2371,9 @@ object tr_rendertools {
             w = 0.25f
             h = 0.25f
         } else {
-            max = max(image.uploadWidth._val.toFloat(), image.uploadHeight._val.toFloat()).toInt()
-            w = 0.25f * image.uploadWidth._val / max
-            h = 0.25f * image.uploadHeight._val / max
+            max = max(image.uploadWidth.integerValue.toFloat(), image.uploadHeight.integerValue.toFloat()).toInt()
+            w = 0.25f * image.uploadWidth.integerValue / max
+            h = 0.25f * image.uploadHeight.integerValue / max
             w *= glConfig.vidHeight.toFloat() / glConfig.vidWidth
         }
         qgl.qglLoadIdentity()

@@ -1,3 +1,24 @@
+/*
+ * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+ * Translated to Kotlin by Dr. Feederino with support of Claude Code
+ *
+ * This file is part of the Doom 3 Kotlin project.
+ * Original source: neo/game/anim/Anim_Blend.cpp, neo/game/anim/Anim.h
+ *
+ * Doom 3 Source Code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Doom 3 Source Code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Doom 3 Source Code. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package neo.Game.Animation
 
 import neo.Game.*
@@ -101,7 +122,13 @@ class idAnim {
         numAnims = anim.numAnims
         name.set(anim.name)
         realname.set(anim.realname)
-        flags = anim.flags
+        // FIX: C++ copies animFlags_t by value; Kotlin reference-copy shares the same object.
+        // Deep-copy the boolean fields instead.
+        flags = animFlags_t()
+        flags.ai_no_turn = anim.flags.ai_no_turn
+        flags.anim_turn = anim.flags.anim_turn
+        flags.prevent_idle_override = anim.flags.prevent_idle_override
+        flags.random_cycle_start = anim.flags.random_cycle_start
         anims = arrayOfNulls(anims.size)
         i = 0
         while (i < numAnims) {
@@ -110,23 +137,35 @@ class idAnim {
             i++
         }
 
+        // FIX: C++ memcpy deep-copies frameLookup_t structs; Kotlin was reference-copying.
+        // Create new frameLookup_t instances to avoid shared mutable state.
         frameLookup.SetNum(anim.frameLookup.Num())
         if (frameLookup.Num() > 0) {
             i = 0
             while (i < frameLookup.Num()) {
-                val frameLookup_t: frameLookup_t = anim.frameLookup[i]
-                frameLookup[i] = frameLookup_t
+                val src = anim.frameLookup[i]
+                val dst = frameLookup_t()
+                dst.num = src.num
+                dst.firstCommand = src.firstCommand
+                frameLookup[i] = dst
                 i++
             }
         }
 
+        // FIX: C++ struct assignment deep-copies frameCommand_t; Kotlin was reference-copying.
+        // Create new frameCommand_t instances and copy all fields.
         frameCommands.SetNum(anim.frameCommands.Num())
         i = 0
         while (i < frameCommands.Num()) {
-            frameCommands[i] = anim.frameCommands[i]
-            if (frameCommands[i].string != null) {
-                frameCommands[i].string = idStr(anim.frameCommands[i].string)
-            }
+            val src = anim.frameCommands[i]
+            val dst = frameCommand_t()
+            dst.type = src.type
+            dst.function = src.function
+            dst.soundShader = src.soundShader
+            dst.skin = src.skin
+            dst.index = src.index
+            dst.string = idStr(src.string)
+            frameCommands[i] = dst
             i++
         }
     }
@@ -294,7 +333,12 @@ class idAnim {
                 return "Unexpected end of line"
             }
             fc.type = frameCommandType_t.FC_EVENTFUNCTION
-            val ev: Event.idEventDef = Event.idEventDef.FindEvent(token.toString())!!
+            // FIX: C++ checks for NULL return from FindEvent and returns error string;
+            // Kotlin was using !! which throws NPE instead of returning the error message
+            val ev: Event.idEventDef? = Event.idEventDef.FindEvent(token.toString())
+            if (ev == null) {
+                return Str.va("Event '%s' not found", token)
+            }
             if (ev.GetNumArgs() != 0) {
                 return Str.va("Event '%s' has arguments", token)
             }
@@ -1006,7 +1050,9 @@ class idAnim {
                     }
 
                     frameCommandType_t.FC_RECORDDEMO -> {
-                        if (command.string != null) {
+                        // FIX: C++ checks if string pointer is non-NULL (null when no argument given);
+                        // Kotlin string is always non-null idStr, so check IsEmpty() instead
+                        if (!command.string.IsEmpty()) {
                             CmdSystem.cmdSystem.BufferCommandText(
                                 cmdExecution_t.CMD_EXEC_NOW, Str.va("recordDemo %s", command.string)
                             )
@@ -1016,7 +1062,8 @@ class idAnim {
                     }
 
                     frameCommandType_t.FC_AVIGAME -> {
-                        if (command.string != null) {
+                        // FIX: Same as FC_RECORDDEMO — check IsEmpty() instead of null
+                        if (!command.string.IsEmpty()) {
                             CmdSystem.cmdSystem.BufferCommandText(
                                 cmdExecution_t.CMD_EXEC_NOW, Str.va("aviGame %s", command.string)
                             )
@@ -1407,7 +1454,7 @@ class idDeclModelDef : idDecl {
         SIMDProcessor!!.TransformJoints(
             list, itoi(jointParents.getList(Array<Int>::class.java))!!, 1, joints.Num() - 1
         )
-        numJoints._val = num
+        numJoints.integerValue = num
         jointList[0] = list
 
         // get the bounds of the default pose
@@ -2748,7 +2795,7 @@ class idAnimator {
     fun  /*size_t*/Allocated(): Int {
         val   /*size_t*/size: Int
         size =
-            jointMods.Allocated() + numJoints._val + AFPoseJointMods.Allocated() + AFPoseJointFrame.Allocated() + AFPoseJoints.Allocated()
+            jointMods.Allocated() + numJoints.integerValue + AFPoseJointMods.Allocated() + AFPoseJointFrame.Allocated() + AFPoseJoints.Allocated()
         return size
     }
 
@@ -2774,9 +2821,9 @@ class idAnimator {
             savefile.WriteInt(TempDump.etoi(jointMods[i].transform_axis))
             i++
         }
-        savefile.WriteInt(numJoints._val)
+        savefile.WriteInt(numJoints.integerValue)
         i = 0
-        while (i < numJoints._val) {
+        while (i < numJoints.integerValue) {
             val data = joints!![i].ToFloatArray()
             j = 0
             while (j < 12) {
@@ -2799,6 +2846,7 @@ class idAnimator {
         savefile.WriteInt(AFPoseJointMods.Num())
         i = 0
         while (i < AFPoseJointMods.Num()) {
+            AFPoseJointMods[i] = idAFPoseJointMod()
             savefile.WriteInt(TempDump.etoi(AFPoseJointMods[i].mod))
             savefile.WriteMat3(AFPoseJointMods[i].axis)
             savefile.WriteVec3(AFPoseJointMods[i].origin)
@@ -2840,11 +2888,11 @@ class idAnimator {
         var j: Int
         val num = CInt()
         modelDef = savefile.ReadModelDef()
-        savefile.ReadObject( /*reinterpret_cast<idClass *&>*/entity)
+        entity = savefile.ReadObject() as idEntity?
         savefile.ReadInt(num)
-        jointMods.SetNum(num._val)
+        jointMods.SetNum(num.integerValue)
         i = 0
-        while (i < num._val) {
+        while (i < num.integerValue) {
             jointMods[i] = jointMod_t()
             jointMods[i].jointnum = savefile.ReadInt()
             savefile.ReadMat3(jointMods[i].mat)
@@ -2853,10 +2901,10 @@ class idAnimator {
             jointMods[i].transform_axis = jointModTransform_t.values()[savefile.ReadInt()]
             i++
         }
-        numJoints._val = (savefile.ReadInt())
-        joints = Array(numJoints._val) { idJointMat() }
+        numJoints.integerValue = (savefile.ReadInt())
+        joints = Array(numJoints.integerValue) { idJointMat() }
         i = 0
-        while (i < numJoints._val) {
+        while (i < numJoints.integerValue) {
             val data = joints!![i].ToFloatArray()
             j = 0
             while (j < 12) {
@@ -2873,10 +2921,10 @@ class idAnimator {
         savefile.ReadInt(num)
 
         AFPoseJoints.SetGranularity(1)
-        AFPoseJoints.SetNum(num._val)
+        AFPoseJoints.SetNum(num.integerValue)
 
         i = 0
-        while (i < num._val) {
+        while (i < num.integerValue) {
             if (i >= AFPoseJoints.Num()) {
                 AFPoseJoints[i] = savefile.ReadInt()
             } else {
@@ -2886,9 +2934,9 @@ class idAnimator {
         }
         savefile.ReadInt(num)
         AFPoseJointMods.SetGranularity(1)
-        AFPoseJointMods.SetNum(num._val)
+        AFPoseJointMods.SetNum(num.integerValue)
         i = 0
-        while (i < num._val) {
+        while (i < num.integerValue) {
             AFPoseJointMods[i].mod = AFJointModType_t.values()[savefile.ReadInt()]
             savefile.ReadMat3(AFPoseJointMods[i].axis)
             savefile.ReadVec3(AFPoseJointMods[i].origin)
@@ -2896,10 +2944,10 @@ class idAnimator {
         }
         savefile.ReadInt(num)
         AFPoseJointFrame.SetGranularity(1)
-        AFPoseJointFrame.SetNum(num._val)
+        AFPoseJointFrame.SetNum(num.integerValue)
 
         i = 0
-        while (i < num._val) {
+        while (i < num.integerValue) {
             AFPoseJointFrame[i].q.x = savefile.ReadFloat()
             AFPoseJointFrame[i].q.y = savefile.ReadFloat()
             AFPoseJointFrame[i].q.z = savefile.ReadFloat()
@@ -3034,11 +3082,11 @@ class idAnimator {
 
     fun GetJoints(renderEntity: renderEntity_s): Int {
         renderEntity.joints = joints as Array<idJointMat?>
-        return numJoints._val
+        return numJoints.integerValue
     }
 
     fun NumJoints(): Int {
-        return numJoints._val
+        return numJoints.integerValue
     }
 
     fun  /*jointHandle_t*/GetFirstChild(   /*jointHandle_t*/jointnum: Int): Int {
@@ -3641,7 +3689,7 @@ class idAnimator {
     fun SetJointPos(   /*jointHandle_t*/jointnum: Int, transform_type: jointModTransform_t, pos: idVec3) {
         var i: Int
         var jointMod: jointMod_t?
-        if (null == modelDef || null == modelDef!!.ModelHandle() || jointnum < 0 || jointnum >= numJoints._val) {
+        if (null == modelDef || null == modelDef!!.ModelHandle() || jointnum < 0 || jointnum >= numJoints.integerValue) {
             return
         }
         jointMod = null
@@ -3671,7 +3719,7 @@ class idAnimator {
     fun SetJointAxis(   /*jointHandle_t*/jointnum: Int, transform_type: jointModTransform_t, mat: idMat3) {
         var i: Int
         var jointMod: jointMod_t?
-        if (null == modelDef || null == modelDef!!.ModelHandle() || jointnum < 0 || jointnum >= numJoints._val) {
+        if (null == modelDef || null == modelDef!!.ModelHandle() || jointnum < 0 || jointnum >= numJoints.integerValue) {
             return
         }
         jointMod = null
@@ -3700,7 +3748,7 @@ class idAnimator {
 
     fun ClearJoint(   /*jointHandle_t*/jointnum: Int) {
         var i: Int
-        if (null == modelDef || null == modelDef!!.ModelHandle() || jointnum < 0 || jointnum >= numJoints._val) {
+        if (null == modelDef || null == modelDef!!.ModelHandle() || jointnum < 0 || jointnum >= numJoints.integerValue) {
             return
         }
         i = 0
@@ -3950,7 +3998,7 @@ class idAnimator {
         if (null == modelDef) {
             idGameLocal.Error("idAnimator::GetChannelForJoint: NULL model")
         }
-        if (joint < 0 || joint >= numJoints._val) {
+        if (joint < 0 || joint >= numJoints.integerValue) {
             idGameLocal.Error("idAnimator::GetChannelForJoint: invalid joint num (%d)", joint)
         }
         return modelDef!!.GetJoint(joint).channel
@@ -4064,7 +4112,7 @@ class idAnimator {
 
 //	Mem_Free16( joints );
         joints = null
-        numJoints._val = 0
+        numJoints.integerValue = 0
         modelDef = null
         ForceUpdate()
     }

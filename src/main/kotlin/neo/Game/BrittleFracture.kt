@@ -91,6 +91,8 @@ object BrittleFracture {
     //
     class idBrittleFracture : idEntity() {
         companion object {
+            val Type = idTypeInfo("idBrittleFracture", "idEntity") { idBrittleFracture() }
+
             //
             // enum {
             val EVENT_PROJECT_DECAL: Int = idEntity.EVENT_MAXEVENTS
@@ -147,6 +149,7 @@ object BrittleFracture {
         private var shardMass: Float
         private val shards: idList<shard_s?>
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             var i: Int
             var j: Int
             savefile.WriteInt(health)
@@ -208,6 +211,7 @@ object BrittleFracture {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             var i: Int
             var j: Int
             val num = CInt()
@@ -222,8 +226,8 @@ object BrittleFracture {
             LittleBitField(fl)
 
             // setttings
-            savefile.ReadMaterial(material!!)
-            savefile.ReadMaterial(decalMaterial!!)
+            material = savefile.ReadMaterial()
+            decalMaterial = savefile.ReadMaterial()
             decalSize = savefile.ReadFloat()
             maxShardArea = savefile.ReadFloat()
             maxShatterRadius = savefile.ReadFloat()
@@ -244,14 +248,14 @@ object BrittleFracture {
             savefile.ReadStaticObject(physicsObj)
             RestorePhysics(physicsObj)
             savefile.ReadInt(num)
-            shards.SetNum(num._val)
+            shards.SetNum(num.integerValue)
             i = 0
-            while (i < num._val) {
+            while (i < num.integerValue) {
                 shards[i] = shard_s()
                 i++
             }
             i = 0
-            while (i < num._val) {
+            while (i < num.integerValue) {
                 savefile.ReadWinding(shards[i]!!.winding)
                 j = savefile.ReadInt()
                 shards[i]!!.decals.SetNum(j)
@@ -267,8 +271,8 @@ object BrittleFracture {
                 while (j < shards[i]!!.neighbours.Num()) {
                     val index = CInt()
                     savefile.ReadInt(index)
-                    assert(index._val != -1)
-                    shards[i]!!.neighbours[j] = shards[index._val]
+                    assert(index.integerValue != -1)
+                    shards[i]!!.neighbours[j] = shards[index.integerValue]
                     j++
                 }
                 j = savefile.ReadInt()
@@ -1247,6 +1251,9 @@ object BrittleFracture {
             impulse.set(other.GetPhysics().GetLinearVelocity().times(other.GetPhysics().GetMass()))
             Shatter(point, impulse, Game_local.gameLocal.time)
         }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idBrittleFracture()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]

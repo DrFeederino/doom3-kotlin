@@ -6,6 +6,7 @@ import neo.Renderer.RenderSystem
 import neo.Renderer.RenderSystem.fontInfoEx_t
 import neo.Renderer.RenderSystem.fontInfo_t
 import neo.Renderer.RenderSystem.glyphInfo_t
+import neo.Renderer.RenderSystem.renderSystem
 import neo.TempDump.ctos
 import neo.TempDump.etoi
 import neo.framework.CVarSystem.CVAR_ARCHIVE
@@ -23,15 +24,20 @@ import neo.idlib.Text.Str.idStr.Companion.ColorForIndex
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.idStr.Companion.IsColor
 import neo.idlib.Text.Str.va
+import neo.idlib.containers.CFloat
+import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Matrix.idMat4
+import neo.idlib.math.idMath.ClampFloat
 import neo.idlib.math.idMath.Cos
 import neo.idlib.math.idMath.FtoiFast
 import neo.idlib.math.idMath.Sin
+import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
+import neo.ui.DeviceContext.CstAnchor.*
 import neo.ui.Rectangle.idRectangle
 import neo.ui.Rectangle.idRegion
 
@@ -42,47 +48,231 @@ object DeviceContext {
     val gui_mediumFontLimit = idCVar("gui_mediumFontLimit", "0.60", CVAR_GUI or CVAR_ARCHIVE, "")
     val gui_smallFontLimit = idCVar("gui_smallFontLimit", "0.30", CVAR_GUI or CVAR_ARCHIVE, "")
 
+    //#modified-fva; BEGIN
+    // ===============
+    fun CstGetVidScale(_xScale: CFloat, _yScale: CFloat): Boolean {
+        var glWidth: CInt = CInt()
+        var glHeight: CInt = CInt()
+        renderSystem.GetGLSettings(glWidth, glHeight)
+        if (glWidth.integerValue <= 0 || glHeight.integerValue <= 0) {
+            return false
+        }
+
+        val glAspectRatio = glWidth.integerValue.toFloat() / glHeight.integerValue.toFloat()
+
+        val vidWidth = VIRTUAL_WIDTH.toFloat()
+        val vidHeight = VIRTUAL_HEIGHT.toFloat()
+        val vidAspectRatio = VIRTUAL_WIDTH.toFloat() / VIRTUAL_HEIGHT.toFloat()
+
+        var modWidth = vidWidth
+        var modHeight = vidHeight
+        if (glAspectRatio >= vidAspectRatio) {
+            modWidth = modHeight * glAspectRatio
+        } else {
+            modHeight = modWidth / glAspectRatio
+        }
+
+        _xScale._val = vidWidth / modWidth
+        _yScale._val = vidHeight / modHeight
+        return true
+    }
+
+    fun CstAdjustParmsForAnchor(
+        anchor: CstAnchor,
+        _xScale: CFloat,
+        _yScale: CFloat,
+        _xOffset: CFloat,
+        _yOffset: CFloat
+    ) {
+        val vidWidth = VIRTUAL_WIDTH.toFloat()
+        val vidHeight = VIRTUAL_HEIGHT.toFloat()
+
+        when (anchor) {
+            CST_ANCHOR_TOP_LEFT -> {
+                _xOffset._val = 0.0f
+                _yOffset._val = 0.0f
+            }
+
+            CST_ANCHOR_TOP_CENTER -> {
+                _xOffset._val = (vidWidth * 0.5f) * (1.0f - _xScale._val)
+                _yOffset._val = 0.0f
+            }
+
+            CST_ANCHOR_TOP_RIGHT -> {
+                _xOffset._val = vidWidth * (1.0f - _xScale._val)
+                _yOffset._val = 0.0f
+            }
+
+            CST_ANCHOR_CENTER_LEFT -> {
+                _xOffset._val = 0.0f
+                _yOffset._val = (vidHeight * 0.5f) * (1.0f - _yScale._val)
+            }
+
+            CST_ANCHOR_CENTER_CENTER -> {
+                _xOffset._val = (vidWidth * 0.5f) * (1.0f - _xScale._val)
+                _yOffset._val = (vidHeight * 0.5f) * (1.0f - _yScale._val)
+            }
+
+            CST_ANCHOR_CENTER_RIGHT -> {
+                _xOffset._val = vidWidth * (1.0f - _xScale._val)
+                _yOffset._val = (vidHeight * 0.5f) * (1.0f - _yScale._val)
+            }
+
+            CST_ANCHOR_BOTTOM_LEFT -> {
+                _xOffset._val = 0.0f
+                _yOffset._val = vidHeight * (1.0f - _yScale._val)
+            }
+
+            CST_ANCHOR_BOTTOM_CENTER -> {
+                _xOffset._val = (vidWidth * 0.5f) * (1.0f - _xScale._val)
+                _yOffset._val = vidHeight * (1.0f - _yScale._val)
+            }
+
+            CST_ANCHOR_BOTTOM_RIGHT -> {
+                _xOffset._val = vidWidth * (1.0f - _xScale._val)
+                _yOffset._val = vidHeight * (1.0f - _yScale._val)
+            }
+
+            CST_ANCHOR_TOP -> {
+                _xScale._val = 1.0f // no horizontal scaling
+                _xOffset._val = 0.0f
+                _yOffset._val = 0.0f
+            }
+
+            CST_ANCHOR_VCENTER -> {
+                _xScale._val = 1.0f // no horizontal scaling
+                _xOffset._val = 0.0f
+                _yOffset._val = (vidHeight * 0.5f) * (1.0f - _yScale._val)
+            }
+
+            CST_ANCHOR_BOTTOM -> {
+                _xScale._val = 1.0f // no horizontal scaling
+                _xOffset._val = 0.0f
+                _yOffset._val = vidHeight * (1.0f - _yScale._val)
+            }
+
+            CST_ANCHOR_LEFT -> {
+                _yScale._val = 1.0f // no vertical scaling
+                _xOffset._val = 0.0f
+                _yOffset._val = 0.0f
+            }
+
+            CST_ANCHOR_HCENTER -> {
+                _yScale._val = 1.0f // no vertical scaling
+                _xOffset._val = (vidWidth * 0.5f) * (1.0f - _xScale._val)
+                _yOffset._val = 0.0f
+            }
+
+            CST_ANCHOR_RIGHT -> {
+                _yScale._val = 1.0f // no vertical scaling
+                _xOffset._val = vidWidth * (1.0f - _xScale._val)
+                _yOffset._val = 0.0f
+            }
+
+            else -> {
+                _xOffset._val = 0.0f
+                _yOffset._val = 0.0f
+            }
+        }
+    }
+
+    // static
+    fun CstGetParams(anchor: Int, anchorTo: Int, factor: Float, out_Scale: idVec2, out_Offset: idVec2): Boolean {
+        var factor = factor
+        val xScale = CFloat(1.0f)
+        val yScale = CFloat(1.0f)
+        out_Offset.set(0.0f, 0.0f)
+
+        if (!CstGetVidScale(xScale, yScale)) {
+            out_Scale.set(1.0f, 1.0f)
+            return false
+        }
+
+        if (CstAnchor.fromInt(anchorTo) == CST_ANCHOR_NONE) {
+            val outOffsetX = CFloat(out_Offset.x)
+            val outOffsetY = CFloat(out_Offset.y)
+            CstAdjustParmsForAnchor(CstAnchor.fromInt(anchor)!!, xScale, yScale, outOffsetX, outOffsetY)
+        } else {
+            val from_xScale = xScale
+            val from_yScale = yScale
+            val from_xOffset = CFloat(0.0f)
+            val from_yOffset = CFloat(0.0f)
+            CstAdjustParmsForAnchor(CstAnchor.fromInt(anchor)!!, from_xScale, from_yScale, from_xOffset, from_yOffset)
+
+            val to_xScale = xScale
+            val to_yScale = yScale
+            val to_xOffset = CFloat(0.0f)
+            val to_yOffset = CFloat(0.0f)
+            CstAdjustParmsForAnchor(CstAnchor.fromInt(anchorTo)!!, to_xScale, to_yScale, to_xOffset, to_yOffset)
+
+            factor = ClampFloat(0.0f, 1.0f, factor)
+
+            xScale._val = from_xScale._val * (1.0f - factor) + to_xScale._val * factor
+            yScale._val = from_yScale._val * (1.0f - factor) + to_yScale._val * factor
+
+            out_Offset.x = from_xOffset._val * (1.0f - factor) + to_xOffset._val * factor
+            out_Offset.y = from_yOffset._val * (1.0f - factor) + to_yOffset._val * factor
+        }
+        out_Scale.set(xScale._val, yScale._val)
+        return true
+    }
+
+    //#modified-fva; BEGIN
+    enum class CstAnchor(val value: Int) {
+        CST_ANCHOR_NONE(-1),
+        CST_ANCHOR_TOP_LEFT(0),
+        CST_ANCHOR_TOP_CENTER(1),
+        CST_ANCHOR_TOP_RIGHT(2),
+        CST_ANCHOR_CENTER_LEFT(3),
+        CST_ANCHOR_CENTER_CENTER(4),
+        CST_ANCHOR_CENTER_RIGHT(5),
+        CST_ANCHOR_BOTTOM_LEFT(6),
+        CST_ANCHOR_BOTTOM_CENTER(7),
+        CST_ANCHOR_BOTTOM_RIGHT(8),
+        CST_ANCHOR_TOP(9),
+        CST_ANCHOR_VCENTER(10),
+        CST_ANCHOR_BOTTOM(11),
+        CST_ANCHOR_LEFT(12),
+        CST_ANCHOR_HCENTER(13),
+        CST_ANCHOR_RIGHT(14);
+
+        companion object {
+            fun fromInt(value: Int) = entries.find { it.value == value }
+        }
+    }
+
+    //#modified-fva; END
+
     class idDeviceContext {
         private val cursorImages = arrayOfNulls<idMaterial>(CURSOR.CURSOR_COUNT.ordinal)
         private val scrollBarImages = arrayOfNulls<idMaterial>(SCROLLBAR.SCROLLBAR_COUNT.ordinal)
         private var activeFont: fontInfoEx_t? = null
-
-        //
         private val clipRects = idList<idRectangle?>()
-
-        //
         private var cursor: CURSOR? = null
-
-        //
-        //
-        //
         private var enableClipping = false
-
-        // ~idDeviceContext() { }
         private val fontLang: idStr
         private val fontName = idStr()
         private var initialized = false
-
-        //
-        //        public void EnableLocalization();
-        //
-        //
         private val mat: idMat3
-
-        //
         private var mbcs = false
         private val origin: idVec3
-
-        //
         private var overStrikeMode = false
         private var useFont: fontInfo_t? = null
-
-        //
         private var vidHeight = 0.0f
         private var vidWidth = 0.0f
         private var whiteImage: idMaterial? = null
-        private var xScale = 0.0f
-        private var yScale = 0.0f
+        private var xScale = 0f
+        private var yScale = 0f
+
+        //#modified-fva; BEGIN
+        private var cst_xOffset: Float = 0.0f
+        private var cst_yOffset: Float = 0.0f
+        private var cstAdjustCoords: Boolean = false
+        //#modified-fva; END
+
+        // DG: this is used for the "make sure menus are rendered as 4:3" hack
+        val fixScaleForMenu = idVec2()
+        val fixOffsetForMenu = idVec2()
 
         init {
             fontLang = idStr()
@@ -92,7 +282,7 @@ object DeviceContext {
         }
 
         fun Init() {
-            xScale = 0.0f
+            xScale = 0f
             SetSize(VIRTUAL_WIDTH.toFloat(), VIRTUAL_HEIGHT.toFloat())
             whiteImage = DeclManager.declManager.FindMaterial("guis/assets/white.tga")
             whiteImage!!.SetSort(Material.SS_GUI.toFloat())
@@ -141,6 +331,43 @@ object DeviceContext {
             mat.Identity()
             origin.Zero()
             initialized = true
+
+            // DG: this is used for the "make sure menus are rendered as 4:3" hack
+            fixScaleForMenu.set(1f, 1f)
+            fixOffsetForMenu.set(0f, 0f)
+        }
+
+        // DG: this is used for the "make sure menus are rendered as 4:3" hack
+        fun SetMenuScaleFix(enable: Boolean) {
+            if (enable) {
+                val w = renderSystem.GetScreenWidth().toFloat()
+                val h = renderSystem.GetScreenHeight().toFloat()
+                val aspectRatio = w / h
+                val virtualAspectRatio = VIRTUAL_WIDTH.toFloat() / VIRTUAL_HEIGHT.toFloat() // 4:3
+                if (aspectRatio > 1.4f) {
+                    // widescreen (4:3 is 1.333 3:2 is 1.5, 16:10 is 1.6, 16:9 is 1.7778)
+                    // => we need to scale and offset X
+                    // All the coordinates here assume 640x480 (VIRTUAL_WIDTH x VIRTUAL_HEIGHT)
+                    // screensize, so to fit a 4:3 menu into 640x480 stretched to a widescreen,
+                    // we need do decrease the width to something smaller than 640 and center
+                    // the result with an offset
+                    val scaleX = virtualAspectRatio / aspectRatio
+                    val offsetX = (1.0f - scaleX) * (VIRTUAL_WIDTH * 0.5f) // (640 - scale*640)/2
+                    fixScaleForMenu.set(scaleX, 1f)
+                    fixOffsetForMenu.set(offsetX, 0f)
+                } else if (aspectRatio < 1.24f) {
+                    // portrait-mode, "thinner" than 5:4 (which is 1.25)
+                    // => we need to scale and offset Y
+                    // it's analogue to the other case, but inverted and with height and Y
+                    val scaleY = aspectRatio / virtualAspectRatio
+                    val offsetY = (1.0f - scaleY) * (VIRTUAL_HEIGHT * 0.5f) // (480 - scale*480)/2
+                    fixScaleForMenu.set(1f, scaleY)
+                    fixOffsetForMenu.set(0f, offsetY)
+                }
+            } else {
+                fixScaleForMenu.set(1f, 1f)
+                fixOffsetForMenu.set(0f, 0f)
+            }
         }
 
         fun Shutdown() {
@@ -189,7 +416,7 @@ object DeviceContext {
         ) {
             var scaleX = scaleX
             var scaleY = scaleY
-            RenderSystem.renderSystem.SetColor(color!!)
+            renderSystem.SetColor(color!!)
             val s0 = floatArrayOf(0.0f)
             val s1 = floatArrayOf(0.0f)
             val t0 = floatArrayOf(0.0f)
@@ -228,8 +455,15 @@ object DeviceContext {
             if (ClippedCoords(x1, y1, w1, h1, s0, t0, s1, t1)) {
                 return
             }
+
+            //#modified-fva; BEGIN
+            /*
             AdjustCoords(x1, y1, w1, h1)
+
             DrawStretchPic(x1[0], y1[0], w1[0], h1[0], s0[0], t0[0], s1[0], t1[0], mat)
+            */
+            DrawStretchPic(x1[0], y1[0], w1[0], h1[0], s0[0], t0[0], s1[0], t1[0], mat, true)
+            //#modified-fva; END
         }
 
         fun DrawRect(x: Float, y: Float, width: Float, height: Float, size: Float, color: idVec4?) {
@@ -240,15 +474,35 @@ object DeviceContext {
             if (color!!.w == 0.0f) {
                 return
             }
-            RenderSystem.renderSystem.SetColor(color)
+            renderSystem.SetColor(color)
             if (ClippedCoords(x1, y1, w1, h1, null, null, null, null)) {
                 return
             }
+            //#modified-fva; BEGIN
+            /*
             AdjustCoords(x1, y1, w1, h1)
             DrawStretchPic(x1[0], y1[0], size, h1[0], 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
             DrawStretchPic(x1[0] + w1[0] - size, y1[0], size, h1[0], 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
             DrawStretchPic(x1[0], y1[0], w1[0], size, 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
             DrawStretchPic(x1[0], y1[0] + h1[0] - size, w1[0], size, 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
+            */
+            DrawStretchPic(x1[0], y1[0] + size, size, h1[0] - 2.0f * size, 0f, 0f, 0f, 0f, whiteImage, true)
+            DrawStretchPic(
+                x1[0] + w1[0] - size,
+                y1[0] + size,
+                size,
+                h1[0] - 2.0f * size,
+                0f,
+                0f,
+                0f,
+                0f,
+                whiteImage,
+                true
+            )
+            DrawStretchPic(x1[0], y1[0], w1[0], size, 0f, 0f, 0f, 0f, whiteImage, true)
+            DrawStretchPic(x1[0], y1[0] + h1[0] - size, w1[0], size, 0f, 0f, 0f, 0f, whiteImage, true)
+            //#modified-fva; END
+
         }
 
         fun DrawFilledRect(x: Float, y: Float, width: Float, height: Float, color: idVec4?) {
@@ -259,12 +513,18 @@ object DeviceContext {
             if (color!!.w == 0.0f) {
                 return
             }
-            RenderSystem.renderSystem.SetColor(color)
+            renderSystem.SetColor(color)
             if (ClippedCoords(x1, y1, w1, h1, null, null, null, null)) {
                 return
             }
+
+            //#modified-fva; BEGIN
+            /*
             AdjustCoords(x1, y1, w1, h1)
             DrawStretchPic(x1[0], y1[0], w1[0], h1[0], 0.0f, 0.0f, 0.0f, 0.0f, whiteImage)
+            */
+            DrawStretchPic(x1[0], y1[0], w1[0], h1[0], 0.0f, 0.0f, 0.0f, 0.0f, whiteImage, true)
+            //#modified-fva; END
         }
 
 
@@ -300,7 +560,7 @@ object DeviceContext {
             SetFontByScale(textScale)
             if (!calcOnly && text.isEmpty()) {
                 if (cursor == 0) {
-                    RenderSystem.renderSystem.SetColor(color!!)
+                    renderSystem.SetColor(color!!)
                     DrawEditCursor(rectDraw.x, lineSkip + rectDraw.y, textScale)
                 }
                 return FtoiFast(rectDraw.w / charSkip)
@@ -442,7 +702,7 @@ object DeviceContext {
             if (color.w == 0.0f) {
                 return
             }
-            RenderSystem.renderSystem.SetColor(color)
+            renderSystem.SetColor(color)
             DrawMaterial(x, y, size, h, mat, color)
             DrawMaterial(x + w - size, y, size, h, mat, color)
             DrawMaterial(x, y, w, size, mat, color)
@@ -458,7 +718,8 @@ object DeviceContext {
             t0: Float,
             s1: Float,
             t1: Float,
-            shader: idMaterial?
+            shader: idMaterial?,
+            adjustCoords: Boolean = false
         ) {
             val verts = arrayOf(idDrawVert(), idDrawVert(), idDrawVert(), idDrawVert())
             val indexes = IntArray(6)
@@ -539,7 +800,20 @@ object DeviceContext {
                 verts[3].xyz.timesAssign(mat)
                 verts[3].xyz.plusAssign(origin)
             }
-            RenderSystem.renderSystem.DrawStretchPic(verts, indexes, 4, 6, shader, identity)
+
+            //#modified-fva; BEGIN
+            if (adjustCoords) {
+                for (i in 0 until 4) {
+                    // Note: if cstAdjustCoords == false; cst_*Offset is 0, so that doesn't require special handling
+                    val x = verts[i].xyz[0] * xScale + cst_xOffset
+                    val y = verts[i].xyz[1] * yScale + cst_yOffset
+                    verts[i].xyz[0] = x * fixScaleForMenu.x + fixOffsetForMenu.x
+                    verts[i].xyz[1] = y * fixScaleForMenu.y + fixOffsetForMenu.y
+                }
+            }
+            //#modified-fva; END
+
+            renderSystem.DrawStretchPic(verts, indexes, 4, 6, shader, identity)
         }
 
         fun DrawMaterialRotated(
@@ -555,7 +829,7 @@ object DeviceContext {
         ) {
             var scalex = scalex
             var scaley = scaley
-            RenderSystem.renderSystem.SetColor(color!!)
+            renderSystem.SetColor(color!!)
             val s0 = FloatArray(1)
             val s1 = FloatArray(1)
             val t0 = FloatArray(1)
@@ -594,10 +868,31 @@ object DeviceContext {
             if (angle == 0.0f && ClippedCoords(x1, y1, w1, h1, s0, t0, s1, t1)) {
                 return
             }
+            //#modified-fva; BEGIN
+            /*
             AdjustCoords(x1, y1, w1, h1)
+
             DrawStretchPicRotated(x1[0], y1[0], w1[0], h1[0], s0[0], t0[0], s1[0], t1[0], mat, angle)
+            */
+            DrawStretchPicRotated(x1[0], y1[0], w1[0], h1[0], s0[0], t0[0], s1[0], t1[0], mat, angle, true)
+            //#modified-fva; END
         }
 
+        //#modified-fva; BEGIN
+        fun CstSetSize(anchor: Int, anchorTo: Int, factor: Float) {
+            vidWidth = VIRTUAL_WIDTH.toFloat()
+            vidHeight = VIRTUAL_HEIGHT.toFloat()
+
+            val scale = idVec2()
+            val offset = idVec2()
+            cstAdjustCoords = CstGetParams(anchor, anchorTo, factor, scale, offset)
+            xScale = scale.x
+            yScale = scale.y
+            cst_xOffset = offset.x
+            cst_yOffset = offset.y
+        }
+
+        //#modified-fva; END
         fun DrawStretchPicRotated(
             x: Float,
             y: Float,
@@ -608,7 +903,8 @@ object DeviceContext {
             s1: Float,
             t1: Float,
             shader: idMaterial?,
-            angle: Float /*= 0.0f*/
+            angle: Float,
+            adjustCoords: Boolean = false
         ) {
             val verts = arrayOf(idDrawVert(), idDrawVert(), idDrawVert(), idDrawVert())
             val indexes = IntArray(6)
@@ -713,9 +1009,22 @@ object DeviceContext {
                 verts[i]!!.xyz.set(rotz.times(verts[i]!!.xyz))
 
                 //Translate back
-                verts[i]!!.xyz.plusAssign(origTrans)
+                verts[i].xyz.plusAssign(origTrans)
             }
-            RenderSystem.renderSystem.DrawStretchPic(verts as Array<idDrawVert>, indexes, 4, 6, shader, angle != 0.0f)
+
+            //#modified-fva; BEGIN
+            if (adjustCoords) {
+                for (i in 0 until 4) {
+                    // Note: if cstAdjustCoords == false; cst_*Offset is 0, so that doesn't require special handling
+                    val x = verts[i].xyz[0] * xScale + cst_xOffset
+                    val y = verts[i].xyz[1] * yScale + cst_yOffset
+                    verts[i].xyz[0] = x * fixScaleForMenu.x + fixOffsetForMenu.x
+                    verts[i].xyz[1] = y * fixScaleForMenu.y + fixOffsetForMenu.y
+                }
+            }
+            //#modified-fva; END
+
+            renderSystem.DrawStretchPic(verts, indexes, 4, 6, shader, angle != 0.0f)
         }
 
         fun CharWidth(c: Char, scale: Float): Int {
@@ -822,9 +1131,9 @@ object DeviceContext {
             // If the font was not found, try to register it
             val fileName = idStr(name!!)
             fileName.Replace("fonts", va("fonts/%s", fontLang))
-            val fontInfo = fontInfoEx_t()
+            val fontInfo = fontInfoEx_t()  // DG: initialize this
             val index = fonts.Append(fontInfo)
-            return if (RenderSystem.renderSystem.RegisterFont(fileName.toString(), fonts[index])) {
+            return if (renderSystem.RegisterFont(fileName.toString(), fonts[index])) {
                 fonts[index].name =
                     name //idStr.Copynz(fonts.oGet(index).name, name, fonts.oGet(index).name.length());
                 index
@@ -926,9 +1235,15 @@ object DeviceContext {
         fun SetSize(width: Float, height: Float) {
             vidWidth = VIRTUAL_WIDTH.toFloat()
             vidHeight = VIRTUAL_HEIGHT.toFloat()
-            yScale = 0.0f
+            yScale = 1.0f
             xScale = yScale
-            if (width != 0.0f && height != 0.0f) {
+            //#modified-fva; BEGIN
+            cst_xOffset = 0.0f
+            cst_yOffset = 0.0f
+            cstAdjustCoords = false
+            if ((width != vidWidth || height != vidHeight) && width > 0.0f && height > 0.0f) {
+                cstAdjustCoords = true
+                //#modified-fva; END
                 xScale = vidWidth * (1.0f / width)
                 yScale = vidHeight * (1.0f / height)
             }
@@ -955,9 +1270,28 @@ object DeviceContext {
             if (y[0] >= vidHeight) {
                 y[0] = vidHeight
             }
-            RenderSystem.renderSystem.SetColor(colorWhite)
-            AdjustCoords(x, y, s, s)
-            DrawStretchPic(x[0], y[0], s[0], s[0], 0.0f, 0.0f, 1.0f, 1.0f, cursorImages[cursor!!.ordinal])
+
+            // DG: originally, this just called AdjustCoords() and then DrawStretchPic().
+            //     It had to be adjusted to scale menus and other fullscreen GUIs to 4:3 aspect ratio
+            //     and for the CstDoom3 anchored GUIs, so all that is now done here
+
+            // the following block used to be Adjust(Cursor)Coords()
+            // (no point in keeping that function when it's only used here)
+
+            // if cstAdjustCoords is used, x and y shouldn't be scaled, otherwise the cursor moves to a window border
+            if (!cstAdjustCoords) {
+                x[0] *= xScale
+                y[0] *= yScale
+            }
+
+            renderSystem.SetColor(colorWhite)
+            // the *actual* sizes and position used (but not set to *x and *y) need to apply the menu fixes
+            val sizeW = size * fixScaleForMenu.x * xScale
+            val sizeH = size * fixScaleForMenu.y * yScale
+            val fixedX = x[0] * fixScaleForMenu.x + fixOffsetForMenu.x
+            val fixedY = y[0] * fixScaleForMenu.y + fixOffsetForMenu.y
+
+            DrawStretchPic(fixedX, fixedY, sizeW, sizeH, 0f, 0f, 1f, 1f, cursorImages[cursor!!.ordinal])
         }
 
         fun SetCursor(n: Int) {
@@ -968,15 +1302,27 @@ object DeviceContext {
         fun AdjustCoords(x: FloatArray?, y: FloatArray?, w: FloatArray?, h: FloatArray?) {
             if (x != null) {
                 x[0] *= xScale
+                x[0] += cst_xOffset // DG: for CstDoom3 anchored windows
+
+                x[0] *= fixScaleForMenu.x // DG: for "render menus as 4:3" hack
+                x[0] += fixOffsetForMenu.x
             }
             if (y != null) {
                 y[0] *= yScale
+                y[0] += cst_yOffset // DG: for CstDoom3 anchored windows
+
+                y[0] *= fixScaleForMenu.y // DG: for "render menus as 4:3" hack
+                y[0] += fixOffsetForMenu.y
             }
             if (w != null) {
                 w[0] *= xScale
+                w[0] *= fixScaleForMenu.x // DG: for "render menus as 4:3" hack
+
             }
             if (h != null) {
                 h[0] *= yScale
+                h[0] *= fixScaleForMenu.y // DG: for "render menus as 4:3" hack
+
             }
         }
 
@@ -1142,7 +1488,7 @@ object DeviceContext {
             if (text.isNotEmpty() && color!!.w != 0.0f) {
                 var s = text[0] //(const unsigned char*)text;
                 var s_i = 0
-                RenderSystem.renderSystem.SetColor(color)
+                renderSystem.SetColor(color)
                 //		memcpy(newColor[0], color[0], sizeof(idVec4));
                 newColor.set(color)
                 len = text.length
@@ -1174,11 +1520,11 @@ object DeviceContext {
                             if (cursor == count) {
                                 partialSkip *= 2.0f
                             } else {
-                                RenderSystem.renderSystem.SetColor(newColor)
+                                renderSystem.SetColor(newColor)
                             }
                             DrawEditCursor(x - partialSkip, y, scale)
                         }
-                        RenderSystem.renderSystem.SetColor(newColor)
+                        renderSystem.SetColor(newColor)
                         s_i += 2
                         count += 2
                         continue
@@ -1234,8 +1580,13 @@ object DeviceContext {
             if (ClippedCoords(x1, y1, w, h, s1, t1, s3, t3)) {
                 return
             }
+            //#modified-fva; BEGIN
+            /*
             AdjustCoords(x1, y1, w, h)
             DrawStretchPic(x1[0], y1[0], w[0], h[0], s1[0], t1[0], s3[0], t3[0], hShader)
+            */
+            DrawStretchPic(x1[0], y1[0], w[0], h[0], s1[0], t1[0], s3[0], t3[0], hShader, true)
+            //#modified-fva; END
         }
 
         private fun SetFontByScale(scale: Float) {

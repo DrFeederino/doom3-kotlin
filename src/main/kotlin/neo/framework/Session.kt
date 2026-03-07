@@ -80,20 +80,30 @@ class Session {
         var combat = 0
 
         override fun AllocBuffer(): ByteBuffer {
-            throw TODO_Exception()
+            return ByteBuffer.allocate(BYTES).order(java.nio.ByteOrder.LITTLE_ENDIAN)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw TODO_Exception()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            health = buffer.short.toInt()
+            heartRate = buffer.short.toInt()
+            stamina = buffer.short.toInt()
+            combat = buffer.short.toInt()
         }
 
         override fun Write(): ByteBuffer {
-            throw TODO_Exception()
+            val buffer = AllocBuffer()
+            buffer.putShort(health.toShort())
+            buffer.putShort(heartRate.toShort())
+            buffer.putShort(stamina.toShort())
+            buffer.putShort(combat.toShort())
+            buffer.flip()
+            return buffer
         }
 
         companion object {
             @Transient
-            val SIZE = TempDump.SERIAL_SIZE(logStats_t())
+            val BYTES = Short.SIZE_BYTES * 4
         }
     }
 

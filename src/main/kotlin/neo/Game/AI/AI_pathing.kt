@@ -140,7 +140,6 @@ fun PointInsideObstacle(obstacles: Array<obstacle_s>, numObstacles: Int, point: 
  GetPointOutsideObstacles
  ============
  */
-// all calls to this function are with edgeNum = null, what is the point of it?
 fun GetPointOutsideObstacles(
     obstacles: Array<obstacle_s>,
     numObstacles: Int,
@@ -169,8 +168,8 @@ fun GetPointOutsideObstacles(
     val obstacleVisited: BooleanArray
     val w1 = idWinding2D()
     val w2 = idWinding2D()
-    obstacle._val = -1
-    edgeNum._val = -1
+    obstacle.integerValue = -1
+    edgeNum.integerValue = -1
     bestObstacle = PointInsideObstacle(obstacles, numObstacles, point)
     if (bestObstacle == -1) {
         return
@@ -201,8 +200,8 @@ fun GetPointOutsideObstacles(
     newPoint.set(point - bestPlane.ToVec2() * (bestd + PUSH_OUTSIDE_OBSTACLES))
     if (PointInsideObstacle(obstacles, numObstacles, newPoint) == -1) {
         point.set(newPoint)
-        obstacle._val = bestObstacle
-        edgeNum._val = bestEdgeNum
+        obstacle.integerValue = bestObstacle
+        edgeNum.integerValue = bestEdgeNum
         return
     }
     queue = IntArray(numObstacles)
@@ -266,8 +265,8 @@ fun GetPointOutsideObstacles(
         }
         if (bestd < idMath.INFINITY) {
             point.set(bestPoint)
-            obstacle._val = bestObstacle
-            edgeNum._val = bestEdgeNum
+            obstacle.integerValue = bestObstacle
+            edgeNum.integerValue = bestEdgeNum
             return
         }
         queueStart++
@@ -320,8 +319,8 @@ fun GetFirstBlockingObstacle(
         if (obstacles[i].winding.RayIntersection(startPos, delta, scale1, scale2, edgeNums)) {
             if (scale1._val < blockingScale._val && scale1._val * dist > -0.01f && scale2._val * dist > 0.01f) {
                 blockingScale._val = scale1._val
-                blockingObstacle._val = i
-                blockingEdgeNum._val = edgeNums[0]
+                blockingObstacle.integerValue = i
+                blockingEdgeNum.integerValue = edgeNums[0]
             }
         }
         i++
@@ -656,7 +655,7 @@ fun GetPathNodeDelta(
     while (true) {
         edgeNum = (node.edgeNum + node.dir) % numPoints
         node.delta.set(obstacles[node.obstacle].winding[edgeNum] - node.pos)
-        if (node.delta.LengthSqr() > 0.01) {
+        if (node.delta.LengthSqr() > 0.01f) {
             break
         }
         node.edgeNum = (node.edgeNum + numPoints + (2 * node.dir - 1)) % numPoints
@@ -764,7 +763,7 @@ fun BuildPathTree(
             )
         ) {
             if (path.firstObstacle == null) {
-                path.firstObstacle = obstacles[blockingObstacle._val].entity
+                path.firstObstacle = obstacles[blockingObstacle.integerValue].entity
             }
             node.delta.timesAssign(blockingScale._val)
             if (node.edgeNum == -1) {
@@ -778,9 +777,9 @@ fun BuildPathTree(
                 node.children[0]!!.parent = node.children[1]!!.parent
                 node.children[1]!!.pos.set(node.pos + node.delta)
                 node.children[0]!!.pos.set(node.children[1]!!.pos)
-                node.children[1]!!.obstacle = blockingObstacle._val
+                node.children[1]!!.obstacle = blockingObstacle.integerValue
                 node.children[0]!!.obstacle = node.children[1]!!.obstacle
-                node.children[1]!!.edgeNum = blockingEdgeNum._val
+                node.children[1]!!.edgeNum = blockingEdgeNum.integerValue
                 node.children[0]!!.edgeNum = node.children[1]!!.edgeNum
                 node.children[1]!!.numNodes = node.numNodes + 1
                 node.children[0]!!.numNodes = node.children[1]!!.numNodes
@@ -797,8 +796,8 @@ fun BuildPathTree(
                 child.dir = node.dir
                 child.parent = node
                 child.pos.set(node.pos + node.delta)
-                child.obstacle = blockingObstacle._val
-                child.edgeNum = blockingEdgeNum._val
+                child.obstacle = blockingObstacle.integerValue
+                child.edgeNum = blockingEdgeNum.integerValue
                 child.numNodes = node.numNodes + 1
                 if (GetPathNodeDelta(child, obstacles, seekPos, true)) {
                     pathNodeQueue.Add(child)
@@ -1023,13 +1022,12 @@ fun FindOptimalPath(
     var pathToGoalExists: Boolean
     var optimizedPathCalculated: Boolean
     optimizedPath[1] =
-        idVec2(-107374176.0f, -107374176.0f) // TODO: need to check if -107374176 is some magic fuckery
+        idVec2(-107374176.0f, -107374176.0f)
     seekPos.Zero()
     seekPos.z = height
     pathToGoalExists = false
     optimizedPathCalculated = false
     bestNode = root
-    //        bestNumPathPoints = 0;
     bestPathLength = idMath.INFINITY
     node = root
     while (node != null) {
@@ -1129,7 +1127,7 @@ fun PathTrace(
     val clipTrace = trace_s()
     val aasTrace = aasTrace_s()
 
-//	memset( &trace, 0, sizeof( trace ) );TODO:
+//	memset( &trace, 0, sizeof( trace ) );
     if (null == aas || aas.GetSettings() == null) {
         Game_local.gameLocal.clip.Translation(
             clipTrace, start, end, ent.GetPhysics().GetClipModel(),
@@ -1206,6 +1204,14 @@ fun PathTrace(
     return false
 }
 
+/*
+ =====================
+ Ballistics
+
+ get the ideal aim pitch angle in order to hit the target
+ also get the time it takes for the projectile to arrive at the target
+ =====================
+ */
 fun Ballistics(
     start: idVec3,
     end: idVec3,
@@ -1331,7 +1337,7 @@ class pathNode_s {
         parent = children[0]
     }
 
-    fun oSet(parent: pathNode_s) { //TODO:how do we reference the non objects?
+    fun oSet(parent: pathNode_s) {
         dir = parent.dir
         pos.set(parent.pos)
         delta.set(parent.delta)
@@ -1340,7 +1346,7 @@ class pathNode_s {
         edgeNum = parent.edgeNum
         numNodes = parent.numNodes
         this.parent = parent.parent
-        children = parent.children
+        children = parent.children.copyOf() // FIX: was reference copy; C++ copies array by value
         next = parent.next
     }
 

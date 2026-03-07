@@ -286,8 +286,8 @@ class DeclAF {
             contactFriction = file.defaultContactFriction
             // FIX: copy integer value, not the CInt reference — otherwise body.contents and
             // file.contents would alias the same CInt object, corrupting file state on ParseContents
-            contents._val = file.contents._val
-            clipMask._val = file.clipMask._val
+            contents.integerValue = file.contents.integerValue
+            clipMask.integerValue = file.clipMask.integerValue
             selfCollision = file.selfCollision
             frictionDirection = idAFVector()
             contactMotorDirection = idAFVector()
@@ -519,8 +519,8 @@ class DeclAF {
             minMoveTime = -1.0f
             maxMoveTime = -1.0f
             selfCollision = true
-            contents._val = (Material.CONTENTS_CORPSE)
-            clipMask._val = (Material.CONTENTS_SOLID or Material.CONTENTS_CORPSE)
+            contents.integerValue = (Material.CONTENTS_CORPSE)
+            clipMask.integerValue = (Material.CONTENTS_SOLID or Material.CONTENTS_CORPSE)
             bodies.DeleteContents(true)
             constraints.DeleteContents(true)
         }
@@ -683,7 +683,7 @@ class DeclAF {
                 }
                 str.Append(",")
             }
-            c._val = (ContentsFromString(str.toString()))
+            c.integerValue = (ContentsFromString(str.toString()))
             return true
         }
 
@@ -696,7 +696,7 @@ class DeclAF {
             body = idDeclAF_Body()
             bodies.Append(body)
             body.SetDefault(this)
-            if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
                 || !src.ExpectTokenString("{")
             ) {
                 return false
@@ -708,7 +708,7 @@ class DeclAF {
             }
             while (src.ReadToken(token)) {
                 if (0 == token.Icmp("model")) {
-                    if (0 == src.ExpectTokenType(Token.TT_NAME, 0, token)) {
+                    if (!src.ExpectTokenType(Token.TT_NAME, 0, token)) {
                         return false
                     }
                     if (0 == token.Icmp("box")) {
@@ -800,7 +800,7 @@ class DeclAF {
                     }
                     body.angles.set(idAngles(angles.ToVec3().x, angles.ToVec3().y, angles.ToVec3().z))
                 } else if (0 == token.Icmp("joint")) {
-                    if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)) {
+                    if (!src.ExpectTokenType(Token.TT_STRING, 0, token)) {
                         return false
                     }
                     body.jointName.set(token)
@@ -827,7 +827,7 @@ class DeclAF {
                 } else if (0 == token.Icmp("selfCollision")) {
                     body.selfCollision = src.ParseBool()
                 } else if (0 == token.Icmp("containedjoints")) {
-                    if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)) {
+                    if (!src.ExpectTokenType(Token.TT_STRING, 0, token)) {
                         return false
                     }
                     body.containedJoints.set(token)
@@ -854,7 +854,7 @@ class DeclAF {
                 src.Error("no joint set for body")
                 return false
             }
-            body.clipMask._val = (body.clipMask._val or Material.CONTENTS_MOVEABLECLIP)
+            body.clipMask.integerValue = (body.clipMask.integerValue or Material.CONTENTS_MOVEABLECLIP)
             return true
         }
 
@@ -865,7 +865,7 @@ class DeclAF {
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
-            if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
                 || !src.ExpectTokenString("{")
             ) {
                 return false
@@ -896,7 +896,7 @@ class DeclAF {
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
-            if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
                 || !src.ExpectTokenString("{")
             ) {
                 return false
@@ -971,7 +971,7 @@ class DeclAF {
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
-            if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
                 || !src.ExpectTokenString("{")
             ) {
                 return false
@@ -1044,7 +1044,7 @@ class DeclAF {
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
-            if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
                 || !src.ExpectTokenString("{")
             ) {
                 return false
@@ -1100,7 +1100,7 @@ class DeclAF {
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
-            if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
                 || !src.ExpectTokenString("{")
             ) {
                 return false
@@ -1139,7 +1139,7 @@ class DeclAF {
             constraint = idDeclAF_Constraint()
             constraints.Append(constraint)
             constraint.SetDefault(this)
-            if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)
+            if (!src.ExpectTokenType(Token.TT_STRING, 0, token)
                 || !src.ExpectTokenString("{")
             ) {
                 return false
@@ -1195,20 +1195,20 @@ class DeclAF {
             }
             while (src.ReadToken(token)) {
                 if (0 == token.Icmp("mesh")) {
-                    if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)) {
+                    if (!src.ExpectTokenType(Token.TT_STRING, 0, token)) {
                         return false
                     }
                 } else if (0 == token.Icmp("anim")) {
-                    if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)) {
+                    if (!src.ExpectTokenType(Token.TT_STRING, 0, token)) {
                         return false
                     }
                 } else if (0 == token.Icmp("model")) {
-                    if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)) {
+                    if (!src.ExpectTokenType(Token.TT_STRING, 0, token)) {
                         return false
                     }
                     model.set(token)
                 } else if (0 == token.Icmp("skin")) {
-                    if (0 == src.ExpectTokenType(Token.TT_STRING, 0, token)) {
+                    if (!src.ExpectTokenType(Token.TT_STRING, 0, token)) {
                         return false
                     }
                     skin.set(token)
@@ -1354,8 +1354,8 @@ class DeclAF {
                     body.contactFriction
                 )
             }
-            f.WriteFloatString("\tcontents %s\n", ContentsToString(body.contents._val, str))
-            f.WriteFloatString("\tclipMask %s\n", ContentsToString(body.clipMask._val, str))
+            f.WriteFloatString("\tcontents %s\n", ContentsToString(body.contents.integerValue, str))
+            f.WriteFloatString("\tclipMask %s\n", ContentsToString(body.clipMask.integerValue, str))
             // FIX: Boolean is not a Number in Kotlin/JVM — FS_WriteFloatString casts %d args
             // via (arg as Number).toLong(), which throws ClassCastException for Boolean.
             // C++ implicitly promotes bool to int for variadic args; Kotlin needs explicit conversion.
@@ -1525,8 +1525,8 @@ class DeclAF {
             f.WriteFloatString("\tminMoveTime %f\n", minMoveTime)
             f.WriteFloatString("\tmaxMoveTime %f\n", maxMoveTime)
             f.WriteFloatString("\ttotalMass %f\n", totalMass)
-            f.WriteFloatString("\tcontents %s\n", ContentsToString(contents._val, str))
-            f.WriteFloatString("\tclipMask %s\n", ContentsToString(clipMask._val, str))
+            f.WriteFloatString("\tcontents %s\n", ContentsToString(contents.integerValue, str))
+            f.WriteFloatString("\tclipMask %s\n", ContentsToString(clipMask.integerValue, str))
             // FIX: Boolean → Int for %d format (see WriteBody fix for explanation)
             f.WriteFloatString("\tselfCollision %d\n", if (selfCollision) 1 else 0)
             f.WriteFloatString("}\n")

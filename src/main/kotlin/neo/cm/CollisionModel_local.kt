@@ -1,3 +1,34 @@
+/*
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+Translated to Kotlin by Dr. Feederino with support of Claude Code
+
+This file is part of the Doom 3 Kotlin project.
+Original source: neo/cm/CollisionModel_local.h, CollisionModel_load.cpp,
+  CollisionModel_translate.cpp, CollisionModel_rotate.cpp,
+  CollisionModel_trace.cpp, CollisionModel_contents.cpp,
+  CollisionModel_files.cpp, CollisionModel_debug.cpp,
+  CollisionModel_contacts.cpp
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+===========================================================================
+*/
+
 package neo.cm
 
 import neo.Renderer.Material
@@ -121,6 +152,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     // polygons and brush for trm model
     private var trmPolygons: Array<cm_polygonRef_s?> = arrayOfNulls<cm_polygonRef_s?>(TraceModel.MAX_TRACEMODEL_POLYS)
 
+    /*
+     ================
+     idCollisionModelManagerLocal::LoadMap
+     ================
+     */
     // load collision models from a map file
     override fun LoadMap(mapFile: idMapFile?) {
         if (mapFile == null) {
@@ -167,6 +203,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         ShutdownHash()
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::FreeMap
+     ================
+     */
     // frees all the collision models
     override fun FreeMap() {
         var i: Int
@@ -189,6 +230,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         ShutdownHash()
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::LoadModel
+     ================
+     */
     // get clip handle for model
     override fun LoadModel(modelName: idStr, precache: Boolean): Int {
         var handle: Int
@@ -317,6 +363,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return TRACE_MODEL_HANDLE
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::TrmFromModel
+     ================
+     */
     // create trace model from a collision model, returns true if successful
     override fun TrmFromModel(modelName: idStr, trm: idTraceModel): Boolean {/*cmHandle_t*/
         val handle: Int
@@ -328,7 +379,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return TrmFromModel(models?.get(handle)!!, trm)
     }
 
-    //
+    /*
+     ================
+     idCollisionModelManagerLocal::GetModelName
+     ================
+     */
     // name of the model
     override fun GetModelName( /*cmHandle_t*/
                                model: Int
@@ -343,6 +398,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return models!![model]?.name.toString()
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::GetModelBounds
+     ================
+     */
     // bounds of the model
     override fun GetModelBounds(model: Int, bounds: idBounds): Boolean {
         if (model < 0 || model > MAX_SUBMODELS || model >= numModels || null == models?.get(
@@ -356,6 +416,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return true
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::GetModelContents
+     ================
+     */
     // all contents flags of brushes and polygons ored together
     override fun GetModelContents(model: Int, contents: CInt): Boolean {
         if (model < 0 || model > MAX_SUBMODELS || model >= numModels || null == models?.get(
@@ -365,10 +430,15 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             Common.common.Printf("idCollisionModelManagerLocal::GetModelContents: invalid model handle\n")
             return false
         }
-        contents._val = (models!![model]!!.contents)
+        contents.integerValue = (models!![model]!!.contents)
         return true
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::GetModelVertex
+     ================
+     */
     // get the vertex of a model
     override fun GetModelVertex(model: Int, vertexNum: Int, vertex: idVec3): Boolean {
         if (model < 0 || model > MAX_SUBMODELS || model >= numModels || null == models?.get(
@@ -387,12 +457,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     }
 
     /*
-         ===============================================================================
-
-         Writing of collision model file
-
-         ===============================================================================
-         */
+     ================
+     idCollisionModelManagerLocal::GetModelEdge
+     ================
+     */
     // get the edge of a model
     override fun GetModelEdge(model: Int, edgeNum: Int, start: idVec3, end: idVec3): Boolean {
         var currentEdgeNum = edgeNum
@@ -413,6 +481,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return true
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::GetModelPolygon
+     ================
+     */
     // get the polygon of a model
     override fun GetModelPolygon(model: Int, polygonNum: Int, winding: idFixedWinding): Boolean {
         return false
@@ -425,6 +498,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
          ===============================================================================
          */
+    /*
+     ================
+     idCollisionModelManagerLocal::Translation
+     ================
+     */
     // translates a trm and reports the first collision if any
     override fun Translation(
         results: trace_s,
@@ -823,6 +901,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::Rotation
+     ================
+     */
     // rotates a trm and reports the first collision if any
     override fun Rotation(
         results: trace_s,
@@ -942,6 +1025,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::Contents
+     ================
+     */
     // returns the contents the trm is stuck in or 0 if the trm is in free space
     override fun Contents(
         start: idVec3,
@@ -971,6 +1059,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
          ===============================================================================
          */
+    /*
+     ================
+     idCollisionModelManagerLocal::Contacts
+     ================
+     */
     // stores all contact points of the trm with the model, returns the number of contacts
     override fun Contacts(
         contacts: Array<contactInfo_t>,
@@ -1005,6 +1098,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return numContacts
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::DebugOutput
+     ================
+     */
     // test collision detection
     override fun DebugOutput(origin: idVec3) {
         var i: Int
@@ -1210,6 +1308,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         sscanf.close()
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::DrawModel
+     ================
+     */
     // draw a model
     override fun DrawModel( /*cmHandle_t*/
                             handle: Int, modelOrigin: idVec3, modelAxis: idMat3, viewOrigin: idVec3, radius: Float
@@ -1230,11 +1333,17 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             cm_drawColor.ClearModified()
         }
         model = models?.get(handle)
-        viewPos.set(viewOrigin - (modelOrigin) * (modelAxis.Transpose()))
+        // FIX: Operator precedence — C++ is (viewOrigin - modelOrigin) * modelAxis.Transpose()
+        viewPos.set((viewOrigin - modelOrigin) * modelAxis.Transpose())
         checkCount++
         DrawNodePolygons(model!!, model.node!!, modelOrigin, modelAxis, viewPos, radius)
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::ModelInfo
+     ================
+     */
     // print model information, use -1 handle for accumulated model info
     override fun ModelInfo( /*cmHandle_t*/
                             model: Int
@@ -1256,6 +1365,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         PrintModelInfo(models!![model]!!)
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::ListModels
+     ================
+     */
     // list all loaded models
     override fun ListModels() {
         var i: Int
@@ -1270,6 +1384,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         Common.common.Printf("%4d KB in %d models\n", totalMemory shr 10, numModels)
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::WriteCollisionModelForMapEntity
+     ================
+     */
     // write a collision model file for the map entity
     override fun WriteCollisionModelForMapEntity(
         mapEnt: idMapEntity, filename: String, testTraceModel: Boolean
@@ -1283,7 +1402,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         model!!.name.set(name)
         name.SetFileExtension(CM_FILE_EXT)
         Common.common.Printf("writing %s\n", name)
-        fp = FileSystem_h.fileSystem.OpenFileWrite(filename, "fs_devpath")
+        // FIX: Use name (with .cm extension) instead of original filename
+        fp = FileSystem_h.fileSystem.OpenFileWrite(name.toString(), "fs_devpath")
         if (null == fp) {
             Common.common.Printf(
                 "idCollisionModelManagerLocal::WriteCollisionModelForMapEntity: Error opening file %s\n", name
@@ -1435,6 +1555,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return true
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::TranslateTrmEdgeThroughPolygon
+     ================
+     */
     private fun TranslateTrmEdgeThroughPolygon(tw: cm_traceWork_s, poly: cm_polygon_s, trmEdge: cm_trmEdge_s) {
         var i: Int
         var edgeNum: Int
@@ -1561,6 +1686,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::TranslateTrmVertexThroughPolygon
+     ================
+     */
     private fun TranslateTrmVertexThroughPolygon(
         tw: cm_traceWork_s, poly: cm_polygon_s, v: cm_trmVertex_s, bitNum: Int
     ) {
@@ -1602,6 +1732,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::TranslatePointThroughPolygon
+     ================
+     */
     private fun TranslatePointThroughPolygon(tw: cm_traceWork_s, poly: cm_polygon_s, v: cm_trmVertex_s) {
         var i: Int
         var edgeNum: Int
@@ -1653,6 +1788,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::TranslateVertexThroughTrmPolygon
+     ================
+     */
     private fun TranslateVertexThroughTrmPolygon(
         tw: cm_traceWork_s, trmpoly: cm_trmPolygon_s, poly: cm_polygon_s, v: cm_vertex_s, endp: idVec3, pl: idPluecker
     ) {
@@ -1886,6 +2026,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return tw.trace.fraction == 0.0f
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::SetupTranslationHeartPlanes
+     ================
+     */
     private fun SetupTranslationHeartPlanes() {
         val dir = idVec3(tw.dir)
         val normal1 = idVec3()
@@ -1900,6 +2045,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         tw.heartPlane2.FitThroughPoint(tw.start)
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::SetupTrm
+     ================
+     */
     private fun SetupTrm(tw: cm_traceWork_s, trm: idTraceModel) {
         var i: Int
 
@@ -2303,6 +2453,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return true
     }
 
+    /*
+     ================
+     idCollisionModelManagerLocal::RotateTrmEdgeThroughPolygon
+     ================
+     */
     private fun RotateTrmEdgeThroughPolygon(tw: cm_traceWork_s, poly: cm_polygon_s, trmEdge: cm_trmEdge_s) {
         var i: Int
         var j: Int
@@ -2660,12 +2815,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     }
 
     /*
-         ===============================================================================
-
-         Contents test
-
-         ===============================================================================
-         */
+     ================
+     idCollisionModelManagerLocal::RotatePointThroughEpsilonPlane
+     ================
+     */
     private fun RotatePointThroughEpsilonPlane(
         tw: cm_traceWork_s,
         point: idVec3,
@@ -2760,6 +2913,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return true
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::RotateTrmVertexThroughPolygon
+    ================
+    */
     private fun RotateTrmVertexThroughPolygon(
         tw: cm_traceWork_s, poly: cm_polygon_s, v: cm_trmVertex_s
     ) {
@@ -2821,6 +2979,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::RotateVertexThroughTrmPolygon
+    ================
+    */
     private fun RotateVertexThroughTrmPolygon(
         tw: cm_traceWork_s, trmpoly: cm_trmPolygon_s, poly: cm_polygon_s, v: cm_vertex_s, rotationOrigin: idVec3
     ) {
@@ -3101,6 +3264,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::Rotation180
+    ================
+    */
     private fun Rotation180(
         results: trace_s,
         rorg: idVec3,
@@ -3813,6 +3981,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return false
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::PointNode
+    ================
+    */
     private fun PointNode(p: idVec3, model: cm_model_s): cm_node_s {
         var currentNode: cm_node_s
         currentNode = model.node!!
@@ -3827,6 +4000,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return currentNode
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::PointContents
+    ================
+    */
     private fun PointContents(
         p: idVec3,  /*cmHandle_t*/
         model: Int
@@ -3872,6 +4050,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return 0
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::TransformedPointContents
+    ================
+    */
     private fun TransformedPointContents(
         p: idVec3,  /*cmHandle_t*/
         model: Int, origin: idVec3, modelAxis: idMat3
@@ -3884,6 +4067,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return PointContents(p_l, model)
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::ContentsTrm
+    ================
+    */
     private fun ContentsTrm(
         results: trace_s, start: idVec3, trm: idTraceModel?, trmAxis: idMat3, contentMask: Int,  /*cmHandle_t*/
         model: Int, modelOrigin: idVec3, modelAxis: idMat3
@@ -4050,6 +4238,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          ===============================================================================
          */
     // CollisionMap_trace.cpp
+    /*
+    ================
+    idCollisionModelManagerLocal::TraceTrmThroughNode
+    ================
+    */
     private fun TraceTrmThroughNode(tw: cm_traceWork_s, node: cm_node_s) {
         var pref: cm_polygonRef_s?
         var bref: cm_brushRef_s?
@@ -4102,6 +4295,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::TraceThroughAxialBSPTree_r
+    ================
+    */
     private fun TraceThroughAxialBSPTree_r(
         tw: cm_traceWork_s, node: cm_node_s?, p1f: Float, p2f: Float, p1: idVec3, p2: idVec3
     ) {
@@ -4197,6 +4395,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         TraceThroughAxialBSPTree_r(tw, node.children[side xor 1], midf, p2f, mid, p2)
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::TraceThroughModel
+    ================
+    */
     private fun TraceThroughModel(tw: cm_traceWork_s) {
         val d: Float
         var i: Int
@@ -4251,6 +4454,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          ===============================================================================
          */
     // CollisionMap_load.cpp
+    /*
+    ================
+    idCollisionModelManagerLocal::Clear
+    ================
+    */
     private fun Clear() {
         mapName.Clear()
         mapFileTime = 0
@@ -4270,6 +4478,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         numContacts = 0
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::FreeTrmModelStructure
+    ================
+    */
     private fun FreeTrmModelStructure() {
         assert(models != null)
         if (null == models?.get(MAX_SUBMODELS)) {
@@ -4285,6 +4498,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     }
 
     // model deallocation
+    /*
+    ================
+    idCollisionModelManagerLocal::RemovePolygonReferences_r
+    ================
+    */
     private fun RemovePolygonReferences_r(node: cm_node_s?, p: cm_polygon_s) {
         var currentNode = node
         var pref: cm_polygonRef_s?
@@ -4313,6 +4531,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::RemoveBrushReferences_r
+    ================
+    */
     private fun RemoveBrushReferences_r(node: cm_node_s?, b: cm_brush_s) {
         var currentNode = node
         var bref: cm_brushRef_s?
@@ -4340,18 +4563,33 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::FreePolygon
+    ================
+    */
     private fun FreePolygon(model: cm_model_s, poly: cm_polygon_s) {
         model.numPolygons--
         model.polygonMemory -= cm_polygon_s.BYTES + (poly.numEdges - 1) * Integer.BYTES
         model.polygonBlock = null
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::FreeBrush
+    ================
+    */
     private fun FreeBrush(model: cm_model_s, brush: cm_brush_s) {
         model.numBrushes--
         model.brushMemory -= cm_brush_s.BYTES + (brush.numPlanes - 1) * idPlane.BYTES
         model.brushBlock = null
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::FreeTree_r
+    ================
+    */
     private fun FreeTree_r(model: cm_model_s, headNode: cm_node_s, node: cm_node_s) {
         var pref: cm_polygonRef_s?
         var p: cm_polygon_s?
@@ -4391,6 +4629,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::FreeModel
+    ================
+    */
     private fun FreeModel(model: cm_model_s) {
         var polygonRefBlock: cm_polygonRefBlock_s?
         var nextPolygonRefBlock: cm_polygonRefBlock_s?
@@ -4501,6 +4744,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::TryMergePolygons
+    ================
+    */
     private fun TryMergePolygons(model: cm_model_s, p1: cm_polygon_s, p2: cm_polygon_s): cm_polygon_s? {
         var i: Int
         var j: Int
@@ -4732,12 +4980,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     }
 
     /*
-         ===============================================================================
-
-         Find internal edges
-
-         ===============================================================================
-         */
+    ================
+    idCollisionModelManagerLocal::MergePolygonWithTreePolygons
+    ================
+    */
     private fun MergePolygonWithTreePolygons(
         model: cm_model_s, node: cm_node_s, polygon: cm_polygon_s
     ): Boolean {
@@ -4840,6 +5086,14 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     }
 
     /*
+    ===============================================================================
+
+    Find internal edges
+
+    ===============================================================================
+    */
+
+    /*
 
          if (two polygons have the same contents)
          if (the normals of the two polygon planes face towards each other)
@@ -4853,6 +5107,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
          */
     // finding internal edges
+    /*
+    ================
+    idCollisionModelManagerLocal::PointInsidePolygon
+    ================
+    */
     private fun PointInsidePolygon(model: cm_model_s, p: cm_polygon_s, v: idVec3): Boolean {
         var i: Int
         var edgeNum: Int
@@ -4880,6 +5139,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return true
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::FindInternalEdgesOnPolygon
+    ================
+    */
     private fun FindInternalEdgesOnPolygon(model: cm_model_s, p1: cm_polygon_s, p2: cm_polygon_s) {
         var i: Int
         var j: Int
@@ -4998,6 +5262,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::FindInternalPolygonEdges
+    ================
+    */
     private fun FindInternalPolygonEdges(model: cm_model_s, node: cm_node_s, polygon: cm_polygon_s) {
         var currentNode = node
         var pref: cm_polygonRef_s?
@@ -5042,6 +5311,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::FindInternalEdges
+    ================
+    */
     private fun FindInternalEdges(model: cm_model_s, node: cm_node_s) {
         var currentNode = node
         var pref: cm_polygonRef_s?
@@ -5076,6 +5350,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          ===============================================================================
          */
     // loading of proc BSP tree
+    /*
+    ================
+    idCollisionModelManagerLocal::ParseProcNodes
+    ================
+    */
     private fun ParseProcNodes(src: idLexer) {
         src.ExpectTokenString("{")
         numProcNodes = src.ParseInt()
@@ -5161,6 +5440,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          ===============================================================================
          */
     // removal of contained polygons
+    /*
+    ================
+    idCollisionModelManagerLocal::R_ChoppedAwayByProcBSP
+    ================
+    */
     private fun R_ChoppedAwayByProcBSP(
         nodeNum: Int, w: idFixedWinding?, normal: idVec3, origin: idVec3, radius: Float
     ): Boolean {
@@ -5207,6 +5491,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return curretnNodenUm >= 0
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::ChoppedAwayByProcBSP
+    ================
+    */
     private fun ChoppedAwayByProcBSP(w: idFixedWinding, plane: idPlane, contents: Int): Boolean {
         val neww: idFixedWinding
         val bounds = idBounds()
@@ -5335,8 +5624,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                             )
                             return
                         }
-                        // store the front winding in the temporary list
-                        cm_tmpList!!.w[cm_tmpList!!.numWindings] = back
+                        // store the back winding in the temporary list
+                        // FIX: Must copy — C++ value-copies into the array, Kotlin would alias
+                        cm_tmpList!!.w[cm_tmpList!!.numWindings] = idFixedWinding(back)
                         cm_tmpList!!.numWindings++
                         chopped = true
                     }
@@ -5389,6 +5679,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         list.numWindings = cm_outList!!.numWindings
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::R_ChopWindingListWithTreeBrushes
+    ================
+    */
     private fun R_ChopWindingListWithTreeBrushes(list: cm_windingList_s, node: cm_node_s) {
         var currentNode = node
         var i: Int
@@ -5536,6 +5831,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          ===============================================================================
          */
     // creation of axial BSP tree
+    /*
+    ================
+    idCollisionModelManagerLocal::AllocModel
+    ================
+    */
     private fun AllocModel(): cm_model_s {
         val model: cm_model_s
         model = cm_model_s()
@@ -5568,6 +5868,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return model
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::AllocNode
+    ================
+    */
     private fun AllocNode(model: cm_model_s, blockSize: Int): cm_node_s {
         var i: Int
         var node: cm_node_s
@@ -5592,6 +5897,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return node
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::AllocPolygonReference
+    ================
+    */
     private fun AllocPolygonReference(model: cm_model_s, blockSize: Int): cm_polygonRef_s {
         var i: Int
         var pref: cm_polygonRef_s
@@ -5615,6 +5925,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return pref
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::AllocBrushReference
+    ================
+    */
     private fun AllocBrushReference(model: cm_model_s, blockSize: Int): cm_brushRef_s {
         var i: Int
         var bref: cm_brushRef_s
@@ -5638,6 +5953,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return bref
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::AllocPolygon
+    ================
+    */
     private fun AllocPolygon(model: cm_model_s, numEdges: Int): cm_polygon_s {
         val poly: cm_polygon_s
         val size: Int
@@ -5650,6 +5970,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return poly
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::AllocBrush
+    ================
+    */
     private fun AllocBrush(model: cm_model_s, numPlanes: Int): cm_brush_s {
         val brush: cm_brush_s
         val size: Int
@@ -5662,6 +5987,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return brush
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::AddPolygonToNode
+    ================
+    */
     private fun AddPolygonToNode(model: cm_model_s, node: cm_node_s, p: cm_polygon_s) {
         val pref: cm_polygonRef_s
         pref = AllocPolygonReference(
@@ -5674,6 +6004,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         model.numPolygonRefs++
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::AddBrushToNode
+    ================
+    */
     private fun AddBrushToNode(model: cm_model_s, node: cm_node_s, b: cm_brush_s) {
         val bref: cm_brushRef_s?
         bref = AllocBrushReference(
@@ -5686,6 +6021,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         model.numBrushRefs++
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::SetupTrmModelStructure
+    ================
+    */
     private fun SetupTrmModelStructure() {
         var i: Int
         val node: cm_node_s?
@@ -5735,6 +6075,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         trmBrushes[0]!!.b!!.numPlanes = 0
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::R_FilterPolygonIntoTree
+    ================
+    */
     private fun R_FilterPolygonIntoTree(
         model: cm_model_s, node: cm_node_s, pref: cm_polygonRef_s?, p: cm_polygon_s
     ) {
@@ -5761,6 +6106,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::R_FilterBrushIntoTree
+    ================
+    */
     private fun R_FilterBrushIntoTree(model: cm_model_s, node: cm_node_s, pref: cm_brushRef_s?, b: cm_brush_s) {
         var currentNode = node
         while (currentNode.planeType != -1) {
@@ -5826,12 +6176,12 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         model.numNodes += 2
         // set front node bounds
         frontBounds = idBounds(bounds)
-        frontBounds[0][planeType._val] = planeDist._val
+        frontBounds[0][planeType.integerValue] = planeDist._val
         // set back node bounds
         backBounds = idBounds(bounds)
-        backBounds[1][planeType._val] = planeDist._val
+        backBounds[1][planeType.integerValue] = planeDist._val
         //
-        node.planeType = planeType._val
+        node.planeType = planeType.integerValue
         node.planeDist = planeDist._val
         node.children[0] = frontNode
         node.children[1] = backNode
@@ -5881,6 +6231,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return node
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::CreateAxialBSPTree
+    ================
+    */
     private fun CreateAxialBSPTree(model: cm_model_s, node: cm_node_s): cm_node_s {
         var currentNode = node
         var pref: cm_polygonRef_s?
@@ -5913,6 +6268,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          ===============================================================================
          */
     // creation of raw polygons
+    /*
+    ================
+    idCollisionModelManagerLocal::SetupHash
+    ================
+    */
     private fun SetupHash() {
         if (null == cm_vertexHash) {
             cm_vertexHash = idHashIndex(VERTEX_HASH_SIZE, 1024)
@@ -5932,6 +6292,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::ShutdownHash
+    ================
+    */
     private fun ShutdownHash() {
         cm_vertexHash = null
         cm_edgeHash = null
@@ -5940,6 +6305,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         cm_windingList = null
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::ClearHash
+    ================
+    */
     private fun ClearHash(bounds: idBounds) {
         var i: Int
         val f: Float
@@ -5964,6 +6334,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::HashVec
+    ================
+    */
     private fun HashVec(vec: idVec3): Int {/*
              int x, y;
 
@@ -5980,6 +6355,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return x + y * VERTEX_HASH_BOXSIZE + z and VERTEX_HASH_SIZE - 1
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::GetVertex
+    ================
+    */
     private fun GetVertex(model: cm_model_s, v: idVec3, vertexNum: CInt): Boolean {
         var i: Int
         val hashKey: Int
@@ -6004,7 +6384,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     vert[0] - p[0]
                 ) < VERTEX_EPSILON && abs(vert[1] - p[1]) < VERTEX_EPSILON
             ) {
-                vertexNum._val = (vn)
+                vertexNum.integerValue = (vn)
                 return true
             }
             vn = cm_vertexHash!!.Next(vn)
@@ -6021,7 +6401,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
         model.vertices!![model.numVertices].p.set(vert)
         model.vertices!![model.numVertices].checkcount = 0
-        vertexNum._val = (model.numVertices)
+        vertexNum.integerValue = (model.numVertices)
         // add vertice to hash
         cm_vertexHash!!.Add(hashKey, model.numVertices)
         //
@@ -6029,6 +6409,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return false
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::GetEdge
+    ================
+    */
     private fun GetEdge(model: cm_model_s, v1: idVec3, v2: idVec3, edgeNum: IntArray, v1num: CInt): Boolean {
         return GetEdge(model, v1, v2, edgeNum, 0, v1num)
     }
@@ -6046,18 +6431,18 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         if (model.numEdges == 0) {
             model.numEdges = 1
         }
-        found = if (v1num._val != -1) {
+        found = if (v1num.integerValue != -1) {
             true
         } else {
             GetVertex(model, v1, v1num)
         }
         found = found and GetVertex(model, v2, v2num)
         // if both vertices are the same or snapped onto each other
-        if (v1num._val == v2num._val) {
+        if (v1num.integerValue == v2num.integerValue) {
             edgeNum[edgeOffset] = 0
             return true
         }
-        hashKey = cm_edgeHash!!.GenerateKey(v1num._val, v2num._val)
+        hashKey = cm_edgeHash!!.GenerateKey(v1num.integerValue, v2num.integerValue)
         // if both vertices where already stored
         if (found) {
             e = cm_edgeHash!!.First(hashKey)
@@ -6069,8 +6454,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     continue
                 }
                 vertexNum = model.edges!![e].vertexNum
-                if (vertexNum[0] == v2num._val) {
-                    if (vertexNum[1] == v1num._val) {
+                if (vertexNum[0] == v2num.integerValue) {
+                    if (vertexNum[1] == v1num.integerValue) {
                         // negative for a reversed edge
                         edgeNum[edgeOffset] = -e
                         break
@@ -6095,8 +6480,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             cm_edgeHash!!.ResizeIndex(model.maxEdges)
         }
         // setup edge
-        model.edges!![model.numEdges].vertexNum[0] = v1num._val
-        model.edges!![model.numEdges].vertexNum[1] = v2num._val
+        model.edges!![model.numEdges].vertexNum[0] = v1num.integerValue
+        model.edges!![model.numEdges].vertexNum[1] = v2num.integerValue
         model.edges!![model.numEdges].internal = false
         model.edges!![model.numEdges].checkcount = 0
         model.edges!![model.numEdges].numUsers = 1 // used by one polygon atm
@@ -6109,6 +6494,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return false
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::CreatePolygon
+    ================
+    */
     private fun CreatePolygon(
         model: cm_model_s,
         w: idFixedWinding,
@@ -6126,7 +6516,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
         // turn the winding into a sequence of edges
         numPolyEdges = 0
-        v1num._val = (-1) // first vertex unknown
+        v1num.integerValue = (-1) // first vertex unknown
         i = 0
         j = 1
         while (i < w.GetNumPoints()) {
@@ -6136,7 +6526,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             GetEdge(model, w[i].ToVec3(), w[j].ToVec3(), polyEdges, numPolyEdges, v1num)
             if (polyEdges[numPolyEdges] != 0) {
                 // last vertex of this edge is the first vertex of the next edge
-                v1num._val = (model.edges!![abs(polyEdges[numPolyEdges])].vertexNum[INTSIGNBITNOTSET(
+                v1num.integerValue = (model.edges!![abs(polyEdges[numPolyEdges])].vertexNum[INTSIGNBITNOTSET(
                     polyEdges[numPolyEdges]
                 )])
                 // this edge is valid so keep it
@@ -6231,6 +6621,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::CalculateEdgeNormals
+    ================
+    */
     private fun CalculateEdgeNormals(model: cm_model_s, node: cm_node_s) {
         var currentNode = node
         var pref: cm_polygonRef_s?
@@ -6294,6 +6689,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::CreatePatchPolygons
+    ================
+    */
     private fun CreatePatchPolygons(
         model: cm_model_s, mesh: idSurface_Patch, material: idMaterial, primitiveNum: Int
     ) {
@@ -6359,6 +6759,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::ConvertPatch
+    ================
+    */
     private fun ConvertPatch(model: cm_model_s, patch: idMapPatch, primitiveNum: Int) {
         val material: idMaterial
         val cp: idSurface_Patch?
@@ -6386,6 +6791,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         CreatePatchPolygons(model, cp, material, primitiveNum)
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::ConvertBrushSides
+    ================
+    */
     private fun ConvertBrushSides(model: cm_model_s, mapBrush: idMapBrush, primitiveNum: Int) {
         var i: Int
         var j: Int
@@ -6426,6 +6836,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::ConvertBrush
+    ================
+    */
     private fun ConvertBrush(model: cm_model_s, mapBrush: idMapBrush, primitiveNum: Int) {
         var i: Int
         var j: Int
@@ -6488,19 +6903,25 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         AddBrushToNode(model, model.node!!, brush)
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::PrintModelInfo
+    ================
+    */
     private fun PrintModelInfo(model: cm_model_s) {
+        // FIX: Added sizeof multipliers — were commented out, producing wrong KB values
         Common.common.Printf(
-            "%6d vertices (%d KB)\n", model.numVertices, model.numVertices /* sizeof(cm_vertex_t)*/ shr 10
+            "%6d vertices (%d KB)\n", model.numVertices, model.numVertices * cm_vertex_s.BYTES shr 10
         )
-        Common.common.Printf("%6d edges (%d KB)\n", model.numEdges, model.numEdges /* sizeof(cm_edge_t)*/ shr 10)
+        Common.common.Printf("%6d edges (%d KB)\n", model.numEdges, model.numEdges * cm_edge_s.BYTES shr 10)
         Common.common.Printf("%6d polygons (%d KB)\n", model.numPolygons, model.polygonMemory shr 10)
         Common.common.Printf("%6d brushes (%d KB)\n", model.numBrushes, model.brushMemory shr 10)
-        Common.common.Printf("%6d nodes (%d KB)\n", model.numNodes, model.numNodes /* sizeof(cm_node_t)*/ shr 10)
+        Common.common.Printf("%6d nodes (%d KB)\n", model.numNodes, model.numNodes * cm_node_s.BYTES shr 10)
         Common.common.Printf(
-            "%6d polygon refs (%d KB)\n", model.numPolygonRefs, model.numPolygonRefs /* sizeof(cm_polygonRef_t)*/ shr 10
+            "%6d polygon refs (%d KB)\n", model.numPolygonRefs, model.numPolygonRefs * cm_polygonRef_s.BYTES shr 10
         )
         Common.common.Printf(
-            "%6d brush refs (%d KB)\n", model.numBrushRefs, model.numBrushRefs /* sizeof(cm_brushRef_t)*/ shr 10
+            "%6d brush refs (%d KB)\n", model.numBrushRefs, model.numBrushRefs * cm_brushRef_s.BYTES shr 10
         )
         Common.common.Printf("%6d internal edges\n", model.numInternalEdges)
         Common.common.Printf("%6d sharp edges\n", model.numSharpEdges)
@@ -6509,6 +6930,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         Common.common.Printf("%6d KB total memory used\n", model.usedMemory shr 10)
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::AccumulateModelInfo
+    ================
+    */
     private fun AccumulateModelInfo(model: cm_model_s) {
         var i: Int
 
@@ -6534,6 +6960,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::RemapEdges
+    ================
+    */
     private fun RemapEdges(node: cm_node_s, edgeRemap: IntArray) {
         var currentNode = node
         var pref: cm_polygonRef_s?
@@ -6651,6 +7082,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::FinishModel
+    ================
+    */
     private fun FinishModel(model: cm_model_s) {
         // try to merge polygons
         checkCount++
@@ -6675,6 +7111,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             (model.numVertices * cm_vertex_s.BYTES + model.numEdges * cm_edge_s.BYTES + model.polygonMemory + model.brushMemory + model.numNodes * cm_node_s.BYTES + model.numPolygonRefs * cm_polygonRef_s.BYTES + model.numBrushRefs * cm_brushRef_s.BYTES)
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::BuildModels
+    ================
+    */
     private fun BuildModels(mapFile: idMapFile) {
         var i: Int
         var mapEnt: idMapEntity?
@@ -6722,6 +7163,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         Common.common.Printf("%d msec to load collision data.\n", timer.Milliseconds())
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::FindModel
+    ================
+    */
     private /*cmHandle_t*/   fun FindModel(name: idStr): Int {
         var i: Int
 
@@ -6739,6 +7185,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         } else -1
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::CollisionModelForMapEntity
+    ================
+    */
     private fun CollisionModelForMapEntity(mapEnt: idMapEntity): cm_model_s? {    // brush/patch model from .map
         val model: cm_model_s?
         val bounds = idBounds()
@@ -6769,8 +7220,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         val maxVertices = CInt()
         val maxEdges = CInt()
         CM_EstimateVertsAndEdges(mapEnt, maxVertices, maxEdges)
-        model.maxVertices = maxVertices._val
-        model.maxEdges = maxEdges._val
+        model.maxVertices = maxVertices.integerValue
+        model.maxEdges = maxEdges.integerValue
         model.numVertices = 0
         model.numEdges = 0
         model.vertices = cm_vertex_s.generateArray(model.maxVertices)
@@ -6833,6 +7284,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return model
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::LoadRenderModel
+    ================
+    */
     private fun LoadRenderModel(fileName: idStr): cm_model_s? {                    // ASE/LWO models
         var i: Int
         var j: Int
@@ -6938,6 +7394,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return model
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::TrmFromModel_r
+    ================
+    */
     private fun TrmFromModel_r(trm: idTraceModel, node: cm_node_s): Boolean {
         var currentNode = node
         var pref: cm_polygonRef_s?
@@ -7104,6 +7565,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          */
     // CollisionMap_files.cpp
     // writing
+    /*
+    ================
+    idCollisionModelManagerLocal::WriteNodes
+    ================
+    */
     private fun WriteNodes(fp: idFile, node: cm_node_s) {
         fp.WriteFloatString("\t( %d %f )\n", node.planeType, node.planeDist)
         if (node.planeType != -1) {
@@ -7112,6 +7578,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::CountPolygonMemory
+    ================
+    */
     private fun CountPolygonMemory(node: cm_node_s): Int {
         var pref: cm_polygonRef_s?
         var p: cm_polygon_s
@@ -7135,6 +7606,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return memory
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::WritePolygons
+    ================
+    */
     private fun WritePolygons(fp: idFile, node: cm_node_s) {
         var pref: cm_polygonRef_s?
         var p: cm_polygon_s
@@ -7171,6 +7647,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::CountBrushMemory
+    ================
+    */
     private fun CountBrushMemory(node: cm_node_s): Int {
         var bref: cm_brushRef_s?
         var b: cm_brush_s
@@ -7194,6 +7675,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return memory
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::WriteBrushes
+    ================
+    */
     private fun WriteBrushes(fp: idFile, node: cm_node_s) {
         var bref: cm_brushRef_s?
         var b: cm_brush_s
@@ -7232,6 +7718,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::WriteCollisionModel
+    ================
+    */
     private fun WriteCollisionModel(fp: idFile, model: cm_model_s) {
         var i: Int
         val polygonMemory: Int
@@ -7288,6 +7779,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         fp.WriteFloatString("}\n")
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::WriteCollisionModelsToFile
+    ================
+    */
     private fun WriteCollisionModelsToFile(filename: String, firstModel: Int, lastModel: Int, mapFileCRC: Long) {
         var i: Int
         val fp: idFile?
@@ -7326,6 +7822,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
          ===============================================================================
          */
     // loading
+    /*
+    ================
+    idCollisionModelManagerLocal::ParseNodes
+    ================
+    */
     private fun ParseNodes(src: idLexer, model: cm_model_s, parent: cm_node_s?): cm_node_s {
         model.numNodes++
         val node: cm_node_s = AllocNode(
@@ -7345,6 +7846,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return node
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::ParseVertices
+    ================
+    */
     private fun ParseVertices(src: idLexer, model: cm_model_s) {
         var i: Int
         src.ExpectTokenString("{")
@@ -7362,6 +7868,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         src.ExpectTokenString("}")
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::ParseEdges
+    ================
+    */
     private fun ParseEdges(src: idLexer, model: cm_model_s) {
         var i: Int
         src.ExpectTokenString("{")
@@ -7386,6 +7897,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         src.ExpectTokenString("}")
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::ParsePolygons
+    ================
+    */
     private fun ParsePolygons(src: idLexer, model: cm_model_s) {
         var p: cm_polygon_s
         var i: Int
@@ -7425,6 +7941,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::ParseBrushes
+    ================
+    */
     private fun ParseBrushes(src: idLexer, model: cm_model_s) {
         var b: cm_brush_s?
         var i: Int
@@ -7467,6 +7988,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::ParseCollisionModel
+    ================
+    */
     private fun ParseCollisionModel(src: idLexer): Boolean {
         val model: cm_model_s
         val token = idToken()
@@ -7521,6 +8047,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     }
 
     //
+    /*
+    ================
+    idCollisionModelManagerLocal::LoadCollisionModelFile
+    ================
+    */
     private fun LoadCollisionModelFile(name: idStr, mapFileCRC: Long): Boolean {
         val fileName: idStr
         val token = idToken()
@@ -7545,14 +8076,14 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             )
             return false
         }
-        if (0 == src.ExpectTokenType(Token.TT_NUMBER, Token.TT_INTEGER, token)) {
+        if (!src.ExpectTokenType(Token.TT_NUMBER, Token.TT_INTEGER, token)) {
             Common.common.Warning("%s has no map file CRC", fileName)
             return false
         }
         crc = token.GetUnsignedLongValue()
         if (mapFileCRC != 0L && crc != mapFileCRC) {
             Common.common.Printf("%s is out of date\n", fileName)
-            Common.common.Warning("Possibly a bug in the calculation of CRC values. Oh well...\n", fileName)
+            // Removed non-C++ debug warning about CRC values
             src = null
             return false
         }
@@ -7574,6 +8105,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     }
 
     // CollisionMap_debug
+    /*
+    ================
+    idCollisionModelManagerLocal::ContentsFromString
+    ================
+    */
     private fun ContentsFromString(string: String): Int {
         var i: Int
         var contents = 0
@@ -7598,6 +8134,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return contents
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::StringFromContents
+    ================
+    */
     private fun StringFromContents(contents: Int): String {
         var i: Int
         var length = 0
@@ -7619,6 +8160,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         return TempDump.ctos(contentsString)
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::DrawEdge
+    ================
+    */
     private fun DrawEdge(model: cm_model_s, edgeNum: Int, origin: idVec3, axis: idMat3) {
         val side: Boolean
         val edge: cm_edge_s?
@@ -7659,6 +8205,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::DrawPolygon
+    ================
+    */
     private fun DrawPolygon(
         model: cm_model_s, p: cm_polygon_s, origin: idVec3, axis: idMat3, viewOrigin: idVec3
     ) {
@@ -7728,6 +8279,11 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
     }
 
+    /*
+    ================
+    idCollisionModelManagerLocal::DrawNodePolygons
+    ================
+    */
     private fun DrawNodePolygons(
         model: cm_model_s, node: cm_node_s, origin: idVec3, axis: idMat3, viewOrigin: idVec3, radius: Float
     ) {

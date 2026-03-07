@@ -875,7 +875,7 @@ object Game {
             }
             args.Set("articulatedFigure", fileName)
             args.Set("nodrop", "1")
-            ent = Game_local.gameLocal.SpawnEntityType(idAFEntity_Generic::class.java, args) as idAFEntity_Generic
+            ent = Game_local.gameLocal.SpawnEntityType(idAFEntity_Generic.Type, args) as idAFEntity_Generic
 
             // always update this entity
             ent.BecomeActive(TH_THINK)

@@ -8,6 +8,8 @@
 
 package neo.Game.Physics
 
+import neo.Game.GameSys.Class
+import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
@@ -185,7 +187,14 @@ object Physics_Player {
 
         // walk movement
         private var walking: Boolean
+
+        /*
+         ================
+         idPhysics_Player::Save
+         ================
+         */
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             idPhysics_Player_SavePState(savefile, current)
             idPhysics_Player_SavePState(savefile, saved)
             savefile.WriteFloat(walkSpeed)
@@ -210,9 +219,17 @@ object Physics_Player {
             savefile.WriteInt(waterType)
         }
 
+        /*
+         ================
+         idPhysics_Player::Restore
+         ================
+         */
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
+
             idPhysics_Player_RestorePState(savefile, current)
             idPhysics_Player_RestorePState(savefile, saved)
+
             walkSpeed = savefile.ReadFloat()
             crouchSpeed = savefile.ReadFloat()
             maxStepHeight = savefile.ReadFloat()
@@ -228,40 +245,75 @@ object Physics_Player {
             walking = savefile.ReadBool()
             groundPlane = savefile.ReadBool()
             savefile.ReadTrace(groundTrace)
-            savefile.ReadMaterial(groundMaterial as Material.idMaterial)
+            groundMaterial = savefile.ReadMaterial()
             ladder = savefile.ReadBool()
             savefile.ReadVec3(ladderNormal)
             waterLevel = waterLevel_t.values()[savefile.ReadInt()]
             waterType = savefile.ReadInt()
         }
 
+        /*
+         ================
+         idPhysics_Player::SetSpeed
+         ================
+         */
         // initialisation
         fun SetSpeed(newWalkSpeed: Float, newCrouchSpeed: Float) {
             walkSpeed = newWalkSpeed
             crouchSpeed = newCrouchSpeed
         }
 
+        /*
+         ================
+         idPhysics_Player::SetMaxStepHeight
+         ================
+         */
         fun SetMaxStepHeight(newMaxStepHeight: Float) {
             maxStepHeight = newMaxStepHeight
         }
 
+        /*
+         ================
+         idPhysics_Player::GetMaxStepHeight
+         ================
+         */
         fun GetMaxStepHeight(): Float {
             return maxStepHeight
         }
 
+        /*
+         ================
+         idPhysics_Player::SetMaxJumpHeight
+         ================
+         */
         fun SetMaxJumpHeight(newMaxJumpHeight: Float) {
             maxJumpHeight = newMaxJumpHeight
         }
 
+        /*
+         ================
+         idPhysics_Player::SetMovementType
+         ================
+         */
         fun SetMovementType(type: pmtype_t) {
             current.movementType = TempDump.etoi(type)
         }
 
+        /*
+         ================
+         idPhysics_Player::SetPlayerInput
+         ================
+         */
         fun SetPlayerInput(cmd: usercmd_t, newViewAngles: idAngles) {
             command = cmd
             viewAngles.set(newViewAngles) // can't use cmd.angles cause of the delta_angles
         }
 
+        /*
+         ================
+         idPhysics_Player::SetKnockBack
+         ================
+         */
         fun SetKnockBack(knockBackTime: Int) {
             if (current.movementTime != 0) {
                 return
@@ -270,44 +322,94 @@ object Physics_Player {
             current.movementTime = knockBackTime
         }
 
+        /*
+         ================
+         idPhysics_Player::SetDebugLevel
+         ================
+         */
         fun SetDebugLevel(set: Boolean) {
             debugLevel = TempDump.btoi(set)
         }
 
+        /*
+         ================
+         idPhysics_Player::GetWaterLevel
+         ================
+         */
         // feed back from last physics frame
         fun GetWaterLevel(): waterLevel_t {
             return waterLevel
         }
 
+        /*
+         ================
+         idPhysics_Player::GetWaterType
+         ================
+         */
         fun GetWaterType(): Int {
             return waterType
         }
 
+        /*
+         ================
+         idPhysics_Player::HasJumped
+         ================
+         */
         fun HasJumped(): Boolean {
             return (current.movementFlags and PMF_JUMPED) != 0
         }
 
+        /*
+         ================
+         idPhysics_Player::HasSteppedUp
+         ================
+         */
         fun HasSteppedUp(): Boolean {
             return (current.movementFlags and (PMF_STEPPED_UP or PMF_STEPPED_DOWN)) != 0
         }
 
+        /*
+         ================
+         idPhysics_Player::GetStepUp
+         ================
+         */
         fun GetStepUp(): Float {
             return current.stepUp
         }
 
+        /*
+         ================
+         idPhysics_Player::IsCrouching
+         ================
+         */
         fun IsCrouching(): Boolean {
             return (current.movementFlags and PMF_DUCKED) != 0
         }
 
+        /*
+         ================
+         idPhysics_Player::OnLadder
+         ================
+         */
         fun OnLadder(): Boolean {
             return ladder
         }
 
+        /*
+         ================
+         idPhysics_Player::GetOrigin
+         ================
+         */
         // != GetOrigin
         fun PlayerGetOrigin(): idVec3 {
             return current.origin
         }
 
+        /*
+         ================
+         idPhysics_Player::Evaluate
+         ================
+         */
         // common physics interface
         override fun Evaluate(timeStepMSec: Int, endTimeMSec: Int): Boolean {
             val masterOrigin = idVec3()
@@ -342,11 +444,27 @@ object Physics_Player {
             return true //( current.origin != oldOrigin );
         }
 
+        /*
+         ================
+         idPhysics_Player::UpdateTime
+         ================
+         */
         override fun UpdateTime(endTimeMSec: Int) {}
+
+        /*
+         ================
+         idPhysics_Player::GetTime
+         ================
+         */
         override fun GetTime(): Int {
             return Game_local.gameLocal.time
         }
 
+        /*
+         ================
+         idPhysics_Player::GetImpactInfo
+         ================
+         */
         override fun GetImpactInfo(id: Int, point: idVec3): impactInfo_s {
             val info = impactInfo_s()
             info.invMass = invMass
@@ -356,30 +474,60 @@ object Physics_Player {
             return info
         }
 
+        /*
+         ================
+         idPhysics_Player::ApplyImpulse
+         ================
+         */
         override fun ApplyImpulse(id: Int, point: idVec3, impulse: idVec3) {
             if (current.movementType != TempDump.etoi(pmtype_t.PM_NOCLIP)) {
                 current.velocity.plusAssign(impulse.times(invMass))
             }
         }
 
+        /*
+         ================
+         idPhysics_Player::IsAtRest
+         ================
+         */
         override fun IsAtRest(): Boolean {
             return false
         }
 
+        /*
+         ================
+         idPhysics_Player::GetRestStartTime
+         ================
+         */
         override fun GetRestStartTime(): Int {
             return -1
         }
 
+        /*
+         ================
+         idPhysics_Player::SaveState
+         ================
+         */
         override fun SaveState() {
             saved.set(current)
         }
 
+        /*
+         ================
+         idPhysics_Player::RestoreState
+         ================
+         */
         override fun RestoreState() {
             current.set(saved)
             clipModel!!.Link(Game_local.gameLocal.clip, self, 0, current.origin, clipModel!!.GetAxis())
             EvaluateContacts()
         }
 
+        /*
+         ================
+         idPhysics_Player::SetOrigin
+         ================
+         */
         override fun SetOrigin(newOrigin: idVec3, id: Int /*= -1*/) {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
@@ -393,16 +541,31 @@ object Physics_Player {
             clipModel!!.Link(Game_local.gameLocal.clip, self, 0, newOrigin, clipModel!!.GetAxis())
         }
 
+        /*
+         ================
+         idPhysics_Player::SetAxis
+         ================
+         */
         override fun SetAxis(newAxis: idMat3, id: Int /*= -1*/) {
             clipModel!!.Link(Game_local.gameLocal.clip, self, 0, clipModel!!.GetOrigin(), newAxis)
         }
 
+        /*
+         ================
+         idPhysics_Player::Translate
+         ================
+         */
         override fun Translate(translation: idVec3, id: Int /*= -1*/) {
             current.localOrigin.plusAssign(translation)
             current.origin.plusAssign(translation)
             clipModel!!.Link(Game_local.gameLocal.clip, self, 0, current.origin, clipModel!!.GetAxis())
         }
 
+        /*
+         ================
+         idPhysics_Player::Rotate
+         ================
+         */
         override fun Rotate(rotation: idRotation, id: Int /*= -1*/) {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
@@ -422,14 +585,29 @@ object Physics_Player {
             )
         }
 
+        /*
+         ================
+         idPhysics_Player::SetLinearVelocity
+         ================
+         */
         override fun SetLinearVelocity(newLinearVelocity: idVec3, id: Int /*= 0*/) {
             current.velocity.set(newLinearVelocity)
         }
 
+        /*
+         ================
+         idPhysics_Player::GetLinearVelocity
+         ================
+         */
         override fun GetLinearVelocity(id: Int /*= 0*/): idVec3 {
             return current.velocity
         }
 
+        /*
+         ================
+         idPhysics_Player::SetPushed
+         ================
+         */
         override fun SetPushed(deltaTime: Int) {
             val velocity = idVec3()
             val d: Float
@@ -445,6 +623,11 @@ object Physics_Player {
             current.pushVelocity.plusAssign(velocity)
         }
 
+        /*
+         ================
+         idPhysics_Player::GetPushedLinearVelocity
+         ================
+         */
         override fun GetPushedLinearVelocity(id: Int /*= 0*/): idVec3 {
             return current.pushVelocity
         }
@@ -453,6 +636,11 @@ object Physics_Player {
             return GetPushedLinearVelocity(0)
         }
 
+        /*
+         ================
+         idPhysics_Player::ClearPushedVelocity
+         ================
+         */
         fun ClearPushedVelocity() {
             current.pushVelocity.Zero()
         }
@@ -483,6 +671,11 @@ object Physics_Player {
             }
         }
 
+        /*
+         ================
+         idPhysics_Player::WriteToSnapshot
+         ================
+         */
         override fun WriteToSnapshot(msg: idBitMsgDelta) {
             msg.WriteFloat(current.origin[0])
             msg.WriteFloat(current.origin[1])
@@ -529,6 +722,11 @@ object Physics_Player {
             msg.WriteDeltaLong(0, current.movementTime)
         }
 
+        /*
+         ================
+         idPhysics_Player::ReadFromSnapshot
+         ================
+         */
         override fun ReadFromSnapshot(msg: idBitMsgDelta) {
             current.origin[0] = msg.ReadFloat()
             current.origin[1] = msg.ReadFloat()
@@ -639,6 +837,13 @@ object Physics_Player {
             }
         }
 
+        /*
+         ==================
+         idPhysics_Player::SlideMove
+
+         Returns true if the velocity was clipped in some way
+         ==================
+         */
         private fun SlideMove(gravity: Boolean, stepUp: Boolean, stepDown: Boolean, push: Boolean): Boolean {
             var i: Int
             var j: Int
@@ -659,7 +864,7 @@ object Physics_Player {
             val endVelocity = idVec3()
             val endClipVelocity = idVec3()
             val clipVelocity = idVec3()
-            var trace: trace_s = trace_s()
+            val trace: trace_s = trace_s()
             val stepTrace = trace_s()
             val downTrace = trace_s()
             var nearGround: Boolean
@@ -797,7 +1002,7 @@ object Physics_Player {
                                 current.origin.set(downTrace.endpos)
                                 current.movementFlags = current.movementFlags or PMF_STEPPED_UP
                                 current.velocity.timesAssign(PM_STEPSCALE)
-                                trace = stepTrace
+                                trace.set(stepTrace)
                                 stepped = true
                             }
                         }
@@ -934,7 +1139,6 @@ object Physics_Player {
                             // stop dead at a tripple plane interaction
                             current.velocity.set(vec3_origin)
                             return true
-                            k++
                         }
                         j++
                     }
@@ -943,7 +1147,6 @@ object Physics_Player {
                     current.velocity.set(clipVelocity)
                     endVelocity.set(endClipVelocity)
                     break
-                    i++
                 }
                 bumpcount++
             }
@@ -1061,6 +1264,11 @@ object Physics_Player {
             }
         }
 
+        /*
+         ===================
+         idPhysics_Player::WaterMove
+         ===================
+         */
         private fun WaterMove() {
             val wishvel = idVec3()
             var wishspeed: Float
@@ -1102,6 +1310,11 @@ object Physics_Player {
             SlideMove(false, true, false, false)
         }
 
+        /*
+         ===================
+         idPhysics_Player::FlyMove
+         ===================
+         */
         private fun FlyMove() {
             val wishvel = idVec3()
             val wishspeed: Float
@@ -1126,6 +1339,11 @@ object Physics_Player {
             SlideMove(false, false, false, false)
         }
 
+        /*
+         ===================
+         idPhysics_Player::AirMove
+         ===================
+         */
         private fun AirMove() {
             val wishvel = idVec3()
             val wishdir = idVec3()
@@ -1160,6 +1378,11 @@ object Physics_Player {
             SlideMove(true, false, false, false)
         }
 
+        /*
+         ===================
+         idPhysics_Player::WalkMove
+         ===================
+         */
         private fun WalkMove() {
             val wishvel = idVec3()
             val wishdir = idVec3()
@@ -1255,6 +1478,11 @@ object Physics_Player {
             SlideMove(false, true, true, true)
         }
 
+        /*
+         ==============
+         idPhysics_Player::DeadMove
+         ==============
+         */
         private fun DeadMove() {
             var forward: Float
             if (!walking) {
@@ -1272,6 +1500,11 @@ object Physics_Player {
             }
         }
 
+        /*
+         ===============
+         idPhysics_Player::NoclipMove
+         ===============
+         */
         private fun NoclipMove() {
             var speed: Float
             val drop: Float
@@ -1314,12 +1547,16 @@ object Physics_Player {
             current.origin.plusAssign(frametime * current.velocity)
         }
 
+        /*
+         ===============
+         idPhysics_Player::SpectatorMove
+         ===============
+         */
         private fun SpectatorMove() {
             val wishvel = idVec3()
             val wishspeed: Float
             val wishdir = idVec3()
             val scale: Float
-            idVec3()
 
             // fly movement
             Friction()
@@ -1338,8 +1575,12 @@ object Physics_Player {
             SlideMove(false, false, false, false)
         }
 
+        /*
+         ============
+         idPhysics_Player::LadderMove
+         ============
+         */
         private fun LadderMove() {
-            idVec3()
             val wishvel = idVec3()
             val right = idVec3()
             val wishspeed: Float
@@ -1408,6 +1649,11 @@ object Physics_Player {
             SlideMove(false, command.forwardmove > 0, false, false)
         }
 
+        /*
+         =============
+         idPhysics_Player::CorrectAllSolid
+         =============
+         */
         private fun CorrectAllSolid(trace: trace_s, contents: Int) {
             if (debugLevel != 0) {
                 Game_local.gameLocal.Printf("%d:allsolid\n", c_pmove)
@@ -1430,10 +1676,14 @@ object Physics_Player {
             }
         }
 
+        /*
+         =============
+         idPhysics_Player::CheckGround
+         =============
+         */
         private fun CheckGround() {
             var i: Int
             val contents: Int
-            idVec3()
             val hadGroundContacts: Boolean
             hadGroundContacts = HasGroundContacts()
 
@@ -1590,6 +1840,11 @@ object Physics_Player {
             }
         }
 
+        /*
+         ================
+         idPhysics_Player::CheckLadder
+         ================
+         */
         private fun CheckLadder() {
             val forward = idVec3()
             val start = idVec3()
@@ -1671,6 +1926,11 @@ object Physics_Player {
             }
         }
 
+        /*
+         =============
+         idPhysics_Player::CheckJump
+         =============
+         */
         private fun CheckJump(): Boolean {
             val addVelocity = idVec3()
             if (command.upmove < 10) {
@@ -1696,6 +1956,11 @@ object Physics_Player {
             return true
         }
 
+        /*
+         =============
+         idPhysics_Player::CheckWaterJump
+         =============
+         */
         private fun CheckWaterJump(): Boolean {
             val spot = idVec3()
             var cont: Int
@@ -1729,6 +1994,11 @@ object Physics_Player {
             return true
         }
 
+        /*
+         =============
+         idPhysics_Player::SetWaterLevel
+         =============
+         */
         private fun SetWaterLevel() {
             val point = idVec3()
             val bounds: idBounds
@@ -1772,6 +2042,11 @@ object Physics_Player {
             }
         }
 
+        /*
+         ================
+         idPhysics_Player::DropTimers
+         ================
+         */
         private fun DropTimers() {
             // drop misc timing counter
             if (current.movementTime != 0) {
@@ -1784,6 +2059,11 @@ object Physics_Player {
             }
         }
 
+        /*
+         ================
+         idPhysics_Player::MovePlayer
+         ================
+         */
         private fun MovePlayer(msec: Int) {
 
             // this counter lets us debug movement problems with a journal
@@ -1890,17 +2170,19 @@ object Physics_Player {
         }
 
         companion object {
+            val Type = idTypeInfo("idPhysics_Player", "idPhysics_Actor") { idPhysics_Player() }
             // CLASS_PROTOTYPE( idPhysics_Player );
-            /*
-         ==================
-         idPhysics_Player::SlideMove
-
-         Returns true if the velocity was clipped in some way
-         ==================
-         */
             const val MAX_CLIP_PLANES = 5
         }
 
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): Class.idClass = idPhysics_Player()
+
+        /*
+         ================
+         idPhysics_Player::idPhysics_Player
+         ================
+         */
         init {
             //false;
             clipModel = null

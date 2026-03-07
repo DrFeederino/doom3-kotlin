@@ -93,7 +93,7 @@ object Push {
             results.fraction = 1.0f
             results.endpos.set(newOrigin)
             results.endAxis.set(clipModel.GetAxis())
-            results.c = contactInfo_t() //memset( &results.c, 0, sizeof( results.c ) );//TODO:
+            results.c = contactInfo_t()
             if (translation == vec3_origin) {
                 return totalMass
             }
@@ -259,7 +259,6 @@ object Push {
                     clipModel.Disable()
                 }
                 return totalMass
-                i++
             }
             if (!wasEnabled) {
                 clipModel.Disable()
@@ -300,7 +299,7 @@ object Push {
             results.fraction = 1.0f
             results.endpos.set(clipModel.GetOrigin())
             results.endAxis.set(newAxis)
-            results.c = contactInfo_t() //memset( &results.c, 0, sizeof( results.c ) );//TODOS:
+            results.c = contactInfo_t()
             if (0.0f == rotation.GetAngle()) {
                 return totalMass
             }
@@ -457,7 +456,6 @@ object Push {
                     clipModel.Disable()
                 }
                 return totalMass
-                i++
             }
             if (!wasEnabled) {
                 clipModel.Disable()
@@ -488,7 +486,7 @@ object Push {
             results.fraction = 1.0f
             results.endpos.set(newOrigin)
             results.endAxis.set(newAxis)
-            results.c = contactInfo_t() //memset( &results.c, 0, sizeof( results.c ) );//TODOS:
+            results.c = contactInfo_t()
 
             // translational push
             translation.set(newOrigin.minus(oldOrigin))
@@ -532,11 +530,21 @@ object Push {
             return mass
         }
 
+        /*
+         ============
+         idPush::InitSavingPushedEntityPositions
+         ============
+         */
         // initialize saving the positions of entities being pushed
         fun InitSavingPushedEntityPositions() {
             numPushed = 0
         }
 
+        /*
+         ============
+         idPush::RestorePushedEntityPositions
+         ============
+         */
         // move all pushed entities back to their previous position
         fun RestorePushedEntityPositions() {
             var i: Int
@@ -561,13 +569,17 @@ object Push {
             return numPushed
         }
 
-        //
         // get the ith pushed entity
         fun GetPushedEntity(i: Int): idEntity {
             assert(i >= 0 && i < numPushed)
             return pushed[i].ent
         }
 
+        /*
+         ============
+         idPush::SaveEntityPosition
+         ============
+         */
         private fun SaveEntityPosition(ent: idEntity) {
             var i: Int
 
@@ -599,6 +611,11 @@ object Push {
             numPushed++
         }
 
+        /*
+         ============
+         idPush::RotateEntityToAxial
+         ============
+         */
         private fun RotateEntityToAxial(ent: idEntity, rotationPoint: idVec3): Boolean {
             var i: Int
             val trace = trace_s()
@@ -643,8 +660,11 @@ object Push {
             return false
         }
 
-        //
-        //
+        /*
+         ============
+         idPush::ClipEntityRotation
+         ============
+         */
         private fun ClipEntityRotation(
             trace: trace_s,
             ent: idEntity,
@@ -659,6 +679,11 @@ object Push {
             skip?.Enable()
         }
 
+        /*
+         ============
+         idPush::ClipEntityTranslation
+         ============
+         */
         private fun ClipEntityTranslation(
             trace: trace_s,
             ent: idEntity,
@@ -673,6 +698,11 @@ object Push {
             skip?.Enable()
         }
 
+        /*
+         ============
+         idPush::TryTranslatePushEntity
+         ============
+         */
         private fun TryTranslatePushEntity(
             results: trace_s,
             check: idEntity,
@@ -689,7 +719,7 @@ object Push {
             results.fraction = 1.0f
             results.endpos.set(newOrigin)
             results.endAxis.set(clipModel.GetAxis())
-            results.c = contactInfo_t() //memset( &results.c, 0, sizeof( results.c ) );//TODOS:
+            results.c = contactInfo_t()
 
             // always pushed when standing on the pusher
             if (physics.IsGroundClipModel(clipModel.GetEntity()!!.entityNumber, clipModel.GetId())) {
@@ -785,6 +815,11 @@ object Push {
             return PUSH_OK
         }
 
+        /*
+         ============
+         idPush::TryRotatePushEntity
+         ============
+         */
         private fun TryRotatePushEntity(
             results: trace_s,
             check: idEntity,
@@ -809,7 +844,7 @@ object Push {
             results.fraction = 1.0f
             results.endpos.set(clipModel.GetOrigin())
             results.endAxis.set(newAxis)
-            results.c = contactInfo_t() //memset( &results.c, 0, sizeof( results.c ) );//TODOS:
+            results.c = contactInfo_t()
 
             // always pushed when standing on the pusher
             if (physics.IsGroundClipModel(clipModel.GetEntity()!!.entityNumber, clipModel.GetId())) {
@@ -936,6 +971,11 @@ object Push {
             return PUSH_OK
         }
 
+        /*
+         ============
+         idPush::DiscardEntities
+         ============
+         */
         private fun DiscardEntities(
             entityList: Array<idEntity?>,
             numEntities: Int,

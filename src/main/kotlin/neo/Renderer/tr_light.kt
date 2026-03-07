@@ -689,8 +689,8 @@ object tr_light {
 
             // see if we are suppressing the light in this view
             if (!r_skipSuppress!!.GetBool()) {
-                if ((light.parms.suppressLightInViewID._val != 0
-                            && light.parms.suppressLightInViewID._val == tr.viewDef!!.renderView.viewID)
+                if ((light.parms.suppressLightInViewID.integerValue != 0
+                            && light.parms.suppressLightInViewID.integerValue == tr.viewDef!!.renderView.viewID)
                 ) {
                     if (vLight === tr.viewDef!!.viewLights) {
                         ptr = vLight.next
@@ -702,8 +702,8 @@ object tr_light {
                     light.viewCount = -1
                     continue
                 }
-                if ((light.parms.allowLightInViewID._val != 0
-                            && light.parms.allowLightInViewID._val != tr.viewDef!!.renderView.viewID)
+                if ((light.parms.allowLightInViewID.integerValue != 0
+                            && light.parms.allowLightInViewID.integerValue != tr.viewDef!!.renderView.viewID)
                 ) {
                     if (vLight === tr.viewDef!!.viewLights) {
                         ptr = vLight.next

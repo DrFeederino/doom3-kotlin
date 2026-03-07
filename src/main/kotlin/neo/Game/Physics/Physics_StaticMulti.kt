@@ -9,6 +9,7 @@
 package neo.Game.Physics
 
 import neo.Game.GameSys.Class.idClass
+import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
@@ -52,6 +53,11 @@ object Physics_StaticMulti {
         protected var self // entity using this physics object
                 : idEntity? = null
 
+        /*
+        ================
+        idPhysics_StaticMulti::~idPhysics_StaticMulti
+        ================
+        */
         override fun _deconstructor() {
             if (self != null && self!!.GetPhysics() === this) {
                 self!!.SetPhysics(null)
@@ -63,7 +69,13 @@ object Physics_StaticMulti {
             super._deconstructor()
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::Save
+        ================
+        */
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             var i: Int
             savefile.WriteObject(self as idClass?)
             savefile.WriteInt(current.Num())
@@ -85,20 +97,28 @@ object Physics_StaticMulti {
             savefile.WriteBool(isOrientated)
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::Restore
+        ================
+        */
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
+
             var i: Int
             val num = CInt()
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/self)
+
+            self = savefile.ReadObject() as idEntity?
             savefile.ReadInt(num)
             // FIX: AssureSize without fill value leaves new slots null in Kotlin.
             // C++ default-constructs POD structs. Must create objects for each slot.
             val oldNum = current.Num()
-            current.AssureSize(num._val)
-            for (j in oldNum until num._val) {
+            current.AssureSize(num.integerValue)
+            for (j in oldNum until num.integerValue) {
                 current[j] = staticPState_s()
             }
             i = 0
-            while (i < num._val) {
+            while (i < num.integerValue) {
                 savefile.ReadVec3(current[i].origin)
                 savefile.ReadMat3(current[i].axis)
                 savefile.ReadVec3(current[i].localOrigin)
@@ -106,10 +126,10 @@ object Physics_StaticMulti {
                 i++
             }
             savefile.ReadInt(num)
-            clipModels.SetNum(num._val)
+            clipModels.SetNum(num.integerValue)
             i = 0
-            while (i < num._val) {
-                savefile.ReadClipModel(clipModels[i])
+            while (i < num.integerValue) {
+                clipModels[i] = savefile.ReadClipModel()
                 i++
             }
             hasMaster = savefile.ReadBool()
@@ -117,24 +137,39 @@ object Physics_StaticMulti {
         }
 
 
+        /*
+        ================
+        idPhysics_StaticMulti::RemoveIndex
+        ================
+        */
         fun RemoveIndex(id: Int /*= 0*/, freeClipModel: Boolean = true /*= true*/) {
             if (id < 0 || id >= clipModels.Num()) {
                 return
             }
-            if (freeClipModel) {
+            if (clipModels[id] != null && freeClipModel) {
                 idClipModel.delete(clipModels[id])
-                //clipModels[id] = null
+                clipModels[id] = null
             }
             clipModels.RemoveIndex(id)
             current.RemoveIndex(id)
         }
 
         // common physics interface
+        /*
+        ================
+        idPhysics_StaticMulti::SetSelf
+        ================
+        */
         override fun SetSelf(e: idEntity) {
             assert(e != null)
             self = e
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::SetClipModel
+        ================
+        */
         override fun SetClipModel(model: idClipModel?, density: Float, id: Int /*= 0*/, freeOld: Boolean /*= true*/) {
             var i: Int
             assert(self != null)
@@ -154,7 +189,7 @@ object Physics_StaticMulti {
                 // FIX: C++ passes NULL, not a new clip model
                 clipModels.AssureSize(id + 1, null)
             }
-            if (clipModels[id] !== model && freeOld) {
+            if (clipModels[id] != null && clipModels[id] !== model && freeOld) {
                 idClipModel.delete(clipModels[id])
             }
             clipModels[id] = model
@@ -170,6 +205,11 @@ object Physics_StaticMulti {
             clipModels.SetNum(i + 1, false)
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetClipModel
+        ================
+        */
         override fun GetClipModel(id: Int /*= 0*/): idClipModel? {
             // FIX: C++ also checks clipModels[id] != NULL before returning
             return if (id >= 0 && id < clipModels.Num() && clipModels[id] != null) {
@@ -177,15 +217,36 @@ object Physics_StaticMulti {
             } else Game_local.gameLocal.clip.DefaultClipModel()
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetNumClipModels
+        ================
+        */
         override fun GetNumClipModels(): Int {
             return clipModels.Num()
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::SetMass
+        ================
+        */
         override fun SetMass(mass: Float, id: Int /*= -1*/) {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::GetMass
+        ================
+        */
         override fun GetMass(id: Int /*= -1*/): Float {
             return 0.0f
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::SetContents
+        ================
+        */
         override fun SetContents(contents: Int, id: Int /*= -1*/) {
             var i: Int
             if (id >= 0 && id < clipModels.Num()) {
@@ -199,6 +260,11 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetContents
+        ================
+        */
         override fun GetContents(id: Int /*= -1*/): Int {
             var i: Int
             var contents = 0
@@ -220,11 +286,27 @@ object Physics_StaticMulti {
             return contents
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::SetClipMask
+        ================
+        */
         override fun SetClipMask(mask: Int, id: Int /*= -1*/) {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::GetClipMask
+        ================
+        */
         override fun GetClipMask(id: Int /*= -1*/): Int {
             return 0
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetBounds
+        ================
+        */
         override fun GetBounds(id: Int /*= -1*/): idBounds {
             var i: Int
             if (id >= 0 && id < clipModels.Num()) {
@@ -257,6 +339,11 @@ object Physics_StaticMulti {
             return bounds_zero
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetAbsBounds
+        ================
+        */
         override fun GetAbsBounds(id: Int /*= -1*/): idBounds {
             var i: Int
             if (id >= 0 && id < clipModels.Num()) {
@@ -280,6 +367,11 @@ object Physics_StaticMulti {
             return bounds_zero
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::Evaluate
+        ================
+        */
         override fun Evaluate(timeStepMSec: Int, endTimeMSec: Int): Boolean {
             var i: Int
             val masterOrigin = idVec3()
@@ -304,33 +396,105 @@ object Physics_StaticMulti {
             return false
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::UpdateTime
+        ================
+        */
         override fun UpdateTime(endTimeMSec: Int) {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::GetTime
+        ================
+        */
         override fun GetTime(): Int {
             return 0
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetImpactInfo
+        ================
+        */
         override fun GetImpactInfo(id: Int, point: idVec3): impactInfo_s {
             return impactInfo_s()
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::ApplyImpulse
+        ================
+        */
         override fun ApplyImpulse(id: Int, point: idVec3, impulse: idVec3) {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::AddForce
+        ================
+        */
         override fun AddForce(id: Int, point: idVec3, force: idVec3) {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::Activate
+        ================
+        */
         override fun Activate() {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::PutToRest
+        ================
+        */
         override fun PutToRest() {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::IsAtRest
+        ================
+        */
         override fun IsAtRest(): Boolean {
             return true
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetRestStartTime
+        ================
+        */
         override fun GetRestStartTime(): Int {
             return 0
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::IsPushable
+        ================
+        */
         override fun IsPushable(): Boolean {
             return false
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::SaveState
+        ================
+        */
         override fun SaveState() {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::RestoreState
+        ================
+        */
         override fun RestoreState() {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::SetOrigin
+        ================
+        */
         override fun SetOrigin(newOrigin: idVec3, id: Int /*= -1*/) {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
@@ -353,6 +517,11 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::SetAxis
+        ================
+        */
         override fun SetAxis(newAxis: idMat3, id: Int /*= -1*/) {
             val masterOrigin = idVec3()
             val masterAxis = idMat3()
@@ -380,6 +549,11 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::Translate
+        ================
+        */
         override fun Translate(translation: idVec3, id: Int /*= -1*/) {
             var i: Int
             if (id >= 0 && id < clipModels.Num()) {
@@ -397,6 +571,11 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::Rotate
+        ================
+        */
         override fun Rotate(rotation: idRotation, id: Int /*= -1*/) {
             var i: Int
             val masterOrigin = idVec3()
@@ -436,6 +615,11 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetOrigin
+        ================
+        */
         override fun GetOrigin(id: Int /*= 0*/): idVec3 {
             if (id >= 0 && id < clipModels.Num()) {
                 return current[id].origin
@@ -447,6 +631,11 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetAxis
+        ================
+        */
         override fun GetAxis(id: Int /*= 0*/): idMat3 {
             if (id >= 0 && id < clipModels.Num()) {
                 return current[id].axis
@@ -458,39 +647,94 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::SetLinearVelocity
+        ================
+        */
         override fun SetLinearVelocity(newLinearVelocity: idVec3, id: Int /*= 0*/) {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::SetAngularVelocity
+        ================
+        */
         override fun SetAngularVelocity(newAngularVelocity: idVec3, id: Int /*= 0*/) {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::GetLinearVelocity
+        ================
+        */
         override fun GetLinearVelocity(id: Int /*= 0*/): idVec3 {
             return vec3_origin
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetAngularVelocity
+        ================
+        */
         override fun GetAngularVelocity(id: Int /*= 0*/): idVec3 {
             return vec3_origin
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::SetGravity
+        ================
+        */
         override fun SetGravity(newGravity: idVec3) {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::GetGravity
+        ================
+        */
         override fun GetGravity(): idVec3 {
             return gravity
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetGravityNormal
+        ================
+        */
         override fun GetGravityNormal(): idVec3 {
             return gravityNormal
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::ClipTranslation
+        ================
+        */
         override fun ClipTranslation(results: trace_s, translation: idVec3, model: idClipModel?) {
             results.fraction = 0.0f
             results.endAxis.set(idMat3())
             results.endpos.set(vec3_origin)
             results.c = contactInfo_t()
+            Game_local.gameLocal.Warning("idPhysics_StaticMulti::ClipTranslation called")
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::ClipRotation
+        ================
+        */
         override fun ClipRotation(results: trace_s, rotation: idRotation, model: idClipModel?) {
             results.fraction = 0.0f
             results.endAxis.set(idMat3())
             results.endpos.set(vec3_origin)
             results.c = contactInfo_t()
+            Game_local.gameLocal.Warning("idPhysics_StaticMulti::ClipRotation called")
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::ClipContents
+        ================
+        */
         override fun ClipContents(model: idClipModel?): Int {
             var i: Int
             var contents: Int
@@ -519,6 +763,11 @@ object Physics_StaticMulti {
             return contents
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::DisableClip
+        ================
+        */
         override fun DisableClip() {
             var i: Int
             i = 0
@@ -528,6 +777,11 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::EnableClip
+        ================
+        */
         override fun EnableClip() {
             var i: Int
             i = 0
@@ -537,6 +791,11 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::UnlinkClip
+        ================
+        */
         override fun UnlinkClip() {
             var i: Int
             i = 0
@@ -546,6 +805,11 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::LinkClip
+        ================
+        */
         override fun LinkClip() {
             var i: Int
             i = 0
@@ -555,44 +819,113 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::EvaluateContacts
+        ================
+        */
         override fun EvaluateContacts(): Boolean {
             return false
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetNumContacts
+        ================
+        */
         override fun GetNumContacts(): Int {
             return 0
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetContact
+        ================
+        */
         override fun GetContact(num: Int): contactInfo_t {
             info = contactInfo_t()
             //	memset( &info, 0, sizeof( info ) );
             return info
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::ClearContacts
+        ================
+        */
         override fun ClearContacts() {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::AddContactEntity
+        ================
+        */
         override fun AddContactEntity(e: idEntity) {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::RemoveContactEntity
+        ================
+        */
         override fun RemoveContactEntity(e: idEntity) {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::HasGroundContacts
+        ================
+        */
         override fun HasGroundContacts(): Boolean {
             return false
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::IsGroundEntity
+        ================
+        */
         override fun IsGroundEntity(entityNum: Int): Boolean {
             return false
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::IsGroundClipModel
+        ================
+        */
         override fun IsGroundClipModel(entityNum: Int, id: Int): Boolean {
             return false
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::SetPushed
+        ================
+        */
         override fun SetPushed(deltaTime: Int) {}
+
+        /*
+        ================
+        idPhysics_StaticMulti::GetPushedLinearVelocity
+        ================
+        */
         override fun GetPushedLinearVelocity(id: Int /*= 0*/): idVec3 {
             return vec3_origin
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetPushedAngularVelocity
+        ================
+        */
         override fun GetPushedAngularVelocity(id: Int /*= 0*/): idVec3 {
             return vec3_origin
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::SetMaster
+        ================
+        */
         override fun SetMaster(master: idEntity?, orientated: Boolean /*= true*/) {
             var i: Int
             val masterOrigin = idVec3()
@@ -623,22 +956,47 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetBlockingInfo
+        ================
+        */
         override fun GetBlockingInfo(): trace_s? {
             return null
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetBlockingEntity
+        ================
+        */
         override fun GetBlockingEntity(): idEntity? {
             return null
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetLinearEndTime
+        ================
+        */
         override fun GetLinearEndTime(): Int {
             return 0
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::GetAngularEndTime
+        ================
+        */
         override fun GetAngularEndTime(): Int {
             return 0
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::WriteToSnapshot
+        ================
+        */
         override fun WriteToSnapshot(msg: idBitMsgDelta) {
             var i: Int
             var quat: idCQuat?
@@ -664,6 +1022,11 @@ object Physics_StaticMulti {
             }
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::ReadFromSnapshot
+        ================
+        */
         override fun ReadFromSnapshot(msg: idBitMsgDelta) {
             var i: Int
             val num: Int
@@ -691,19 +1054,15 @@ object Physics_StaticMulti {
             }
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
-
-        override fun  /*idTypeInfo*/GetType(): Class<out idClass> {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
+        override fun CreateInstance(): idClass = idPhysics_StaticMulti()
+        override fun GetType(): idTypeInfo = Type
 
         override fun oSet(oGet: idClass?) {
             throw UnsupportedOperationException("Not supported yet.")
         }
 
         companion object {
+            val Type = idTypeInfo("idPhysics_StaticMulti", "idPhysics") { idPhysics_StaticMulti() }
             private val gravity: idVec3 = idVec3(0.0f, 0.0f, -SysCvar.g_gravity.GetFloat())
             private val gravityNormal: idVec3 = idVec3(0, 0, -1)
             private val absBounds: idBounds = idBounds()
@@ -711,6 +1070,11 @@ object Physics_StaticMulti {
             private var info: contactInfo_t = contactInfo_t()
         }
 
+        /*
+        ================
+        idPhysics_StaticMulti::idPhysics_StaticMulti
+        ================
+        */
         init {
             clipModels = idList()
             current = idList()

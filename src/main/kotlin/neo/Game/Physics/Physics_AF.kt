@@ -9,6 +9,7 @@
 package neo.Game.Physics
 
 import neo.Game.GameSys.Class.idClass
+import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
@@ -110,7 +111,7 @@ object Physics_AF {
         saveFile.ReadFloat(activateTime)
         saveFile.ReadFloat(lastTimeStep)
         saveFile.ReadVec6(state.pushVelocity)
-        state.atRest = atRest._val
+        state.atRest = atRest.integerValue
         state.noMoveTime = noMoveTime._val
         state.activateTime = activateTime._val
         state.lastTimeStep = lastTimeStep._val
@@ -190,7 +191,6 @@ object Physics_AF {
             return type
         }
 
-        // virtual					~idAFConstraint( void );
         fun GetName(): idStr {
             return name
         }
@@ -207,10 +207,20 @@ object Physics_AF {
             physics = p
         }
 
+        /*
+        ================
+        idAFConstraint::GetMultiplier
+        ================
+        */
         fun GetMultiplier(): idVecX {
             return lm
         }
 
+        /*
+        ================
+        idAFConstraint::SetBody1
+        ================
+        */
         open fun SetBody1(body: idAFBody?) {
             if (body1 != body) {
                 body1 = body
@@ -218,6 +228,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint::SetBody2
+        ================
+        */
         open fun SetBody2(body: idAFBody?) {
             if (body2 != body) {
                 body2 = body
@@ -225,7 +240,18 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint::DebugDraw
+        ================
+        */
         open fun DebugDraw() {}
+
+        /*
+        ================
+        idAFConstraint::GetForce
+        ================
+        */
         open fun GetForce(body: idAFBody?, force: idVec6) {
             val v = idVecX()
             v.SetData(6, idVecX.VECX_ALLOCA(6))
@@ -244,33 +270,74 @@ object Physics_AF {
             force.p[5] = v.p[5]
         }
 
+        /*
+        ================
+        idAFConstraint::Translate
+        ================
+        */
         open fun Translate(translation: idVec3) {
             assert(false)
         }
 
+        /*
+        ================
+        idAFConstraint::Rotate
+        ================
+        */
         open fun Rotate(rotation: idRotation) {
             assert(false)
         }
 
+        /*
+        ================
+        idAFConstraint::GetCenter
+        ================
+        */
         open fun GetCenter(center: idVec3) {
             center.Zero()
         }
 
+        /*
+        ================
+        idAFConstraint::Save
+        ================
+        */
         open fun Save(saveFile: idSaveGame) {
             saveFile.WriteInt(type.ordinal)
         }
 
+        /*
+        ================
+        idAFConstraint::Restore
+        ================
+        */
         open fun Restore(saveFile: idRestoreGame) {
             val t = CInt()
             saveFile.ReadInt(t)
-            assert(t._val == type.ordinal)
+            assert(t.integerValue == type.ordinal)
         }
 
+        /*
+        ================
+        idAFConstraint::Evaluate
+        ================
+        */
         open fun Evaluate(invTimeStep: Float) {
             assert(false)
         }
 
+        /*
+        ================
+        idAFConstraint::ApplyFriction
+        ================
+        */
         open fun ApplyFriction(invTimeStep: Float) {}
+
+        /*
+        ================
+        idAFConstraint::InitSize
+        ================
+        */
         protected fun InitSize(size: Int) {
             J1.Zero(size, 6)
             J2.Zero(size, 6)
@@ -341,6 +408,11 @@ object Physics_AF {
             relAxis.set(axis)
         }
 
+        /*
+        ================
+        idAFConstraint_Fixed::SetBody1
+        ================
+        */
         override fun SetBody1(body: idAFBody?) {
             if (body1 != body) {
                 body1 = body
@@ -349,6 +421,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Fixed::SetBody2
+        ================
+        */
         override fun SetBody2(body: idAFBody?) {
             if (body2 != body) {
                 body2 = body
@@ -357,6 +434,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Fixed::DebugDraw
+        ================
+        */
         override fun DebugDraw() {
             val master: idAFBody?
             master = if (body2 != null) body2 else physics!!.GetMasterBody()
@@ -375,12 +457,22 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Fixed::Translate
+        ================
+        */
         override fun Translate(translation: idVec3) {
             if (null == body2) {
                 offset.plusAssign(translation)
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Fixed::Rotate
+        ================
+        */
         override fun Rotate(rotation: idRotation) {
             if (null == body2) {
                 offset.timesAssign(rotation)
@@ -388,22 +480,42 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Fixed::GetCenter
+        ================
+        */
         override fun GetCenter(center: idVec3) {
             center.set(body1!!.GetWorldOrigin())
         }
 
+        /*
+        ================
+        idAFConstraint_Fixed::Save
+        ================
+        */
         override fun Save(saveFile: idSaveGame) {
             super.Save(saveFile)
             saveFile.WriteVec3(offset)
             saveFile.WriteMat3(relAxis)
         }
 
+        /*
+        ================
+        idAFConstraint_Fixed::Restore
+        ================
+        */
         override fun Restore(saveFile: idRestoreGame) {
             super.Restore(saveFile)
             saveFile.ReadVec3(offset)
             saveFile.ReadMat3(relAxis)
         }
 
+        /*
+        ================
+        idAFConstraint_Fixed::Evaluate
+        ================
+        */
         override fun Evaluate(invTimeStep: Float) {
             val ofs = idVec3()
             val a2 = idVec3()
@@ -449,10 +561,20 @@ object Physics_AF {
             c1.Clamp(-ERROR_REDUCTION_MAX, ERROR_REDUCTION_MAX)
         }
 
+        /*
+        ================
+        idAFConstraint_Fixed::ApplyFriction
+        ================
+        */
         override fun ApplyFriction(invTimeStep: Float) {
             // no friction
         }
 
+        /*
+        ================
+        idAFConstraint_Fixed::InitOffset
+        ================
+        */
         protected fun InitOffset() {
             if (body2 != null) {
                 offset.set(
@@ -498,6 +620,11 @@ object Physics_AF {
                 : idAFConstraint_PyramidLimit?
 
         // ~idAFConstraint_BallAndSocketJoint( void );
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::SetAnchor
+        ================
+        */
         fun SetAnchor(worldPosition: idVec3) {
 
             // get anchor relative to center of mass of body1
@@ -516,12 +643,22 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::GetAnchor
+        ================
+        */
         fun GetAnchor(): idVec3 {
             return if (body2 != null) {
                 body2!!.GetWorldOrigin().plus(body2!!.GetWorldAxis().times(anchor2))
             } else anchor2
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::SetNoLimit
+        ================
+        */
         fun SetNoLimit() {
             if (coneLimit != null) {
 //		delete coneLimit;
@@ -533,6 +670,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::SetConeLimit
+        ================
+        */
         fun SetConeLimit(coneAxis: idVec3, coneAngle: Float, body1Axis: idVec3) {
             if (pyramidLimit != null) {
                 pyramidLimit = null
@@ -562,6 +704,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::SetPyramidLimit
+        ================
+        */
         fun SetPyramidLimit(pyramidAxis: idVec3, baseAxis: idVec3, angle1: Float, angle2: Float, body1Axis: idVec3) {
             if (coneLimit != null) {
                 coneLimit = null
@@ -595,6 +742,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::SetLimitEpsilon
+        ================
+        */
         fun SetLimitEpsilon(e: Float) {
             if (coneLimit != null) {
                 coneLimit!!.SetEpsilon(e)
@@ -608,12 +760,22 @@ object Physics_AF {
             friction = f
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::GetFriction
+        ================
+        */
         fun GetFriction(): Float {
             return if (SysCvar.af_forceFriction.GetFloat() > 0.0f) {
                 SysCvar.af_forceFriction.GetFloat()
             } else friction * physics!!.GetJointFrictionScale()
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::DebugDraw
+        ================
+        */
         override fun DebugDraw() {
             val a1 = idVec3(body1!!.GetWorldOrigin().plus(anchor1.times(body1!!.GetWorldAxis())))
             Game_local.gameRenderWorld!!.DebugLine(
@@ -641,6 +803,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::Translate
+        ================
+        */
         override fun Translate(translation: idVec3) {
             if (null == body2) {
                 anchor2.plusAssign(translation)
@@ -652,6 +819,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::Rotate
+        ================
+        */
         override fun Rotate(rotation: idRotation) {
             if (null == body2) {
                 anchor2.timesAssign(rotation)
@@ -663,10 +835,20 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::GetCenter
+        ================
+        */
         override fun GetCenter(center: idVec3) {
             center.set(body1!!.GetWorldOrigin().plus(anchor1.times(body1!!.GetWorldAxis())))
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::Save
+        ================
+        */
         override fun Save(saveFile: idSaveGame) {
             super.Save(saveFile)
             saveFile.WriteVec3(anchor1)
@@ -680,9 +862,15 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::Restore
+        ================
+        */
         override fun Restore(saveFile: idRestoreGame) {
-            val friction = CFloat(friction)
             super.Restore(saveFile)
+
+            val friction = CFloat(friction)
             saveFile.ReadVec3(anchor1)
             saveFile.ReadVec3(anchor2)
             saveFile.ReadFloat(friction)
@@ -695,6 +883,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::Evaluate
+        ================
+        */
         override fun Evaluate(invTimeStep: Float) {
             val a1 = idVec3()
             val a2 = idVec3()
@@ -729,6 +922,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJoint::ApplyFriction
+        ================
+        */
         override fun ApplyFriction(invTimeStep: Float) {
             val angular = idVec3()
             var invMass: Float
@@ -786,12 +984,23 @@ object Physics_AF {
     // ball and socket joint friction
     class idAFConstraint_BallAndSocketJointFriction : idAFConstraint() {
         protected var joint: idAFConstraint_BallAndSocketJoint?
+
+        /*
+        ================
+        idAFConstraint_BallAndSocketJointFriction::Setup
+        ================
+        */
         fun Setup(bsj: idAFConstraint_BallAndSocketJoint) {
             joint = bsj
             body1 = bsj.GetBody1()
             body2 = bsj.GetBody2()
         }
 
+        /*
+        ================
+        idAFConstraint_BallAndSocketJointFriction::Add
+        ================
+        */
         fun Add(phys: idPhysics_AF?, invTimeStep: Float): Boolean {
             val f: Float
             physics = phys
@@ -868,6 +1077,11 @@ object Physics_AF {
         protected var pyramidLimit // pyramid shaped limit
                 : idAFConstraint_PyramidLimit?
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::SetAnchor
+        ================
+        */
         fun SetAnchor(worldPosition: idVec3) {
 
             // get anchor relative to center of mass of body1
@@ -886,12 +1100,22 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::GetAnchor
+        ================
+        */
         fun GetAnchor(): idVec3 {
             return if (body2 != null) {
                 body2!!.GetWorldOrigin().plus(body2!!.GetWorldAxis().times(anchor2))
             } else anchor2
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::SetShafts
+        ================
+        */
         fun SetShafts(cardanShaft1: idVec3, cardanShaft2: idVec3) {
             val cardanAxis = idVec3()
             var l: Float
@@ -930,6 +1154,11 @@ object Physics_AF {
             cardanShaft2.set(shaft2)
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::SetNoLimit
+        ================
+        */
         fun SetNoLimit() {
             if (coneLimit != null) {
                 coneLimit = null
@@ -939,6 +1168,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::SetConeLimit
+        ================
+        */
         fun SetConeLimit(coneAxis: idVec3, coneAngle: Float) {
             if (pyramidLimit != null) {
                 pyramidLimit = null
@@ -961,6 +1195,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::SetPyramidLimit
+        ================
+        */
         fun SetPyramidLimit(pyramidAxis: idVec3, baseAxis: idVec3, angle1: Float, angle2: Float) {
             if (coneLimit != null) {
                 coneLimit = null
@@ -985,6 +1224,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::SetLimitEpsilon
+        ================
+        */
         fun SetLimitEpsilon(e: Float) {
             if (coneLimit != null) {
                 coneLimit!!.SetEpsilon(e)
@@ -998,12 +1242,22 @@ object Physics_AF {
             friction = f
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::GetFriction
+        ================
+        */
         fun GetFriction(): Float {
             return if (SysCvar.af_forceFriction.GetFloat() > 0.0f) {
                 SysCvar.af_forceFriction.GetFloat()
             } else friction * physics!!.GetJointFrictionScale()
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::DebugDraw
+        ================
+        */
         override fun DebugDraw() {
             val a1 = idVec3()
             val a2 = idVec3()
@@ -1048,6 +1302,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::Translate
+        ================
+        */
         override fun Translate(translation: idVec3) {
             if (null == body2) {
                 anchor2.plusAssign(translation)
@@ -1059,6 +1318,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::Rotate
+        ================
+        */
         override fun Rotate(rotation: idRotation) {
             if (null == body2) {
                 anchor2.timesAssign(rotation)
@@ -1072,10 +1336,20 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::GetCenter
+        ================
+        */
         override fun GetCenter(center: idVec3) {
             center.set(body1!!.GetWorldOrigin().plus(anchor1.times(body1!!.GetWorldAxis())))
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::Save
+        ================
+        */
         override fun Save(saveFile: idSaveGame) {
             super.Save(saveFile)
             saveFile.WriteVec3(anchor1)
@@ -1093,9 +1367,15 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::Restore
+        ================
+        */
         override fun Restore(saveFile: idRestoreGame) {
-            val friction = CFloat(friction)
             super.Restore(saveFile)
+
+            val friction = CFloat(friction)
             saveFile.ReadVec3(anchor1)
             saveFile.ReadVec3(anchor2)
             saveFile.ReadVec3(shaft1)
@@ -1193,6 +1473,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJoint::ApplyFriction
+        ================
+        */
         override fun ApplyFriction(invTimeStep: Float) {
             val angular = idVec3()
             var invMass: Float
@@ -1257,12 +1542,22 @@ object Physics_AF {
         protected var joint // universal joint
                 : idAFConstraint_UniversalJoint?
 
+        /*
+        ================
+        idAFConstraint_UniversalJointFriction::Setup
+        ================
+        */
         fun Setup(uj: idAFConstraint_UniversalJoint) {
             joint = uj
             body1 = uj.GetBody1()
             body2 = uj.GetBody2()
         }
 
+        /*
+        ================
+        idAFConstraint_UniversalJointFriction::Add
+        ================
+        */
         fun Add(phys: idPhysics_AF?, invTimeStep: Float): Boolean {
             val s1 = idVec3()
             val s2 = idVec3()
@@ -1327,6 +1622,11 @@ object Physics_AF {
     // cylindrical joint which allows 2 degrees of freedom
     // constrains body1 to lie on a line relative to body2 and allows only translation along and rotation about the line
     class idAFConstraint_CylindricalJoint(name: idStr, body1: idAFBody?, body2: idAFBody?) : idAFConstraint() {
+        /*
+        ================
+        idAFConstraint_CylindricalJoint::DebugDraw
+        ================
+        */
         override fun DebugDraw() {
             assert(
                 false // FIXME: implement
@@ -1392,6 +1692,11 @@ object Physics_AF {
                 : idAFConstraint_HingeSteering?
 
         // ~idAFConstraint_Hinge();
+        /*
+        ================
+        idAFConstraint_Hinge::SetAnchor
+        ================
+        */
         fun SetAnchor(worldPosition: idVec3) {
             // get anchor relative to center of mass of body1
             anchor1.set(worldPosition.minus(body1!!.GetWorldOrigin()).times(body1!!.GetWorldAxis().Transpose()))
@@ -1406,12 +1711,22 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::GetAnchor
+        ================
+        */
         fun GetAnchor(): idVec3 {
             return if (body2 != null) {
                 body2!!.GetWorldOrigin().plus(body2!!.GetWorldAxis().times(anchor2))
             } else anchor2
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::SetAxis
+        ================
+        */
         fun SetAxis(axis: idVec3) {
             val normAxis = idVec3()
             normAxis.set(axis)
@@ -1427,17 +1742,32 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::GetAxis
+        ================
+        */
         fun GetAxis(a1: idVec3, a2: idVec3) {
             a1.set(axis1)
             a2.set(axis2)
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::GetAxis
+        ================
+        */
         fun GetAxis(): idVec3 {
             return if (body2 != null) {
                 axis2.times(body2!!.GetWorldAxis())
             } else axis2
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::SetNoLimit
+        ================
+        */
         fun SetNoLimit() {
             if (coneLimit != null) {
 //		delete coneLimit;
@@ -1445,6 +1775,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::SetLimit
+        ================
+        */
         fun SetLimit(axis: idVec3, angle: Float, body1Axis: idVec3) {
             if (null == coneLimit) {
                 coneLimit = idAFConstraint_ConeLimit()
@@ -1471,12 +1806,22 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::SetLimitEpsilon
+        ================
+        */
         fun SetLimitEpsilon(e: Float) {
             if (coneLimit != null) {
                 coneLimit!!.SetEpsilon(e)
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::GetAngle
+        ================
+        */
         fun GetAngle(): Float {
             val axis: idMat3
             val rotation: idRotation
@@ -1489,6 +1834,11 @@ object Physics_AF {
             } else angle
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::SetSteerAngle
+        ================
+        */
         fun SetSteerAngle(degrees: Float) {
             if (coneLimit != null) {
 //		delete coneLimit;
@@ -1511,12 +1861,22 @@ object Physics_AF {
             friction = f
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::GetFriction
+        ================
+        */
         fun GetFriction(): Float {
             return if (SysCvar.af_forceFriction.GetFloat() > 0.0f) {
                 SysCvar.af_forceFriction.GetFloat()
             } else friction * physics!!.GetJointFrictionScale()
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::DebugDraw
+        ================
+        */
         override fun DebugDraw() {
             val vecX = idVec3()
             val vecY = idVec3()
@@ -1546,6 +1906,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::Translate
+        ================
+        */
         override fun Translate(translation: idVec3) {
             if (null == body2) {
                 anchor2.plusAssign(translation)
@@ -1555,6 +1920,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::Rotate
+        ================
+        */
         override fun Rotate(rotation: idRotation) {
             if (null == body2) {
                 anchor2.timesAssign(rotation)
@@ -1565,10 +1935,20 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::GetCenter
+        ================
+        */
         override fun GetCenter(center: idVec3) {
             center.set(body1!!.GetWorldOrigin().plus(anchor1.times(body1!!.GetWorldAxis())))
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::Save
+        ================
+        */
         override fun Save(saveFile: idSaveGame) {
             super.Save(saveFile)
             saveFile.WriteVec3(anchor1)
@@ -1597,10 +1977,16 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::Restore
+        ================
+        */
         override fun Restore(saveFile: idRestoreGame) {
+            super.Restore(saveFile)
+
             val b = CBool(false)
             val friction = CFloat(friction)
-            super.Restore(saveFile)
             saveFile.ReadVec3(anchor1)
             saveFile.ReadVec3(anchor2)
             saveFile.ReadVec3(axis1)
@@ -1634,6 +2020,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::Evaluate
+        ================
+        */
         override fun Evaluate(invTimeStep: Float) {
             val a1 = idVec3()
             val a2 = idVec3()
@@ -1700,6 +2091,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Hinge::ApplyFriction
+        ================
+        */
         override fun ApplyFriction(invTimeStep: Float) {
             val angular = idVec3()
             var invMass: Float
@@ -1750,7 +2146,7 @@ object Physics_AF {
             fc = null
             fl.allowPrimary = true
             fl.noCollision = true
-            initialAxis = body1!!.GetWorldAxis()
+            initialAxis = idMat3(body1!!.GetWorldAxis())
             if (body2 != null) {
                 initialAxis.timesAssign(body2.GetWorldAxis().Transpose())
             }
@@ -1767,12 +2163,22 @@ object Physics_AF {
         protected var hinge // hinge
                 : idAFConstraint_Hinge?
 
+        /*
+        ================
+        idAFConstraint_HingeFriction::Setup
+        ================
+        */
         fun Setup(h: idAFConstraint_Hinge) {
             hinge = h
             body1 = h.GetBody1()
             body2 = h.GetBody2()
         }
 
+        /*
+        ================
+        idAFConstraint_HingeFriction::Add
+        ================
+        */
         fun Add(phys: idPhysics_AF?, invTimeStep: Float): Boolean {
             val a1 = idVec3()
             val a2 = idVec3()
@@ -1837,6 +2243,11 @@ object Physics_AF {
         protected var steerSpeed // steer speed
                 : Float
 
+        /*
+        ================
+        idAFConstraint_HingeSteering::Setup
+        ================
+        */
         fun Setup(h: idAFConstraint_Hinge) {
             hinge = h
             body1 = h.GetBody1()
@@ -1855,6 +2266,11 @@ object Physics_AF {
             epsilon = e
         }
 
+        /*
+        ================
+        idAFConstraint_HingeSteering::Add
+        ================
+        */
         fun Add(phys: idPhysics_AF?, invTimeStep: Float): Boolean {
             val angle: Float
             var speed: Float
@@ -1946,6 +2362,11 @@ object Physics_AF {
         protected val relAxis // rotation of body1 relative to body2
                 : idMat3 = idMat3()
 
+        /*
+        ================
+        idAFConstraint_Slider::SetAxis
+        ================
+        */
         fun SetAxis(ax: idVec3) {
             val normAxis = idVec3()
 
@@ -1959,6 +2380,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Slider::DebugDraw
+        ================
+        */
         override fun DebugDraw() {
             val ofs = idVec3()
             val master: idAFBody?
@@ -1978,18 +2404,33 @@ object Physics_AF {
             )
         }
 
+        /*
+        ================
+        idAFConstraint_Slider::Translate
+        ================
+        */
         override fun Translate(translation: idVec3) {
             if (null == body2) {
                 offset.plusAssign(translation)
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Slider::Rotate
+        ================
+        */
         override fun Rotate(rotation: idRotation) {
             if (null == body2) {
                 offset.timesAssign(rotation)
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Slider::GetCenter
+        ================
+        */
         override fun GetCenter(center: idVec3) {
             val master: idAFBody?
             master = if (body2 != null) body2 else physics!!.GetMasterBody()
@@ -2003,6 +2444,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Slider::Save
+        ================
+        */
         override fun Save(saveFile: idSaveGame) {
             super.Save(saveFile)
             saveFile.WriteVec3(axis)
@@ -2010,6 +2456,11 @@ object Physics_AF {
             saveFile.WriteMat3(relAxis)
         }
 
+        /*
+        ================
+        idAFConstraint_Slider::Restore
+        ================
+        */
         override fun Restore(saveFile: idRestoreGame) {
             super.Restore(saveFile)
             saveFile.ReadVec3(axis)
@@ -2017,6 +2468,11 @@ object Physics_AF {
             saveFile.ReadMat3(relAxis)
         }
 
+        /*
+        ================
+        idAFConstraint_Slider::Evaluate
+        ================
+        */
         override fun Evaluate(invTimeStep: Float) {
             val vecX = idVec3()
             val vecY = idVec3()
@@ -2151,6 +2607,11 @@ object Physics_AF {
         protected val planeNormal // plane normal in body2 space
                 : idVec3
 
+        /*
+        ================
+        idAFConstraint_Plane::SetPlane
+        ================
+        */
         fun SetPlane(normal: idVec3, anchor: idVec3) {
             // get anchor relative to center of mass of body1
             anchor1.set(anchor.minus(body1!!.GetWorldOrigin()).times(body1!!.GetWorldAxis().Transpose()))
@@ -2164,6 +2625,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Plane::DebugDraw
+        ================
+        */
         override fun DebugDraw() {
             val a1 = idVec3()
             val normal = idVec3()
@@ -2186,12 +2652,22 @@ object Physics_AF {
             Game_local.gameRenderWorld!!.DebugArrow(colorCyan, a1, a1.plus(normal), 1)
         }
 
+        /*
+        ================
+        idAFConstraint_Plane::Translate
+        ================
+        */
         override fun Translate(translation: idVec3) {
             if (null == body2) {
                 anchor2.plusAssign(translation)
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Plane::Rotate
+        ================
+        */
         override fun Rotate(rotation: idRotation) {
             if (null == body2) {
                 anchor2.timesAssign(rotation)
@@ -2199,6 +2675,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Plane::Save
+        ================
+        */
         override fun Save(saveFile: idSaveGame) {
             super.Save(saveFile)
             saveFile.WriteVec3(anchor1)
@@ -2206,6 +2687,11 @@ object Physics_AF {
             saveFile.WriteVec3(planeNormal)
         }
 
+        /*
+        ================
+        idAFConstraint_Plane::Restore
+        ================
+        */
         override fun Restore(saveFile: idRestoreGame) {
             super.Restore(saveFile)
             saveFile.ReadVec3(anchor1)
@@ -2213,6 +2699,11 @@ object Physics_AF {
             saveFile.ReadVec3(planeNormal)
         }
 
+        /*
+        ================
+        idAFConstraint_Plane::Evaluate
+        ================
+        */
         override fun Evaluate(invTimeStep: Float) {
             val a1 = idVec3()
             val a2 = idVec3()
@@ -2289,6 +2780,11 @@ object Physics_AF {
         protected var restLength // rest length of spring
                 : Float
 
+        /*
+        ================
+        idAFConstraint_Spring::SetAnchor
+        ================
+        */
         fun SetAnchor(worldAnchor1: idVec3, worldAnchor2: idVec3) {
             // get anchor relative to center of mass of body1
             anchor1.set(worldAnchor1.minus(body1!!.GetWorldOrigin()).times(body1!!.GetWorldAxis().Transpose()))
@@ -2300,6 +2796,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Spring::SetSpring
+        ================
+        */
         fun SetSpring(stretch: Float, compress: Float, damping: Float, restLength: Float) {
             assert(stretch >= 0.0f && compress >= 0.0f && restLength >= 0.0f)
             kstretch = stretch
@@ -2308,12 +2809,22 @@ object Physics_AF {
             this.restLength = restLength
         }
 
+        /*
+        ================
+        idAFConstraint_Spring::SetLimit
+        ================
+        */
         fun SetLimit(minLength: Float, maxLength: Float) {
             assert(minLength >= 0.0f && maxLength >= 0.0f && maxLength >= minLength)
             this.minLength = minLength
             this.maxLength = maxLength
         }
 
+        /*
+        ================
+        idAFConstraint_Spring::DebugDraw
+        ================
+        */
         override fun DebugDraw() {
             val master: idAFBody?
             val length: Float
@@ -2419,13 +2930,15 @@ object Physics_AF {
         }
 
         override fun Restore(saveFile: idRestoreGame) {
+            super.Restore(saveFile)
+
             val kstretch = CFloat()
             val kcompress = CFloat()
             val damping = CFloat()
             val restLength = CFloat()
             val minLength = CFloat()
             val maxLength = CFloat()
-            super.Restore(saveFile)
+
             saveFile.ReadVec3(anchor1)
             saveFile.ReadVec3(anchor2)
             saveFile.ReadFloat(kstretch)
@@ -2563,6 +3076,11 @@ object Physics_AF {
         protected var fc // contact friction
                 : idAFConstraint_ContactFriction?
 
+        /*
+        ================
+        idAFConstraint_Contact::Setup
+        ================
+        */
         fun Setup(b1: idAFBody?, b2: idAFBody?, c: contactInfo_t) {
             val p = idVec3()
             val v = idVec6()
@@ -2598,10 +3116,20 @@ object Physics_AF {
             boxIndex[0] = -1
         }
 
+        /*
+        ================
+        idAFConstraint_Contact::GetContact
+        ================
+        */
         fun GetContact(): contactInfo_t {
             return contact
         }
 
+        /*
+        ================
+        idAFConstraint_Contact::DebugDraw
+        ================
+        */
         override fun DebugDraw() {
             val x = idVec3()
             val y = idVec3()
@@ -2623,28 +3151,53 @@ object Physics_AF {
             )
         }
 
+        /*
+        ================
+        idAFConstraint_Contact::Translate
+        ================
+        */
         override fun Translate(translation: idVec3) {
             assert(
                 false // contact should never be translated
             )
         }
 
+        /*
+        ================
+        idAFConstraint_Contact::Rotate
+        ================
+        */
         override fun Rotate(rotation: idRotation) {
             assert(
                 false // contact should never be rotated
             )
         }
 
+        /*
+        ================
+        idAFConstraint_Contact::GetCenter
+        ================
+        */
         override fun GetCenter(center: idVec3) {
             center.set(contact.point)
         }
 
         //
         //
+        /*
+        ================
+        idAFConstraint_Contact::Evaluate
+        ================
+        */
         override fun Evaluate(invTimeStep: Float) {
             // do nothing
         }
 
+        /*
+        ================
+        idAFConstraint_Contact::ApplyFriction
+        ================
+        */
         override fun ApplyFriction(invTimeStep: Float) {
             val r = idVec3()
             val velocity = idVec3()
@@ -2720,12 +3273,22 @@ object Physics_AF {
         var cc // contact constraint
                 : idAFConstraint_Contact?
 
+        /*
+        ================
+        idAFConstraint_ContactFriction::Setup
+        ================
+        */
         fun Setup(cc: idAFConstraint_Contact) {
             this.cc = cc
             body1 = cc.GetBody1()
             body2 = cc.GetBody2()
         }
 
+        /*
+        ================
+        idAFConstraint_ContactFriction::Add
+        ================
+        */
         fun Add(phys: idPhysics_AF?, invTimeStep: Float): Boolean {
             val r = idVec3()
             val dir1 = idVec3()
@@ -2819,16 +3382,43 @@ object Physics_AF {
             return true
         }
 
+        /*
+        ================
+        idAFConstraint_ContactFriction::DebugDraw
+        ================
+        */
         override fun DebugDraw() {}
+
+        /*
+        ================
+        idAFConstraint_ContactFriction::Translate
+        ================
+        */
         override fun Translate(translation: idVec3) {}
+
+        /*
+        ================
+        idAFConstraint_ContactFriction::Rotate
+        ================
+        */
         override fun Rotate(rotation: idRotation) {}
 
         //
         //
+        /*
+        ================
+        idAFConstraint_ContactFriction::Evaluate
+        ================
+        */
         override fun Evaluate(invTimeStep: Float) {
             // do nothing
         }
 
+        /*
+        ================
+        idAFConstraint_ContactFriction::ApplyFriction
+        ================
+        */
         override fun ApplyFriction(invTimeStep: Float) {
             // do nothing
         }
@@ -2891,18 +3481,38 @@ object Physics_AF {
             cosHalfAngle = cos(DEG2RAD(coneAngle * 0.25f))
         }
 
+        /*
+        ================
+        idAFConstraint_ConeLimit::SetAnchor
+        ================
+        */
         fun SetAnchor(coneAnchor: idVec3) {
             this.coneAnchor.set(coneAnchor)
         }
 
+        /*
+        ================
+        idAFConstraint_ConeLimit::SetBody1Axis
+        ================
+        */
         fun SetBody1Axis(body1Axis: idVec3) {
             this.body1Axis.set(body1Axis)
         }
 
+        /*
+        ================
+        idAFConstraint_ConeLimit::SetEpsilon
+        ================
+        */
         fun SetEpsilon(e: Float) {
             epsilon = e
         }
 
+        /*
+        ================
+        idAFConstraint_ConeLimit::Add
+        ================
+        */
         fun Add(phys: idPhysics_AF?, invTimeStep: Float): Boolean {
             val a: Float
             val J1row = idVec6()
@@ -2966,6 +3576,11 @@ object Physics_AF {
             return true
         }
 
+        /*
+        ================
+        idAFConstraint_ConeLimit::DebugDraw
+        ================
+        */
         override fun DebugDraw() {
             val ax = idVec3()
             val anchor = idVec3()
@@ -3039,11 +3654,13 @@ object Physics_AF {
         }
 
         override fun Restore(saveFile: idRestoreGame) {
+            super.Restore(saveFile)
+
             val cosAngle = CFloat()
             val sinHalfAngle = CFloat()
             val cosHalfAngle = CFloat()
             val epsilon = CFloat()
-            super.Restore(saveFile)
+
             saveFile.ReadVec3(coneAnchor)
             saveFile.ReadVec3(coneAxis)
             saveFile.ReadVec3(body1Axis)
@@ -3095,6 +3712,12 @@ object Physics_AF {
         protected val pyramidBasis // pyramid basis in body2 space with base[2] being the pyramid axis
                 : idMat3
         protected var sinHalfAngle: FloatArray = FloatArray(2) // sin( pyramidAngle / 4 )
+
+        /*
+        ================
+        idAFConstraint_PyramidLimit::Setup
+        ================
+        */
         fun Setup(
             b1: idAFBody?, b2: idAFBody?, pyramidAnchor: idVec3, pyramidAxis: idVec3,
             baseAxis: idVec3, pyramidAngle1: Float, pyramidAngle2: Float, body1Axis: idVec3
@@ -3120,6 +3743,11 @@ object Physics_AF {
             body1Axis.set(body1Axis)
         }
 
+        /*
+        ================
+        idAFConstraint_PyramidLimit::SetAnchor
+        ================
+        */
         fun SetAnchor(pyramidAxis: idVec3) {
             pyramidAnchor.set(pyramidAnchor)
         }
@@ -3296,11 +3924,13 @@ object Physics_AF {
         }
 
         override fun Restore(saveFile: idRestoreGame) {
+            super.Restore(saveFile)
+
             val cosAngle = listOf(CFloat(), CFloat())
             val sinHalfAngle = listOf(CFloat(), CFloat())
             val cosHalfAngle = listOf(CFloat(), CFloat())
             val epsilon = CFloat()
-            super.Restore(saveFile)
+
             saveFile.ReadVec3(pyramidAnchor)
             saveFile.ReadMat3(pyramidBasis)
             saveFile.ReadVec3(body1Axis)
@@ -3448,7 +4078,19 @@ object Physics_AF {
         }
 
         override fun Translate(translation: idVec3) {}
+
+        /*
+        ================
+        idAFConstraint_Suspension::Rotate
+        ================
+        */
         override fun Rotate(rotation: idRotation) {}
+
+        /*
+        ================
+        idAFConstraint_Suspension::Evaluate
+        ================
+        */
         override fun Evaluate(invTimeStep: Float) {
             var velocity: Float
             val suspensionLength: Float
@@ -3569,6 +4211,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFConstraint_Suspension::ApplyFriction
+        ================
+        */
         override fun ApplyFriction(invTimeStep: Float) {
             // do nothing
         }
@@ -3748,6 +4395,11 @@ object Physics_AF {
             idClipModel.delete(clipModel!!)
         }
 
+        /*
+        ================
+        idAFBody::Init
+        ================
+        */
         fun Init() {
             name.set(idStr("noname"))
             parent = null
@@ -3829,6 +4481,11 @@ object Physics_AF {
             return centerOfMass
         }
 
+        /*
+        ================
+        idAFBody::SetClipModel
+        ================
+        */
         fun SetClipModel(clipModel: idClipModel?) {
 //	if ( this.clipModel && this.clipModel != clipModel ) {
 //		delete this.clipModel;
@@ -3870,6 +4527,11 @@ object Physics_AF {
             current.spatialVelocity.SubVec3_oSet(1, angular)
         }
 
+        /*
+        ================
+        idAFBody::SetFriction
+        ================
+        */
         fun SetFriction(linear: Float, angular: Float, contact: Float) {
             if (linear < 0.0f || linear > 1.0f || angular < 0.0f || angular > 1.0f || contact < 0.0f) {
                 Game_local.gameLocal.Warning(
@@ -3889,6 +4551,11 @@ object Physics_AF {
             return contactFriction
         }
 
+        /*
+        ================
+        idAFBody::SetBouncyness
+        ================
+        */
         fun SetBouncyness(bounce: Float) {
             if (bounce < 0.0f || bounce > 1.0f) {
                 Game_local.gameLocal.Warning("idAFBody::SetBouncyness: bouncyness out of range, bounce = %.1f", bounce)
@@ -3902,6 +4569,11 @@ object Physics_AF {
         }
 
 
+        /*
+        ================
+        idAFBody::SetDensity
+        ================
+        */
         fun SetDensity(
             density: Float,
             inertiaScale: idMat3 = idMat3.getMat3_identity() /*= mat3_identity*/
@@ -3952,11 +4624,21 @@ object Physics_AF {
             return current.worldAxis.Transpose().times(inverseInertiaTensor.times(current.worldAxis))
         }
 
+        /*
+        ================
+        idAFBody::SetFrictionDirection
+        ================
+        */
         fun SetFrictionDirection(dir: idVec3) {
             frictionDir.set(dir.times(current.worldAxis.Transpose()))
             fl.useFrictionDir = true
         }
 
+        /*
+        ================
+        idAFBody::GetFrictionDirection
+        ================
+        */
         fun GetFrictionDirection(dir: idVec3): Boolean {
             if (fl.useFrictionDir) {
                 dir.set(frictionDir.times(current.worldAxis))
@@ -3965,11 +4647,21 @@ object Physics_AF {
             return false
         }
 
+        /*
+        ================
+        idAFBody::SetContactMotorDirection
+        ================
+        */
         fun SetContactMotorDirection(dir: idVec3) {
             contactMotorDir.set(dir.times(current.worldAxis.Transpose()))
             fl.useContactMotorDir = true
         }
 
+        /*
+        ================
+        idAFBody::GetContactMotorDirection
+        ================
+        */
         fun GetContactMotorDirection(dir: idVec3): Boolean {
             if (fl.useContactMotorDir) {
                 dir.set(contactMotorDir.times(current.worldAxis))
@@ -3994,6 +4686,11 @@ object Physics_AF {
             return contactMotorForce
         }
 
+        /*
+        ================
+        idAFBody::AddForce
+        ================
+        */
         fun AddForce(point: idVec3, force: idVec3) {
             current.externalForce.SubVec3_oPluSet(0, force)
             current.externalForce.SubVec3_oPluSet(1, point.minus(current.worldOrigin).Cross(force))
@@ -4030,6 +4727,11 @@ object Physics_AF {
             System.arraycopy(v.p, 0, response, index * 8, 6)
         }
 
+        /*
+        ================
+        idAFBody::Save
+        ================
+        */
         fun Save(saveFile: idSaveGame) {
             saveFile.WriteFloat(linearFriction)
             saveFile.WriteFloat(angularFriction)
@@ -4053,6 +4755,11 @@ object Physics_AF {
             saveFile.WriteMat3(atRestAxis)
         }
 
+        /*
+        ================
+        idAFBody::Restore
+        ================
+        */
         fun Restore(saveFile: idRestoreGame) {
             linearFriction = saveFile.ReadFloat()
             angularFriction = saveFile.ReadFloat()
@@ -4138,7 +4845,6 @@ object Physics_AF {
                             )
                         }
                         child.J.set(child.invI.times(child.J))
-                        body.I.ToFloatPtr().clone()
                         body.I.minusAssign(child.J.TransposeMultiply(childI).times(child.J))
                         j++
                     }
@@ -4150,11 +4856,9 @@ object Physics_AF {
                         )
                     }
                     if (body.primaryConstraint != null) {
-                        body.J.ToFloatPtr().clone()
                         body.J.set(body.invI.times(body.J))
                     }
                 } else if (body.primaryConstraint != null) {
-                    body.J.ToFloatPtr().clone()
                     body.J.set(body.inverseWorldSpatialInertia.times(body.J))
                 }
                 i--
@@ -4183,8 +4887,7 @@ object Physics_AF {
                 j = 0
                 while (j < body.children.Num()) {
                     child = body.children[j]
-                    primaryConstraint = child.primaryConstraint
-                    primaryConstraint!!.s.ToFloatPtr().clone()
+                    primaryConstraint = child.primaryConstraint!!
                     if (!child.fl.isZero) {
                         child.J.TransposeMultiplySub(primaryConstraint.s, child.s)
                         primaryConstraint.fl.isZero = false
@@ -4209,7 +4912,6 @@ object Physics_AF {
                         i++
                         continue
                     }
-                    primaryConstraint.s.ToFloatPtr().clone()
                     if (!primaryConstraint.fl.isZero) {
                         primaryConstraint.s.set(primaryConstraint.invI.times(primaryConstraint.s))
                     }
@@ -4226,7 +4928,6 @@ object Physics_AF {
                         body.J.MultiplySub(body.s, primaryConstraint.s)
                     }
                 } else if (body.children.Num() != 0) {
-                    body.s.p.clone()
                     body.s.set(body.invI.times(body.s))
                 }
                 i++
@@ -4422,6 +5123,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFTree::SetMaxSubTreeAuxiliaryIndex
+        ================
+        */
         fun SetMaxSubTreeAuxiliaryIndex() {
             var i: Int
             var j: Int
@@ -4473,6 +5179,11 @@ object Physics_AF {
             SortBodies_r(sortedBodies, body)
         }
 
+        /*
+        ================
+        idAFTree::SortBodies_r
+        ================
+        */
         fun SortBodies_r(sortedList: idList<idAFBody>, body: idAFBody) {
             var i: Int
             i = 0
@@ -4487,6 +5198,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idAFTree::DebugDraw
+        ================
+        */
         fun DebugDraw(color: idVec4) {
             var i: Int
             var body: idAFBody?
@@ -4661,17 +5377,18 @@ object Physics_AF {
         private var worldConstraintsLocked // if true world constraints cannot be moved
                 : Boolean
 
+        /*
+        ================
+        idPhysics_AF::Save
+        ================
+        */
         override fun Save(saveFile: idSaveGame) {
-            var i: Int
-
-            // the articulated figure structure is handled by the owner
+            super.Save(saveFile)
             idPhysics_AF_SavePState(saveFile, current)
             idPhysics_AF_SavePState(saveFile, saved)
             saveFile.WriteInt(bodies.Num())
-            i = 0
-            while (i < bodies.Num()) {
+            for (i in 0 until bodies.Num()) {
                 bodies[i].Save(saveFile)
-                i++
             }
             if (masterBody != null) {
                 saveFile.WriteBool(true)
@@ -4680,10 +5397,8 @@ object Physics_AF {
                 saveFile.WriteBool(false)
             }
             saveFile.WriteInt(constraints.Num())
-            i = 0
-            while (i < constraints.Num()) {
+            for (i in 0 until constraints.Num()) {
                 constraints[i].Save(saveFile)
-                i++
             }
             saveFile.WriteBool(changedAF)
             saveFile.WriteFloat(linearFriction)
@@ -4722,7 +5437,14 @@ object Physics_AF {
             saveFile.WriteBool(forcePushable)
         }
 
+        /*
+        ================
+        idPhysics_AF::Restore
+        ================
+        */
         override fun Restore(saveFile: idRestoreGame) {
+            super.Restore(saveFile)
+
             var i: Int
             val num = CInt()
             val hasMaster = CBool(false)
@@ -4730,8 +5452,9 @@ object Physics_AF {
             // the articulated figure structure should have already been restored
             idPhysics_AF_RestorePState(saveFile, current)
             idPhysics_AF_RestorePState(saveFile, saved)
+
             saveFile.ReadInt(num)
-            assert(num._val == bodies.Num())
+            assert(num.integerValue == bodies.Num())
             i = 0
             while (i < bodies.Num()) {
                 bodies[i].Restore(saveFile)
@@ -4743,7 +5466,7 @@ object Physics_AF {
                 masterBody!!.Restore(saveFile)
             }
             saveFile.ReadInt(num)
-            assert(num._val == constraints.Num())
+            assert(num.integerValue == constraints.Num())
             i = 0
             while (i < constraints.Num()) {
                 constraints[i].Restore(saveFile)
@@ -4829,6 +5552,11 @@ object Physics_AF {
             return id
         }
 
+        /*
+        ================
+        idPhysics_AF::AddConstraint
+        ================
+        */
         fun AddConstraint(constraint: idAFConstraint) {
             if (constraints.Find(constraint) != null) {
                 idGameLocal.Error(
@@ -4871,11 +5599,21 @@ object Physics_AF {
             changedAF = true
         }
 
+        /*
+        ================
+        idPhysics_AF::AddFrameConstraint
+        ================
+        */
         fun AddFrameConstraint(constraint: idAFConstraint) {
             frameConstraints.Append(constraint)
             constraint.physics = this
         }
 
+        /*
+        ================
+        idPhysics_AF::ForceBodyId
+        ================
+        */
         // force a body to have a certain id
         fun ForceBodyId(body: idAFBody, newId: Int) {
             val id: Int
@@ -4894,6 +5632,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::GetBodyId
+        ================
+        */
         // get body or constraint id
         fun GetBodyId(body: idAFBody): Int {
             val id: Int
@@ -4920,6 +5663,11 @@ object Physics_AF {
             return 0
         }
 
+        /*
+        ================
+        idPhysics_AF::GetConstraintId
+        ================
+        */
         fun GetConstraintId(constraint: idAFConstraint): Int {
             val id: Int
             id = constraints.FindIndex(constraint)
@@ -4957,6 +5705,11 @@ object Physics_AF {
             return constraints.Num()
         }
 
+        /*
+        ================
+        idPhysics_AF::GetBody
+        ================
+        */
         // retrieve body or constraint
         fun GetBody(bodyName: String): idAFBody? {
             var i: Int
@@ -4986,6 +5739,11 @@ object Physics_AF {
             return masterBody
         }
 
+        /*
+        ================
+        idPhysics_AF::GetConstraint
+        ================
+        */
         fun GetConstraint(constraintName: String): idAFConstraint? {
             var i: Int
             i = 0
@@ -5007,6 +5765,11 @@ object Physics_AF {
             return constraints[id]
         }
 
+        /*
+        ================
+        idPhysics_AF::DeleteBody
+        ================
+        */
         // delete body or constraint
         fun DeleteBody(bodyName: String) {
             var i: Int
@@ -5060,6 +5823,11 @@ object Physics_AF {
             changedAF = true
         }
 
+        /*
+        ================
+        idPhysics_AF::DeleteConstraint
+        ================
+        */
         fun DeleteConstraint(constraintName: String) {
             var i: Int
 
@@ -5093,6 +5861,11 @@ object Physics_AF {
             changedAF = true
         }
 
+        /*
+        ================
+        idPhysics_AF::GetBodyContactConstraints
+        ================
+        */
         // get all the contact constraints acting on the body
         fun GetBodyContactConstraints(id: Int, contacts: Array<idAFConstraint_Contact?>, maxContacts: Int): Int {
             var i: Int
@@ -5118,6 +5891,11 @@ object Physics_AF {
             return numContacts
         }
 
+        /*
+        ================
+        idPhysics_AF::SetDefaultFriction
+        ================
+        */
         // set the default friction for bodies
         fun SetDefaultFriction(linear: Float, angular: Float, contact: Float) {
             if (linear < 0.0f || linear > 1.0f || angular < 0.0f || angular > 1.0f || contact < 0.0f || contact > 1.0f) {
@@ -5244,6 +6022,11 @@ object Physics_AF {
             forcePushable = enable
         }
 
+        /*
+        ================
+        idPhysics_AF::UpdateClipModels
+        ================
+        */
         // update the clip model positions
         fun UpdateClipModels() {
             var i: Int
@@ -5274,6 +6057,11 @@ object Physics_AF {
             return bodies.Num()
         }
 
+        /*
+        ================
+        idPhysics_AF::SetMass
+        ================
+        */
         override fun SetMass(mass: Float, id: Int /*= -1*/) {
             if (id >= 0 && id < bodies.Num()) {
             } else {
@@ -5282,12 +6070,22 @@ object Physics_AF {
             SetChanged()
         }
 
+        /*
+        ================
+        idPhysics_AF::GetMass
+        ================
+        */
         override fun GetMass(id: Int /*= -1*/): Float {
             return if (id >= 0 && id < bodies.Num()) {
                 bodies[id].mass
             } else totalMass
         }
 
+        /*
+        ================
+        idPhysics_AF::SetContents
+        ================
+        */
         override fun SetContents(contents: Int, id: Int /*= -1*/) {
             var i: Int
             if (id >= 0 && id < bodies.Num()) {
@@ -5301,6 +6099,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::GetContents
+        ================
+        */
         override fun GetContents(id: Int /*= -1*/): Int {
             var i: Int
             var contents: Int
@@ -5317,6 +6120,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::GetBounds
+        ================
+        */
         override fun GetBounds(id: Int /*= -1*/): idBounds {
             var i: Int
             return if (id >= 0 && id < bodies.Num()) {
@@ -5342,6 +6150,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::GetAbsBounds
+        ================
+        */
         override fun GetAbsBounds(id: Int /*= -1*/): idBounds {
             var i: Int
             return if (id >= 0 && id < bodies.Num()) {
@@ -5360,9 +6173,13 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::Evaluate
+        ================
+        */
         override fun Evaluate(timeStepMSec: Int, endTimeMSec: Int): Boolean {
-            val timeStep: Float
-            timeStep =
+            var timeStep =
                 if (timeScaleRampStart < MS2SEC(endTimeMSec.toFloat()) && timeScaleRampEnd > MS2SEC(
                         endTimeMSec.toFloat()
                     )
@@ -5560,6 +6377,11 @@ object Physics_AF {
             return Game_local.gameLocal.time
         }
 
+        /*
+        ================
+        idPhysics_AF::GetImpactInfo
+        ================
+        */
         override fun GetImpactInfo(id: Int, point: idVec3): impactInfo_s {
             val info = impactInfo_s()
             if (id < 0 || id >= bodies.Num()) {
@@ -5579,6 +6401,11 @@ object Physics_AF {
             return info
         }
 
+        /*
+        ================
+        idPhysics_AF::ApplyImpulse
+        ================
+        */
         override fun ApplyImpulse(id: Int, point: idVec3, impulse: idVec3) {
             if (id < 0 || id >= bodies.Num()) {
                 return
@@ -5596,6 +6423,11 @@ object Physics_AF {
             Activate()
         }
 
+        /*
+        ================
+        idPhysics_AF::AddForce
+        ================
+        */
         override fun AddForce(id: Int, point: idVec3, force: idVec3) {
             if (noImpact) {
                 return
@@ -5619,6 +6451,11 @@ object Physics_AF {
             return current.atRest
         }
 
+        /*
+        ================
+        idPhysics_AF::Activate
+        ================
+        */
         override fun Activate() {
             // if the articulated figure was at rest
             if (current.atRest >= 0) {
@@ -5640,14 +6477,29 @@ object Physics_AF {
          put to rest untill something collides with this physics object
          ================
          */
+        /*
+        ================
+        idPhysics_AF::PutToRest
+        ================
+        */
         override fun PutToRest() {
             Rest()
         }
 
+        /*
+        ================
+        idPhysics_AF::IsPushable
+        ================
+        */
         override fun IsPushable(): Boolean {
             return !noImpact && (masterBody == null || forcePushable)
         }
 
+        /*
+        ================
+        idPhysics_AF::SaveState
+        ================
+        */
         override fun SaveState() {
             var i: Int
             // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
@@ -5661,6 +6513,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::RestoreState
+        ================
+        */
         override fun RestoreState() {
             var i: Int
             // FIX: C++ struct assignment does value copy; Kotlin = creates reference alias
@@ -5673,6 +6530,11 @@ object Physics_AF {
             EvaluateContacts()
         }
 
+        /*
+        ================
+        idPhysics_AF::SetOrigin
+        ================
+        */
         override fun SetOrigin(newOrigin: idVec3, id: Int /*= -1*/) {
             if (masterBody != null) {
                 Translate(masterBody!!.current.worldOrigin + masterBody!!.current.worldAxis * newOrigin - bodies[0].current.worldOrigin)
@@ -5681,6 +6543,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::SetAxis
+        ================
+        */
         override fun SetAxis(newAxis: idMat3, id: Int /*= -1*/) {
             val axis: idMat3
             val rotation: idRotation
@@ -5694,6 +6561,11 @@ object Physics_AF {
             Rotate(rotation)
         }
 
+        /*
+        ================
+        idPhysics_AF::Translate
+        ================
+        */
         override fun Translate(translation: idVec3, id: Int /*= -1*/) {
             var i: Int
             var body: idAFBody?
@@ -5717,6 +6589,11 @@ object Physics_AF {
             UpdateClipModels()
         }
 
+        /*
+        ================
+        idPhysics_AF::Rotate
+        ================
+        */
         override fun Rotate(rotation: idRotation, id: Int /*= -1*/) {
             var i: Int
             var body: idAFBody?
@@ -5733,7 +6610,6 @@ object Physics_AF {
             i = 0
             while (i < bodies.Num()) {
                 body = bodies[i]
-                idMat3(body.GetWorldAxis())
                 body.current.worldOrigin.timesAssign(rotation)
                 body.current.worldAxis.timesAssign(rotation.ToMat3())
                 i++
@@ -5742,6 +6618,11 @@ object Physics_AF {
             UpdateClipModels()
         }
 
+        /*
+        ================
+        idPhysics_AF::GetOrigin
+        ================
+        */
         override fun GetOrigin(id: Int /*= 0*/): idVec3 {
             return if (id < 0 || id >= bodies.Num()) {
                 vec3_origin
@@ -5750,6 +6631,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::GetAxis
+        ================
+        */
         override fun GetAxis(id: Int /*= 0*/): idMat3 {
             return if (id < 0 || id >= bodies.Num()) {
                 idMat3.getMat3_identity()
@@ -5790,6 +6676,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::ClipTranslation
+        ================
+        */
         override fun ClipTranslation(results: trace_s, translation: idVec3, model: idClipModel?) {
             var i: Int
             var body: idAFBody?
@@ -5821,8 +6712,12 @@ object Physics_AF {
             results.endAxis.set(bodies[0].current.worldAxis)
         }
 
+        /*
+        ================
+        idPhysics_AF::ClipRotation
+        ================
+        */
         override fun ClipRotation(results: trace_s, rotation: idRotation, model: idClipModel?) {
-            var results = results
             var i: Int
             var body: idAFBody?
             val bodyResults = trace_s()
@@ -5845,7 +6740,7 @@ object Physics_AF {
                         )
                     }
                     if (bodyResults.fraction < results.fraction) {
-                        results = bodyResults
+                        results.set(bodyResults)
                     }
                 }
                 i++
@@ -5855,6 +6750,11 @@ object Physics_AF {
             results.endAxis.set(bodies[0].current.worldAxis.times(partialRotation.ToMat3()))
         }
 
+        /*
+        ================
+        idPhysics_AF::ClipContents
+        ================
+        */
         override fun ClipContents(model: idClipModel?): Int {
             var i: Int
             var contents: Int
@@ -5882,6 +6782,11 @@ object Physics_AF {
             return contents
         }
 
+        /*
+        ================
+        idPhysics_AF::DisableClip
+        ================
+        */
         override fun DisableClip() {
             var i: Int
             i = 0
@@ -5891,6 +6796,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::EnableClip
+        ================
+        */
         override fun EnableClip() {
             var i: Int
             i = 0
@@ -5900,6 +6810,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::UnlinkClip
+        ================
+        */
         override fun UnlinkClip() {
             var i: Int
             i = 0
@@ -5913,6 +6828,11 @@ object Physics_AF {
             UpdateClipModels()
         }
 
+        /*
+        ================
+        idPhysics_AF::EvaluateContacts
+        ================
+        */
         override fun EvaluateContacts(): Boolean {
             var i: Int
             var j: Int
@@ -5995,6 +6915,11 @@ object Physics_AF {
             return contacts.Num() != 0
         }
 
+        /*
+        ================
+        idPhysics_AF::SetPushed
+        ================
+        */
         override fun SetPushed(deltaTime: Int) {
             val body: idAFBody?
             val rotation: idRotation
@@ -6030,6 +6955,13 @@ object Physics_AF {
          the binding is orientated based on the constraints being used
          ================
          */
+        /*
+        ================
+        idPhysics_AF::SetMaster
+
+          the binding is orientated based on the constraints being used
+        ================
+        */
         override fun SetMaster(master: idEntity?, orientated: Boolean /*= true*/) {
             var i: Int
             val masterOrigin = idVec3()
@@ -6070,6 +7002,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::WriteToSnapshot
+        ================
+        */
         override fun WriteToSnapshot(msg: idBitMsgDelta) {
             var i: Int
             var quat: idCQuat
@@ -6163,6 +7100,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::ReadFromSnapshot
+        ================
+        */
         override fun ReadFromSnapshot(msg: idBitMsgDelta) {
             var i: Int
             val num: Int
@@ -6211,6 +7153,11 @@ object Physics_AF {
             UpdateClipModels()
         }
 
+        /*
+        ================
+        idPhysics_AF::BuildTrees
+        ================
+        */
         private fun BuildTrees() {
             var i: Int
             val scale: Float
@@ -6339,6 +7286,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::IsClosedLoop
+        ================
+        */
         private fun IsClosedLoop(body1: idAFBody?, body2: idAFBody?): Boolean {
             var b1: idAFBody?
             var b2: idAFBody?
@@ -6353,6 +7305,11 @@ object Physics_AF {
             return b1 == b2
         }
 
+        /*
+        ================
+        idPhysics_AF::PrimaryFactor
+        ================
+        */
         private fun PrimaryFactor() {
             var i: Int
             i = 0
@@ -6362,6 +7319,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::EvaluateBodies
+        ================
+        */
         private fun EvaluateBodies(timeStep: Float) {
             var i: Int
             var body: idAFBody?
@@ -6412,6 +7374,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::EvaluateConstraints
+        ================
+        */
         private fun EvaluateConstraints(timeStep: Float) {
             var i: Int
             val invTimeStep: Float
@@ -6451,6 +7418,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::AddFrameConstraints
+        ================
+        */
         private fun AddFrameConstraints() {
             var i: Int
 
@@ -6462,12 +7434,22 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::RemoveFrameConstraints
+        ================
+        */
         private fun RemoveFrameConstraints() {
             // remove all the frame constraints from the auxiliary constraints
             auxiliaryConstraints.SetNum(auxiliaryConstraints.Num() - frameConstraints.Num(), false)
             frameConstraints.SetNum(0, false)
         }
 
+        /*
+        ================
+        idPhysics_AF::ApplyFriction
+        ================
+        */
         private fun ApplyFriction(timeStep: Float, endTimeMSec: Float) {
             var i: Int
             val invTimeStep: Float
@@ -6520,6 +7502,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::PrimaryForces
+        ================
+        */
         private fun PrimaryForces(timeStep: Float) {
             var i: Int
             i = 0
@@ -6529,6 +7516,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::AuxiliaryForces
+        ================
+        */
         private fun AuxiliaryForces(timeStep: Float) {
             var i: Int
             var j: Int
@@ -6758,7 +7750,6 @@ object Physics_AF {
                     } else {
                         boxIndex[k] = -1
                     }
-                    jmk[k][k]
                     jmk.plusAssign(k, k, constraint.e.p[j] * invStep)
                     j++
                     k++
@@ -6823,6 +7814,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::VerifyContactConstraints
+        ================
+        */
         private fun VerifyContactConstraints() {
             var i: Int
             var body: idAFBody?
@@ -6854,6 +7850,11 @@ object Physics_AF {
             // }
         }
 
+        /*
+        ================
+        idPhysics_AF::SetupContactConstraints
+        ================
+        */
         private fun SetupContactConstraints() {
             var i: Int
 
@@ -6877,10 +7878,20 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::ApplyContactForces
+        ================
+        */
         private fun ApplyContactForces() {
             return  // method behind ifdef, probably not used
         }
 
+        /*
+        ================
+        idPhysics_AF::Evolve
+        ================
+        */
         private fun Evolve(timeStep: Float) {
             var i: Int
             var angle: Float
@@ -7215,6 +8226,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::TestIfAtRest
+        ================
+        */
         private fun TestIfAtRest(timeStep: Float): Boolean {
             var i: Int
             var translationSqr: Float
@@ -7295,6 +8311,11 @@ object Physics_AF {
             return true
         }
 
+        /*
+        ================
+        idPhysics_AF::Rest
+        ================
+        */
         private fun Rest() {
             var i: Int
             current.atRest = Game_local.gameLocal.time
@@ -7307,6 +8328,11 @@ object Physics_AF {
             self!!.BecomeInactive(TH_PHYSICS)
         }
 
+        /*
+        ================
+        idPhysics_AF::AddPushVelocity
+        ================
+        */
         private fun AddPushVelocity(pushVelocity: idVec6) {
             var i: Int
             if (pushVelocity != vec6_origin) {
@@ -7318,6 +8344,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::DebugDraw
+        ================
+        */
         private fun DebugDraw() {
             var i: Int
             var body: idAFBody?
@@ -7521,6 +8552,11 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::DrawTraceModelSilhouette
+        ================
+        */
         private fun DrawTraceModelSilhouette(projectionOrigin: idVec3, clipModel: idClipModel) {
             var i: Int
             val numSilEdges: Int
@@ -7546,10 +8582,19 @@ object Physics_AF {
             }
         }
 
+        /*
+        ================
+        idPhysics_AF::oSet
+        ================
+        */
         override fun oSet(oGet: idClass?) {
         }
 
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idPhysics_AF()
+
         companion object {
+            val Type = idTypeInfo("idPhysics_AF", "idPhysics_Base") { idPhysics_AF() }
             const val AF_FORCE_MAX = 1e20f
             val AF_FORCE_EXPONENT_BITS = idMath.BitsForInteger(idMath.BitsForFloat(AF_FORCE_MAX)) + 1
             const val AF_FORCE_TOTAL_BITS = 16

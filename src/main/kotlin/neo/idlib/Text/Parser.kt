@@ -1119,8 +1119,8 @@ object Parser {
 
         private fun PopIndent(type: CInt, skip: CInt) {
             val indent: indent_s?
-            type._val = 0
-            skip._val = 0
+            type.integerValue = 0
+            skip.integerValue = 0
             indent = indentstack
             if (null == indent) {
                 return
@@ -1130,8 +1130,8 @@ object Parser {
             if (indentstack!!.script !== scriptstack) {
                 return
             }
-            type._val = indent.type
-            skip._val = indent.skip
+            type.integerValue = indent.type
+            skip.integerValue = indent.skip
             indentstack = indentstack!!.next
             this.skip -= indent.skip
             //	Mem_Free( indent );
@@ -1895,15 +1895,15 @@ object Parser {
             val type = CInt()
             val skip = CInt()
             PopIndent(type, skip)
-            if (0 == type._val) {
+            if (0 == type.integerValue) {
                 this.Error("misplaced #else")
                 return false
             }
-            if (type._val == INDENT_ELSE) {
+            if (type.integerValue == INDENT_ELSE) {
                 this.Error("#else after #else")
                 return false
             }
-            PushIndent(INDENT_ELSE, if (skip._val == 0) 1 else 0)
+            PushIndent(INDENT_ELSE, if (skip.integerValue == 0) 1 else 0)
             return true
         }
 
@@ -1912,7 +1912,7 @@ object Parser {
             val type = CInt()
             val skip = CInt()
             PopIndent(type, skip)
-            if (0 == type._val) {
+            if (0 == type.integerValue) {
                 this.Error("misplaced #endif")
                 return false
             }
@@ -2006,7 +2006,7 @@ object Parser {
             firstOperator = lastOperator
             lastValue = null
             firstValue = lastValue
-            intValue._val = 0
+            intValue.integerValue = 0
             floatValue._val = 0.0f
             t = tokens
             while (t != null) {
@@ -2384,8 +2384,8 @@ object Parser {
 //                FreeOperator(o);//TODO:see above
             }
             if (firstValue != null) {
-                if (intValue._val != 0) {
-                    intValue._val = firstValue.intValue
+                if (intValue.integerValue != 0) {
+                    intValue.integerValue = firstValue.intValue
                 }
                 if (floatValue._val != 0.0f) {
                     floatValue._val = firstValue.floatValue
@@ -2404,8 +2404,8 @@ object Parser {
             if (!error) {
                 return true
             }
-            if (intValue._val != 0) {
-                intValue._val = 0
+            if (intValue.integerValue != 0) {
+                intValue.integerValue = 0
             }
             if (floatValue._val != 0.0f) {
                 floatValue._val = 0.0f
@@ -2421,7 +2421,7 @@ object Parser {
             var t: idToken
             var define: define_s?
             var defined = false
-            intvalue._val = 0
+            intvalue.integerValue = 0
             floatvalue._val = 0.0f
             //
             if (!ReadLine(token)) {
@@ -2508,7 +2508,7 @@ object Parser {
             var lasttoken: idToken?
             var t: idToken
             var define: define_s?
-            intValue._val = 0
+            intValue.integerValue = 0
             floatValue._val = 0.0f
             //
             if (!ReadSourceToken(token)) {
@@ -2723,7 +2723,7 @@ object Parser {
             val type = CInt()
             val skip = CInt()
             PopIndent(type, skip)
-            if (type._val == INDENT_ELSE) {
+            if (type.integerValue == INDENT_ELSE) {
                 this.Error("misplaced #elif")
                 return false
             }
@@ -2731,8 +2731,8 @@ object Parser {
             if (!Evaluate(value, CFloat(), 1)) {
                 return false
             }
-            skip._val = if (value._val == 0) 1 else 0
-            PushIndent(INDENT_ELIF, skip._val)
+            skip.integerValue = if (value.integerValue == 0) 1 else 0
+            PushIndent(INDENT_ELIF, skip.integerValue)
             return true
         }
 
@@ -2743,8 +2743,8 @@ object Parser {
             if (!Evaluate(value, CFloat(), 1)) {
                 return false
             }
-            skip._val = if (value._val == 0) 1 else 0
-            PushIndent(INDENT_IF, skip._val)
+            skip.integerValue = if (value.integerValue == 0) 1 else 0
+            PushIndent(INDENT_IF, skip.integerValue)
             return true
         }
 
@@ -2816,12 +2816,12 @@ object Parser {
             token.whiteSpaceEnd_p = 0
             token.linesCrossed = 0
             token.flags = 0
-            buf = String.format("%d", abs(value._val))
+            buf = String.format("%d", abs(value.integerValue))
             token.set(buf)
             token.type = Token.TT_NUMBER
             token.subtype = Token.TT_INTEGER or Token.TT_LONG or Token.TT_DECIMAL
             UnreadSourceToken(token)
-            if (value._val < 0) {
+            if (value.integerValue < 0) {
                 UnreadSignToken()
             }
             return true
@@ -2916,14 +2916,14 @@ object Parser {
             token.whiteSpaceEnd_p = 0
             token.linesCrossed = 0
             token.flags = 0
-            buf = String.format("%d", abs(value._val))
+            buf = String.format("%d", abs(value.integerValue))
             token.set(buf)
             token.type = Token.TT_NUMBER
             token.subtype = Token.TT_INTEGER or Token.TT_LONG or Token.TT_DECIMAL or Token.TT_VALUESVALID
-            token.intValue = abs(value._val).toLong()
-            token.floatValue = abs(value._val.toFloat())
+            token.intValue = abs(value.integerValue).toLong()
+            token.floatValue = abs(value.integerValue.toFloat())
             UnreadSourceToken(token)
-            if (value._val < 0) {
+            if (value.integerValue < 0) {
                 UnreadSignToken()
             }
             return true

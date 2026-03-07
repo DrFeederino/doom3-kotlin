@@ -81,10 +81,10 @@ class Anim_Testmodel {
 
      ==============================================================================================
      */
-    class idTestModel     //
-    //
-        : idAnimatedEntity() {
+    class idTestModel : idAnimatedEntity() {
         companion object {
+            val Type = idTypeInfo("idTestModel", "idAnimatedEntity") { idTestModel() }
+
             // CLASS_PROTOTYPE( idTestModel );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -95,10 +95,8 @@ class Anim_Testmodel {
 
             init {
                 eventCallbacks.putAll(idAnimatedEntity.getEventCallBacks())
-                eventCallbacks[EV_FootstepLeft] =
-                    eventCallback_t0 { obj: idTestModel -> obj.Event_Footstep() }
-                eventCallbacks[EV_FootstepRight] =
-                    eventCallback_t0 { obj: idTestModel -> obj.Event_Footstep() }
+                eventCallbacks[EV_FootstepLeft] = eventCallback_t0 { obj: idTestModel -> obj.Event_Footstep() }
+                eventCallbacks[EV_FootstepRight] = eventCallback_t0 { obj: idTestModel -> obj.Event_Footstep() }
             }
         }
 
@@ -122,7 +120,9 @@ class Anim_Testmodel {
          idTestModel::Save
          ================
          */
-        override fun Save(savefile: idSaveGame) {}
+        override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
+        }
 
         /*
          ================
@@ -130,6 +130,7 @@ class Anim_Testmodel {
          ================
          */
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             // FIXME: one day we may actually want to save/restore test models, but for now we'll just delete them
             // FIX: Was missing cleanup logic — C++ calls `delete this` which triggers the destructor
             cleanup()
@@ -172,8 +173,7 @@ class Anim_Testmodel {
             var kv: idKeyValue?
             if (renderEntity!!.hModel != null && renderEntity!!.hModel!!.IsDefaultModel() && animator.ModelDef() == null) {
                 Game_local.gameLocal.Warning(
-                    "Unable to create testmodel for '%s' : model defaulted",
-                    spawnArgs.GetString("model")
+                    "Unable to create testmodel for '%s' : model defaulted", spawnArgs.GetString("model")
                 )
                 PostEventMS(EV_Remove, 0)
                 return
@@ -210,7 +210,7 @@ class Anim_Testmodel {
                         args.Set(sndKV.GetKey(), sndKV.GetValue())
                         sndKV = spawnArgs.MatchPrefix("snd_", sndKV)
                     }
-                    head.oSet(Game_local.gameLocal.SpawnEntityType(idAnimatedEntity::class.java, args))
+                    head.oSet(Game_local.gameLocal.SpawnEntityType(idAnimatedEntity.Type, args))
                     animator.GetJointTransform(joint, Game_local.gameLocal.time, origin, axis)
                     origin.set(
                         GetPhysics().GetOrigin() + (origin + modelOffset) * GetPhysics().GetAxis()
@@ -232,14 +232,14 @@ class Anim_Testmodel {
                             jointName.StripLeadingOnce("copy_joint ")
                             copyJoint.mod = jointModTransform_t.JOINTMOD_LOCAL_OVERRIDE
                         }
-                        copyJoint.from._val = animator.GetJointHandle(jointName.toString())
-                        if (copyJoint.from._val == Model.INVALID_JOINT) {
+                        copyJoint.from.integerValue = animator.GetJointHandle(jointName.toString())
+                        if (copyJoint.from.integerValue == Model.INVALID_JOINT) {
                             Game_local.gameLocal.Warning("Unknown copy_joint '%s'", jointName)
                             kv = spawnArgs.MatchPrefix("copy_joint", kv)
                             continue
                         }
-                        copyJoint.to._val = headAnimator!!.GetJointHandle(jointName.toString())
-                        if (copyJoint.to._val == Model.INVALID_JOINT) {
+                        copyJoint.to.integerValue = headAnimator!!.GetJointHandle(jointName.toString())
+                        if (copyJoint.to.integerValue == Model.INVALID_JOINT) {
                             Game_local.gameLocal.Warning("Unknown copy_joint '%s' on head", jointName)
                             kv = spawnArgs.MatchPrefix("copy_joint", kv)
                             continue
@@ -251,8 +251,7 @@ class Anim_Testmodel {
             }
 
             // start any shader effects based off of the spawn time
-            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                -MS2SEC(Game_local.gameLocal.time.toFloat())
+            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
             SetPhysics(physicsObj)
             Game_local.gameLocal.Printf(
                 "Added testmodel at origin = '%s',  angles = '%s'\n",
@@ -373,10 +372,7 @@ class Anim_Testmodel {
                 frame = 1
             }
             Game_local.gameLocal.Printf(
-                "^5 Anim: ^7%s\n^5Frame: ^7%d/%d\n\n",
-                animator.AnimFullName(anim),
-                frame,
-                animator.NumFrames(anim)
+                "^5 Anim: ^7%s\n^5Frame: ^7%d/%d\n\n", animator.AnimFullName(anim), frame, animator.NumFrames(anim)
             )
 
             // reset the anim
@@ -392,10 +388,7 @@ class Anim_Testmodel {
                 frame = animator.NumFrames(anim)
             }
             Game_local.gameLocal.Printf(
-                "^5 Anim: ^7%s\n^5Frame: ^7%d/%d\n\n",
-                animator.AnimFullName(anim),
-                frame,
-                animator.NumFrames(anim)
+                "^5 Anim: ^7%s\n^5Frame: ^7%d/%d\n\n", animator.AnimFullName(anim), frame, animator.NumFrames(anim)
             )
 
             // reset the anim
@@ -486,10 +479,7 @@ class Anim_Testmodel {
             animName.set(args.Argv(2))
             animator.CycleAnim(Anim.ANIMCHANNEL_ALL, anim1, Game_local.gameLocal.time, 0)
             animator.CycleAnim(
-                Anim.ANIMCHANNEL_ALL,
-                anim2,
-                Game_local.gameLocal.time,
-                Anim.FRAME2MS(args.Argv(3).toInt())
+                Anim.ANIMCHANNEL_ALL, anim2, Game_local.gameLocal.time, Anim.FRAME2MS(args.Argv(3).toInt())
             )
             anim = anim2
             headAnim = 0
@@ -716,31 +706,21 @@ class Anim_Testmodel {
                         if (copyJoints[i].mod == jointModTransform_t.JOINTMOD_WORLD_OVERRIDE) {
                             val mat = head.GetEntity()!!.GetPhysics().GetAxis().Transpose()
                             GetJointWorldTransform(
-                                copyJoints[i].from._val,
-                                Game_local.gameLocal.time,
-                                pos,
-                                axis
+                                copyJoints[i].from.integerValue, Game_local.gameLocal.time, pos, axis
                             )
                             pos.minusAssign(head.GetEntity()!!.GetPhysics().GetOrigin())
                             headAnimator!!.SetJointPos(
-                                copyJoints[i].to._val,
-                                copyJoints[i].mod,
-                                pos.times(mat)
+                                copyJoints[i].to.integerValue, copyJoints[i].mod, pos.times(mat)
                             )
                             headAnimator!!.SetJointAxis(
-                                copyJoints[i].to._val,
-                                copyJoints[i].mod,
-                                axis.times(mat)
+                                copyJoints[i].to.integerValue, copyJoints[i].mod, axis.times(mat)
                             )
                         } else {
                             animator.GetJointLocalTransform(
-                                copyJoints[i].from._val,
-                                Game_local.gameLocal.time,
-                                pos,
-                                axis
+                                copyJoints[i].from.integerValue, Game_local.gameLocal.time, pos, axis
                             )
-                            headAnimator!!.SetJointPos(copyJoints[i].to._val, copyJoints[i].mod, pos)
-                            headAnimator!!.SetJointAxis(copyJoints[i].to._val, copyJoints[i].mod, axis)
+                            headAnimator!!.SetJointPos(copyJoints[i].to.integerValue, copyJoints[i].mod, pos)
+                            headAnimator!!.SetJointAxis(copyJoints[i].to.integerValue, copyJoints[i].mod, axis)
                         }
                         i++
                     }
@@ -773,9 +753,7 @@ class Anim_Testmodel {
             }
             UpdateAnimation()
             Present()
-            if (Game_local.gameLocal.testmodel == this
-                && SysCvar.g_showTestModelFrame.GetInteger() != 0 && anim != 0
-            ) {
+            if (Game_local.gameLocal.testmodel == this && SysCvar.g_showTestModelFrame.GetInteger() != 0 && anim != 0) {
                 Game_local.gameLocal.Printf(
                     "^5 Anim: ^7%s  ^5Frame: ^7%d/%d  Time: %.3f\n",
                     animator.AnimFullName(anim),
@@ -811,6 +789,9 @@ class Anim_Testmodel {
             throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
         }
 
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idTestModel()
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -830,8 +811,7 @@ class Anim_Testmodel {
                     return
                 }
                 Game_local.gameLocal.Printf(
-                    "modelDef %p kept\n",
-                    Game_local.gameLocal.testmodel!!.renderEntity!!.hModel
+                    "modelDef %p kept\n", Game_local.gameLocal.testmodel!!.renderEntity!!.hModel
                 )
                 Game_local.gameLocal.testmodel = null
             }
@@ -989,7 +969,7 @@ class Anim_Testmodel {
                 dict.Set("origin", offset.ToString())
                 dict.Set("angle", Str.va("%f", player.viewAngles.yaw + 180.0f))
                 Game_local.gameLocal.testmodel =
-                    Game_local.gameLocal.SpawnEntityType(idTestModel::class.java, dict) as idTestModel
+                    Game_local.gameLocal.SpawnEntityType(Type, dict) as idTestModel
                 Game_local.gameLocal.testmodel!!.renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
                     -MS2SEC(Game_local.gameLocal.time.toFloat())
             }
@@ -1016,9 +996,7 @@ class Anim_Testmodel {
                 while (i < num) {
                     callback.run(
                         idStr(args!!.Argv(0)).toString() + " " + DeclManager.declManager.DeclByIndex(
-                            declType_t.DECL_ENTITYDEF,
-                            i,
-                            false
+                            declType_t.DECL_ENTITYDEF, i, false
                         )!!.GetName()
                     )
                     i++
@@ -1028,24 +1006,13 @@ class Anim_Testmodel {
                 while (i < num) {
                     callback.run(
                         idStr(args!!.Argv(0)).toString() + " " + DeclManager.declManager.DeclByIndex(
-                            declType_t.DECL_MODELDEF,
-                            i,
-                            false
+                            declType_t.DECL_MODELDEF, i, false
                         )!!.GetName()
                     )
                     i++
                 }
                 CmdSystem.cmdSystem.ArgCompletion_FolderExtension(
-                    args,
-                    callback,
-                    "models/",
-                    false,
-                    ".lwo",
-                    ".ase",
-                    ".md5mesh",
-                    ".ma",
-                    ".mb",
-                    null
+                    args, callback, "models/", false, ".lwo", ".ase", ".md5mesh", ".ma", ".mb", null
                 )
             }
 

@@ -96,60 +96,16 @@ object Winvar {
         override fun toString(): String {
             return "idWinVar{guiDict=$guiDict, name=$name}"
         }
-
-        companion object {
-            @Deprecated("calling this function in idWindow::EmitOp hides the loading bar progress.")
-            fun clone(`var`: idWinVar?): idWinVar? {
-                if (`var` == null) return null
-                if (`var` is idWinBool) {
-                    return idWinBool(`var`)
-                }
-                if (`var` is idWinBackground) {
-                    return idWinBackground(`var`)
-                }
-                if (`var` is idWinFloat) {
-                    return idWinFloat(`var`)
-                }
-                if (`var` is idWinInt) {
-                    return idWinInt(`var`.data)
-                }
-                if (`var` is idWinRectangle) {
-                    return idWinRectangle(`var`)
-                }
-                if (`var` is idWinStr) {
-                    return idWinStr(`var`)
-                }
-                if (`var` is idWinVec2) {
-                    return idWinVec2(`var`.data)
-                }
-                if (`var` is idWinVec3) {
-                    return idWinVec3(`var`)
-                }
-                if (`var` is idWinVec4) {
-                    return idWinVec4(`var`)
-                }
-                throw UnsupportedOperationException()
-            }
-        }
     }
 
     class idWinBool : idWinVar {
         var data = false
 
-        //
-        //
         constructor() : super()
         constructor(a: Boolean) : this() {
             data = a
         }
 
-        //copy constructor
-        constructor(winBool: idWinBool) {
-            super.set(winBool)
-            data = winBool.data
-        }
-
-        // ~idWinBool() {};
         override fun Init(_name: String?, win: idWindow?) {
             super.Init(_name, win)
             if (guiDict != null) {
@@ -224,7 +180,7 @@ object Winvar {
     }
 
     open class idWinStr : idWinVar {
-        var data: idStr? = idStr()
+        val data: idStr = idStr()
 
         //
         //
@@ -232,19 +188,19 @@ object Winvar {
 
         //	// ~idWinStr() {};
         constructor(a: String?) : this() {
-            data = idStr(a!!)
+            data.set(a!!)
         }
 
         //copy constructor
         internal constructor(other: idWinStr) {
             super.set(other)
-            data = idStr(other.data!!)
+            data.set(other.data!!)
         }
 
         override fun Init(_name: String?, win: idWindow?) {
             super.Init(_name, win)
             if (guiDict != null) {
-                data = idStr(guiDict!!.GetString(GetName()))
+                data.set(guiDict!!.GetString(GetName()))
             }
         }
 
@@ -279,8 +235,8 @@ object Winvar {
             return false
         }
 
-        open fun set(other: idStr?): idStr? {
-            data = other
+        open fun set(other: idStr): idStr {
+            data.set(other)
             if (guiDict != null) {
                 guiDict!!.Set(GetName(), data!!)
             }
@@ -289,7 +245,7 @@ object Winvar {
 
         fun set(other: idWinStr?): idWinStr {
             super.set(other)
-            data = other!!.data
+            data.set(other!!.data)
             return this
         }
 
@@ -355,11 +311,10 @@ object Winvar {
 
         override fun ReadFromSaveGame(savefile: idFile) {
             eval = savefile.ReadBool()
-            val len: Int
-            len = savefile.ReadInt()
+            val len: Int = savefile.ReadInt()
             if (len > 0) {
                 data!!.Fill(' ', len)
-                savefile.ReadString(data!!)
+                savefile.Read(data, len)
             }
         }
 
@@ -369,7 +324,7 @@ object Winvar {
         }
     }
 
-    internal class idWinInt() : idWinVar() {
+    class idWinInt() : idWinVar() {
         var data = 0
 
         constructor(a: Int) : this() {
@@ -1083,13 +1038,12 @@ object Winvar {
         //
         constructor() : super() {
             mat = null
-            data = idStr()
         }
 
         //copy constructor
         constructor(other: idWinBackground) {
             super.set(other)
-            data = other.data
+            data.set(other.data)
             mat = other.mat
             if (mat != null) {
                 if (data!!.IsEmpty()) {
@@ -1108,8 +1062,8 @@ object Winvar {
             }
         }
 
-        override fun set(other: idStr?): idStr? {
-            data = other
+        override fun set(other: idStr): idStr {
+            data.set(other)
             if (guiDict != null) {
                 guiDict!!.Set(GetName(), data!!)
             }
@@ -1186,11 +1140,10 @@ object Winvar {
 
         override fun ReadFromSaveGame(savefile: idFile) {
             eval = savefile.ReadBool()
-            val len: Int
-            len = savefile.ReadInt()
+            val len: Int = savefile.ReadInt()
             if (len > 0) {
                 data!!.Fill(' ', len)
-                savefile.ReadString(data!!)
+                savefile.Read(data, len)
             }
             if (mat != null) {
                 if (len > 0) {

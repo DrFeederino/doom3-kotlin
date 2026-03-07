@@ -108,6 +108,8 @@ object Sound {
     */
     class idSound : idEntity() {
         companion object {
+            val Type = idTypeInfo("idSound", "idEntity") { idSound() }
+
             // CLASS_DECLARATION( idEntity, idSound )
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -145,6 +147,7 @@ object Sound {
         ================
         */
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteFloat(lastSoundVol)
             savefile.WriteFloat(soundVol)
             savefile.WriteFloat(random)
@@ -161,6 +164,7 @@ object Sound {
         ================
         */
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             lastSoundVol = savefile.ReadFloat()
             soundVol = savefile.ReadFloat()
             random = savefile.ReadFloat()
@@ -349,7 +353,7 @@ object Sound {
                     true,
                     playingUntilTime
                 )
-                this.playingUntilTime = playingUntilTime._val + Game_local.gameLocal.time
+                this.playingUntilTime = playingUntilTime.integerValue + Game_local.gameLocal.time
             } else {
                 StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), true)
                 playingUntilTime = 0
@@ -391,9 +395,8 @@ object Sound {
             Common.common.InitTool(Common.EDITOR_SOUND, spawnArgs)
         }
 
-        override fun CreateInstance(): idClass {
-            return idSound()
-        }
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idSound()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]

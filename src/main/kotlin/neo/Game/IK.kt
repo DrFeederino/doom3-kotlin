@@ -96,7 +96,7 @@ object IK {
             val anim = idStr()
             initialized = savefile.ReadBool()
             ik_activate = savefile.ReadBool()
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/self)
+            self = savefile.ReadObject() as idEntity?
             savefile.ReadString(anim)
             savefile.ReadVec3(modelOffset)
             if (self != null) {
@@ -422,7 +422,7 @@ object IK {
             var i: Int
             super.Restore(savefile)
             // FIX: was footModel!! which would NPE when footModel is null (always null after construction)
-            savefile.ReadClipModel(footModel)
+            footModel = savefile.ReadClipModel()
             numLegs = savefile.ReadInt()
             enabledLegs = savefile.ReadInt()
             i = 0

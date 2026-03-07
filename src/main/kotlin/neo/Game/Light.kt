@@ -72,6 +72,8 @@ object Light {
 
     class idLight : idEntity() {
         companion object {
+            val Type = idTypeInfo("idLight", "idEntity") { idLight() }
+
             // enum {
             val EVENT_BECOMEBROKEN: Int = idEntity.EVENT_MAXEVENTS
             val EVENT_MAXEVENTS = EVENT_BECOMEBROKEN + 1
@@ -192,8 +194,8 @@ object Light {
 
             // set the number of light levels
             spawnArgs.GetInt("levels", "1", levels)
-            currentLevel = levels._val
-            if (levels._val <= 0) {
+            currentLevel = levels.integerValue
+            if (levels.integerValue <= 0) {
                 idGameLocal.Error("Invalid light level set on entity #%d(%s)", entityNumber, name)
             }
 
@@ -293,12 +295,13 @@ object Light {
          ================
          */
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteRenderLight(renderLight)
             savefile.WriteBool(renderLight.prelightModel != null)
             savefile.WriteVec3(localLightOrigin)
             savefile.WriteMat3(localLightAxis)
             savefile.WriteString(brokenModel)
-            savefile.WriteInt(levels._val)
+            savefile.WriteInt(levels.integerValue)
             savefile.WriteInt(currentLevel)
             savefile.WriteVec3(baseColor)
             savefile.WriteBool(breakOnTrigger)
@@ -320,6 +323,7 @@ object Light {
          ================
          */
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val hadPrelightModel = CBool(false)
             savefile.ReadRenderLight(renderLight)
             savefile.ReadBool(hadPrelightModel)
@@ -343,7 +347,7 @@ object Light {
             breakOnTrigger = savefile.ReadBool()
             count = savefile.ReadInt()
             triggercount = savefile.ReadInt()
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/lightParent)
+            lightParent = savefile.ReadObject() as idEntity?
             savefile.ReadVec4(fadeFrom)
             savefile.ReadVec4(fadeTo)
             fadeStart = savefile.ReadInt()
@@ -520,7 +524,7 @@ object Light {
         }
 
         fun On() {
-            currentLevel = levels._val
+            currentLevel = levels.integerValue
             // offset the start time of the shader to sync it to the game time
             renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
                 -MS2SEC(Game_local.gameLocal.time.toFloat())
@@ -558,7 +562,7 @@ object Light {
         fun FadeIn(time: Float) {
             val color = idVec3()
             val color4 = idVec4()
-            currentLevel = levels._val
+            currentLevel = levels.integerValue
             spawnArgs.GetVector("_color", "1 1 1", color)
             color4.set(color.x, color.y, color.z, 1.0f)
             Fade(color4, time)
@@ -637,7 +641,7 @@ object Light {
         fun SetLightLevel() {
             val color = idVec3()
             val intensity: Float
-            intensity = currentLevel.toFloat() / levels._val.toFloat()
+            intensity = currentLevel.toFloat() / levels.integerValue.toFloat()
             color.set(baseColor.times(intensity))
             renderLight.shaderParms[RenderWorld.SHADERPARM_RED] = color[0]
             renderLight.shaderParms[RenderWorld.SHADERPARM_GREEN] = color[1]
@@ -897,9 +901,8 @@ object Light {
             FadeIn(time.value)
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idLight()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -918,7 +921,7 @@ object Light {
             localLightAxis.set(idMat3.getMat3_identity())
             lightDefHandle = -1
             brokenModel = idStr()
-            levels._val = 0
+            levels.integerValue = 0
             currentLevel = 0
             baseColor.set(vec3_zero)
             breakOnTrigger = false

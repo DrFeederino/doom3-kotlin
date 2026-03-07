@@ -453,7 +453,7 @@ object AASFile_local {
                 )
                 return false
             }
-            if (0 == src.ExpectTokenType(Token.TT_NUMBER, Token.TT_INTEGER, token)) {
+            if (!src.ExpectTokenType(Token.TT_NUMBER, Token.TT_INTEGER, token)) {
                 Common.common.Warning("AAS file '%s' has no map file CRC", name)
                 return false
             }
@@ -1198,14 +1198,14 @@ object AASFile_local {
             if (nodeNum <= 0) {
                 return
             }
-            depth._val = (depth._val + 1)
-            if (depth._val > maxDepth._val) {
+            depth.integerValue = (depth.integerValue + 1)
+            if (depth.integerValue > maxDepth.integerValue) {
                 maxDepth = depth
             }
             node = nodes[nodeNum]
             MaxTreeDepth_r(node.children[0], depth, maxDepth)
             MaxTreeDepth_r(node.children[1], depth, maxDepth)
-            depth._val = (depth._val - 1)
+            depth.integerValue = (depth.integerValue - 1)
         }
 
         private fun MaxTreeDepth(): Int {
@@ -1214,7 +1214,7 @@ object AASFile_local {
 
 //	depth = maxDepth = 0;
             MaxTreeDepth_r(1, depth, maxDepth)
-            return maxDepth._val
+            return maxDepth.integerValue
         }
 
         private fun AreaContentsTravelFlags(areaNum: Int): Int {

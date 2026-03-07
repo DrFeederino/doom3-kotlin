@@ -1395,12 +1395,12 @@ object Material {
 
         fun GetImageWidth(): Int {
             assert((GetStage(0) != null && GetStage(0)!!.texture.image!![0] != null))
-            return GetStage(0)!!.texture.image!![0]!!.uploadWidth._val
+            return GetStage(0)!!.texture.image!![0]!!.uploadWidth.integerValue
         }
 
         fun GetImageHeight(): Int {
             assert((GetStage(0) != null && GetStage(0)!!.texture.image!![0] != null))
-            return GetStage(0)!!.texture.image!![0]!!.uploadHeight._val
+            return GetStage(0)!!.texture.image!![0]!!.uploadHeight.integerValue
         }
 
         fun SetGui(_gui: String?) {
@@ -2731,10 +2731,6 @@ object Material {
                 decalInfo.start[i] = start[i]
                 decalInfo.end[i] = end[i]
             }
-        }
-
-        fun oSet(FindMaterial: idMaterial?) {
-            throw UnsupportedOperationException("Not supported yet.")
         }
 
         /*

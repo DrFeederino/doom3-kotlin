@@ -145,8 +145,8 @@ object BitMsg {
 
         // save the write state
         fun SaveWriteState(s: CInt, b: CInt) {
-            s._val = curSize
-            b._val = writeBit
+            s.integerValue = curSize
+            b.integerValue = writeBit
         }
 
         // restore the write state
@@ -192,8 +192,8 @@ object BitMsg {
 
         // save the read state
         fun SaveReadState(c: CInt, b: CInt) {
-            c._val = readCount
-            b._val = readBit
+            c.integerValue = readCount
+            b.integerValue = readBit
         }
 
         // restore the read state

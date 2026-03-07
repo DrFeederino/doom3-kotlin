@@ -554,11 +554,11 @@ object Lexer {
 
         // expect a certain token type
         @Throws(idException::class)
-        fun ExpectTokenType(type: Int, subtype: Int, token: idToken): Int {
+        fun ExpectTokenType(type: Int, subtype: Int, token: idToken): Boolean {
             val str = idStr()
             if (!ReadToken(token)) {
                 Error("couldn't read expected token")
-                return 0
+                return false
             }
             if (token.type != type) {
                 when (type) {
@@ -570,7 +570,7 @@ object Lexer {
                     else -> str.set("unknown type")
                 }
                 Error("expected a %s but found '%s'", str.toString(), token.toString())
-                return 0
+                return false
             }
             if (token.type == Token.TT_NUMBER) {
                 if (token.subtype and subtype != subtype) {
@@ -601,19 +601,19 @@ object Lexer {
                     }
                     str.StripTrailing(' ')
                     Error("expected %s but found '%s'", str.toString(), token.toString())
-                    return 0
+                    return false
                 }
             } else if (token.type == Token.TT_PUNCTUATION) {
                 if (subtype < 0) {
                     Error("BUG: wrong punctuation subtype")
-                    return 0
+                    return false
                 }
                 if (token.subtype != subtype) {
                     Error("expected '%s' but found '%s'", GetPunctuationFromId(subtype), token.toString())
-                    return 0
+                    return false
                 }
             }
-            return 1
+            return true
         }
 
         // expect a token
@@ -827,7 +827,7 @@ object Lexer {
         @Throws(idException::class)
         fun ParseBool(): Boolean {
             val token = idToken()
-            if (0 == ExpectTokenType(Token.TT_NUMBER, 0, token)) {
+            if (!ExpectTokenType(Token.TT_NUMBER, 0, token)) {
                 Error("couldn't read expected boolean")
                 return false
             }

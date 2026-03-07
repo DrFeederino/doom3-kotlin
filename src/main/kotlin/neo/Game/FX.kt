@@ -82,6 +82,8 @@ class idFXLocalAction {
 
 open class idEntityFx : idEntity() {
     companion object {
+        val Type = idTypeInfo("idEntityFx", "idEntity") { idEntityFx() }
+
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
         //	virtual					~idEntityFx();
@@ -92,7 +94,7 @@ open class idEntityFx : idEntity() {
             val args = idDict()
             args.SetBool("start", true)
             args.Set("fx", fx)
-            val nfx = Game_local.gameLocal.SpawnEntityType(idEntityFx::class.java, args) as idEntityFx
+            val nfx = Game_local.gameLocal.SpawnEntityType(idEntityFx.Type, args) as idEntityFx
             if (nfx.Joint() != null && !nfx.Joint()!!.isEmpty()) {
                 nfx.BindToJoint(ent!!, nfx.Joint()!!, true)
                 nfx.SetOrigin(vec3_origin)
@@ -157,6 +159,7 @@ open class idEntityFx : idEntity() {
     }
 
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         var i: Int
         savefile.WriteInt(started)
         savefile.WriteInt(nextTriggerTime)
@@ -188,6 +191,7 @@ open class idEntityFx : idEntity() {
     }
 
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         var i: Int
         val num = CInt()
         val hasObject = CBool(false)
@@ -204,9 +208,9 @@ open class idEntityFx : idEntity() {
         }
         savefile.ReadString(systemName)
         savefile.ReadInt(num)
-        actions.SetNum(num._val)
+        actions.SetNum(num.integerValue)
         i = 0
-        while (i < num._val) {
+        while (i < num.integerValue) {
             savefile.ReadBool(hasObject)
             if (hasObject._val) {
                 savefile.ReadRenderLight(actions[i].renderLight)
@@ -218,7 +222,7 @@ open class idEntityFx : idEntity() {
             }
             savefile.ReadBool(hasObject)
             if (hasObject._val) {
-                savefile.ReadRenderEntity(actions[i].renderEntity)
+                actions[i].renderEntity = savefile.ReadRenderEntity()
                 actions[i].modelDefHandle =
                     Game_local.gameRenderWorld!!.AddEntityDef(actions[i].renderEntity)
             } else {
@@ -612,7 +616,7 @@ open class idEntityFx : idEntity() {
         start_time = msg.ReadLong()
         if (fx_index != -1 && start_time > 0 && fxEffect == null && started < 0) {
             spawnArgs.GetInt("effect_lapse", "1000", max_lapse)
-            if (Game_local.gameLocal.time - start_time > max_lapse._val) {
+            if (Game_local.gameLocal.time - start_time > max_lapse.integerValue) {
                 // too late, skip the effect completely
                 started = 0
                 return
@@ -741,6 +745,9 @@ open class idEntityFx : idEntity() {
         }
     }
 
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idEntityFx()
+
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]
     }
@@ -766,6 +773,8 @@ open class idEntityFx : idEntity() {
  */
 class idTeleporter : idEntityFx() {
     companion object {
+        val Type = idTypeInfo("idTeleporter", "idEntityFx") { idTeleporter() }
+
         //        public 	CLASS_PROTOTYPE( idTeleporter );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
         fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -786,6 +795,9 @@ class idTeleporter : idEntityFx() {
         val a = idAngles(0.0f, spawnArgs.GetFloat("angle"), 0.0f)
         activator.value.Teleport(GetPhysics().GetOrigin(), a, null)
     }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idTeleporter()
 
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]

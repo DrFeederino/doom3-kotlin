@@ -10,7 +10,6 @@ import neo.Sound.snd_system
 import neo.Sound.sound.idSoundWorld
 import neo.TempDump
 import neo.TempDump.SERiAL
-import neo.TempDump.TODO_Exception
 import neo.framework.Async.AsyncNetwork
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.framework.Async.ServerScan.serverSort_t
@@ -50,6 +49,7 @@ import neo.idlib.hashing.CRC32
 import neo.sys.*
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.sys_public.sysEvent_s
+import neo.sys.win_shared.Sys_GetDriveFreeSpace
 import neo.ui.ListGUI.idListGUI
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
@@ -75,11 +75,23 @@ object Session_local {
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw TODO_Exception()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            if (cmd == null) cmd = usercmd_t()
+            cmd!!.Read(buffer)
+            consistencyHash = buffer.int
         }
 
         override fun Write(): ByteBuffer {
-            throw TODO_Exception()
+            val buffer = AllocBuffer()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            if (cmd != null) {
+                buffer.put(cmd!!.Write())
+            } else {
+                buffer.position(buffer.position() + usercmd_t.BYTES)
+            }
+            buffer.putInt(consistencyHash)
+            buffer.flip()
+            return buffer
         }
 
         companion object {
@@ -1925,7 +1937,7 @@ object Session_local {
             // version
             val readVersion = CInt()
             savegameFile!!.ReadInt(readVersion)
-            savegameVersion = readVersion._val
+            savegameVersion = readVersion.integerValue
 
             // map
             savegameFile!!.ReadString(saveMap)
@@ -2025,154 +2037,153 @@ object Session_local {
 
         @Throws(idException::class)
         fun SaveGame(saveName: String, autosave: Boolean = false /*= false*/): Boolean {
-            // TODO: uncomment
-            return false
-//            val previewFile = idStr()
-//            val descriptionFile = idStr()
-//            val mapName = idStr()
-//            // DG: support setting an explicit savename to avoid problems with autosave names
-//            val gameFile = idStr(saveName)
-//            if (!mapSpawned) {
-//                Common.common.Printf("Not playing a game.\n")
-//                return false
-//            }
-//
-//            if (IsMultiplayer()) {
-//                Common.common.Printf("Can't save during net play.\n")
-//                return false
-//            }
-//
-//            if (Game_local.game.GetPersistentPlayerInfo(0).GetInt("health") <= 0) {
-//                MessageBox(
-//                    msgBoxType_t.MSG_OK,
-//                    Common.common.GetLanguageDict().GetString("#str_04311"),
-//                    Common.common.GetLanguageDict().GetString("#str_04312"),
-//                    true
-//                )
-//                Common.common.Printf("You must be alive to save the game\n")
-//                return false
-//            }
-//
-//            if (Sys_GetDriveFreeSpace(CVarSystem.cvarSystem.GetCVarString("fs_savepath")) < 25) {
-//                MessageBox(
-//                    msgBoxType_t.MSG_OK,
-//                    Common.common.GetLanguageDict().GetString("#str_04313"),
-//                    Common.common.GetLanguageDict().GetString("#str_04314"),
-//                    true
-//                )
-//                Common.common.Printf("Not enough drive space to save the game\n")
-//                return false
-//            }
-//
-//            val pauseWorld = snd_system.soundSystem.GetPlayingSoundWorld()
-//            if (pauseWorld != null) {
-//                pauseWorld.Pause()
-//                snd_system.soundSystem.SetPlayingSoundWorld(null)
-//            }
-//
-//            // setup up filenames and paths
-//            ScrubSaveGameFileName(gameFile)
-//
-//            gameFile.set("savegames/" + gameFile)
-//            gameFile.SetFileExtension(".save")
-//
-//            previewFile.set(gameFile)
-//            previewFile.SetFileExtension(".tga")
-//
-//            descriptionFile.set(gameFile)
-//            descriptionFile.SetFileExtension(".txt")
-//
-//            // Open savegame file
-//            val fileOut = FileSystem_h.fileSystem.OpenFileWrite(gameFile.toString())
-//            if (fileOut == null) {
-//                Common.common.Warning("Failed to open save file '%s'\n", gameFile.toString())
-//                if (pauseWorld != null) {
-//                    snd_system.soundSystem.SetPlayingSoundWorld(pauseWorld)
-//                    pauseWorld.UnPause()
-//                }
-//                return false
-//            }
-//
-//            // Write SaveGame Header:
-//            // Game Name / Version / Map Name / Persistant Player Info
-//
-//            // game
-//            val gamename = GAME_NAME
-//            fileOut.WriteString(gamename)
-//
-//            // version
-//            fileOut.WriteInt(SAVEGAME_VERSION)
-//
-//            // map
-//            mapName.set(mapSpawnData.serverInfo.GetString("si_map"))
-//            fileOut.WriteString(mapName.toString())
-//
-//            // persistent player info
-//            for (i in 0 until AsyncNetwork.MAX_ASYNC_CLIENTS) {
-//                mapSpawnData.persistentPlayerInfo[i] = Game_local.game.GetPersistentPlayerInfo(i)
-//                mapSpawnData.persistentPlayerInfo[i].WriteToFileHandle(fileOut)
-//            }
-//
-//            // let the game save its state
-//            Game_local.game.SaveGame(fileOut)
-//
-//            // close the sava game file
-//            FileSystem_h.fileSystem.CloseFile(fileOut)
-//
-//            // Write screenshot
-//            if (!autosave) {
-//                RenderSystem.renderSystem.CropRenderSize(320, 240, false)
-//                Game_local.game.Draw(0)
-//                RenderSystem.renderSystem.CaptureRenderToFile(previewFile.toString(), true)
-//                RenderSystem.renderSystem.UnCrop()
-//            }
-//
-//            // Write description, which is just a text file with
-//            // the unclean save name on line 1, map name on line 2, screenshot on line 3
-//            val fileDesc = FileSystem_h.fileSystem.OpenFileWrite(descriptionFile.toString())
-//            if (fileDesc == null) {
-//                Common.common.Warning("Failed to open description file '%s'\n", descriptionFile.toString())
-//                if (pauseWorld != null) {
-//                    snd_system.soundSystem.SetPlayingSoundWorld(pauseWorld)
-//                    pauseWorld.UnPause()
-//                }
-//                return false
-//            }
-//
-//            val description = idStr(saveName)
-//            description.Replace("\\", "\\\\")
-//            description.Replace("\"", "\\\"")
-//
-//            val mapDef =
-//                DeclManager.declManager.FindType(declType_t.DECL_MAPDEF, mapName.toString(), false) as idDeclEntityDef?
-//            if (mapDef != null) {
-//                mapName.set(
-//                    Common.common.GetLanguageDict().GetString(mapDef.dict.GetString("name", mapName.toString()))
-//                )
-//            }
-//
-//            fileDesc.Printf("\"%s\"\n", description.toString())
-//            fileDesc.Printf("\"%s\"\n", mapName.toString())
-//
-//            if (autosave) {
-//                val sshot = idStr(mapSpawnData.serverInfo.GetString("si_map"))
-//                sshot.StripPath()
-//                sshot.StripFileExtension()
-//                fileDesc.Printf("\"guis/assets/autosave/%s\"\n", sshot.toString())
-//            } else {
-//                fileDesc.Printf("\"\"\n")
-//            }
-//
-//            FileSystem_h.fileSystem.CloseFile(fileDesc)
-//
-//            if (pauseWorld != null) {
-//                snd_system.soundSystem.SetPlayingSoundWorld(pauseWorld)
-//                pauseWorld.UnPause()
-//            }
-//
-//            syncNextGameFrame = true
-//
-//            return true
+//            return false
+            val previewFile = idStr()
+            val descriptionFile = idStr()
+            val mapName = idStr()
+            // DG: support setting an explicit savename to avoid problems with autosave names
+            val gameFile = idStr(saveName)
+            if (!mapSpawned) {
+                Common.common.Printf("Not playing a game.\n")
+                return false
+            }
+
+            if (IsMultiplayer()) {
+                Common.common.Printf("Can't save during net play.\n")
+                return false
+            }
+
+            if (Game_local.game.GetPersistentPlayerInfo(0).GetInt("health") <= 0) {
+                MessageBox(
+                    msgBoxType_t.MSG_OK,
+                    Common.common.GetLanguageDict().GetString("#str_04311"),
+                    Common.common.GetLanguageDict().GetString("#str_04312"),
+                    true
+                )
+                Common.common.Printf("You must be alive to save the game\n")
+                return false
+            }
+
+            if (Sys_GetDriveFreeSpace(CVarSystem.cvarSystem.GetCVarString("fs_savepath")) < 25) {
+                MessageBox(
+                    msgBoxType_t.MSG_OK,
+                    Common.common.GetLanguageDict().GetString("#str_04313"),
+                    Common.common.GetLanguageDict().GetString("#str_04314"),
+                    true
+                )
+                Common.common.Printf("Not enough drive space to save the game\n")
+                return false
+            }
+
+            val pauseWorld = snd_system.soundSystem.GetPlayingSoundWorld()
+            if (pauseWorld != null) {
+                pauseWorld.Pause()
+                snd_system.soundSystem.SetPlayingSoundWorld(null)
+            }
+
+            // setup up filenames and paths
+            ScrubSaveGameFileName(gameFile)
+
+            gameFile.set("savegames/" + gameFile)
+            gameFile.SetFileExtension(".save")
+
+            previewFile.set(gameFile)
+            previewFile.SetFileExtension(".tga")
+
+            descriptionFile.set(gameFile)
+            descriptionFile.SetFileExtension(".txt")
+
+            // Open savegame file
+            val fileOut = FileSystem_h.fileSystem.OpenFileWrite(gameFile.toString())
+            if (fileOut == null) {
+                Common.common.Warning("Failed to open save file '%s'\n", gameFile.toString())
+                if (pauseWorld != null) {
+                    snd_system.soundSystem.SetPlayingSoundWorld(pauseWorld)
+                    pauseWorld.UnPause()
+                }
+                return false
+            }
+
+            // Write SaveGame Header:
+            // Game Name / Version / Map Name / Persistant Player Info
+
+            // game
+            val gamename = GAME_NAME
+            fileOut.WriteString(gamename)
+
+            // version
+            fileOut.WriteInt(SAVEGAME_VERSION)
+
+            // map
+            mapName.set(mapSpawnData.serverInfo.GetString("si_map"))
+            fileOut.WriteString(mapName.toString())
+
+            // persistent player info
+            for (i in 0 until AsyncNetwork.MAX_ASYNC_CLIENTS) {
+                mapSpawnData.persistentPlayerInfo[i] = Game_local.game.GetPersistentPlayerInfo(i)
+                mapSpawnData.persistentPlayerInfo[i].WriteToFileHandle(fileOut)
+            }
+
+            // let the game save its state
+            Game_local.game.SaveGame(fileOut)
+
+            // close the sava game file
+            FileSystem_h.fileSystem.CloseFile(fileOut)
+
+            // Write screenshot
+            if (!autosave) {
+                RenderSystem.renderSystem.CropRenderSize(320, 240, false)
+                Game_local.game.Draw(0)
+                RenderSystem.renderSystem.CaptureRenderToFile(previewFile.toString(), true)
+                RenderSystem.renderSystem.UnCrop()
+            }
+
+            // Write description, which is just a text file with
+            // the unclean save name on line 1, map name on line 2, screenshot on line 3
+            val fileDesc = FileSystem_h.fileSystem.OpenFileWrite(descriptionFile.toString())
+            if (fileDesc == null) {
+                Common.common.Warning("Failed to open description file '%s'\n", descriptionFile.toString())
+                if (pauseWorld != null) {
+                    snd_system.soundSystem.SetPlayingSoundWorld(pauseWorld)
+                    pauseWorld.UnPause()
+                }
+                return false
+            }
+
+            val description = idStr(saveName)
+            description.Replace("\\", "\\\\")
+            description.Replace("\"", "\\\"")
+
+            val mapDef =
+                DeclManager.declManager.FindType(declType_t.DECL_MAPDEF, mapName.toString(), false) as idDeclEntityDef?
+            if (mapDef != null) {
+                mapName.set(
+                    Common.common.GetLanguageDict().GetString(mapDef.dict.GetString("name", mapName.toString()))
+                )
+            }
+
+            fileDesc.Printf("\"%s\"\n", description.toString())
+            fileDesc.Printf("\"%s\"\n", mapName.toString())
+
+            if (autosave) {
+                val sshot = idStr(mapSpawnData.serverInfo.GetString("si_map"))
+                sshot.StripPath()
+                sshot.StripFileExtension()
+                fileDesc.Printf("\"guis/assets/autosave/%s\"\n", sshot.toString())
+            } else {
+                fileDesc.Printf("\"\"\n")
+            }
+
+            FileSystem_h.fileSystem.CloseFile(fileDesc)
+
+            if (pauseWorld != null) {
+                snd_system.soundSystem.SetPlayingSoundWorld(pauseWorld)
+                pauseWorld.UnPause()
+            }
+
+            syncNextGameFrame = true
+
+            return true
         }
 
         fun QuickSave(): Boolean {
@@ -2869,7 +2880,7 @@ object Session_local {
             while (skipFrames > -1) {
                 val ds = CInt(demoSystem_t.DS_FINISHED.ordinal)
                 readDemo!!.ReadInt(ds)
-                if (ds._val == demoSystem_t.DS_FINISHED.ordinal) {
+                if (ds.integerValue == demoSystem_t.DS_FINISHED.ordinal) {
                     if (numDemoFrames != 1) {
                         // if the demo has a single frame (a demoShot), continuously replay
                         // the renderView that has already been read
@@ -2878,26 +2889,26 @@ object Session_local {
                     }
                     break
                 }
-                if (ds._val == demoSystem_t.DS_RENDER.ordinal) {
+                if (ds.integerValue == demoSystem_t.DS_RENDER.ordinal) {
                     val demoTimeOffset = CInt()
                     if (rw.ProcessDemoCommand(readDemo, currentDemoRenderView, demoTimeOffset)) {
                         // a view is ready to render
                         skipFrames--
                         numDemoFrames++
                     }
-                    this.demoTimeOffset = demoTimeOffset._val
+                    this.demoTimeOffset = demoTimeOffset.integerValue
                     continue
                 }
-                if (ds._val == demoSystem_t.DS_SOUND.ordinal) {
+                if (ds.integerValue == demoSystem_t.DS_SOUND.ordinal) {
                     sw.ProcessDemoCommand(readDemo!!)
                     continue
                 }
                 // appears in v1.2, with savegame format 17
-                if (ds._val == demoSystem_t.DS_VERSION.ordinal) {
+                if (ds.integerValue == demoSystem_t.DS_VERSION.ordinal) {
                     val renderdemoVersion = CInt()
                     readDemo!!.ReadInt(renderdemoVersion)
-                    this.renderdemoVersion = renderdemoVersion._val
-                    Common.common.Printf("reading a v%d render demo\n", renderdemoVersion._val)
+                    this.renderdemoVersion = renderdemoVersion.integerValue
+                    Common.common.Printf("reading a v%d render demo\n", renderdemoVersion.integerValue)
                     // set the savegameVersion to current for render demo paths that share the savegame paths
                     savegameVersion = SAVEGAME_VERSION
                     continue
@@ -3453,7 +3464,7 @@ object Session_local {
 
         @Throws(idException::class)
         fun HandleSaveGameMenuCommand(args: CmdArgs.idCmdArgs, icmd: CInt): Boolean {
-            val cmd = args.Argv(icmd._val - 1)
+            val cmd = args.Argv(icmd.integerValue - 1)
             if (0 == idStr.Icmp(cmd, "loadGame")) {
                 val choice = guiActive!!.State().GetInt("loadgame_sel_0")
                 if (choice >= 0 && choice < loadGameList.size()) {
@@ -3468,7 +3479,7 @@ object Session_local {
                 if (saveGameName != null && saveGameName.isNotEmpty()) {
 
                     // First see if the file already exists unless they pass '1' to authorize the overwrite
-                    if (icmd._val == args.Argc() || args.Argv(icmd.increment()).toInt() == 0) {
+                    if (icmd.integerValue == args.Argc() || args.Argv(icmd.increment()).toInt() == 0) {
                         var saveFileName = idStr(saveGameName)
                         Session.sessLocal.ScrubSaveGameFileName(saveFileName)
                         saveFileName = idStr("savegames/$saveFileName")
@@ -3608,8 +3619,8 @@ object Session_local {
             val icmd = CInt()
             val args = CmdArgs.idCmdArgs()
             args.TokenizeString(menuCommand, false)
-            icmd._val = (0)
-            while (icmd._val < args.Argc()) {
+            icmd.integerValue = (0)
+            while (icmd.integerValue < args.Argc()) {
                 val cmd = args.Argv(icmd.increment())
                 if (HandleSaveGameMenuCommand(args, icmd)) {
                     continue
@@ -3621,7 +3632,7 @@ object Session_local {
                 }
                 if (0 == idStr.Icmp(cmd, "startGame")) {
                     cvarSystem.SetCVarInteger("g_skill", guiMainMenu!!.State().GetInt("skill"))
-                    if (icmd._val < args.Argc()) {
+                    if (icmd.integerValue < args.Argc()) {
                         StartNewGame(args.Argv(icmd.increment()))
                     } else {
                         // FIX: Branches were swapped — demo build should use demo map, not full game map
@@ -3860,7 +3871,7 @@ object Session_local {
                 }
                 if (0 == idStr.Icmp(cmd, "mpSkin")) {
                     var skin: idStr
-                    if (args.Argc() - icmd._val >= 1) {
+                    if (args.Argc() - icmd.integerValue >= 1) {
                         skin = idStr(args.Argv(icmd.increment()))
                         cvarSystem.SetCVarString("ui_skin", skin.toString())
                         SetMainMenuSkin()
@@ -3880,7 +3891,7 @@ object Session_local {
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "bind")) {
-                    if (args.Argc() - icmd._val >= 2) {
+                    if (args.Argc() - icmd.integerValue >= 2) {
                         val key = args.Argv(icmd.increment()).toInt()
                         val bind = args.Argv(icmd.increment())
                         if (idKeyInput.NumBinds(bind) >= 2 && !idKeyInput.KeyIsBoundTo(key, bind)) {
@@ -3892,19 +3903,19 @@ object Session_local {
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "play")) {
-                    if (args.Argc() - icmd._val >= 1) {
+                    if (args.Argc() - icmd.integerValue >= 1) {
                         var snd = idStr(args.Argv(icmd.increment()))
                         var channel = 1
                         if (snd.Length() == 1) {
                             channel = snd.toString().toInt()
-                            snd = idStr(args.Argv(icmd._val))
+                            snd = idStr(args.Argv(icmd.integerValue))
                         }
                         menuSoundWorld!!.PlayShaderDirectly(snd.toString(), channel)
                     }
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "music")) {
-                    if (args.Argc() - icmd._val >= 1) {
+                    if (args.Argc() - icmd.integerValue >= 1) {
                         val snd = idStr(args.Argv(icmd.increment()))
                         menuSoundWorld!!.PlayShaderDirectly(snd.toString(), 2)
                     }
@@ -3914,7 +3925,7 @@ object Session_local {
                 // triggered from mainmenu or mpmain
                 if (0 == idStr.Icmp(cmd, "sound")) {
                     var vcmd = idStr()
-                    if (args.Argc() - icmd._val >= 1) {
+                    if (args.Argc() - icmd.integerValue >= 1) {
                         // FIX: C++ does `vcmd = args.Argv( icmd++ )` — post-increments icmd
                         vcmd = idStr(args.Argv(icmd.increment()))
                     }
@@ -4001,7 +4012,7 @@ object Session_local {
                 }
                 if (0 == idStr.Icmp(cmd, "video")) {
                     var vcmd = idStr()
-                    if (args.Argc() - icmd._val >= 1) {
+                    if (args.Argc() - icmd.integerValue >= 1) {
                         vcmd = idStr(args.Argv(icmd.increment()))
                     }
                     val oldSpec = Common.com_machineSpec.GetInteger()
@@ -4028,7 +4039,7 @@ object Session_local {
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "clearBind")) {
-                    if (args.Argc() - icmd._val >= 1) {
+                    if (args.Argc() - icmd.integerValue >= 1) {
                         idKeyInput.UnbindBinding(args.Argv(icmd.increment()))
                         guiMainMenu!!.SetKeyBindingNames()
                     }
@@ -4049,7 +4060,7 @@ object Session_local {
                     // FIX: C++ does `args.Argv( icmd++ )` — post-increments icmd.
                     // Then compares `args.Argv( icmd - 1 )` which is the same executed command.
                     cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, args.Argv(icmd.increment()))
-                    if (idStr.Icmp("cvar_restart", args.Argv(icmd._val - 1)) == 0) {
+                    if (idStr.Icmp("cvar_restart", args.Argv(icmd.integerValue - 1)) == 0) {
                         cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "exec default.cfg")
                         cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "setMachineSpec\n")
 
@@ -4103,7 +4114,7 @@ object Session_local {
                 // triggered from mainmenu or mpmain
                 if (0 == idStr.Icmp(cmd, "punkbuster")) {
                     var vcmd: idStr
-                    if (args.Argc() - icmd._val >= 1) {
+                    if (args.Argc() - icmd.integerValue >= 1) {
                         vcmd = idStr(args.Argv(icmd.increment()))
                     }
                     // filtering PB based on enabled/disabled
@@ -4219,8 +4230,8 @@ object Session_local {
             val icmd = CInt()
             val args = CmdArgs.idCmdArgs()
             args.TokenizeString(menuCommand, false)
-            icmd._val = (0)
-            while (icmd._val < args.Argc()) {
+            icmd.integerValue = (0)
+            while (icmd.integerValue < args.Argc()) {
                 val cmd = args.Argv(icmd.increment())
                 if (HandleSaveGameMenuCommand(args, icmd)) {
                     continue
@@ -4242,7 +4253,7 @@ object Session_local {
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "play")) {
-                    if (args.Argc() - icmd._val >= 1) {
+                    if (args.Argc() - icmd.integerValue >= 1) {
                         val snd = args.Argv(icmd.increment())
                         sw.PlayShaderDirectly(snd)
                     }
@@ -4357,7 +4368,7 @@ object Session_local {
                     workName = fileList[i]
                     workName.Append("/")
                     workName.Append(p)
-                    val workNote = CInt(noteNumber._val)
+                    val workNote = CInt(noteNumber.integerValue)
                     R_ScreenshotFilename(workNote, workName.toString(), shotName)
                     noteNum = shotName
                     noteNum.StripPath()
@@ -4395,7 +4406,7 @@ object Session_local {
                     win_main.Sys_Sleep(500)
                 }
                 if (file != null) {
-                    file.WriteInt(noteNumber._val) //, 4);
+                    file.WriteInt(noteNumber.integerValue) //, 4);
                     FileSystem_h.fileSystem.CloseFile(file)
                 }
                 cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "closeViewNotes\n")

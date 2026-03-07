@@ -146,7 +146,7 @@ class idAF {
      */
     // NOTE: Differs from C++ — ReadBool/ReadInt return values instead of pass-by-reference
     fun Restore(savefile: idRestoreGame) {
-        savefile.ReadObject(self)
+        self = savefile.ReadObject() as idEntity?
         savefile.ReadString(name)
         hasBindConstraints = savefile.ReadBool()
         savefile.ReadVec3(baseOrigin)
@@ -288,7 +288,7 @@ class idAF {
 
         // initialize articulated figure physics
         physicsObj.SetGravity(Game_local.gameLocal.GetGravity())
-        physicsObj.SetClipMask(file.clipMask._val)
+        physicsObj.SetClipMask(file.clipMask.integerValue)
         physicsObj.SetDefaultFriction(
             file.defaultLinearFriction, file.defaultAngularFriction, file.defaultContactFriction
         )
@@ -1169,18 +1169,18 @@ class idAF {
             clip = body.GetClipModel()!!
             if (!clip.IsEqual(trm)) {
                 clip = idClipModel(trm)
-                clip.SetContents(fb.contents._val)
+                clip.SetContents(fb.contents.integerValue)
                 clip.Link(Game_local.gameLocal.clip, self, 0, origin, axis)
                 body.SetClipModel(clip)
             }
-            clip.SetContents(fb.contents._val)
+            clip.SetContents(fb.contents.integerValue)
             body.SetDensity(fb.density, fb.inertiaScale)
             body.SetWorldOrigin(origin)
             body.SetWorldAxis(axis)
             id = physicsObj.GetBodyId(body)
         } else {
             clip = idClipModel(trm)
-            clip.SetContents(fb.contents._val)
+            clip.SetContents(fb.contents.integerValue)
             clip.Link(Game_local.gameLocal.clip, self, 0, origin, axis)
             body = idAFBody(fb.name, clip, fb.density)
             if (fb.inertiaScale != idMat3.getMat3_identity()) {
@@ -1191,7 +1191,7 @@ class idAF {
         if (fb.linearFriction != -1.0f) {
             body.SetFriction(fb.linearFriction, fb.angularFriction, fb.contactFriction)
         }
-        body.SetClipMask(fb.clipMask._val)
+        body.SetClipMask(fb.clipMask.integerValue)
         body.SetSelfCollision(fb.selfCollision)
         if (fb.jointName.toString() == "origin") {
             SetBase(body, joints)

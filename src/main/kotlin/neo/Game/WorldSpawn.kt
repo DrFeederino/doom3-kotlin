@@ -72,6 +72,8 @@ class WorldSpawn {
      */
     class idWorldspawn : idEntity() {
         companion object {
+            val Type = idTypeInfo("idWorldspawn", "idEntity") { idWorldspawn() }
+
             // CLASS_DECLARATION( idEntity, idWorldspawn )
             //   EVENT( EV_Remove,      idWorldspawn::Event_Remove )
             //   EVENT( EV_SafeRemove,  idWorldspawn::Event_Remove )
@@ -162,7 +164,9 @@ class WorldSpawn {
          ================
          */
         // NOTE: C++ header incorrectly declares Save(idRestoreGame*) — should be idSaveGame*
-        override fun Save(savefile: idSaveGame) {}
+        override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
+        }
 
         /*
          ================
@@ -170,6 +174,7 @@ class WorldSpawn {
          ================
          */
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             assert(Game_local.gameLocal.world === this)
 
             SysCvar.g_gravity.SetFloat(spawnArgs.GetFloat("gravity", Str.va("%f", Game_local.DEFAULT_GRAVITY)))
@@ -189,9 +194,8 @@ class WorldSpawn {
             idGameLocal.Error("Tried to remove world")
         }
 
-        override fun CreateInstance(): idClass {
-            return idWorldspawn()
-        }
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idWorldspawn()
 
         override fun oSet(oGet: idClass?) {
             throw UnsupportedOperationException("Not supported yet.")

@@ -244,18 +244,32 @@ object Rectangle {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            return ByteBuffer.allocate(BYTES)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            x = buffer.float
+            y = buffer.float
+            w = buffer.float
+            h = buffer.float
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            val buffer = AllocBuffer()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.putFloat(x)
+            buffer.putFloat(y)
+            buffer.putFloat(w)
+            buffer.putFloat(h)
+            buffer.flip()
+            return buffer
         }
 
         companion object {
+            @Transient
+            val BYTES = 4 * java.lang.Float.BYTES // 16
+
             private val str = Array(8) { CharArray(48) }
             private var index = 0
         }

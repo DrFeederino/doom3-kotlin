@@ -45,6 +45,8 @@ class AI_Vagary {
 
     class idAI_Vagary : idAI() {
         companion object {
+            val Type = idTypeInfo("idAI_Vagary", "idAI") { idAI_Vagary() }
+
             //CLASS_PROTOTYPE( idAI_Vagary );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -73,6 +75,11 @@ class AI_Vagary {
             }
         }
 
+        /*
+         ================
+         idAI_Vagary::Event_ChooseObjectToThrow
+         ================
+         */
         private fun Event_ChooseObjectToThrow(
             mins: idEventArg<idVec3>, maxs: idEventArg<idVec3>,
             speed: idEventArg<Float>, minDist: idEventArg<Float>, offset: idEventArg<Float>
@@ -88,10 +95,9 @@ class AI_Vagary {
             val enemyEnt: idEntity? = enemy.GetEntity()
             if (null == enemyEnt) {
                 idThread.ReturnEntity(null)
-//                // FIX: Missing return. C++ also lacks the return (original bug), but in C++ the
-//                // NULL enemyEnt is passed harmlessly to PredictTrajectory. In Kotlin, enemyEnt!!
-//                // at line 140 throws NPE. Adding return to avoid Kotlin-specific crash.
-//                return
+                // FIX: C++ also lacks return here (original bug), but in Kotlin enemyEnt!! below
+                // throws NPE. Adding return to avoid Kotlin-specific crash.
+                return
             }
             val enemyEyePos = lastVisibleEnemyPos + lastVisibleEnemyEyeOffset
             val myBounds = physicsObj.GetAbsBounds()
@@ -155,6 +161,11 @@ class AI_Vagary {
             idThread.ReturnEntity(null)
         }
 
+        /*
+         ================
+         idAI_Vagary::Event_ThrowObjectAtEnemy
+         ================
+         */
         private fun Event_ThrowObjectAtEnemy(_ent: idEventArg<idEntity>, _speed: idEventArg<Float>) {
             val ent = _ent.value
             val speed: Float = _speed.value
@@ -187,6 +198,9 @@ class AI_Vagary {
                 ment.EnableDamage(true, 2.5f)
             }
         }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idAI_Vagary()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]

@@ -13,8 +13,10 @@
 
 package neo.Game.Physics
 
+import neo.Game.GameSys.Class
 import neo.Game.GameSys.Class.eventCallback_t
 import neo.Game.GameSys.Class.idClass
+import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.Physics.Physics.idPhysics
 import neo.idlib.containers.List.idList
@@ -30,25 +32,32 @@ class Force {
      ===============================================================================
      */
     open class idForce : idClass() {
-        // virtual				~idForce( void );
+        /*
+        ================
+        idForce::~idForce
+        ================
+        */
         override fun _deconstructor() {
             forceList.Remove(this)
             super._deconstructor()
         }
 
-        // common force interface
-        // evalulate the force up to the given time
+        /*
+        ================
+        idForce::Evaluate
+        ================
+        */
         open fun Evaluate(time: Int) {}
 
-        // removes any pointers to the physics object
+        /*
+        ================
+        idForce::RemovePhysics
+        ================
+        */
         open fun RemovePhysics(phys: idPhysics) {}
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
+        override fun CreateInstance(): idClass = idForce()
 
-        override fun GetType(): Class<out idClass> {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return null
@@ -59,8 +68,16 @@ class Force {
         }
 
         companion object {
+            val Type = idTypeInfo("idForce", "idClass") { idForce() }
+
             // CLASS_PROTOTYPE( idForce );
             private val forceList: idList<idForce> = idList()
+
+            /*
+            ================
+            idForce::DeletePhysics
+            ================
+            */
             fun DeletePhysics(phys: idPhysics) {
                 var i: Int
                 i = 0
@@ -70,6 +87,11 @@ class Force {
                 }
             }
 
+            /*
+            ================
+            idForce::ClearForceList
+            ================
+            */
             fun ClearForceList() {
                 forceList.Clear()
             }

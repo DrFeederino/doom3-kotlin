@@ -389,11 +389,11 @@ object MsgChannel {
             UpdateIncomingRate(time, msg.GetSize())
 
             // get sequence numbers
-            sequence._val = (msg.ReadLong())
+            sequence.integerValue = (msg.ReadLong())
 
             // check for fragment information
-            fragmented = if (sequence._val and FRAGMENT_BIT != 0) {
-                sequence._val = (sequence._val and FRAGMENT_BIT.inv())
+            fragmented = if (sequence.integerValue and FRAGMENT_BIT != 0) {
+                sequence.integerValue = (sequence.integerValue and FRAGMENT_BIT.inv())
                 true
             } else {
                 false
@@ -413,24 +413,24 @@ object MsgChannel {
                         "%d recv %4d : s = %d fragment = %d,%d\n",
                         id,
                         msg.GetSize(),
-                        sequence._val,
+                        sequence.integerValue,
                         fragStart,
                         fragLength
                     )
                 } else {
-                    Common.common.Printf("%d recv %4d : s = %d\n", id, msg.GetSize(), sequence._val)
+                    Common.common.Printf("%d recv %4d : s = %d\n", id, msg.GetSize(), sequence.integerValue)
                 }
             }
 
             //
             // discard out of order or duplicated packets
             //
-            if (sequence._val <= incomingSequence) {
+            if (sequence.integerValue <= incomingSequence) {
                 if (net_channelShowDrop.GetBool() || net_channelShowPackets.GetBool()) {
                     Common.common.Printf(
                         "%s: out of order packet %d at %d\n",
                         win_net.Sys_NetAdrToString(remoteAddress),
-                        sequence._val,
+                        sequence.integerValue,
                         incomingSequence
                     )
                 }
@@ -440,14 +440,14 @@ object MsgChannel {
             //
             // dropped packets don't keep this message from being used
             //
-            dropped = sequence._val - (incomingSequence + 1)
+            dropped = sequence.integerValue - (incomingSequence + 1)
             if (dropped > 0) {
                 if (net_channelShowDrop.GetBool() || net_channelShowPackets.GetBool()) {
                     Common.common.Printf(
                         "%s: dropped %d packets at %d\n",
                         win_net.Sys_NetAdrToString(remoteAddress),
                         dropped,
-                        sequence._val
+                        sequence.integerValue
                     )
                 }
                 UpdatePacketLoss(time, 0, dropped)
@@ -458,8 +458,8 @@ object MsgChannel {
             //
             if (fragmented) {
                 // make sure we have the correct sequence number
-                if (sequence._val != fragmentSequence) {
-                    fragmentSequence = sequence._val
+                if (sequence.integerValue != fragmentSequence) {
+                    fragmentSequence = sequence.integerValue
                     fragmentLength = 0
                 }
 
@@ -469,7 +469,7 @@ object MsgChannel {
                         Common.common.Printf(
                             "%s: dropped a message fragment at seq %d\n",
                             win_net.Sys_NetAdrToString(remoteAddress),
-                            sequence._val
+                            sequence.integerValue
                         )
                     }
                     // we can still keep the part that we have so far,
@@ -511,7 +511,7 @@ object MsgChannel {
             fragMsg.Init(fragmentBuffer, fragmentLength)
             fragMsg.SetSize(fragmentLength)
             fragMsg.BeginReading()
-            incomingSequence = sequence._val
+            incomingSequence = sequence.integerValue
 
             // read the message data
             return ReadMessageData(msg, fragMsg)
@@ -540,7 +540,7 @@ object MsgChannel {
             val result: Boolean
             result = reliableReceive.Get(msg.GetData()!!.array(), size)
             // FIX: was setting size to buffer capacity, ignoring actual message size from Get()
-            msg.SetSize(size._val)
+            msg.SetSize(size.integerValue)
             msg.BeginReading()
             return result
         }
@@ -607,9 +607,9 @@ object MsgChannel {
             }
 
             // read reliable messages
-            reliableMessageSize._val = (out.ReadShort().toInt())
-            while (reliableMessageSize._val != 0) {
-                if (reliableMessageSize._val <= 0 || reliableMessageSize._val > out.GetSize() - out.GetReadCount()) {
+            reliableMessageSize.integerValue = (out.ReadShort().toInt())
+            while (reliableMessageSize.integerValue != 0) {
+                if (reliableMessageSize.integerValue <= 0 || reliableMessageSize.integerValue > out.GetSize() - out.GetReadCount()) {
                     Common.common.Printf("%s: bad reliable message\n", win_net.Sys_NetAdrToString(remoteAddress))
                     return false
                 }
@@ -620,11 +620,11 @@ object MsgChannel {
                             out.GetData()!!.array(),
                             out.GetReadCount(),
                             out.GetData()!!.capacity()
-                        ), reliableMessageSize._val
+                        ), reliableMessageSize.integerValue
                     )
                 }
-                out.ReadData(null, reliableMessageSize._val)
-                reliableMessageSize._val = (out.ReadShort().toInt())
+                out.ReadData(null, reliableMessageSize.integerValue)
+                reliableMessageSize.integerValue = (out.ReadShort().toInt())
             }
             return true
         }
@@ -724,13 +724,13 @@ object MsgChannel {
 
         fun Get(data: ByteArray?, size: CInt): Boolean {
             if (first == last) {
-                size._val = (0)
+                size.integerValue = (0)
                 return false
             }
             val sequence: Int
-            size._val = (ReadShort())
+            size.integerValue = (ReadShort())
             sequence = ReadLong()
-            ReadData(data, size._val)
+            ReadData(data, size.integerValue)
             assert(sequence == first)
             first++
             return true

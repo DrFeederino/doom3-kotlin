@@ -20,6 +20,8 @@ package neo.Game
 
 import neo.Game.AI.idAI
 import neo.Game.Game.idGameEdit
+import neo.Game.GameSys.Class
+import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.idEntityPtr
 import neo.Game.Light.idLight
@@ -90,6 +92,13 @@ object GameEdit {
      ===============================================================================
      */
     class idCursor3D : idEntity() {
+        companion object {
+            val Type = idTypeInfo("idCursor3D", "idEntity") { idCursor3D() }
+        }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): Class.idClass = idCursor3D()
+
         //
         //
         var drag: idForce_Drag = idForce_Drag()
@@ -216,7 +225,7 @@ object GameEdit {
                             id = trace.c.id
                             bodyName = newBodyName
                             if (null == cursor) {
-                                cursor = Game_local.gameLocal.SpawnEntityType(idCursor3D::class.java) as idCursor3D
+                                cursor = Game_local.gameLocal.SpawnEntityType(idCursor3D.Type) as idCursor3D
                             }
                             val phys = dragEnt.GetEntity()!!.GetPhysics()
                             localPlayerPoint.set(trace.c.point.minus(viewPoint).times(viewAxis.Transpose()))
@@ -402,7 +411,7 @@ object GameEdit {
      */
     class selectedTypeInfo_s {
         var textKey: idStr = idStr()
-        var   /*idTypeInfo*/typeInfo: Class<*>? = null
+        var typeInfo: idTypeInfo? = null
     }
 
     class idEditEntities {
@@ -471,47 +480,47 @@ object GameEdit {
             val sit = selectedTypeInfo_s()
             when (SysCvar.g_editEntityMode.GetInteger()) {
                 1 -> {
-                    sit.typeInfo = idLight::class.java
+                    sit.typeInfo = idLight.Type
                     sit.textKey.set("texture")
                     selectableEntityClasses.Append(sit)
                 }
 
                 2 -> {
-                    sit.typeInfo = idSound::class.java
+                    sit.typeInfo = idSound.Type
                     sit.textKey.set("s_shader")
                     selectableEntityClasses.Append(sit)
                     val sit2 = selectedTypeInfo_s()
-                    sit2.typeInfo = idLight::class.java
+                    sit2.typeInfo = idLight.Type
                     sit2.textKey.set("texture")
                     selectableEntityClasses.Append(sit2)
                 }
 
                 3 -> {
-                    sit.typeInfo = idAFEntity_Base::class.java
+                    sit.typeInfo = idAFEntity_Base.Type
                     sit.textKey.set("articulatedFigure")
                     selectableEntityClasses.Append(sit)
                 }
 
                 4 -> {
-                    sit.typeInfo = idFuncEmitter::class.java
+                    sit.typeInfo = idFuncEmitter.Type
                     sit.textKey.set("model")
                     selectableEntityClasses.Append(sit)
                 }
 
                 5 -> {
-                    sit.typeInfo = idAI::class.java
+                    sit.typeInfo = idAI.Type
                     sit.textKey.set("name")
                     selectableEntityClasses.Append(sit)
                 }
 
                 6 -> {
-                    sit.typeInfo = idEntity::class.java
+                    sit.typeInfo = idEntity.Type
                     sit.textKey.set("name")
                     selectableEntityClasses.Append(sit)
                 }
 
                 7 -> {
-                    sit.typeInfo = idEntity::class.java
+                    sit.typeInfo = idEntity.Type
                     sit.textKey.set("model")
                     selectableEntityClasses.Append(sit)
                 }
@@ -533,12 +542,12 @@ object GameEdit {
                     continue
                 }
                 var drawArrows = false
-                if (ent.GetType() == idAFEntity_Base::class.java) {
+                if (ent.IsType(idAFEntity_Base.Type)) {
                     if (!(ent as idAFEntity_Base).IsActiveAF()) {
                         ent = ent.spawnNode.Next()
                         continue
                     }
-                } else if (ent.GetType() == idSound::class.java) {
+                } else if (ent.IsType(idSound.Type)) {
                     if (ent.fl.selected) {
                         drawArrows = true
                     }
@@ -546,7 +555,7 @@ object GameEdit {
                     if (ss.HasDefaultSound() || ss.base!!.GetState() == declState_t.DS_DEFAULTED) {
                         color.set(1.0f, 0.0f, 1.0f, 1.0f)
                     }
-                } else if (ent.GetType() == idFuncEmitter::class.java) {
+                } else if (ent.IsType(idFuncEmitter.Type)) {
                     if (ent.fl.selected) {
                         drawArrows = true
                     }
@@ -637,7 +646,7 @@ object GameEdit {
             text: idStr? = null /*= NULL*/
         ): Boolean {
             for (i in 0 until selectableEntityClasses.Num()) {
-                if (ent.GetType() == selectableEntityClasses[i].typeInfo) {
+                if (ent.IsType(selectableEntityClasses[i].typeInfo!!)) {
                     text?.set(selectableEntityClasses[i].textKey)
                     if (color != null) {
                         if (ent.fl.selected) {

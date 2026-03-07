@@ -444,10 +444,10 @@ object draw_common {
         // screen power of two correction factor, assuming the copy to _currentRender
         // also copied an extra row and column for the bilerp
         val w = backEnd!!.viewDef!!.viewport.x2 - backEnd!!.viewDef!!.viewport.x1 + 1
-        pot = Image.globalImages.currentRenderImage!!.uploadWidth._val
+        pot = Image.globalImages.currentRenderImage!!.uploadWidth.integerValue
         parm.put(0, w.toFloat() / pot)
         val h = backEnd!!.viewDef!!.viewport.y2 - backEnd!!.viewDef!!.viewport.y1 + 1
-        pot = Image.globalImages.currentRenderImage!!.uploadHeight._val
+        pot = Image.globalImages.currentRenderImage!!.uploadHeight.integerValue
         parm.put(1, h.toFloat() / pot)
         parm.put(2, 0.0f)
         parm.put(3, 1.0f)

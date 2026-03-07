@@ -152,6 +152,8 @@ object Mover {
      */
     open class idMover : idEntity() {
         companion object {
+            val Type = idTypeInfo("idMover", "idEntity") { idMover() }
+
             protected const val DIR_BACK = -6
             protected const val DIR_DOWN = -2
             protected const val DIR_FORWARD = -5
@@ -341,9 +343,8 @@ object Mover {
         private val splineEnt: idEntityPtr<idEntity>
         private var stopRotation: Boolean
         private var useSplineAngles: Boolean
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idMover()
 
         // } moverDir_t;
         override fun Spawn() {
@@ -407,6 +408,7 @@ object Mover {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             var i: Int
             savefile.WriteStaticObject(physicsObj)
             savefile.WriteInt(TempDump.etoi(move.stage))
@@ -462,6 +464,7 @@ object Mover {
         //
         //
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             var i: Int
             val num = CInt()
             val hasSpline = CBool(false)
@@ -497,13 +500,13 @@ object Mover {
             if (areaPortal > 0) {
                 val portalState = CInt()
                 savefile.ReadInt(portalState)
-                Game_local.gameLocal.SetPortalState(areaPortal, portalState._val)
+                Game_local.gameLocal.SetPortalState(areaPortal, portalState.integerValue)
             }
             guiTargets.Clear()
             savefile.ReadInt(num)
-            guiTargets.SetNum(num._val)
+            guiTargets.SetNum(num.integerValue)
             i = 0
-            while (i < num._val) {
+            while (i < num.integerValue) {
                 guiTargets[i].Restore(savefile)
                 i++
             }
@@ -1548,9 +1551,12 @@ object Mover {
      */
     class idSplinePath  //	CLASS_PROTOTYPE( idSplinePath );
         : idEntity() {
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+        companion object {
+            val Type = idTypeInfo("idSplinePath", "idEntity") { idSplinePath() }
         }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idSplinePath()
     }
 
     class floorInfo_s {
@@ -1568,6 +1574,8 @@ object Mover {
      */
     class idElevator : idMover() {
         companion object {
+            val Type = idTypeInfo("idElevator", "idMover") { idElevator() }
+
             // CLASS_PROTOTYPE( idElevator );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -1648,6 +1656,7 @@ object Mover {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             var i: Int
             savefile.WriteInt(TempDump.etoi(state))
             savefile.WriteInt(floorInfo.Num())
@@ -1668,6 +1677,7 @@ object Mover {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             var i: Int
             val num: Int
             state = elevatorState_t.values()[savefile.ReadInt()]
@@ -1954,6 +1964,9 @@ object Mover {
             }
         }
 
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idElevator()
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1997,6 +2010,8 @@ object Mover {
         }
 
         companion object {
+            val Type = idTypeInfo("idMover_Binary", "idEntity") { idMover_Binary() }
+
             // CLASS_PROTOTYPE( idMover_Binary );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -2181,6 +2196,7 @@ object Mover {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             var i: Int
             savefile.WriteVec3(pos1)
             savefile.WriteVec3(pos2)
@@ -2224,6 +2240,7 @@ object Mover {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             var i: Int
             var num: Int
             val portalState: Int
@@ -2231,8 +2248,8 @@ object Mover {
             savefile.ReadVec3(pos1)
             savefile.ReadVec3(pos2)
             moverState = moverState_t.values()[savefile.ReadInt()]
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/moveMaster)
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/activateChain)
+            moveMaster = savefile.ReadObject() as idMover_Binary?
+            activateChain = savefile.ReadObject() as idMover_Binary?
             soundPos1 = savefile.ReadInt()
             sound1to2 = savefile.ReadInt()
             sound2to1 = savefile.ReadInt()
@@ -2881,9 +2898,8 @@ object Mover {
             }
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idMover_Binary()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -2935,6 +2951,8 @@ object Mover {
      */
     class idDoor : idMover_Binary() {
         companion object {
+            val Type = idTypeInfo("idDoor", "idMover_Binary") { idDoor() }
+
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
             // ~idDoor( void );
@@ -3118,6 +3136,7 @@ object Mover {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteFloat(triggersize)
             savefile.WriteBool(crusher)
             savefile.WriteBool(noTouch)
@@ -3136,6 +3155,7 @@ object Mover {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             triggersize = savefile.ReadFloat()
             crusher = savefile.ReadBool()
             noTouch = savefile.ReadBool()
@@ -3149,9 +3169,9 @@ object Mover {
             removeItem = savefile.ReadInt()
             savefile.ReadString(syncLock)
             normalAxisIndex = savefile.ReadInt()
-            savefile.ReadClipModel(trigger)
-            savefile.ReadClipModel(sndTrigger)
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/companionDoor)
+            trigger = savefile.ReadClipModel()
+            sndTrigger = savefile.ReadClipModel()
+            companionDoor = savefile.ReadObject() as idDoor?
         }
 
         override fun Think() {
@@ -3714,6 +3734,9 @@ object Mover {
             }
         }
 
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idDoor()
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -3746,6 +3769,8 @@ object Mover {
      */
     class idPlat : idMover_Binary() {
         companion object {
+            val Type = idTypeInfo("idPlat", "idMover_Binary") { idPlat() }
+
             // CLASS_PROTOTYPE( idPlat );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -3822,13 +3847,15 @@ object Mover {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteClipModel(trigger)
             savefile.WriteVec3(localTriggerOrigin)
             savefile.WriteMat3(localTriggerAxis)
         }
 
         override fun Restore(savefile: idRestoreGame) {
-            savefile.ReadClipModel(trigger)
+            super.Restore(savefile)
+            trigger = savefile.ReadClipModel()
             savefile.ReadVec3(localTriggerOrigin)
             savefile.ReadMat3(localTriggerAxis)
         }
@@ -3927,6 +3954,9 @@ object Mover {
             }
         }
 
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idPlat()
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -3957,6 +3987,8 @@ object Mover {
      */
     open class idMover_Periodic : idEntity() {
         companion object {
+            val Type = idTypeInfo("idMover_Periodic", "idEntity") { idMover_Periodic() }
+
             // CLASS_PROTOTYPE( idMover_Periodic );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -3991,11 +4023,13 @@ object Mover {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteFloat(damage._val)
             savefile.WriteStaticObject(physicsObj)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             savefile.ReadFloat(damage)
             savefile.ReadStaticObject(physicsObj)
             RestorePhysics(physicsObj)
@@ -4042,9 +4076,8 @@ object Mover {
             }
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idMover_Periodic()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -4068,6 +4101,8 @@ object Mover {
      */
     class idRotater : idMover_Periodic() {
         companion object {
+            val Type = idTypeInfo("idRotater", "idMover_Periodic") { idRotater() }
+
             // CLASS_PROTOTYPE( idRotater );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -4119,10 +4154,12 @@ object Mover {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             activatedBy.Save(savefile)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             activatedBy.Restore(savefile)
         }
 
@@ -4160,6 +4197,9 @@ object Mover {
             )
         }
 
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idRotater()
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -4180,6 +4220,12 @@ object Mover {
      */
     class idBobber  // CLASS_PROTOTYPE( idBobber );
         : idMover_Periodic() {
+        companion object {
+            val Type = idTypeInfo("idBobber", "idMover_Periodic") { idBobber() }
+        }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idBobber()
         override fun Spawn() {
             super.Spawn()
             val speed = CFloat()
@@ -4231,6 +4277,13 @@ object Mover {
      ===============================================================================
      */
     class idPendulum : idMover_Periodic() {
+        companion object {
+            val Type = idTypeInfo("idPendulum", "idMover_Periodic") { idPendulum() }
+        }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idPendulum()
+
         // CLASS_PROTOTYPE( idPendulum );
         //        public idPendulum() {//TODO:remove default constructor override
         //        }
@@ -4291,6 +4344,8 @@ object Mover {
      */
     class idRiser : idMover_Periodic() {
         companion object {
+            val Type = idTypeInfo("idRiser", "idMover_Periodic") { idRiser() }
+
             // CLASS_PROTOTYPE( idRiser );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -4351,6 +4406,9 @@ object Mover {
                 )
             }
         }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idRiser()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]

@@ -323,15 +323,47 @@ object UsercmdGen {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            throw TODO_Exception()
+            return ByteBuffer.allocate(BYTES).order(java.nio.ByteOrder.LITTLE_ENDIAN)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw TODO_Exception()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            gameFrame = buffer.int
+            gameTime = buffer.int
+            duplicateCount = buffer.int
+            buttons = buffer.get()
+            forwardmove = buffer.get()
+            rightmove = buffer.get()
+            upmove = buffer.get()
+            angles[0] = buffer.short
+            angles[1] = buffer.short
+            angles[2] = buffer.short
+            mx = buffer.short
+            my = buffer.short
+            impulse = buffer.get()
+            flags = buffer.get()
+            sequence = buffer.int
         }
 
         override fun Write(): ByteBuffer {
-            throw TODO_Exception()
+            val buffer = AllocBuffer()
+            buffer.putInt(gameFrame)
+            buffer.putInt(gameTime)
+            buffer.putInt(duplicateCount)
+            buffer.put(buttons)
+            buffer.put(forwardmove)
+            buffer.put(rightmove)
+            buffer.put(upmove)
+            buffer.putShort(angles[0])
+            buffer.putShort(angles[1])
+            buffer.putShort(angles[2])
+            buffer.putShort(mx)
+            buffer.putShort(my)
+            buffer.put(impulse)
+            buffer.put(flags)
+            buffer.putInt(sequence)
+            buffer.flip()
+            return buffer
         }
 
         companion object {

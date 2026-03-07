@@ -37,7 +37,7 @@ object snd_wavefile {
         var mpwfx // Pointer to waveformatex structure
                 : waveformatextensible_s = waveformatextensible_s()
         private var isOgg: Boolean
-        private var   /*dword*/mMemSize // size of the wave data in memory
+        private var mMemSize // size of the wave data in memory
                 : Long = 0
 
         //

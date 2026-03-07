@@ -9,6 +9,7 @@
 package neo.Game.Physics
 
 import neo.Game.GameSys.Class
+import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local
@@ -53,6 +54,11 @@ class Physics_Actor {
         protected var masterEntity: idEntity?
         protected var masterYaw: Float
 
+        /*
+        ================
+        idPhysics_Actor::~idPhysics_Actor
+        ================
+        */
         override fun _deconstructor() {
             if (clipModel != null) {             // null check before delete
                 idClipModel.delete(clipModel!!)
@@ -61,7 +67,13 @@ class Physics_Actor {
             super._deconstructor()
         }
 
+        /*
+        ================
+        idPhysics_Actor::Save
+        ================
+        */
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteClipModel(clipModel)
             savefile.WriteMat3(clipModelAxis)
             savefile.WriteFloat(mass)
@@ -72,27 +84,49 @@ class Physics_Actor {
             groundEntityPtr.Save(savefile)
         }
 
+        /*
+        ================
+        idPhysics_Actor::Restore
+        ================
+        */
         override fun Restore(savefile: idRestoreGame) {
-            savefile.ReadClipModel(clipModel)
+            super.Restore(savefile)
+
+            clipModel = savefile.ReadClipModel()
             savefile.ReadMat3(clipModelAxis)
             mass = savefile.ReadFloat()
             invMass = savefile.ReadFloat()
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/masterEntity)
+            masterEntity = savefile.ReadObject() as idEntity?
             masterYaw = savefile.ReadFloat()
             masterDeltaYaw = savefile.ReadFloat()
             groundEntityPtr.Restore(savefile)
         }
 
+        /*
+        ================
+        idPhysics_Actor::GetMasterDeltaYaw
+        ================
+        */
         // get delta yaw of master
         fun GetMasterDeltaYaw(): Float {
             return masterDeltaYaw
         }
 
+        /*
+        ================
+        idPhysics_Actor::GetGroundEntity
+        ================
+        */
         // returns the ground entity
         fun GetGroundEntity(): idEntity? {
             return groundEntityPtr.GetEntity()
         }
 
+        /*
+        ================
+        idPhysics_Actor::SetClipModelAxis
+        ================
+        */
         // align the clip model with the gravity direction
         fun SetClipModelAxis() {
             // align clip model to gravity direction
@@ -108,6 +142,11 @@ class Physics_Actor {
             }
         }
 
+        /*
+        ================
+        idPhysics_Actor::SetClipModel
+        ================
+        */
         // common physics interface
         override fun SetClipModel(model: idClipModel?, density: Float, id: Int /*= 0*/, freeOld: Boolean /*= true*/) {
             assert(self != null)
@@ -127,52 +166,112 @@ class Physics_Actor {
             clipModel!!.Link(Game_local.gameLocal.clip, self, 0, clipModel!!.GetOrigin(), clipModelAxis)
         }
 
+        /*
+        ================
+        idPhysics_Actor::GetClipModel
+        ================
+        */
         override fun GetClipModel(id: Int /*= 0*/): idClipModel? {
             return clipModel
         }
 
+        /*
+        ================
+        idPhysics_Actor::GetNumClipModels
+        ================
+        */
         override fun GetNumClipModels(): Int {
             return 1
         }
 
+        /*
+        ================
+        idPhysics_Actor::SetMass
+        ================
+        */
         override fun SetMass(_mass: Float, id: Int /*= -1*/) {
             assert(_mass > 0.0f)
             mass = _mass
             invMass = 1.0f / _mass
         }
 
+        /*
+        ================
+        idPhysics_Actor::GetMass
+        ================
+        */
         override fun GetMass(id: Int /*= -1*/): Float {
             return mass
         }
 
+        /*
+        ================
+        idPhysics_Actor::SetClipMask
+        ================
+        */
         override fun SetContents(contents: Int, id: Int /*= -1*/) {
             clipModel!!.SetContents(contents)
         }
 
+        /*
+        ================
+        idPhysics_Actor::SetClipMask
+        ================
+        */
         override fun GetContents(id: Int /*= -1*/): Int {
             return clipModel!!.GetContents()
         }
 
+        /*
+        ================
+        idPhysics_Actor::GetBounds
+        ================
+        */
         override fun GetBounds(id: Int /*= -1*/): idBounds {
             return clipModel!!.GetBounds()
         }
 
+        /*
+        ================
+        idPhysics_Actor::GetAbsBounds
+        ================
+        */
         override fun GetAbsBounds(id: Int /*= -1*/): idBounds {
             return clipModel!!.GetAbsBounds()
         }
 
+        /*
+        ================
+        idPhysics_Actor::IsPushable
+        ================
+        */
         override fun IsPushable(): Boolean {
             return masterEntity == null
         }
 
+        /*
+        ================
+        idPhysics_Actor::GetOrigin
+        ================
+        */
         override fun GetOrigin(id: Int /*= 0*/): idVec3 {
             return clipModel!!.GetOrigin()
         }
 
+        /*
+        ================
+        idPhysics_Player::GetAxis
+        ================
+        */
         override fun GetAxis(id: Int /*= 0*/): idMat3 {
             return clipModel!!.GetAxis()
         }
 
+        /*
+        ================
+        idPhysics_Actor::SetGravity
+        ================
+        */
         override fun SetGravity(newGravity: idVec3) {
             if (newGravity != gravityVector) {
                 super.SetGravity(newGravity)
@@ -180,10 +279,20 @@ class Physics_Actor {
             }
         }
 
+        /*
+        ================
+        idPhysics_Actor::GetGravityAxis
+        ================
+        */
         fun GetGravityAxis(): idMat3 {
             return clipModelAxis
         }
 
+        /*
+        ================
+        idPhysics_Actor::ClipTranslation
+        ================
+        */
         override fun ClipTranslation(results: trace_s, translation: idVec3, model: idClipModel?) {
             if (model != null) {
                 Game_local.gameLocal.clip.TranslationModel(
@@ -198,6 +307,11 @@ class Physics_Actor {
             }
         }
 
+        /*
+        ================
+        idPhysics_Actor::ClipRotation
+        ================
+        */
         override fun ClipRotation(results: trace_s, rotation: idRotation, model: idClipModel?) {
             if (model != null) {
                 Game_local.gameLocal.clip.RotationModel(
@@ -212,6 +326,11 @@ class Physics_Actor {
             }
         }
 
+        /*
+        ================
+        idPhysics_Actor::ClipContents
+        ================
+        */
         override fun ClipContents(model: idClipModel?): Int {
             return if (model != null) {
                 Game_local.gameLocal.clip.ContentsModel(
@@ -228,22 +347,47 @@ class Physics_Actor {
             }
         }
 
+        /*
+        ================
+        idPhysics_Actor::DisableClip
+        ================
+        */
         override fun DisableClip() {
             clipModel!!.Disable()
         }
 
+        /*
+        ================
+        idPhysics_Actor::EnableClip
+        ================
+        */
         override fun EnableClip() {
             clipModel!!.Enable()
         }
 
+        /*
+        ================
+        idPhysics_Actor::UnlinkClip
+        ================
+        */
         override fun UnlinkClip() {
             clipModel!!.Unlink()
         }
 
+        /*
+        ================
+        idPhysics_Actor::LinkClip
+        ================
+        */
         override fun LinkClip() {
             clipModel!!.Link(Game_local.gameLocal.clip, self, 0, clipModel!!.GetOrigin(), clipModel!!.GetAxis())
         }
 
+        /*
+        ================
+        idPhysics_Actor::EvaluateContacts
+        ================
+        */
         override fun EvaluateContacts(): Boolean {
 
             // get all the ground contacts
@@ -255,6 +399,18 @@ class Physics_Actor {
 
         //
         //
+        companion object {
+            val Type = idTypeInfo("idPhysics_Actor", "idPhysics_Base") { idPhysics_Actor() }
+        }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): Class.idClass = idPhysics_Actor()
+
+        /*
+        ================
+        idPhysics_Actor::idPhysics_Actor
+        ================
+        */
         init {
             SetClipModelAxis()
             mass = 100.0f

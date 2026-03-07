@@ -1295,11 +1295,11 @@ internal class idSIMD_Generic : idSIMDProcessor() {
                 i = 0
                 while (i < numColumns) {
                     mIndex = i
-                    var sum = mPtr[0] * vPtr[0]
+                    var sum = mPtr[mIndex] * vPtr[0]
                     j = 1
                     while (j < numRows) {
                         mIndex += numColumns
-                        sum += mPtr[0] * vPtr[j]
+                        sum += mPtr[mIndex] * vPtr[j]
                         j++
                     }
                     dstPtr[i] += sum
@@ -2905,98 +2905,101 @@ internal class idSIMD_Generic : idSIMDProcessor() {
     override fun MatX_LDLTFactor(mat: idMatX, invDiag: idVecX, n: Int): Boolean {
         var j: Int
         var k: Int
-        var mptr: FloatArray
+        var mBase: Int
         var s0: Double
         var s1: Double
         var s2: Double
         var s3: Double
         var sum: Double
         var d: Double
-        var mIndex = 0
-        val v = DoubleArray(n)
-        val diag = DoubleArray(n)
+        val v = FloatArray(n)
+        val diag = FloatArray(n)
         val nc: Int = mat.GetNumColumns()
+        val mptr: FloatArray = mat.ToFloatPtr()
         if (n <= 0) {
             return true
         }
-        mptr = mat[0]
+
         sum = mptr[0].toDouble()
         if (sum == 0.0) {
             return false
         }
-        diag[0] = sum
+        diag[0] = sum.toFloat()
         d = 1.0 / sum
         invDiag.p[0] = d.toFloat()
         if (n <= 1) {
             return true
         }
-        mptr = mat[0]
+        // mptr = mat[0]
         j = 1
         while (j < n) {
             mptr[j * nc + 0] = (mptr[j * nc + 0] * d).toFloat()
             j++
         }
-        mptr = mat[1]
-        v[0] = diag[0] * mptr[0]
-        s0 = v[0] * mptr[0]
-        sum = mptr[1] - s0
+        // mptr = mat[1]
+        mBase = 1 * nc
+        v[0] = diag[0] * mptr[mBase + 0]
+        s0 = (v[0] * mptr[mBase + 0]).toDouble()
+        sum = mptr[mBase + 1] - s0
         if (sum == 0.0) {
             return false
         }
-        mat[1, 1] = sum.toFloat()
-        diag[1] = sum
+        mptr[mBase + 1] = sum.toFloat()
+        diag[1] = sum.toFloat()
         d = 1.0 / sum
         invDiag.p[1] = d.toFloat()
         if (n <= 2) {
             return true
         }
-        mptr = mat[0]
+        // mptr = mat[0]
         j = 2
         while (j < n) {
             mptr[j * nc + 1] = ((mptr[j * nc + 1] - v[0] * mptr[j * nc + 0]) * d).toFloat()
             j++
         }
-        mptr = mat[2]
-        v[0] = diag[0] * mptr[0]
-        s0 = v[0] * mptr[0]
-        v[1] = diag[1] * mptr[1]
-        s1 = v[1] * mptr[1]
-        sum = mptr[2] - s0 - s1
+        // mptr = mat[2]
+        mBase = 2 * nc
+        v[0] = diag[0] * mptr[mBase + 0]
+        s0 = (v[0] * mptr[mBase + 0]).toDouble()
+        v[1] = diag[1] * mptr[mBase + 1]
+        s1 = (v[1] * mptr[mBase + 1]).toDouble()
+        sum = mptr[mBase + 2] - s0 - s1
         if (sum == 0.0) {
             return false
         }
-        mat[2, 2] = sum.toFloat()
-        diag[2] = sum
+        mptr[mBase + 2] = sum.toFloat()
+        diag[2] = sum.toFloat()
         d = 1.0f / sum
         invDiag.p[2] = d.toFloat()
         if (n <= 3) {
             return true
         }
-        mptr = mat[0]
+        // mptr = mat[0]
         j = 3
         while (j < n) {
             mptr[j * nc + 2] = ((mptr[j * nc + 2] - v[0] * mptr[j * nc + 0] - v[1] * mptr[j * nc + 1]) * d).toFloat()
             j++
         }
-        mptr = mat[3]
-        v[0] = diag[0] * mptr[0]
-        s0 = v[0] * mptr[0]
-        v[1] = diag[1] * mptr[1]
-        s1 = v[1] * mptr[1]
-        v[2] = diag[2] * mptr[2]
-        s2 = v[2] * mptr[2]
-        sum = mptr[3] - s0 - s1 - s2
+        // mptr = mat[3]
+        mBase = 3 * nc
+        v[0] = diag[0] * mptr[mBase + 0]
+        s0 = (v[0] * mptr[mBase + 0]).toDouble()
+        v[1] = diag[1] * mptr[mBase + 1]
+        s1 = (v[1] * mptr[mBase + 1]).toDouble()
+        v[2] = diag[2] * mptr[mBase + 2]
+        s2 = (v[2] * mptr[mBase + 2]).toDouble()
+        sum = mptr[mBase + 3] - s0 - s1 - s2
         if (sum == 0.0) {
             return false
         }
-        mat[3, 3] = sum.toFloat()
-        diag[3] = sum
+        mptr[mBase + 3] = sum.toFloat()
+        diag[3] = sum.toFloat()
         d = 1.0 / sum
         invDiag.p[3] = d.toFloat()
         if (n <= 4) {
             return true
         }
-        mptr = mat[0]
+        // mptr = mat[0]
         j = 4
         while (j < n) {
             mptr[j * nc + 3] =
@@ -3005,47 +3008,48 @@ internal class idSIMD_Generic : idSIMDProcessor() {
         }
         var i = 4
         while (i < n) {
-            mptr = mat[i]
-            v[0] = diag[0] * mptr[0]
-            s0 = v[0] * mptr[0]
-            v[1] = diag[1] * mptr[1]
-            s1 = v[1] * mptr[1]
-            v[2] = diag[2] * mptr[2]
-            s2 = v[2] * mptr[2]
-            v[3] = diag[3] * mptr[3]
-            s3 = v[3] * mptr[3]
+            // mptr = mat[i]
+            mBase = i * nc
+            v[0] = diag[0] * mptr[mBase + 0]
+            s0 = (v[0] * mptr[mBase + 0]).toDouble()
+            v[1] = diag[1] * mptr[mBase + 1]
+            s1 = (v[1] * mptr[mBase + 1]).toDouble()
+            v[2] = diag[2] * mptr[mBase + 2]
+            s2 = (v[2] * mptr[mBase + 2]).toDouble()
+            v[3] = diag[3] * mptr[mBase + 3]
+            s3 = (v[3] * mptr[mBase + 3]).toDouble()
             k = 4
             while (k < i - 3) {
-                v[k + 0] = diag[k + 0] * mptr[k + 0]
-                s0 += v[k + 0] * mptr[k + 0]
-                v[k + 1] = diag[k + 1] * mptr[k + 1]
-                s1 += v[k + 1] * mptr[k + 1]
-                v[k + 2] = diag[k + 2] * mptr[k + 2]
-                s2 += v[k + 2] * mptr[k + 2]
-                v[k + 3] = diag[k + 3] * mptr[k + 3]
-                s3 += v[k + 3] * mptr[k + 3]
+                v[k + 0] = diag[k + 0] * mptr[mBase + k + 0]
+                s0 += v[k + 0] * mptr[mBase + k + 0]
+                v[k + 1] = diag[k + 1] * mptr[mBase + k + 1]
+                s1 += v[k + 1] * mptr[mBase + k + 1]
+                v[k + 2] = diag[k + 2] * mptr[mBase + k + 2]
+                s2 += v[k + 2] * mptr[mBase + k + 2]
+                v[k + 3] = diag[k + 3] * mptr[mBase + k + 3]
+                s3 += v[k + 3] * mptr[mBase + k + 3]
                 k += 4
             }
             when (i - k) {
                 3 -> {
-                    v[k + 2] = diag[k + 2] * mptr[k + 2]
-                    s0 += v[k + 2] * mptr[k + 2]
-                    v[k + 1] = diag[k + 1] * mptr[k + 1]
-                    s1 += v[k + 1] * mptr[k + 1]
-                    v[k + 0] = diag[k + 0] * mptr[k + 0]
-                    s2 += v[k + 0] * mptr[k + 0]
+                    v[k + 2] = diag[k + 2] * mptr[mBase + k + 2]
+                    s0 += v[k + 2] * mptr[mBase + k + 2]
+                    v[k + 1] = diag[k + 1] * mptr[mBase + k + 1]
+                    s1 += v[k + 1] * mptr[mBase + k + 1]
+                    v[k + 0] = diag[k + 0] * mptr[mBase + k + 0]
+                    s2 += v[k + 0] * mptr[mBase + k + 0]
                 }
 
                 2 -> {
-                    v[k + 1] = diag[k + 1] * mptr[k + 1]
-                    s1 += v[k + 1] * mptr[k + 1]
-                    v[k + 0] = diag[k + 0] * mptr[k + 0]
-                    s2 += v[k + 0] * mptr[k + 0]
+                    v[k + 1] = diag[k + 1] * mptr[mBase + k + 1]
+                    s1 += v[k + 1] * mptr[mBase + k + 1]
+                    v[k + 0] = diag[k + 0] * mptr[mBase + k + 0]
+                    s2 += v[k + 0] * mptr[mBase + k + 0]
                 }
 
                 1 -> {
-                    v[k + 0] = diag[k + 0] * mptr[k + 0]
-                    s2 += v[k + 0] * mptr[k + 0]
+                    v[k + 0] = diag[k + 0] * mptr[mBase + k + 0]
+                    s2 += v[k + 0] * mptr[mBase + k + 0]
                 }
 
                 0 -> {}
@@ -3054,92 +3058,92 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             sum += s2
             sum += s1
             sum += s0
-            sum = mptr[i] - sum
+            sum = mptr[mBase + i] - sum
             if (sum == 0.0) {
                 return false
             }
-            mat[i, i] = sum.toFloat()
-            diag[i] = sum
+            mptr[mBase + i] = sum.toFloat()
+            diag[i] = sum.toFloat()
             d = 1.0f / sum
             invDiag.p[i] = d.toFloat()
             if (i + 1 >= n) {
                 return true
             }
-            mptr = mat[i + 1]
-            mIndex = 0
+            // mptr = mat[i+1]; in C++ mptr advances by nc each j iteration
+            mBase = (i + 1) * nc
             j = i + 1
             while (j < n) {
-                s0 = mptr[mIndex + 0] * v[0]
-                s1 = mptr[mIndex + 1] * v[1]
-                s2 = mptr[mIndex + 2] * v[2]
-                s3 = mptr[mIndex + 3] * v[3]
+                s0 = (mptr[mBase + 0] * v[0]).toDouble()
+                s1 = (mptr[mBase + 1] * v[1]).toDouble()
+                s2 = (mptr[mBase + 2] * v[2]).toDouble()
+                s3 = (mptr[mBase + 3] * v[3]).toDouble()
                 k = 4
                 while (k < i - 7) {
-                    s0 += mptr[mIndex + k + 0] * v[k + 0]
-                    s1 += mptr[mIndex + k + 1] * v[k + 1]
-                    s2 += mptr[mIndex + k + 2] * v[k + 2]
-                    s3 += mptr[mIndex + k + 3] * v[k + 3]
-                    s0 += mptr[mIndex + k + 4] * v[k + 4]
-                    s1 += mptr[mIndex + k + 5] * v[k + 5]
-                    s2 += mptr[mIndex + k + 6] * v[k + 6]
-                    s3 += mptr[mIndex + k + 7] * v[k + 7]
+                    s0 += mptr[mBase + k + 0] * v[k + 0]
+                    s1 += mptr[mBase + k + 1] * v[k + 1]
+                    s2 += mptr[mBase + k + 2] * v[k + 2]
+                    s3 += mptr[mBase + k + 3] * v[k + 3]
+                    s0 += mptr[mBase + k + 4] * v[k + 4]
+                    s1 += mptr[mBase + k + 5] * v[k + 5]
+                    s2 += mptr[mBase + k + 6] * v[k + 6]
+                    s3 += mptr[mBase + k + 7] * v[k + 7]
                     k += 8
                 }
                 when (i - k) {
                     7 -> {
-                        s0 += mptr[mIndex + k + 6] * v[k + 6]
-                        s1 += mptr[mIndex + k + 5] * v[k + 5]
-                        s2 += mptr[mIndex + k + 4] * v[k + 4]
-                        s3 += mptr[mIndex + k + 3] * v[k + 3]
-                        s0 += mptr[mIndex + k + 2] * v[k + 2]
-                        s1 += mptr[mIndex + k + 1] * v[k + 1]
-                        s2 += mptr[mIndex + k + 0] * v[k + 0]
+                        s0 += mptr[mBase + k + 6] * v[k + 6]
+                        s1 += mptr[mBase + k + 5] * v[k + 5]
+                        s2 += mptr[mBase + k + 4] * v[k + 4]
+                        s3 += mptr[mBase + k + 3] * v[k + 3]
+                        s0 += mptr[mBase + k + 2] * v[k + 2]
+                        s1 += mptr[mBase + k + 1] * v[k + 1]
+                        s2 += mptr[mBase + k + 0] * v[k + 0]
                     }
 
                     6 -> {
-                        s1 += mptr[mIndex + k + 5] * v[k + 5]
-                        s2 += mptr[mIndex + k + 4] * v[k + 4]
-                        s3 += mptr[mIndex + k + 3] * v[k + 3]
-                        s0 += mptr[mIndex + k + 2] * v[k + 2]
-                        s1 += mptr[mIndex + k + 1] * v[k + 1]
-                        s2 += mptr[mIndex + k + 0] * v[k + 0]
+                        s1 += mptr[mBase + k + 5] * v[k + 5]
+                        s2 += mptr[mBase + k + 4] * v[k + 4]
+                        s3 += mptr[mBase + k + 3] * v[k + 3]
+                        s0 += mptr[mBase + k + 2] * v[k + 2]
+                        s1 += mptr[mBase + k + 1] * v[k + 1]
+                        s2 += mptr[mBase + k + 0] * v[k + 0]
                     }
 
                     5 -> {
-                        s2 += mptr[mIndex + k + 4] * v[k + 4]
-                        s3 += mptr[mIndex + k + 3] * v[k + 3]
-                        s0 += mptr[mIndex + k + 2] * v[k + 2]
-                        s1 += mptr[mIndex + k + 1] * v[k + 1]
-                        s2 += mptr[mIndex + k + 0] * v[k + 0]
+                        s2 += mptr[mBase + k + 4] * v[k + 4]
+                        s3 += mptr[mBase + k + 3] * v[k + 3]
+                        s0 += mptr[mBase + k + 2] * v[k + 2]
+                        s1 += mptr[mBase + k + 1] * v[k + 1]
+                        s2 += mptr[mBase + k + 0] * v[k + 0]
                     }
 
                     4 -> {
-                        s3 += mptr[mIndex + k + 3] * v[k + 3]
-                        s0 += mptr[mIndex + k + 2] * v[k + 2]
-                        s1 += mptr[mIndex + k + 1] * v[k + 1]
-                        s2 += mptr[mIndex + k + 0] * v[k + 0]
+                        s3 += mptr[mBase + k + 3] * v[k + 3]
+                        s0 += mptr[mBase + k + 2] * v[k + 2]
+                        s1 += mptr[mBase + k + 1] * v[k + 1]
+                        s2 += mptr[mBase + k + 0] * v[k + 0]
                     }
 
                     3 -> {
-                        s0 += mptr[mIndex + k + 2] * v[k + 2]
-                        s1 += mptr[mIndex + k + 1] * v[k + 1]
-                        s2 += mptr[mIndex + k + 0] * v[k + 0]
+                        s0 += mptr[mBase + k + 2] * v[k + 2]
+                        s1 += mptr[mBase + k + 1] * v[k + 1]
+                        s2 += mptr[mBase + k + 0] * v[k + 0]
                     }
 
                     2 -> {
-                        s1 += mptr[mIndex + k + 1] * v[k + 1]
-                        s2 += mptr[mIndex + k + 0] * v[k + 0]
+                        s1 += mptr[mBase + k + 1] * v[k + 1]
+                        s2 += mptr[mBase + k + 0] * v[k + 0]
                     }
 
-                    1 -> s2 += mptr[mIndex + k + 0] * v[k + 0]
+                    1 -> s2 += mptr[mBase + k + 0] * v[k + 0]
                     0 -> {}
                 }
                 sum = s3
                 sum += s2
                 sum += s1
                 sum += s0
-                mptr[mIndex + i] = ((mptr[mIndex + i] - sum) * d).toFloat()
-                mIndex += nc
+                mptr[mBase + i] = ((mptr[mBase + i] - sum) * d).toFloat()
+                mBase += nc
                 j++
             }
             i++
@@ -3606,7 +3610,7 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             v.z *= f
             for (j in 0..1) {
                 val t = verts[i].tangents[j]
-                t.minusAssign(t.timesVec(v).timesVec(v))
+                t.minusAssign((t * v) * v)
                 f = idMath.RSqrt(t.x * t.x + t.y * t.y + t.z * t.z)
                 t.x *= f
                 t.y *= f

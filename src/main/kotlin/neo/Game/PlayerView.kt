@@ -24,11 +24,16 @@ import neo.Game.GameSys.SysCvar
 import neo.Game.Player.idPlayer
 import neo.Renderer.Material
 import neo.Renderer.RenderSystem
+import neo.Renderer.RenderSystem.SCREEN_HEIGHT
+import neo.Renderer.RenderSystem.SCREEN_WIDTH
+import neo.Renderer.RenderSystem.renderSystem
 import neo.Renderer.RenderWorld.renderView_s
+import neo.framework.CVarSystem.cvarSystem
 import neo.framework.DeclManager
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Text.Str.idStr
 import neo.idlib.colorWhite
+import neo.idlib.containers.CInt
 import neo.idlib.idLib
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
@@ -66,22 +71,22 @@ object PlayerView {
 
     class idPlayerView {
         private val screenBlobs: Array<screenBlob_t> = Array(MAX_SCREEN_BLOBS) { screenBlob_t() }
-        private val armorMaterial // armor damage view effect
+        private var armorMaterial // armor damage view effect
                 : Material.idMaterial?
-        private val berserkMaterial // berserk effect
+        private var berserkMaterial // berserk effect
                 : Material.idMaterial?
-        private val bfgMaterial // when targeted with BFG
+        private var bfgMaterial // when targeted with BFG
                 : Material.idMaterial?
 
         //
         private var bfgVision: Boolean
-        private val bloodSprayMaterial // blood spray
+        private var bloodSprayMaterial // blood spray
                 : Material.idMaterial?
 
         //
         private var dvFinishTime // double vision will be stopped at this time
                 : Int
-        private val dvMaterial // material to take the double vision screen shot
+        private var dvMaterial // material to take the double vision screen shot
                 : Material.idMaterial?
 
         //
@@ -95,7 +100,7 @@ object PlayerView {
                 : Int
         private val fadeToColor // color to fade to
                 : idVec4
-        private val irGogglesMaterial // ir effect
+        private var irGogglesMaterial // ir effect
                 : Material.idMaterial?
         private val kickAngles: idAngles
 
@@ -115,7 +120,7 @@ object PlayerView {
                 : idAngles
 
         //
-        private val tunnelMaterial // health tunnel vision
+        private var tunnelMaterial // health tunnel vision
                 : Material.idMaterial?
         private val view: renderView_s
         fun Save(savefile: idSaveGame) {
@@ -159,7 +164,7 @@ object PlayerView {
         fun Restore(savefile: idRestoreGame) {
             for (i in 0 until MAX_SCREEN_BLOBS) {
                 val blob = screenBlobs[i]
-                savefile.ReadMaterial(blob.material!!)
+                blob.material = savefile.ReadMaterial()
                 blob.x = savefile.ReadFloat()
                 blob.y = savefile.ReadFloat()
                 blob.w = savefile.ReadFloat()
@@ -173,16 +178,16 @@ object PlayerView {
                 blob.driftAmount = savefile.ReadFloat()
             }
             dvFinishTime = savefile.ReadInt()
-            savefile.ReadMaterial(dvMaterial!!)
+            dvMaterial = savefile.ReadMaterial()
             kickFinishTime = savefile.ReadInt()
             savefile.ReadAngles(kickAngles)
             bfgVision = savefile.ReadBool()
-            savefile.ReadMaterial(tunnelMaterial!!)
-            savefile.ReadMaterial(armorMaterial!!)
-            savefile.ReadMaterial(berserkMaterial!!)
-            savefile.ReadMaterial(irGogglesMaterial!!)
-            savefile.ReadMaterial(bloodSprayMaterial!!)
-            savefile.ReadMaterial(bfgMaterial!!)
+            tunnelMaterial = savefile.ReadMaterial()
+            armorMaterial = savefile.ReadMaterial()
+            berserkMaterial = savefile.ReadMaterial()
+            irGogglesMaterial = savefile.ReadMaterial()
+            bloodSprayMaterial = savefile.ReadMaterial()
+            bfgMaterial = savefile.ReadMaterial()
             lastDamageTime = savefile.ReadFloat()
             savefile.ReadVec4(fadeColor)
             savefile.ReadVec4(fadeToColor)
@@ -190,7 +195,7 @@ object PlayerView {
             fadeRate = savefile.ReadFloat()
             fadeTime = savefile.ReadInt()
             savefile.ReadAngles(shakeAng)
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/player)
+            player = savefile.ReadObject() as idPlayer?
             savefile.ReadRenderView(view)
         }
 
@@ -376,18 +381,45 @@ object PlayerView {
                 ScreenFade()
             }
             if (Game_network.net_clientLagOMeter.GetBool() && lagoMaterial != null && Game_local.gameLocal.isClient) {
-                RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
-                RenderSystem.renderSystem.DrawStretchPic(
-                    10.0f,
-                    380.0f,
-                    64.0f,
-                    64.0f,
-                    0.0f,
-                    0.0f,
-                    1.0f,
-                    1.0f,
-                    lagoMaterial
-                )
+                //#modified-fva; BEGIN
+                var x = 10.0f
+                var y = 380.0f
+                var w = 64.0f
+                var h = 64.0f
+                if (cvarSystem.GetCVarBool("cst_hudAdjustAspect")) {
+                    // similar to CST_ANCHOR_BOTTOM_LEFT
+                    var glWidth: CInt = CInt()
+                    var glHeight: CInt = CInt()
+                    renderSystem.GetGLSettings(glWidth, glHeight)
+                    if (glWidth.integerValue > 0 && glHeight.integerValue > 0) {
+                        val glAspectRatio = glWidth.integerValue.toFloat() / glHeight.integerValue.toFloat()
+
+                        val vidWidth = SCREEN_WIDTH
+                        val vidHeight = SCREEN_HEIGHT
+                        val vidAspectRatio = SCREEN_WIDTH.toFloat() / SCREEN_HEIGHT.toFloat()
+
+                        var modWidth = vidWidth.toFloat()
+                        var modHeight = vidHeight.toFloat()
+                        if (glAspectRatio >= vidAspectRatio) {
+                            modWidth = modHeight * glAspectRatio
+                        } else {
+                            modHeight = modWidth / glAspectRatio
+                        }
+
+                        val xScale = vidWidth / modWidth
+                        val yScale = vidHeight / modHeight
+                        val xOffset = 0.0f
+                        val yOffset = vidHeight * (1.0f - yScale)
+
+                        x = x * xScale + xOffset
+                        y = y * yScale + yOffset
+                        w *= xScale
+                        h *= yScale
+                    }
+                }
+                renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
+                renderSystem.DrawStretchPic(x, y, w, h, 0.0f, 0.0f, 1.0f, 1.0f, lagoMaterial)
+                //#modified-fva; END
             }
         }
 
@@ -494,8 +526,8 @@ object PlayerView {
                         fade = 1.0f
                     }
                     if (fade != 0.0f) {
-                        RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, fade)
-                        RenderSystem.renderSystem.DrawStretchPic(
+                        renderSystem.SetColor4(1.0f, 1.0f, 1.0f, fade)
+                        renderSystem.DrawStretchPic(
                             blob.x,
                             blob.y,
                             blob.w,
@@ -513,8 +545,8 @@ object PlayerView {
                 // armor impulse feedback
                 val armorPulse = (Game_local.gameLocal.time - player!!.lastArmorPulse) / 250.0f
                 if (armorPulse > 0.0f && armorPulse < 1.0f) {
-                    RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f - armorPulse)
-                    RenderSystem.renderSystem.DrawStretchPic(
+                    renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f - armorPulse)
+                    renderSystem.DrawStretchPic(
                         0.0f,
                         0.0f,
                         640.0f,
@@ -542,13 +574,13 @@ object PlayerView {
                     alpha = 1.0f
                 }
                 if (alpha < 1.0f) {
-                    RenderSystem.renderSystem.SetColor4(
+                    renderSystem.SetColor4(
                         if (player!!.health <= 0.0f) MS2SEC(Game_local.gameLocal.time.toFloat()) else lastDamageTime,
                         1.0f,
                         1.0f,
                         if (player!!.health <= 0.0f) 0.0f else alpha
                     )
-                    RenderSystem.renderSystem.DrawStretchPic(
+                    renderSystem.DrawStretchPic(
                         0.0f,
                         0.0f,
                         640.0f,
@@ -565,8 +597,8 @@ object PlayerView {
                     if (berserkTime > 0) {
                         // start fading if within 10 seconds of going away
                         alpha = if (berserkTime < 10000) berserkTime.toFloat() / 10000 else 1.0f
-                        RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, alpha)
-                        RenderSystem.renderSystem.DrawStretchPic(
+                        renderSystem.SetColor4(1.0f, 1.0f, 1.0f, alpha)
+                        renderSystem.DrawStretchPic(
                             0.0f,
                             0.0f,
                             640.0f,
@@ -580,8 +612,8 @@ object PlayerView {
                     }
                 }
                 if (bfgVision) {
-                    RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
-                    RenderSystem.renderSystem.DrawStretchPic(
+                    renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
+                    renderSystem.DrawStretchPic(
                         0.0f,
                         0.0f,
                         640.0f,
@@ -603,8 +635,8 @@ object PlayerView {
                     idLib.common.Printf("Material not found.\n")
                     SysCvar.g_testPostProcess.SetString("")
                 } else {
-                    RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
-                    RenderSystem.renderSystem.DrawStretchPic(0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, mtr)
+                    renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
+                    renderSystem.DrawStretchPic(0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, mtr)
                 }
             }
         }
@@ -622,10 +654,10 @@ object PlayerView {
             shift = abs(shift)
 
             // if double vision, render to a texture
-            RenderSystem.renderSystem.CropRenderSize(512, 256, true)
+            renderSystem.CropRenderSize(512, 256, true)
             SingleView(hud, view)
-            RenderSystem.renderSystem.CaptureRenderToImage("_scratch")
-            RenderSystem.renderSystem.UnCrop()
+            renderSystem.CaptureRenderToImage("_scratch")
+            renderSystem.UnCrop()
 
             // carry red tint if in berserk mode
             val color = idVec4(1.0f, 1.0f, 1.0f, 1.0f)
@@ -633,8 +665,8 @@ object PlayerView {
                 color.y = 0.0f
                 color.z = 0.0f
             }
-            RenderSystem.renderSystem.SetColor4(color.x, color.y, color.z, 1.0f)
-            RenderSystem.renderSystem.DrawStretchPic(
+            renderSystem.SetColor4(color.x, color.y, color.z, 1.0f)
+            renderSystem.DrawStretchPic(
                 0.0f,
                 0.0f,
                 RenderSystem.SCREEN_WIDTH.toFloat(),
@@ -645,8 +677,8 @@ object PlayerView {
                 0.0f,
                 dvMaterial
             )
-            RenderSystem.renderSystem.SetColor4(color.x, color.y, color.z, 0.5f)
-            RenderSystem.renderSystem.DrawStretchPic(
+            renderSystem.SetColor4(color.x, color.y, color.z, 0.5f)
+            renderSystem.DrawStretchPic(
                 0.0f,
                 0.0f,
                 RenderSystem.SCREEN_WIDTH.toFloat(),
@@ -660,12 +692,12 @@ object PlayerView {
         }
 
         private fun BerserkVision(hud: idUserInterface, view: renderView_s?) {
-            RenderSystem.renderSystem.CropRenderSize(512, 256, true)
+            renderSystem.CropRenderSize(512, 256, true)
             SingleView(hud, view)
-            RenderSystem.renderSystem.CaptureRenderToImage("_scratch")
-            RenderSystem.renderSystem.UnCrop()
-            RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
-            RenderSystem.renderSystem.DrawStretchPic(
+            renderSystem.CaptureRenderToImage("_scratch")
+            renderSystem.UnCrop()
+            renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
+            renderSystem.DrawStretchPic(
                 0.0f,
                 0.0f,
                 RenderSystem.SCREEN_WIDTH.toFloat(),
@@ -692,9 +724,9 @@ object PlayerView {
             }
             if (player!!.GetInfluenceMaterial() != null) {
                 SingleView(hud, view)
-                RenderSystem.renderSystem.CaptureRenderToImage("_currentRender")
-                RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, pct)
-                RenderSystem.renderSystem.DrawStretchPic(
+                renderSystem.CaptureRenderToImage("_currentRender")
+                renderSystem.SetColor4(1.0f, 1.0f, 1.0f, pct)
+                renderSystem.DrawStretchPic(
                     0.0f,
                     0.0f,
                     640.0f,
@@ -731,13 +763,13 @@ object PlayerView {
                 fadeColor.set(fadeFromColor.times(t).plus(fadeToColor.times(1.0f - t)))
             }
             if (fadeColor[3] != 0.0f) {
-                RenderSystem.renderSystem.SetColor4(
+                renderSystem.SetColor4(
                     fadeColor[0],
                     fadeColor[1],
                     fadeColor[2],
                     fadeColor[3]
                 )
-                RenderSystem.renderSystem.DrawStretchPic(
+                renderSystem.DrawStretchPic(
                     0.0f,
                     0.0f,
                     640.0f,

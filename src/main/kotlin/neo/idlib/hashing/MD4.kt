@@ -1,11 +1,9 @@
 package neo.idlib.hashing
 
-import neo.idlib.idException
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest
-import java.security.NoSuchAlgorithmException
 import java.security.Security
 
 private const val MD4 = true
@@ -18,38 +16,36 @@ private const val MD4 = true
 
  ===============================================================================
  */
-fun MD4_BlockChecksum(data: ByteBuffer, length: Int): String {
+fun MD4_BlockChecksum(data: ByteBuffer, length: Int): Long {
     return BlockChecksum(data, length, MD4)
 }
 
-fun MD4_BlockChecksum(data: IntArray, length: Int): String {
+fun MD4_BlockChecksum(data: IntArray, length: Int): Long {
     val buffer = ByteBuffer.allocate(data.size * 4)
     buffer.asIntBuffer().put(data)
     return BlockChecksum(buffer, length, MD4)
 }
 
-fun MD4_BlockChecksum(data: ByteArray, length: Int): String {
+fun MD4_BlockChecksum(data: ByteArray, length: Int): Long {
     return BlockChecksum(
         ByteBuffer.wrap(data),
         length,
         MD4
-    ) //TODO: make sure checksums match the original c++ rsa version.
+    )
 }
 
-fun BlockChecksum(data: ByteBuffer, length: Int, MD4: Boolean): String {
-    var hash = 0
-    hash = try {
-        Security.addProvider(BouncyCastleProvider())
-        val currentPosition = data.position()
-        val messageDigest = if (MD4) MessageDigest.getInstance("MD4") else MessageDigest.getInstance("MD5")
-        messageDigest.update(data)
-        data.position(currentPosition)
-        val digest = ByteBuffer.wrap(messageDigest.digest())
-        digest.order(ByteOrder.LITTLE_ENDIAN)
-        val digestInt = digest.int
-        digestInt xor digestInt xor digestInt xor digestInt
-    } catch (ex: NoSuchAlgorithmException) {
-        throw idException(ex)
-    }
-    return Integer.toUnsignedString(hash)
+fun BlockChecksum(data: ByteBuffer, length: Int, MD4: Boolean): Long {
+    Security.addProvider(BouncyCastleProvider())
+    val currentPosition = data.position()
+    // Hash exactly 'length' bytes from the current position, matching C++ behavior
+    val slice = data.slice().order(data.order())
+    slice.limit(length)
+    val messageDigest = if (MD4) MessageDigest.getInstance("MD4") else MessageDigest.getInstance("MD5")
+    messageDigest.update(slice)
+    data.position(currentPosition)
+    val digest = ByteBuffer.wrap(messageDigest.digest())
+    digest.order(ByteOrder.LITTLE_ENDIAN)
+    val hash = digest.int xor digest.int xor digest.int xor digest.int
+
+    return hash.toLong() and 0xFFFFFFFFL
 }

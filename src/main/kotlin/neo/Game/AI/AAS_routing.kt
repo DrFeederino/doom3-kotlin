@@ -57,7 +57,8 @@ object AAS_routing {
 
         // ~idRoutingCache( void );
         fun Size(): Int {
-            return BYTES + size * java.lang.Byte.BYTES + size * java.lang.Short.BYTES //TODO:we use integers for travelTimes, but are using shorts for the sake of consistency...
+            // NOTE: C++ uses unsigned short for travelTimes; Kotlin uses Int for compatibility
+            return BYTES + size * java.lang.Byte.BYTES + size * java.lang.Short.BYTES
         }
 
         companion object {

@@ -33,6 +33,7 @@ import neo.TempDump.CPP_class.Char
 import neo.framework.Common.Companion.common
 import neo.framework.Common.MemInfo_t
 import neo.idlib.CmdArgs
+import neo.idlib.containers.CInt
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
@@ -586,7 +587,7 @@ object RenderSystem {
         )
 
         abstract fun GlobalToNormalizedDeviceCoordinates(global: idVec3?, ndc: idVec3?)
-        abstract fun GetGLSettings(width: IntArray, height: IntArray)
+        abstract fun GetGLSettings(width: CInt, height: CInt)
         abstract fun PrintMemInfo(mi: MemInfo_t)
         abstract fun DrawSmallChar(x: Int, y: Int, ch: Int, material: idMaterial?)
         abstract fun DrawSmallStringExt(

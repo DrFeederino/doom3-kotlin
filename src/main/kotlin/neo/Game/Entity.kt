@@ -252,7 +252,9 @@ class signalList_t {
 open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
 
     companion object {
+        val Type = idTypeInfo("idEntity", "idClass") { idEntity() }
         const val EVENT_MAXEVENTS = 2
+        const val SERIAL_BYTES = 864
 
         //
         // enum {
@@ -423,7 +425,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                 false,
                 length
             )
-            idThread.ReturnFloat(MS2SEC(length._val.toFloat()))
+            idThread.ReturnFloat(MS2SEC(length.integerValue.toFloat()))
         }
 
         private fun Event_StopSound(e: idEntity, channel: idEventArg<Int>, netSync: idEventArg<Int>) {
@@ -438,7 +440,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         ) {
             val time = CInt()
             e.StartSound(soundName.value,  /*(s_channelType)*/channel.value, 0, netSync.value != 0, time)
-            idThread.ReturnFloat(MS2SEC(time._val.toFloat()))
+            idThread.ReturnFloat(MS2SEC(time.integerValue.toFloat()))
         }
 
         private fun Event_FadeSound(
@@ -541,7 +543,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             e.spawnArgs.GetInt(key.value, "0", value)
 
             // scripts only support floats
-            idThread.ReturnFloat(value._val.toFloat())
+            idThread.ReturnFloat(value.integerValue.toFloat())
         }
 
         private fun Event_GetFloatKey(e: idEntity, key: idEventArg<String>) {
@@ -907,13 +909,9 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
     private var teamMaster // master of the physics team
             : idEntity?
 
-    override fun CreateInstance(): idClass {
-        throw UnsupportedOperationException("Not supported yet.")
-    }
+    override fun CreateInstance(): idClass = idEntity()
 
-    override fun GetType(): Class<out idEntity> {
-        return this.javaClass
-    }
+    override fun GetType(): idTypeInfo = Type
 
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]
@@ -928,15 +926,21 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
     }
 
     override fun AllocBuffer(): ByteBuffer {
-        throw UnsupportedOperationException("Not supported yet.")
+        return ByteBuffer.allocate(SERIAL_BYTES)
     }
 
     override fun Read(buffer: ByteBuffer) {
-        throw UnsupportedOperationException("Not supported yet.")
+        // idEntity uses Save/Restore for game serialization, not SERiAL.
+        // This is a placeholder matching the C++ sizeof for binary compatibility.
+        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
     }
 
     override fun Write(): ByteBuffer {
-        throw UnsupportedOperationException("Not supported yet.")
+        // idEntity uses Save/Restore for game serialization, not SERiAL.
+        val buffer = AllocBuffer()
+        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        buffer.flip()
+        return buffer
     }
 
     override fun oSet(oGet: idClass?) {
@@ -1103,6 +1107,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
     }
 
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         var i: Int
         var j: Int
         savefile.WriteInt(entityNumber)
@@ -1163,6 +1168,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
     }
 
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         var i: Int
         var j: Int
         val num = CInt()
@@ -1173,33 +1179,33 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         // spawnNode and activeNode are restored by gameLocal
         snapshotSequence = savefile.ReadInt()
         snapshotBits = savefile.ReadInt()
-        savefile.ReadDict(spawnArgs)
+        spawnArgs = savefile.ReadDict()!!
         savefile.ReadString(name)
         SetName(name)
         scriptObject.Restore(savefile)
         thinkFlags = savefile.ReadInt()
         dormantStart = savefile.ReadInt()
         cinematic = savefile.ReadBool()
-        savefile.ReadObject( /*reinterpret_cast<idClass*&>*/cameraTarget)
+        cameraTarget = savefile.ReadObject() as idEntity?
         health = savefile.ReadInt()
         targets.Clear()
         savefile.ReadInt(num)
-        targets.SetNum(num._val)
+        targets.SetNum(num.integerValue)
         i = 0
-        while (i < num._val) {
+        while (i < num.integerValue) {
             targets[i].Restore(savefile)
             i++
         }
         savefile.Read(fl)
         LittleBitField(fl)
-        savefile.ReadRenderEntity(renderEntity!!)
+        renderEntity = savefile.ReadRenderEntity()
         modelDefHandle = savefile.ReadInt()
         savefile.ReadRefSound(refSound)
-        savefile.ReadObject( /*reinterpret_cast<idClass*&>*/bindMaster)
+        bindMaster = savefile.ReadObject() as idEntity?
         bindJoint = savefile.ReadJoint()
         bindBody = savefile.ReadInt()
-        savefile.ReadObject( /*reinterpret_cast<idClass*&>*/teamMaster)
-        savefile.ReadObject( /*reinterpret_cast<idClass*&>*/teamChain)
+        teamMaster = savefile.ReadObject() as idEntity?
+        teamChain = savefile.ReadObject() as idEntity?
         savefile.ReadStaticObject(defaultPhysicsObj)
         RestorePhysics(defaultPhysicsObj)
         numPVSAreas = savefile.ReadInt()
@@ -1215,9 +1221,9 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             i = 0
             while (i < signalNum_t.NUM_SIGNALS.ordinal) {
                 savefile.ReadInt(num)
-                signals!!.signal[i].SetNum(num._val)
+                signals!!.signal[i].SetNum(num.integerValue)
                 j = 0
-                while (j < num._val) {
+                while (j < num.integerValue) {
                     signals!!.signal[i][j].threadnum = savefile.ReadInt()
                     savefile.ReadString(funcname)
                     signals!!.signal[i][j].function = Game_local.gameLocal.program.FindFunction(funcname)
@@ -1828,7 +1834,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         UpdateSound()
         len = refSound.referenceSound!!.StartSound(shader, channel, diversity, soundShaderFlags)
 
-        length?._val = len
+        length?.integerValue = len
 
         // set reference to the sound for shader synced effects
         renderEntity!!.referenceSound = refSound.referenceSound
@@ -2772,16 +2778,16 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
 
         // inform the attacker that they hit someone
         attacker!!.DamageFeedback(this, inflictor, damage)
-        if (0 != damage._val) {
+        if (0 != damage.integerValue) {
             // do the damage
-            health -= damage._val
+            health -= damage.integerValue
             if (health <= 0) {
                 if (health < -999) {
                     health = -999
                 }
-                Killed(inflictor, attacker, damage._val, dir, location)
+                Killed(inflictor, attacker, damage.integerValue, dir, location)
             } else {
-                Pain(inflictor, attacker, damage._val, dir, location)
+                Pain(inflictor, attacker, damage.integerValue, dir, location)
             }
         }
     }
@@ -3729,10 +3735,10 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                 if (setClipModel) {
                     val numSides = CInt()
                     val trm = idTraceModel()
-                    if (spawnArgs.GetInt("cylinder", "0", numSides) && numSides._val > 0) {
-                        trm.SetupCylinder(bounds, max(numSides._val, 3))
-                    } else if (spawnArgs.GetInt("cone", "0", numSides) && numSides._val > 0) {
-                        trm.SetupCone(bounds, max(numSides._val, 3))
+                    if (spawnArgs.GetInt("cylinder", "0", numSides) && numSides.integerValue > 0) {
+                        trm.SetupCylinder(bounds, max(numSides.integerValue, 3))
+                    } else if (spawnArgs.GetInt("cone", "0", numSides) && numSides.integerValue > 0) {
+                        trm.SetupCone(bounds, max(numSides.integerValue, 3))
                     } else {
                         trm.SetupBox(bounds)
                     }
@@ -4016,7 +4022,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                     }
                 } // bind to a body of the physics object of the parent
                 else if (spawnArgs.GetInt("bindToBody", "0", id)) {
-                    BindToBody(parent, id._val, bindOrientated)
+                    BindToBody(parent, id.integerValue, bindOrientated)
                 } // bind to the parent
                 else {
                     Bind(parent, bindOrientated)
@@ -4225,15 +4231,50 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                 = false
 
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            return ByteBuffer.allocate(BYTES)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            val bits = buffer.short.toInt()
+            takedamage = (bits and (1 shl 0)) != 0
+            noknockback = (bits and (1 shl 1)) != 0
+            hidden = (bits and (1 shl 2)) != 0
+            bindOrientated = (bits and (1 shl 3)) != 0
+            solidForTeam = (bits and (1 shl 4)) != 0
+            forcePhysicsUpdate = (bits and (1 shl 5)) != 0
+            neverDormant = (bits and (1 shl 6)) != 0
+            isDormant = (bits and (1 shl 7)) != 0
+            hasAwakened = (bits and (1 shl 8)) != 0
+            networkSync = (bits and (1 shl 9)) != 0
+            selected = (bits and (1 shl 10)) != 0
+            notarget = (bits and (1 shl 11)) != 0
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            val buffer = AllocBuffer()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            var bits = 0
+            if (takedamage) bits = bits or (1 shl 0)
+            if (noknockback) bits = bits or (1 shl 1)
+            if (hidden) bits = bits or (1 shl 2)
+            if (bindOrientated) bits = bits or (1 shl 3)
+            if (solidForTeam) bits = bits or (1 shl 4)
+            if (forcePhysicsUpdate) bits = bits or (1 shl 5)
+            if (neverDormant) bits = bits or (1 shl 6)
+            if (isDormant) bits = bits or (1 shl 7)
+            if (hasAwakened) bits = bits or (1 shl 8)
+            if (networkSync) bits = bits or (1 shl 9)
+            if (selected) bits = bits or (1 shl 10)
+            if (notarget) bits = bits or (1 shl 11)
+            buffer.putShort(bits.toShort())
+            buffer.flip()
+            return buffer
+        }
+
+        companion object {
+            @Transient
+            val BYTES = java.lang.Short.BYTES // 2
         }
     }
 
@@ -4255,15 +4296,15 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            return ByteBuffer.allocate(0) // stateless singleton - no data to serialize
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
+            // stateless singleton - nothing to read
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            return AllocBuffer() // stateless singleton - nothing to write
         }
 
         companion object {
@@ -4343,6 +4384,8 @@ class damageEffect_s {
      */
 open class idAnimatedEntity : idEntity() {
     companion object {
+        val Type = idTypeInfo("idAnimatedEntity", "idEntity") { idAnimatedEntity() }
+
         // enum {
         const val EVENT_ADD_DAMAGE_EFFECT = idEntity.EVENT_MAXEVENTS
         const val EVENT_MAXEVENTS = EVENT_ADD_DAMAGE_EFFECT + 1
@@ -4491,6 +4534,7 @@ open class idAnimatedEntity : idEntity() {
                 }
         }
     }
+
     protected var animator: idAnimator
     protected var damageEffects: damageEffect_s?
 
@@ -4502,6 +4546,7 @@ open class idAnimatedEntity : idEntity() {
          ================
          */
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         animator.Save(savefile)
 
         // Wounds are very temporary, ignored at this time
@@ -4516,6 +4561,7 @@ open class idAnimatedEntity : idEntity() {
          ================
          */
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         animator.Restore(savefile)
 
         // check if the entity has an MD5 model
@@ -4936,6 +4982,10 @@ open class idAnimatedEntity : idEntity() {
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks.get(event)!!
     }
+
+    override fun CreateInstance(): idClass = idAnimatedEntity()
+
+    override fun GetType(): idTypeInfo = Type
 
     //
     //

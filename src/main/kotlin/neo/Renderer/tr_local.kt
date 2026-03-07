@@ -73,6 +73,7 @@ import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.idStr.Companion.IsColor
 import neo.idlib.Text.Str.idStr.Companion.snPrintf
 import neo.idlib.colorWhite
+import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.Winding.idWinding
@@ -1825,9 +1826,9 @@ class idRenderSystemLocal : idRenderSystem() {
         tr_main.R_GlobalToNormalizedDeviceCoordinates(global!!, ndc!!)
     }
 
-    override fun GetGLSettings(width: IntArray, height: IntArray) {
-        width[0] = glConfig.vidWidth
-        height[0] = glConfig.vidHeight
+    override fun GetGLSettings(width: CInt, height: CInt) {
+        width.integerValue = glConfig.vidWidth
+        height.integerValue = glConfig.vidHeight
     }
 
     override fun PrintMemInfo(mi: MemInfo_t) {

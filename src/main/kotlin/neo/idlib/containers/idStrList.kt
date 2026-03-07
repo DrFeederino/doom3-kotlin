@@ -1,8 +1,6 @@
 package neo.idlib.containers
 
 import neo.idlib.Text.Str.idStr
-import java.util.stream.Collectors
-import kotlin.math.min
 
 /*
 ===============================================================================
@@ -108,8 +106,15 @@ open class idStrList : Comparator<idStr> {
             // not changing the size, so just exit
             return
         }
-        val targetSize = min(stringsList.size, newSize)
-        stringsList = stringsList.stream().limit(targetSize.toLong()).collect(Collectors.toList())
+        if (newSize < stringsList.size) {
+            // shrink
+            stringsList = stringsList.subList(0, newSize).toMutableList()
+        } else {
+            // grow — fill new slots with empty idStr (C++ default-constructs elements)
+            for (i in stringsList.size until newSize) {
+                stringsList.add(idStr())
+            }
+        }
     }
 
     open fun clear() {
@@ -195,7 +200,7 @@ open class idStrList : Comparator<idStr> {
             i = if (stringsList.isEmpty()) 0 else stringsList.size - 1
         }
         // FIX: copy by value, not reference (C++ value semantics)
-        stringsList.add(i, idStr(obj))
+        stringsList[i] = idStr(obj)
     }
 
     fun setSize(num: Int) {

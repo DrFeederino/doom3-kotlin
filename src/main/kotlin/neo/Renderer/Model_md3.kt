@@ -159,15 +159,56 @@ object Model_md3 {
         var tags: Array<md3Tag_s?>? = null
         var version: Int = 0
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            return ByteBuffer.allocate(BYTES)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            ident = buffer.int
+            version = buffer.int
+            val nameBytes = ByteArray(MAX_MD3PATH)
+            buffer.get(nameBytes)
+            name = String(nameBytes).trimEnd('\u0000')
+            flags = buffer.int
+            numFrames = buffer.int
+            numTags = buffer.int
+            numSurfaces = buffer.int
+            numSkins = buffer.int
+            ofsFrames = buffer.int
+            ofsTags = buffer.int
+            ofsSurfaces = buffer.int
+            ofsEnd = buffer.int
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            val buffer = AllocBuffer()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.putInt(ident)
+            buffer.putInt(version)
+            val nameBytes = ByteArray(MAX_MD3PATH)
+            if (name != null) {
+                val src = name!!.toByteArray()
+                System.arraycopy(src, 0, nameBytes, 0, minOf(src.size, MAX_MD3PATH))
+            }
+            buffer.put(nameBytes)
+            buffer.putInt(flags)
+            buffer.putInt(numFrames)
+            buffer.putInt(numTags)
+            buffer.putInt(numSurfaces)
+            buffer.putInt(numSkins)
+            buffer.putInt(ofsFrames)
+            buffer.putInt(ofsTags)
+            buffer.putInt(ofsSurfaces)
+            buffer.putInt(ofsEnd)
+            buffer.flip()
+            return buffer
+        }
+
+        companion object {
+            private const val MAX_MD3PATH = 64
+
+            @Transient
+            val BYTES = 108 // 2*int + char[64] + 9*int
         }
     }
 

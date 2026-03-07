@@ -154,10 +154,13 @@ object Misc {
      ===============================================================================
      */
     class idSpawnableEntity : idEntity() {
-
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+        companion object {
+            val Type = idTypeInfo("idSpawnableEntity", "idEntity") { idSpawnableEntity() }
         }
+
+        override fun CreateInstance(): idClass = idSpawnableEntity()
+
+        override fun GetType(): idTypeInfo = Type
     }
 
     /*
@@ -171,6 +174,7 @@ object Misc {
     //
         : idEntity() {
         companion object {
+            val Type = idTypeInfo("idPlayerStart", "idEntity") { idPlayerStart() }
             // enum {
             val EVENT_TELEPORTPLAYER: Int = idEntity.EVENT_MAXEVENTS
             val EVENT_MAXEVENTS = EVENT_TELEPORTPLAYER + 1
@@ -271,13 +275,15 @@ object Misc {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteInt(teleportStage)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val teleportStage = CInt()
             savefile.ReadInt(teleportStage)
-            this.teleportStage = teleportStage._val
+            this.teleportStage = teleportStage.integerValue
         }
 
         override fun ClientReceiveEvent(event: Int, time: Int, msg: idBitMsg): Boolean {
@@ -334,9 +340,9 @@ object Misc {
             }
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idPlayerStart()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -355,6 +361,7 @@ object Misc {
      */
     class idActivator : idEntity() {
         companion object {
+            val Type = idTypeInfo("idActivator", "idEntity") { idActivator() }
             // public 	CLASS_PROTOTYPE( idActivator );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -395,10 +402,12 @@ object Misc {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteBool(stay_on._val)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             savefile.ReadBool(stay_on)
             if (stay_on._val) {
                 BecomeActive(TH_THINK)
@@ -417,9 +426,9 @@ object Misc {
             Present()
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idActivator()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -442,6 +451,7 @@ object Misc {
      */
     class idPathCorner : idEntity() {
         companion object {
+            val Type = idTypeInfo("idPathCorner", "idEntity") { idPathCorner() }
             // public 	CLASS_PROTOTYPE( idPathCorner );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun DrawDebugInfo() {
@@ -501,9 +511,9 @@ object Misc {
             idThread.ReturnEntity(path)
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idPathCorner()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -512,6 +522,7 @@ object Misc {
 
     class idDamagable : idEntity() {
         companion object {
+            val Type = idTypeInfo("idDamagable", "idEntity") { idDamagable() }
             // CLASS_PROTOTYPE( idDamagable );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             private fun Event_BecomeBroken(d: idDamagable, activator: idEventArg<idEntity>) {
@@ -536,11 +547,13 @@ object Misc {
         private val count: CInt = CInt()
         private val nextTriggerTime: CInt = CInt()
         override fun Save(savefile: idSaveGame) {
-            savefile.WriteInt(count._val)
-            savefile.WriteInt(nextTriggerTime._val)
+            super.Save(savefile)
+            savefile.WriteInt(count.integerValue)
+            savefile.WriteInt(nextTriggerTime.integerValue)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             savefile.ReadInt(count)
             savefile.ReadInt(nextTriggerTime)
         }
@@ -550,7 +563,7 @@ object Misc {
             val broken = idStr()
             health = spawnArgs.GetInt("health", "5")
             spawnArgs.GetInt("count", "1", count)
-            nextTriggerTime._val = (0)
+            nextTriggerTime.integerValue = (0)
 
             // make sure the model gets cached
             spawnArgs.GetString("broken", "", broken)
@@ -567,7 +580,7 @@ object Misc {
         }
 
         override fun Killed(inflictor: idEntity?, attacker: idEntity?, damage: Int, dir: idVec3, location: Int) {
-            if (Game_local.gameLocal.time < nextTriggerTime._val) {
+            if (Game_local.gameLocal.time < nextTriggerTime.integerValue) {
                 health += damage
                 return
             }
@@ -579,14 +592,14 @@ object Misc {
             val numStates = CInt()
             val cycle = CInt()
             val wait = CFloat()
-            if (Game_local.gameLocal.time < nextTriggerTime._val) {
+            if (Game_local.gameLocal.time < nextTriggerTime.integerValue) {
                 return
             }
             spawnArgs.GetFloat("wait", "0.1f", wait)
-            nextTriggerTime._val = ((Game_local.gameLocal.time + SEC2MS(wait._val)))
-            if (count._val > 0) {
+            nextTriggerTime.integerValue = ((Game_local.gameLocal.time + SEC2MS(wait._val)))
+            if (count.integerValue > 0) {
                 count.decrement()
-                if (0 == count._val) {
+                if (0 == count.integerValue) {
                     fl.takedamage = false
                 } else {
                     health = spawnArgs.GetInt("health", "5")
@@ -606,23 +619,23 @@ object Misc {
             spawnArgs.GetFloat("forcestate", "0", forceState)
 
             // set the state parm
-            if (cycle._val != 0) {
+            if (cycle.integerValue != 0) {
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE]++
-                if (renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] > numStates._val) {
+                if (renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] > numStates.integerValue) {
                     renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] = 0.0f
                 }
             } else if (forceState._val != 0.0f) {
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] = forceState._val
             } else {
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] =
-                    (Game_local.gameLocal.random.RandomInt(numStates._val) + 1).toFloat()
+                    (Game_local.gameLocal.random.RandomInt(numStates.integerValue) + 1).toFloat()
             }
             renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
                 -MS2SEC(Game_local.gameLocal.time.toFloat())
             ActivateTargets(activator)
             if (spawnArgs.GetBool("hideWhenBroken")) {
                 Hide()
-                PostEventMS(EV_RestoreDamagable, nextTriggerTime._val - Game_local.gameLocal.time)
+                PostEventMS(EV_RestoreDamagable, nextTriggerTime.integerValue - Game_local.gameLocal.time)
                 BecomeActive(TH_THINK)
             }
         }
@@ -632,9 +645,9 @@ object Misc {
             Show()
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idDamagable()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -643,8 +656,8 @@ object Misc {
         //
         //
         init {
-            count._val = (0)
-            nextTriggerTime._val = (0)
+            count.integerValue = (0)
+            nextTriggerTime.integerValue = (0)
         }
     }
 
@@ -664,6 +677,7 @@ object Misc {
      */
     class idExplodable : idEntity() {
         companion object {
+            val Type = idTypeInfo("idExplodable", "idEntity") { idExplodable() }
             //	CLASS_PROTOTYPE( idExplodable );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             private fun Event_Explode(e: idExplodable, activator: idEventArg<idEntity>) {
@@ -711,9 +725,9 @@ object Misc {
             Hide()
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idExplodable()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -729,6 +743,7 @@ object Misc {
      */
     class idSpring : idEntity() {
         companion object {
+            val Type = idTypeInfo("idSpring", "idEntity") { idSpring() }
             //	CLASS_PROTOTYPE( idSpring );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -829,13 +844,13 @@ object Misc {
             } else {
                 ent2 = Game_local.gameLocal.entities[Game_local.ENTITYNUM_WORLD]
             }
-            spring.SetPosition(ent1!!.GetPhysics(), id1._val, p1, ent2!!.GetPhysics(), id2._val, p2)
+            spring.SetPosition(ent1!!.GetPhysics(), id1.integerValue, p1, ent2!!.GetPhysics(), id2.integerValue, p2)
             BecomeActive(TH_THINK)
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idSpring()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -844,6 +859,7 @@ object Misc {
 
     class idForceField : idEntity() {
         companion object {
+            val Type = idTypeInfo("idForceField", "idEntity") { idForceField() }
             // CLASS_PROTOTYPE( idForceField );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -868,10 +884,12 @@ object Misc {
 
         private val forceField: idForce_Field = idForce_Field()
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteStaticObject(forceField)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             savefile.ReadStaticObject(forceField)
         }
 
@@ -949,9 +967,9 @@ object Misc {
             }
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idForceField()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -960,6 +978,7 @@ object Misc {
 
     class idAnimated : idAFEntity_Gibbable() {
         companion object {
+            val Type = idTypeInfo("idAnimated", "idAFEntity_Gibbable") { idAnimated() }
             // CLASS_PROTOTYPE( idAnimated );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -1023,6 +1042,7 @@ object Misc {
         private var num_anims: Int
         private var   /*jointHandle_t*/soundJoint: Int
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteInt(current_anim_index)
             savefile.WriteInt(num_anims)
             savefile.WriteInt(anim)
@@ -1033,6 +1053,7 @@ object Misc {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val current_anim_index = CInt()
             val num_anims = CInt()
             val anim = CInt()
@@ -1046,11 +1067,11 @@ object Misc {
             savefile.ReadJoint(soundJoint)
             activator.Restore(savefile)
             savefile.ReadBool(activated)
-            this.current_anim_index = current_anim_index._val
-            this.num_anims = num_anims._val
-            this.anim = anim._val
-            this.blendFrames = blendFrames._val
-            this.soundJoint = soundJoint._val
+            this.current_anim_index = current_anim_index.integerValue
+            this.num_anims = num_anims.integerValue
+            this.anim = anim.integerValue
+            this.blendFrames = blendFrames.integerValue
+            this.soundJoint = soundJoint.integerValue
             this.activated = activated._val
         }
 
@@ -1085,7 +1106,7 @@ object Misc {
             blendFrames = 0
             current_anim_index = 0
             spawnArgs.GetInt("num_anims", "0", num_anims2)
-            num_anims = num_anims2._val
+            num_anims = num_anims2.integerValue
             blendFrames = spawnArgs.GetInt("blend_in")
             animname[0] = spawnArgs.GetString(if (num_anims != 0) "anim1" else "anim")
             if (0 == animname[0]!!.length) {
@@ -1200,10 +1221,10 @@ object Misc {
             }
             spawnArgs.GetInt("cycle", "1", cycle)
             if (current_anim_index == num_anims && spawnArgs.GetBool("loop_last_anim")) {
-                cycle._val = (-1)
+                cycle.integerValue = (-1)
             }
             animator.CycleAnim(Anim.ANIMCHANNEL_ALL, anim, Game_local.gameLocal.time, Anim.FRAME2MS(blendFrames))
-            animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(cycle._val)
+            animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(cycle.integerValue)
             len = animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).PlayLength()
             if (len >= 0) {
                 PostEventMS(EV_AnimDone, len, current_anim_index)
@@ -1253,7 +1274,7 @@ object Misc {
                 }
                 spawnArgs.GetInt("cycle", "1", cycle)
                 animator.CycleAnim(Anim.ANIMCHANNEL_ALL, anim, Game_local.gameLocal.time, Anim.FRAME2MS(blendFrames))
-                animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(cycle._val)
+                animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(cycle.integerValue)
                 len = animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).PlayLength()
                 if (len >= 0) {
                     PostEventMS(EV_AnimDone, len, 1)
@@ -1396,6 +1417,10 @@ object Misc {
             }
         }
 
+        override fun CreateInstance(): idClass = idAnimated()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1423,6 +1448,7 @@ object Misc {
      */
     open class idStaticEntity : idEntity() {
         companion object {
+            val Type = idTypeInfo("idStaticEntity", "idEntity") { idStaticEntity() }
             // CLASS_PROTOTYPE( idStaticEntity );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1446,6 +1472,7 @@ object Misc {
         private var runGui: Boolean
         private var spawnTime = 0
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteInt(spawnTime)
             savefile.WriteBool(active)
             savefile.WriteVec4(fadeFrom)
@@ -1456,6 +1483,7 @@ object Misc {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val spawnTime = CInt()
             val fadeStart = CInt()
             val fadeEnd = CInt() //TODO:make sure the dumbass compiler doesn't decide that all {0}'s are the same (lol)
@@ -1468,9 +1496,9 @@ object Misc {
             savefile.ReadInt(fadeStart)
             savefile.ReadInt(fadeEnd)
             savefile.ReadBool(runGui)
-            this.spawnTime = spawnTime._val
-            this.fadeStart = fadeStart._val
-            this.fadeEnd = fadeEnd._val
+            this.spawnTime = spawnTime.integerValue
+            this.fadeStart = fadeStart.integerValue
+            this.fadeEnd = fadeEnd.integerValue
             this.active = active._val
             this.runGui = runGui._val
         }
@@ -1619,9 +1647,9 @@ object Misc {
             BecomeActive(TH_UPDATEVISUALS)
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idStaticEntity()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -1647,6 +1675,7 @@ object Misc {
      */
     open class idFuncEmitter : idStaticEntity() {
         companion object {
+            val Type = idTypeInfo("idFuncEmitter", "idStaticEntity") { idFuncEmitter() }
             // CLASS_PROTOTYPE( idFuncEmitter );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1664,10 +1693,12 @@ object Misc {
 
         private val hidden: CBool = CBool(false)
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteBool(hidden._val)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             savefile.ReadBool(hidden)
         }
 
@@ -1711,6 +1742,10 @@ object Misc {
             }
         }
 
+        override fun CreateInstance(): idClass = idFuncEmitter()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1733,6 +1768,7 @@ object Misc {
     //
         : idEntity() {
         companion object {
+            val Type = idTypeInfo("idFuncSmoke", "idEntity") { idFuncSmoke() }
             // CLASS_PROTOTYPE( idFuncSmoke );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1771,18 +1807,20 @@ object Misc {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteInt(smokeTime)
             savefile.WriteParticle(smoke)
             savefile.WriteBool(restart)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val smokeTime = CInt()
             val restart = CBool()
             savefile.ReadInt(smokeTime)
-            savefile.ReadParticle(smoke!!)
+            smoke = savefile.ReadParticle()
             savefile.ReadBool(restart)
-            this.smokeTime = smokeTime._val
+            this.smokeTime = smokeTime.integerValue
             this.restart = restart._val
         }
 
@@ -1822,9 +1860,9 @@ object Misc {
             }
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idFuncSmoke()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -1833,6 +1871,7 @@ object Misc {
 
     class idFuncSplat : idFuncEmitter() {
         companion object {
+            val Type = idTypeInfo("idFuncSplat", "idFuncEmitter") { idFuncSplat() }
             // CLASS_PROTOTYPE( idFuncSplat );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1879,6 +1918,10 @@ object Misc {
             StartSound("snd_splat", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
         }
 
+        override fun CreateInstance(): idClass = idFuncSplat()
+
+        override fun GetType(): idTypeInfo = Type
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1892,6 +1935,9 @@ object Misc {
      ===============================================================================
      */
     class idTextEntity : idEntity() {
+        companion object {
+            val Type = idTypeInfo("idTextEntity", "idEntity") { idTextEntity() }
+        }
         // CLASS_PROTOTYPE( idTextEntity );
         private var playerOriented = false
         private val text: idStr = idStr()
@@ -1910,11 +1956,13 @@ object Misc {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteString(text)
             savefile.WriteBool(playerOriented)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val playerOriented = CBool(false)
             savefile.ReadString(text)
             savefile.ReadBool(playerOriented)
@@ -1947,9 +1995,9 @@ object Misc {
             }
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idTextEntity()
+
+        override fun GetType(): idTypeInfo = Type
     }
 
     /*
@@ -1960,6 +2008,9 @@ object Misc {
      ===============================================================================
      */
     class idLocationEntity : idEntity() {
+        companion object {
+            val Type = idTypeInfo("idLocationEntity", "idEntity") { idLocationEntity() }
+        }
         // CLASS_PROTOTYPE( idLocationEntity );
         override fun Spawn() {
             super.Spawn()
@@ -1976,9 +2027,9 @@ object Misc {
             return spawnArgs.GetString("location")
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idLocationEntity()
+
+        override fun GetType(): idTypeInfo = Type
     }
 
     /*
@@ -1989,6 +2040,9 @@ object Misc {
      ===============================================================================
      */
     class idLocationSeparatorEntity : idEntity() {
+        companion object {
+            val Type = idTypeInfo("idLocationSeparatorEntity", "idEntity") { idLocationSeparatorEntity() }
+        }
         // CLASS_PROTOTYPE( idLocationSeparatorEntity );
         override fun Spawn() {
             super.Spawn()
@@ -2004,9 +2058,9 @@ object Misc {
             Game_local.gameLocal.SetPortalState(portal, TempDump.etoi(portalConnection_t.PS_BLOCK_LOCATION))
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idLocationSeparatorEntity()
+
+        override fun GetType(): idTypeInfo = Type
     }
 
     /*
@@ -2020,6 +2074,7 @@ object Misc {
      */
     class idVacuumSeparatorEntity : idEntity() {
         companion object {
+            val Type = idTypeInfo("idVacuumSeparatorEntity", "idEntity") { idVacuumSeparatorEntity() }
             // CLASS_PROTOTYPE( idVacuumSeparatorEntity );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2057,17 +2112,19 @@ object Misc {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteInt(portal)
             savefile.WriteInt(Game_local.gameRenderWorld!!.GetPortalState(portal))
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val state = CInt()
             val portal = CInt()
             savefile.ReadInt(portal)
             savefile.ReadInt(state)
-            this.portal = portal._val
-            Game_local.gameLocal.SetPortalState(portal._val, state._val)
+            this.portal = portal.integerValue
+            Game_local.gameLocal.SetPortalState(portal.integerValue, state.integerValue)
         }
 
         fun Event_Activate(activator: idEventArg<idEntity>) {
@@ -2077,9 +2134,9 @@ object Misc {
             Game_local.gameLocal.SetPortalState(portal, TempDump.etoi(portalConnection_t.PS_BLOCK_NONE))
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idVacuumSeparatorEntity()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -2096,6 +2153,9 @@ object Misc {
      ===============================================================================
      */
     class idVacuumEntity : idEntity() {
+        companion object {
+            val Type = idTypeInfo("idVacuumEntity", "idEntity") { idVacuumEntity() }
+        }
         // public:
         // CLASS_PROTOTYPE( idVacuumEntity );
         override fun Spawn() {
@@ -2108,9 +2168,9 @@ object Misc {
             Game_local.gameLocal.vacuumAreaNum = Game_local.gameRenderWorld!!.PointInArea(org)
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idVacuumEntity()
+
+        override fun GetType(): idTypeInfo = Type
     }
 
     /*
@@ -2122,6 +2182,7 @@ object Misc {
      */
     class idBeam : idEntity() {
         companion object {
+            val Type = idTypeInfo("idBeam", "idEntity") { idBeam() }
             // CLASS_PROTOTYPE( idBeam );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2151,11 +2212,13 @@ object Misc {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             target.Save(savefile)
             master.Save(savefile)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             target.Restore(savefile)
             master.Restore(savefile)
         }
@@ -2255,9 +2318,9 @@ object Misc {
             }
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idBeam()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -2280,6 +2343,7 @@ object Misc {
      */
     class idLiquid : idEntity() {
         companion object {
+            val Type = idTypeInfo("idLiquid", "idEntity") { idLiquid() }
             // CLASS_PROTOTYPE( idLiquid );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -2304,10 +2368,12 @@ object Misc {
         private val model: idRenderModelLiquid? = null
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             // Nothing to save
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             //FIXME: NO!
             Spawn()
         }
@@ -2322,9 +2388,9 @@ object Misc {
                          */
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idLiquid()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -2340,6 +2406,7 @@ object Misc {
      */
     class idShaking : idEntity() {
         companion object {
+            val Type = idTypeInfo("idShaking", "idEntity") { idShaking() }
             // CLASS_PROTOTYPE( idShaking );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2374,11 +2441,13 @@ object Misc {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteBool(active)
             savefile.WriteStaticObject(physicsObj)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val active = CBool()
             savefile.ReadBool(active)
             savefile.ReadStaticObject(physicsObj)
@@ -2420,9 +2489,9 @@ object Misc {
             }
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idShaking()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -2447,6 +2516,7 @@ object Misc {
     //
         : idEntity() {
         companion object {
+            val Type = idTypeInfo("idEarthQuake", "idEntity") { idEarthQuake() }
             // CLASS_PROTOTYPE( idEarthQuake );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2487,6 +2557,7 @@ object Misc {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteInt(nextTriggerTime)
             savefile.WriteInt(shakeStopTime)
             savefile.WriteFloat(wait)
@@ -2498,6 +2569,7 @@ object Misc {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val nextTriggerTime = CInt()
             val shakeStopTime = CInt()
             val wait = CFloat()
@@ -2514,15 +2586,15 @@ object Misc {
             savefile.ReadBool(playerOriented)
             savefile.ReadBool(disabled)
             savefile.ReadFloat(shakeTime)
-            this.nextTriggerTime = nextTriggerTime._val
-            this.shakeStopTime = shakeStopTime._val
+            this.nextTriggerTime = nextTriggerTime.integerValue
+            this.shakeStopTime = shakeStopTime.integerValue
             this.wait = wait._val
             this.random = random._val
             this.triggered = triggered._val
             this.playerOriented = playerOriented._val
             this.disabled = disabled._val
             this.shakeTime = shakeTime._val
-            if (shakeStopTime._val > Game_local.gameLocal.time) {
+            if (shakeStopTime.integerValue > Game_local.gameLocal.time) {
                 BecomeActive(TH_THINK)
             }
         }
@@ -2595,9 +2667,9 @@ object Misc {
             }
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idEarthQuake()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -2613,6 +2685,7 @@ object Misc {
      */
     class idFuncPortal : idEntity() {
         companion object {
+            val Type = idTypeInfo("idFuncPortal", "idEntity") { idFuncPortal() }
             // CLASS_PROTOTYPE( idFuncPortal );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2632,43 +2705,45 @@ object Misc {
         private val state: CBool = CBool()
         override fun Spawn() {
             super.Spawn()
-            portal._val = (Game_local.gameRenderWorld!!.FindPortal(GetPhysics().GetAbsBounds().Expand(32.0f)))
-            if (portal._val > 0) {
+            portal.integerValue = (Game_local.gameRenderWorld!!.FindPortal(GetPhysics().GetAbsBounds().Expand(32.0f)))
+            if (portal.integerValue > 0) {
                 state._val = (spawnArgs.GetBool("start_on"))
                 Game_local.gameLocal.SetPortalState(
-                    portal._val,
+                    portal.integerValue,
                     (if (state._val) portalConnection_t.PS_BLOCK_ALL else portalConnection_t.PS_BLOCK_NONE).ordinal
                 )
             }
         }
 
         override fun Save(savefile: idSaveGame) {
-            savefile.WriteInt(portal._val)
+            super.Save(savefile)
+            savefile.WriteInt(portal.integerValue)
             savefile.WriteBool(state._val)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             savefile.ReadInt(portal)
             savefile.ReadBool(state)
             Game_local.gameLocal.SetPortalState(
-                portal._val,
+                portal.integerValue,
                 (if (state._val) portalConnection_t.PS_BLOCK_ALL else portalConnection_t.PS_BLOCK_NONE).ordinal
             )
         }
 
         private fun Event_Activate(activator: idEventArg<idEntity>) {
-            if (portal._val > 0) {
+            if (portal.integerValue > 0) {
                 state._val = (!state._val)
                 Game_local.gameLocal.SetPortalState(
-                    portal._val,
+                    portal.integerValue,
                     (if (state._val) portalConnection_t.PS_BLOCK_ALL else portalConnection_t.PS_BLOCK_NONE).ordinal
                 )
             }
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idFuncPortal()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -2677,7 +2752,7 @@ object Misc {
         //
         //
         init {
-            portal._val = (0)
+            portal.integerValue = (0)
             state._val = (false)
         }
     }
@@ -2693,6 +2768,7 @@ object Misc {
     //
         : idEntity() {
         companion object {
+            val Type = idTypeInfo("idFuncAASPortal", "idEntity") { idFuncAASPortal() }
             // CLASS_PROTOTYPE( idFuncAASPortal );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2716,10 +2792,12 @@ object Misc {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteBool(state)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val state = CBool()
             savefile.ReadBool(state)
             Game_local.gameLocal.SetAASAreaState(
@@ -2733,9 +2811,9 @@ object Misc {
             Game_local.gameLocal.SetAASAreaState(GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_CLUSTERPORTAL, state)
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idFuncAASPortal()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -2751,6 +2829,7 @@ object Misc {
      */
     class idFuncAASObstacle : idEntity() {
         companion object {
+            val Type = idTypeInfo("idFuncAASObstacle", "idEntity") { idFuncAASObstacle() }
             // CLASS_PROTOTYPE( idFuncAASObstacle );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2778,10 +2857,12 @@ object Misc {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteBool(state._val)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             savefile.ReadBool(state)
             Game_local.gameLocal.SetAASAreaState(
                 GetPhysics().GetAbsBounds(),
@@ -2799,9 +2880,9 @@ object Misc {
             )
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idFuncAASObstacle()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -2818,6 +2899,7 @@ object Misc {
     //
         : idEntity() {
         companion object {
+            val Type = idTypeInfo("idFuncRadioChatter", "idEntity") { idFuncRadioChatter() }
             // CLASS_PROTOTYPE( idFuncRadioChatter );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2844,10 +2926,12 @@ object Misc {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteFloat(time)
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val time = CFloat()
             savefile.ReadFloat(time)
             this.time = time._val
@@ -2868,7 +2952,7 @@ object Misc {
             if (sound != null && !sound.isEmpty()) {
                 shader = DeclManager.declManager.FindSound(sound)
                 player.StartSoundShader(shader, gameSoundChannel_t.SND_CHANNEL_RADIO, Sound.SSF_GLOBAL, false, length)
-                time = MS2SEC((length._val + 150).toFloat())
+                time = MS2SEC((length.integerValue + 150).toFloat())
             }
             // we still put the hud up because this is used with no sound on
             // certain frame commands when the chatter is triggered
@@ -2882,9 +2966,9 @@ object Misc {
             ActivateTargets(activator)
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idFuncRadioChatter()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
@@ -2900,6 +2984,7 @@ object Misc {
      */
     class idPhantomObjects : idEntity() {
         companion object {
+            val Type = idTypeInfo("idPhantomObjects", "idEntity") { idPhantomObjects() }
             // CLASS_PROTOTYPE( idPhantomObjects );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2942,6 +3027,7 @@ object Misc {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             var i: Int
             savefile.WriteInt(end_time)
             savefile.WriteFloat(throw_time)
@@ -2965,6 +3051,7 @@ object Misc {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             val num: Int
             var i: Int
             end_time = savefile.ReadInt()
@@ -3148,9 +3235,9 @@ object Misc {
         //
         //        private void Event_ShakeObject(idEntity object, int starttime);
         //
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun CreateInstance(): idClass = idPhantomObjects()
+
+        override fun GetType(): idTypeInfo = Type
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]

@@ -30,10 +30,11 @@ import neo.idlib.containers.CInt
 import neo.idlib.math.idMath
 import neo.idlib.math.idVec3
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.*
 
 object Script_Interpreter {
-    const val LOCALSTACK_SIZE = 6144
+    const val LOCALSTACK_SIZE = 6144 * 2  // DG: doubled for 64-bit (dhewm3)
     const val MAX_STACK_DEPTH = 64
 
     class prstack_s {
@@ -100,16 +101,34 @@ object Script_Interpreter {
         }
 
         private fun Push(value: Int) {
-            if (localstackUsed == 36) {
-            }
-            if (localstackUsed + Integer.BYTES > LOCALSTACK_SIZE) {
+            if (localstackUsed + Script_Program.SIZEOF_INTPTR > LOCALSTACK_SIZE) {
                 Error("Push: locals stack overflow\n")
             }
             localstack[localstackUsed + 0] = (value ushr 0).toByte()
             localstack[localstackUsed + 1] = (value ushr 8).toByte()
             localstack[localstackUsed + 2] = (value ushr 16).toByte()
             localstack[localstackUsed + 3] = (value ushr 24).toByte()
-            localstackUsed += Integer.BYTES
+            // zero upper bytes (padding for 64-bit alignment)
+            for (i in 4 until Script_Program.SIZEOF_INTPTR) {
+                localstack[localstackUsed + i] = 0
+            }
+            localstackUsed += Script_Program.SIZEOF_INTPTR
+        }
+
+        private fun PushVector(vector: idVec3) {
+            if (localstackUsed + Script_Program.E_EVENT_SIZEOF_VEC > LOCALSTACK_SIZE) {
+                Error("Push: locals stack overflow\n")
+            }
+            val bb = ByteBuffer.wrap(localstack, localstackUsed, Script_Program.E_EVENT_SIZEOF_VEC)
+                .order(ByteOrder.LITTLE_ENDIAN)
+            bb.putFloat(vector.x)
+            bb.putFloat(vector.y)
+            bb.putFloat(vector.z)
+            // zero padding bytes (4 bytes on 64-bit)
+            for (i in 12 until Script_Program.E_EVENT_SIZEOF_VEC) {
+                localstack[localstackUsed + i] = 0
+            }
+            localstackUsed += Script_Program.E_EVENT_SIZEOF_VEC
         }
 
         private fun FloatToString(value: Float): String {
@@ -495,8 +514,8 @@ object Script_Interpreter {
                 callStack[i] = prstack_s()
                 callStack[i]!!.s = savefile.ReadInt()
                 savefile.ReadInt(func_index)
-                if (func_index._val >= 0) {
-                    callStack[i]!!.f = Game_local.gameLocal.program.GetFunction(func_index._val)
+                if (func_index.integerValue >= 0) {
+                    callStack[i]!!.f = Game_local.gameLocal.program.GetFunction(func_index.integerValue)
                 } else {
                     callStack[i]!!.f = null
                 }
@@ -509,8 +528,8 @@ object Script_Interpreter {
             localstackBase = savefile.ReadInt()
             maxLocalstackUsed = savefile.ReadInt()
             savefile.ReadInt(func_index)
-            currentFunction = if (func_index._val >= 0) {
-                Game_local.gameLocal.program.GetFunction(func_index._val)
+            currentFunction = if (func_index.integerValue >= 0) {
+                Game_local.gameLocal.program.GetFunction(func_index.integerValue)
             } else {
                 null
             }
@@ -520,8 +539,8 @@ object Script_Interpreter {
             if (funcname.Length() != 0) {
                 multiFrameEvent = FindEvent(funcname.toString())
             }
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/eventEntity)
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/thread)
+            eventEntity = savefile.ReadObject() as idEntity?
+            thread = savefile.ReadObject() as idThread?
             doneProcessing = savefile.ReadBool()
             threadDying = savefile.ReadBool()
             terminateOnExit = savefile.ReadBool()
@@ -1635,9 +1654,7 @@ object Script_Interpreter {
                     OP_PUSH_S -> PushString(GetString(st.a))
                     OP_PUSH_V -> {
                         var_a = GetVariable(st.a)
-                        Push(var_a!!.getVectorPtrs().x.toBits())
-                        Push(var_a.getVectorPtrs().y.toBits())
-                        Push(var_a.getVectorPtrs().z.toBits())
+                        PushVector(var_a!!.getVectorPtrs())
                     }
 
                     OP_PUSH_OBJ -> {

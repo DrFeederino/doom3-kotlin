@@ -25,14 +25,19 @@ import java.nio.ByteOrder
 object Script_Program {
     const val MAX_STRING_LEN = 128
     const val MAX_FUNCS = 3072
-    const val MAX_GLOBALS = 196608 // in bytes
+    const val MAX_GLOBALS = 296608 // in bytes -- DG: increased for 64-bit compatibility (dhewm3 value)
     const val MAX_STATEMENTS = 81920 // statement_s - 18 bytes last I checked
     const val MAX_STRINGS = 1024
+
+    // C++ sizeof(intptr_t) -- 8 on 64-bit dhewm3, 4 on original 32-bit id builds
+    const val SIZEOF_INTPTR = 8
+
+    // C++ E_EVENT_SIZEOF_VEC: ((sizeof(idVec3) + (sizeof(intptr_t) - 1)) & ~(sizeof(intptr_t) - 1))
+    // 64-bit: ((12 + 7) & ~7) = 16, 32-bit: ((12 + 3) & ~3) = 12
+    const val E_EVENT_SIZEOF_VEC = (12 + (SIZEOF_INTPTR - 1)) and (SIZEOF_INTPTR - 1).inv()
     const val ev_argsize = 13
     const val ev_boolean = 14
     const val ev_entity = 6
-
-    //    public enum etype_t {
     const val ev_error = -1
     const val ev_field = 7
     const val ev_float = 4
@@ -46,45 +51,44 @@ object Script_Program {
     const val ev_vector = 5
     const val ev_virtualfunction = 9
     const val ev_void = 0
-    val type_argsize = idTypeDef(ev_argsize, "<argsize>", 4, null) // only used for function call and thread opcodes
-    val def_argsize = idVarDef(type_argsize)
-    val type_boolean = idTypeDef(ev_boolean, "boolean", 4, null)
-    val def_boolean = idVarDef(type_boolean)
-    val type_entity = idTypeDef(ev_entity, "entity", 4, null) // stored as entity number pointer
-    val def_entity = idVarDef(type_entity)
-    val type_field = idTypeDef(ev_field, "field", 4, null)
-    val def_field = idVarDef(type_field)
-    val type_float = idTypeDef(ev_float, "float", 4, null)
-    val def_float = idVarDef(type_float)
-    val type_jumpoffset = idTypeDef(ev_jumpoffset, "<jump>", 4, null) // only used for jump opcodes
-    val def_jumpoffset = idVarDef(type_jumpoffset) // only used for jump opcodes
-    val type_namespace = idTypeDef(ev_namespace, "namespace", 4, null)
-    val def_namespace = idVarDef(type_namespace)
-    val type_object = idTypeDef(ev_object, "object", 4, null) // stored as entity number pointer
-    val def_object = idVarDef(type_object)
-    val type_pointer = idTypeDef(ev_pointer, "pointer", 4, null)
-    val def_pointer = idVarDef(type_pointer)
-    val type_scriptevent = idTypeDef(ev_scriptevent, "scriptevent", 4, null)
-    val def_scriptevent = idVarDef(type_scriptevent)
-    val type_string = idTypeDef(ev_string, "string", MAX_STRING_LEN, null)
-    val def_string = idVarDef(type_string)
-    val type_vector = idTypeDef(ev_vector, "vector", 12, null)
-    val def_vector = idVarDef(type_vector)
-    val type_virtualfunction = idTypeDef(ev_virtualfunction, "virtual function", 4, null)
-    val def_virtualfunction = idVarDef(type_virtualfunction)
 
-    //    };
     /* **********************************************************************
 
-     Variable and type defintions
+         Variable and type defintions
 
-     ***********************************************************************/
+         ***********************************************************************/
     // simple types.  function types are dynamically allocated
+    val type_argsize =
+        idTypeDef(ev_argsize, "<argsize>", SIZEOF_INTPTR, null) // only used for function call and thread opcodes
+    val type_boolean = idTypeDef(ev_boolean, "boolean", SIZEOF_INTPTR, null)
+    val type_entity = idTypeDef(ev_entity, "entity", SIZEOF_INTPTR, null) // stored as entity number pointer
+    val type_field = idTypeDef(ev_field, "field", SIZEOF_INTPTR, null)
+    val type_float = idTypeDef(ev_float, "float", SIZEOF_INTPTR, null)
+    val type_jumpoffset = idTypeDef(ev_jumpoffset, "<jump>", SIZEOF_INTPTR, null) // only used for jump opcodes
+    val type_namespace = idTypeDef(ev_namespace, "namespace", SIZEOF_INTPTR, null)
+    val type_object = idTypeDef(ev_object, "object", SIZEOF_INTPTR, null) // stored as entity number pointer
+    val type_pointer = idTypeDef(ev_pointer, "pointer", SIZEOF_INTPTR, null)
+    val type_scriptevent = idTypeDef(ev_scriptevent, "scriptevent", SIZEOF_INTPTR, null)
+    val type_string = idTypeDef(ev_string, "string", MAX_STRING_LEN, null)
+    val type_vector = idTypeDef(ev_vector, "vector", E_EVENT_SIZEOF_VEC, null)
+    val type_virtualfunction = idTypeDef(ev_virtualfunction, "virtual function", SIZEOF_INTPTR, null)
     val type_void = idTypeDef(ev_void, "void", 0, null)
-    val type_function = idTypeDef(ev_function, "function", 4, type_void)
-    val def_function = idVarDef(type_function)
+    val type_function = idTypeDef(ev_function, "function", SIZEOF_INTPTR, type_void)
 
-    //
+    val def_entity = idVarDef(type_entity)
+    val def_argsize = idVarDef(type_argsize)
+    val def_boolean = idVarDef(type_boolean)
+    val def_field = idVarDef(type_field)
+    val def_float = idVarDef(type_float)
+    val def_jumpoffset = idVarDef(type_jumpoffset) // only used for jump opcodes
+    val def_namespace = idVarDef(type_namespace)
+    val def_object = idVarDef(type_object)
+    val def_pointer = idVarDef(type_pointer)
+    val def_scriptevent = idVarDef(type_scriptevent)
+    val def_string = idVarDef(type_string)
+    val def_vector = idVarDef(type_vector)
+    val def_virtualfunction = idVarDef(type_virtualfunction)
+    val def_function = idVarDef(type_function)
     val def_void = idVarDef(type_void)
 
     init {
@@ -156,15 +160,15 @@ object Script_Program {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            return ByteBuffer.allocate(BYTES).order(java.nio.ByteOrder.LITTLE_ENDIAN)
         }
 
         override fun Read(buffer: ByteBuffer) {
             try {
                 name.Read(buffer)
-                buffer.int //skip
-                buffer.int //skip
-                buffer.int //skip
+                buffer.int //skip eventdef pointer
+                buffer.int //skip def pointer
+                buffer.int //skip type pointer
                 firstStatement = buffer.int
                 numStatements = buffer.int
                 parmTotal = buffer.int
@@ -175,20 +179,28 @@ object Script_Program {
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            val buffer = AllocBuffer()
+            buffer.put(name.Write())
+            buffer.putInt(0) // eventdef pointer
+            buffer.putInt(0) // def pointer
+            buffer.putInt(0) // type pointer
+            buffer.putInt(firstStatement)
+            buffer.putInt(numStatements)
+            buffer.putInt(parmTotal)
+            buffer.putInt(locals)
+            buffer.putInt(filenum)
+            // parmSize idList - write num and pointer
+            buffer.putInt(parmSize.Num())
+            buffer.putInt(0) // list data pointer
+            buffer.flip()
+            return buffer
         }
 
         companion object {
-            val SIZE = (idStr.SIZE
-                    + CPP_class.Pointer.SIZE //eventdef
+            val SIZE = (idStr.SIZE + CPP_class.Pointer.SIZE //eventdef
                     + CPP_class.Pointer.SIZE //def
                     + CPP_class.Pointer.SIZE //type
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + Integer.SIZE
-                    + idList.SIZE)
+                    + Integer.SIZE + Integer.SIZE + Integer.SIZE + Integer.SIZE + Integer.SIZE + idList.SIZE)
             val BYTES = SIZE / java.lang.Byte.SIZE
         }
     }
@@ -616,13 +628,12 @@ object Script_Program {
                 savefile.Error("idScriptObject::Restore: failed to restore object of type '%s'.", typeName.toString())
             }
             savefile.ReadInt(size)
-            if (size._val != type.Size()) {
+            if (size.integerValue != type.Size()) {
                 savefile.Error(
-                    "idScriptObject::Restore: size of object '%s' doesn't match size in save game.",
-                    typeName
+                    "idScriptObject::Restore: size of object '%s' doesn't match size in save game.", typeName
                 )
             }
-            savefile.Read(data!!, size._val)
+            savefile.Read(data!!, size.integerValue)
         }
 
         fun Free() {
@@ -761,15 +772,30 @@ object Script_Program {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            return ByteBuffer.allocate(BYTES).order(java.nio.ByteOrder.LITTLE_ENDIAN)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.int // data pointer, skip
+            offset = buffer.int
+            buffer.int // type pointer, skip
+            buffer.int // padding
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            val buffer = AllocBuffer()
+            buffer.putInt(0) // data pointer
+            buffer.putInt(offset)
+            buffer.putInt(0) // type pointer
+            buffer.putInt(0) // padding
+            buffer.flip()
+            return buffer
+        }
+
+        companion object {
+            @Transient
+            val BYTES = 16
         }
     }
 
@@ -975,8 +1001,8 @@ object Script_Program {
                 .order(ByteOrder.LITTLE_ENDIAN)
         }
 
-        fun setBytePtr(bytes: ByteArray?, offset: Int) {
-            setBytePtr(ByteBuffer.wrap(bytes), offset)
+        fun setBytePtr(bytes: UByteArray?, offset: Int) {
+            setBytePtr(ByteBuffer.wrap(bytes?.toByteArray()), offset)
         }
 
         fun setStringPtr(data: ByteBuffer?, offset: Int) {
@@ -992,7 +1018,7 @@ object Script_Program {
         }
 
         companion object {
-            const val BYTES = java.lang.Float.BYTES
+            const val BYTES = SIZEOF_INTPTR  // C++ sizeof(intptr_t) = 8 on 64-bit
         }
     }
 
@@ -1183,10 +1209,7 @@ object Script_Program {
 
         companion object {
             // friend class idVarDefName;
-            const val BYTES = (Integer.BYTES
-                    + varEval_s.BYTES
-                    + Integer.BYTES
-                    + Integer.BYTES)
+            const val BYTES = (Integer.BYTES + varEval_s.BYTES + Integer.BYTES + Integer.BYTES)
         }
     }
 

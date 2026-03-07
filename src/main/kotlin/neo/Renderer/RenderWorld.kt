@@ -327,15 +327,15 @@ object RenderWorld {
 
         fun atomicSet(shadow: renderEntityShadow) {
             hModel = shadow.hModel
-            entityNum = shadow.entityNum._val
-            bodyId = shadow.bodyId._val
+            entityNum = shadow.entityNum.integerValue
+            bodyId = shadow.bodyId.integerValue
             bounds.set(shadow.bounds)
             callback = shadow.callback
             callbackData = shadow.callbackData
-            suppressSurfaceInViewID = shadow.suppressSurfaceInViewID._val
-            suppressShadowInViewID = shadow.suppressShadowInViewID._val
-            suppressShadowInLightID = shadow.suppressShadowInLightID._val
-            allowSurfaceInViewID = shadow.allowSurfaceInViewID._val
+            suppressSurfaceInViewID = shadow.suppressSurfaceInViewID.integerValue
+            suppressShadowInViewID = shadow.suppressShadowInViewID.integerValue
+            suppressShadowInLightID = shadow.suppressShadowInLightID.integerValue
+            allowSurfaceInViewID = shadow.allowSurfaceInViewID.integerValue
             origin.set(shadow.origin)
             axis.set(shadow.axis)
             customShader = shadow.customShader
@@ -343,16 +343,16 @@ object RenderWorld {
             customSkin = shadow.customSkin
             referenceSound = shadow.referenceSound
             remoteRenderView = shadow.remoteRenderView
-            numJoints = shadow.numJoints._val
+            numJoints = shadow.numJoints.integerValue
             joints = shadow.joints as Array<idJointMat?>
             modelDepthHack = shadow.modelDepthHack._val
             noSelfShadow = shadow.noSelfShadow._val
             noShadow = shadow.noShadow._val
             noDynamicInteractions = shadow.noDynamicInteractions._val
             weaponDepthHack = shadow.weaponDepthHack._val
-            forceUpdate = shadow.forceUpdate._val
-            timeGroup = shadow.timeGroup._val
-            xrayIndex = shadow.xrayIndex._val
+            forceUpdate = shadow.forceUpdate.integerValue
+            timeGroup = shadow.timeGroup.integerValue
+            xrayIndex = shadow.xrayIndex.integerValue
         }
 
         fun clear() {
@@ -593,9 +593,9 @@ object RenderWorld {
             noShadows._val = other.noShadows._val
             noSpecular._val = other.noSpecular._val
             parallel._val = other.parallel._val
-            lightId._val = other.lightId._val
-            allowLightInViewID._val = other.allowLightInViewID._val
-            suppressLightInViewID._val = other.suppressLightInViewID._val
+            lightId.integerValue = other.lightId.integerValue
+            allowLightInViewID.integerValue = other.allowLightInViewID.integerValue
+            suppressLightInViewID.integerValue = other.suppressLightInViewID.integerValue
             shader = other.shader
             prelightModel = other.prelightModel
             referenceSound = other.referenceSound
@@ -645,18 +645,18 @@ object RenderWorld {
         }
 
         fun atomicSet(shadow: renderViewShadow) {
-            viewID = shadow.viewID._val
-            x = shadow.x._val
-            y = shadow.y._val
-            width = shadow.width._val
-            height = shadow.height._val
+            viewID = shadow.viewID.integerValue
+            x = shadow.x.integerValue
+            y = shadow.y.integerValue
+            width = shadow.width.integerValue
+            height = shadow.height.integerValue
             fov_x = shadow.fov_x._val
             fov_y = shadow.fov_y._val
             vieworg.set(shadow.vieworg)
             viewaxis.set(shadow.viewaxis)
             cramZNear = shadow.cramZNear._val
             forceUpdate = shadow.forceUpdate._val
-            time = shadow.time._val
+            time = shadow.time.integerValue
             for (a in 0 until MAX_GLOBAL_SHADER_PARMS) {
                 shaderParms[a] = shadow.shaderParms[a]._val
             }
@@ -664,18 +664,68 @@ object RenderWorld {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            return ByteBuffer.allocate(BYTES)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            viewID = buffer.int
+            x = buffer.int
+            y = buffer.int
+            width = buffer.int
+            height = buffer.int
+            fov_x = buffer.float
+            fov_y = buffer.float
+            vieworg[0] = buffer.float
+            vieworg[1] = buffer.float
+            vieworg[2] = buffer.float
+            for (i in 0 until 3) {
+                for (j in 0 until 3) {
+                    viewaxis[i][j] = buffer.float
+                }
+            }
+            cramZNear = buffer.int != 0
+            forceUpdate = buffer.int != 0
+            time = buffer.int
+            for (i in shaderParms.indices) {
+                shaderParms[i] = buffer.float
+            }
+            buffer.int // globalMaterial pointer, skip
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
+            val buffer = AllocBuffer()
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.putInt(viewID)
+            buffer.putInt(x)
+            buffer.putInt(y)
+            buffer.putInt(width)
+            buffer.putInt(height)
+            buffer.putFloat(fov_x)
+            buffer.putFloat(fov_y)
+            buffer.putFloat(vieworg[0])
+            buffer.putFloat(vieworg[1])
+            buffer.putFloat(vieworg[2])
+            for (i in 0 until 3) {
+                for (j in 0 until 3) {
+                    buffer.putFloat(viewaxis[i][j])
+                }
+            }
+            buffer.putInt(if (cramZNear) 1 else 0)
+            buffer.putInt(if (forceUpdate) 1 else 0)
+            buffer.putInt(time)
+            for (p in shaderParms) {
+                buffer.putFloat(p)
+            }
+            buffer.putInt(0) // globalMaterial pointer
+            buffer.flip()
+            return buffer
         }
 
         companion object {
+            @Transient
+            val BYTES = 144
+
             // player views will set this to a non-zero integer for model suppress / allow
             // subviews (mirrors, cameras, etc) will always clear it to zero
             private var DBG_counter: Int = 0

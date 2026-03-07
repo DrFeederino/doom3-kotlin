@@ -465,8 +465,8 @@ object tr_backend {
 
             // show in proportional size in mode 2
             if (r_showImages!!.GetInteger() == 2) {
-                w *= image.uploadWidth._val / 512.0f
-                h *= image.uploadHeight._val / 512.0f
+                w *= image.uploadWidth.integerValue / 512.0f
+                h *= image.uploadHeight.integerValue / 512.0f
             }
             image.Bind()
             qgl.qglBegin(GL11.GL_QUADS)
@@ -528,8 +528,8 @@ object tr_backend {
             val imageWidth = CInt(cmd.imageWidth)
             val imageHeight = CInt(cmd.imageHeight)
             cmd.image!!.CopyFramebuffer(cmd.x, cmd.y, imageWidth, imageHeight, false)
-            cmd.imageWidth = imageWidth._val
-            cmd.imageHeight = imageHeight._val
+            cmd.imageWidth = imageWidth.integerValue
+            cmd.imageHeight = imageHeight.integerValue
         }
     }
 

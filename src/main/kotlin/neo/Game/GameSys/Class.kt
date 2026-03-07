@@ -26,31 +26,54 @@
  * Base class for all game objects.  Provides fast run-time type checking
  * and run-time instancing of objects.
  *
- * NOTE: Differs from C++ — The C++ version uses CLASS_DECLARATION /
- * ABSTRACT_DECLARATION macros to register static idTypeInfo instances at
- * program startup, providing RTTI, factory instantiation, and event dispatch
- * via eventMap arrays. The Kotlin/JVM port replaces this with:
- *   - JVM reflection for class name / superclass queries
- *   - Per-class Map<idEventDef, eventCallback_t> for event dispatch
- *   - GetEntity() hardcoded factory for entity instantiation
- *   - Virtual getEventCallBack() dispatch instead of eventMap[eventNum]
- * The idTypeInfo infrastructure is preserved for future use and for
- * save/restore compatibility, but is currently dormant (no idTypeInfo
- * instances are created at class registration time).
+ * Each idClass descendant declares a companion-level idTypeInfo (val Type)
+ * that auto-registers into a central HashMap registry on construction.
+ * This replaces the C++ CLASS_DECLARATION macro system. Event dispatch
+ * continues through per-class getEventCallBack() virtual methods.
  */
 package neo.Game.GameSys
 
-import neo.Game.*
-import neo.Game.AI.AI_Vagary.idAI_Vagary
+import neo.Game.AI.AI_Vagary
+import neo.Game.idAFAttachment
+import neo.Game.idAFEntity_Base
+import neo.Game.idAFEntity_ClawFourFingers
+import neo.Game.idAFEntity_Gibbable
+import neo.Game.idAFEntity_Generic
+import neo.Game.idAFEntity_SteamPipe
+import neo.Game.idAFEntity_Vehicle
+import neo.Game.idAFEntity_VehicleFourWheels
+import neo.Game.idAFEntity_VehicleSimple
+import neo.Game.idAFEntity_VehicleSixWheels
+import neo.Game.idAFEntity_WithAttachedHead
+import neo.Game.idChain
+import neo.Game.idMultiModelAF
 import neo.Game.AI.idAI
 import neo.Game.AI.idCombatNode
+import neo.Game.Animation.Anim_Testmodel.idTestModel
 import neo.Game.BrittleFracture.idBrittleFracture
+import neo.Game.EV_Activate
+import neo.Game.idCamera
+import neo.Game.idCameraAnim
+import neo.Game.idCameraView
+import neo.Game.idEntityFx
+import neo.Game.idTeleporter
+import neo.Game.GameEdit.idCursor3D
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.Event.D_EVENT_MAXARGS
 import neo.Game.GameSys.Event.idEvent
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
+import neo.Game.Game_local
+import neo.Game.idItem
+import neo.Game.idItemPowerup
+import neo.Game.idItemRemover
+import neo.Game.idMoveableItem
+import neo.Game.idMoveablePDAItem
+import neo.Game.idObjective
+import neo.Game.idObjectiveComplete
+import neo.Game.idPDAItem
+import neo.Game.idVideoCDItem
 import neo.Game.Light.idLight
 import neo.Game.Misc.idActivator
 import neo.Game.Misc.idAnimated
@@ -60,11 +83,13 @@ import neo.Game.Misc.idEarthQuake
 import neo.Game.Misc.idExplodable
 import neo.Game.Misc.idForceField
 import neo.Game.Misc.idFuncAASObstacle
+import neo.Game.Misc.idFuncAASPortal
 import neo.Game.Misc.idFuncEmitter
 import neo.Game.Misc.idFuncPortal
 import neo.Game.Misc.idFuncRadioChatter
 import neo.Game.Misc.idFuncSmoke
 import neo.Game.Misc.idFuncSplat
+import neo.Game.Misc.idLiquid
 import neo.Game.Misc.idLocationEntity
 import neo.Game.Misc.idLocationSeparatorEntity
 import neo.Game.Misc.idPathCorner
@@ -72,7 +97,9 @@ import neo.Game.Misc.idPhantomObjects
 import neo.Game.Misc.idPlayerStart
 import neo.Game.Misc.idShaking
 import neo.Game.Misc.idSpawnableEntity
+import neo.Game.Misc.idSpring
 import neo.Game.Misc.idStaticEntity
+import neo.Game.Misc.idTextEntity
 import neo.Game.Misc.idVacuumEntity
 import neo.Game.Misc.idVacuumSeparatorEntity
 import neo.Game.Moveable.idBarrel
@@ -82,10 +109,28 @@ import neo.Game.Mover.idBobber
 import neo.Game.Mover.idDoor
 import neo.Game.Mover.idElevator
 import neo.Game.Mover.idMover
+import neo.Game.Mover.idMover_Binary
+import neo.Game.Mover.idMover_Periodic
 import neo.Game.Mover.idPendulum
 import neo.Game.Mover.idPlat
+import neo.Game.Mover.idRiser
 import neo.Game.Mover.idRotater
 import neo.Game.Mover.idSplinePath
+import neo.Game.Physics.Force.idForce
+import neo.Game.Physics.Force_Constant.idForce_Constant
+import neo.Game.Physics.Force_Drag.idForce_Drag
+import neo.Game.Physics.Force_Field.idForce_Field
+import neo.Game.Physics.Force_Spring.idForce_Spring
+import neo.Game.Physics.Physics.idPhysics
+import neo.Game.Physics.Physics_AF.idPhysics_AF
+import neo.Game.Physics.Physics_Actor.idPhysics_Actor
+import neo.Game.Physics.Physics_Base.idPhysics_Base
+import neo.Game.Physics.Physics_Monster.idPhysics_Monster
+import neo.Game.Physics.Physics_Parametric.idPhysics_Parametric
+import neo.Game.Physics.Physics_Player.idPhysics_Player
+import neo.Game.Physics.Physics_RigidBody.idPhysics_RigidBody
+import neo.Game.Physics.Physics_Static.idPhysics_Static
+import neo.Game.Physics.Physics_StaticMulti.idPhysics_StaticMulti
 import neo.Game.Player.idPlayer
 import neo.Game.Projectile.idBFGProjectile
 import neo.Game.Projectile.idDebris
@@ -102,6 +147,8 @@ import neo.Game.Target.idTarget_EnableLevelWeapons
 import neo.Game.Target.idTarget_EnableStamina
 import neo.Game.Target.idTarget_EndLevel
 import neo.Game.Target.idTarget_FadeEntity
+import neo.Game.Target.idTarget_FadeSoundClass
+import neo.Game.Target.idTarget_Give
 import neo.Game.Target.idTarget_GiveEmail
 import neo.Game.Target.idTarget_GiveSecurity
 import neo.Game.Target.idTarget_LevelTrigger
@@ -110,12 +157,19 @@ import neo.Game.Target.idTarget_LightFadeOut
 import neo.Game.Target.idTarget_LockDoor
 import neo.Game.Target.idTarget_Remove
 import neo.Game.Target.idTarget_RemoveWeapons
+import neo.Game.Target.idTarget_SessionCommand
+import neo.Game.Target.idTarget_SetFov
+import neo.Game.Target.idTarget_SetGlobalShaderTime
 import neo.Game.Target.idTarget_SetInfluence
 import neo.Game.Target.idTarget_SetKeyVal
+import neo.Game.Target.idTarget_SetModel
 import neo.Game.Target.idTarget_SetPrimaryObjective
 import neo.Game.Target.idTarget_SetShaderParm
+import neo.Game.Target.idTarget_SetShaderTime
 import neo.Game.Target.idTarget_Show
 import neo.Game.Target.idTarget_Tip
+import neo.Game.Target.idTarget_WaitForButton
+import neo.Game.Trigger.idTrigger
 import neo.Game.Trigger.idTrigger_Count
 import neo.Game.Trigger.idTrigger_EntityName
 import neo.Game.Trigger.idTrigger_Fade
@@ -123,7 +177,11 @@ import neo.Game.Trigger.idTrigger_Hurt
 import neo.Game.Trigger.idTrigger_Multi
 import neo.Game.Trigger.idTrigger_Timer
 import neo.Game.Trigger.idTrigger_Touch
+import neo.Game.Weapon.idWeapon
 import neo.Game.WorldSpawn.idWorldspawn
+import neo.Game.idActor
+import neo.Game.idAnimatedEntity
+import neo.Game.idEntity
 
 import neo.cm.trace_s
 import neo.framework.CmdSystem.cmdFunction_t
@@ -135,7 +193,6 @@ import neo.idlib.idException
 import neo.idlib.math.SEC2MS
 import neo.idlib.math.idMath
 import neo.idlib.math.idVec3
-import java.lang.Class
 
 val EV_Remove: idEventDef = idEventDef("<immediateremove>", null)
 val EV_SafeRemove: idEventDef = idEventDef("remove", null)
@@ -145,7 +202,12 @@ class Class {
         var classHierarchy: idHierarchy<idTypeInfo> = idHierarchy()
         var eventCallbackMemory = 0
 
+        // HashMap registry for all idTypeInfo instances, keyed by classname.
+        // Replaces the C++ singly-linked typelist with O(1) lookup.
+        val typeRegistry: HashMap<String, idTypeInfo> = HashMap()
+
         // this is the head of a singly linked list of all the idTypes
+        // Kept for Init() traversal ordering -- populated alongside typeRegistry
         var typelist: idTypeInfo? = null
     }
 
@@ -225,18 +287,6 @@ class Class {
         )
     }
 
-    abstract class classSpawnFunc_t<type> {
-        abstract fun run(): type
-    }
-
-    abstract class idClass_Save {
-        abstract fun run(savefile: idSaveGame)
-    }
-
-    abstract class idClass_Restore {
-        abstract fun run(savefile: idRestoreGame)
-    }
-
     class idEventFunc<type> {
         var event: idEventDef? = null
         var function: eventCallback_t<*>? = null
@@ -312,6 +362,8 @@ class Class {
      ***********************************************************************/
     abstract class idClass {
         companion object {
+            val Type = idTypeInfo("idClass", "")
+
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = run {
                 val map = HashMap<idEventDef, eventCallback_t<*>>()
                 map[EV_Remove] = (eventCallback_t0 { obj: idClass -> obj.Event_Remove() })
@@ -348,10 +400,8 @@ class Class {
                 }
 
                 // init the event callback tables for all the classes
-                c = typelist
-                while (c != null) {
-                    c.Init()
-                    c = c.next
+                for (type in typeRegistry.values) {
+                    type.Init()
                 }
 
                 // number the types according to the class hierarchy so we can quickly determine if a class
@@ -396,11 +446,8 @@ class Class {
              ================
              */
             fun Shutdown() {
-                var c: idTypeInfo?
-                c = typelist
-                while (c != null) {
-                    c.Shutdown()
-                    c = c.next
+                for (type in typeRegistry.values) {
+                    type.Shutdown()
                 }
                 types.Clear()
                 typenums.Clear()
@@ -415,168 +462,25 @@ class Class {
          so it must be called as idClass::GetClass( classname )
          ================
          */
-            // FIX: Was a hardcoded when block that always returned null.
-            // Reimplemented to match C++ — linear scan pre-init, binary search post-init.
             fun GetClass(name: String?): idTypeInfo? {
                 if (name == null) return null
-
-                if (!initialized) {
-                    // idClass::Init hasn't been called yet, so do a slow lookup
-                    var c = typelist
-                    while (c != null) {
-                        if (idStr.Cmp(c.classname, name) == 0) {
-                            return c
-                        }
-                        c = c.next
-                    }
-                } else {
-                    // do a binary search through the list of types
-                    var min = 0
-                    var max = types.Num() - 1
-                    while (min <= max) {
-                        val mid = (min + max) / 2
-                        val c = types[mid]
-                        val order = idStr.Cmp(c.classname, name)
-                        if (order == 0) {
-                            return c
-                        } else if (order > 0) {
-                            max = mid - 1
-                        } else {
-                            min = mid + 1
-                        }
-                    }
-                }
-
-                return null
-            }
-
-            // NOTE: Kotlin-only, no C++ counterpart.
-            // This is a hardcoded factory that replaces the C++ CLASS_DECLARATION macro
-            // and idTypeInfo::CreateInstance() system. In C++, each class registers an
-            // idTypeInfo with a factory function; here, we use a when-block mapping class
-            // names to constructor calls. This is used by CreateInstance() as a fallback
-            // when the idTypeInfo system is not populated.
-            fun GetEntity(name: String?): idEntity? {
-                return if (name == null || name.isEmpty()) {
-                    null
-                } else when (name) {
-                    "idWorldspawn" -> idWorldspawn()
-                    "idStaticEntity" -> idStaticEntity()
-                    "idPathCorner" -> idPathCorner()
-                    "idTrigger_Multi" -> idTrigger_Multi()
-                    "idTarget_Tip" -> idTarget_Tip()
-                    "idTarget_Remove" -> idTarget_Remove()
-                    "idMover" -> idMover()
-                    "idMoveable" -> idMoveable()
-                    "idLight" -> idLight()
-                    "idCameraAnim" -> idCameraAnim()
-                    "idAI" -> idAI()
-                    "idFuncEmitter" -> idFuncEmitter()
-                    "idAnimated" -> idAnimated()
-                    "idBFGProjectile" -> idBFGProjectile()
-                    "idTrigger_Hurt" -> idTrigger_Hurt()
-                    "idMoveablePDAItem" -> idMoveablePDAItem()
-                    "idLocationEntity" -> idLocationEntity()
-                    "idPlayerStart" -> idPlayerStart()
-                    "idSound" -> idSound()
-                    "idTarget_GiveEmail" -> idTarget_GiveEmail()
-                    "idTarget_SetPrimaryObjective" -> idTarget_SetPrimaryObjective()
-                    "idObjectiveComplete" -> idObjectiveComplete()
-                    "idTarget" -> idTarget()
-                    "idCameraView" -> idCameraView()
-                    "idObjective" -> idObjective()
-                    "idTarget_SetShaderParm" -> idTarget_SetShaderParm()
-                    "idTarget_FadeEntity" -> idTarget_FadeEntity()
-                    "idEntityFx" -> idEntityFx()
-                    "idItem" -> idItem()
-                    "idSplinePath" -> idSplinePath()
-                    "idAFEntity_Generic" -> idAFEntity_Generic()
-                    "idDoor" -> idDoor()
-                    "idProjectile" -> idProjectile()
-                    "idTrigger_Count" -> idTrigger_Count()
-                    "idTarget_EndLevel" -> idTarget_EndLevel()
-                    "idTarget_CallObjectFunction" -> idTarget_CallObjectFunction()
-                    "idTrigger_Fade" -> idTrigger_Fade()
-                    "idPDAItem" -> idPDAItem()
-                    "idVideoCDItem" -> idVideoCDItem()
-                    "idLocationSeparatorEntity" -> idLocationSeparatorEntity()
-                    "idPlayer" -> idPlayer()
-                    "idDebris" -> idDebris()
-                    "idSpawnableEntity" -> idSpawnableEntity()
-                    "idTarget_LightFadeIn" -> idTarget_LightFadeIn()
-                    "idTarget_LightFadeOut" -> idTarget_LightFadeOut()
-                    "idItemPowerup" -> idItemPowerup()
-                    "idForceField" -> idForceField()
-                    "idTarget_LockDoor" -> idTarget_LockDoor()
-                    "idTarget_SetInfluence" -> idTarget_SetInfluence()
-                    "idExplodingBarrel" -> idExplodingBarrel()
-                    "idTarget_EnableLevelWeapons" -> idTarget_EnableLevelWeapons()
-                    "idAFEntity_WithAttachedHead" -> idAFEntity_WithAttachedHead()
-                    "idCombatNode" -> idCombatNode()
-                    "idFuncAASObstacle" -> idFuncAASObstacle()
-                    "idVacuumEntity" -> idVacuumEntity()
-                    "idRotater" -> idRotater()
-                    "idElevator" -> idElevator()
-                    "idShaking" -> idShaking()
-                    "idFuncRadioChatter" -> idFuncRadioChatter()
-                    "idFuncPortal" -> idFuncPortal()
-                    "idMoveableItem" -> idMoveableItem()
-                    "idFuncSmoke" -> idFuncSmoke()
-                    "idPhantomObjects" -> idPhantomObjects()
-                    "idBeam" -> idBeam()
-                    "idExplodable" -> idExplodable()
-                    "idEarthQuake" -> idEarthQuake()
-                    "idGuidedProjectile" -> idGuidedProjectile()
-                    "idTarget_Show" -> idTarget_Show()
-                    "idBrittleFracture" -> idBrittleFracture()
-                    "idTrigger_Timer" -> idTrigger_Timer()
-                    "idPendulum" -> idPendulum()
-                    "idItemRemover" -> idItemRemover()
-                    "idTarget_GiveSecurity" -> idTarget_GiveSecurity()
-                    "idTrigger_EntityName" -> idTrigger_EntityName()
-                    "idBarrel" -> idBarrel()
-                    "idActivator" -> idActivator()
-                    "idFuncSplat" -> idFuncSplat()
-                    "idTarget_Damage" -> idTarget_Damage()
-                    "idTarget_SetKeyVal" -> idTarget_SetKeyVal()
-                    "idTarget_EnableStamina" -> idTarget_EnableStamina()
-                    "idVacuumSeparatorEntity" -> idVacuumSeparatorEntity()
-                    "idDamagable" -> idDamagable()
-                    "idSecurityCamera" -> idSecurityCamera()
-                    "idTrigger_Touch" -> idTrigger_Touch()
-                    "idAFEntity_ClawFourFingers" -> idAFEntity_ClawFourFingers()
-                    "idAI_Vagary" -> idAI_Vagary()
-                    "idBobber" -> idBobber()
-                    "idTarget_LevelTrigger" -> idTarget_LevelTrigger()
-                    "idTarget_RemoveWeapons" -> idTarget_RemoveWeapons()
-                    "idTeleporter" -> idTeleporter()
-                    "idPlat" -> idPlat()
-                    "idSoulCubeMissile" -> idSoulCubeMissile()
-                    "idAnimatedEntity" -> idAnimatedEntity()
-                    else -> null
-                }
+                return typeRegistry[name]
             }
 
             /*
              ================
              idClass::CreateInstance
+
+             Looks up idTypeInfo by name and calls its factory lambda.
              ================
              */
-            // FIX: Was throwing TODO_Exception, making factory instantiation impossible.
-            // Reimplemented to match C++ — looks up idTypeInfo by name and calls its factory.
-            // Falls back to GetEntity() as a Kotlin-specific workaround when idTypeInfo
-            // system is not populated (which is the normal case in the current Kotlin port,
-            // since CLASS_DECLARATION macros don't exist and idTypeInfo instances are not
-            // created at class registration time).
             fun CreateInstance(name: String?): idClass? {
-                val type = GetClass(name)
-                if (type != null) {
-                    return type.CreateInstance.run() as? idClass
+                val type = GetClass(name) ?: return null
+                return try {
+                    type.createInstance()
+                } catch (e: idAllocError) {
+                    null
                 }
-
-                // NOTE: Differs from C++ — fall back to GetEntity() factory when
-                // idTypeInfo system is not populated.
-                return GetEntity(name)
             }
 
             fun GetNumTypes(): Int {
@@ -618,8 +522,20 @@ class Class {
         }
 
         abstract fun CreateInstance(): idClass
-        abstract fun GetType(): Class<out idClass>
+        abstract fun GetType(): idTypeInfo
         abstract fun getEventCallBack(event: idEventDef): eventCallback_t<*>?
+
+        /*
+         ================
+         idClass::IsType
+
+         Checks if the object's class is a subclass of the class defined by the
+         passed in idTypeInfo.
+         ================
+         */
+        fun IsType(c: idTypeInfo): Boolean {
+            return GetType().IsType(c)
+        }
 
         /*
          ================
@@ -661,7 +577,7 @@ class Class {
          ================
          */
         fun GetClassname(): String {
-            return this.javaClass.simpleName
+            return GetType().classname
         }
 
         /*
@@ -669,11 +585,10 @@ class Class {
          idClass::GetSuperclass
 
          Returns the text classname of the superclass.
-         NOTE: Differs from C++ — uses JVM reflection instead of idTypeInfo hierarchy.
          ================
          */
         fun GetSuperclass(): String {
-            return this.javaClass.superclass?.simpleName ?: ""
+            return GetType().superclass
         }
 
         /*
@@ -1199,32 +1114,11 @@ class Class {
 
         /*
          ================
-         idClass::CallSpawnFunc
-         ================
-         */
-        private fun CallSpawnFunc(cls: idTypeInfo): classSpawnFunc_t<*> {
-            val func: classSpawnFunc_t<*>?
-            if (cls.zuper != null) {
-                func = CallSpawnFunc(cls.zuper!!)
-                if (func === cls.Spawn) {
-                    // don't call the same function twice in a row.
-                    // this can happen when subclasses don't have their own spawn function.
-                    return func
-                }
-            }
-
-//	( this.*cls.Spawn )();
-            cls.Spawn.run()
-            return cls.Spawn
-        }
-
-        /*
-         ================
          idClass::PostEventArgs
          ================
          */
         private fun PostEventArgs(ev: idEventDef, time: Int, numargs: Int, vararg args: idEventArg<*>?): Boolean {
-            val c: Class<*>
+
             val event: idEvent
             assert(ev != null)
             if (!Event.initialized) {
@@ -1233,7 +1127,7 @@ class Class {
 
             // NOTE: Differs from C++ — C++ checks c->eventMap[ev->GetEventNum()] using the
             // idTypeInfo eventMap. In the Kotlin port, we use getEventCallBack virtual dispatch.
-            c = this.javaClass
+            val c = this.GetType()
             if (getEventCallBack(ev) == null) {
                 // we don't respond to this event, so ignore it
                 return false
@@ -1350,18 +1244,12 @@ class Class {
     class idTypeInfo(
         classname: String,
         superclass: String,
-        eventCallbacks: Array<idEventFunc<idClass>>,
-        CreateInstance: classSpawnFunc_t<*>,
-        Spawn: classSpawnFunc_t<*>,
-        Save: idClass_Save,
-        Restore: idClass_Restore
+        eventCallbacks: Array<idEventFunc<idClass>> = arrayOf(idEventFunc()),
+        val createInstance: () -> idClass = { throw UnsupportedOperationException("Cannot instantiate abstract $classname") }
     ) {
         //
-        var CreateInstance: classSpawnFunc_t<*>
-        var Restore: idClass_Restore
-        var Save: idClass_Save
-        var Spawn: classSpawnFunc_t<*>
         var classname: String
+        val name: String get() = classname  // compatibility with GetType().name call sites
 
         //
         var eventCallbacks: Array<idEventFunc<idClass>>
@@ -1501,42 +1389,29 @@ class Class {
             return typeNum >= type.typeNum && typeNum <= type.lastChild
         }
 
-        // FIX: Was throwing TODO_Exception, causing crash in Game_local.SpawnEntityType().
-        // NOTE: Differs from C++ — C++ uses typeNum range check across idTypeInfo hierarchy.
-        // In the JVM port, we walk the superclass name chain through the typelist.
-        // This is a limited implementation: it only works when idTypeInfo instances are
-        // registered in the typelist (via INIT). When typelist is empty, falls back to
-        // single-level superclass name check.
-        fun IsType(type: Class<*>?): Boolean {
-            if (type == null) return false
-            val targetName = type.simpleName
-            // Direct match
-            if (classname == targetName) return true
-            // Walk superclass chain using zuper pointers
-            var current = zuper
-            while (current != null) {
-                if (current.classname == targetName) return true
-                current = current.zuper
-            }
-            // If zuper chain not populated, walk superclass names via typelist lookup
-            if (zuper == null) {
-                var superName: String? = this.superclass
-                while (!superName.isNullOrEmpty()) {
-                    if (superName == targetName) return true
-                    // Look up super in typelist
-                    var superType: idTypeInfo? = null
-                    var t = typelist
-                    while (t != null) {
-                        if (t.classname == superName) {
-                            superType = t; break
-                        }
-                        t = t.next
-                    }
-                    superName = superType?.superclass
-                }
-            }
-            return false
-        }
+//        // @Deprecated — prefer IsType(idTypeInfo) after migration
+//        fun IsType(type: Class<*>?): Boolean {
+//            if (type == null) return false
+//            val targetName = type.simpleName
+//            // Direct match
+//            if (classname == targetName) return true
+//            // Walk superclass chain using zuper pointers
+//            var current = zuper
+//            while (current != null) {
+//                if (current.classname == targetName) return true
+//                current = current.zuper
+//            }
+//            // If zuper chain not populated, walk superclass names via typeRegistry
+//            if (zuper == null) {
+//                var superName: String? = this.superclass
+//                while (!superName.isNullOrEmpty()) {
+//                    if (superName == targetName) return true
+//                    val superType = typeRegistry[superName]
+//                    superName = superType?.superclass
+//                }
+//            }
+//            return false
+//        }
 
         /*
          ================
@@ -1562,15 +1437,10 @@ class Class {
          */
         init {
             var type: idTypeInfo?
-            var insert: idTypeInfo?
             this.classname = classname
             this.superclass = superclass
             this.eventCallbacks = eventCallbacks
             eventMap = null
-            this.Spawn = Spawn
-            this.Save = Save
-            this.Restore = Restore
-            this.CreateInstance = CreateInstance
             zuper = idClass.GetClass(superclass)
             freeEventMap = false
             typeNum = 0
@@ -1587,13 +1457,20 @@ class Class {
                 type = type.next
             }
 
-            // FIX: Sorted insert was broken — local variable reassignment doesn't modify the
-            // linked list. C++ uses pointer-to-pointer (&typelist, &(*insert)->next) to modify
-            // the actual list structure. Reimplemented using prev/current pattern.
+            // Also check in typeRegistry for subclasses that were registered before us
+            for (registered in typeRegistry.values) {
+                if (registered.zuper == null && idStr.Cmp(registered.superclass, this.classname) == 0
+                    && idStr.Cmp(registered.classname, "idClass") != 0
+                ) {
+                    registered.zuper = this
+                }
+            }
+
+            // Sorted insert into the linked list (used for INIT() ordering)
             var prev: idTypeInfo? = null
             var current = typelist
             while (current != null && idStr.Cmp(classname, current.classname) >= 0) {
-                assert(idStr.Cmp(classname, current.classname) != 0)
+                assert(idStr.Cmp(classname, current.classname) != 0) { "Duplicate class registration: $classname" }
                 prev = current
                 current = current.next
             }
@@ -1603,6 +1480,214 @@ class Class {
             } else {
                 prev.next = this
             }
+
+            // Register into the HashMap for O(1) lookup
+            typeRegistry[classname] = this
         }
     }
+}
+
+/*
+ ================
+ registerAllTypes
+
+ Touches every companion-level idTypeInfo to trigger lazy initialization.
+ Must be called before idClass.INIT(). Replaces the C++ static-initialization
+ order that was handled by CLASS_DECLARATION macros.
+ ================
+ */
+fun registerAllTypes() {
+    // idClass (base)
+    idClass.Type
+
+    // Entity
+    idEntity.Type
+    idAnimatedEntity.Type
+
+    // Actor
+    idActor.Type
+
+    // AFEntity
+    idMultiModelAF.Type
+    idChain.Type
+    idAFAttachment.Type
+    idAFEntity_Base.Type
+    idAFEntity_Gibbable.Type
+    idAFEntity_Generic.Type
+    idAFEntity_WithAttachedHead.Type
+    idAFEntity_Vehicle.Type
+    idAFEntity_VehicleSimple.Type
+    idAFEntity_VehicleFourWheels.Type
+    idAFEntity_VehicleSixWheels.Type
+    idAFEntity_SteamPipe.Type
+    idAFEntity_ClawFourFingers.Type
+
+    // AI
+    idAI.Type
+    idCombatNode.Type
+    AI_Vagary.idAI_Vagary.Type
+
+    // Animation
+    idTestModel.Type
+
+    // BrittleFracture
+    idBrittleFracture.Type
+
+    // Camera
+    idCamera.Type
+    idCameraView.Type
+    idCameraAnim.Type
+
+    // FX
+    idEntityFx.Type
+    idTeleporter.Type
+
+    // GameEdit
+    idCursor3D.Type
+
+    // Item
+    idItem.Type
+    idItemPowerup.Type
+    idObjective.Type
+    idVideoCDItem.Type
+    idPDAItem.Type
+    idMoveableItem.Type
+    idMoveablePDAItem.Type
+    idItemRemover.Type
+    idObjectiveComplete.Type
+
+    // Light
+    idLight.Type
+
+    // Misc
+    idSpawnableEntity.Type
+    idPlayerStart.Type
+    idActivator.Type
+    idPathCorner.Type
+    idDamagable.Type
+    idExplodable.Type
+    idSpring.Type
+    idForceField.Type
+    idAnimated.Type
+    idStaticEntity.Type
+    idFuncEmitter.Type
+    idFuncSmoke.Type
+    idFuncSplat.Type
+    idTextEntity.Type
+    idLocationEntity.Type
+    idLocationSeparatorEntity.Type
+    idVacuumSeparatorEntity.Type
+    idVacuumEntity.Type
+    idBeam.Type
+    idLiquid.Type
+    idShaking.Type
+    idEarthQuake.Type
+    idFuncPortal.Type
+    idFuncAASPortal.Type
+    idFuncAASObstacle.Type
+    idFuncRadioChatter.Type
+    idPhantomObjects.Type
+
+    // Moveable
+    idMoveable.Type
+    idBarrel.Type
+    idExplodingBarrel.Type
+
+    // Mover
+    idMover.Type
+    idSplinePath.Type
+    idElevator.Type
+    idMover_Binary.Type
+    idDoor.Type
+    idPlat.Type
+    idMover_Periodic.Type
+    idRotater.Type
+    idBobber.Type
+    idPendulum.Type
+    idRiser.Type
+
+    // Player
+    idPlayer.Type
+
+    // Projectile
+    idProjectile.Type
+    idGuidedProjectile.Type
+    idSoulCubeMissile.Type
+    idBFGProjectile.Type
+    idDebris.Type
+
+    // SecurityCamera
+    idSecurityCamera.Type
+
+    // Sound
+    idSound.Type
+
+    // Target
+    idTarget.Type
+    idTarget_Remove.Type
+    idTarget_Show.Type
+    idTarget_Damage.Type
+    idTarget_SessionCommand.Type
+    idTarget_EndLevel.Type
+    idTarget_WaitForButton.Type
+    idTarget_SetGlobalShaderTime.Type
+    idTarget_SetShaderParm.Type
+    idTarget_SetShaderTime.Type
+    idTarget_FadeEntity.Type
+    idTarget_LightFadeIn.Type
+    idTarget_LightFadeOut.Type
+    idTarget_Give.Type
+    idTarget_GiveEmail.Type
+    idTarget_SetModel.Type
+    idTarget_SetInfluence.Type
+    idTarget_SetKeyVal.Type
+    idTarget_SetFov.Type
+    idTarget_SetPrimaryObjective.Type
+    idTarget_LockDoor.Type
+    idTarget_CallObjectFunction.Type
+    idTarget_EnableLevelWeapons.Type
+    idTarget_Tip.Type
+    idTarget_GiveSecurity.Type
+    idTarget_RemoveWeapons.Type
+    idTarget_LevelTrigger.Type
+    idTarget_EnableStamina.Type
+    idTarget_FadeSoundClass.Type
+
+    // Trigger
+    idTrigger.Type
+    idTrigger_Multi.Type
+    idTrigger_EntityName.Type
+    idTrigger_Timer.Type
+    idTrigger_Count.Type
+    idTrigger_Hurt.Type
+    idTrigger_Fade.Type
+    idTrigger_Touch.Type
+
+    // Weapon
+    idWeapon.Type
+
+    // WorldSpawn
+    idWorldspawn.Type
+
+    // Script
+    idThread.Type
+
+    // Physics
+    idPhysics.Type
+    idForce.Type
+    idForce_Constant.Type
+    idForce_Drag.Type
+    idForce_Field.Type
+    idForce_Spring.Type
+    idPhysics_Base.Type
+    idPhysics_Static.Type
+    idPhysics_StaticMulti.Type
+    idPhysics_Actor.Type
+    idPhysics_Monster.Type
+    idPhysics_Player.Type
+    idPhysics_Parametric.Type
+    idPhysics_RigidBody.Type
+    idPhysics_AF.Type
+    idPhysics_RigidBody.Type
+    idPhysics_Parametric.Type
 }

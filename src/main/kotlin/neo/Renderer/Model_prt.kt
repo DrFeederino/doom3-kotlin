@@ -132,7 +132,7 @@ object Model_prt {
                 val surfaceNum = CInt()
                 var surf: modelSurface_s?
                 if (staticModel.FindSurfaceWithId(stageNum, surfaceNum)) {
-                    surf = staticModel.surfaces[surfaceNum._val]
+                    surf = staticModel.surfaces[surfaceNum.integerValue]
                     R_FreeStaticTriSurfVertexCaches(surf!!.geometry!!)
                 } else {
                     surf = modelSurface_s()

@@ -3278,7 +3278,7 @@ object RenderWorld_local {
                 // a demoShot may not have an endFrame, but it is still valid
                 return false
             }
-            dc = demoCommand_t.values()[d._val]
+            dc = demoCommand_t.values()[d.integerValue]
             when (dc) {
                 demoCommand_t.DC_LOADMAP -> {
                     // read the initial data
@@ -3294,7 +3294,7 @@ object RenderWorld_local {
                         i++
                     }
                     // the internal version value got replaced by DS_VERSION at toplevel
-                    if (header.version._val != 4) {
+                    if (header.version.integerValue != 4) {
                         Common.common.Error("Demo version mismatch.\n")
                     }
                     if (r_showDemo!!.GetBool()) {
@@ -3338,7 +3338,7 @@ object RenderWorld_local {
 
                     // possibly change the time offset if this is from a new map
                     if (newMap) {
-                        demoTimeOffset._val = viewShadow.time._val - EventLoop.eventLoop.Milliseconds()
+                        demoTimeOffset.integerValue = viewShadow.time.integerValue - EventLoop.eventLoop.Milliseconds()
                     }
                     renderView.atomicSet(viewShadow)
                     return false
@@ -3350,9 +3350,9 @@ object RenderWorld_local {
                         return false
                     }
                     if (r_showDemo!!.GetBool()) {
-                        Common.common.Printf("DC_DELETE_ENTITYDEF: %d\n", h._val)
+                        Common.common.Printf("DC_DELETE_ENTITYDEF: %d\n", h.integerValue)
                     }
-                    FreeEntityDef(h._val)
+                    FreeEntityDef(h.integerValue)
                 }
 
                 demoCommand_t.DC_UPDATE_LIGHTDEF -> ReadRenderLight()
@@ -3361,9 +3361,9 @@ object RenderWorld_local {
                         return false
                     }
                     if (r_showDemo!!.GetBool()) {
-                        Common.common.Printf("DC_DELETE_LIGHTDEF: %d\n", h._val)
+                        Common.common.Printf("DC_DELETE_LIGHTDEF: %d\n", h.integerValue)
                     }
-                    FreeLightDef(h._val)
+                    FreeLightDef(h.integerValue)
                 }
 
                 demoCommand_t.DC_CAPTURE_RENDER -> {
@@ -3381,7 +3381,11 @@ object RenderWorld_local {
                     readDemo.ReadInt(size[0])
                     readDemo.ReadInt(size[1])
                     readDemo.ReadInt(size[2])
-                    RenderSystem.renderSystem.CropRenderSize(size[0]._val, size[1]._val, size[2]._val != 0)
+                    RenderSystem.renderSystem.CropRenderSize(
+                        size[0].integerValue,
+                        size[1].integerValue,
+                        size[2].integerValue != 0
+                    )
                 }
 
                 demoCommand_t.DC_UNCROP_RENDER -> {
@@ -3415,9 +3419,9 @@ object RenderWorld_local {
                     val data: Array<CInt> = Array(2) { CInt() }
                     readDemo.ReadInt(data[0])
                     readDemo.ReadInt(data[1])
-                    SetPortalState(data[0]._val, data[1]._val)
+                    SetPortalState(data[0].integerValue, data[1].integerValue)
                     if (r_showDemo!!.GetBool()) {
-                        Common.common.Printf("DC_SET_PORTAL_STATE: %d %d\n", data[0]._val, data[1]._val)
+                        Common.common.Printf("DC_SET_PORTAL_STATE: %d %d\n", data[0].integerValue, data[1].integerValue)
                     }
                 }
 
@@ -3442,12 +3446,12 @@ object RenderWorld_local {
             val len = minOf(nameChars.size, 255)
             System.arraycopy(nameChars, 0, header.mapname, 0, len)
             header.mapname[len] = 0.toChar() // null-terminate
-            header.version._val = 4
-            header.sizeofRenderEntity._val = 4
-            header.sizeofRenderLight._val = 4
-            Session.session.writeDemo!!.WriteInt(header.version._val)
-            Session.session.writeDemo!!.WriteInt(header.sizeofRenderEntity._val)
-            Session.session.writeDemo!!.WriteInt(header.sizeofRenderLight._val)
+            header.version.integerValue = 4
+            header.sizeofRenderEntity.integerValue = 4
+            header.sizeofRenderLight.integerValue = 4
+            Session.session.writeDemo!!.WriteInt(header.version.integerValue)
+            Session.session.writeDemo!!.WriteInt(header.sizeofRenderEntity.integerValue)
+            Session.session.writeDemo!!.WriteInt(header.sizeofRenderLight.integerValue)
             for (i in 0..255) {
                 Session.session.writeDemo!!.WriteChar(header.mapname[i].code.toShort())
             }
@@ -3573,8 +3577,8 @@ object RenderWorld_local {
             Session.session.writeDemo!!.WriteInt(handle)
             Session.session.writeDemo!!.WriteMat3(light.axis)
             Session.session.writeDemo!!.WriteVec3(light.origin)
-            Session.session.writeDemo!!.WriteInt(light.suppressLightInViewID._val)
-            Session.session.writeDemo!!.WriteInt(light.allowLightInViewID._val)
+            Session.session.writeDemo!!.WriteInt(light.suppressLightInViewID.integerValue)
+            Session.session.writeDemo!!.WriteInt(light.allowLightInViewID.integerValue)
             Session.session.writeDemo!!.WriteBool(light.noShadows._val)
             Session.session.writeDemo!!.WriteBool(light.noSpecular._val)
             Session.session.writeDemo!!.WriteBool(light.pointLight._val)
@@ -3587,7 +3591,7 @@ object RenderWorld_local {
             Session.session.writeDemo!!.WriteVec3(light.start)
             Session.session.writeDemo!!.WriteVec3(light.end)
             Session.session.writeDemo!!.WriteInt(if (light.prelightModel != null) 1 else 0)
-            Session.session.writeDemo!!.WriteInt(light.lightId._val)
+            Session.session.writeDemo!!.WriteInt(light.lightId.integerValue)
             Session.session.writeDemo!!.WriteInt(if (light.shader != null) 1 else 0)
             for (i in 0 until Material.MAX_ENTITY_SHADER_PARMS) {
                 Session.session.writeDemo!!.WriteFloat(light.shaderParms[i])
@@ -3702,7 +3706,7 @@ object RenderWorld_local {
             val tmp = CInt()
 
             Session.session.readDemo!!.ReadInt(index)
-            if (index._val < 0) {
+            if (index.integerValue < 0) {
                 Common.common.Error("ReadRenderEntity: index < 0")
             }
 
@@ -3743,38 +3747,38 @@ object RenderWorld_local {
             Session.session.readDemo!!.ReadBool(shadow.weaponDepthHack)
             Session.session.readDemo!!.ReadInt(shadow.forceUpdate)
             shadow.callback = null
-            if (customShader._val != 0) {
+            if (customShader.integerValue != 0) {
                 shadow.customShader = DeclManager.declManager.FindMaterial(Session.session.readDemo!!.ReadHashString())
             } else {
                 shadow.customShader = null
             }
-            if (customSkin._val != 0) {
+            if (customSkin.integerValue != 0) {
                 shadow.customSkin = DeclManager.declManager.FindSkin(Session.session.readDemo!!.ReadHashString())
             } else {
                 shadow.customSkin = null
             }
-            if (hModel._val != 0) {
+            if (hModel.integerValue != 0) {
                 shadow.hModel = ModelManager.renderModelManager.FindModel(Session.session.readDemo!!.ReadHashString())
             } else {
                 shadow.hModel = null
             }
-            if (referenceShader._val != 0) {
+            if (referenceShader.integerValue != 0) {
                 shadow.referenceShader =
                     DeclManager.declManager.FindMaterial(Session.session.readDemo!!.ReadHashString())
             } else {
                 shadow.referenceShader = null
             }
-            if (referenceSound._val != 0) {
+            if (referenceSound.integerValue != 0) {
                 Session.session.readDemo!!.ReadInt(tmp)
-                shadow.referenceSound = Session.session.sw.EmitterForIndex(tmp._val)
+                shadow.referenceSound = Session.session.sw.EmitterForIndex(tmp.integerValue)
             } else {
                 shadow.referenceSound = null
             }
             shadow.remoteRenderView = null
-            if (shadow.numJoints._val != 0) {
-                shadow.joints = Array(shadow.numJoints._val) { idJointMat() }
+            if (shadow.numJoints.integerValue != 0) {
+                shadow.joints = Array(shadow.numJoints.integerValue) { idJointMat() }
                 i = 0
-                while (i < shadow.numJoints._val) {
+                while (i < shadow.numJoints.integerValue) {
                     val data: FloatArray = shadow.joints!![i].ToFloatArray()
                     for (j in 0..11) {
                         val d = CFloat()
@@ -3788,7 +3792,7 @@ object RenderWorld_local {
 
             i = 0
             while (i < RenderWorld.MAX_RENDERENTITY_GUI) {
-                if (gui[i]._val != 0) {
+                if (gui[i].integerValue != 0) {
                     shadow.gui[i] = uiManager.Alloc()
                     if (WRITE_GUIS) {
                         shadow.gui[i]!!.ReadFromDemoFile((Session.session.readDemo)!!)
@@ -3804,15 +3808,15 @@ object RenderWorld_local {
                 Session.session.readDemo!!.ReadInt(shadow.timeGroup)
                 Session.session.readDemo!!.ReadInt(shadow.xrayIndex)
             } else {
-                shadow.timeGroup._val = 0
-                shadow.xrayIndex._val = 0
+                shadow.timeGroup.integerValue = 0
+                shadow.xrayIndex.integerValue = 0
             }
             ent.atomicSet(shadow)
-            UpdateEntityDef(index._val, ent)
+            UpdateEntityDef(index.integerValue, ent)
             if (r_showDemo!!.GetBool()) {
                 Common.common.Printf(
                     "DC_UPDATE_ENTITYDEF: %d = %s\n",
-                    index._val,
+                    index.integerValue,
                     if (shadow.hModel != null) shadow.hModel!!.Name() else "NULL"
                 )
             }
@@ -3826,7 +3830,7 @@ object RenderWorld_local {
             val referenceSound = CInt()
 
             Session.session.readDemo!!.ReadInt(index)
-            if (index._val < 0) {
+            if (index.integerValue < 0) {
                 Common.common.Error("ReadRenderLight: index < 0 ")
             }
             Session.session.readDemo!!.ReadMat3(light.axis)
@@ -3853,27 +3857,27 @@ object RenderWorld_local {
                 light.shaderParms[i] = parm._val
             }
             Session.session.readDemo!!.ReadInt(referenceSound)
-            if (prelightModel._val != 0) {
+            if (prelightModel.integerValue != 0) {
                 light.prelightModel =
                     ModelManager.renderModelManager.FindModel(Session.session.readDemo!!.ReadHashString())
             } else {
                 light.prelightModel = null
             }
-            if (shader._val != 0) {
+            if (shader.integerValue != 0) {
                 light.shader = DeclManager.declManager.FindMaterial(Session.session.readDemo!!.ReadHashString())
             } else {
                 light.shader = null
             }
-            if (referenceSound._val != 0) {
+            if (referenceSound.integerValue != 0) {
                 val tmp = CInt()
                 Session.session.readDemo!!.ReadInt(tmp)
-                light.referenceSound = Session.session.sw.EmitterForIndex(tmp._val)
+                light.referenceSound = Session.session.sw.EmitterForIndex(tmp.integerValue)
             } else {
                 light.referenceSound = null
             }
-            UpdateLightDef(index._val, light)
+            UpdateLightDef(index.integerValue, light)
             if (r_showDemo!!.GetBool()) {
-                Common.common.Printf("DC_UPDATE_LIGHTDEF: %d\n", index._val)
+                Common.common.Printf("DC_UPDATE_LIGHTDEF: %d\n", index.integerValue)
             }
         }
 
@@ -4306,7 +4310,7 @@ object RenderWorld_local {
                                 j++
                                 continue
                             }
-                            if (eDef.parms.suppressShadowInLightID != 0 && eDef.parms.suppressShadowInLightID == lDef.parms.lightId._val) {
+                            if (eDef.parms.suppressShadowInLightID != 0 && eDef.parms.suppressShadowInLightID == lDef.parms.lightId.integerValue) {
                                 eRef = eRef.areaNext!!
                                 j++
                                 continue

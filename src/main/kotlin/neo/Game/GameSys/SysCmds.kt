@@ -82,7 +82,7 @@ object SysCmds {
      Kills all the entities of the given class in a level.
      ==================
      */
-    fun KillEntities(args: CmdArgs.idCmdArgs,    /*idTypeInfo*/superClass: java.lang.Class<*>) {
+    fun KillEntities(args: CmdArgs.idCmdArgs, superClass: Class.idTypeInfo) {
         var ent: idEntity?
         val ignore = idStrList()
         var name: String?
@@ -98,7 +98,7 @@ object SysCmds {
         }
         ent = Game_local.gameLocal.spawnedEntities.Next()
         while (ent != null) {
-            if (superClass.isInstance(ent)) {
+            if (ent.IsType(superClass)) {
                 i = 0
                 while (i < ignore.size()) {
                     if (ignore[i] == ent.name) {
@@ -424,10 +424,10 @@ object SysCmds {
      */
     class Cmd_KillMonsters_f private constructor() : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            KillEntities(args!!, idAI::class.java)
+            KillEntities(args!!, idAI.Type)
 
             // kill any projectiles as well since they have pointers to the monster that created them
-            KillEntities(args, idProjectile::class.java)
+            KillEntities(args, idProjectile.Type)
         }
 
         companion object {
@@ -450,7 +450,7 @@ object SysCmds {
             if (Game_local.gameLocal.GetLocalPlayer() == null || !Game_local.gameLocal.CheatsOk(false)) {
                 return
             }
-            KillEntities(args!!, idMoveable::class.java)
+            KillEntities(args!!, idMoveable.Type)
         }
 
         companion object {
@@ -473,8 +473,8 @@ object SysCmds {
             if (Game_local.gameLocal.GetLocalPlayer() == null || !Game_local.gameLocal.CheatsOk(false)) {
                 return
             }
-            KillEntities(args!!, idAFEntity_Generic::class.java)
-            KillEntities(args, idAFEntity_WithAttachedHead::class.java)
+            KillEntities(args!!, idAFEntity_Generic.Type)
+            KillEntities(args, idAFEntity_WithAttachedHead.Type)
         }
 
         companion object {
@@ -1391,7 +1391,7 @@ object SysCmds {
             dict.Set("test", "1")
             dict.Set("fx", name)
             Game_local.gameLocal.testFx =
-                Game_local.gameLocal.SpawnEntityType(idEntityFx::class.java, dict) as idEntityFx
+                Game_local.gameLocal.SpawnEntityType(idEntityFx.Type, dict) as idEntityFx
         }
 
         companion object {
@@ -2627,7 +2627,7 @@ object SysCmds {
             if (ent == null) {
                 newEnt = true
             } else if (FindEntityGUIs(ent, surfaces, MAX_RENDERENTITY_GUI, guiSurfaces) == true) {
-                if (Game_local.gameLocal.lastGUI >= guiSurfaces._val) {
+                if (Game_local.gameLocal.lastGUI >= guiSurfaces.integerValue) {
                     newEnt = true
                 }
             } else {
@@ -2666,7 +2666,7 @@ object SysCmds {
             if (FindEntityGUIs(ent!!, surfaces, MAX_RENDERENTITY_GUI, guiSurfaces) == false) {
                 Game_local.gameLocal.Printf("Entity \"%s\" has gui properties but no gui surfaces.\n", ent.name)
             }
-            if (guiSurfaces._val == 0) {
+            if (guiSurfaces.integerValue == 0) {
                 Game_local.gameLocal.Printf("Entity \"%s\" has gui properties but no gui surfaces!\n", ent.name)
                 return
             }
@@ -2712,7 +2712,7 @@ object SysCmds {
             var i: Int
             assert(surfaces != null)
             assert(ent != null)
-            guiSurfaces._val = 0
+            guiSurfaces.integerValue = 0
             renderEnt = ent.GetRenderEntity()!!
             renderModel = renderEnt.hModel
             if (renderModel == null) {
@@ -2735,7 +2735,7 @@ object SysCmds {
                 }
                 i++
             }
-            return guiSurfaces._val != 0
+            return guiSurfaces.integerValue != 0
         }
 
         companion object {

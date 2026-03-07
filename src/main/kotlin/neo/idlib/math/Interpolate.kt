@@ -317,15 +317,102 @@ class Interpolate {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            val typeSize = _sizeOfT()
+            // 4 floats + 2*typeSize + extrapolate(int + 2*float + 3*typeSize + float + typeSize)
+            // = 16 + 2*typeSize + 12 + 4*typeSize = 28 + 6*typeSize
+            val bytes = 4 * java.lang.Float.BYTES + 2 * typeSize +
+                    java.lang.Integer.BYTES + 2 * java.lang.Float.BYTES + 3 * typeSize +
+                    java.lang.Float.BYTES + typeSize
+            return ByteBuffer.allocate(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            startTime = buffer.float
+            accelTime = buffer.float
+            linearTime = buffer.float
+            decelTime = buffer.float
+            startValue = _readValue(buffer)
+            endValue = _readValue(buffer)
+            // idExtrapolate fields
+            val extType = buffer.int
+            val extStartTime = buffer.float
+            val extDuration = buffer.float
+            val extStartValue = _readValue(buffer)
+            val extBaseSpeed = _readValue(buffer)
+            val extSpeed = _readValue(buffer)
+            buffer.float // currentTime
+            _readValue(buffer) // currentValue - discard
+            extrapolate.Init(extStartTime, extDuration, extStartValue, extBaseSpeed, extSpeed, extType)
         }
 
         override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+            val buffer = AllocBuffer()
+            buffer.putFloat(startTime)
+            buffer.putFloat(accelTime)
+            buffer.putFloat(linearTime)
+            buffer.putFloat(decelTime)
+            _writeValue(buffer, startValue)
+            _writeValue(buffer, endValue)
+            // idExtrapolate fields
+            buffer.putInt(extrapolate.GetExtrapolationType())
+            buffer.putFloat(extrapolate.GetStartTime())
+            buffer.putFloat(extrapolate.GetDuration())
+            _writeValue(buffer, extrapolate.GetStartValue())
+            _writeValue(buffer, extrapolate.GetBaseSpeed())
+            _writeValue(buffer, extrapolate.GetSpeed())
+            buffer.putFloat(-1.0f) // currentTime
+            _writeValue(buffer, extrapolate.GetCurrentValue(extrapolate.GetStartTime())) // currentValue
+            buffer.flip()
+            return buffer
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun _readValue(buffer: ByteBuffer): T {
+            // Detect type from existing startValue or endValue, or from extrapolate
+            val sample = startValue ?: endValue ?: extrapolate.GetStartValue()
+            return when (sample) {
+                is Int -> buffer.int as T
+                is Float -> buffer.float as T
+                is idVec3 -> idVec3(buffer.float, buffer.float, buffer.float) as T
+                is idVec4 -> idVec4(buffer.float, buffer.float, buffer.float, buffer.float) as T
+                is idAngles -> idAngles(buffer.float, buffer.float, buffer.float) as T
+                else -> buffer.int as T // fallback
+            }
+        }
+
+        private fun _writeValue(buffer: ByteBuffer, value: T?) {
+            when (value) {
+                is Int -> buffer.putInt(value)
+                is Float -> buffer.putFloat(value)
+                is idVec3 -> {
+                    buffer.putFloat(value[0]); buffer.putFloat(value[1]); buffer.putFloat(value[2])
+                }
+
+                is idVec4 -> {
+                    buffer.putFloat(value[0]); buffer.putFloat(value[1]); buffer.putFloat(value[2]); buffer.putFloat(
+                        value[3]
+                    )
+                }
+
+                is idAngles -> {
+                    buffer.putFloat(value.pitch); buffer.putFloat(value.yaw); buffer.putFloat(value.roll)
+                }
+
+                else -> buffer.putInt(0) // fallback
+            }
+        }
+
+        private fun _sizeOfT(): Int {
+            val sample = startValue ?: endValue ?: extrapolate.GetStartValue()
+            return when (sample) {
+                is Int -> 4
+                is Float -> 4
+                is idVec3 -> 12
+                is idVec4 -> 16
+                is idAngles -> 12
+                else -> 4
+            }
         }
 
         private fun _Multiply(t: T, f: Float): T {

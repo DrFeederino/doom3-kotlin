@@ -5,6 +5,7 @@ import neo.Renderer.Material.idMaterial
 import neo.TempDump.itob
 import neo.framework.DeclManager
 import neo.framework.File_h.idFile
+import neo.framework.Session.Companion.session
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.colorBlack
@@ -14,6 +15,8 @@ import neo.idlib.math.idRotation
 import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
 import neo.idlib.math.vec3_origin
+import neo.ui.DeviceContext.VIRTUAL_HEIGHT
+import neo.ui.DeviceContext.VIRTUAL_WIDTH
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.Rectangle.idRectangle
 import neo.ui.UserInterfaceLocal.idUserInterfaceLocal
@@ -21,9 +24,11 @@ import neo.ui.Window.idWindow
 import neo.ui.Winvar.idWinBackground
 import neo.ui.Winvar.idWinBool
 import neo.ui.Winvar.idWinFloat
+import neo.ui.Winvar.idWinInt
 import neo.ui.Winvar.idWinRectangle
 import neo.ui.Winvar.idWinStr
 import neo.ui.Winvar.idWinVar
+import neo.ui.Winvar.idWinVec2
 import neo.ui.Winvar.idWinVec4
 
 class SimpleWindow {
@@ -67,7 +72,14 @@ class SimpleWindow {
         protected val origin: idVec2
         var rect = idWinRectangle() // overall rect
         var rotate = idWinFloat()
-        protected var shear = Winvar.idWinVec2()
+        protected var shear = idWinVec2()
+
+        //#modified-fva; BEGIN
+        private val cstAnchor: idWinInt = idWinInt()
+        private val cstAnchorTo: idWinInt = idWinInt()       // for anchor transitions
+        val cstAnchorFactor: idWinFloat = idWinFloat()    // for anchor transitions
+        private var cstNoClipBackground: Boolean = true
+        //#modified-fva; END
 
         //
         protected var text = idWinStr()
@@ -109,7 +121,7 @@ class SimpleWindow {
             shear.set(win.shear)
             backGroundName.set(win.backGroundName)
             if (backGroundName.Length() != 0) {
-                background = DeclManager.declManager.FindMaterial(backGroundName.data!!)
+                background = DeclManager.declManager.FindMaterial(backGroundName.data)
                 background!!.SetSort(Material.SS_GUI.toFloat())
                 background!!.SetImageClassifications(1) // just for resource tracking
             }
@@ -120,6 +132,14 @@ class SimpleWindow {
             mParent = win.GetParent()
             // 
             hideCursor.set(win.hideCursor)
+
+            //#modified-fva; BEGIN
+            cstAnchor.set(win.cstAnchor)
+            cstAnchorTo.set(win.cstAnchorTo)
+            cstAnchorFactor.set(win.cstAnchorFactor)
+            cstNoClipBackground = win.cstNoClipBackground
+            //#modified-fva; END
+
             val parent = win.GetParent()
             if (parent != null) {
                 if (text.NeedsUpdate()) {
@@ -155,6 +175,18 @@ class SimpleWindow {
                 if (backGroundName.NeedsUpdate()) {
                     parent.AddUpdateVar(backGroundName)
                 }
+
+                //#modified-fva; BEGIN
+                if (cstAnchor.NeedsUpdate()) {
+                    parent.AddUpdateVar(cstAnchor)
+                }
+                if (cstAnchorTo.NeedsUpdate()) {
+                    parent.AddUpdateVar(cstAnchorTo)
+                }
+                if (cstAnchorFactor.NeedsUpdate()) {
+                    parent.AddUpdateVar(cstAnchorFactor)
+                }
+                //#modified-fva; END
             }
         }
 
@@ -163,19 +195,47 @@ class SimpleWindow {
             if (!visible.data) {
                 return
             }
+
             CalcClientRect(0.0f, 0.0f)
             dc!!.SetFont(fontNum)
+
+            //#modified-fva; BEGIN
+            if (mParent != null && mParent!!.cstAnchor.data != DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) {
+                cstAnchor.set(mParent!!.cstAnchor)
+                cstAnchorTo.set(mParent!!.cstAnchorTo)
+                cstAnchorFactor.set(mParent!!.cstAnchorFactor)
+            }
+            if (!idWindow.cst_hudAdjustAspect.GetBool() || cstAnchor.data == DeviceContext.CstAnchor.CST_ANCHOR_NONE.value) {
+                if (mParent != null) {
+                    dc!!.SetSize(mParent!!.forceAspectWidth, mParent!!.forceAspectHeight)
+                } else {
+                    dc!!.SetSize(VIRTUAL_WIDTH.toFloat(), VIRTUAL_HEIGHT.toFloat())
+                }
+            } else {
+                dc!!.CstSetSize(cstAnchor.data, cstAnchorTo.data, cstAnchorFactor.data)
+            }
+            //#modified-fva; END
+
             drawRect.Offset(x, y)
             clientRect.Offset(x, y)
             textRect.Offset(x, y)
             SetupTransforms(x, y)
-            if (flags and Window.WIN_NOCLIP != 0) {
+
+            // fva's cst: added cstNoClipBackground
+            if (flags and Window.WIN_NOCLIP != 0 || cstNoClipBackground) {
                 dc!!.EnableClipping(false)
             }
             DrawBackground(drawRect)
+
+            //#modified-fva; BEGIN
+            if ((flags and Window.WIN_NOCLIP) == 0 && cstNoClipBackground) {
+                dc!!.EnableClipping(true)
+            }
+            //#modified-fva; END
+
             DrawBorderAndCaption(drawRect)
             if (textShadow != 0) {
-                val shadowText = idStr(text.data!!)
+                val shadowText = idStr(text.data)
                 val shadowRect = idRectangle(textRect)
                 shadowText.RemoveColors()
                 shadowRect.x += textShadow.toFloat()
@@ -249,6 +309,17 @@ class SimpleWindow {
             if (Icmp(_name, "text") == 0) {
                 retVar = text
             }
+
+            //#modified-fva; BEGIN
+            if (Icmp(_name, "cstAnchor") == 0) {
+                retVar = cstAnchor
+            } else if (Icmp(_name, "cstAnchorTo") == 0) {
+                retVar = cstAnchorTo
+            } else if (Icmp(_name, "cstAnchorFactor") == 0) {
+                retVar = cstAnchorFactor
+            }
+            //#modified-fva; END
+
             return retVar
         }
 
@@ -282,6 +353,12 @@ class SimpleWindow {
             if (wv === rotate) {
                 ret = Window.TransiotonalDataOffset.ROTATE_OFFSET.offset
             }
+
+            //#modified-fva; BEGIN
+            if (wv === cstAnchorFactor) {
+                ret = Window.TransiotonalDataOffset.CSTANCHORFACTOR_OFFSET.offset
+            }
+            //#modified-fva; END
 
             if (ret != -1) {
                 owner?.simp = this
@@ -318,6 +395,14 @@ class SimpleWindow {
             rotate.WriteToSaveGame(savefile)
             shear.WriteToSaveGame(savefile)
             backGroundName.WriteToSaveGame(savefile)
+
+            //#modified-fva; BEGIN // FIXME: savegame version?
+            cstAnchor.WriteToSaveGame(savefile)
+            cstAnchorTo.WriteToSaveGame(savefile)
+            cstAnchorFactor.WriteToSaveGame(savefile)
+            savefile.WriteBool(cstNoClipBackground)
+            //#modified-fva; END
+
             val stringLen: Int
             if (background != null) {
                 stringLen = background!!.GetName().length
@@ -354,12 +439,22 @@ class SimpleWindow {
             rotate.ReadFromSaveGame(savefile)
             shear.ReadFromSaveGame(savefile)
             backGroundName.ReadFromSaveGame(savefile)
-            val stringLen: Int
-            stringLen = savefile.ReadInt()
+
+            //#modified-fva; BEGIN
+            // TODO: why does this have to be read from the savegame anyway, does it change?
+            if (session.GetSaveGameVersion() >= 18) {
+                cstAnchor.ReadFromSaveGame(savefile)
+                cstAnchorTo.ReadFromSaveGame(savefile)
+                cstAnchorFactor.ReadFromSaveGame(savefile)
+                cstNoClipBackground = savefile.ReadBool()
+            } // else keep default values, I guess
+            //#modified-fva; END
+
+            val stringLen: Int = savefile.ReadInt()
             if (stringLen > 0) {
                 val backName = idStr()
                 backName.Fill(' ', stringLen)
-                savefile.ReadString(backName)
+                savefile.Read(backName, stringLen)
                 background = DeclManager.declManager.FindMaterial(backName)
                 background!!.SetSort(Material.SS_GUI.toFloat())
             } else {
@@ -421,8 +516,10 @@ class SimpleWindow {
                     val scaleX: Float
                     val scaleY: Float
                     if (flags and Window.WIN_NATURALMAT != 0) {
-                        scaleX = drawRect.w / background!!.GetImageWidth()
-                        scaleY = drawRect.h / background!!.GetImageHeight()
+                        // DG: now also multiplied with matScalex/y, don't see a reason not to support that
+                        //     (it allows scaling a tiled background image)
+                        scaleX = (drawRect.w / background!!.GetImageWidth()) * matScalex
+                        scaleY = (drawRect.h / background!!.GetImageHeight()) * matScaley
                     } else {
                         scaleX = matScalex
                         scaleY = matScaley

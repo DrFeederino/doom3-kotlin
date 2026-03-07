@@ -38,8 +38,7 @@ import neo.Game.AI.AI_Vagary.idAI_Vagary
 import neo.Game.AI.idAI
 import neo.Game.AI.idCombatNode
 import neo.Game.Animation.Anim_Testmodel.idTestModel
-import neo.Game.GameSys.Class.idClass
-import neo.Game.GameSys.Class.idEventArg
+import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local.idGameLocal
@@ -130,7 +129,7 @@ object Event {
     // In the Kotlin port, event data is stored as Array<idEventArg<*>?> rather than a flat byte buffer,
     // so these sizes are only used for Save/Restore size assertions. We use the C++ 32-bit values
     // for consistency with the original code.
-    private const val SIZEOF_INTPTR = 4        // C++: sizeof(intptr_t) on 32-bit
+    private const val SIZEOF_INTPTR = 8        // C++: sizeof(intptr_t) on 64-bit (dhewm3)
     private const val SIZEOF_BOOL = 1          // C++: sizeof(bool)
     private const val SIZEOF_TRACE_T = 68      // C++: sizeof(trace_t) — approximate, platform-dependent
 
@@ -224,6 +223,7 @@ object Event {
                         // FIX: Was empty body — C++ original: argsize += sizeof(trace_t) + MAX_STRING_LEN + sizeof(bool)
                         argsize += SIZEOF_TRACE_T + Script_Program.MAX_STRING_LEN + SIZEOF_BOOL
                     }
+
                     else -> {
                         eventError = true
                         eventErrorMsg = String.format(
@@ -417,7 +417,7 @@ object Event {
         private var eventdef: idEventDef? = null
         private var `object`: idClass? = null
         private var time = 0
-        private var typeinfo: java.lang.Class<*>? = null
+        private var typeinfo: idTypeInfo? = null
 
         /*
          ================
@@ -441,7 +441,7 @@ object Event {
          idEvent::Schedule
          ================
          */
-        fun Schedule(obj: idClass, type: java.lang.Class<*>, time: Int) {
+        fun Schedule(obj: idClass, type: idTypeInfo, time: Int) {
             var event: idEvent?
             assert(initialized)
             if (!initialized) {
@@ -833,7 +833,7 @@ object Event {
                 while (event != null) {
                     savefile.WriteInt(event.time)
                     savefile.WriteString(event.eventdef!!.GetName())
-                    savefile.WriteString(event.typeinfo!!.getSimpleName())
+                    savefile.WriteString(event.typeinfo!!.name)
                     savefile.WriteObject(event.`object`)
                     savefile.WriteInt(event.eventdef!!.GetArgSize())
                     format = event.eventdef!!.GetArgFormat()
@@ -930,7 +930,7 @@ object Event {
                 var format: String?
                 savefile.ReadInt(num)
                 i = 0
-                while (i < num._val) {
+                while (i < num.integerValue) {
                     if (FreeEvents.IsListEmpty()) {
                         idGameLocal.Error("idEvent::Restore : No more free events")
                     }
@@ -948,28 +948,28 @@ object Event {
 
                     // read the classtype
                     savefile.ReadString(name)
-                    try {
-                        event.typeinfo = java.lang.Class.forName(name.toString())
-                    } catch (e: ClassNotFoundException) {
+                    event.typeinfo = idClass.GetClass(name.toString())
+                    if (event.typeinfo == null) {
                         savefile.Error(
                             "idEvent::Restore: unknown class '%s' on event '%s'",
                             name.toString(),
                             event.eventdef!!.GetName()
                         )
                     }
-                    savefile.ReadObject(event.`object`)
+
+                    event.`object` = savefile.ReadObject()
 
                     // read the args
                     savefile.ReadInt(argsize)
-                    if (argsize._val != event.eventdef!!.GetArgSize()) {
+                    if (argsize.integerValue != event.eventdef!!.GetArgSize()) {
                         savefile.Error(
                             "idEvent::Restore: arg size (%d) doesn't match saved arg size(%d) on event '%s'",
                             event.eventdef!!.GetArgSize(),
-                            argsize._val,
+                            argsize.integerValue,
                             event.eventdef!!.GetName()
                         )
                     }
-                    if (argsize._val != 0) {
+                    if (argsize.integerValue != 0) {
                         // FIX: Was arrayOfNulls(argsize._val) — allocating by byte-size instead of arg count.
                         // The array is indexed by argument number, so it needs GetNumArgs() elements.
                         val numArgs = event.eventdef!!.GetNumArgs()

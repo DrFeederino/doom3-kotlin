@@ -91,6 +91,8 @@ object Projectile {
 
     open class idProjectile : idEntity() {
         companion object {
+            val Type = idTypeInfo("idProjectile", "idEntity") { idProjectile() }
+
             // enum {
             val EVENT_DAMAGE_EFFECT: Int = idEntity.EVENT_MAXEVENTS
             val EVENT_MAXEVENTS = EVENT_DAMAGE_EFFECT
@@ -268,6 +270,7 @@ object Projectile {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             owner.Save(savefile)
             val flags = projectileFlags
             LittleBitField(flags)
@@ -289,6 +292,7 @@ object Projectile {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             owner.Restore(savefile)
             savefile.Read(projectileFlags)
             LittleBitField(projectileFlags)
@@ -303,7 +307,7 @@ object Projectile {
             lightStartTime = savefile.ReadInt()
             lightEndTime = savefile.ReadInt()
             savefile.ReadVec3(lightColor)
-            savefile.ReadParticle(smokeFly!!)
+            smokeFly = savefile.ReadParticle()
             smokeFlyTime = savefile.ReadInt()
             state = projectileState_t.values()[savefile.ReadInt()]
             damagePower = savefile.ReadFloat()
@@ -1173,6 +1177,9 @@ object Projectile {
             idThread.ReturnInt(TempDump.etoi(state))
         }
 
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idProjectile()
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         }
@@ -1200,15 +1207,34 @@ object Projectile {
                     = false
 
             override fun AllocBuffer(): ByteBuffer {
-                throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+                return ByteBuffer.allocate(BYTES)
             }
 
             override fun Read(buffer: ByteBuffer) {
-                throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+                val bits = buffer.get().toInt()
+                detonate_on_world = (bits and (1 shl 0)) != 0
+                detonate_on_actor = (bits and (1 shl 1)) != 0
+                randomShaderSpin = (bits and (1 shl 2)) != 0
+                isTracer = (bits and (1 shl 3)) != 0
+                noSplashDamage = (bits and (1 shl 4)) != 0
             }
 
             override fun Write(): ByteBuffer {
-                throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
+                val buffer = AllocBuffer()
+                var bits = 0
+                if (detonate_on_world) bits = bits or (1 shl 0)
+                if (detonate_on_actor) bits = bits or (1 shl 1)
+                if (randomShaderSpin) bits = bits or (1 shl 2)
+                if (isTracer) bits = bits or (1 shl 3)
+                if (noSplashDamage) bits = bits or (1 shl 4)
+                buffer.put(bits.toByte())
+                buffer.flip()
+                return buffer
+            }
+
+            companion object {
+                @Transient
+                val BYTES = java.lang.Byte.BYTES // 1
             }
         }
 
@@ -1249,6 +1275,13 @@ object Projectile {
      ===============================================================================
      */
     open class idGuidedProjectile : idProjectile() {
+        companion object {
+            val Type = idTypeInfo("idGuidedProjectile", "idProjectile") { idGuidedProjectile() }
+        }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idGuidedProjectile()
+
         // CLASS_PROTOTYPE( idGuidedProjectile );
         protected val enemy: idEntityPtr<idEntity>
 
@@ -1267,6 +1300,7 @@ object Projectile {
 
         // ~idGuidedProjectile( void );
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             enemy.Save(savefile)
             savefile.WriteFloat(speed)
             savefile.WriteAngles(rndScale)
@@ -1282,6 +1316,7 @@ object Projectile {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             enemy.Restore(savefile)
             speed = savefile.ReadFloat()
             savefile.ReadAngles(rndScale)
@@ -1446,6 +1481,13 @@ object Projectile {
      ===============================================================================
      */
     class idSoulCubeMissile : idGuidedProjectile() {
+        companion object {
+            val Type = idTypeInfo("idSoulCubeMissile", "idGuidedProjectile") { idSoulCubeMissile() }
+        }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idSoulCubeMissile()
+
         // CLASS_PROTOTYPE ( idSoulCubeMissile );
         private var accelTime = 0.0f
         private val destOrg: idVec3 = idVec3()
@@ -1463,6 +1505,7 @@ object Projectile {
         //
         // ~idSoulCubeMissile();
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteVec3(startingVelocity)
             savefile.WriteVec3(endingVelocity)
             savefile.WriteFloat(accelTime)
@@ -1477,6 +1520,7 @@ object Projectile {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             savefile.ReadVec3(startingVelocity)
             savefile.ReadVec3(endingVelocity)
             accelTime = savefile.ReadFloat()
@@ -1487,7 +1531,7 @@ object Projectile {
             orbitTime = savefile.ReadInt()
             savefile.ReadVec3(orbitOrg)
             smokeKillTime = savefile.ReadInt()
-            savefile.ReadParticle(smokeKill!!)
+            smokeKill = savefile.ReadParticle()
         }
 
         override fun Spawn() {
@@ -1648,6 +1692,8 @@ object Projectile {
      */
     class idBFGProjectile : idProjectile() {
         companion object {
+            val Type = idTypeInfo("idBFGProjectile", "idProjectile") { idBFGProjectile() }
+
             // CLASS_PROTOTYPE( idBFGProjectile );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1676,6 +1722,7 @@ object Projectile {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             var i: Int
             savefile.WriteInt(beamTargets.Num())
             i = 0
@@ -1692,14 +1739,15 @@ object Projectile {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             var i: Int
             val num = CInt()
             savefile.ReadInt(num)
-            beamTargets.SetNum(num._val)
+            beamTargets.SetNum(num.integerValue)
             i = 0
-            while (i < num._val) {
+            while (i < num.integerValue) {
                 beamTargets[i].target.Restore(savefile)
-                savefile.ReadRenderEntity(beamTargets[i].renderEntity)
+                beamTargets[i].renderEntity = savefile.ReadRenderEntity()
                 beamTargets[i].modelDefHandle = savefile.ReadInt()
                 if (beamTargets[i].modelDefHandle >= 0) {
                     beamTargets[i].modelDefHandle =
@@ -1707,7 +1755,7 @@ object Projectile {
                 }
                 i++
             }
-            savefile.ReadRenderEntity(secondModel)
+            secondModel = savefile.ReadRenderEntity()
             secondModelDefHandle = savefile.ReadInt()
             nextDamageTime = savefile.ReadInt()
             savefile.ReadString(damageFreq)
@@ -2006,6 +2054,9 @@ object Projectile {
             UpdateVisuals()
         }
 
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idBFGProjectile()
+
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]
         } //        private void ApplyDamage();
@@ -2030,6 +2081,8 @@ object Projectile {
      */
     class idDebris : idEntity() {
         companion object {
+            val Type = idTypeInfo("idDebris", "idEntity") { idDebris() }
+
             // CLASS_PROTOTYPE( idDebris );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2054,6 +2107,7 @@ object Projectile {
         // ~idDebris();
         // save games
         override fun Save(savefile: idSaveGame) {                    // archives object for save game file
+            super.Save(savefile)
             owner.Save(savefile)
             savefile.WriteStaticObject(physicsObj)
             savefile.WriteParticle(smokeFly)
@@ -2062,10 +2116,11 @@ object Projectile {
         }
 
         override fun Restore(savefile: idRestoreGame) {                    // unarchives object from save game file
+            super.Restore(savefile)
             owner.Restore(savefile)
             savefile.ReadStaticObject(physicsObj)
             RestorePhysics(physicsObj)
-            savefile.ReadParticle(smokeFly!!)
+            smokeFly = savefile.ReadParticle()
             smokeFlyTime = savefile.ReadInt()
             sndBounce = savefile.ReadSoundShader()
         }
@@ -2142,8 +2197,15 @@ object Projectile {
             // load the trace model
             if (!collisionModelManager.TrmFromModel(clipModelName, trm)) {
                 // default to a box
+                Game_local.gameLocal.Printf(
+                    "DEBRIS_SETUP [%s]: TrmFromModel FAILED for '%s', falling back to SetClipBox bounds=(%.2f,%.2f,%.2f)-(%.2f,%.2f,%.2f)\n",
+                    name, clipModelName,
+                    renderEntity!!.bounds[0].x, renderEntity!!.bounds[0].y, renderEntity!!.bounds[0].z,
+                    renderEntity!!.bounds[1].x, renderEntity!!.bounds[1].y, renderEntity!!.bounds[1].z
+                )
                 physicsObj.SetClipBox(renderEntity!!.bounds, 1.0f)
             } else {
+                Game_local.gameLocal.Printf("DEBRIS_SETUP [%s]: TrmFromModel OK for '%s'\n", name, clipModelName)
                 physicsObj.SetClipModel(idClipModel(trm), 1.0f)
             }
             physicsObj.GetClipModel()!!.SetOwner(owner.GetEntity())
@@ -2310,9 +2372,8 @@ object Projectile {
             Fizzle()
         }
 
-        override fun CreateInstance(): idClass {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idDebris()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]

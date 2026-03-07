@@ -85,6 +85,8 @@ val EV_RespawnItem: idEventDef = idEventDef("respawn")
  */
 open class idItem : idEntity() {
     companion object {
+        val Type = idTypeInfo("idItem", "idEntity") { idItem() }
+
         // enum {
         val EVENT_PICKUP: Int = idEntity.EVENT_MAXEVENTS
         val EVENT_MAXEVENTS = EVENT_PICKUP + 3
@@ -145,6 +147,7 @@ open class idItem : idEntity() {
     }
 
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         savefile.WriteVec3(orgOrigin)
         savefile.WriteBool(spin)
         savefile.WriteBool(pulse)
@@ -157,11 +160,12 @@ open class idItem : idEntity() {
     }
 
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         savefile.ReadVec3(orgOrigin)
         spin = savefile.ReadBool()
         pulse = savefile.ReadBool()
         canPickUp = savefile.ReadBool()
-        savefile.ReadMaterial(shellMaterial!!)
+        shellMaterial = savefile.ReadMaterial()
         inView = savefile.ReadBool()
         inViewTime = savefile.ReadInt()
         lastCycle = savefile.ReadInt()
@@ -434,9 +438,8 @@ open class idItem : idEntity() {
         return true
     }
 
-    override fun CreateInstance(): idClass {
-        throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-    }
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idItem()
 
     private fun Event_DropToFloor() {
         val trace = trace_s()
@@ -558,38 +561,47 @@ open class idItem : idEntity() {
  ===============================================================================
  */
 class idItemPowerup : idItem() {
+    companion object {
+        val Type = idTypeInfo("idItemPowerup", "idItem") { idItemPowerup() }
+    }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idItemPowerup()
+
     // public 	CLASS_PROTOTYPE( idItemPowerup );
     private val time: CInt = CInt()
     private val type: CInt = CInt()
     override fun Save(savefile: idSaveGame) {
-        savefile.WriteInt(time._val)
-        savefile.WriteInt(type._val)
+        super.Save(savefile)
+        savefile.WriteInt(time.integerValue)
+        savefile.WriteInt(type.integerValue)
     }
 
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         savefile.ReadInt(time)
         savefile.ReadInt(type)
     }
 
     override fun Spawn() {
         super.Spawn()
-        time._val = (spawnArgs.GetInt("time", "30"))
-        type._val = (spawnArgs.GetInt("type", "0"))
+        time.integerValue = (spawnArgs.GetInt("time", "30"))
+        type.integerValue = (spawnArgs.GetInt("type", "0"))
     }
 
     override fun GiveToPlayer(player: idPlayer?): Boolean {
         if (player!!.spectating) {
             return false
         }
-        player.GivePowerUp(type._val, time._val * 1000)
+        player.GivePowerUp(type.integerValue, time.integerValue * 1000)
         return true
     }
 
     //
     //
     init {
-        time._val = 0
-        type._val = 0
+        time.integerValue = 0
+        type.integerValue = 0
     }
 }
 
@@ -602,6 +614,8 @@ class idItemPowerup : idItem() {
  */
 class idObjective : idItem() {
     companion object {
+        val Type = idTypeInfo("idObjective", "idItem") { idObjective() }
+
         //public 	CLASS_PROTOTYPE( idObjective );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
         fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -625,10 +639,12 @@ class idObjective : idItem() {
 
     private val playerPos: idVec3
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         savefile.WriteVec3(playerPos)
     }
 
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         savefile.ReadVec3(playerPos)
         PostEventMS(EV_CamShot, 250)
     }
@@ -724,6 +740,9 @@ class idObjective : idItem() {
         }
     }
 
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idObjective()
+
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]
     }
@@ -743,6 +762,13 @@ class idObjective : idItem() {
  ===============================================================================
  */
 class idVideoCDItem : idItem() {
+    companion object {
+        val Type = idTypeInfo("idVideoCDItem", "idItem") { idVideoCDItem() }
+    }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idVideoCDItem()
+
     //            public 	CLASS_PROTOTYPE( idVideoCDItem );
     override fun GiveToPlayer(player: idPlayer?): Boolean {
         val str = spawnArgs.GetString("video")
@@ -761,6 +787,13 @@ class idVideoCDItem : idItem() {
  ===============================================================================
  */
 class idPDAItem : idItem() {
+    companion object {
+        val Type = idTypeInfo("idPDAItem", "idItem") { idPDAItem() }
+    }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idPDAItem()
+
     //public 	CLASS_PROTOTYPE( idPDAItem );
     override fun GiveToPlayer(player: idPlayer?): Boolean {
         val str = idStr(spawnArgs.GetString("pda_name"))
@@ -778,6 +811,8 @@ class idPDAItem : idItem() {
  */
 open class idMoveableItem : idItem() {
     companion object {
+        val Type = idTypeInfo("idMoveableItem", "idItem") { idMoveableItem() }
+
         // public 	CLASS_PROTOTYPE( idMoveableItem );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -932,6 +967,7 @@ open class idMoveableItem : idItem() {
     }
 
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         savefile.WriteStaticObject(physicsObj)
         savefile.WriteClipModel(trigger)
         savefile.WriteParticle(smoke)
@@ -939,10 +975,11 @@ open class idMoveableItem : idItem() {
     }
 
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         savefile.ReadStaticObject(physicsObj)
         RestorePhysics(physicsObj)
-        savefile.ReadClipModel(trigger!!)
-        savefile.ReadParticle(smoke!!)
+        trigger = savefile.ReadClipModel()
+        smoke = savefile.ReadParticle()
         smokeTime = savefile.ReadInt()
     }
 
@@ -1079,6 +1116,9 @@ open class idMoveableItem : idItem() {
         Gib(idVec3(0, 0, 1), damageDefName.value)
     }
 
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idMoveableItem()
+
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]
     }
@@ -1101,6 +1141,13 @@ open class idMoveableItem : idItem() {
  ===============================================================================
  */
 class idMoveablePDAItem : idMoveableItem() {
+    companion object {
+        val Type = idTypeInfo("idMoveablePDAItem", "idMoveableItem") { idMoveablePDAItem() }
+    }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idMoveablePDAItem()
+
     //public 	CLASS_PROTOTYPE( idMoveablePDAItem );
     override fun GiveToPlayer(player: idPlayer?): Boolean {
         val str = idStr(spawnArgs.GetString("pda_name"))
@@ -1125,6 +1172,8 @@ class idMoveablePDAItem : idMoveableItem() {
  */
 open class idItemRemover : idEntity() {
     companion object {
+        val Type = idTypeInfo("idItemRemover", "idEntity") { idItemRemover() }
+
         //public 	CLASS_PROTOTYPE( idItemRemover );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
         fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1153,9 +1202,8 @@ open class idItemRemover : idEntity() {
         }
     }
 
-    override fun CreateInstance(): idClass {
-        throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-    }
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idItemRemover()
 
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]
@@ -1171,6 +1219,8 @@ open class idItemRemover : idEntity() {
  */
 class idObjectiveComplete : idItemRemover() {
     companion object {
+        val Type = idTypeInfo("idObjectiveComplete", "idItemRemover") { idObjectiveComplete() }
+
         // public 	CLASS_PROTOTYPE( idObjectiveComplete );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
         fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1194,10 +1244,12 @@ class idObjectiveComplete : idItemRemover() {
 
     private val playerPos: idVec3 = idVec3()
     override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
         savefile.WriteVec3(playerPos)
     }
 
     override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
         savefile.ReadVec3(playerPos)
     }
 
@@ -1246,6 +1298,9 @@ class idObjectiveComplete : idItemRemover() {
             PostEventMS(EV_HideObjective, 100, player)
         }
     }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idObjectiveComplete()
 
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
         return eventCallbacks[event]

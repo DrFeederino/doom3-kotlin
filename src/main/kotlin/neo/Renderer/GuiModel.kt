@@ -130,11 +130,11 @@ class GuiModel {
             var j: Int
             val k = CInt()
             val color = charArrayOf(0.toChar())
-            i._val = verts.Num()
+            i.integerValue = verts.Num()
             demo.ReadInt(i)
-            verts.SetNum(i._val, false)
+            verts.SetNum(i.integerValue, false)
             j = 0
-            while (j < i._val) {
+            while (j < i.integerValue) {
                 demo.ReadVec3(verts[j].xyz)
                 demo.ReadVec2(verts[j].st)
                 demo.ReadVec3(verts[j].normal)
@@ -150,20 +150,20 @@ class GuiModel {
                 verts[j].color[3] = color[0].code.toByte()
                 j++
             }
-            i._val = indexes.Num()
+            i.integerValue = indexes.Num()
             demo.ReadInt(i)
-            indexes.SetNum(i._val, false)
+            indexes.SetNum(i.integerValue, false)
             j = 0
-            while (j < i._val) {
+            while (j < i.integerValue) {
                 demo.ReadInt(k)
-                indexes[j] = k._val
+                indexes[j] = k.integerValue
                 j++
             }
-            i._val = surfaces.Num()
+            i.integerValue = surfaces.Num()
             demo.ReadInt(i)
-            surfaces.SetNum(i._val, false)
+            surfaces.SetNum(i.integerValue, false)
             j = 0
-            while (j < i._val) {
+            while (j < i.integerValue) {
                 val surf = surfaces[j]
 
                 demo.ReadInt(k) // C++ reads (int&)surf->material; consume for compat

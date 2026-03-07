@@ -195,10 +195,13 @@ class RegExp {
             enabled = savefile.ReadBool()
             type = savefile.ReadShort()
             regCount = savefile.ReadInt()
-            for (i in 0..3) {
+            for (i in 0 until regs.size) { // 8 bytes
                 regs[i] = savefile.ReadShort()
             }
-            savefile.ReadString(name)
+
+            val len = savefile.ReadInt()
+            name.Fill(' ', len)
+            savefile.Read(name, len)
             `var`!!.ReadFromSaveGame(savefile)
         }
 
@@ -330,7 +333,7 @@ class RegExp {
             val c = CInt()
             f.ReadInt(c)
             regs.DeleteContents(true)
-            for (i in 0 until c._val) {
+            for (i in 0 until c.integerValue) {
                 val reg = idRegister()
                 reg.ReadFromDemoFile(f)
                 regs.Append(reg)

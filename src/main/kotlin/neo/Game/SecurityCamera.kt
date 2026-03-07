@@ -18,8 +18,10 @@
 
 package neo.Game
 
+import neo.Game.GameSys.Class
 import neo.Game.GameSys.Class.eventCallback_t
 import neo.Game.GameSys.Class.eventCallback_t0
+import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -65,6 +67,8 @@ object SecurityCamera {
 
     class idSecurityCamera : idEntity() {
         companion object {
+            val Type = idTypeInfo("idSecurityCamera", "idEntity") { idSecurityCamera() }
+
             private const val ACTIVATED = 3
             private const val ALERT = 2
             private const val LOSINGINTEREST = 1
@@ -162,6 +166,7 @@ object SecurityCamera {
         }
 
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteFloat(angle)
             savefile.WriteFloat(sweepAngle)
             savefile.WriteInt(modelAxis)
@@ -182,6 +187,7 @@ object SecurityCamera {
         }
 
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             angle = savefile.ReadFloat()
             sweepAngle = savefile.ReadFloat()
             modelAxis = savefile.ReadInt()
@@ -526,10 +532,13 @@ object SecurityCamera {
             args.Set("light_right", right.ToString())
             args.Set("light_up", up.ToString())
             args.SetFloat("angle", GetPhysics().GetAxis()[0].ToYaw())
-            spotLight = Game_local.gameLocal.SpawnEntityType(idLight::class.java, args) as idLight
+            spotLight = Game_local.gameLocal.SpawnEntityType(idLight.Type, args) as idLight
             spotLight.Bind(this, true)
             spotLight.UpdateVisuals()
         }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): Class.idClass = idSecurityCamera()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]

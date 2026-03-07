@@ -431,7 +431,7 @@ object Image_init {
                     while (j < classifications[i].Num()) {
                         partialSize += sortedArray[classifications[i][j]]!!.image!!.StorageSize()
                         if (overSized) {
-                            if (sortedArray[classifications[i][j]]!!.image!!.uploadWidth._val > IC_Info[i].maxWidth && sortedArray[classifications[i][j]]!!.image!!.uploadHeight._val > IC_Info[i].maxHeight
+                            if (sortedArray[classifications[i][j]]!!.image!!.uploadWidth.integerValue > IC_Info[i].maxWidth && sortedArray[classifications[i][j]]!!.image!!.uploadHeight.integerValue > IC_Info[i].maxHeight
                             ) {
                                 overSizedList.Append(classifications[i][j])
                             }

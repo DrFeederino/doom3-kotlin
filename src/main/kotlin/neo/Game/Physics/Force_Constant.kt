@@ -8,6 +8,9 @@
 
 package neo.Game.Physics
 
+import neo.Game.GameSys.Class
+import neo.Game.GameSys.Class.idClass
+import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Physics.Force.idForce
@@ -24,6 +27,13 @@ class Force_Constant {
      ===============================================================================
      */
     class idForce_Constant : idForce() {
+        companion object {
+            val Type = idTypeInfo("idForce_Constant", "idForce") { idForce_Constant() }
+        }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idForce_Constant()
+
         // CLASS_PROTOTYPE( idForce_Constant );
         // force properties
         private val force: idVec3 = vec3_zero
@@ -31,37 +41,65 @@ class Force_Constant {
         private var physics: idPhysics? = null
         private val point: idVec3
 
-        // virtual				~idForce_Constant( void );
+        /*
+        ================
+        idForce_Constant::Save
+        ================
+        */
         override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
             savefile.WriteVec3(force)
             savefile.WriteInt(id)
             savefile.WriteVec3(point)
         }
 
+        /*
+        ================
+        idForce_Constant::Restore
+        ================
+        */
         override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
             // Owner needs to call SetPhysics!!
             savefile.ReadVec3(force)
             id = savefile.ReadInt()
             savefile.ReadVec3(point)
         }
 
-        // constant force
+        /*
+        ================
+        idForce_Constant::SetForce
+        ================
+        */
         fun SetForce(force: idVec3) {
             this.force.set(force)
         }
 
-        // set force position
+        /*
+        ================
+        idForce_Constant::SetPosition
+        ================
+        */
         fun SetPosition(physics: idPhysics?, id: Int, point: idVec3) {
             this.physics = physics
             this.id = id
             this.point.set(point)
         }
 
+        /*
+        ================
+        idForce_Constant::SetPhysics
+        ================
+        */
         fun SetPhysics(physics: idPhysics?) {
             this.physics = physics
         }
 
-        // common force interface
+        /*
+        ================
+        idForce_Constant::Evaluate
+        ================
+        */
         override fun Evaluate(time: Int) {
             val p = idVec3()
             if (null == physics) {
@@ -71,6 +109,11 @@ class Force_Constant {
             physics!!.AddForce(id, p, force)
         }
 
+        /*
+        ================
+        idForce_Constant::RemovePhysics
+        ================
+        */
         override fun RemovePhysics(phys: idPhysics) {
             if (physics == phys) {
                 physics = null

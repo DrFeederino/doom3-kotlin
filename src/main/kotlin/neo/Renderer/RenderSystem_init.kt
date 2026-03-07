@@ -851,11 +851,11 @@ fun R_ScreenshotFilename(lastNumber: CInt, base: String?, fileName: idStr) {
     val restrict: Boolean = cvarSystem.GetCVarBool("fs_restrict")
     cvarSystem.SetCVarBool("fs_restrict", false)
     lastNumber.increment()
-    if (lastNumber._val > 99999) {
-        lastNumber._val = 99999
+    if (lastNumber.integerValue > 99999) {
+        lastNumber.integerValue = 99999
     }
-    while (lastNumber._val < 99999) {
-        var frac: Int = lastNumber._val
+    while (lastNumber.integerValue < 99999) {
+        var frac: Int = lastNumber.integerValue
         a = frac / 10000
         frac -= a * 10000
         b = frac / 1000
@@ -866,7 +866,7 @@ fun R_ScreenshotFilename(lastNumber: CInt, base: String?, fileName: idStr) {
         frac -= d * 10
         e = frac
         fileName.set(String.format("%s%d%d%d%d%d.tga", base, a, b, c, d, e))
-        if (lastNumber._val == 99999) {
+        if (lastNumber.integerValue == 99999) {
             break
         }
         val len: Int = fileSystem.ReadFile(fileName.toString(), null, null)

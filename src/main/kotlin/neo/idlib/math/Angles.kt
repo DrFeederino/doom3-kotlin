@@ -423,18 +423,30 @@ class idAngles : SERiAL {
     }
 
     override fun AllocBuffer(): ByteBuffer {
-        throw UnsupportedOperationException("Not supported yet.")
+        return ByteBuffer.allocate(BYTES)
     }
 
     override fun Read(buffer: ByteBuffer) {
-        throw UnsupportedOperationException("Not supported yet.")
+        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        pitch = buffer.float
+        yaw = buffer.float
+        roll = buffer.float
     }
 
     override fun Write(): ByteBuffer {
-        throw UnsupportedOperationException("Not supported yet.")
+        val buffer = AllocBuffer()
+        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        buffer.putFloat(pitch)
+        buffer.putFloat(yaw)
+        buffer.putFloat(roll)
+        buffer.flip()
+        return buffer
     }
 
     companion object {
+        @Transient
+        val BYTES = 3 * java.lang.Float.BYTES // 12
+
         fun times(a: Float, b: idAngles): idAngles {
             return idAngles(a * b.pitch, a * b.yaw, a * b.roll)
         }

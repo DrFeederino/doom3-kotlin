@@ -139,6 +139,8 @@ object Weapon {
      ***********************************************************************/
     class idWeapon : idAnimatedEntity() {
         companion object {
+            val Type = idTypeInfo("idWeapon", "idAnimatedEntity") { idWeapon() }
+
             val EVENT_RELOAD: Int = idEntity.EVENT_MAXEVENTS
             val EVENT_ENDRELOAD = EVENT_RELOAD + 1
             val EVENT_CHANGESKIN = EVENT_RELOAD + 2
@@ -205,14 +207,14 @@ object Weapon {
                 if (!ammoDict!!.GetInt(ammoname, "-1", num)) {
                     idGameLocal.Error("Unknown ammo type '%s'", ammoname)
                 }
-                if (num._val < 0 || num._val >= AMMO_NUMTYPES) {
+                if (num.integerValue < 0 || num.integerValue >= AMMO_NUMTYPES) {
                     idGameLocal.Error(
                         "Ammo type '%s' value out of range.  Maximum ammo types is %d.\n",
                         ammoname,
                         AMMO_NUMTYPES
                     )
                 }
-                return num._val
+                return num.integerValue
             }
 
             /*
@@ -593,7 +595,7 @@ object Weapon {
                 // setup the world model
                 worldModel.oSet(
                     Game_local.gameLocal.SpawnEntityType(
-                        idAnimatedEntity::class.java,
+                        idAnimatedEntity.Type,
                         null
                     ) as idAnimatedEntity
                 )
@@ -649,6 +651,7 @@ object Weapon {
          */
         // save games
         override fun Save(savefile: idSaveGame) {                    // archives object for save game file
+            super.Save(savefile)
             savefile.WriteInt(TempDump.etoi(status))
             savefile.WriteObject(thread)
             savefile.WriteString(state)
@@ -746,8 +749,9 @@ object Weapon {
          ================
          */
         override fun Restore(savefile: idRestoreGame) {                    // unarchives object from save game file
+            super.Restore(savefile)
             status = weaponStatus_t.values()[savefile.ReadInt()]
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/thread)
+            thread = savefile.ReadObject() as idThread?
             savefile.ReadString(state)
             savefile.ReadString(idealState)
             animBlendFrames = savefile.ReadInt()
@@ -764,7 +768,7 @@ object Weapon {
             }
             WEAPON_RAISEWEAPON.LinkTo(scriptObject, "WEAPON_RAISEWEAPON")
             WEAPON_LOWERWEAPON.LinkTo(scriptObject, "WEAPON_LOWERWEAPON")
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/owner)
+            owner = savefile.ReadObject() as idPlayer?
             worldModel.Restore(savefile)
             hideTime = savefile.ReadInt()
             hideDistance = savefile.ReadFloat()
@@ -850,19 +854,11 @@ object Weapon {
             barrelJointWorld = savefile.ReadJoint()
             ejectJointWorld = savefile.ReadJoint()
             hasBloodSplat = savefile.ReadBool()
-            // FIX: sndHum may be null; create temp object for ReadSoundShader which requires non-null
-            val tempSndHum = savefile.ReadSoundShader()
-            sndHum = tempSndHum
-            // FIX: weaponSmoke may be null; create temp object for ReadParticle which requires non-null
-            val tempWeaponSmoke = idDeclParticle()
-            savefile.ReadParticle(tempWeaponSmoke)
-            weaponSmoke = tempWeaponSmoke
+            sndHum = savefile.ReadSoundShader()
+            weaponSmoke = savefile.ReadParticle()
             weaponSmokeStartTime = savefile.ReadInt()
             continuousSmoke = savefile.ReadBool()
-            // FIX: strikeSmoke may be null; create temp object for ReadParticle which requires non-null
-            val tempStrikeSmoke = idDeclParticle()
-            savefile.ReadParticle(tempStrikeSmoke)
-            strikeSmoke = tempStrikeSmoke
+            strikeSmoke = savefile.ReadParticle()
             strikeSmokeStartTime = savefile.ReadInt()
             savefile.ReadVec3(strikePos)
             savefile.ReadMat3(strikeAxis)
@@ -878,9 +874,7 @@ object Weapon {
             }
             savefile.ReadVec3(nozzleGlowColor)
             // FIX: nozzleGlowShader may be null; create temp object for ReadMaterial which requires non-null
-            val tempNozzleGlowShader = Material.idMaterial()
-            savefile.ReadMaterial(tempNozzleGlowShader)
-            nozzleGlowShader = tempNozzleGlowShader
+            nozzleGlowShader = savefile.ReadMaterial()
             nozzleGlowRadius = savefile.ReadFloat()
             weaponAngleOffsetAverages = savefile.ReadInt()
             weaponAngleOffsetScale = savefile.ReadFloat()
@@ -888,7 +882,7 @@ object Weapon {
             weaponOffsetTime = savefile.ReadFloat()
             weaponOffsetScale = savefile.ReadFloat()
             allowDrop = savefile.ReadBool()
-            savefile.ReadObject( /*reinterpret_cast<idClass *&>*/projectileEnt)
+            projectileEnt = savefile.ReadObject() as idEntity?
         }
 
         /* **********************************************************************
@@ -1143,7 +1137,7 @@ object Weapon {
                     val spawnclass = projectileDef.dict.GetString("spawnclass")
                     // NOTE: Differs from C++ — original uses idClass::GetClass(spawnclass)->IsType() to check
                     // type metadata without constructing an entity. Kotlin creates a throwaway entity via GetEntity().
-                    val spawnEntity: idEntity = GetEntity(spawnclass)!!
+                    val spawnEntity: idEntity = GetClass(spawnclass)!!.createInstance.invoke() as idEntity
                     if (spawnEntity !is idProjectile) {
                         Game_local.gameLocal.Warning(
                             "Invalid spawnclass '%s' on projectile '%s' (used by weapon '%s')",
@@ -1174,12 +1168,12 @@ object Weapon {
             flashUp.set(weaponDef!!.dict.GetVector("flashUp"))
             flashRight.set(weaponDef!!.dict.GetVector("flashRight"))
             muzzleFlash = renderLight_s()
-            muzzleFlash.lightId._val = LIGHTID_VIEW_MUZZLE_FLASH + owner!!.entityNumber
-            muzzleFlash.allowLightInViewID._val = owner!!.entityNumber + 1
+            muzzleFlash.lightId.integerValue = LIGHTID_VIEW_MUZZLE_FLASH + owner!!.entityNumber
+            muzzleFlash.allowLightInViewID.integerValue = owner!!.entityNumber + 1
 
             // the weapon lights will only be in first person
-            guiLight.allowLightInViewID._val = owner!!.entityNumber + 1
-            nozzleGlow.allowLightInViewID._val = owner!!.entityNumber + 1
+            guiLight.allowLightInViewID.integerValue = owner!!.entityNumber + 1
+            nozzleGlow.allowLightInViewID.integerValue = owner!!.entityNumber + 1
             muzzleFlash.pointLight._val = flashPointLight
             muzzleFlash.shader = flashShader
             muzzleFlash.shaderParms[RenderWorld.SHADERPARM_RED] = flashColor[0]
@@ -1198,9 +1192,9 @@ object Weapon {
 
             // the world muzzle flash is the same, just positioned differently
             worldMuzzleFlash = renderLight_s(muzzleFlash)
-            worldMuzzleFlash.suppressLightInViewID._val = owner!!.entityNumber + 1
-            worldMuzzleFlash.allowLightInViewID._val = 0
-            worldMuzzleFlash.lightId._val = LIGHTID_WORLD_MUZZLE_FLASH + owner!!.entityNumber
+            worldMuzzleFlash.suppressLightInViewID.integerValue = owner!!.entityNumber + 1
+            worldMuzzleFlash.allowLightInViewID.integerValue = 0
+            worldMuzzleFlash.lightId.integerValue = LIGHTID_WORLD_MUZZLE_FLASH + owner!!.entityNumber
 
             //-----------------------------------
             nozzleFx = weaponDef!!.dict.GetBool("nozzleFx")
@@ -2098,7 +2092,7 @@ object Weapon {
          ================
          */
         fun GetWeaponAngleOffsets(average: CInt, scale: CFloat, max: CFloat) {
-            average._val = (weaponAngleOffsetAverages)
+            average.integerValue = (weaponAngleOffsetAverages)
             scale._val = (weaponAngleOffsetScale)
             max._val = (weaponAngleOffsetMax)
         }
@@ -2521,7 +2515,7 @@ object Weapon {
             if (nozzleGlowHandle == -1) {
                 nozzleGlow = renderLight_s()
                 if (owner != null) {
-                    nozzleGlow.allowLightInViewID._val = owner!!.entityNumber + 1
+                    nozzleGlow.allowLightInViewID.integerValue = owner!!.entityNumber + 1
                 }
                 nozzleGlow.pointLight._val = true
                 nozzleGlow.noShadows._val = true
@@ -3448,6 +3442,9 @@ object Weapon {
         override fun oSet(oGet: idClass?) {
             throw UnsupportedOperationException("Not supported yet.")
         }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idWeapon()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]

@@ -109,7 +109,7 @@ object GuiScript {
                     break
                 }
                 val str = idWinStr()
-                str.data = token
+                str.data.set(token)
                 val wv = idGSWinVar()
                 wv.own = true
                 wv.`var` = str

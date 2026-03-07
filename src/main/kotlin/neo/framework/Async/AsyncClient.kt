@@ -551,7 +551,7 @@ object AsyncClient {
                     )
                     if (newPacket) {
                         msg.Init(msgBuf, msgBuf.capacity())
-                        msg.SetSize(size._val)
+                        msg.SetSize(size.integerValue)
                         msg.BeginReading()
                         ProcessMessage(from, msg)
                     }
@@ -681,7 +681,7 @@ object AsyncClient {
             clientPort.SendPacket(idAsyncNetwork.GetMasterAddress(), msg.GetData()!!, msg.GetSize())
             Common.common.DPrintf("sent a version check request\n")
             val sizePackage = CInt()
-            sizePackage._val = MsgChannel.MAX_MESSAGE_SIZE
+            sizePackage.integerValue = MsgChannel.MAX_MESSAGE_SIZE
             updateState = clientUpdateState_t.UPDATE_SENT
             updateSentTime = clientTime
             showUpdateMessage = fromMenu
@@ -1742,10 +1742,10 @@ object AsyncClient {
             }
             val serverMessageSequence = CInt()
             if (!channel.Process(from, clientTime, msg, serverMessageSequence)) {
-                this.serverMessageSequence = serverMessageSequence._val
+                this.serverMessageSequence = serverMessageSequence.integerValue
                 return  // out of order, duplicated, fragment, etc.
             }
-            this.serverMessageSequence = serverMessageSequence._val
+            this.serverMessageSequence = serverMessageSequence.integerValue
             lastPacketTime = clientTime
             ProcessReliableServerMessages()
             ProcessUnreliableServerMessage(msg)
@@ -1841,7 +1841,7 @@ object AsyncClient {
                 outMsg.WriteLong(inChecksums[i++])
             }
             outMsg.WriteLong(0)
-            outMsg.WriteLong(gamePakChecksum._val)
+            outMsg.WriteLong(gamePakChecksum.integerValue)
             clientPort.SendPacket(from, outMsg.GetData()!!, outMsg.GetSize())
         }
 
@@ -2014,7 +2014,7 @@ object AsyncClient {
                 outMsg.WriteLong(inChecksums[i++])
             }
             outMsg.WriteLong(0)
-            outMsg.WriteLong(gamePakChecksum._val)
+            outMsg.WriteLong(gamePakChecksum.integerValue)
             if (!channel.SendReliableMessage(outMsg)) {
                 Common.common.Error("client.server reliable messages overflow\n")
             }
