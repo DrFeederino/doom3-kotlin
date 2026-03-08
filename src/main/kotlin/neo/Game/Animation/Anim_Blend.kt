@@ -2937,6 +2937,7 @@ class idAnimator {
         AFPoseJointMods.SetNum(num.integerValue)
         i = 0
         while (i < num.integerValue) {
+            AFPoseJointMods[i] = idAFPoseJointMod()
             AFPoseJointMods[i].mod = AFJointModType_t.values()[savefile.ReadInt()]
             savefile.ReadMat3(AFPoseJointMods[i].axis)
             savefile.ReadVec3(AFPoseJointMods[i].origin)
@@ -2948,6 +2949,7 @@ class idAnimator {
 
         i = 0
         while (i < num.integerValue) {
+            AFPoseJointFrame[i] = idJointQuat()
             AFPoseJointFrame[i].q.x = savefile.ReadFloat()
             AFPoseJointFrame[i].q.y = savefile.ReadFloat()
             AFPoseJointFrame[i].q.z = savefile.ReadFloat()

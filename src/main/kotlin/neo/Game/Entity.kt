@@ -1193,6 +1193,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         targets.SetNum(num.integerValue)
         i = 0
         while (i < num.integerValue) {
+            targets[i] = idEntityPtr()
             targets[i].Restore(savefile)
             i++
         }

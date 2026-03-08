@@ -927,10 +927,6 @@ object tr_rendertools {
             }
             b.set(model.Bounds(vModels.entityDef!!.parms))
             RB_DrawBounds(b)
-            println("Reference bounds ${vModels.entityDef!!.referenceBounds}")
-            println("Model bounds $b")
-            println("Are ref and model bounds equal ${vModels.entityDef!!.referenceBounds == b}")
-            //assert(vModels.entityDef!!.referenceBounds == b)
 
             vModels = vModels.next
         }

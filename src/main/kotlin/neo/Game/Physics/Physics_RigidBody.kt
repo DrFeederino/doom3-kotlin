@@ -601,8 +601,8 @@ object Physics_RigidBody {
             }
 
             // move the rigid body velocity into the frame of a pusher
-//	current.i.linearMomentum -= current.pushVelocity.SubVec3( 0 ) * mass;
-//	current.i.angularMomentum -= current.pushVelocity.SubVec3( 1 ) * inertiaTensor;
+            //	current.i.linearMomentum -= current.pushVelocity.SubVec3( 0 ) * mass;
+            //	current.i.angularMomentum -= current.pushVelocity.SubVec3( 1 ) * inertiaTensor;
             clipModel!!.Unlink()
             next = current.copy()
 

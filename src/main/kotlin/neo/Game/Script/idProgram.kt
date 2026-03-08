@@ -736,17 +736,13 @@ class idProgram {
                 scope.value!!.functionPtr!!.locals += type.Size()
             }
         } else {
-            //
             // global variable
-            //
             def.value!!.setBytePtr(variables, numVariables)
             numVariables += def.TypeDef()!!.Size()
-            //            System.out.println(def.TypeDef().Name());
             if (numVariables > variables.size) {
                 throw idCompileError(String.format("Exceeded global memory size (%d bytes)", variables.size))
             }
             variables.fill(0.toUByte(), numVariables, variables.size)
-            //                memset(def.value.bytePtr, 0, def.TypeDef().Size());
         }
         return def
     }

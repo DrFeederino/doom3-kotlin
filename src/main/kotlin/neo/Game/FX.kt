@@ -211,12 +211,14 @@ open class idEntityFx : idEntity() {
         actions.SetNum(num.integerValue)
         i = 0
         while (i < num.integerValue) {
+            actions[i] = idFXLocalAction()
             savefile.ReadBool(hasObject)
             if (hasObject._val) {
                 savefile.ReadRenderLight(actions[i].renderLight)
                 actions[i].lightDefHandle = Game_local.gameRenderWorld!!.AddLightDef(actions[i].renderLight)
             } else {
 //			memset( actions.oGet(i).renderLight, 0, sizeof( renderLight_t ) );
+
                 actions[i].renderLight = renderLight_s()
                 actions[i].lightDefHandle = -1
             }

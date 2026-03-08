@@ -1827,6 +1827,7 @@ open class idAI : idActor() {
         missileLaunchOffset.SetNum(num)
         i = 0
         while (i < num) {
+            missileLaunchOffset[i] = idVec3()
             savefile.ReadVec3(missileLaunchOffset[i])
             i++
         }
@@ -1873,6 +1874,7 @@ open class idAI : idActor() {
         i = 0
         while (i < num) {
             lookJoints[i] = savefile.ReadJoint()
+            lookJointAngles[i] = idAngles()
             savefile.ReadAngles(lookJointAngles[i])
             i++
         }
@@ -1882,6 +1884,7 @@ open class idAI : idActor() {
         particles.SetNum(num)
         i = 0
         while (i < particles.Num()) {
+            particles[i] = particleEmitter_s()
             particles[i].particle = savefile.ReadParticle()
             particles[i].time = savefile.ReadInt()
             particles[i].joint = savefile.ReadJoint()

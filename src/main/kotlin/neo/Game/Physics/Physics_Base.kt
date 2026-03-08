@@ -123,6 +123,7 @@ class Physics_Base {
             contacts.SetNum(num.integerValue)
             i = 0
             while (i < contacts.Num()) {
+                contacts[i] = contactInfo_t()
                 savefile.ReadContactInfo(contacts[i])
                 i++
             }
@@ -130,6 +131,7 @@ class Physics_Base {
             contactEntities.SetNum(num.integerValue)
             i = 0
             while (i < contactEntities.Num()) {
+                contactEntities[i] = contactEntity_t()
                 contactEntities[i].Restore(savefile)
                 i++
             }

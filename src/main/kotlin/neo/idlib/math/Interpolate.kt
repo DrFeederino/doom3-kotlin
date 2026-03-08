@@ -3,6 +3,7 @@ package neo.idlib.math
 import neo.TempDump.SERiAL
 import neo.idlib.math.Extrapolate.idExtrapolate
 import java.nio.ByteBuffer
+import kotlin.reflect.KClass
 
 class Interpolate {
     /*
@@ -146,7 +147,7 @@ class Interpolate {
 
      ==============================================================================================
      */
-    class idInterpolateAccelDecelLinear<T> : SERiAL {
+    class idInterpolateAccelDecelLinear<T : Any>(private val clazz: KClass<T>) : SERiAL {
         private var accelTime: Float = 0.0f
         private var decelTime = 0.0f
         private var endValue: T? = null
@@ -370,13 +371,12 @@ class Interpolate {
         @Suppress("UNCHECKED_CAST")
         private fun _readValue(buffer: ByteBuffer): T {
             // Detect type from existing startValue or endValue, or from extrapolate
-            val sample = startValue ?: endValue ?: extrapolate.GetStartValue()
-            return when (sample) {
-                is Int -> buffer.int as T
-                is Float -> buffer.float as T
-                is idVec3 -> idVec3(buffer.float, buffer.float, buffer.float) as T
-                is idVec4 -> idVec4(buffer.float, buffer.float, buffer.float, buffer.float) as T
-                is idAngles -> idAngles(buffer.float, buffer.float, buffer.float) as T
+            return when (clazz) {
+                Int::class -> buffer.int as T
+                Float::class -> buffer.float as T
+                idVec3::class -> idVec3(buffer.float, buffer.float, buffer.float) as T
+                idVec4::class -> idVec4(buffer.float, buffer.float, buffer.float, buffer.float) as T
+                idAngles::class -> idAngles(buffer.float, buffer.float, buffer.float) as T
                 else -> buffer.int as T // fallback
             }
         }
@@ -404,14 +404,13 @@ class Interpolate {
         }
 
         private fun _sizeOfT(): Int {
-            val sample = startValue ?: endValue ?: extrapolate.GetStartValue()
-            return when (sample) {
-                is Int -> 4
-                is Float -> 4
-                is idVec3 -> 12
-                is idVec4 -> 16
-                is idAngles -> 12
-                else -> 4
+            return when (clazz) {
+                Int::class -> Int.SIZE_BYTES
+                Float::class -> Float.SIZE_BYTES
+                idVec3::class -> idVec3.BYTES
+                idVec4::class -> idVec4.BYTES
+                idAngles::class -> idAngles.BYTES
+                else -> throw UnsupportedOperationException("Cannot tell the sizeOf.")
             }
         }
 

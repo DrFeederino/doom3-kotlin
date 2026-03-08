@@ -2122,6 +2122,7 @@ object Player {
             aasLocation.SetNum(num.integerValue)
             i = 0
             while (i < num.integerValue) {
+                aasLocation[i] = aasLocation_t()
                 aasLocation[i].areaNum = savefile.ReadInt()
                 savefile.ReadVec3(aasLocation[i].pos)
                 i++
