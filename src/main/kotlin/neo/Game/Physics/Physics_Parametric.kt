@@ -47,7 +47,7 @@ object Physics_Parametric {
         savefile.WriteFloat(state.linearExtrapolation.GetStartTime())
         savefile.WriteFloat(state.linearExtrapolation.GetDuration())
         savefile.WriteVec3(state.linearExtrapolation.GetStartValue()!!)
-        savefile.WriteVec3(state.linearExtrapolation.GetBaseSpeed()!!)
+        savefile.WriteVec3(state.linearExtrapolation.GetBaseSpeed())
         savefile.WriteVec3(state.linearExtrapolation.GetSpeed()!!)
         savefile.WriteInt(state.angularExtrapolation.GetExtrapolationType())
         savefile.WriteFloat(state.angularExtrapolation.GetStartTime())
@@ -204,17 +204,17 @@ object Physics_Parametric {
         val angles // world angles
                 : idAngles = idAngles()
         var angularExtrapolation // extrapolation based description of the orientation over time
-                : idExtrapolate<idAngles> = idExtrapolate()
+                : idExtrapolate<idAngles> = idExtrapolate(idAngles())
         var angularInterpolation // interpolation based description of the orientation over time
-                : idInterpolateAccelDecelLinear<idAngles> = idInterpolateAccelDecelLinear(idAngles::class)
+                : idInterpolateAccelDecelLinear<idAngles> = idInterpolateAccelDecelLinear(idAngles())
         var atRest // set when simulation is suspended
                 = 0
         var axis // world axis
                 : idMat3 = idMat3()
         var linearExtrapolation // extrapolation based description of the position over time
-                : idExtrapolate<idVec3> = idExtrapolate()
+                : idExtrapolate<idVec3> = idExtrapolate(idVec3())
         var linearInterpolation // interpolation based description of the position over time
-                : idInterpolateAccelDecelLinear<idVec3> = idInterpolateAccelDecelLinear(idVec3::class)
+                : idInterpolateAccelDecelLinear<idVec3> = idInterpolateAccelDecelLinear(idVec3())
         val localAngles // local angles
                 : idAngles = idAngles()
         val localOrigin: idVec3 = idVec3() // local origin
@@ -222,7 +222,7 @@ object Physics_Parametric {
         var spline // spline based description of the position over time
                 : idCurve_Spline<idVec3>? = null
         var splineInterpolate // position along the spline over time
-                : idInterpolateAccelDecelLinear<Float> = idInterpolateAccelDecelLinear(Float::class)
+                : idInterpolateAccelDecelLinear<Float> = idInterpolateAccelDecelLinear(0f)
         var time // physics time
                 = 0
         var useSplineAngles // set the orientation using the spline
@@ -1319,7 +1319,7 @@ object Physics_Parametric {
             current.angles.set(idAngles())
             current.axis = idMat3.getMat3_identity()
             current.localAngles.set(idAngles())
-            current.linearExtrapolation = idExtrapolate()
+            current.linearExtrapolation = idExtrapolate(idVec3())
             current.linearExtrapolation.Init(
                 0.0f,
                 0.0f,
@@ -1328,7 +1328,7 @@ object Physics_Parametric {
                 vec3_zero,
                 Extrapolate.EXTRAPOLATION_NONE
             )
-            current.angularExtrapolation = idExtrapolate()
+            current.angularExtrapolation = idExtrapolate(idAngles())
             current.angularExtrapolation.Init(
                 0.0f,
                 0.0f,
@@ -1337,12 +1337,12 @@ object Physics_Parametric {
                 ang_zero,
                 Extrapolate.EXTRAPOLATION_NONE
             )
-            current.linearInterpolation = idInterpolateAccelDecelLinear(idVec3::class)
+            current.linearInterpolation = idInterpolateAccelDecelLinear(idVec3())
             current.linearInterpolation.Init(0.0f, 0.0f, 0.0f, 0.0f, vec3_zero, vec3_zero)
-            current.angularInterpolation = idInterpolateAccelDecelLinear(idAngles::class)
+            current.angularInterpolation = idInterpolateAccelDecelLinear(idAngles())
             current.angularInterpolation.Init(0.0f, 0.0f, 0.0f, 0.0f, ang_zero, ang_zero)
             current.spline = null
-            current.splineInterpolate = idInterpolateAccelDecelLinear(Float::class)
+            current.splineInterpolate = idInterpolateAccelDecelLinear(0f)
             current.splineInterpolate.Init(0.0f, 1.0f, 1.0f, 2.0f, 0.0f, 0.0f)
             // FIX: was `saved = current` (reference aliasing). Create independent saved state.
             saved = parametricPState_s()

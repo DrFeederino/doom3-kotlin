@@ -2153,7 +2153,7 @@ class Game_local {
                     if (!entPtr.SetSpawnId(spawnId)) {
                         return
                     }
-                    entPtr.GetEntity()?.deconstructor()
+                    entPtr.GetEntity()?._deconstructor()
                 }
 
                 GAME_RELIABLE_MESSAGE_CHAT, GAME_RELIABLE_MESSAGE_TCHAT -> {

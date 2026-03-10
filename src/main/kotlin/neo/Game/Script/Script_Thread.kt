@@ -148,10 +148,7 @@ object Script_Thread {
             SetThreadName(String.format("thread_%d", threadIndex))
             if (SysCvar.g_debugScript.GetBool()) {
                 gameLocal.Printf(
-                    "%d: create thread (%d) '%s'\n",
-                    gameLocal.time,
-                    threadNum,
-                    threadName
+                    "%d: create thread (%d) '%s'\n", gameLocal.time, threadNum, threadName
                 )
             }
         }
@@ -163,10 +160,7 @@ object Script_Thread {
             interpreter.EnterObjectFunction(self, func, false)
             if (SysCvar.g_debugScript.GetBool()) {
                 gameLocal.Printf(
-                    "%d: create thread (%d) '%s'\n",
-                    gameLocal.time,
-                    threadNum,
-                    threadName
+                    "%d: create thread (%d) '%s'\n", gameLocal.time, threadNum, threadName
                 )
             }
         }
@@ -178,10 +172,7 @@ object Script_Thread {
             interpreter.EnterFunction(func, false)
             if (SysCvar.g_debugScript.GetBool()) {
                 gameLocal.Printf(
-                    "%d: create thread (%d) '%s'\n",
-                    gameLocal.time,
-                    threadNum,
-                    threadName
+                    "%d: create thread (%d) '%s'\n", gameLocal.time, threadNum, threadName
                 )
             }
         }
@@ -191,10 +182,7 @@ object Script_Thread {
             interpreter.ThreadCall(source, func, args)
             if (SysCvar.g_debugScript.GetBool()) {
                 gameLocal.Printf(
-                    "%d: create thread (%d) '%s'\n",
-                    gameLocal.time,
-                    threadNum,
-                    threadName
+                    "%d: create thread (%d) '%s'\n", gameLocal.time, threadNum, threadName
                 )
             }
         }
@@ -206,10 +194,7 @@ object Script_Thread {
             interpreter.ThreadCall(source, func, args)
             if (SysCvar.g_debugScript.GetBool()) {
                 gameLocal.Printf(
-                    "%d: create thread (%d) '%s'\n",
-                    gameLocal.time,
-                    threadNum,
-                    threadName
+                    "%d: create thread (%d) '%s'\n", gameLocal.time, threadNum, threadName
                 )
             }
         }
@@ -334,16 +319,13 @@ object Script_Thread {
         }
 
         // virtual						~idThread();
-        override fun deconstructor() {
+        override fun _deconstructor() {
             var thread: idThread
             var i: Int
             val n: Int
             if (SysCvar.g_debugScript.GetBool()) {
                 gameLocal.Printf(
-                    "%d: end thread (%d) '%s'\n",
-                    gameLocal.time,
-                    threadNum,
-                    threadName
+                    "%d: end thread (%d) '%s'\n", gameLocal.time, threadNum, threadName
                 )
             }
             threadList.Remove(this)
@@ -359,7 +341,7 @@ object Script_Thread {
             if (currentThread === this) {
                 currentThread = null
             }
-            super.deconstructor()
+            super._deconstructor()
         }
 
         // tells the thread manager not to delete this thread when it ends
@@ -413,7 +395,7 @@ object Script_Thread {
         }
 
         fun WaitSec(time: Float) {
-            WaitMS(SEC2MS(time).toInt())
+            WaitMS(SEC2MS(time))
         }
 
         fun WaitFrame() {
@@ -457,9 +439,12 @@ object Script_Thread {
         File: %s(%d)
      Created: %d (%d ms ago)
       Status: """,
-                threadNum, threadName,
-                interpreter.CurrentFile(), interpreter.CurrentLine(),
-                creationTime, gameLocal.time - creationTime
+                threadNum,
+                threadName,
+                interpreter.CurrentFile(),
+                interpreter.CurrentLine(),
+                creationTime,
+                gameLocal.time - creationTime
             )
             if (interpreter.threadDying) {
                 gameLocal.Printf("Dying\n")
@@ -476,15 +461,11 @@ object Script_Thread {
                     )
                 } else if (waitingFor != Game_local.ENTITYNUM_NONE && gameLocal.entities[waitingFor] != null) {
                     gameLocal.Printf(
-                        "Waiting for entity #%3d '%s'\n",
-                        waitingFor,
-                        gameLocal.entities[waitingFor]!!.name
+                        "Waiting for entity #%3d '%s'\n", waitingFor, gameLocal.entities[waitingFor]!!.name
                     )
                 } else if (waitingUntil != 0) {
                     gameLocal.Printf(
-                        "Waiting until %d (%d ms total wait time)\n",
-                        waitingUntil,
-                        waitingUntil - lastExecuteTime
+                        "Waiting until %d (%d ms total wait time)\n", waitingUntil, waitingUntil - lastExecuteTime
                     )
                 } else {
                     gameLocal.Printf("None\n")
@@ -717,58 +698,46 @@ object Script_Thread {
                 eventCallbacks[EV_Thread_Execute] = eventCallback_t0 { obj: idThread -> obj.Event_Execute() }
                 eventCallbacks[EV_Thread_TerminateThread] = eventCallback_t1 { t: idThread, num: idEventArg<*> ->
                     Event_TerminateThread(
-                        t,
-                        num as idEventArg<Int>
+                        t, num as idEventArg<Int>
                     )
                 }
                 eventCallbacks[EV_Thread_Pause] = (eventCallback_t0 { obj: idThread -> obj.Event_Pause() })
                 eventCallbacks[EV_Thread_Wait] =
                     (eventCallback_t1 { t: idThread, time: idEventArg<*> -> Event_Wait(t, time as idEventArg<Float>) })
-                eventCallbacks[EV_Thread_WaitFrame] =
-                    (eventCallback_t0 { obj: idThread -> obj.Event_WaitFrame() })
+                eventCallbacks[EV_Thread_WaitFrame] = (eventCallback_t0 { obj: idThread -> obj.Event_WaitFrame() })
                 eventCallbacks[EV_Thread_WaitFor] = (eventCallback_t1 { t: idThread, e: idEventArg<*> ->
                     Event_WaitFor(
-                        t,
-                        e as idEventArg<idEntity>
+                        t, e as idEventArg<idEntity>
                     )
                 })
-                eventCallbacks[EV_Thread_WaitForThread] =
-                    (eventCallback_t1 { t: idThread, num: idEventArg<*> ->
-                        Event_WaitForThread(
-                            t,
-                            num as idEventArg<Int>
-                        )
-                    })
-                eventCallbacks[EV_Thread_Print] =
-                    (eventCallback_t1 { t: idThread, text: idEventArg<*> ->
-                        Event_Print(
-                            t,
-                            text as idEventArg<String>
-                        )
-                    })
-                eventCallbacks[EV_Thread_PrintLn] =
-                    (eventCallback_t1 { t: idThread, text: idEventArg<*> ->
-                        Event_PrintLn(
-                            t, text as idEventArg<String>
-                        )
-                    })
+                eventCallbacks[EV_Thread_WaitForThread] = (eventCallback_t1 { t: idThread, num: idEventArg<*> ->
+                    Event_WaitForThread(
+                        t, num as idEventArg<Int>
+                    )
+                })
+                eventCallbacks[EV_Thread_Print] = (eventCallback_t1 { t: idThread, text: idEventArg<*> ->
+                    Event_Print(
+                        t, text as idEventArg<String>
+                    )
+                })
+                eventCallbacks[EV_Thread_PrintLn] = (eventCallback_t1 { t: idThread, text: idEventArg<*> ->
+                    Event_PrintLn(
+                        t, text as idEventArg<String>
+                    )
+                })
                 eventCallbacks[EV_Thread_Say] = (eventCallback_t1 { t: idThread, text: idEventArg<*> ->
                     Event_Say(
-                        t,
-                        text as idEventArg<String>
+                        t, text as idEventArg<String>
                     )
                 })
-                eventCallbacks[EV_Thread_Assert] =
-                    (eventCallback_t1 { t: idThread, value: idEventArg<*> ->
-                        Event_Assert(
-                            t,
-                            value as idEventArg<Float>
-                        )
-                    })
+                eventCallbacks[EV_Thread_Assert] = (eventCallback_t1 { t: idThread, value: idEventArg<*> ->
+                    Event_Assert(
+                        t, value as idEventArg<Float>
+                    )
+                })
                 eventCallbacks[EV_Thread_Trigger] = (eventCallback_t1 { t: idThread, e: idEventArg<*> ->
                     Event_Trigger(
-                        t,
-                        e as idEventArg<idEntity>
+                        t, e as idEventArg<idEntity>
                     )
                 })
                 eventCallbacks[EV_Thread_SetCvar] =
@@ -777,52 +746,42 @@ object Script_Thread {
                             t, name as idEventArg<String>, value as idEventArg<String>
                         )
                     })
-                eventCallbacks[EV_Thread_GetCvar] =
-                    (eventCallback_t1 { t: idThread, name: idEventArg<*> ->
-                        Event_GetCvar(
-                            t, name as idEventArg<String>
-                        )
-                    })
-                eventCallbacks[EV_Thread_Random] =
-                    (eventCallback_t1 { t: idThread, range: idEventArg<*> ->
-                        Event_Random(
-                            t,
-                            range as idEventArg<Float>
-                        )
-                    })
-                eventCallbacks[EV_Thread_GetTime] =
-                    (eventCallback_t0 { obj: idThread -> obj.Event_GetTime() })
-                eventCallbacks[EV_Thread_KillThread] =
-                    (eventCallback_t1 { t: idThread, name: idEventArg<*> ->
-                        Event_KillThread(
-                            t, name as idEventArg<String>
-                        )
-                    })
-                eventCallbacks[EV_Thread_SetThreadName] =
-                    (eventCallback_t1 { t: idThread, name: idEventArg<*> ->
-                        Event_SetThreadName(
-                            t, name as idEventArg<String>
-                        )
-                    })
-                eventCallbacks[EV_Thread_GetEntity] =
-                    (eventCallback_t1 { t: idThread, n: idEventArg<*> ->
-                        Event_GetEntity(
-                            t,
-                            n as idEventArg<String>
-                        )
-                    })
-                eventCallbacks[EV_Thread_Spawn] =
-                    (eventCallback_t1 { t: idThread, classname: idEventArg<*> ->
-                        Event_Spawn(
-                            t, classname as idEventArg<String>
-                        )
-                    })
-                eventCallbacks[EV_Thread_CopySpawnArgs] =
-                    (eventCallback_t1 { t: idThread, ent: idEventArg<*> ->
-                        Event_CopySpawnArgs(
-                            t, ent as idEventArg<idEntity>
-                        )
-                    })
+                eventCallbacks[EV_Thread_GetCvar] = (eventCallback_t1 { t: idThread, name: idEventArg<*> ->
+                    Event_GetCvar(
+                        t, name as idEventArg<String>
+                    )
+                })
+                eventCallbacks[EV_Thread_Random] = (eventCallback_t1 { t: idThread, range: idEventArg<*> ->
+                    Event_Random(
+                        t, range as idEventArg<Float>
+                    )
+                })
+                eventCallbacks[EV_Thread_GetTime] = (eventCallback_t0 { obj: idThread -> obj.Event_GetTime() })
+                eventCallbacks[EV_Thread_KillThread] = (eventCallback_t1 { t: idThread, name: idEventArg<*> ->
+                    Event_KillThread(
+                        t, name as idEventArg<String>
+                    )
+                })
+                eventCallbacks[EV_Thread_SetThreadName] = (eventCallback_t1 { t: idThread, name: idEventArg<*> ->
+                    Event_SetThreadName(
+                        t, name as idEventArg<String>
+                    )
+                })
+                eventCallbacks[EV_Thread_GetEntity] = (eventCallback_t1 { t: idThread, n: idEventArg<*> ->
+                    Event_GetEntity(
+                        t, n as idEventArg<String>
+                    )
+                })
+                eventCallbacks[EV_Thread_Spawn] = (eventCallback_t1 { t: idThread, classname: idEventArg<*> ->
+                    Event_Spawn(
+                        t, classname as idEventArg<String>
+                    )
+                })
+                eventCallbacks[EV_Thread_CopySpawnArgs] = (eventCallback_t1 { t: idThread, ent: idEventArg<*> ->
+                    Event_CopySpawnArgs(
+                        t, ent as idEventArg<idEntity>
+                    )
+                })
                 eventCallbacks[EV_Thread_SetSpawnArg] =
                     (eventCallback_t2 { t: idThread, key: idEventArg<*>, value: idEventArg<*> ->
                         Event_SetSpawnArg(
@@ -855,77 +814,61 @@ object Script_Thread {
                             t, key as idEventArg<String>, value as idEventArg<String>
                         )
                     })
-                eventCallbacks[EV_Thread_GetPersistantString] =
-                    (eventCallback_t1 { t: idThread, key: idEventArg<*> ->
-                        Event_GetPersistantString(
-                            t, key as idEventArg<String>
-                        )
-                    })
-                eventCallbacks[EV_Thread_GetPersistantFloat] =
-                    (eventCallback_t1 { t: idThread, key: idEventArg<*> ->
-                        Event_GetPersistantFloat(
-                            t, key as idEventArg<String>
-                        )
-                    })
-                eventCallbacks[EV_Thread_GetPersistantVector] =
-                    (eventCallback_t1 { t: idThread, key: idEventArg<*> ->
-                        Event_GetPersistantVector(
-                            t, key as idEventArg<String>
-                        )
-                    })
-                eventCallbacks[EV_Thread_AngToForward] =
-                    (eventCallback_t1 { t: idThread, ang: idEventArg<*> ->
-                        Event_AngToForward(
-                            t,
-                            ang as idEventArg<idVec3>
-                        )
-                    })
-                eventCallbacks[EV_Thread_AngToRight] =
-                    (eventCallback_t1 { t: idThread, ang: idEventArg<*> ->
-                        Event_AngToRight(
-                            t,
-                            ang as idEventArg<idAngles>
-                        )
-                    })
-                eventCallbacks[EV_Thread_AngToUp] =
-                    (eventCallback_t1 { t: idThread, ang: idEventArg<*> ->
-                        Event_AngToUp(
-                            t,
-                            ang as idEventArg<idAngles>
-                        )
-                    })
-                eventCallbacks[EV_Thread_Sine] =
-                    (eventCallback_t1 { t: idThread, angle: idEventArg<*> ->
-                        Event_GetSine(
-                            t, angle as idEventArg<Float>
-                        )
-                    })
-                eventCallbacks[EV_Thread_Cosine] =
-                    (eventCallback_t1 { t: idThread, angle: idEventArg<*> ->
-                        Event_GetCosine(
-                            t, angle as idEventArg<Float>
-                        )
-                    })
-                eventCallbacks[EV_Thread_SquareRoot] =
-                    (eventCallback_t1 { t: idThread, theSquare: idEventArg<*> ->
-                        Event_GetSquareRoot(
-                            t, theSquare as idEventArg<Float>
-                        )
-                    })
-                eventCallbacks[EV_Thread_Normalize] =
-                    (eventCallback_t1 { t: idThread, vec: idEventArg<*> ->
-                        Event_VecNormalize(
-                            t,
-                            vec as idEventArg<idVec3>
-                        )
-                    })
-                eventCallbacks[EV_Thread_VecLength] =
-                    (eventCallback_t1 { t: idThread, vec: idEventArg<*> ->
-                        Event_VecLength(
-                            t,
-                            vec as idEventArg<idVec3>
-                        )
-                    })
+                eventCallbacks[EV_Thread_GetPersistantString] = (eventCallback_t1 { t: idThread, key: idEventArg<*> ->
+                    Event_GetPersistantString(
+                        t, key as idEventArg<String>
+                    )
+                })
+                eventCallbacks[EV_Thread_GetPersistantFloat] = (eventCallback_t1 { t: idThread, key: idEventArg<*> ->
+                    Event_GetPersistantFloat(
+                        t, key as idEventArg<String>
+                    )
+                })
+                eventCallbacks[EV_Thread_GetPersistantVector] = (eventCallback_t1 { t: idThread, key: idEventArg<*> ->
+                    Event_GetPersistantVector(
+                        t, key as idEventArg<String>
+                    )
+                })
+                eventCallbacks[EV_Thread_AngToForward] = (eventCallback_t1 { t: idThread, ang: idEventArg<*> ->
+                    Event_AngToForward(
+                        t, ang as idEventArg<idVec3>
+                    )
+                })
+                eventCallbacks[EV_Thread_AngToRight] = (eventCallback_t1 { t: idThread, ang: idEventArg<*> ->
+                    Event_AngToRight(
+                        t, ang as idEventArg<idAngles>
+                    )
+                })
+                eventCallbacks[EV_Thread_AngToUp] = (eventCallback_t1 { t: idThread, ang: idEventArg<*> ->
+                    Event_AngToUp(
+                        t, ang as idEventArg<idAngles>
+                    )
+                })
+                eventCallbacks[EV_Thread_Sine] = (eventCallback_t1 { t: idThread, angle: idEventArg<*> ->
+                    Event_GetSine(
+                        t, angle as idEventArg<Float>
+                    )
+                })
+                eventCallbacks[EV_Thread_Cosine] = (eventCallback_t1 { t: idThread, angle: idEventArg<*> ->
+                    Event_GetCosine(
+                        t, angle as idEventArg<Float>
+                    )
+                })
+                eventCallbacks[EV_Thread_SquareRoot] = (eventCallback_t1 { t: idThread, theSquare: idEventArg<*> ->
+                    Event_GetSquareRoot(
+                        t, theSquare as idEventArg<Float>
+                    )
+                })
+                eventCallbacks[EV_Thread_Normalize] = (eventCallback_t1 { t: idThread, vec: idEventArg<*> ->
+                    Event_VecNormalize(
+                        t, vec as idEventArg<idVec3>
+                    )
+                })
+                eventCallbacks[EV_Thread_VecLength] = (eventCallback_t1 { t: idThread, vec: idEventArg<*> ->
+                    Event_VecLength(
+                        t, vec as idEventArg<idVec3>
+                    )
+                })
                 eventCallbacks[EV_Thread_VecDotProduct] =
                     (eventCallback_t2 { t: idThread, vec1: idEventArg<*>, vec2: idEventArg<*> ->
                         Event_VecDotProduct(
@@ -938,13 +881,11 @@ object Script_Thread {
                             t, vec1 as idEventArg<idVec3>, vec2 as idEventArg<idVec3>
                         )
                     })
-                eventCallbacks[EV_Thread_VecToAngles] =
-                    (eventCallback_t1 { t: idThread, vec: idEventArg<*> ->
-                        Event_VecToAngles(
-                            t,
-                            vec as idEventArg<idVec3>
-                        )
-                    })
+                eventCallbacks[EV_Thread_VecToAngles] = (eventCallback_t1 { t: idThread, vec: idEventArg<*> ->
+                    Event_VecToAngles(
+                        t, vec as idEventArg<idVec3>
+                    )
+                })
                 eventCallbacks[EV_Thread_OnSignal] =
                     (eventCallback_t3 { t: idThread, s: idEventArg<*>, e: idEventArg<*>, f: idEventArg<*> ->
                         Event_OnSignal(
@@ -957,20 +898,22 @@ object Script_Thread {
                             t, s as idEventArg<Int>, e as idEventArg<idEntity>
                         )
                     })
-                eventCallbacks[EV_Thread_SetCamera] =
-                    (eventCallback_t1 { t: idThread, e: idEventArg<*> ->
-                        Event_SetCamera(
-                            t,
-                            e as idEventArg<idEntity>
-                        )
-                    })
-                eventCallbacks[EV_Thread_FirstPerson] =
-                    (eventCallback_t0 { obj: idThread -> obj.Event_FirstPerson() })
+                eventCallbacks[EV_Thread_SetCamera] = (eventCallback_t1 { t: idThread, e: idEventArg<*> ->
+                    Event_SetCamera(
+                        t, e as idEventArg<idEntity>
+                    )
+                })
+                eventCallbacks[EV_Thread_FirstPerson] = (eventCallback_t0 { obj: idThread -> obj.Event_FirstPerson() })
                 eventCallbacks[EV_Thread_Trace] =
                     (eventCallback_t6 { t: idThread, s: idEventArg<*>, e: idEventArg<*>, mi: idEventArg<*>, ma: idEventArg<*>, c: idEventArg<*>, p: idEventArg<*> ->
                         Event_Trace(
-                            t, s as idEventArg<idVec3>, e as idEventArg<idVec3>, mi as idEventArg<idVec3>,
-                            ma as idEventArg<idVec3>, c as idEventArg<Int>, p as idEventArg<idEntity>
+                            t,
+                            s as idEventArg<idVec3>,
+                            e as idEventArg<idVec3>,
+                            mi as idEventArg<idVec3>,
+                            ma as idEventArg<idVec3>,
+                            c as idEventArg<Int>,
+                            p as idEventArg<idEntity>
                         )
                     })
                 eventCallbacks[EV_Thread_TracePoint] =
@@ -1019,31 +962,26 @@ object Script_Thread {
                             t, parmnumA as idEventArg<Int>, value as idEventArg<Float>
                         )
                     })
-                eventCallbacks[EV_Thread_StartMusic] =
-                    (eventCallback_t1 { t: idThread, text: idEventArg<*> ->
-                        Event_StartMusic(
-                            t, text as idEventArg<String>
-                        )
-                    })
-                eventCallbacks[EV_Thread_Warning] =
-                    (eventCallback_t1 { t: idThread, text: idEventArg<*> ->
-                        Event_Warning(
-                            t, text as idEventArg<String>
-                        )
-                    })
-                eventCallbacks[EV_Thread_Error] =
-                    (eventCallback_t1 { t: idThread, text: idEventArg<*> ->
-                        Event_Error(
-                            t,
-                            text as idEventArg<String>
-                        )
-                    })
-                eventCallbacks[EV_Thread_StrLen] =
-                    (eventCallback_t1 { t: idThread, string: idEventArg<*> ->
-                        Event_StrLen(
-                            t, string as idEventArg<String>
-                        )
-                    })
+                eventCallbacks[EV_Thread_StartMusic] = (eventCallback_t1 { t: idThread, text: idEventArg<*> ->
+                    Event_StartMusic(
+                        t, text as idEventArg<String>
+                    )
+                })
+                eventCallbacks[EV_Thread_Warning] = (eventCallback_t1 { t: idThread, text: idEventArg<*> ->
+                    Event_Warning(
+                        t, text as idEventArg<String>
+                    )
+                })
+                eventCallbacks[EV_Thread_Error] = (eventCallback_t1 { t: idThread, text: idEventArg<*> ->
+                    Event_Error(
+                        t, text as idEventArg<String>
+                    )
+                })
+                eventCallbacks[EV_Thread_StrLen] = (eventCallback_t1 { t: idThread, string: idEventArg<*> ->
+                    Event_StrLen(
+                        t, string as idEventArg<String>
+                    )
+                })
                 eventCallbacks[EV_Thread_StrLeft] =
                     (eventCallback_t2 { t: idThread, stringA: idEventArg<*>, numA: idEventArg<*> ->
                         Event_StrLeft(
@@ -1068,56 +1006,66 @@ object Script_Thread {
                             t, stringA as idEventArg<String>, startA as idEventArg<Int>, numA as idEventArg<Int>
                         )
                     })
-                eventCallbacks[EV_Thread_StrToFloat] =
-                    (eventCallback_t1 { t: idThread, string: idEventArg<*> ->
-                        Event_StrToFloat(
-                            t, string as idEventArg<String>
-                        )
-                    })
+                eventCallbacks[EV_Thread_StrToFloat] = (eventCallback_t1 { t: idThread, string: idEventArg<*> ->
+                    Event_StrToFloat(
+                        t, string as idEventArg<String>
+                    )
+                })
                 eventCallbacks[EV_Thread_RadiusDamage] =
                     (eventCallback_t6 { t: idThread, origin: idEventArg<*>, inflictor: idEventArg<*>, attacker: idEventArg<*>, ignore: idEventArg<*>, damageDefName: idEventArg<*>, dmgPower: idEventArg<*> ->
                         Event_RadiusDamage(
-                            t, origin as idEventArg<idVec3>,
+                            t,
+                            origin as idEventArg<idVec3>,
                             inflictor as idEventArg<idEntity>,
-                            attacker as idEventArg<idEntity>, ignore as idEventArg<idEntity>,
-                            damageDefName as idEventArg<String>, dmgPower as idEventArg<Float>
+                            attacker as idEventArg<idEntity>,
+                            ignore as idEventArg<idEntity>,
+                            damageDefName as idEventArg<String>,
+                            dmgPower as idEventArg<Float>
                         )
                     })
-                eventCallbacks[EV_Thread_IsClient] =
-                    (eventCallback_t0 { obj: idThread -> obj.Event_IsClient() })
+                eventCallbacks[EV_Thread_IsClient] = (eventCallback_t0 { obj: idThread -> obj.Event_IsClient() })
                 eventCallbacks[EV_Thread_IsMultiplayer] =
                     (eventCallback_t0 { obj: idThread -> obj.Event_IsMultiplayer() })
                 eventCallbacks[EV_Thread_GetFrameTime] =
                     (eventCallback_t0 { obj: idThread -> obj.Event_GetFrameTime() })
                 eventCallbacks[EV_Thread_GetTicsPerSecond] =
                     (eventCallback_t0 { obj: idThread -> obj.Event_GetTicsPerSecond() })
-                eventCallbacks[EV_CacheSoundShader] =
-                    (eventCallback_t1 { t: idThread, soundName: idEventArg<*> ->
-                        Event_CacheSoundShader(
-                            t, soundName as idEventArg<String>
-                        )
-                    })
+                eventCallbacks[EV_CacheSoundShader] = (eventCallback_t1 { t: idThread, soundName: idEventArg<*> ->
+                    Event_CacheSoundShader(
+                        t, soundName as idEventArg<String>
+                    )
+                })
                 eventCallbacks[EV_Thread_DebugLine] =
                     (eventCallback_t4 { t: idThread, colorA: idEventArg<*>, start: idEventArg<*>, end: idEventArg<*>, lifetime: idEventArg<*> ->
                         Event_DebugLine(
                             t,
                             colorA as idEventArg<idVec3>,
-                            start as idEventArg<idVec3>, end as idEventArg<idVec3>, lifetime as idEventArg<Float>
+                            start as idEventArg<idVec3>,
+                            end as idEventArg<idVec3>,
+                            lifetime as idEventArg<Float>
                         )
                     })
                 eventCallbacks[EV_Thread_DebugArrow] =
                     (eventCallback_t5 { t: idThread, colorA: idEventArg<*>, start: idEventArg<*>, end: idEventArg<*>, size: idEventArg<*>, lifetime: idEventArg<*> ->
                         Event_DebugArrow(
-                            t, colorA as idEventArg<idVec3>, start as idEventArg<idVec3>, end as idEventArg<idVec3>,
-                            size as idEventArg<Int>, lifetime as idEventArg<Float>
+                            t,
+                            colorA as idEventArg<idVec3>,
+                            start as idEventArg<idVec3>,
+                            end as idEventArg<idVec3>,
+                            size as idEventArg<Int>,
+                            lifetime as idEventArg<Float>
                         )
                     })
                 eventCallbacks[EV_Thread_DebugCircle] =
                     (eventCallback_t6 { t: idThread, colorA: idEventArg<*>, origin: idEventArg<*>, dir: idEventArg<*>, radius: idEventArg<*>, numSteps: idEventArg<*>, lifetime: idEventArg<*> ->
                         Event_DebugCircle(
-                            t, colorA as idEventArg<idVec3>, origin as idEventArg<idVec3>,
-                            dir as idEventArg<idVec3>, radius as idEventArg<Float>,
-                            numSteps as idEventArg<Int>, lifetime as idEventArg<Float>
+                            t,
+                            colorA as idEventArg<idVec3>,
+                            origin as idEventArg<idVec3>,
+                            dir as idEventArg<idVec3>,
+                            radius as idEventArg<Float>,
+                            numSteps as idEventArg<Int>,
+                            lifetime as idEventArg<Float>
                         )
                     })
                 eventCallbacks[EV_Thread_DebugBounds] =
@@ -1155,8 +1103,7 @@ object Script_Thread {
             ) {
                 val color = idVec3(colorA.value)
                 Game_local.gameRenderWorld!!.DebugLine(
-                    idVec4(color.x, color.y, color.z, 0.0f), start.value, end.value,
-                    SEC2MS(lifetime.value).toInt()
+                    idVec4(color.x, color.y, color.z, 0.0f), start.value, end.value, SEC2MS(lifetime.value)
                 )
             }
 
@@ -1170,8 +1117,7 @@ object Script_Thread {
             ) {
                 val color = idVec3(colorA.value)
                 Game_local.gameRenderWorld!!.DebugArrow(
-                    idVec4(color.x, color.y, color.z, 0.0f), start.value, end.value, size.value,
-                    SEC2MS(lifetime.value).toInt()
+                    idVec4(color.x, color.y, color.z, 0.0f), start.value, end.value, size.value, SEC2MS(lifetime.value)
                 )
             }
 
@@ -1186,8 +1132,12 @@ object Script_Thread {
             ) {
                 val color = idVec3(colorA.value)
                 Game_local.gameRenderWorld!!.DebugCircle(
-                    idVec4(color.x, color.y, color.z, 0.0f), origin.value, dir.value, radius.value, numSteps.value,
-                    SEC2MS(lifetime.value).toInt()
+                    idVec4(color.x, color.y, color.z, 0.0f),
+                    origin.value,
+                    dir.value,
+                    radius.value,
+                    numSteps.value,
+                    SEC2MS(lifetime.value)
                 )
             }
 
@@ -1200,8 +1150,10 @@ object Script_Thread {
             ) {
                 val color = idVec3(colorA.value)
                 Game_local.gameRenderWorld!!.DebugBounds(
-                    idVec4(color.x, color.y, color.z, 0.0f), idBounds(mins.value, maxs.value), vec3_origin,
-                    SEC2MS(lifetime.value).toInt()
+                    idVec4(color.x, color.y, color.z, 0.0f),
+                    idBounds(mins.value, maxs.value),
+                    vec3_origin,
+                    SEC2MS(lifetime.value)
                 )
             }
 
@@ -1222,7 +1174,7 @@ object Script_Thread {
                     idVec4(color.x, color.y, color.z, 0.0f),
                     gameLocal.GetLocalPlayer()!!.viewAngles.ToMat3(),
                     align.value,
-                    SEC2MS(lifetime.value).toInt()
+                    SEC2MS(lifetime.value)
                 )
             }
 
@@ -1233,7 +1185,7 @@ object Script_Thread {
                 player = gameLocal.GetLocalPlayer()
                 if (player != null) {
                     fadeColor.set(color[0], color[1], color[2], 0.0f)
-                    player.playerView.Fade(fadeColor, SEC2MS(time.value).toInt())
+                    player.playerView.Fade(fadeColor, SEC2MS(time.value))
                 }
             }
 
@@ -1244,15 +1196,12 @@ object Script_Thread {
                 player = gameLocal.GetLocalPlayer()
                 if (player != null) {
                     fadeColor.set(color[0], color[1], color[2], 1.0f)
-                    player.playerView.Fade(fadeColor, SEC2MS(time.value).toInt())
+                    player.playerView.Fade(fadeColor, SEC2MS(time.value))
                 }
             }
 
             private fun Event_FadeTo(
-                t: idThread,
-                colorA: idEventArg<idVec3>,
-                alpha: idEventArg<Float>,
-                time: idEventArg<Float>
+                t: idThread, colorA: idEventArg<idVec3>, alpha: idEventArg<Float>, time: idEventArg<Float>
             ) {
                 val fadeColor = idVec4()
                 val player: idPlayer?
@@ -1260,7 +1209,7 @@ object Script_Thread {
                 player = gameLocal.GetLocalPlayer()
                 if (player != null) {
                     fadeColor.set(color[0], color[1], color[2], alpha.value)
-                    player.playerView.Fade(fadeColor, SEC2MS(time.value).toInt())
+                    player.playerView.Fade(fadeColor, SEC2MS(time.value))
                 }
             }
 
@@ -1371,10 +1320,7 @@ object Script_Thread {
             }
 
             private fun Event_OnSignal(
-                t: idThread,
-                s: idEventArg<Int>,
-                e: idEventArg<idEntity>,
-                f: idEventArg<String>
+                t: idThread, s: idEventArg<Int>, e: idEventArg<idEntity>, f: idEventArg<String>
             ) {
                 val function: function_t?
                 val signal = s.value
@@ -1419,8 +1365,13 @@ object Script_Thread {
             }
 
             private fun Event_Trace(
-                t: idThread, s: idEventArg<idVec3>, e: idEventArg<idVec3>, mi: idEventArg<idVec3>,
-                ma: idEventArg<idVec3>, c: idEventArg<Int>, p: idEventArg<idEntity>
+                t: idThread,
+                s: idEventArg<idVec3>,
+                e: idEventArg<idVec3>,
+                mi: idEventArg<idVec3>,
+                ma: idEventArg<idVec3>,
+                c: idEventArg<Int>,
+                p: idEventArg<idEntity>
             ) {
                 val start = idVec3(s.value)
                 val end = idVec3(e.value)
@@ -1434,12 +1385,7 @@ object Script_Thread {
                         gameLocal.clip.TracePoint(trace, start, end, contents_mask, passEntity)
                     } else {
                         gameLocal.clip.TraceBounds(
-                            trace,
-                            start,
-                            end,
-                            idBounds(mins, maxs),
-                            contents_mask,
-                            passEntity
+                            trace, start, end, idBounds(mins, maxs), contents_mask, passEntity
                         )
                     }
                     idThread.trace = trace
@@ -1607,9 +1553,7 @@ object Script_Thread {
                 val defaultvalue: idVec3 = idVec3(d.value)
 
                 t.spawnArgs!!.GetVector(
-                    key.value,
-                    String.format("%f %f %f", defaultvalue.x, defaultvalue.y, defaultvalue.z),
-                    result
+                    key.value, String.format("%f %f %f", defaultvalue.x, defaultvalue.y, defaultvalue.z), result
                 )
                 ReturnVector(result)
             }
@@ -1653,10 +1597,7 @@ object Script_Thread {
             }
 
             private fun Event_StrMid(
-                t: idThread,
-                stringA: idEventArg<String>,
-                startA: idEventArg<Int>,
-                numA: idEventArg<Int>
+                t: idThread, stringA: idEventArg<String>, startA: idEventArg<Int>, numA: idEventArg<Int>
             ) {
                 val len: Int
                 val string = stringA.value
@@ -1845,7 +1786,7 @@ object Script_Thread {
             }
 
             fun delete(thread: idThread) {
-                thread.deconstructor()
+                thread._deconstructor()
             }
         }
     }

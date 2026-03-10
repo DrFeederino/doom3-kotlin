@@ -2762,13 +2762,13 @@ open class idActor : idAFEntity_Gibbable() {
         return eventCallbacks[event]
     }
 
-    override fun deconstructor() {
+    override fun _deconstructor() {
         var i: Int
         var ent: idEntity?
         DeconstructScriptObject()
         scriptObject.Free()
         StopSound(gameSoundChannel_t.SND_CHANNEL_ANY.ordinal, false)
-        combatModel?.deconstructor()
+        idClipModel.delete(combatModel)
         combatModel = null
         if (head.GetEntity() != null) {
             head.GetEntity()!!.ClearBody()
@@ -2783,7 +2783,7 @@ open class idActor : idAFEntity_Gibbable() {
             i++
         }
         ShutdownThreads()
-        super.deconstructor()
+        super._deconstructor()
     }
 
     //

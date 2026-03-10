@@ -246,7 +246,7 @@ object Window {
 
     class idTransitionData {
         var data: idWinVar? = null
-        var interp = idInterpolateAccelDecelLinear<idVec4>()
+        var interp = idInterpolateAccelDecelLinear<idVec4>(idVec4())
         var offset = 0
     }
 
