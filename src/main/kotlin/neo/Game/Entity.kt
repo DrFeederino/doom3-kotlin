@@ -976,20 +976,14 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         QuitTeam()
         Game_local.gameLocal.RemoveEntityFromHash(name.toString(), this)
 
-//            delete renderView;
-        renderView = null
+        renderView = null // delete renderView;
+        signals = null // delete signals;
 
-//            delete signals;
-        signals = null
         FreeModelDef()
         FreeSoundEmitter(false)
+
         Game_local.gameLocal.UnregisterEntity(this)
-        delete(teamChain)
-        delete(teamMaster)
-        delete(bindMaster)
-        delete(physics)
-        if (physics !== defaultPhysicsObj) delete(defaultPhysicsObj)
-        delete(cameraTarget)
+
         super._deconstructor()
     }
 
@@ -4981,7 +4975,7 @@ open class idAnimatedEntity : idEntity() {
     }
 
     override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
-        return eventCallbacks.get(event)!!
+        return eventCallbacks[event]
     }
 
     override fun CreateInstance(): idClass = idAnimatedEntity()

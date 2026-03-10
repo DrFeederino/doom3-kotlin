@@ -1150,10 +1150,10 @@ open class idVec3 : idVec<idVec3>, SERiAL {
 
     companion object {
         @Transient
-        val SIZE = 3 * java.lang.Float.SIZE
+        const val SIZE = 3 * java.lang.Float.SIZE
 
         @Transient
-        val BYTES = SIZE / 8
+        const val BYTES = SIZE / 8
         private const val LERP_DELTA = 1e-6
 
         fun times(a: Float, b: idVec3): idVec3 {

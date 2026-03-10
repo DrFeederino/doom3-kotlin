@@ -334,7 +334,7 @@ object Script_Thread {
         }
 
         // virtual						~idThread();
-        override fun _deconstructor() {
+        override fun deconstructor() {
             var thread: idThread
             var i: Int
             val n: Int
@@ -359,7 +359,7 @@ object Script_Thread {
             if (currentThread === this) {
                 currentThread = null
             }
-            super._deconstructor()
+            super.deconstructor()
         }
 
         // tells the thread manager not to delete this thread when it ends
@@ -1728,18 +1728,16 @@ object Script_Thread {
 
 
             fun Restart() {
-                val n: Int
-
                 // reset the threadIndex
                 threadIndex = 0
                 currentThread = null
-                n = threadList.Num()
-                //	for( i = n - 1; i >= 0; i-- ) {
-//		delete threadList[ i ];
-//	}
+                // C++ `delete threadList[i]` triggers ~idClass -> CancelEvents(this) for each thread
+//                val n = threadList.Num()
+//                for (i in n - 1 downTo 0) {
+//                    threadList[i].deconstructor()
+//                }
                 threadList.Clear()
 
-//	memset( &trace, 0, sizeof( trace ) );
                 trace = trace_s()
                 trace.c.entityNum = Game_local.ENTITYNUM_NONE
             }
@@ -1847,7 +1845,7 @@ object Script_Thread {
             }
 
             fun delete(thread: idThread) {
-                thread._deconstructor()
+                thread.deconstructor()
             }
         }
     }

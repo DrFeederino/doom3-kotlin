@@ -141,6 +141,10 @@ import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_Decl
 import neo.framework.DeclEntityDef.idDeclEntityDef
 import neo.framework.DeclManager.*
 import neo.framework.File_h.idFile
+import neo.framework.Licensee.D3_ARCH
+import neo.framework.Licensee.D3_OSTYPE
+import neo.framework.Licensee.D3_SHORT_SIZE
+import neo.framework.Licensee.ENGINE_VERSION
 import neo.framework.UsercmdGen.usercmd_t
 import neo.idlib.*
 import neo.idlib.BV.idBounds
@@ -358,6 +362,7 @@ class Game_local {
         //
         // are kept up to date with changes to serverInfo
         var framenum = 0
+        var restoreFrame = 0  // === DIAGNOSTIC: frame when restore completed ===
 
         //
         var gameType: gameType_t = gameType_t.GAME_SP
@@ -990,6 +995,7 @@ class Game_local {
             animationLib.FlushUnusedAnims()
             gamestate = gameState_t.GAMESTATE_ACTIVE
             Printf("--------------------------------------\n")
+            restoreFrame = framenum
             return true
         }
 
@@ -1012,8 +1018,16 @@ class Game_local {
                 // save game bugs.
                 saveGameFile.ForceFlush()
             }
-            savegame.WriteBuildNumber(BUILD_NUMBER)
 
+            // DG: add some more information to savegame to make future quirks easier
+            savegame.WriteInt(INTERNAL_SAVEGAME_VERSION) // to be independent of BUILD_NUMBER
+            savegame.WriteString(D3_OSTYPE) // operating system - from CMake
+            savegame.WriteString(D3_ARCH) // CPU architecture (e.g. "x86" or "x86_64") - from CMake
+            savegame.WriteString(ENGINE_VERSION)
+            savegame.WriteShort(D3_SHORT_SIZE) // tells us if it's from a 32bit (4) or 64bit system (8)
+            savegame.WriteBuildNumber(BUILD_NUMBER)
+            savegame.WriteShort(0) // byteOrder
+            // DG end
             // go through all entities and threads and add them to the object list
             i = 0
             while (i < MAX_GENTITIES) {
@@ -2139,7 +2153,7 @@ class Game_local {
                     if (!entPtr.SetSpawnId(spawnId)) {
                         return
                     }
-                    entPtr.GetEntity()?._deconstructor()
+                    entPtr.GetEntity()?.deconstructor()
                 }
 
                 GAME_RELIABLE_MESSAGE_CHAT, GAME_RELIABLE_MESSAGE_TCHAT -> {

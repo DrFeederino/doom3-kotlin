@@ -173,15 +173,12 @@ object Script_Interpreter {
         }
 
         private fun GetVariable(def: idVarDef?): varEval_s? {
-            return if (def!!.initialized == initialized_t.stackVariable) {
-                val `val` = varEval_s()
-                `val`.setIntPtr(
-                    localstack,
-                    localstackBase + def.value!!.stackOffset
-                ) // = ( int * )&localstack[ localstackBase + def->value.stackOffset ];
-                `val`
+            if (def!!.initialized == initialized_t.stackVariable) {
+                val varEval_s = varEval_s()
+                varEval_s.setIntPtr(localstack, localstackBase + def.value!!.stackOffset)
+                return varEval_s
             } else {
-                def.value
+                return def.value
             }
         }
 
@@ -481,7 +478,7 @@ object Script_Interpreter {
             }
             savefile.WriteInt(maxStackDepth)
             savefile.WriteInt(localstackUsed)
-            savefile.Write(ByteBuffer.wrap(localstack), localstackUsed)
+            savefile.Write(ByteBuffer.wrap(localstack, 0, localstackUsed), localstackUsed)
             savefile.WriteInt(localstackBase)
             savefile.WriteInt(maxLocalstackUsed)
             if (currentFunction != null) {
@@ -524,7 +521,7 @@ object Script_Interpreter {
             }
             maxStackDepth = savefile.ReadInt()
             localstackUsed = savefile.ReadInt()
-            savefile.Read(ByteBuffer.wrap(localstack), localstackUsed)
+            savefile.Read(ByteBuffer.wrap(localstack, 0, localstackUsed), localstackUsed)
             localstackBase = savefile.ReadInt()
             maxLocalstackUsed = savefile.ReadInt()
             savefile.ReadInt(func_index)
@@ -1408,7 +1405,7 @@ object Script_Interpreter {
                     OP_STORE_BOOLTOF -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
-                        var_b!!.floatPtr = Float.fromBits(var_a!!.intPtr)
+                        var_b!!.floatPtr = var_a!!.intPtr.toFloat()
                     }
 
                     OP_STOREP_F -> {
@@ -1496,7 +1493,7 @@ object Script_Interpreter {
                         var_b = GetEvalVariable(st.b)
                         if (var_b != null && var_b.evalPtr != null) {
                             var_a = GetVariable(st.a)
-                            var_b.floatPtr = Float.fromBits(var_a!!.intPtr)
+                            var_b.evalPtr!!.floatPtr = var_a!!.intPtr.toFloat()
                         }
                     }
 

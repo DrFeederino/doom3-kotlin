@@ -186,6 +186,7 @@ object sys_public {
             buffer.putInt(evValue2)
             buffer.putInt(evPtrLength)
             buffer.putInt(0x50) //P for pointer
+            buffer.flip()
             return buffer
         }
 

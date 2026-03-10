@@ -7929,7 +7929,7 @@ object Player {
             objectiveSystem = null
             objectiveSystemOpen = false
             heartRate = BASE_HEARTRATE
-            heartInfo = idInterpolate()
+            heartInfo = idInterpolate(0f)
             heartInfo.Init(0.0f, 0.0f, 0.0f, 0.0f)
             lastHeartAdjust = 0
             lastHeartBeat = 0
@@ -7997,9 +7997,9 @@ object Player {
             gibDeath = false
             gibsLaunched = false
             gibsDir = vec3_zero
-            zoomFov = idInterpolate()
+            zoomFov = idInterpolate(0f)
             zoomFov.Init(0.0f, 0.0f, 0.0f, 0.0f)
-            centerView = idInterpolate()
+            centerView = idInterpolate(0f)
             centerView.Init(0.0f, 0.0f, 0.0f, 0.0f)
             fxFov = false
             influenceFov = 0.0f

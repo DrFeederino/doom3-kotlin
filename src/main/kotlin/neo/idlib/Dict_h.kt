@@ -26,6 +26,8 @@ import neo.idlib.math.idAngles
 import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import kotlin.math.sqrt
 
 class Dict_h {
@@ -757,8 +759,8 @@ class Dict_h {
             val c: Int = LittleLong(args.Num())
             f.WriteInt(c) //, sizeof(c));
             for (i in 0 until args.Num()) {    // don't loop on the swapped count use the original
-                WriteString(args[i].GetKey().toString(), f)
-                WriteString(args[i].GetValue().toString(), f)
+                WriteString(args[i].GetKey(), f)
+                WriteString(args[i].GetValue(), f)
             }
         }
 
@@ -882,12 +884,15 @@ class Dict_h {
             private var DBG_counter = 0
 
             @Throws(idException::class)
-            fun WriteString(s: String, f: idFile) {
-                val len = s.length
+            fun WriteString(s: idStr, f: idFile) {
+                val len = s.data.length + 1
                 if (len >= MAX_STRING_CHARS - 1) {
                     idLib.common.Error("idDict::WriteToFileHandle: bad string")
                 }
-                f.WriteString(s) //, len + 1);
+                val buffer = ByteBuffer.allocate(len).order(ByteOrder.LITTLE_ENDIAN)
+                buffer.put(s.data.toByteArray())
+                buffer.flip()
+                f.Write(buffer, len)
             }
 
             @Throws(idException::class)

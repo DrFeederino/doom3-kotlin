@@ -529,8 +529,8 @@ class Console {
             for (i in 0 until COMMAND_HISTORY) {
                 // make sure the history is in the right order
                 val line = (nextHistoryLine + i) % COMMAND_HISTORY
-                val s = TempDump.ctos(historyEditLines[line].GetBuffer())
-                if (s.isNotEmpty()) {
+                val s = idStr(TempDump.ctos(historyEditLines[line].GetBuffer()))
+                if (!s.IsEmpty()) {
                     f.WriteString(s)
                 }
             }

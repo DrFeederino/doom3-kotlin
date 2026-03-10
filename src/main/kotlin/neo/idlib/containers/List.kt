@@ -861,18 +861,9 @@ object List {
          ================
          */
         fun DeleteContents(clear: Boolean) {                        // delete the contents of the list
-            var i: Int
-            i = 0
-            while (i < num) {
-
-//		delete list[i ];
-                //list[i] = null
-                i++
-            }
             if (clear) {
                 Clear()
             } else {
-//		memset( list, 0, size * sizeof( T ) );
                 list = arrayOfNulls<Any>(list!!.size) as Array<T>
             }
         }

@@ -19,7 +19,6 @@ import neo.Game.Script.Script_Program.idVarDefName
 import neo.Game.Script.Script_Program.statement_s
 import neo.Game.Script.Script_Thread.idThread
 import neo.Game.idEntity
-import neo.framework.Common
 import neo.framework.FileSystem_h.fileSystem
 import neo.framework.FileSystem_h.fsMode_t
 import neo.framework.File_h.idFile
@@ -72,8 +71,8 @@ class idProgram {
     private val varDefNameHash = idHashIndex()
     private val varDefNames = idList<idVarDefName>()
     private val varDefs = idList<idVarDef>()
-    private val variableDefaults = idStaticList<UByte>(Script_Program.MAX_GLOBALS)
-    private var variables = UByteArray(Script_Program.MAX_GLOBALS)
+    private val variableDefaults = idStaticList<Byte>(Script_Program.MAX_GLOBALS)
+    private var variables = ByteArray(Script_Program.MAX_GLOBALS)
 
     //
     //
@@ -140,6 +139,7 @@ class idProgram {
     fun Save(savefile: idSaveGame) {
         var i: Int
         var currentFileNum = top_files
+
         savefile.WriteInt(fileList.size() - currentFileNum)
         while (currentFileNum < fileList.size()) {
             savefile.WriteString(fileList[currentFileNum])
@@ -161,7 +161,7 @@ class idProgram {
             savefile.WriteByte(variables[i])
             i++
         }
-        val checksum = CalculateChecksum().toInt()
+        val checksum = CalculateChecksum(false).toInt()
         savefile.WriteInt(checksum)
     }
 
@@ -181,9 +181,7 @@ class idProgram {
         savefile.ReadInt(index)
         while (index.integerValue >= 0) {
             variables[index.integerValue] = savefile.ReadByte()
-            Common.common.Printf("Readbyte returned %d\n", variables[index.integerValue].toInt())
             savefile.ReadInt(index)
-            Common.common.Printf("ReadInt returned %d\n", index.integerValue)
         }
 
         savefile.ReadInt(num)
@@ -195,7 +193,7 @@ class idProgram {
         val checksum: Long
 
         savefile.ReadInt(saved_checksum)
-        checksum = CalculateChecksum()
+        checksum = CalculateChecksum(false)
 
         if (saved_checksum.integerValue.toLong() != checksum) {
             Game_local.gameLocal.Warning("WARNING: Real Script checksum didn't match the one from the savegame!")
@@ -206,7 +204,7 @@ class idProgram {
     }
 
     // Used to insure program code has not changed between savegames
-    fun CalculateChecksum(): Long {
+    fun CalculateChecksum(forOldSavegame: Boolean): Long {
         // C++ statementBlock_t layout (natural alignment, sizeof = 20):
         //   unsigned short op;         // offset 0,  size 2
         //   (2 bytes padding)          // offset 2,  size 2 (align int a to 4)
@@ -266,19 +264,18 @@ class idProgram {
         var i: Int
         idThread.Restart()
 
-        //
         // since there may have been a script loaded by the map or the user may
         // have typed "script" from the console, free up any types and vardefs that
         // have been allocated after the initial startup
         //
-//	for( i = top_types; i < types.Num(); i++ ) {
-//		delete types[ i ];
-//	}
-        types.SetNum(top_types, false)
-
-//	for( i = top_defs; i < varDefs.Num(); i++ ) {
-//		delete varDefs[ i ];
-//	}
+//        for (i in top_types until types.Num()) {
+//            types[i].deconstructor()
+//        }
+//        types.SetNum(top_types, false)
+//
+//        for (i in top_defs until varDefs.Num()) {
+//            varDefs[i].deconstructor()
+//        }
         varDefs.SetNum(top_defs, false)
         i = top_functions
         while (i < functions.Num()) {
@@ -504,7 +501,7 @@ class idProgram {
         filenum = 0
         numVariables = 0
         //	memset( variables, 0, sizeof( variables ) );
-        variables = UByteArray(variables.size)
+        variables = ByteArray(variables.size)
 
         // clear all the strings in the functions so that it doesn't look like we're leaking memory.
         i = 0
@@ -705,7 +702,7 @@ class idProgram {
                     if (numVariables > variables.size) {
                         throw idCompileError(String.format("Exceeded global memory size (%d bytes)", variables.size))
                     }
-
+                    variables.fill(0, baseOffset, numVariables)
                     def_x.value!!.setBytePtr(variables, baseOffset)
                     def_y.value!!.setBytePtr(variables, baseOffset + java.lang.Float.BYTES)
                     def_z.value!!.setBytePtr(variables, baseOffset + java.lang.Float.BYTES * 2)
@@ -737,12 +734,13 @@ class idProgram {
             }
         } else {
             // global variable
-            def.value!!.setBytePtr(variables, numVariables)
+            val baseOffset = numVariables
+            def.value!!.setBytePtr(variables, baseOffset)
             numVariables += def.TypeDef()!!.Size()
             if (numVariables > variables.size) {
                 throw idCompileError(String.format("Exceeded global memory size (%d bytes)", variables.size))
             }
-            variables.fill(0.toUByte(), numVariables, variables.size)
+            variables.fill(0, baseOffset, numVariables)
         }
         return def
     }

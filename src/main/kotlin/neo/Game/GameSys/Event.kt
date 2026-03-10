@@ -609,6 +609,7 @@ object Event {
                 var numargs: Int
                 var formatspec: String
                 var ev: idEventDef
+
                 num = 0
                 while (!EventQueue.IsListEmpty()) {
                     event = EventQueue.Next()
@@ -941,7 +942,7 @@ object Event {
 
                     // read the event name
                     savefile.ReadString(name)
-                    event.eventdef = idEventDef.FindEvent(name.toString())!!
+                    event.eventdef = idEventDef.FindEvent(name.toString())
                     if (null == event.eventdef) {
                         savefile.Error("idEvent::Restore: unknown event '%s'", name.toString())
                     }

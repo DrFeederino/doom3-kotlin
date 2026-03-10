@@ -3,7 +3,6 @@ package neo.idlib.math
 import neo.TempDump.SERiAL
 import neo.idlib.math.Extrapolate.idExtrapolate
 import java.nio.ByteBuffer
-import kotlin.reflect.KClass
 
 class Interpolate {
     /*
@@ -13,13 +12,13 @@ class Interpolate {
 
      ==============================================================================================
      */
-    class idInterpolate<T> {
+    class idInterpolate<T>(value: T) {
         private var currentTime: Float = 0.0f
-        private var currentValue: T? = null
+        private var currentValue: T
         private var duration = 0.0f
-        private var endValue: T? = null
+        private var endValue: T
         private var startTime: Float = 0.0f
-        private var startValue: T? = null
+        private var startValue: T
         fun Init(startTime: Float, duration: Float, startValue: T, endValue: T) {
             this.startTime = startTime
             this.duration = duration
@@ -50,7 +49,7 @@ class Interpolate {
             if (time != currentTime) {
                 currentTime = time
                 when {
-                    deltaTime <= 0 -> currentValue = startValue
+                    deltaTime <= 0 -> currentValue = _Copy(startValue)
                     deltaTime >= duration -> currentValue = endValue
                     else -> {
                         currentValue =
@@ -58,7 +57,7 @@ class Interpolate {
                     }
                 }
             }
-            return currentValue!!
+            return currentValue
         }
 
         fun IsDone(time: Float): Boolean {
@@ -78,11 +77,11 @@ class Interpolate {
         }
 
         fun GetStartValue(): T {
-            return startValue!!
+            return startValue
         }
 
         fun GetEndValue(): T {
-            return endValue!!
+            return endValue
         }
 
         private fun _Multiply(t: T, f: Float): T {
@@ -92,7 +91,7 @@ class Interpolate {
                 is idAngles -> (t * f) as T
                 is Float -> (t * f) as T
                 is Int -> (t * f).toInt() as T
-                else -> t
+                else -> throw UnsupportedOperationException("Illegal use of _Multiply().")
             }
         }
 
@@ -103,7 +102,7 @@ class Interpolate {
                 t1 is idAngles && t2 is idAngles -> (t1 + t2) as T
                 t1 is Float && t2 is Float -> (t1 + t2) as T
                 t1 is Int && t2 is Int -> (t1 + t2) as T
-                else -> t1
+                else -> throw UnsupportedOperationException("Illegal use of _Plus().")
             }
         }
 
@@ -114,17 +113,18 @@ class Interpolate {
                 t1 is idAngles && t2 is idAngles -> (t1 - t2) as T
                 t1 is Float && t2 is Float -> (t1 - t2) as T
                 t1 is Int && t2 is Int -> (t1 - t2) as T
-                else -> t1
+                else -> throw UnsupportedOperationException("Illegal use of _Minus().")
             }
         }
 
-        private fun _Copy(t: T?): T? {
-            if (t == null) return null
+        private fun _Copy(t: T): T {
             return when (t) {
+                is Int -> t
+                is Float -> t
                 is idVec3 -> idVec3(t) as T
                 is idVec4 -> idVec4(t) as T
                 is idAngles -> idAngles(t) as T
-                else -> t // Float, Int are immutable
+                else -> throw UnsupportedOperationException("Illegal use of _Copy().")
             }
         }
 
@@ -132,9 +132,9 @@ class Interpolate {
             startTime = 0.0f
             duration = 0.0f
             currentTime = 0.0f
-            currentValue = null
-            startValue = null
-            endValue = null
+            currentValue = _Copy(value)
+            startValue = _Copy(value)
+            endValue = _Copy(value)
             // Initialize with default values based on common types
         }
     }
@@ -147,14 +147,14 @@ class Interpolate {
 
      ==============================================================================================
      */
-    class idInterpolateAccelDecelLinear<T : Any>(private val clazz: KClass<T>) : SERiAL {
+    class idInterpolateAccelDecelLinear<T>(val value: T) : SERiAL {
         private var accelTime: Float = 0.0f
         private var decelTime = 0.0f
-        private var endValue: T? = null
+        private var endValue: T = _Copy(value)
         private val extrapolate: idExtrapolate<T>
         private var linearTime: Float = 0.0f
         private var startTime: Float = 0.0f
-        private var startValue: T? = null
+        private var startValue: T = _Copy(value)
         fun Init(
             startTime: Float,
             accelTime: Float,
@@ -261,11 +261,11 @@ class Interpolate {
         }
 
         fun GetStartValue(): T {
-            return startValue!!
+            return startValue
         }
 
         fun GetEndValue(): T {
-            return endValue!!
+            return endValue
         }
 
         private fun Invalidate() {
@@ -368,15 +368,14 @@ class Interpolate {
             return buffer
         }
 
-        @Suppress("UNCHECKED_CAST")
         private fun _readValue(buffer: ByteBuffer): T {
             // Detect type from existing startValue or endValue, or from extrapolate
-            return when (clazz) {
-                Int::class -> buffer.int as T
-                Float::class -> buffer.float as T
-                idVec3::class -> idVec3(buffer.float, buffer.float, buffer.float) as T
-                idVec4::class -> idVec4(buffer.float, buffer.float, buffer.float, buffer.float) as T
-                idAngles::class -> idAngles(buffer.float, buffer.float, buffer.float) as T
+            return when (value) {
+                is Int -> buffer.int as T
+                is Float -> buffer.float as T
+                is idVec3 -> idVec3(buffer.float, buffer.float, buffer.float) as T
+                is idVec4 -> idVec4(buffer.float, buffer.float, buffer.float, buffer.float) as T
+                is idAngles -> idAngles(buffer.float, buffer.float, buffer.float) as T
                 else -> buffer.int as T // fallback
             }
         }
@@ -404,12 +403,12 @@ class Interpolate {
         }
 
         private fun _sizeOfT(): Int {
-            return when (clazz) {
-                Int::class -> Int.SIZE_BYTES
-                Float::class -> Float.SIZE_BYTES
-                idVec3::class -> idVec3.BYTES
-                idVec4::class -> idVec4.BYTES
-                idAngles::class -> idAngles.BYTES
+            return when (value) {
+                is Int -> Int.SIZE_BYTES
+                is Float -> Float.SIZE_BYTES
+                is idVec3 -> idVec3.BYTES
+                is idVec4 -> idVec4.BYTES
+                is idAngles -> idAngles.BYTES
                 else -> throw UnsupportedOperationException("Cannot tell the sizeOf.")
             }
         }
@@ -421,7 +420,7 @@ class Interpolate {
                 is idAngles -> (t * f) as T
                 is Float -> (f * t) as T
                 is Int -> (f * t).toInt() as T
-                else -> t
+                else -> throw UnsupportedOperationException("Illegal use of _Multiply().")
             }
         }
 
@@ -432,7 +431,7 @@ class Interpolate {
                 t1 is idAngles && t2 is idAngles -> (t1 + t2) as T
                 t1 is Float && t2 is Float -> (t1 + t2) as T
                 t1 is Int && t2 is Int -> (t1 + t2) as T
-                else -> t1
+                else -> throw UnsupportedOperationException("Illegal use of _Plus().")
             }
         }
 
@@ -443,18 +442,18 @@ class Interpolate {
                 t1 is idAngles && t2 is idAngles -> (t1 - t2) as T
                 t1 is Float && t2 is Float -> (t1 - t2) as T
                 t1 is Int && t2 is Int -> (t1 - t2) as T
-                else -> t1
+                else -> throw UnsupportedOperationException("Illegal use of _Minus().")
             }
         }
 
-        @Suppress("UNCHECKED_CAST")
-        private fun _Copy(t: T?): T? {
-            if (t == null) return null
+        private fun _Copy(t: T): T {
             return when (t) {
+                is Int -> t
+                is Float -> t
                 is idVec3 -> idVec3(t) as T
                 is idVec4 -> idVec4(t) as T
                 is idAngles -> idAngles(t) as T
-                else -> t // Float, Int are immutable
+                else -> throw UnsupportedOperationException("Illegal use of _Copy().")
             }
         }
 
@@ -464,7 +463,7 @@ class Interpolate {
             accelTime = 0f
             startTime = 0f
             //	memset( &startValue, 0, sizeof( startValue ) );
-            extrapolate = idExtrapolate()
+            extrapolate = idExtrapolate(value)
         }
     }
 
@@ -476,14 +475,14 @@ class Interpolate {
 
      ==============================================================================================
      */
-    class idInterpolateAccelDecelSine<T> {
+    class idInterpolateAccelDecelSine<T>(private val value: T) {
         private var accelTime: Float = 0.0f
         private var decelTime: Float = 0.0f
-        private var endValue: T? = null
+        private var endValue: T = _Copy(value)
         private val extrapolate: idExtrapolate<T>
         private var linearTime: Float = 0f
         private var startTime: Float = 0f
-        private var startValue: T? = null
+        private var startValue: T = _Copy(value)
         fun Init(
             startTime: Float,
             accelTime: Float,
@@ -590,11 +589,11 @@ class Interpolate {
         }
 
         fun GetStartValue(): T {
-            return startValue!!
+            return startValue
         }
 
         fun GetEndValue(): T {
-            return endValue!!
+            return endValue
         }
 
         private fun Invalidate() {
@@ -685,14 +684,14 @@ class Interpolate {
             }
         }
 
-        @Suppress("UNCHECKED_CAST")
-        private fun _Copy(t: T?): T? {
-            if (t == null) return null
+        private fun _Copy(t: T): T {
             return when (t) {
+                is Int -> t
+                is Float -> t
                 is idVec3 -> idVec3(t) as T
                 is idVec4 -> idVec4(t) as T
                 is idAngles -> idAngles(t) as T
-                else -> t // Float, Int are immutable
+                else -> throw UnsupportedOperationException("Illegal use of _Copy().")
             }
         }
 
@@ -702,7 +701,7 @@ class Interpolate {
             accelTime = 0f
             startTime = 0f
             //	memset( &startValue, 0, sizeof( startValue ) );
-            extrapolate = idExtrapolate()
+            extrapolate = idExtrapolate(value)
         }
     }
 }

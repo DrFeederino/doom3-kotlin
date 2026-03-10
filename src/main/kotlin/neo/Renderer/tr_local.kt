@@ -2276,7 +2276,6 @@ class idRenderSystemLocal : idRenderSystem() {
             width = MegaTexture.RoundDownToPowerOfTwo(width)
             height = MegaTexture.RoundDownToPowerOfTwo(height)
         }
-        val rc: renderCrop_t? = renderCrops[currentRenderCrop]
 
         // we might want to clip these to the crop window instead
         while (width > glConfig.vidWidth) {
@@ -2289,11 +2288,11 @@ class idRenderSystemLocal : idRenderSystem() {
             Common.common.Error("idRenderSystemLocal::CropRenderSize: currentRenderCrop == MAX_RENDER_CROPS")
         }
         currentRenderCrop++
-        renderCrops[currentRenderCrop - 1] = renderCrops[currentRenderCrop]
-        rc!!.x = 0
-        rc.y = 0
-        rc.width = width
-        rc.height = height
+        val newRc = renderCrops[currentRenderCrop]!!
+        newRc.x = 0
+        newRc.y = 0
+        newRc.width = width
+        newRc.height = height
     }
 
     override fun CaptureRenderToImage(imageName: String?) {

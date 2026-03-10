@@ -990,10 +990,10 @@ object Target {
 
         private var delay: Float
         private var flashIn: Float
-        private lateinit var flashInSound: idStr
+        private val flashInSound: idStr = idStr()
         private var flashOut: Float
-        private lateinit var flashOutSound: idStr
-        private val fovSetting: idInterpolate<Float> = idInterpolate()
+        private val flashOutSound: idStr = idStr()
+        private val fovSetting: idInterpolate<Float> = idInterpolate(0f)
         private val genericList: idList<Int>
         private val guiList: idList<Int>
         private val lightList: idList<Int>
@@ -1099,8 +1099,8 @@ object Target {
             PostEventMS(EV_GatherEntities, 0)
             flashIn = spawnArgs.GetFloat("flashIn", "0")
             flashOut = spawnArgs.GetFloat("flashOut", "0")
-            flashInSound = idStr(spawnArgs.GetString("snd_flashin"))
-            flashOutSound = idStr(spawnArgs.GetString("snd_flashout"))
+            flashInSound.set(idStr(spawnArgs.GetString("snd_flashin")))
+            flashOutSound.set(idStr(spawnArgs.GetString("snd_flashout")))
             delay = spawnArgs.GetFloat("delay")
             soundFaded = false
             restoreOnTrigger = false
@@ -1601,7 +1601,7 @@ object Target {
             }
         }
 
-        private val fovSetting: idInterpolate<Int> = idInterpolate()
+        private val fovSetting: idInterpolate<Int> = idInterpolate(0)
         override fun Save(savefile: idSaveGame) {
             super.Save(savefile)
             savefile.WriteFloat(fovSetting.GetStartTime())

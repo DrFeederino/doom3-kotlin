@@ -22,22 +22,22 @@ object Extrapolate {
      ==============================================================================================
      */
     //where T: TempDump.Settable<T>
-    class idExtrapolate<T> {
-        private var baseSpeed: T? = null
+    class idExtrapolate<T>(private val value: T) {
+        private var baseSpeed: T = _Copy(value)
         private var currentTime: Float = 0.0f
-        private var currentValue: T? = null
+        private var currentValue: T = _Copy(value)
         private var duration: Float = 0.0f
         private var extrapolationType: Int
-        private var speed: T? = null
+        private var speed: T = _Copy(value)
         private var startTime: Float = 0.0f
-        private var startValue: T? = null
+        private var startValue: T = _Copy(value)
 
         fun Init(
             startTime: Float,
             duration: Float,
-            startValue: T?,
-            baseSpeed: T?,
-            speed: T?,
+            startValue: T,
+            baseSpeed: T,
+            speed: T,
             extrapolationType: Int
         ) {
             this.extrapolationType = extrapolationType
@@ -201,20 +201,20 @@ object Extrapolate {
             return duration
         }
 
-        fun SetStartValue(value: T?) {
+        fun SetStartValue(value: T) {
             startValue = _Copy(value)
             currentTime = -1.0f
         }
 
-        fun GetStartValue(): T? {
+        fun GetStartValue(): T {
             return startValue
         }
 
-        fun GetBaseSpeed(): T? {
+        fun GetBaseSpeed(): T {
             return baseSpeed
         }
 
-        fun GetSpeed(): T? {
+        fun GetSpeed(): T {
             return speed
         }
 
@@ -255,10 +255,10 @@ object Extrapolate {
             }
         }
 
-        @Suppress("UNCHECKED_CAST")
-        private fun _Copy(t: T?): T? {
-            if (t == null) return null
+        private fun _Copy(t: T): T {
             return when (t) {
+                is Int -> t
+                is Float -> t
                 is idVec3 -> idVec3(t) as T
                 is idVec4 -> idVec4(t) as T
                 is idAngles -> idAngles(t) as T
@@ -271,10 +271,6 @@ object Extrapolate {
             duration = 0.0f
             startTime = 0.0f
             currentTime = -1.0f
-            startValue = null
-            baseSpeed = null
-            speed = null
-            currentValue = null
         }
     }
 }

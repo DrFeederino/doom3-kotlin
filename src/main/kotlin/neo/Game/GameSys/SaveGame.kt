@@ -33,7 +33,6 @@ import neo.cm.contactInfo_t
 import neo.cm.contactType_t
 import neo.cm.trace_s
 import neo.framework.BUILD_NUMBER
-import neo.framework.Common
 import neo.framework.DeclFX.idDeclFX
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
@@ -188,9 +187,10 @@ object SaveGame {
         idSaveGame::WriteByte
         ================
         */
-        fun WriteByte(value: UByte) {
+        fun WriteByte(value: Byte) {
             val buffer = ByteBuffer.allocate(1)
-            buffer.put(value.toByte())
+            buffer.put(value)
+            buffer.flip()
             file.Write(buffer, 1)
         }
 
@@ -203,6 +203,7 @@ object SaveGame {
             // FIX: C++ writes sizeof(signed char) = 1 byte, not sizeof(short) = 2 bytes
             val buffer = ByteBuffer.allocate(1)
             buffer.put(value.toByte())
+            buffer.flip()
             file.Write(buffer, 1)
         }
 
@@ -635,7 +636,7 @@ object SaveGame {
             WriteInt(usercmd.gameFrame)
             WriteInt(usercmd.gameTime)
             WriteInt(usercmd.duplicateCount)
-            WriteByte(usercmd.buttons.toUByte())
+            WriteByte(usercmd.buttons)
             WriteSignedChar(usercmd.forwardmove.toShort())
             WriteSignedChar(usercmd.rightmove.toShort())
             WriteSignedChar(usercmd.upmove.toShort())
@@ -645,7 +646,7 @@ object SaveGame {
             WriteShort(usercmd.mx)
             WriteShort(usercmd.my)
             WriteSignedChar(usercmd.impulse.toShort())
-            WriteByte(usercmd.flags.toUByte())
+            WriteByte(usercmd.flags)
             WriteInt(usercmd.sequence)
         }
 
@@ -842,14 +843,13 @@ object SaveGame {
 
             // restore all the objects
             for (i in 1 until objects.Num()) {
-                Common.common.Printf("CallRestore_r %d %s\n", i, objects[i].GetType().classname);
                 CallRestore_r(objects[i].GetType(), objects[i])
             }
 
             // regenerate render entities and render lights because are not saved
             i = 1
             while (i < objects.Num()) {
-                if (objects[i] is idEntity) {
+                if (objects[i].IsType(idEntity.Type)) {
                     val ent = objects[i] as idEntity
                     ent.UpdateVisuals()
                     ent.Present()
@@ -941,10 +941,10 @@ object SaveGame {
         idRestoreGame::ReadByte
         ================
         */
-        fun ReadByte(): UByte {
+        fun ReadByte(): Byte {
             val value = ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN)
             file.Read(value, 1)
-            return value.get().toUByte()
+            return value.get()
         }
 
         /*
@@ -1420,7 +1420,7 @@ object SaveGame {
             usercmd.gameFrame = ReadInt()
             usercmd.gameTime = ReadInt()
             usercmd.duplicateCount = ReadInt()
-            usercmd.buttons = ReadByte().toByte()
+            usercmd.buttons = ReadByte()
             usercmd.forwardmove = ReadSignedChar().code.toByte()
             usercmd.rightmove = ReadSignedChar().code.toByte()
             usercmd.upmove = ReadSignedChar().code.toByte()
@@ -1430,7 +1430,7 @@ object SaveGame {
             usercmd.mx = ReadShort()
             usercmd.my = ReadShort()
             usercmd.impulse = ReadSignedChar().code.toByte()
-            usercmd.flags = ReadByte().toByte()
+            usercmd.flags = ReadByte()
             usercmd.sequence = ReadInt()
         }
 

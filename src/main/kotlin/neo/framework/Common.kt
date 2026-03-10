@@ -1054,10 +1054,7 @@ class Common {
             // skip the config file if "safe" is on the command line
             if (!SafeMode()) {
                 CmdSystem.cmdSystem.BufferCommandText(
-                    cmdExecution_t.CMD_EXEC_APPEND, """
-     exec ${Licensee.CONFIG_FILE}
-     
-     """.trimIndent()
+                    cmdExecution_t.CMD_EXEC_APPEND, "exec ${Licensee.CONFIG_FILE}\n"
                 )
             }
             CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "exec autoexec.cfg\n")

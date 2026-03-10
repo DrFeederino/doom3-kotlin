@@ -258,8 +258,8 @@ object Session_local {
 
         //
         /*const*/  var wipeMaterial: Material.idMaterial? = null
-        var wipeStartTic = 0
-        var wipeStopTic = 0
+        var wipeStartTime = 0
+        var wipeStopTime = 0
         private var authEmitTimeout = 0
 
         //
@@ -911,8 +911,8 @@ object Session_local {
                     return true
                 }
                 cmd = guiTest!!.HandleEvent(event, Common.com_frameTime)!!.toCharArray()
-                if (cmd != null && cmd!!.get(0) != '\u0000') {
-                    Common.common.Printf("testGui event returned: '%s'\n", cmd!!)
+                if (cmd != null && cmd!!.isNotEmpty() && cmd!![0] != '\u0000') {
+                    Common.common.Printf("testGui event returned: '%s'\n", cmd!!.toString())
                 }
                 return true
             }
@@ -1023,10 +1023,9 @@ object Session_local {
 //	memset( &ev, 0, sizeof( ev ) );
             ev = sysEvent_s()
             ev.evType = sysEventType_t.SE_NONE
-            //            System.out.println(System.nanoTime()+"com_frameTime="+com_frameTime+" "+Common.com_ticNumber);
             cmd = gui!!.HandleEvent(ev, Common.com_frameTime)
             if (cmd != null && cmd.isNotEmpty()) {
-                DispatchCommand(guiActive, cmd, false)
+                DispatchCommand(guiActive, cmd)
             }
         }
 
@@ -1470,7 +1469,7 @@ object Session_local {
                 var i: Int
                 i = 0
                 while (i < CDKEY_BUF_LEN - 1) {
-                    if (-1 == CDKEY_DIGITS.indexOf(lkey[i_key].get(i))) {
+                    if (-1 == CDKEY_DIGITS.indexOf(lkey[i_key][i])) {
                         offline_valid[i_key] = false
                         i++
                         continue
@@ -1754,15 +1753,15 @@ object Session_local {
          */
         // called by Draw when the scene to scene wipe is still running
         fun DrawWipeModel() {
-            val latchedTic = Common.com_ticNumber
-            if (wipeStartTic >= wipeStopTic) {
+            val now = win_shared.Sys_Milliseconds()
+            if (wipeStartTime >= wipeStopTime) {
                 return
             }
-            if (!wipeHold && latchedTic >= wipeStopTic) {
+            if (!wipeHold && now > wipeStopTime) {
                 return
             }
-            val fade = (latchedTic - wipeStartTic) / (wipeStopTic - wipeStartTic)
-            RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, fade.toFloat())
+            val fade = (now - wipeStartTime).toFloat() / (wipeStopTime - wipeStartTime)
+            RenderSystem.renderSystem.SetColor4(1.0f, 1.0f, 1.0f, fade)
             RenderSystem.renderSystem.DrawStretchPic(0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, wipeMaterial)
         }
 
@@ -1783,31 +1782,30 @@ object Session_local {
             RenderSystem.renderSystem.CaptureRenderToImage("_scratch")
             RenderSystem.renderSystem.UnCrop()
             wipeMaterial = DeclManager.declManager.FindMaterial(_wipeMaterial, false)
-            wipeStartTic = Common.com_ticNumber
-            wipeStopTic = (wipeStartTic + 1000.0f / UsercmdGen.USERCMD_MSEC * com_wipeSeconds.GetFloat()).toInt()
+            wipeStartTime = win_shared.Sys_Milliseconds()
+            wipeStopTime = (wipeStartTime + com_wipeSeconds.GetFloat() * 1000.0f).toInt()
             wipeHold = hold
         }
 
         fun CompleteWipe() {
             if (Common.com_ticNumber == 0) {
-                // if the async thread hasn't started, we would hang here
-                wipeStopTic = 0
+                // if the tic counting hasn't started, we would hang here
+                wipeStopTime = 0
                 UpdateScreen(true)
                 return
             }
-            while (Common.com_ticNumber < wipeStopTic) {
+            while (win_shared.Sys_Milliseconds() < wipeStopTime) {
                 if (ID_CONSOLE_LOCK) {
                     emptyDrawCount = 0
                 }
-                Common.common.Async()
                 UpdateScreen(true)
             }
         }
 
         fun ClearWipe() {
             wipeHold = false
-            wipeStopTic = 0
-            wipeStartTic = wipeStopTic + 1
+            wipeStopTime = 0
+            wipeStartTime = 16
         }
 
         fun ShowLoadingGui() {
@@ -2037,7 +2035,6 @@ object Session_local {
 
         @Throws(idException::class)
         fun SaveGame(saveName: String, autosave: Boolean = false /*= false*/): Boolean {
-//            return false
             val previewFile = idStr()
             val descriptionFile = idStr()
             val mapName = idStr()
@@ -2108,7 +2105,7 @@ object Session_local {
             // Game Name / Version / Map Name / Persistant Player Info
 
             // game
-            val gamename = GAME_NAME
+            val gamename = idStr(GAME_NAME)
             fileOut.WriteString(gamename)
 
             // version
@@ -2116,7 +2113,7 @@ object Session_local {
 
             // map
             mapName.set(mapSpawnData.serverInfo.GetString("si_map"))
-            fileOut.WriteString(mapName.toString())
+            fileOut.WriteString(mapName)
 
             // persistent player info
             for (i in 0 until AsyncNetwork.MAX_ASYNC_CLIENTS) {
@@ -2329,6 +2326,7 @@ object Session_local {
         @Throws(idException::class)
         fun Draw() {
             var fullConsole = false
+
             if (insideExecuteMapChange) {
                 if (guiLoading != null) {
                     guiLoading!!.Redraw(Common.com_frameTime)
@@ -2563,7 +2561,7 @@ object Session_local {
                 numClients = 1
             }
             for (i in 0 until numClients * logIndex) {
-                file.Write(loggedUsercmds[i].Write() /* sizeof(loggedUsercmds[0])*/)
+                file.Write(loggedUsercmds[i].Write())
             }
         }
 
@@ -3396,7 +3394,7 @@ object Session_local {
 
 
         @Throws(idException::class)
-        fun DispatchCommand(gui: idUserInterface?, menuCommand: String, doIngame: Boolean = false /*= true*/) {
+        fun DispatchCommand(gui: idUserInterface?, menuCommand: String, doIngame: Boolean = true) {
             var gui = gui
             if (gui == null) {
                 gui = guiActive
@@ -3592,13 +3590,11 @@ object Session_local {
             val args = CmdArgs.idCmdArgs()
             args.TokenizeString(menuCommand, false)
 
-            /*final*/
             val cmd = args.Argv(0)
             if (0 == idStr.Icmp(cmd, "close")) {
                 if (guiActive != null) {
                     val ev = sysEvent_s()
                     ev.evType = sysEventType_t.SE_NONE
-                    //			final String cmd;
                     args.set(guiActive!!.HandleEvent(ev, Common.com_frameTime))
                     guiActive!!.Activate(false, Common.com_frameTime)
                     guiActive = null

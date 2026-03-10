@@ -110,6 +110,7 @@ class snd_local {
             data.putInt(wf.nAvgBytesPerSec)
             data.putShort(wf.nBlockAlign.toShort())
             data.putShort(wBitsPerSample.toShort())
+            data.flip()
             return data
         }
 
@@ -198,6 +199,7 @@ class snd_local {
             data.putInt(cksize)
             data.putInt(fccType.toInt())
             data.putInt(dwDataOffset)
+            data.flip()
             return data
         }
 

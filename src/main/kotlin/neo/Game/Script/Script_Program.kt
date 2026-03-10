@@ -34,7 +34,7 @@ object Script_Program {
 
     // C++ E_EVENT_SIZEOF_VEC: ((sizeof(idVec3) + (sizeof(intptr_t) - 1)) & ~(sizeof(intptr_t) - 1))
     // 64-bit: ((12 + 7) & ~7) = 16, 32-bit: ((12 + 3) & ~3) = 12
-    const val E_EVENT_SIZEOF_VEC = (12 + (SIZEOF_INTPTR - 1)) and (SIZEOF_INTPTR - 1).inv()
+    const val E_EVENT_SIZEOF_VEC = (idVec3.BYTES + (SIZEOF_INTPTR - 1)) and (SIZEOF_INTPTR - 1).inv()
     const val ev_argsize = 13
     const val ev_boolean = 14
     const val ev_entity = 6
@@ -160,7 +160,7 @@ object Script_Program {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
         }
 
         override fun Read(buffer: ByteBuffer) {
@@ -611,6 +611,7 @@ object Script_Program {
                 savefile.WriteString(type.Name())
                 size = type.Size()
                 savefile.WriteInt(size)
+                data!!.position(0) // C++ writes from data[0]; ensure position is at start
                 savefile.Write(data!!, size)
             }
         }
@@ -678,7 +679,7 @@ object Script_Program {
 
                 // allocate the memory
                 size = type.Size()
-                data = ByteBuffer.allocate(size) // Mem_Alloc(size);
+                data = ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN) // Mem_Alloc(size);
             }
 
             // init object memory
@@ -699,6 +700,7 @@ object Script_Program {
                 // init object memory
                 size = type.Size()
                 //		memset( data, 0, size );
+                data = ByteBuffer.allocate(data!!.capacity()).order(ByteOrder.LITTLE_ENDIAN)
                 data!!.clear()
             }
         }
@@ -757,7 +759,7 @@ object Script_Program {
                     if (t.GetParmName(i) == name) {
                         return if (etype != parm!!.FieldType()!!.Type()) {
                             null
-                        } else data!!.position(pos).slice()
+                        } else data!!.duplicate().order(ByteOrder.LITTLE_ENDIAN).position(pos).slice()
                     }
                     pos += if (parm!!.FieldType()!!.Inherits(type_object)) {
                         type_object.Size()
@@ -772,11 +774,11 @@ object Script_Program {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
         }
 
         override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.order(ByteOrder.LITTLE_ENDIAN)
             buffer.int // data pointer, skip
             offset = buffer.int
             buffer.int // type pointer, skip
@@ -1001,8 +1003,8 @@ object Script_Program {
                 .order(ByteOrder.LITTLE_ENDIAN)
         }
 
-        fun setBytePtr(bytes: UByteArray?, offset: Int) {
-            setBytePtr(ByteBuffer.wrap(bytes?.toByteArray()), offset)
+        fun setBytePtr(bytes: ByteArray?, offset: Int) {
+            setBytePtr(ByteBuffer.wrap(bytes), offset)
         }
 
         fun setStringPtr(data: ByteBuffer?, offset: Int) {
