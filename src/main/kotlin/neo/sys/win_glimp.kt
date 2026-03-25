@@ -22,12 +22,15 @@
 
 package neo.sys
 
+import neo.Renderer.glConfig
 import neo.Renderer.r_logFile
 import neo.Renderer.tr
 import neo.TempDump
 import neo.framework.Common.Companion.common
 import neo.framework.FileSystem_h
 import neo.framework.UsercmdGen
+import neo.framework.WIN32
+import neo.framework._MACOSX
 import neo.idlib.Text.Str.idStr
 import neo.idlib.idLib
 import org.lwjgl.glfw.GLFW.*
@@ -237,7 +240,9 @@ object win_glimp {
             }
             images.position(0)
 
-            glfwSetWindowIcon(window, images)
+            if (WIN32) {
+                glfwSetWindowIcon(window, images)
+            }
 
             // Free native resources
             images.free()
@@ -271,6 +276,19 @@ object win_glimp {
             loadIcoAndSetWindowIcon(window)
         }
 
+        if (_MACOSX) {
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE)
+            glfwGetWindowContentScale(window, glConfig.scaleX, glConfig.scaleY)
+            // get scale factor and update width and height by scale factor of each axis
+            parms.width = (parms.width * glConfig.scaleX[0]).toInt()
+            parms.height = (parms.height * glConfig.scaleY[0]).toInt()
+            glConfig.vidWidth = (glConfig.vidWidth * glConfig.scaleX[0]).toInt()
+            glConfig.vidHeight = (glConfig.vidHeight * glConfig.scaleX[0]).toInt()
+        }
+
         glfwMakeContextCurrent(window)
         GL.createCapabilities()
         glViewport(0, 0, parms.width, parms.height)
@@ -281,10 +299,12 @@ object win_glimp {
         glfwSetInputMode(window, GLFW_LOCK_KEY_MODS, GLFW_FALSE)
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED)
         glfwSetKeyCallback(window, UsercmdGen.usercmdGen.keyboardCallback)
+        glfwSetCharCallback(window, UsercmdGen.usercmdGen.keyboardCharCallback)
         glfwSetCursorPosCallback(window, UsercmdGen.usercmdGen.mouseCursorCallback)
         glfwSetScrollCallback(window, UsercmdGen.usercmdGen.mouseScrollCallback)
         glfwSetMouseButtonCallback(window, UsercmdGen.usercmdGen.mouseButtonCallback)
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+
         idLib.common.Printf("ok\n")
         return true
     }

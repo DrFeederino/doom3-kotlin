@@ -57,7 +57,7 @@ object Interaction {
     val LIGHT_CLIP_EPSILON: Float = 0.1f
     var LIGHT_TRIS_DEFERRED: srfTriangles_s? = null
     val MAX_CLIPPED_POINTS: Int = 20
-    var LIGHT_CULL_ALL_FRONT: ByteArray? = null
+    var LIGHT_CULL_ALL_FRONT = ByteArray(0)
 
     init {
         LIGHT_TRIS_DEFERRED = srfTriangles_s()
@@ -337,7 +337,7 @@ object Interaction {
         R_CalcInteractionCullBits(ent, tri, light, cullInfo)
 
         // if the surface is completely inside the light frustum
-        if (cullInfo.cullBits == LIGHT_CULL_ALL_FRONT) {
+        if (cullInfo.cullBits === LIGHT_CULL_ALL_FRONT) {
 
             // if we aren't self shadowing, let back facing triangles get
             // through so the smooth shaded bump maps light all the way around
@@ -425,7 +425,7 @@ object Interaction {
                     if (cullBits[i1].toInt() != 0 && cullBits[i2].toInt() != 0 && cullBits[i3].toInt() != 0) {
                         val cull: Int = cullBits[i1].toInt() or cullBits[i2].toInt() or cullBits[i3].toInt()
                         if (!R_ClipTriangleToLight(
-                                tri.verts!![i1]!!.xyz,
+                                tri.verts!![i1].xyz,
                                 tri.verts!![i2]!!.xyz,
                                 tri.verts!![i3]!!.xyz,
                                 cull,

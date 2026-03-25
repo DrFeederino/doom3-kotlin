@@ -80,7 +80,7 @@ object tr_turboshadow {
         facing = cullInfo.facing
 
         // if all the triangles are inside the light frustum
-        if (cullInfo.cullBits.contentEquals(Interaction.LIGHT_CULL_ALL_FRONT) || !r_useShadowProjectedCull!!.GetBool()) {
+        if (cullInfo.cullBits === Interaction.LIGHT_CULL_ALL_FRONT || !r_useShadowProjectedCull!!.GetBool()) {
 
             // count the number of shadowing faces
             i = 0
@@ -224,8 +224,9 @@ object tr_turboshadow {
         var sil: silEdge_t?
         var indexes: IntArray?
         val facing: ByteArray?
+
         Interaction.R_CalcInteractionFacing(ent, tri, light, cullInfo)
-        if (r_useShadowProjectedCull!!.GetBool()) {
+        if (r_useShadowProjectedCull.GetBool()) {
             Interaction.R_CalcInteractionCullBits(ent, tri, light, cullInfo)
         }
         val numFaces: Int = tri.numIndexes / 3
@@ -233,7 +234,7 @@ object tr_turboshadow {
         facing = cullInfo.facing
 
         // if all the triangles are inside the light frustum
-        if (cullInfo.cullBits.contentEquals(Interaction.LIGHT_CULL_ALL_FRONT) || !r_useShadowProjectedCull!!.GetBool()) {
+        if (cullInfo.cullBits === Interaction.LIGHT_CULL_ALL_FRONT || !r_useShadowProjectedCull!!.GetBool()) {
 
             // count the number of shadowing faces
             i = 0
@@ -339,7 +340,7 @@ object tr_turboshadow {
             val f2: Int = facing[sil.p2].toInt()
             if (0 == (f1 xor f2)) {
                 i--
-                sil = tri.silEdges!![++sil_index]
+                sil = tri.silEdges!![sil_index++]
                 continue
             }
             val v1: Int = vertRemap[sil.v1]
@@ -355,7 +356,7 @@ object tr_turboshadow {
             shadowIndexes[shadowIndex + 5] = v2 xor 1
             shadowIndex += 6
             i--
-            sil = tri.silEdges!![++sil_index]
+            sil = tri.silEdges!![sil_index++]
         }
         val numShadowIndexes: Int = shadowIndex
 

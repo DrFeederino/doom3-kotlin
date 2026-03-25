@@ -66,7 +66,7 @@ object Physics_RigidBody {
 
     //
     private const val RB_TIMINGS = false
-    private const val RB_DEBUG_REST = true // Temporary debug flag for idMoveable rest issue
+    private const val RB_DEBUG_REST = false // Temporary debug flag for idMoveable rest issue
     private const val TEST_COLLISION_DETECTION = false
 
     //

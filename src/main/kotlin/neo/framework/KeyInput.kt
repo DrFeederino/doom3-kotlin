@@ -182,24 +182,14 @@ object KeyInput {
     // Some high ascii (> 127) characters that are mapped directly to keys on
     // western european keyboards are inserted in this table so that those keys
     // are bindable (otherwise they get bound as one of the special keys in this table)
-    //
-    //
     const val K_TAB = 9
     const val K_TILDE_N = 241 // lowercase n with tilde
-
     //
     const val K_UPARROW = 133
-
-    //    
-    //    
-    //
     //
     const val ID_DOOM_LEGACY = false // FIX: was false, but C++ always #defines ID_DOOM_LEGACY
-
-    //
     //
     const val MAX_KEYS = 256
-
     //
     val cheatCodes: Array<String?> = arrayOf(
         "iddqd",  // Invincibility

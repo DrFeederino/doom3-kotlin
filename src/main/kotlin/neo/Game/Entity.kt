@@ -984,13 +984,12 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
 
         Game_local.gameLocal.UnregisterEntity(this)
 
-        // TODO DOUBLE CHECK THIS
-//        delete(teamChain)
-//        delete(teamMaster)
-//        delete(bindMaster)
-//        delete(physics)
-//        if (physics !== defaultPhysicsObj) delete(defaultPhysicsObj)
-//        delete(cameraTarget)
+        delete(teamChain)
+        delete(teamMaster)
+        delete(bindMaster)
+        delete(physics)
+        if (physics !== defaultPhysicsObj) delete(defaultPhysicsObj)
+        delete(cameraTarget)
 
         super._deconstructor()
     }

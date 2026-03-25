@@ -166,7 +166,6 @@ class idProgram {
     }
 
     fun Restore(savefile: idRestoreGame): Boolean {
-        var i: Int
         val num = CInt()
         val index = CInt()
         var result = true
@@ -702,7 +701,7 @@ class idProgram {
                     if (numVariables > variables.size) {
                         throw idCompileError(String.format("Exceeded global memory size (%d bytes)", variables.size))
                     }
-                    //variables.fill(0, baseOffset, numVariables)
+                    variables.fill(0, baseOffset, numVariables)
                     def_x.value!!.setBytePtr(variables, baseOffset)
                     def_y.value!!.setBytePtr(variables, baseOffset + java.lang.Float.BYTES)
                     def_z.value!!.setBytePtr(variables, baseOffset + java.lang.Float.BYTES * 2)
@@ -734,12 +733,13 @@ class idProgram {
             }
         } else {
             // global variable
-            def.value!!.setBytePtr(variables, numVariables)
+            val baseOffset = numVariables
+            def.value!!.setBytePtr(variables, baseOffset)
             numVariables += def.TypeDef()!!.Size()
             if (numVariables > variables.size) {
                 throw idCompileError(String.format("Exceeded global memory size (%d bytes)", variables.size))
             }
-            variables.fill(0, numVariables, variables.size)
+            variables.fill(0, baseOffset, numVariables)
         }
         return def
     }

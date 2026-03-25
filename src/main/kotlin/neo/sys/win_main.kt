@@ -59,6 +59,7 @@ import java.time.Instant
 import java.util.concurrent.ScheduledExecutorService
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.system.exitProcess
 
 
 fun main(args: Array<String>) {
@@ -236,7 +237,6 @@ object win_main {
      Sys_EnterCriticalSection
      ==================
      */
-
     fun Sys_EnterCriticalSection(index: Int = sys_public.CRITICAL_SECTION_ZERO) {
         assert(index >= 0 && index < sys_public.MAX_CRITICAL_SECTIONS)
         //		Sys_DebugPrintf( "busy lock '%s' in thread '%s'\n", lock->name, Sys_GetThreadName() );
@@ -366,11 +366,9 @@ object win_main {
      ==============
      */
     fun Sys_Quit() {
-
-//	timeEndPeriod( 1 );
         win_input.Sys_ShutdownInput()
         win_syscon.Sys_DestroyConsole()
-        System.exit(0) //ExitProcess(0);
+        exitProcess(0) //ExitProcess(0);
     }
 
     /*
@@ -819,7 +817,6 @@ object win_main {
         }
 
         // return the empty event
-//	memset( &ev, 0, sizeof( ev ) );
         ev = sysEvent_s()
         return ev
     }

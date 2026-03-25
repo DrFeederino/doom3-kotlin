@@ -67,10 +67,10 @@ object sys_public {
     //
     // enum {
     const val CRITICAL_SECTION_ZERO = 0
-    val PATHSEPERATOR_CHAR: Char = '\\'
+    val PATHSEPERATOR_CHAR: Char = '/'
 
     //
-    val PATHSEPERATOR_STR: String = "\\"
+    val PATHSEPERATOR_STR: String = "/"
     const val PORT_ANY = -1
     const val TRIGGER_EVENT_ONE = 1
     val g_thread_count: IntArray = intArrayOf(0)
@@ -186,7 +186,6 @@ object sys_public {
             buffer.putInt(evValue2)
             buffer.putInt(evPtrLength)
             buffer.putInt(0x50) //P for pointer
-            buffer.flip()
             return buffer
         }
 

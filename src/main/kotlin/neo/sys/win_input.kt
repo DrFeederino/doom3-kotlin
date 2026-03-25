@@ -19,6 +19,7 @@ package neo.sys
 import neo.TempDump.TODO_Exception
 import neo.framework.Common
 import neo.framework.KeyInput
+import neo.framework.MACOS_X
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CInt
@@ -314,8 +315,7 @@ object win_input {
             0.toChar(),
             0.toChar(),
             0.toChar(),
-            0 // 7
-                .toChar()
+            0.toChar()// 7
         )
     val s_scantokey_french /*[256]*/: CharArray =
         charArrayOf( //  0            1       2          3          4       5            6         7
@@ -1414,8 +1414,14 @@ object win_input {
      =======
      */
     fun IN_DIMapKey(key: Int, scancode: Int, mods: Int): Int {
-        if (key >= 260 && scancode >= 128) {
+        // GLFW maps all special/non-printable keys starting from 256
+        if (key >= 256) {
             return when (key) {
+                GLFW.GLFW_KEY_ESCAPE -> KeyInput.K_ESCAPE
+                GLFW.GLFW_KEY_ENTER -> KeyInput.K_ENTER
+                GLFW.GLFW_KEY_TAB -> KeyInput.K_TAB
+                GLFW.GLFW_KEY_BACKSPACE -> KeyInput.K_BACKSPACE
+
                 GLFW.GLFW_KEY_HOME -> KeyInput.K_HOME
                 GLFW.GLFW_KEY_UP -> KeyInput.K_UPARROW
                 GLFW.GLFW_KEY_PAGE_UP -> KeyInput.K_PGUP
@@ -1454,7 +1460,11 @@ object win_input {
                 else -> 0
             }
         }
-        return if (scancode > 256) 0 else keyScanTable[getShiftedScancode(key, scancode, mods)].code
+
+        // For standard keys (< 256), fall back to thy OS-specific ASCII translations
+        return if (MACOS_X) {
+            Char(key).lowercaseChar().code //a small hack to make controls work
+        } else if (scancode > 256) 0 else keyScanTable[getShiftedScancode(key, scancode, mods)].code
     }
 
     private fun getShiftedScancode(key: Int, scancode: Int, mods: Int): Int {
@@ -1599,8 +1609,7 @@ object win_input {
      MOUSE CONTROL
 
      ============================================================
-     */
-    /*
+     *//*
      ===========
      Sys_ShutdownInput
      ===========
@@ -1761,7 +1770,6 @@ object win_input {
      Sys_PollKeyboardInputEvents
      ====================
      */
-    @Deprecated("")
     fun Sys_PollKeyboardInputEvents(): Int {
 //        return Keyboard.getNumKeyboardEvents();
         return -1
@@ -1779,6 +1787,14 @@ object win_input {
     fun Sys_ReturnKeyboardInputEvent(ch: IntArray, action: Int, key: Int, scancode: Int, mods: Int): Int {
         ch[0] = IN_DIMapKey(key, scancode, mods)
         when (ch[0]) {
+            KeyInput.K_BACKSPACE -> {
+                if (action != GLFW.GLFW_RELEASE) {
+                    win_main.Sys_QueEvent(
+                        Instant.now().toEpochMilli(), sysEventType_t.SE_CHAR, ch[0], action, 0, null
+                    )
+                }
+            }
+
             KeyInput.K_PRINT_SCR -> {
                 if (action != GLFW.GLFW_RELEASE) {
                     // don't queue printscreen keys.  Since windows doesn't send us key
@@ -1797,9 +1813,16 @@ object win_input {
                 GetTickCount(), sysEventType_t.SE_KEY, ch[0], action, 0, null
             )
 
-            else -> if (action == GLFW.GLFW_RELEASE && ch[0] > 31 && ch[0] != '~'.code && ch[0] != '`'.code && ch[0] < 128) win_main.Sys_QueEvent(
-                Instant.now().toEpochMilli(), sysEventType_t.SE_CHAR, ch[0], action, 0, null
-            ) else win_main.Sys_QueEvent(Instant.now().toEpochMilli(), sysEventType_t.SE_KEY, ch[0], action, 0, null)
+            else -> {
+                val character = Char(ch[0])
+                if (action == GLFW.GLFW_RELEASE && (character in '0'..'9' || character == Char(127)) && ch[0] != '~'.code && ch[0] != '`'.code && ch[0] < 128) {
+                    win_main.Sys_QueEvent(
+                        Instant.now().toEpochMilli(), sysEventType_t.SE_CHAR, ch[0], action, 0, null
+                    )
+                } else {
+                    win_main.Sys_QueEvent(Instant.now().toEpochMilli(), sysEventType_t.SE_KEY, ch[0], action, 0, null)
+                }
+            }
         }
         return ch[0]
     }

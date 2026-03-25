@@ -390,7 +390,10 @@ object RenderSystem {
         var vendor_string: String? = null
         var version_string: String? = null
 
-        //
+        // macOS has different way of handling pixels and coordinates, and, thus, both X and Y needs to be scaled properly
+        var scaleX: FloatArray = floatArrayOf(1.0f)
+        var scaleY: FloatArray = floatArrayOf(1.0f)
+
         var vidWidth: Int = 0
         var vidHeight: Int = 0 // passed to R_BeginFrame
         var wgl_extensions_string: String? = null

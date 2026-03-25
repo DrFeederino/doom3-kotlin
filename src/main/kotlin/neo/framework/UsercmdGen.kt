@@ -38,7 +38,6 @@ package neo.framework
 
 import neo.TempDump
 import neo.TempDump.SERiAL
-import neo.TempDump.TODO_Exception
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_Integer
@@ -58,8 +57,12 @@ import neo.idlib.math.idVec3
 import neo.sys.sys_public.joystickAxis_t
 import neo.sys.sys_public.sysEventType_t
 import neo.sys.win_input
+import neo.sys.win_input.Sys_EndKeyboardInputEvents
+import neo.sys.win_input.Sys_ReturnKeyboardInputEvent
 import neo.sys.win_main
+import neo.sys.win_main.Sys_QueEvent
 import org.lwjgl.glfw.*
+import org.lwjgl.glfw.GLFW.GLFW_RELEASE
 import java.nio.ByteBuffer
 import java.time.Instant
 import java.util.*
@@ -373,6 +376,7 @@ object UsercmdGen {
     }
 
     abstract class idUsercmdGen {
+        lateinit var keyboardCharCallback: KeyboardCharCallback
         lateinit var keyboardCallback: KeyboardCallback
         lateinit var mouseButtonCallback: MouseButtonCallback
         lateinit var mouseCursorCallback: MouseCursorCallback
@@ -586,7 +590,7 @@ object UsercmdGen {
 //            Mouse();
 
             // process the system keyboard events
-//            Keyboard();
+            //Keyboard()
 
             // process the system joystick events
             Joystick()
@@ -999,7 +1003,6 @@ object UsercmdGen {
          ===================
          */
         private fun Key(keyNum: Int, down: Boolean) {
-
             // Sanity check, sometimes we get double message :(
             if (keyState[keyNum] == down) {
                 return
@@ -1011,9 +1014,9 @@ object UsercmdGen {
                 if (!Inhibited()) {
                     if (action >= usercmdButton_t.UB_IMPULSE0.ordinal && action <= usercmdButton_t.UB_IMPULSE61.ordinal) {
                         cmd.impulse = (action - usercmdButton_t.UB_IMPULSE0.ordinal).toByte()
-                        impulse = cmd.impulse.toInt()
+                        //impulse = cmd.impulse.toInt()
                         cmd.flags = cmd.flags xor UCF_IMPULSE_SEQUENCE.toByte()
-                        flags = cmd.flags.toInt()
+                        //flags = cmd.flags.toInt()
                     }
                 }
             } else {
@@ -1039,7 +1042,7 @@ object UsercmdGen {
                     mouseDy += dy
                     continuousMouseY += dy
                     prevY = ypos
-                    win_main.Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_MOUSE, dx.toInt(), dy.toInt(), 0, null)
+                    Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_MOUSE, dx.toInt(), dy.toInt(), 0, null)
                 }
                 win_input.Sys_EndMouseInputEvents()
             }
@@ -1058,8 +1061,8 @@ object UsercmdGen {
                     Key(key, false)
                     mouseButton = key
                     mouseDown = true
-                    win_main.Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_KEY, key, TempDump.btoi(true), 0, null)
-                    win_main.Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_KEY, key, TempDump.btoi(false), 0, null)
+                    Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_KEY, key, TempDump.btoi(true), 0, null)
+                    Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_KEY, key, TempDump.btoi(false), 0, null)
                 }
             }
         }
@@ -1071,26 +1074,33 @@ object UsercmdGen {
                 // Study each of the buffer elements and process them.
                 //
                 if (button != -1) {
-                    val buton = if (action != GLFW.GLFW_RELEASE) 0x80 else 0 // (polled_didod[n].dwData & 0x80) == 0x80;
+                    val buton = if (action != GLFW_RELEASE) 0x80 else 0 // (polled_didod[n].dwData & 0x80) == 0x80;
                     mouseButton = KeyInput.K_MOUSE1 + button
                     mouseDown = buton != 0
                     Key(mouseButton, mouseDown)
-                    win_main.Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_KEY, mouseButton, buton, 0, null)
+                    Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_KEY, mouseButton, buton, 0, null)
                 }
                 win_input.Sys_EndMouseInputEvents()
             }
         }
 
+        class KeyboardCharCallback : GLFWCharCallback() {
+            override fun invoke(p0: Long, codepoint: Int) {
+                // Converts the unicode codepoint to ASCII for Doom's console
+                if (codepoint < 128) {
+                    Sys_QueEvent(Instant.now().toEpochMilli(), sysEventType_t.SE_CHAR, codepoint, 0, 0, null)
+                }
+            }
+
+        }
         inner class KeyboardCallback : GLFWKeyCallback() {
             override fun invoke(window: Long, key: Int, scancode: Int, action: Int, mods: Int) {
                 val ch = intArrayOf(0)
-                //                        //-+
                 // Study each of the buffer elements and process them.
-                //
-                if (win_input.Sys_ReturnKeyboardInputEvent(ch, action, key, scancode, mods) != 0) {
-                    Key(ch[0], action != GLFW.GLFW_RELEASE)
+                if (Sys_ReturnKeyboardInputEvent(ch, action, key, scancode, mods) != 0) {
+                    Key(ch[0], action != GLFW_RELEASE)
                 }
-                win_input.Sys_EndKeyboardInputEvents()
+                Sys_EndKeyboardInputEvents()
             }
         }
 
@@ -1201,6 +1211,7 @@ object UsercmdGen {
             viewangles.set(idVec3()) //ClearAngles();
             cmd = usercmd_t()
             Clear()
+            keyboardCharCallback = KeyboardCharCallback()
             keyboardCallback = KeyboardCallback()
             mouseCursorCallback = MouseCursorCallback()
             mouseScrollCallback = MouseScrollCallback()

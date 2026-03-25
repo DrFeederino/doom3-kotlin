@@ -631,7 +631,7 @@ object qgl {
 
     fun qglDepthRange(zNear: Float, zFar: Float) {
         DEBUG_printName("glDepthRange")
-        GL43.glDepthRangef(zNear, zFar)
+        GL43.glDepthRange(zNear.toDouble(), zFar.toDouble())
     }
 
     fun qglDisable(cap: Int) {

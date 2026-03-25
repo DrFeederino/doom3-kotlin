@@ -513,8 +513,7 @@ fun R_ResizeStaticTriSurfIndexes(tri: srfTriangles_s, numIndexes: Int) {
  */
 fun R_ResizeStaticTriSurfShadowVerts(tri: srfTriangles_s, numVerts: Int) {
     if (USE_TRI_DATA_ALLOCATOR) {
-        tri.shadowVertexes =  /*triShadowVertexAllocator.*/
-            Resize(tri.shadowVertexes as Array<idDrawVert>, numVerts) as Array<shadowCache_s>
+        tri.shadowVertexes = Resize(tri.shadowVertexes, numVerts)!! as Array<shadowCache_s>?
     } else {
         assert((false))
     }
@@ -1918,9 +1917,9 @@ private fun Resize(verts: Array<idDrawVert>, totalVerts: Int): Array<idDrawVert?
     return newVerts
 }
 
-private fun Resize(shadowVertexes: Array<shadowCache_s>, numVerts: Int): Array<shadowCache_s?> {
+private fun Resize(shadowVertexes: Array<shadowCache_s>?, numVerts: Int): Array<shadowCache_s?> {
     val newArray: Array<shadowCache_s?> = arrayOfNulls(numVerts)
-    val length: Int = min(shadowVertexes.size, numVerts)
+    val length: Int = min(shadowVertexes?.size ?: 0, numVerts)
     System.arraycopy(shadowVertexes, 0, newArray, 0, length)
     return newArray
 }

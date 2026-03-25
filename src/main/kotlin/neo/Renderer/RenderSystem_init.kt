@@ -40,6 +40,7 @@ import neo.Renderer.MegaTexture.idMegaTexture.MakeMegaTexture_f
 import neo.Renderer.RenderWorld.modelTrace_s
 import neo.Renderer.RenderWorld.renderView_s
 import neo.Renderer.draw_arb2.R_ReloadARBPrograms_f
+import neo.Renderer.qgl.qglGetString
 import neo.Renderer.tr_guisurf.R_ListGuis_f
 import neo.Renderer.tr_guisurf.R_ReloadGuis_f
 import neo.Sound.snd_system
@@ -1271,17 +1272,10 @@ fun R_InitOpenGL() {
     snd_system.soundSystem.InitHW()
 
     // get our config strings
-    glConfig.vendor_string = qgl.qglGetString(GL11.GL_VENDOR)
-    glConfig.renderer_string = qgl.qglGetString(GL11.GL_RENDERER)
-    glConfig.version_string = qgl.qglGetString(GL11.GL_VERSION)
-    val extensions = StringBuilder()
-    var j = 0
-    var ext: String?
-    while (GL30.glGetStringi(GL11.GL_EXTENSIONS, j).also { ext = it } != null) {
-        extensions.append(ext).append(' ')
-        j++
-    }
-    glConfig.extensions_string = extensions.toString()
+    glConfig.vendor_string = qglGetString(GL11.GL_VENDOR)
+    glConfig.renderer_string = qglGetString(GL11.GL_RENDERER)
+    glConfig.version_string = qglGetString(GL11.GL_VERSION)
+    glConfig.extensions_string = qglGetString(GL11.GL_EXTENSIONS)
 
     // OpenGL driver constants
     qgl.qglGetIntegerv(GL11.GL_MAX_TEXTURE_SIZE, temp)

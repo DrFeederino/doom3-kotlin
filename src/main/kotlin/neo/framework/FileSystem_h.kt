@@ -848,10 +848,6 @@ object FileSystem_h {
                 : idList<Int>
         private var restartGamePakChecksum: Int
         private var searchPaths: searchpath_s? = null
-
-        //
-        //
-        //
         private val serverPaks: idList<pack_t>
 
         /*
@@ -1323,7 +1319,6 @@ object FileSystem_h {
                 val testPath: idStr
                 val fileName: idStr
 
-//		sprintf( testPath, "%s/%s", game , relativePath );
                 testPath = idStr(String.format("%s/%s", game, relativePath))
                 testPath.StripFilename()
                 if (testPath.HasUpper()) {
@@ -2914,7 +2909,7 @@ object FileSystem_h {
          ===========
          */
         override fun FilenameCompare(s1: String, s2: String): Boolean {
-            return Paths.get(s1) == Paths.get(s2)
+            return s1.equals(s2, ignoreCase = true)
         }
 
         /*
@@ -2925,9 +2920,7 @@ object FileSystem_h {
          ====================
          */
         private fun ReplaceSeparators(path: idStr, sep: Char = sys_public.PATHSEPERATOR_CHAR) {
-            // c_str() returns a copy (toCharArray()), so modifying it doesn't update the idStr.
-            // Use string replacement directly on the idStr's data field instead.
-            path.data = path.data.replace('/', sep).replace('\\', sep)
+            path.data = path.data.replace('\\', sep).replace('/', sep)
         }
 
         /*
@@ -2954,7 +2947,7 @@ object FileSystem_h {
                 hash += letter.code.toLong() * (i + 119)
                 i++
             }
-            hash = hash and FILE_HASH_SIZE - 1L
+            hash = hash and (FILE_HASH_SIZE - 1L)
             return hash
         }
 
