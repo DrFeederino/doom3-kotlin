@@ -1665,16 +1665,17 @@ object win_input {
      */
     fun Sys_ReturnKeyboardInputEvent(ch: IntArray, action: Int, key: Int, scancode: Int, mods: Int): Int {
         ch[0] = IN_DIMapKey(key, scancode, mods)
+        val isDown = if (action != GLFW.GLFW_RELEASE) 1 else 0
         when (ch[0]) {
             KeyInput.K_BACKSPACE -> {
                 // SE_KEY covers bindings and key-state tracking for all actions.
                 win_main.Sys_QueEvent(
-                    Instant.now().toEpochMilli(), sysEventType_t.SE_KEY, ch[0], action, 0, null
+                    Instant.now().toEpochMilli(), sysEventType_t.SE_KEY, ch[0], isDown, 0, null
                 )
                 // SE_CHAR on press/repeat drives the console/UI delete-character logic.
                 if (action != GLFW.GLFW_RELEASE) {
                     win_main.Sys_QueEvent(
-                        Instant.now().toEpochMilli(), sysEventType_t.SE_CHAR, ch[0], action, 0, null
+                        Instant.now().toEpochMilli(), sysEventType_t.SE_CHAR, ch[0], 0, 0, null
                     )
                 }
             }
@@ -1684,7 +1685,7 @@ object win_input {
                     // don't queue printscreen keys.  Since windows doesn't send us key
                     // down events for this, we handle queueing them with DirectInput
                     win_main.Sys_QueEvent(
-                        GetTickCount(), sysEventType_t.SE_KEY, ch[0], action, 0, null
+                        GetTickCount(), sysEventType_t.SE_KEY, ch[0], isDown, 0, null
                     ) //TODO:enable this
                 }
                 // for windows, add a keydown event for print screen here, since
@@ -1694,13 +1695,13 @@ object win_input {
             }
 
             KeyInput.K_CTRL, KeyInput.K_ALT, KeyInput.K_RIGHT_ALT -> win_main.Sys_QueEvent(
-                GetTickCount(), sysEventType_t.SE_KEY, ch[0], action, 0, null
+                GetTickCount(), sysEventType_t.SE_KEY, ch[0], isDown, 0, null
             )
 
             else -> {
                 // Always queue SE_KEY so binding execution and key-state tracking
                 // (keys[n].down) work correctly for every key and every action.
-                win_main.Sys_QueEvent(Instant.now().toEpochMilli(), sysEventType_t.SE_KEY, ch[0], action, 0, null)
+                win_main.Sys_QueEvent(Instant.now().toEpochMilli(), sysEventType_t.SE_KEY, ch[0], isDown, 0, null)
                 // Additionally queue SE_CHAR for printable ASCII on press/repeat so
                 // the console and UI text-fields receive the typed characters.
                 // Console-toggle keys (grave / tilde) are intentionally excluded —

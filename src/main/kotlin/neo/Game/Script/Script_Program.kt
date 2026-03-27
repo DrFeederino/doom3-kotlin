@@ -697,8 +697,9 @@ object Script_Program {
                 // init object memory
                 size = type.Size()
                 //		memset( data, 0, size );
-                data = ByteBuffer.allocate(data!!.capacity()).order(ByteOrder.LITTLE_ENDIAN)
-                data!!.clear()
+                for (i in 0 until size) {
+                    data!!.put(i, 0)
+                }
             }
         }
 
@@ -839,7 +840,7 @@ object Script_Program {
             if (data != null) {
                 val pos = data!!.position()
                 when (etype) {
-                    ev_boolean -> data!!.put(btoi((value as Boolean)).toByte())
+                    ev_boolean -> data!!.putInt(pos, btoi((value as Boolean)))
                     ev_float -> data!!.putFloat((value as Float))
                 }
                 data!!.position(pos)
@@ -855,7 +856,7 @@ object Script_Program {
             return if (data != null) {
                 val pos = data!!.position()
                 when (etype) {
-                    ev_boolean -> itob(data!![pos].toInt()) as returnType
+                    ev_boolean -> itob(data!!.getInt(pos)) as returnType
                     ev_float -> data!!.getFloat(pos) as returnType
                     else -> null
                 }

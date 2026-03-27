@@ -215,13 +215,6 @@ object KeyInput {
         null
     )
 
-    //
-    //    
-    // #if MACOS_X
-    // const char* OSX_GetLocalizedString( const char* );
-    // #endif
-    //    
-    //    
     // names not in this list can either be lowercase ascii, or '0xnn' hex sequences
     val keynames: Array<keyname_t> = arrayOf(
         keyname_t("TAB", K_TAB, "#str_07018"),
@@ -581,16 +574,9 @@ object KeyInput {
                     return if (!localized || kn.strId!![0] != '#') {
                         kn.name
                     } else {
-//                        if (MACOS_X) {
-//                            when (kn.keynum) {
-//                                K_ENTER, K_BACKSPACE, K_ALT, K_INS, K_PRINT_SCR -> Common.common.GetLanguageDict()
-//                                    .GetString(kn.strId)
-//
-//                                else -> Common.common.GetLanguageDict().GetString(kn.strId)
-//                            }
-//                        } else {
-                            Common.common.GetLanguageDict().GetString(kn.strId)
-                        //}
+                        val locStr = Common.common.GetLanguageDict().GetString(kn.strId)
+                        // fall back to key name if the localized string wasn't found
+                        if (locStr.startsWith("#str_")) kn.name else locStr
                     }
                 }
             }
@@ -699,10 +685,11 @@ object KeyInput {
                 while (i < MAX_KEYS) {
                     if (keys[i].binding.Icmp(bind) == 0) {
                         if (keyName[0] != '\u0000') {
+                            val sep = Common.common.GetLanguageDict().GetString("#str_07183")
                             idStr.Append(
                                 keyName,
                                 MAX_STRING_CHARS,
-                                Common.common.GetLanguageDict().GetString("#str_07183")
+                                if (sep.startsWith("#str_")) " or " else sep
                             )
                         }
                         idStr.Append(keyName, keyName.size, KeyNumToString(i, true)!!)
@@ -711,7 +698,8 @@ object KeyInput {
                 }
             }
             if (keyName[0] == '\u0000') {
-                idStr.Copynz(keyName, Common.common.GetLanguageDict().GetString("#str_07133"), keyName.size)
+                val none = Common.common.GetLanguageDict().GetString("#str_07133")
+                idStr.Copynz(keyName, if (none.startsWith("#str_")) "<none>" else none, keyName.size)
             }
             idStr.ToLower(keyName)
             return TempDump.ctos(keyName)

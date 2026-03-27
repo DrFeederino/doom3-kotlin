@@ -70,11 +70,13 @@ class BindWindow {
             var color = foreColor.oCastIdVec4()
             val str: String
             str = (if (waitingOnKey) {
-                Common.common.GetLanguageDict().GetString("#str_07000")
+                val s = Common.common.GetLanguageDict().GetString("#str_07000")
+                if (s.startsWith("#str_")) "Press a key..." else s
             } else if (bindName.Length() != 0) {
                 bindName.c_str()
             } else {
-                Common.common.GetLanguageDict().GetString("#str_07001")
+                val s = Common.common.GetLanguageDict().GetString("#str_07001")
+                if (s.startsWith("#str_")) "None" else s
             }).toString()
             if (waitingOnKey || hover && !noEvents.data && Contains(gui!!.CursorX(), gui!!.CursorY())) {
                 color = hoverColor.oCastIdVec4()

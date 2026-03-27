@@ -376,7 +376,6 @@ object UsercmdGen {
     }
 
     abstract class idUsercmdGen {
-        lateinit var keyboardCharCallback: KeyboardCharCallback
         lateinit var keyboardCallback: KeyboardCallback
         lateinit var mouseButtonCallback: MouseButtonCallback
         lateinit var mouseCursorCallback: MouseCursorCallback
@@ -1014,9 +1013,9 @@ object UsercmdGen {
                 if (!Inhibited()) {
                     if (action >= usercmdButton_t.UB_IMPULSE0.ordinal && action <= usercmdButton_t.UB_IMPULSE61.ordinal) {
                         cmd.impulse = (action - usercmdButton_t.UB_IMPULSE0.ordinal).toByte()
-                        //impulse = cmd.impulse.toInt()
+                        impulse = cmd.impulse.toInt()
                         cmd.flags = cmd.flags xor UCF_IMPULSE_SEQUENCE.toByte()
-                        //flags = cmd.flags.toInt()
+                        flags = cmd.flags.toInt()
                     }
                 }
             } else {
@@ -1074,25 +1073,16 @@ object UsercmdGen {
                 // Study each of the buffer elements and process them.
                 //
                 if (button != -1) {
-                    val buton = if (action != GLFW_RELEASE) 0x80 else 0 // (polled_didod[n].dwData & 0x80) == 0x80;
+                    val isDown = action != GLFW_RELEASE
                     mouseButton = KeyInput.K_MOUSE1 + button
-                    mouseDown = buton != 0
+                    mouseDown = isDown
                     Key(mouseButton, mouseDown)
-                    Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_KEY, mouseButton, buton, 0, null)
+                    Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_KEY, mouseButton, if (isDown) 1 else 0, 0, null)
                 }
                 win_input.Sys_EndMouseInputEvents()
             }
         }
 
-        class KeyboardCharCallback : GLFWCharCallback() {
-            override fun invoke(p0: Long, codepoint: Int) {
-                // Converts the unicode codepoint to ASCII for Doom's console
-                if (codepoint < 128) {
-                    Sys_QueEvent(Instant.now().toEpochMilli(), sysEventType_t.SE_CHAR, codepoint, 0, 0, null)
-                }
-            }
-
-        }
         inner class KeyboardCallback : GLFWKeyCallback() {
             override fun invoke(window: Long, key: Int, scancode: Int, action: Int, mods: Int) {
                 val ch = intArrayOf(0)
@@ -1211,7 +1201,6 @@ object UsercmdGen {
             viewangles.set(idVec3()) //ClearAngles();
             cmd = usercmd_t()
             Clear()
-            keyboardCharCallback = KeyboardCharCallback()
             keyboardCallback = KeyboardCallback()
             mouseCursorCallback = MouseCursorCallback()
             mouseScrollCallback = MouseScrollCallback()

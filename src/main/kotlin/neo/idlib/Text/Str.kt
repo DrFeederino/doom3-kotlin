@@ -1894,7 +1894,7 @@ object Str {
                 if (l1 >= size) {
                     idLib.common.Error("idStr::Append: already overflowed")
                 }
-                Copynz(dest, src, size - l1)
+                Copynz(dest, l1, src, size - l1)
             }
 
             fun Append(dest: String, size: Int, src: String): String? {
