@@ -553,14 +553,14 @@ class idLCP_Square : idLCP() {
         val y1: FloatArray
         val z0: FloatArray
         val z1: FloatArray
-        var diag: Float
-        var beta0: Float
-        var beta1: Float
-        var p0: Float
-        var p1: Float
-        var q0: Float
-        var q1: Float
-        var d: Float
+        var diag: Double
+        var beta0: Double
+        var beta1: Double
+        var p0: Double
+        var p1: Double
+        var q0: Double
+        var q1: Double
+        var d: Double
         assert(r < numClamped)
         numClamped--
 
@@ -608,64 +608,64 @@ class idLCP_Square : idLCP() {
         // update the beginning of the to be updated row and column
         i = 0
         while (i < r) {
-            p0 = y0[i]
-            beta1 = (z1[i] * diagonal.p[i])
-            clamped.plusAssign(i, r, p0)
+            p0 = y0[i].toDouble()
+            beta1 = (z1[i] * diagonal.p[i]).toDouble()
+            clamped.plusAssign(i, r, p0.toFloat())
             j = i + 1
             while (j < numClamped) {
-                z1[j] -= beta1 * clamped[i][j]
+                z1[j] -= (beta1 * clamped[i][j]).toFloat()
                 j++
             }
             j = i + 1
             while (j < numClamped) {
-                y0[j] -= p0 * clamped[j][i]
+                y0[j] -= (p0 * clamped[j][i]).toFloat()
                 j++
             }
-            clamped.plusAssign(r, i, beta1)
+            clamped.plusAssign(r, i, beta1.toFloat())
             i++
         }
 
         // update the lower right corner starting at r,r
         i = r
         while (i < numClamped) {
-            diag = clamped[i][i]
-            p0 = y0[i]
-            p1 = z0[i]
+            diag = clamped[i][i].toDouble()
+            p0 = y0[i].toDouble()
+            p1 = z0[i].toDouble()
             diag += p0 * p1
-            if (diag == 0.0f) {
+            if (diag == 0.0) {
                 idLib.common.Printf("idLCP_Square::RemoveClamped: updating factorization failed\n")
                 return
             }
             beta0 = p1 / diag
-            q0 = y1[i]
-            q1 = z1[i]
+            q0 = y1[i].toDouble()
+            q1 = z1[i].toDouble()
             diag += q0 * q1
-            if (diag == 0.0f) {
+            if (diag == 0.0) {
                 idLib.common.Printf("idLCP_Square::RemoveClamped: updating factorization failed\n")
                 return
             }
-            d = 1.0f / diag
+            d = 1.0 / diag
             beta1 = q1 * d
-            clamped[i, i] = diag
-            diagonal.p[i] = d
+            clamped[i, i] = diag.toFloat()
+            diagonal.p[i] = d.toFloat()
             j = i + 1
             while (j < numClamped) {
-                d = clamped[i][j]
+                d = clamped[i][j].toDouble()
                 d += p0 * z0[j]
-                z0[j] -= beta0 * d
+                z0[j] -= (beta0 * d).toFloat()
                 d += q0 * z1[j]
-                z1[j] -= beta1 * d
-                clamped[i, j] = d
+                z1[j] -= (beta1 * d).toFloat()
+                clamped[i, j] = d.toFloat()
                 j++
             }
             j = i + 1
             while (j < numClamped) {
-                d = clamped[j][i]
-                y0[j] -= p0 * d
+                d = clamped[j][i].toDouble()
+                y0[j] -= (p0 * d).toFloat()
                 d += beta0 * y0[j]
-                y1[j] -= q0 * d
+                y1[j] -= (q0 * d).toFloat()
                 d += beta1 * y1[j]
-                clamped[j, i] = d
+                clamped[j, i] = d.toFloat()
                 j++
             }
             i++
@@ -1320,16 +1320,16 @@ class idLCP_Symmetric : idLCP() {
         val v1: FloatArray
         val v2: FloatArray
         val dot = CFloat()
-        var sum: Float
-        var diag: Float
-        var newDiag: Float
-        var invNewDiag: Float
-        var p1: Float
-        var p2: Float
-        var alpha1: Float
-        var alpha2: Float
-        var beta1: Float
-        var beta2: Float
+        var sum: Double
+        var diag: Double
+        var newDiag: Double
+        var invNewDiag: Double
+        var p1: Double
+        var p2: Double
+        var alpha1: Double
+        var alpha2: Double
+        var beta1: Double
+        var beta2: Double
         val original: FloatBuffer
         var ptr: FloatBuffer
         assert(r < numClamped)
@@ -1350,13 +1350,13 @@ class idLCP_Symmetric : idLCP() {
         addSub = FloatArray(numClamped) //	addSub = (float *) _alloca16( numClamped * sizeof( float ) );
         if (r == 0) {
             if (numClamped == 1) {
-                diag = rowPtrs[0].get(0)
-                if (diag == 0.0f) {
+                diag = rowPtrs[0].get(0).toDouble()
+                if (diag == 0.0) {
                     idLib.common.Printf("idLCP_Symmetric::RemoveClamped: updating factorization failed\n")
                     return
                 }
-                clamped.set(0, 0, diag)
-                diagonal.p[0] = (1.0f / diag)
+                clamped.set(0, 0, diag.toFloat())
+                diagonal.p[0] = (1.0 / diag).toFloat()
                 return
             }
 
@@ -1384,13 +1384,13 @@ class idLCP_Symmetric : idLCP() {
                 // only calculate new diagonal
                 SIMDProcessor!!.Dot(dot, clampedArray, v, r)
                 unClam(clamped, clampedArray)
-                diag = (rowPtrs[r].get(r) - dot._val)
-                if (diag == 0.0f) {
+                diag = rowPtrs[r].get(r).toDouble() - dot._val
+                if (diag == 0.0) {
                     idLib.common.Printf("idLCP_Symmetric::RemoveClamped: updating factorization failed\n")
                     return
                 }
-                clamped[r, r] = diag
-                diagonal.p[r] = (1.0f / diag)
+                clamped[r, r] = diag.toFloat()
+                diagonal.p[r] = (1.0 / diag).toFloat()
                 return
             }
             unClam(clamped, clampedArray)
@@ -1404,17 +1404,17 @@ class idLCP_Symmetric : idLCP() {
             i = r
             while (i < numClamped) {
                 if (i == r) {
-                    sum = clamped[r][r]
+                    sum = clamped[r][r].toDouble()
                 } else {
-                    sum = (clamped[r][r] * clamped[i][r])
+                    sum = (clamped[r][r] * clamped[i][r]).toDouble()
                 }
                 ptr = clamped.GetRowPtr(i)
                 j = 0
                 while (j < r) {
-                    sum += (ptr[j] * v[j])
+                    sum += (ptr[j] * v[j]).toDouble()
                     j++
                 }
-                addSub[i] = (rowPtrs[r].get(i) - sum)
+                addSub[i] = (rowPtrs[r].get(i) - sum).toFloat()
                 i++
             }
         }
@@ -1422,26 +1422,26 @@ class idLCP_Symmetric : idLCP() {
         // add row/column to the lower right sub matrix starting at (r, r)
         v1 = FloatArray(numClamped) //	v1 = (float *) _alloca16( numClamped * sizeof( float ) );
         v2 = FloatArray(numClamped) //	v2 = (float *) _alloca16( numClamped * sizeof( float ) );
-        diag = idMath.SQRT_1OVER2
-        v1[r] = ((0.5f * addSub[r] + 1.0f) * diag)
-        v2[r] = ((0.5f * addSub[r] - 1.0f) * diag)
+        diag = idMath.SQRT_1OVER2.toDouble()
+        v1[r] = ((0.5f * addSub[r] + 1.0f) * diag).toFloat()
+        v2[r] = ((0.5f * addSub[r] - 1.0f) * diag).toFloat()
         i = r + 1
         while (i < numClamped) {
-            v2[i] = (addSub[i] * diag)
+            v2[i] = (addSub[i] * diag).toFloat()
             v1[i] = v2[i]
             i++
         }
-        alpha1 = 1.0f
-        alpha2 = -1.0f
+        alpha1 = 1.0
+        alpha2 = -1.0
 
         // simultaneous update/downdate of the sub matrix starting at (r, r)
         n = clamped.GetNumColumns()
         i = r
         while (i < numClamped) {
-            diag = clamped[i][i]
-            p1 = v1[i]
+            diag = clamped[i][i].toDouble()
+            p1 = v1[i].toDouble()
             newDiag = diag + alpha1 * p1 * p1
-            if (newDiag == 0.0f) {
+            if (newDiag == 0.0) {
                 idLib.common.Printf("idLCP_Symmetric::RemoveClamped: updating factorization failed\n")
                 return
             }
@@ -1449,14 +1449,15 @@ class idLCP_Symmetric : idLCP() {
             beta1 = p1 * alpha1
             alpha1 *= diag
             diag = newDiag
-            p2 = v2[i]
+            p2 = v2[i].toDouble()
             newDiag = diag + alpha2 * p2 * p2
-            if (newDiag == 0.0f) {
+            if (newDiag == 0.0) {
                 idLib.common.Printf("idLCP_Symmetric::RemoveClamped: updating factorization failed\n")
                 return
             }
-            clamped[i, i] = newDiag
-            diagonal.p[i] = (1.0f / newDiag.also { invNewDiag = it })
+            clamped[i, i] = newDiag.toFloat()
+            invNewDiag = 1.0 / newDiag
+            diagonal.p[i] = invNewDiag.toFloat()
             alpha2 *= invNewDiag
             beta2 = p2 * alpha2
             alpha2 *= diag
@@ -1465,27 +1466,27 @@ class idLCP_Symmetric : idLCP() {
             ptr = clamped.ToFloatBufferPtr(i)
             j = i + 1
             while (j < numClamped - 1) {
-                var sum0 = ptr[(j + 0) * n]
-                var sum1 = ptr[(j + 1) * n]
-                v1[j + 0] -= p1 * sum0
-                v1[j + 1] -= p1 * sum1
-                sum0 += (beta1 * v1[j + 0])
-                sum1 += (beta1 * v1[j + 1])
-                v2[j + 0] -= p2 * sum0
-                v2[j + 1] -= p2 * sum1
-                sum0 += (beta2 * v2[j + 0])
-                sum1 += (beta2 * v2[j + 1])
-                ptr.put((j + 0) * n, sum0)
-                ptr.put((j + 1) * n, sum1)
+                var sum0 = ptr[(j + 0) * n].toDouble()
+                var sum1 = ptr[(j + 1) * n].toDouble()
+                v1[j + 0] -= (p1 * sum0).toFloat()
+                v1[j + 1] -= (p1 * sum1).toFloat()
+                sum0 += beta1 * v1[j + 0]
+                sum1 += beta1 * v1[j + 1]
+                v2[j + 0] -= (p2 * sum0).toFloat()
+                v2[j + 1] -= (p2 * sum1).toFloat()
+                sum0 += beta2 * v2[j + 0]
+                sum1 += beta2 * v2[j + 1]
+                ptr.put((j + 0) * n, sum0.toFloat())
+                ptr.put((j + 1) * n, sum1.toFloat())
                 j += 2
             }
             while (j < numClamped) {
-                sum = ptr[j * n]
-                v1[j] -= p1 * sum
+                sum = ptr[j * n].toDouble()
+                v1[j] -= (p1 * sum).toFloat()
                 sum += beta1 * v1[j]
-                v2[j] -= p2 * sum
+                v2[j] -= (p2 * sum).toFloat()
                 sum += beta2 * v2[j]
-                ptr.put(j * n, sum)
+                ptr.put(j * n, sum.toFloat())
                 j++
             }
             i++
