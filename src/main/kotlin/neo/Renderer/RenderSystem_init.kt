@@ -69,7 +69,7 @@ import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.FileSystem_h.fileSystem
 import neo.framework.Session
-import neo.framework._WIN32
+import neo.framework.WIN32
 import neo.idlib.CmdArgs
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.FindText
@@ -1317,7 +1317,7 @@ fun R_InitOpenGL() {
         R_SetColorMappings()
     }
 
-    if (_WIN32) {
+    if (WIN32) {
         if (!glCheck) {
             glCheck = true
             if (0 == Icmp(
@@ -1963,10 +1963,7 @@ internal class GfxInfo_f private constructor() : cmdFunction_t() {
         } else {
             common.Printf("glFinish not forced\n")
         }
-        if (_WIN32) {
-// WGL_EXT_swap_interval
-//                typedef BOOL (WINAPI * PFNWGLSWAPINTERVALEXTPROC) (int interval);
-//                extern PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
+        if (WIN32) {
             if (r_swapInterval.GetInteger() != 0) { //)  && NativeLibrary.isFunctionAvailableGlobal("wglSwapIntervalEXT")) {
                 common.Printf("Forcing swapInterval %d\n", r_swapInterval.GetInteger())
             } else {

@@ -30,9 +30,7 @@ import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld.idRenderWorld
 import neo.Sound.snd_system
 import neo.Sound.sound.idSoundWorld
-import neo.TempDump
 import neo.TempDump.SERiAL
-import neo.TempDump.TODO_Exception
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.cmdFunction_t
@@ -45,7 +43,7 @@ import neo.idlib.CmdArgs
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.idException
-import neo.sys.sys_public.sysEvent_s
+import neo.sys.sysEvent_s
 import neo.sys.win_main
 import neo.sys.win_main.Sys_EnterCriticalSection
 import neo.sys.win_main.Sys_LeaveCriticalSection

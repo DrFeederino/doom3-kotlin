@@ -1,24 +1,30 @@
 /*
- * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
- * Translated to Kotlin by Dr. Feederino with support of Claude Code
- *
- * This file is part of the Doom 3 Kotlin project.
- * Original source: neo/sys/win32/win_net.cpp
- *
- * NOTE: Differs from C++ — The original C++ uses Winsock2 (WSA) for networking.
- * This Kotlin port uses java.net (DatagramSocket, InetAddress, etc.).
- *
- * Doom 3 Source Code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Doom 3 Source Code is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+===========================================================================
 
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
 package neo.sys
 
 import neo.TempDump
@@ -27,7 +33,6 @@ import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.Common.Companion.common
 import neo.idlib.containers.CInt
-import neo.sys.sys_public.netadr_t
 import java.net.*
 import java.nio.ByteBuffer
 import java.util.*
@@ -36,9 +41,9 @@ import java.util.logging.Logger
 
 
 class win_net {
-    class net_interface(/*unsigned*/
-                        var ip: Long, /*unsigned*/
-                        var mask: Long
+    class net_interface(
+        var ip: Long,
+        var mask: Long
     )
 
     class udpMsg_s {
@@ -56,7 +61,6 @@ class win_net {
 
         var recieveFirst: udpMsg_s?
 
-        //						~idUDPLag( void );
         var recieveLast: udpMsg_s? = null
         var sendFirst: udpMsg_s?
         var sendLast: udpMsg_s?
@@ -65,7 +69,7 @@ class win_net {
             recieveFirst = recieveLast
             sendLast = recieveFirst
             sendFirst = sendLast //TODO:check this
-        } //        public idBlockAlloc<udpMsg_t> udpMsgAllocator = new idBlockAlloc(64);
+        }
     }
 
     companion object {
@@ -88,8 +92,6 @@ class win_net {
                 ""
             )
 
-        //        val net_socksPassword: idCVar =
-//            idCVar("net_socksPassword", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE, "")
         val net_socksPort: idCVar = idCVar(
             "net_socksPort",
             "1080",
@@ -97,15 +99,9 @@ class win_net {
             ""
         )
 
-        //        val net_socksServer: idCVar =
-//            idCVar("net_socksServer", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE, "")
-        //val net_socksUsername: idCVar =
-        //    idCVar("net_socksUsername", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE, "")
         val netint: Array<net_interface?> = arrayOfNulls<net_interface?>(MAX_INTERFACES)
         var num_interfaces = 0
         var usingSocks = false
-
-        //    static WSADATA winsockdata;
         var winsockInitialized = false
 
         //=============================================================================
@@ -116,56 +112,6 @@ class win_net {
          */
         fun NET_ErrorString(): String {
             throw TODO_Exception()
-            //	int		code;
-//
-//	code = WSAGetLastError();
-//	switch( code ) {
-//	case WSAEINTR: return "WSAEINTR";
-//	case WSAEBADF: return "WSAEBADF";
-//	case WSAEACCES: return "WSAEACCES";
-//	case WSAEDISCON: return "WSAEDISCON";
-//	case WSAEFAULT: return "WSAEFAULT";
-//	case WSAEINVAL: return "WSAEINVAL";
-//	case WSAEMFILE: return "WSAEMFILE";
-//	case WSAEWOULDBLOCK: return "WSAEWOULDBLOCK";
-//	case WSAEINPROGRESS: return "WSAEINPROGRESS";
-//	case WSAEALREADY: return "WSAEALREADY";
-//	case WSAENOTSOCK: return "WSAENOTSOCK";
-//	case WSAEDESTADDRREQ: return "WSAEDESTADDRREQ";
-//	case WSAEMSGSIZE: return "WSAEMSGSIZE";
-//	case WSAEPROTOTYPE: return "WSAEPROTOTYPE";
-//	case WSAENOPROTOOPT: return "WSAENOPROTOOPT";
-//	case WSAEPROTONOSUPPORT: return "WSAEPROTONOSUPPORT";
-//	case WSAESOCKTNOSUPPORT: return "WSAESOCKTNOSUPPORT";
-//	case WSAEOPNOTSUPP: return "WSAEOPNOTSUPP";
-//	case WSAEPFNOSUPPORT: return "WSAEPFNOSUPPORT";
-//	case WSAEAFNOSUPPORT: return "WSAEAFNOSUPPORT";
-//	case WSAEADDRINUSE: return "WSAEADDRINUSE";
-//	case WSAEADDRNOTAVAIL: return "WSAEADDRNOTAVAIL";
-//	case WSAENETDOWN: return "WSAENETDOWN";
-//	case WSAENETUNREACH: return "WSAENETUNREACH";
-//	case WSAENETRESET: return "WSAENETRESET";
-//	case WSAECONNABORTED: return "WSWSAECONNABORTEDAEINTR";
-//	case WSAECONNRESET: return "WSAECONNRESET";
-//	case WSAENOBUFS: return "WSAENOBUFS";
-//	case WSAEISCONN: return "WSAEISCONN";
-//	case WSAENOTCONN: return "WSAENOTCONN";
-//	case WSAESHUTDOWN: return "WSAESHUTDOWN";
-//	case WSAETOOMANYREFS: return "WSAETOOMANYREFS";
-//	case WSAETIMEDOUT: return "WSAETIMEDOUT";
-//	case WSAECONNREFUSED: return "WSAECONNREFUSED";
-//	case WSAELOOP: return "WSAELOOP";
-//	case WSAENAMETOOLONG: return "WSAENAMETOOLONG";
-//	case WSAEHOSTDOWN: return "WSAEHOSTDOWN";
-//	case WSASYSNOTREADY: return "WSASYSNOTREADY";
-//	case WSAVERNOTSUPPORTED: return "WSAVERNOTSUPPORTED";
-//	case WSANOTINITIALISED: return "WSANOTINITIALISED";
-//	case WSAHOST_NOT_FOUND: return "WSAHOST_NOT_FOUND";
-//	case WSATRY_AGAIN: return "WSATRY_AGAIN";
-//	case WSANO_RECOVERY: return "WSANO_RECOVERY";
-//	case WSANO_DATA: return "WSANO_DATA";
-//	default: return "NO ERROR";
-//	}
         }
 
         /*
@@ -174,9 +120,9 @@ class win_net {
          ====================
          */
         fun Net_NetadrToSockadr(a: netadr_t, s: Array<InetSocketAddress?>) {
-            if (a.type == sys_public.netadrtype_t.NA_BROADCAST) {
+            if (a.type == netadrtype_t.NA_BROADCAST) {
                 s[0] = InetSocketAddress("255.255.255.255", a.port)
-            } else if (a.type == sys_public.netadrtype_t.NA_IP || a.type == sys_public.netadrtype_t.NA_LOOPBACK) {
+            } else if (a.type == netadrtype_t.NA_IP || a.type == netadrtype_t.NA_LOOPBACK) {
                 val ipStr = "${a.ip[0].code}.${a.ip[1].code}.${a.ip[2].code}.${a.ip[3].code}"
                 s[0] = InetSocketAddress(ipStr, a.port)
             }
@@ -215,9 +161,9 @@ class win_net {
             a.port = sockAddr.port
 
             if (addr.isLoopbackAddress) {
-                a.type = sys_public.netadrtype_t.NA_LOOPBACK
+                a.type = netadrtype_t.NA_LOOPBACK
             } else {
-                a.type = sys_public.netadrtype_t.NA_IP
+                a.type = netadrtype_t.NA_IP
             }
         }
 
@@ -287,37 +233,6 @@ class win_net {
          */
         fun Net_WaitForUDPPacket(netSocket: Int, timeout: Int): Boolean {
             throw TODO_Exception()
-            //	int					ret;
-//	fd_set				set;
-//	struct timeval		tv;
-//
-//	if ( !netSocket ) {
-//		return false;
-//	}
-//
-//	if ( timeout <= 0 ) {
-//		return true;
-//	}
-//
-//	FD_ZERO( &set );
-//	FD_SET( netSocket, &set );
-//
-//	tv.tv_sec = 0;
-//	tv.tv_usec = timeout * 1000;
-//
-//	ret = select( netSocket + 1, &set, NULL, NULL, &tv );
-//
-//	if ( ret == -1 ) {
-//		common->DPrintf( "Net_WaitForUPDPacket select(): %s\n", strerror( errno ) );
-//		return false;
-//	}
-//
-//	// timeout with no data
-//	if ( ret == 0 ) {
-//		return false;
-//	}
-//
-//	return true;
         }
 
         /*
@@ -360,59 +275,6 @@ class win_net {
             } catch (e: Exception) {
                 return false
             }
-
-            //	int 			ret;
-//	struct sockaddr	from;
-//	int				fromlen;
-//	int				err;
-//
-//	if( !netSocket ) {
-//		return false;
-//	}
-//
-//	fromlen = sizeof(from);
-//	ret = recvfrom( netSocket, data, maxSize, 0, (struct sockaddr *)&from, &fromlen );
-//	if ( ret == SOCKET_ERROR ) {
-//		err = WSAGetLastError();
-//
-//		if( err == WSAEWOULDBLOCK || err == WSAECONNRESET ) {
-//			return false;
-//		}
-//		char	buf[1024];
-//		sprintf( buf, "Net_GetUDPPacket: %s\n", NET_ErrorString() );
-//		OutputDebugString( buf );
-//		return false;
-//	}
-//
-//	if ( netSocket == ip_socket ) {
-//		memset( ((struct sockaddr_in *)&from)->sin_zero, 0, 8 );
-//	}
-//
-//	if ( usingSocks && netSocket == ip_socket && memcmp( &from, &socksRelayAddr, fromlen ) == 0 ) {
-//		if ( ret < 10 || data[0] != 0 || data[1] != 0 || data[2] != 0 || data[3] != 1 ) {
-//			return false;
-//		}
-//		net_from.type = NA_IP;
-//		net_from.ip[0] = data[4];
-//		net_from.ip[1] = data[5];
-//		net_from.ip[2] = data[6];
-//		net_from.ip[3] = data[7];
-//		net_from.port = *(short *)&data[8];
-//		memmove( data, &data[10], ret - 10 );
-//	} else {
-//		Net_SockadrToNetadr( &from, &net_from );
-//	}
-//
-//	if( ret == maxSize ) {
-//		char	buf[1024];
-//		sprintf( buf, "Net_GetUDPPacket: oversize packet from %s\n", Sys_NetAdrToString( net_from ) );
-//		OutputDebugString( buf );
-//		return false;
-//	}
-//
-//	size = ret;
-//
-//	return true;
         }
 
         /*
@@ -443,7 +305,6 @@ class win_net {
          Sys_ShutdownNetworking
          ====================
          */
-        // NOTE: Differs from C++ — C++ calls WSACleanup(). Java manages sockets via GC.
         fun Sys_ShutdownNetworking() {
             if (!winsockInitialized) {
                 return
@@ -459,11 +320,11 @@ class win_net {
         fun Sys_IsLANAddress(adr: netadr_t?): Boolean {
             if (adr == null) return false
 
-            if (adr.type == sys_public.netadrtype_t.NA_LOOPBACK) {
+            if (adr.type == netadrtype_t.NA_LOOPBACK) {
                 return true
             }
 
-            if (adr.type != sys_public.netadrtype_t.NA_IP) {
+            if (adr.type != netadrtype_t.NA_IP) {
                 return false
             }
 
@@ -493,41 +354,13 @@ class win_net {
      ====================
      */
         fun Sys_InitNetworking() {
-            //
-//        r = WSAStartup(MAKEWORD(1, 1),  & winsockdata);
-//        if (r) {
-//            common.Printf("WARNING: Winsock initialization failed, returned %d\n", r);
-//            return;
-//        }
-//
             winsockInitialized = true
             common.Printf("Winsock Initialized\n")
-            val   /*PIP_ADAPTER_INFO*/pAdapterInfo: Enumeration<NetworkInterface>
-            var   /*PIP_ADAPTER_INFO*/pAdapter: NetworkInterface
-            //        DWORD dwRetVal = 0;
-            var   /*PIP_ADDR_STRING*/pIPAddrStrings: Enumeration<InetAddress>
+            val pAdapterInfo: Enumeration<NetworkInterface>
+            var pAdapter: NetworkInterface
+            var pIPAddrStrings: Enumeration<InetAddress>
             var pIPAddr: InetAddress
-            //        ULONG ulOutBufLen;
-//        boolean foundLoopback;
             num_interfaces = 0
-            //        foundLoopback = false;
-//
-//	pAdapterInfo = (IP_ADAPTER_INFO *)malloc( sizeof( IP_ADAPTER_INFO ) );
-//	if( !pAdapterInfo ) {
-//		common.FatalError( "Sys_InitNetworking: Couldn't malloc( %d )", sizeof( IP_ADAPTER_INFO ) );
-//	}
-//	ulOutBufLen = sizeof( IP_ADAPTER_INFO );
-//
-//	// Make an initial call to GetAdaptersInfo to get
-//	// the necessary size into the ulOutBufLen variable
-//	if( GetAdaptersInfo( pAdapterInfo, &ulOutBufLen ) == ERROR_BUFFER_OVERFLOW ) {
-//		free( pAdapterInfo );
-//		pAdapterInfo = (IP_ADAPTER_INFO *)malloc( ulOutBufLen );
-//		if( !pAdapterInfo ) {
-//			common.FatalError( "Sys_InitNetworking: Couldn't malloc( %ld )", ulOutBufLen );
-//		}
-//	}
-//
             try {
                 pAdapterInfo =
                     NetworkInterface.getNetworkInterfaces() //if( ( dwRetVal = GetAdaptersInfo( pAdapterInfo, &ulOutBufLen) ) != NO_ERROR ) {
@@ -537,16 +370,12 @@ class win_net {
                     pIPAddrStrings = pAdapter.inetAddresses
                     while (pIPAddrStrings.hasMoreElements()) {
                         pIPAddr = pIPAddrStrings.nextElement()
-                        /*unsigned*/
+
                         var ip_a: Long
                         var ip_m: Long = 0
                         if (pIPAddr is Inet6Address) {
                             continue  //TODO:skip ipv6, for now.
                         }
-                        //                        if (!idStr.Icmp("127.0f.0f.1", pIPAddrString.IpAddress.String)) {
-//                            foundLoopback = true;
-//                        }
-//                    foundLoopback |= pIPAddr.isLoopbackAddress();
                         ip_a = TempDump.ntohl(pIPAddr.address)
                         if (pAdapter.interfaceAddresses != null && pAdapter.interfaceAddresses.size > 0) {
                             ip_m = pAdapter.interfaceAddresses[0].networkPrefixLength.toLong()
@@ -577,23 +406,13 @@ class win_net {
                 // happens if you have no network connection
                 common.Printf("Sys_InitNetworking: GetAdaptersInfo failed (%ld).\n", -1 /*dwRetVal*/)
             }
-
-//        //TODO: check if java is as retarded as win32.
-//        // for some retarded reason, win32 doesn't count loopback as an adapter...
-//        if (!foundLoopback && num_interfaces < MAX_INTERFACES) {
-//            common.Printf("Sys_InitNetworking: adding loopback interface\n");
-//            netint[num_interfaces].ip = ntohl(inet_addr("127.0f.0f.1"));
-//            netint[num_interfaces].mask = ntohl(inet_addr("255.0f.0f.0f"));
-//            num_interfaces++;
-//        }
-//            free( pAdapterInfo );
         }
 
         /*
-    =============
-    Sys_StringToNetAdr
-    =============
-    */
+        =============
+        Sys_StringToNetAdr
+        =============
+        */
         fun Sys_StringToNetAdr(s: String?, a: netadr_t?, doDNSResolve: Boolean): Boolean {
             var sadr = arrayOfNulls<InetSocketAddress>(1)
             if (!Net_StringToSockaddr(s!!, sadr, doDNSResolve)) {
@@ -609,13 +428,13 @@ class win_net {
      =============
      */
         fun Sys_NetAdrToString(a: netadr_t): String {
-            return if (a.type == sys_public.netadrtype_t.NA_LOOPBACK) {
+            return if (a.type == netadrtype_t.NA_LOOPBACK) {
                 if (a.port != 0) {
                     String.format("localhost:%d", a.port)
                 } else {
                     "localhost"
                 }
-            } else if (a.type == sys_public.netadrtype_t.NA_IP) {
+            } else if (a.type == netadrtype_t.NA_IP) {
                 String.format(
                     "%d.%d.%d.%d:%d",
                     a.ip[0].code, a.ip[1].code, a.ip[2].code, a.ip[3].code, a.port
@@ -626,12 +445,12 @@ class win_net {
         }
 
         /*
-     ===================
-     Sys_CompareNetAdrBase
+         ===================
+         Sys_CompareNetAdrBase
 
-     Compares without the port
-     ===================
-     */
+         Compares without the port
+         ===================
+         */
         fun Sys_CompareNetAdrBase(a: netadr_t?, b: netadr_t?): Boolean {
             if (a == null || b == null) return false
 
@@ -639,11 +458,11 @@ class win_net {
                 return false
             }
 
-            if (a.type == sys_public.netadrtype_t.NA_LOOPBACK) {
+            if (a.type == netadrtype_t.NA_LOOPBACK) {
                 return true
             }
 
-            if (a.type == sys_public.netadrtype_t.NA_IP) {
+            if (a.type == netadrtype_t.NA_IP) {
                 return a.ip[0] == b.ip[0] && a.ip[1] == b.ip[1] && a.ip[2] == b.ip[2] && a.ip[3] == b.ip[3]
             }
 
@@ -652,10 +471,10 @@ class win_net {
         }
 
         /*
-     ====================
-     NET_IPSocket
-     ====================
-     */
+         ====================
+         NET_IPSocket
+         ====================
+         */
         fun IPSocket(net_interface: String, port: Int, bound_to: netadr_t?): DatagramSocket? {
             if (net_interface.isNotEmpty()) {
                 common.DPrintf("Opening IP socket: %s:%d\n", net_interface, port)
@@ -668,10 +487,10 @@ class win_net {
                 val bindAddr: InetAddress =
                     if (net_interface.isEmpty() || net_interface.equals("localhost", ignoreCase = true)) {
                         Inet4Address.getByName("0.0.0.0") // INADDR_ANY, force IPv4
-                } else {
+                    } else {
                         Inet4Address.getByName(net_interface)
-                }
-                val bindPort = if (port == sys_public.PORT_ANY) 0 else port
+                    }
+                val bindPort = if (port == PORT_ANY) 0 else port
                 val address = InetSocketAddress(bindAddr, bindPort)
 
                 newSocket = DatagramSocket(null) // create unbound socket
@@ -701,174 +520,6 @@ class win_net {
          */
         fun NET_OpenSocks(port: Int) {
             throw TODO_Exception()
-            //	struct sockaddr_in	address;
-//	int					err;
-//	struct hostent		*h;
-//	int					len;
-//	bool			rfc1929;
-//	unsigned char		buf[64];
-//
-//	usingSocks = false;
-//
-//	common->Printf( "Opening connection to SOCKS server.\n" );
-//
-//	if ( ( socks_socket = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ) == INVALID_SOCKET ) {
-//		err = WSAGetLastError();
-//		common->Printf( "WARNING: NET_OpenSocks: socket: %s\n", NET_ErrorString() );
-//		return;
-//	}
-//
-//	h = gethostbyname( net_socksServer.GetString() );
-//	if ( h == NULL ) {
-//		err = WSAGetLastError();
-//		common->Printf( "WARNING: NET_OpenSocks: gethostbyname: %s\n", NET_ErrorString() );
-//		return;
-//	}
-//	if ( h->h_addrtype != AF_INET ) {
-//		common->Printf( "WARNING: NET_OpenSocks: gethostbyname: address type was not AF_INET\n" );
-//		return;
-//	}
-//	address.sin_family = AF_INET;
-//	address.sin_addr.s_addr = *(int *)h->h_addr_list[0];
-//	address.sin_port = htons( (short)net_socksPort.GetInteger() );
-//
-//	if ( connect( socks_socket, (struct sockaddr *)&address, sizeof( address ) ) == SOCKET_ERROR ) {
-//		err = WSAGetLastError();
-//		common->Printf( "NET_OpenSocks: connect: %s\n", NET_ErrorString() );
-//		return;
-//	}
-//
-//	// send socks authentication handshake
-//	if ( *net_socksUsername.GetString() || *net_socksPassword.GetString() ) {
-//		rfc1929 = true;
-//	}
-//	else {
-//		rfc1929 = false;
-//	}
-//
-//	buf[0] = 5;		// SOCKS version
-//	// method count
-//	if ( rfc1929 ) {
-//		buf[1] = 2;
-//		len = 4;
-//	}
-//	else {
-//		buf[1] = 1;
-//		len = 3;
-//	}
-//	buf[2] = 0;		// method #1 - method id #00: no authentication
-//	if ( rfc1929 ) {
-//		buf[2] = 2;		// method #2 - method id #02: username/password
-//	}
-//	if ( send( socks_socket, (const char *)buf, len, 0 ) == SOCKET_ERROR ) {
-//		err = WSAGetLastError();
-//		common->Printf( "NET_OpenSocks: send: %s\n", NET_ErrorString() );
-//		return;
-//	}
-//
-//	// get the response
-//	len = recv( socks_socket, (char *)buf, 64, 0 );
-//	if ( len == SOCKET_ERROR ) {
-//		err = WSAGetLastError();
-//		common->Printf( "NET_OpenSocks: recv: %s\n", NET_ErrorString() );
-//		return;
-//	}
-//	if ( len != 2 || buf[0] != 5 ) {
-//		common->Printf( "NET_OpenSocks: bad response\n" );
-//		return;
-//	}
-//	switch( buf[1] ) {
-//	case 0:	// no authentication
-//		break;
-//	case 2: // username/password authentication
-//		break;
-//	default:
-//		common->Printf( "NET_OpenSocks: request denied\n" );
-//		return;
-//	}
-//
-//	// do username/password authentication if needed
-//	if ( buf[1] == 2 ) {
-//		int		ulen;
-//		int		plen;
-//
-//		// build the request
-//		ulen = strlen( net_socksUsername.GetString() );
-//		plen = strlen( net_socksPassword.GetString() );
-//
-//		buf[0] = 1;		// username/password authentication version
-//		buf[1] = ulen;
-//		if ( ulen ) {
-//			memcpy( &buf[2], net_socksUsername.GetString(), ulen );
-//		}
-//		buf[2 + ulen] = plen;
-//		if ( plen ) {
-//			memcpy( &buf[3 + ulen], net_socksPassword.GetString(), plen );
-//		}
-//
-//		// send it
-//		if ( send( socks_socket, (const char *)buf, 3 + ulen + plen, 0 ) == SOCKET_ERROR ) {
-//			err = WSAGetLastError();
-//			common->Printf( "NET_OpenSocks: send: %s\n", NET_ErrorString() );
-//			return;
-//		}
-//
-//		// get the response
-//		len = recv( socks_socket, (char *)buf, 64, 0 );
-//		if ( len == SOCKET_ERROR ) {
-//			err = WSAGetLastError();
-//			common->Printf( "NET_OpenSocks: recv: %s\n", NET_ErrorString() );
-//			return;
-//		}
-//		if ( len != 2 || buf[0] != 1 ) {
-//			common->Printf( "NET_OpenSocks: bad response\n" );
-//			return;
-//		}
-//		if ( buf[1] != 0 ) {
-//			common->Printf( "NET_OpenSocks: authentication failed\n" );
-//			return;
-//		}
-//	}
-//
-//	// send the UDP associate request
-//	buf[0] = 5;		// SOCKS version
-//	buf[1] = 3;		// command: UDP associate
-//	buf[2] = 0;		// reserved
-//	buf[3] = 1;		// address type: IPV4
-//	*(int *)&buf[4] = INADDR_ANY;
-//	*(short *)&buf[8] = htons( (short)port );		// port
-//	if ( send( socks_socket, (const char *)buf, 10, 0 ) == SOCKET_ERROR ) {
-//		err = WSAGetLastError();
-//		common->Printf( "NET_OpenSocks: send: %s\n", NET_ErrorString() );
-//		return;
-//	}
-//
-//	// get the response
-//	len = recv( socks_socket, (char *)buf, 64, 0 );
-//	if( len == SOCKET_ERROR ) {
-//		err = WSAGetLastError();
-//		common->Printf( "NET_OpenSocks: recv: %s\n", NET_ErrorString() );
-//		return;
-//	}
-//	if( len < 2 || buf[0] != 5 ) {
-//		common->Printf( "NET_OpenSocks: bad response\n" );
-//		return;
-//	}
-//	// check completion code
-//	if( buf[1] != 0 ) {
-//		common->Printf( "NET_OpenSocks: request denied: %i\n", buf[1] );
-//		return;
-//	}
-//	if( buf[3] != 1 ) {
-//		common->Printf( "NET_OpenSocks: relay address is not IPV4: %i\n", buf[3] );
-//		return;
-//	}
-//	((struct sockaddr_in *)&socksRelayAddr)->sin_family = AF_INET;
-//	((struct sockaddr_in *)&socksRelayAddr)->sin_addr.s_addr = *(int *)&buf[4];
-//	((struct sockaddr_in *)&socksRelayAddr)->sin_port = *(short *)&buf[8];
-//	memset( ((struct sockaddr_in *)&socksRelayAddr)->sin_zero, 0, 8 );
-//
-//	usingSocks = true;
         }
     }
 }

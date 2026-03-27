@@ -36,12 +36,7 @@ import neo.idlib.idLib
 import neo.idlib.math.INTSIGNBITSET
 import neo.idlib.math.Random.idRandom
 import neo.idlib.math.idMath
-import neo.sys.sys_public
-import neo.sys.sys_public.idPort
-import neo.sys.sys_public.netadr_t
-import neo.sys.sys_public.netadrtype_t
-import neo.sys.win_net
-import neo.sys.win_shared
+import neo.sys.*
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
 import java.math.BigInteger
@@ -209,7 +204,7 @@ object AsyncClient {
         fun InitPort(): Boolean {
             // if this is the first time we connect to a server, open the UDP port
             if (0 == clientPort.GetPort()) {
-                if (!clientPort.InitForPort(sys_public.PORT_ANY)) {
+                if (!clientPort.InitForPort(PORT_ANY)) {
                     Common.common.Printf("Couldn't open client network port.\n")
                     return false
                 }
@@ -675,7 +670,7 @@ object AsyncClient {
             msg.WriteShort(MsgChannel.CONNECTIONLESS_MESSAGE_ID.toShort())
             msg.WriteString("versionCheck")
             msg.WriteLong(AsyncNetwork.ASYNC_PROTOCOL_VERSION)
-            msg.WriteShort(sys_public.BUILD_OS_ID.toShort())
+            msg.WriteShort(BUILD_OS_ID.toShort())
             msg.WriteString(CVarSystem.cvarSystem.GetCVarString("si_version"))
             msg.WriteString(CVarSystem.cvarSystem.GetCVarString("com_guid"))
             clientPort.SendPacket(idAsyncNetwork.GetMasterAddress(), msg.GetData()!!, msg.GetSize())
@@ -1779,7 +1774,7 @@ object AsyncClient {
                     // fake win32 OS - might need to adapt depending on the case
                     msg.WriteShort(0)
                 } else {
-                    msg.WriteShort(sys_public.BUILD_OS_ID.toShort())
+                    msg.WriteShort(BUILD_OS_ID.toShort())
                 }
                 msg.WriteLong(clientDataChecksum.toInt())
                 msg.WriteLong(serverChallenge)

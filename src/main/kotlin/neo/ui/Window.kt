@@ -54,8 +54,8 @@ import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Matrix.idMat3.Companion.getMat3_identity
 import neo.idlib.precompiled.MAX_EXPRESSION_OPS
 import neo.idlib.precompiled.MAX_EXPRESSION_REGISTERS
-import neo.sys.sys_public.sysEventType_t
-import neo.sys.sys_public.sysEvent_s
+import neo.sys.sysEventType_t
+import neo.sys.sysEvent_s
 import neo.ui.BindWindow.idBindWindow
 import neo.ui.ChoiceWindow.idChoiceWindow
 import neo.ui.DeviceContext.CstGetParams
@@ -2345,7 +2345,7 @@ object Window {
             rotate.ReadFromSaveGame(savefile)
             text.ReadFromSaveGame(savefile)
             backGroundName.ReadFromSaveGame(savefile)
-            if (Session.session.GetSaveGameVersion() >= 17) {
+            if (session.GetSaveGameVersion() >= 17) {
                 hideCursor.ReadFromSaveGame(savefile)
             } else {
                 hideCursor.data = false

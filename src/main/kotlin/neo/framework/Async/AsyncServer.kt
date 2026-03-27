@@ -22,12 +22,7 @@ import neo.idlib.containers.CInt
 import neo.idlib.containers.idStrList
 import neo.idlib.idException
 import neo.idlib.math.idMath
-import neo.sys.sys_public.idPort
-import neo.sys.sys_public.netadr_t
-import neo.sys.sys_public.netadrtype_t
-import neo.sys.win_main
-import neo.sys.win_net
-import neo.sys.win_shared
+import neo.sys.*
 import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.util.*
@@ -1860,7 +1855,7 @@ object AsyncServer {
             val guid = CharArray(12)
             val password = CharArray(17)
             var i: Int
-            var ichallenge: Int
+            var ichallenge: Int = 0
             var islot: Int
             val OS: Int
             var numClients: Int

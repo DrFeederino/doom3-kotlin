@@ -54,8 +54,8 @@ import neo.idlib.math.YAW
 import neo.idlib.math.idMath.ClampChar
 import neo.idlib.math.idMath.M_MS2SEC
 import neo.idlib.math.idVec3
-import neo.sys.sys_public.joystickAxis_t
-import neo.sys.sys_public.sysEventType_t
+import neo.sys.joystickAxis_t
+import neo.sys.sysEventType_t
 import neo.sys.win_input
 import neo.sys.win_input.Sys_EndKeyboardInputEvents
 import neo.sys.win_input.Sys_ReturnKeyboardInputEvent

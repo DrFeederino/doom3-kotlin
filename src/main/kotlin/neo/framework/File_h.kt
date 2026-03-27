@@ -293,16 +293,12 @@ object File_h {
         fun Printf(fmt: String, vararg args: Any): Int /* id_attribute((format(printf,2,3)))*/ {
             val buf = arrayOf("") // new char[MAX_PRINT_MSG];
             val length: Int
-            //            va_list argptr;
-
-//            va_start(argptr, fmt);
             length = idStr.vsnPrintf(buf, MAX_PRINT_MSG - 1, fmt, *args /*, argptr*/)
-            //            va_end(argptr);
 
             // so notepad formats the lines correctly
             val work = idStr(buf[0])
             work.Replace("\n", "\r\n")
-            return Write(TempDump.atobb(work)!!)
+            return Write(TempDump.atobb(work)!!, length)
         }
 
         // Like fprintf but with argument pointer

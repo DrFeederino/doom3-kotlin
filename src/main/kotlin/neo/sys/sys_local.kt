@@ -1,20 +1,30 @@
 /*
- * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
- * Translated to Kotlin by Dr. Feederino with support of Claude Code
- *
- * This file is part of the Doom 3 Kotlin project.
- * Original source: neo/sys/sys_local.cpp, neo/sys/sys_local.h
- *
- * Doom 3 Source Code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Doom 3 Source Code is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
 
 package neo.sys
 
@@ -25,9 +35,6 @@ import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_String
 import neo.framework.Common.Companion.common
 import neo.idlib.Text.Str.idStr
 import neo.idlib.idException
-import neo.sys.sys_public.idSys
-import neo.sys.sys_public.sysEventType_t
-import neo.sys.sys_public.sysEvent_s
 import java.awt.Desktop
 import java.net.URI
 import java.text.SimpleDateFormat
@@ -156,12 +163,11 @@ class sys_local {
          ================
          */
         override fun DLL_GetFileName(baseName: String, dllName: Array<String>, maxLength: Int) {
-            // NOTE: Differs from C++ — C++ uses BUILD_LIBRARY_SUFFIX macro at compile time.
             // Kotlin uses runtime platform detection instead.
-            if (_WIN32) {
-                idStr.snPrintf(dllName, maxLength, "%s" + sys_public.CPUSTRING + ".dll", baseName)
+            if (WIN32) {
+                idStr.snPrintf(dllName, maxLength, "%s" + CPUSTRING + ".dll", baseName)
             } else if (__linux__) {
-                idStr.snPrintf(dllName, maxLength, "%s" + sys_public.CPUSTRING + ".so", baseName)
+                idStr.snPrintf(dllName, maxLength, "%s" + CPUSTRING + ".so", baseName)
             } else {
                 throw idException("OS define is required")
             }
@@ -200,8 +206,6 @@ class sys_local {
         /*
          ================
          idSysLocal::OpenURL
-         // NOTE: Differs from C++ — C++ uses Win32 ShellExecute.
-         // Kotlin uses java.awt.Desktop.browse() as the LWJGL/JVM equivalent.
          ================
          */
         override fun OpenURL(url: String, doExit: Boolean) {
@@ -233,8 +237,6 @@ class sys_local {
         /*
          ================
          idSysLocal::StartProcess
-         // NOTE: Differs from C++ — C++ uses Win32 CreateProcess.
-         // Kotlin uses ProcessBuilder as the JVM equivalent.
          ================
          */
         override fun StartProcess(exePath: String, doExit: Boolean) {
@@ -276,10 +278,7 @@ class sys_local {
          Sys_TimeStampToStr
          =================
          */
-        fun Sys_TimeStampToStr(/*ID_TIME_T*/ timeStamp: Long): String {
-            // FIX: Was ignoring timeStamp parameter and using current time (Date()).
-            // C++ uses localtime(&timeStamp) which converts the passed timestamp.
-            // ID_TIME_T is time_t (seconds since epoch), so multiply by 1000 for Java ms.
+        fun Sys_TimeStampToStr(timeStamp: Long): String {
             val time = Date(timeStamp * 1000)
             val out: String
             val lang = idStr(CVarSystem.cvarSystem.GetCVarString("sys_lang"))
@@ -290,6 +289,7 @@ class sys_local {
                 // europeans get "day/month/year  24hour:min"
                 SimpleDateFormat("dd/MM/yyyy\tHH:mm").format(time)
             }
+
             return out.also { timeString = it }
         }
     }

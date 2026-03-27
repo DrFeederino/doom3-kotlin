@@ -35,8 +35,8 @@ import neo.idlib.colorWhite
 import neo.idlib.containers.CBool
 import neo.idlib.containers.List.idList
 import neo.idlib.math.idMath.FtoiFast
-import neo.sys.sys_public.sysEventType_t
-import neo.sys.sys_public.sysEvent_s
+import neo.sys.sysEventType_t
+import neo.sys.sysEvent_s
 import neo.sys.win_input.Sys_GetConsoleKey
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.Rectangle.idRectangle

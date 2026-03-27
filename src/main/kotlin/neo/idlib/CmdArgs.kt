@@ -178,7 +178,7 @@ class CmdArgs {
 
 //                idStr::Copynz( tokenized + totalLen, token.c_str(), sizeof( tokenized ) - totalLen );
 //                tokenized.replace(totalLen, tokenized.capacity() - token.Length(), token.toString());
-                totalLen += len // + 1;//we don't need the '\0'.
+                totalLen += len //+ 1;//we don't need the '\0'.
             }
         }
 

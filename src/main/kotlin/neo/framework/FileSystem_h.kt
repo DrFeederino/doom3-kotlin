@@ -29,8 +29,7 @@ import neo.idlib.containers.List.idList
 import neo.idlib.containers.idHashIndex
 import neo.idlib.containers.idStrList
 import neo.idlib.idLib
-import neo.sys.sys_public
-import neo.sys.win_main
+import neo.sys.*
 import neo.sys.win_main.Sys_EnterCriticalSection
 import neo.sys.win_main.Sys_LeaveCriticalSection
 import neo.sys.win_main.Sys_TriggerEvent
@@ -1369,7 +1368,7 @@ object FileSystem_h {
             val path = idStr(OSPath)
             ofs = 1
             while (ofs < path.Length()) {
-                if (path[ofs] == sys_public.PATHSEPERATOR_CHAR) {
+                if (path[ofs] == PATHSEPERATOR_CHAR) {
                     // create the directory
                     // FIX: C++ uses null-termination (*ofs = 0) which doesn't work in Kotlin strings.
                     // Use substring to pass only the path up to this separator.
@@ -1535,12 +1534,12 @@ object FileSystem_h {
 
             // some sanity checks on the game code references
             // make sure that at least the local OS got a pure reference
-            if (0 == gamePakForOS[sys_public.BUILD_OS_ID]) {
+            if (0 == gamePakForOS[BUILD_OS_ID]) {
                 idLib.common.Warning("No game code pak reference found for the local OS")
                 return false
             }
             if (!CVarSystem.cvarSystem.GetCVarBool("net_serverAllowServerMod")
-                && gamePakChecksum != gamePakForOS[sys_public.BUILD_OS_ID]
+                && gamePakChecksum != gamePakForOS[BUILD_OS_ID]
             ) {
                 idLib.common.Warning("The current game code doesn't match pak files (net_serverAllowServerMod is off)")
                 return false
@@ -2104,7 +2103,7 @@ object FileSystem_h {
                         copypath = idStr(BuildOSPath(fs_savepath.GetString()!!, dir.gamedir.toString(), relativePath))
                         netpath.ExtractFileName(name)
                         copypath.StripFilename()
-                        copypath.Append(sys_public.PATHSEPERATOR_STR)
+                        copypath.Append(PATHSEPERATOR_STR)
                         copypath.Append(name)
                         val isFromCDPath = 0 == dir.path.Cmp(fs_cdpath.GetString()!!)
                         val isFromSavePath = 0 == dir.path.Cmp(fs_savepath.GetString()!!)
@@ -2919,7 +2918,7 @@ object FileSystem_h {
          Fix things up differently for win/unix/mac
          ====================
          */
-        private fun ReplaceSeparators(path: idStr, sep: Char = sys_public.PATHSEPERATOR_CHAR) {
+        private fun ReplaceSeparators(path: idStr, sep: Char = PATHSEPERATOR_CHAR) {
             path.data = path.data.replace('\\', sep).replace('/', sep)
         }
 
@@ -2970,7 +2969,7 @@ object FileSystem_h {
 //                extension = ""
 //            }
             if (!fs_caseSensitiveOS.GetBool()) {
-                return sys_public.Sys_ListFiles(directory, extension, list)
+                return Sys_ListFiles(directory, extension, list)
             }
 
             // try in cache
@@ -2989,7 +2988,7 @@ object FileSystem_h {
             if (fs_debug.GetInteger() != 0) {
                 //common.Printf( "idFileSystemLocal::ListOSFiles: cache miss: %s\n", directory );
             }
-            ret = sys_public.Sys_ListFiles(directory, extension, list)
+            ret = Sys_ListFiles(directory, extension, list)
             if (ret == -1) {
                 return -1
             }
@@ -3039,13 +3038,13 @@ object FileSystem_h {
             ) {
                 fpath = idStr(fileName)
                 fpath.StripFilename()
-                fpath.StripTrailing(sys_public.PATHSEPERATOR_CHAR)
+                fpath.StripTrailing(PATHSEPERATOR_CHAR)
                 if (ListOSFiles(fpath.toString(), "", list) == -1) {
                     return null
                 }
                 i = 0
                 while (i < list.size()) {
-                    entry = idStr(fpath.toString() + sys_public.PATHSEPERATOR_CHAR + list[i].toString())
+                    entry = idStr(fpath.toString() + PATHSEPERATOR_CHAR + list[i].toString())
                     if (0 == entry.Icmp(fileName)) {
                         fp = Paths.get(entry.toString()) //fp = fopen(entry, mode);
                         if (Files.exists(fp, LinkOption.NOFOLLOW_LINKS)) {
@@ -3091,7 +3090,7 @@ object FileSystem_h {
             val f = OpenOSFile(path.toString(), mode, caseName)
             if (f != null) {
                 path.StripFilename()
-                path.Append(sys_public.PATHSEPERATOR_STR)
+                path.Append(PATHSEPERATOR_STR)
                 path.Append(caseName)
             }
             return f

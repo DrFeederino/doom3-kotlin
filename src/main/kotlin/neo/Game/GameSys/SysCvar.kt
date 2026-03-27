@@ -19,7 +19,7 @@ import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.idCmdSystem.*
 import neo.framework.Licensee
-import neo.sys.sys_public
+import neo.sys.BUILD_STRING
 import java.util.*
 
 class SysCvar {
@@ -33,7 +33,7 @@ class SysCvar {
                 Licensee.ENGINE_VERSION,
                 BUILD_NUMBER,
                 BUILD_DEBUG,
-                sys_public.BUILD_STRING,
+                BUILD_STRING,
                 __DATE__
             )
         }

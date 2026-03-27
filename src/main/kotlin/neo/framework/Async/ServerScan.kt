@@ -15,8 +15,8 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.List.cmp_t
 import neo.idlib.containers.List.idList
 import neo.idlib.idException
-import neo.sys.sys_public
-import neo.sys.sys_public.netadr_t
+import neo.sys.BUILD_OS_ID
+import neo.sys.netadr_t
 import neo.sys.win_net
 import neo.sys.win_shared
 import neo.ui.ListGUI.idListGUI
@@ -526,7 +526,7 @@ class ServerScan {
         private fun IsFiltered(server: networkServer_t): Boolean {
             var i: Int
             var keyval: idKeyValue?
-            if (server.OSMask and (1 shl sys_public.BUILD_OS_ID) == 0) {
+            if (server.OSMask and (1 shl BUILD_OS_ID) == 0) {
                 return true
             }
             // password filter

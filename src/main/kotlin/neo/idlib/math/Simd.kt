@@ -12,7 +12,9 @@ import neo.idlib.geometry.JointTransform.idJointMat
 import neo.idlib.geometry.JointTransform.idJointQuat
 import neo.idlib.idLib
 import neo.idlib.math.Matrix.idMatX
-import neo.sys.sys_public
+import neo.sys.CPUID_GENERIC
+import neo.sys.CPUID_NONE
+import neo.sys.CPUID_SSE
 import java.nio.FloatBuffer
 import java.util.*
 
@@ -38,7 +40,7 @@ enum class speakerLabel {
 object idSIMD {
     fun Init() {
         generic = idSIMD_Generic()
-        generic?.cpuid = sys_public.CPUID_GENERIC
+        generic?.cpuid = CPUID_GENERIC
         processor = null
         SIMDProcessor = generic
     }
@@ -63,7 +65,7 @@ object idSIMD {
         }
 
         // Set FPU settings for SSE support
-        if ((cpuid and sys_public.CPUID_SSE) != 0) {
+        if ((cpuid and CPUID_SSE) != 0) {
             idLib.sys.FPU_SetFTZ(true)
             idLib.sys.FPU_SetDAZ(true)
         }
@@ -83,7 +85,7 @@ object idSIMD {
 }
 
 abstract class idSIMDProcessor {
-    var cpuid: Int = sys_public.CPUID_NONE
+    var cpuid: Int = CPUID_NONE
     abstract fun  /*char *VPCALL*/GetName(): String
     abstract fun Add(dst: FloatArray, constant: Float, src: FloatArray, count: Int)
     abstract fun Add(dst: FloatArray, src0: FloatArray, src1: FloatArray, count: Int)

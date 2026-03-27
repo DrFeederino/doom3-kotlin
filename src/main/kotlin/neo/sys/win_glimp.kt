@@ -1,24 +1,30 @@
 /*
- * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
- * Translated to Kotlin by Dr. Feederino with support of Claude Code
- *
- * This file is part of the Doom 3 Kotlin project.
- * Original source: neo/sys/glimp.cpp
- *
- * NOTE: Differs from C++ — The original C++ uses SDL for window management and OpenGL
- * context creation. This Kotlin port uses LWJGL (GLFW for windowing, OpenGL via LWJGL
- * bindings) as the equivalent.
- *
- * Doom 3 Source Code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Doom 3 Source Code is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+===========================================================================
+
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
 
 package neo.sys
 
@@ -28,9 +34,9 @@ import neo.Renderer.tr
 import neo.TempDump
 import neo.framework.Common.Companion.common
 import neo.framework.FileSystem_h
+import neo.framework.Licensee.ENGINE_VERSION
+import neo.framework.MACOS_X
 import neo.framework.UsercmdGen
-import neo.framework.WIN32
-import neo.framework._MACOSX
 import neo.idlib.Text.Str.idStr
 import neo.idlib.idLib
 import org.lwjgl.glfw.GLFW.*
@@ -240,9 +246,7 @@ object win_glimp {
             }
             images.position(0)
 
-            if (WIN32) {
-                glfwSetWindowIcon(window, images)
-            }
+            glfwSetWindowIcon(window, images)
 
             // Free native resources
             images.free()
@@ -269,14 +273,14 @@ object win_glimp {
             window = glfwCreateWindow(
                 parms.width,
                 parms.height,
-                "DOOM 3",
+                ENGINE_VERSION,
                 if (parms.fullScreen) glfwGetPrimaryMonitor() else MemoryUtil.NULL,
                 MemoryUtil.NULL
             )
             loadIcoAndSetWindowIcon(window)
         }
 
-        if (_MACOSX) {
+        if (MACOS_X) {
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
@@ -379,13 +383,9 @@ object win_glimp {
             glfwWindowHint(GLFW_BLUE_BITS, channelcolorbits)
             glfwWindowHint(GLFW_DOUBLEBUFFER, 1)
             glfwWindowHint(GLFW_DEPTH_BITS, tdepthbits)
-            // FIX: Was missing stencil bits hint — C++ sets SDL_GL_STENCIL_SIZE
             glfwWindowHint(GLFW_STENCIL_BITS, tstencilbits)
-
             glfwWindowHint(GLFW_ALPHA_BITS, talphabits)
-
             glfwWindowHint(GLFW_STEREO, if (parms.stereo) 1 else 0)
-
             glfwWindowHint(GLFW_SAMPLES, multisamples)
         }
 
@@ -415,7 +415,6 @@ object win_glimp {
     // If the desired mode can't be set satisfactorily, false will be returned.
     // The renderer will then reset the glimpParms to "safe mode" of 640x480
     // fullscreen and try again.  If that also fails, the error will be fatal.
-    // FIX: GLFW gamma ramp functions take a monitor handle, not a window handle.
     fun GLimp_SetGamma(red: ShortArray, green: ShortArray, blue: ShortArray) {
         if (window == 0L) {
             common.Warning("GLimp_SetGamma called without window")
@@ -476,8 +475,6 @@ object win_glimp {
         glfwTerminate()
     }
 
-    // Destroys the rendering context, closes the window, resets the resolution,
-    // and resets the gamma ramps.
     /*
      =================
      GLimp_ResetGamma
@@ -609,22 +606,11 @@ object win_glimp {
      ====================================================================
      */
     class glimpParms_t {
-
         var displayHz = 0
-
-
         var fullScreen = false
-
-
         var height = 0
-
-
         var multiSamples = 0
-
-
         var stereo = false
-
-
         var width = 0
     }
 }

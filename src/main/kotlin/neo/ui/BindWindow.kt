@@ -7,8 +7,8 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.idStr.Companion.snPrintf
 import neo.idlib.containers.CBool
-import neo.sys.sys_public.sysEventType_t
-import neo.sys.sys_public.sysEvent_s
+import neo.sys.sysEventType_t
+import neo.sys.sysEvent_s
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.SimpleWindow.drawWin_t
 import neo.ui.UserInterfaceLocal.idUserInterfaceLocal

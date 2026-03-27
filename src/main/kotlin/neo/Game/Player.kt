@@ -86,7 +86,7 @@ import neo.idlib.idLib
 import neo.idlib.math.*
 import neo.idlib.math.Interpolate.idInterpolate
 import neo.idlib.math.Matrix.idMat3
-import neo.sys.sys_public.sysEvent_s
+import neo.sys.sysEvent_s
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
 import java.nio.ByteBuffer

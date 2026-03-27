@@ -11,7 +11,7 @@ import neo.idlib.LittleLong
 import neo.idlib.LittleRevBytes
 import neo.idlib.LittleShort
 import neo.idlib.Text.Str.idStr
-import neo.sys.sys_public
+import neo.sys.CRITICAL_SECTION_ONE
 import neo.sys.win_main
 import org.lwjgl.BufferUtils
 import org.lwjgl.stb.STBVorbis
@@ -353,7 +353,7 @@ object snd_wavefile {
             if (null == mhmmio) {
                 return -1
             }
-            win_main.Sys_EnterCriticalSection(sys_public.CRITICAL_SECTION_ONE)
+            win_main.Sys_EnterCriticalSection(CRITICAL_SECTION_ONE)
             try {
                 val fileSize = mhmmio!!.Length()
                 val buffer = ByteBuffer.allocate(fileSize)
@@ -396,7 +396,7 @@ object snd_wavefile {
                 }
                 pwfx[0] = mpwfx.Format
             } finally {
-                win_main.Sys_LeaveCriticalSection(sys_public.CRITICAL_SECTION_ONE)
+                win_main.Sys_LeaveCriticalSection(CRITICAL_SECTION_ONE)
             }
             isOgg = true
             return 0
@@ -450,9 +450,9 @@ object snd_wavefile {
         private fun CloseOGG(): Int {
             val ov = ogg
             if (ov != 0L) {
-                win_main.Sys_EnterCriticalSection(sys_public.CRITICAL_SECTION_ONE)
+                win_main.Sys_EnterCriticalSection(CRITICAL_SECTION_ONE)
                 STBVorbis.stb_vorbis_close(ov)
-                win_main.Sys_LeaveCriticalSection(sys_public.CRITICAL_SECTION_ONE)
+                win_main.Sys_LeaveCriticalSection(CRITICAL_SECTION_ONE)
                 if (mhmmio != null) {
                     FileSystem_h.fileSystem.CloseFile(mhmmio!!)
                     mhmmio = null

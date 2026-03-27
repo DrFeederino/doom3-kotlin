@@ -9,7 +9,7 @@ import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.idException
 import neo.idlib.idLib
-import neo.sys.sys_public
+import neo.sys.PATHSEPERATOR_STR
 import java.nio.CharBuffer
 import java.util.*
 import kotlin.math.abs
@@ -958,7 +958,7 @@ object Parser {
             if (includepath[includepath.Length() - 1] != '\\'
                 && includepath[includepath.Length() - 1] != '/'
             ) {
-                includepath.Append(sys_public.PATHSEPERATOR_STR)
+                includepath.Append(PATHSEPERATOR_STR)
             }
         }
 

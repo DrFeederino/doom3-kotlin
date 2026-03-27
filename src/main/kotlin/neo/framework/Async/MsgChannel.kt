@@ -8,9 +8,9 @@ import neo.framework.File_h.idFile_BitMsg
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.containers.CInt
 import neo.idlib.idException
-import neo.sys.sys_public.idPort
-import neo.sys.sys_public.netadr_t
-import neo.sys.sys_public.netadrtype_t
+import neo.sys.idPort
+import neo.sys.netadr_t
+import neo.sys.netadrtype_t
 import neo.sys.win_net
 import java.nio.ByteBuffer
 import java.util.*

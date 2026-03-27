@@ -43,8 +43,8 @@ import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_Integer
 import neo.framework.File_h.idFile
 import neo.framework.KeyInput.idKeyInput
 import neo.idlib.idException
-import neo.sys.sys_public.sysEventType_t
-import neo.sys.sys_public.sysEvent_s
+import neo.sys.sysEventType_t
+import neo.sys.sysEvent_s
 import neo.sys.win_main
 import neo.sys.win_shared
 import java.nio.ByteBuffer

@@ -24,8 +24,8 @@ import neo.idlib.Text.Token.idToken
 import neo.idlib.colorBlack
 import neo.idlib.containers.CBool
 import neo.idlib.containers.idStrList
-import neo.sys.sys_public.sysEventType_t
-import neo.sys.sys_public.sysEvent_s
+import neo.sys.sysEventType_t
+import neo.sys.sysEvent_s
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.Rectangle.idRectangle
 import neo.ui.SimpleWindow.drawWin_t

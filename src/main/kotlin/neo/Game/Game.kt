@@ -68,7 +68,7 @@ import neo.idlib.geometry.JointTransform.idJointQuat
 import neo.idlib.geometry.TraceModel.traceModel_t
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.sys.sys_public.idSys
+import neo.sys.idSys
 import neo.ui.UserInterface.idUserInterface
 import neo.ui.UserInterface.idUserInterface.idUserInterfaceManager
 import java.util.*

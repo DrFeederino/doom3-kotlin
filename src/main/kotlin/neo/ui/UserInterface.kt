@@ -6,7 +6,7 @@ import neo.framework.File_h.idFile
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CBool
-import neo.sys.sys_public.sysEvent_s
+import neo.sys.sysEvent_s
 import neo.ui.ListGUI.idListGUI
 import neo.ui.UserInterface.idUserInterface.idUserInterfaceManager
 import neo.ui.UserInterfaceLocal.idUserInterfaceManagerLocal

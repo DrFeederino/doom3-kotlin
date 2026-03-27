@@ -13,7 +13,7 @@ import neo.idlib.BV.idBounds
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Text.Str.idStr
 import neo.idlib.math.*
-import neo.sys.sys_public.idSys
+import neo.sys.idSys
 import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

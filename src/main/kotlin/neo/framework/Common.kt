@@ -194,7 +194,7 @@ class Common {
                 Licensee.ENGINE_VERSION,
                 BUILD_NUMBER,
                 BUILD_DEBUG,
-                sys_public.BUILD_STRING,
+                BUILD_STRING,
                 SysCvar.__DATE__
             )
         }
@@ -227,7 +227,7 @@ class Common {
             var argv = argv
             try {
                 // set interface pointers used by idLib
-                idLib.sys = sys_public.sys
+                idLib.sys = sys
                 idLib.common = common
                 idLib.cvarSystem = cvarSystem
                 idLib.fileSystem = FileSystem_h.fileSystem
@@ -580,7 +580,7 @@ class Common {
 
         override fun WriteConfigToFile(filename: String) {
             val f: idFile?
-            f = FileSystem_h.fileSystem.OpenFileWrite(filename, "fs_configpath") // FIX: C++ uses "fs_configpath"
+            f = FileSystem_h.fileSystem.OpenFileWrite(filename, "fs_configpath")
             if (null == f) {
                 Printf("Couldn't write %s.\n", filename)
                 return
@@ -1379,8 +1379,8 @@ class Common {
                 vidRam,
                 if (oldCard[0]) "a less than optimal video architecture" else "an optimal video architecture"
             )
-            val cpuGhz = if (cpuid_t and sys_public.CPUID_AMD != 0) 1.9 else 2.19
-            val cpuGhzPart2 = if (cpuid_t and sys_public.CPUID_AMD != 0) 1.1 else 1.25
+            val cpuGhz = if (cpuid_t and CPUID_AMD != 0) 1.9 else 2.19
+            val cpuGhzPart2 = if (cpuid_t and CPUID_AMD != 0) 1.1 else 1.25
             if (ghz >= 2.75 && vidRam >= 512 && sysRam >= 1024 && !oldCard[0]) { //TODO:try to make this shit work.
                 Printf("This system qualifies for Ultra quality!\n")
                 com_machineSpec.SetInteger(3)
@@ -1829,7 +1829,7 @@ class Common {
                 }
                 warningFile.ForceFlush()
                 FileSystem_h.fileSystem.CloseFile(warningFile)
-                if (_WIN32 && !_DEBUG) {
+                if (WIN32 && !_DEBUG) {
                     val osPath: String?
                     osPath = FileSystem_h.fileSystem.RelativePathToOSPath("warnings.txt", "fs_savepath")
                     try {
@@ -3181,7 +3181,7 @@ class Common {
 
             //Recurse Subdirectories
             val dirList = idStrList()
-            sys_public.Sys_ListFiles(dir, "/", dirList)
+            Sys_ListFiles(dir, "/", dirList)
             for (i in 0 until dirList.size()) {
                 if (dirList[i].toString() == "." || dirList[i].toString() == "..") {
                     continue
@@ -3190,7 +3190,7 @@ class Common {
                 GetFileList(fullName, ext, list)
             }
             val fileList = idStrList()
-            sys_public.Sys_ListFiles(dir, ext, fileList)
+            Sys_ListFiles(dir, ext, fileList)
             for (i in 0 until fileList.size()) {
                 val fullName = idStr(Str.va("%s/%s", dir, fileList[i]))
                 list.add(fullName)

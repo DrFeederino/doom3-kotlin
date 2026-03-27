@@ -6,8 +6,8 @@ import neo.idlib.Dict_h.idKeyValue
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CInt
 import neo.idlib.math.*
-import neo.sys.sys_public.netadr_t
-import neo.sys.sys_public.netadrtype_t
+import neo.sys.netadr_t
+import neo.sys.netadrtype_t
 import java.nio.ByteBuffer
 import java.util.logging.Level
 import java.util.logging.Logger

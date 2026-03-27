@@ -167,7 +167,8 @@ import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Random.idRandom
-import neo.sys.sys_public
+import neo.sys.setSysLocal
+import neo.sys.sys
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
 import java.nio.ByteBuffer
@@ -3227,7 +3228,7 @@ class Game_local {
             fov_y._val = (y * 360.0f / idMath.PI)
             assert(fov_y._val > 0)
             if (fov_y._val <= 0) {
-                Printf(sys_public.sys.FPU_GetState())
+                Printf(sys.FPU_GetState())
                 Error("idGameLocal::CalcFov: bad result")
             }
             when (SysCvar.r_aspectRatio.GetInteger()) {
@@ -3271,7 +3272,7 @@ class Game_local {
             }
             assert(fov_x._val > 0 && fov_y._val > 0)
             if (fov_y._val <= 0 || fov_x._val <= 0) {
-                Printf(sys_public.sys.FPU_GetState())
+                Printf(sys.FPU_GetState())
                 Error("idGameLocal::CalcFov: bad result")
             }
         }
@@ -6438,7 +6439,7 @@ class Game_local {
         fun TestGameAPI() {
             val testImport = gameImport_t()
             var testExport = gameExport_t()
-            testImport.sys = sys_public.sys
+            testImport.sys = sys
             testImport.common = Common.common
             testImport.cmdSystem = CmdSystem.cmdSystem
             testImport.cvarSystem = CVarSystem.cvarSystem
@@ -6462,7 +6463,7 @@ class Game_local {
         fun GetGameAPI(gameImport: gameImport_t): gameExport_t {
             if (gameImport.version == Game.GAME_API_VERSION) {
                 // set interface pointers used by the game
-                sys_public.setSysLocal(gameImport.sys)
+                setSysLocal(gameImport.sys)
                 Common.setCommons(gameImport.common)
                 CmdSystem.setCmdSystems(gameImport.cmdSystem)
                 CVarSystem.setCvarSystems(gameImport.cvarSystem)
@@ -6478,7 +6479,7 @@ class Game_local {
             }
 
             // set interface pointers used by idLib
-            idLib.sys = sys_public.sys
+            idLib.sys = sys
             idLib.common = Common.common
             idLib.cvarSystem = CVarSystem.cvarSystem
             idLib.fileSystem = FileSystem_h.fileSystem

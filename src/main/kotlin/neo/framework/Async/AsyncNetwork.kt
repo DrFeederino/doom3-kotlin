@@ -21,7 +21,7 @@ import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.CmdArgs.idCmdArgs
 import neo.idlib.Text.Str.idStr
 import neo.idlib.idException
-import neo.sys.sys_public.netadr_t
+import neo.sys.netadr_t
 import neo.sys.win_input
 import neo.sys.win_net
 import neo.sys.win_syscon.Sys_ShowConsole

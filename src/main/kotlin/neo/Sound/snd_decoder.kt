@@ -34,7 +34,7 @@ import neo.framework.File_h.idFile_Memory
 import neo.idlib.Min
 import neo.idlib.math.MIXBUFFER_SAMPLES
 import neo.idlib.math.SIMDProcessor
-import neo.sys.sys_public
+import neo.sys.CRITICAL_SECTION_ONE
 import neo.sys.win_main
 import org.lwjgl.BufferUtils
 import org.lwjgl.PointerBuffer
@@ -147,7 +147,7 @@ object snd_decoder {
             }
 
             // samples can be decoded both from the sound thread and the main thread for shakes
-            win_main.Sys_EnterCriticalSection(sys_public.CRITICAL_SECTION_ONE)
+            win_main.Sys_EnterCriticalSection(CRITICAL_SECTION_ONE)
             readSamples44k = try {
                 when (sample.objectInfo.wFormatTag) {
                     snd_local.WAVE_FORMAT_TAG_PCM -> {
@@ -163,7 +163,7 @@ object snd_decoder {
                     }
                 }
             } finally {
-                win_main.Sys_LeaveCriticalSection(sys_public.CRITICAL_SECTION_ONE)
+                win_main.Sys_LeaveCriticalSection(CRITICAL_SECTION_ONE)
             }
 
             if (readSamples44k < sampleCount44k) {
@@ -180,7 +180,7 @@ object snd_decoder {
          ====================
          */
         override fun ClearDecoder() {
-            win_main.Sys_EnterCriticalSection(sys_public.CRITICAL_SECTION_ONE)
+            win_main.Sys_EnterCriticalSection(CRITICAL_SECTION_ONE)
             try {
                 when (lastFormat) {
                     snd_local.WAVE_FORMAT_TAG_PCM -> {}
@@ -193,7 +193,7 @@ object snd_decoder {
                 }
                 Clear()
             } finally {
-                win_main.Sys_LeaveCriticalSection(sys_public.CRITICAL_SECTION_ONE)
+                win_main.Sys_LeaveCriticalSection(CRITICAL_SECTION_ONE)
             }
         }
 

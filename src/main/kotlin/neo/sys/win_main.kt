@@ -1,25 +1,30 @@
 /*
- * Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
- * Translated to Kotlin by Dr. Feederino with support of Claude Code
- *
- * This file is part of the Doom 3 Kotlin project.
- * Original source: neo/sys/win32/win_main.cpp
- *
- * NOTE: Differs from C++ — The original C++ uses Win32 API (WinMain, message pump,
- * GetModuleFileName, etc.) and SDL for the main loop. This Kotlin port uses GLFW/LWJGL
- * for windowing and standard Java APIs for OS interactions.
- *
- * Doom 3 Source Code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Doom 3 Source Code is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
+===========================================================================
 
+Doom 3 GPL Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
+
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
+
+Doom 3 Source Code is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Doom 3 Source Code is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
+
+In addition, the Doom 3 Source Code is also subject to certain additional terms. You should have received a copy of these additional terms immediately following the terms and conditions of the GNU General Public License which accompanied the Doom 3 Source Code.  If not, please request a copy in writing from id Software at the address below.
+
+If you have questions concerning this license or the applicable additional terms, you may contact in writing id Software LLC, c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
+
+===========================================================================
+*/
 package neo.sys
 
 import neo.TempDump
@@ -41,8 +46,6 @@ import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.idStrList
 import neo.idlib.idException
 import neo.idlib.idLib
-import neo.sys.sys_public.sysEventType_t
-import neo.sys.sys_public.sysEvent_s
 import neo.sys.win_local.Win32Vars_t
 import org.lwjgl.glfw.GLFW.*
 import java.awt.Toolkit
@@ -61,19 +64,7 @@ import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.system.exitProcess
 
-
-fun main(args: Array<String>) {
-    win_main.main(args)
-}
-
-object win_main {
-    //TODO: rename to plain "main" or something.
-    const val MAXPRINTMSG = 4096
-    const val MAX_QUED_EVENTS = 256
-    const val MASK_QUED_EVENTS = MAX_QUED_EVENTS - 1
-    const val OSR2_BUILD_NUMBER = 1111
-
-    /*
+/*
      *
      *
      *
@@ -92,25 +83,26 @@ object win_main {
      *
      *
      */
-    //    static final int TEST_FPU_EXCEPTIONS
-    //            /*	=FPU_EXCEPTION_INVALID_OPERATION |		*/
-    //            /*	FPU_EXCEPTION_DENORMALIZED_OPERAND |	*/
-    //            /*	FPU_EXCEPTION_DIVIDE_BY_ZERO |			*/
-    //            /*	FPU_EXCEPTION_NUMERIC_OVERFLOW |		*/
-    //            /*	FPU_EXCEPTION_NUMERIC_UNDERFLOW |		*/
-    //            /*	FPU_EXCEPTION_INEXACT_RESULT |			*/
-    //            = 0;
+
+fun main(args: Array<String>) {
+    win_main.main(args)
+}
+
+object win_main {
+    //TODO: rename to plain "main" or something.
+    const val MAXPRINTMSG = 4096
+    const val MAX_QUED_EVENTS = 256
+    const val MASK_QUED_EVENTS = MAX_QUED_EVENTS - 1
     const val SET_THREAD_AFFINITY = false
-    const val WIN98_BUILD_NUMBER = 1998
     val sys_cmdline: StringBuilder = StringBuilder(MAX_STRING_CHARS)
     val sys_showMallocs: idCVar = idCVar("sys_showMallocs", "0", CVarSystem.CVAR_SYSTEM, "")
-    var   /*HANDLE*/hTimer: ScheduledExecutorService? = null
-    var debug_current_alloc/*unsigned*/ = 0
-    var debug_current_alloc_count/*unsigned*/ = 0
-    var debug_frame_alloc/*unsigned*/ = 0
-    var debug_frame_alloc_count/*unsigned*/ = 0
-    var debug_total_alloc/*unsigned*/ = 0
-    var debug_total_alloc_count/*unsigned*/ = 0
+    var hTimer: ScheduledExecutorService? = null
+    var debug_current_alloc = 0
+    var debug_current_alloc_count = 0
+    var debug_frame_alloc = 0
+    var debug_frame_alloc_count = 0
+    var debug_total_alloc = 0
+    var debug_total_alloc_count = 0
     var eventHead = 0
 
     /*
@@ -122,123 +114,17 @@ object win_main {
      */
     var eventQue: Array<sysEvent_s> = Array(MAX_QUED_EVENTS) { sysEvent_s() }
     var eventTail = 0
-
-    /*
-     ====================
-     clrstk
-
-     I tried to get the run time to call this at every function entry, but
-     ====================
-     */
     var parmBytes = 0
-    //var threadInfo: xthreadInfo? = null
-
-    /*
-     ==============
-     Sys_StartAsyncThread
-
-     Start the thread that will call idCommon::Async()
-     ==============
-     */
     private var count = 0
-
-    /*
-     ================
-     Sys_GenerateEvents
-     ================
-     */
     private var entered = false
-
-    /*
-     ================
-     Sys_GetExeLaunchMemoryStatus
-     ================
-     */
-//    fun Sys_GetExeLaunchMemoryStatus(stats: sysMemoryStats_s?) {
-//        throw TODO_Exception()
-//        //	stats = exeLaunchMemoryStats;
-//    }
-
-    /*
-     ==================
-     Sys_Createthread
-     ==================
-     */
-//    fun Sys_CreateThread(
-//        function: xthread_t,
-//        parms: Any?,
-//        priority: xthreadPriority,
-//        info: xthreadInfo,
-//        name: String,
-//        threads: Array<xthreadInfo> /*[MAX_THREADS]*/,
-//        thread_count: IntArray
-//    ) {
-//        val temp = Thread(function)
-//        info.threadId = temp.id
-//        info.threadHandle = temp //TODO: do we need this?
-//        if (priority == xthreadPriority.THREAD_HIGHEST) {
-//            info.threadHandle!!.priority = Thread.MAX_PRIORITY //  we better sleep enough to do this
-//        } else if (priority == xthreadPriority.THREAD_ABOVE_NORMAL) {
-//            info.threadHandle!!.priority = Thread.NORM_PRIORITY + 2
-//        }
-//        info.name = name
-//        if (thread_count[0] < sys_public.MAX_THREADS) {
-//            threads[thread_count[0]++] = info
-//            function.run()
-//        } else {
-//            Common.common.DPrintf("WARNING: MAX_THREADS reached\n")
-//        }
-//    }
-
-    /*
-     ==================
-     Sys_DestroyThread
-     ==================
-     */
-//    fun Sys_DestroyThread(info: xthreadInfo?) {
-//        throw TODO_Exception()
-//        //	WaitForSingleObject( (HANDLE)info.threadHandle, INFINITE);
-////	CloseHandle( (HANDLE)info.threadHandle );
-////	info.threadHandle = 0;
-//    }
-
-    /*
-     ==================
-     Sys_Sentry
-     ==================
-     */
-    fun Sys_Sentry() {
-    }
-
-    /*
-     ==================
-     Sys_GetThreadName
-     ==================
-     */
-    fun Sys_GetThreadName(index: IntArray?): String {
-        throw TODO_Exception()
-        //	int id = GetCurrentThreadId();
-//	for( int i = 0; i < g_thread_count; i++ ) {
-//		if ( id == g_threads[i]->threadId ) {
-//			if ( index ) {
-//				*index = i;
-//			}
-//			return g_threads[i]->name;
-//		}
-//	}
-//	if ( index ) {
-//		*index = -1;
-//	}
-//	return "main";
-    }
 
     /*
      ==================
      Sys_EnterCriticalSection
      ==================
      */
-    fun Sys_EnterCriticalSection(index: Int = sys_public.CRITICAL_SECTION_ZERO) {
-        assert(index >= 0 && index < sys_public.MAX_CRITICAL_SECTIONS)
+    fun Sys_EnterCriticalSection(index: Int = CRITICAL_SECTION_ZERO) {
+        assert(index >= 0 && index < MAX_CRITICAL_SECTIONS)
         //		Sys_DebugPrintf( "busy lock '%s' in thread '%s'\n", lock->name, Sys_GetThreadName() );
         return
         //win_local.win32.criticalSections[index].lock()
@@ -250,8 +136,8 @@ object win_main {
      ==================
      */
 
-    fun Sys_LeaveCriticalSection(index: Int = sys_public.CRITICAL_SECTION_ZERO) {
-        assert(index >= 0 && index < sys_public.MAX_CRITICAL_SECTIONS)
+    fun Sys_LeaveCriticalSection(index: Int = CRITICAL_SECTION_ZERO) {
+        assert(index >= 0 && index < MAX_CRITICAL_SECTIONS)
 //        if (win_local.win32.criticalSections[index].isLocked) {
 //            win_local.win32.criticalSections[index].unlock()
 //        }
@@ -263,7 +149,7 @@ object win_main {
      ==================
      */
 
-    fun Sys_WaitForEvent(index: Int = sys_public.TRIGGER_EVENT_ZERO) {
+    fun Sys_WaitForEvent(index: Int = TRIGGER_EVENT_ZERO) {
         return
         //	assert( index == 0 );
 //	if ( !win32.backgroundDownloadSemaphore ) {
@@ -278,11 +164,7 @@ object win_main {
      Sys_TriggerEvent
      ==================
      */
-
-    // NOTE: Differs from C++ — C++ uses Win32 SetEvent on a semaphore.
-    // JVM equivalent would be a CountDownLatch or Semaphore, but the background
-    // download system that uses this is not fully implemented. Implemented as no-op.
-    fun Sys_TriggerEvent(index: Int = sys_public.TRIGGER_EVENT_ZERO) {
+    fun Sys_TriggerEvent(index: Int = TRIGGER_EVENT_ZERO) {
     }
 
     /*
@@ -332,32 +214,14 @@ object win_main {
     fun Sys_Error(fmt: String, vararg arg: Any) {
         val text = StringBuilder(4096)
 
-//	va_start( argptr, error );
-//	vsprintf( text, error, argptr );
-//	va_end( argptr);
         text.append(String.format(fmt, *arg))
         win_syscon.Conbuf_AppendText(text.toString())
         win_syscon.Conbuf_AppendText("\n")
         win_syscon.Win_SetErrorText(text.toString())
         win_syscon.Sys_ShowConsole(1, true)
 
-//        timeEndPeriod(1);
-//
         win_input.Sys_ShutdownInput()
         win_glimp.GLimp_Shutdown()
-
-//	// wait for the user to quit
-        while (true) {
-//            if (!GetMessage( & msg, NULL, 0, 0)) {
-//                common->Quit();
-//            }
-//		TranslateMessage( &msg );
-//      	DispatchMessage( &msg );
-        }
-        //
-//        Sys_DestroyConsole();
-//
-//        System.exit(1);
     }
 
     /*
@@ -368,7 +232,7 @@ object win_main {
     fun Sys_Quit() {
         win_input.Sys_ShutdownInput()
         win_syscon.Sys_DestroyConsole()
-        exitProcess(0) //ExitProcess(0);
+        exitProcess(0)
     }
 
     /*
@@ -380,7 +244,7 @@ object win_main {
         val msg = StringBuilder(MAXPRINTMSG)
         msg.append(String.format(fmt, *arg))
         if (Win32Vars_t.win_outputDebugString.GetBool()) {
-            print(msg) //OutputDebugString(msg);
+            print(msg)
         }
         if (Win32Vars_t.win_outputEditString.GetBool()) {
             win_syscon.Conbuf_AppendText(msg.toString())
@@ -394,10 +258,7 @@ object win_main {
      */
     fun Sys_DebugPrintf(fmt: String, vararg arg: Any) {
         System.out.printf(
-            """
-    $fmt
-    
-    """.trimIndent(), *arg
+            fmt.trimIndent(), *arg
         )
     }
 
@@ -406,7 +267,6 @@ object win_main {
      Sys_DebugVPrintf
      ==============
      */
-    // NOTE: Differs from C++ — C++ takes a va_list; in Kotlin varargs and va_list are equivalent.
     fun Sys_DebugVPrintf(fmt: String, vararg arg: Any) {
         System.out.printf(fmt, *arg)
     }
@@ -432,7 +292,6 @@ object win_main {
      Sys_ShowWindow
      ==============
      */
-    // NOTE: Differs from C++ — C++ uses Win32 ShowWindow. Kotlin uses GLFW.
     fun Sys_ShowWindow(show: Boolean) {
         if (win_glimp.window == 0L) return
         if (show) {
@@ -447,7 +306,6 @@ object win_main {
      Sys_IsWindowVisible
      ==============
      */
-    // NOTE: Differs from C++ — C++ uses Win32 IsWindowVisible. Kotlin uses GLFW.
     fun Sys_IsWindowVisible(): Boolean {
         if (win_glimp.window == 0L) return false
         return glfwGetWindowAttrib(win_glimp.window, GLFW_VISIBLE) == GLFW_TRUE
@@ -459,7 +317,6 @@ object win_main {
      ==============
      */
     fun Sys_Mkdir(path: String) {
-//	_mkdir (path);
         Paths.get(path).toFile().mkdir()
     }
 
@@ -475,7 +332,6 @@ object win_main {
     fun  /*ID_TIME_T*/Sys_FileTimeStamp(fp: String): Long {
         val st = Paths.get(fp).toFile()
         return if (st.exists()) {
-            // C++ returns time_t (seconds since epoch), Java's lastModified() returns milliseconds
             st.lastModified() / 1000
         } else 0
     }
@@ -523,7 +379,6 @@ object win_main {
      Sys_EXEPath
      ==============
      */
-    // NOTE: Differs from C++ — C++ uses Win32 GetModuleFileName. Kotlin uses Java system properties.
     fun Sys_EXEPath(): String {
         return System.getProperty("user.dir")
     }
@@ -535,16 +390,12 @@ object win_main {
      */
     fun Sys_ListFiles(directory: String, extension: String, list: idStrList): Int {
         val search: FilenameFilter
-        val   /*_finddata_t*/findinfo: File
-        //	int			findhandle;
-//        final boolean _A_SUBDIR;
+        val findinfo: File
         search = FilenameFilter { pathname: File, name: String ->
             // passing a slash as extension will find directories
             if (extension == "/") {
-//                    _A_SUBDIR = false;
                 return@FilenameFilter pathname.isDirectory()
             } else {
-//                    _A_SUBDIR = true;
                 return@FilenameFilter name.endsWith(extension)
             }
         }
@@ -562,11 +413,6 @@ object win_main {
             }
         }
 
-//        for (findhandle in findinfo.listFiles(search)) {
-////            if (_A_SUBDIR ^ (findinfo.isDirectory())) {
-//            list.add(findhandle.name)
-//            //            }
-//        }
         return list.size()
     }
 
@@ -578,24 +424,6 @@ object win_main {
     fun Sys_GetClipboardData(): String? {
         try {
             return Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor) as String
-            //	char *data = NULL;
-//	char *cliptext;
-//
-//	if ( OpenClipboard( NULL ) != 0 ) {
-//		HANDLE hClipboardData;
-//
-//		if ( ( hClipboardData = GetClipboardData( CF_TEXT ) ) != 0 ) {
-//			if ( ( cliptext = (char *)GlobalLock( hClipboardData ) ) != 0 ) {
-//				data = (char *)Mem_Alloc( GlobalSize( hClipboardData ) + 1 );
-//				strcpy( data, cliptext );
-//				GlobalUnlock( hClipboardData );
-//
-//				strtok( data, "\n\r\b" );
-//			}
-//		}
-//		CloseClipboard();
-//	}
-//	return data;
         } catch (ex: UnsupportedFlavorException) {
             Logger.getLogger(win_main::class.java.name).log(Level.SEVERE, null, ex)
         } catch (ex: IOException) {
@@ -611,35 +439,6 @@ object win_main {
      */
     fun Sys_SetClipboardData(string: String) {
         Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(string), null)
-        //	HGLOBAL HMem;
-//	char *PMem;
-//
-//	// allocate memory block
-//	HMem = (char *)::GlobalAlloc( GMEM_MOVEABLE | GMEM_DDESHARE, strlen( string ) + 1 );
-//	if ( HMem == NULL ) {
-//		return;
-//	}
-//	// lock allocated memory and obtain a pointer
-//	PMem = (char *)::GlobalLock( HMem );
-//	if ( PMem == NULL ) {
-//		return;
-//	}
-//	// copy text into allocated memory block
-//	lstrcpy( PMem, string );
-//	// unlock allocated memory
-//	::GlobalUnlock( HMem );
-//	// open Clipboard
-//	if ( !OpenClipboard( 0 ) ) {
-//		::GlobalFree( HMem );
-//		return;
-//	}
-//	// remove current Clipboard contents
-//	EmptyClipboard();
-//	// supply the memory handle to the Clipboard
-//	SetClipboardData( CF_TEXT, HMem );
-//	HMem = 0;
-//	// close Clipboard
-//	CloseClipboard();
     }
 
     fun Sys_SetClipboardData(string: CharArray) {
@@ -660,19 +459,6 @@ object win_main {
      */
     fun Sys_DLL_Load(dllName: String): Int {
         throw TODO_Exception()
-        //	HINSTANCE	libHandle;
-//	libHandle = LoadLibrary( dllName );
-//	if ( libHandle ) {
-//		// since we can't have LoadLibrary load only from the specified path, check it did the right thing
-//		char loadedPath[ MAX_OSPATH ];
-//		GetModuleFileName( libHandle, loadedPath, sizeof( loadedPath ) - 1 );
-//		if ( idStr::IcmpPath( dllName, loadedPath ) ) {
-//			Sys_Printf( "ERROR: LoadLibrary '%s' wants to load '%s'\n", dllName, loadedPath );
-//			Sys_DLL_Unload( (int)libHandle );
-//			return 0;
-//		}
-//	}
-//	return (int)libHandle;
     }
 
     /*
@@ -682,7 +468,6 @@ object win_main {
      */
     fun Sys_DLL_GetProcAddress(dllHandle: Int, procName: String): Any {
         throw TODO_Exception()
-        //	return GetProcAddress( (HINSTANCE)dllHandle, procName );
     }
 
     /*
@@ -692,23 +477,6 @@ object win_main {
      */
     fun Sys_DLL_Unload(dllHandle: Int) {
         throw TODO_Exception()
-        //	if ( !dllHandle ) {
-//		return;
-//	}
-//	if ( FreeLibrary( (HINSTANCE)dllHandle ) == 0 ) {
-//		int lastError = GetLastError();
-//		LPVOID lpMsgBuf;
-//		FormatMessage(
-//			FORMAT_MESSAGE_ALLOCATE_BUFFER,
-//		    NULL,
-//			lastError,
-//			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-//			(LPTSTR) &lpMsgBuf,
-//			0,
-//			NULL
-//		);
-//		Sys_Error( "Sys_DLL_Unload: FreeLibrary failed - %s (%d)", lpMsgBuf, lastError );
-//	}
     }
 
     /*
@@ -736,36 +504,6 @@ object win_main {
         ev.evValue2 = value2
         ev.evPtrLength = ptrLength
         ev.evPtr = ptr
-    }
-
-    @Deprecated("not needed for java")
-    fun Sys_PumpEvents() {
-        throw TODO_Exception()
-        //    MSG msg;
-//
-//	// pump the message loop
-//	while( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE ) ) {
-//		if ( !GetMessage( &msg, NULL, 0, 0 ) ) {
-//			common->Quit();
-//		}
-//
-//		// save the msg time, because wndprocs don't have access to the timestamp
-//		if ( win32.sysMsgTime && win32.sysMsgTime > (int)msg.time ) {
-//			// don't ever let the event times run backwards
-////			common->Printf( "Sys_PumpEvents: win32.sysMsgTime (%i) > msg.time (%i)\n", win32.sysMsgTime, msg.time );
-//		} else {
-//			win32.sysMsgTime = msg.time;
-//		}
-//
-//#ifdef ID_ALLOW_TOOLS
-//		if ( GUIEditorHandleMessage ( &msg ) ) {
-//			continue;
-//		}
-//#endif
-//
-//		TranslateMessage (&msg);
-//      	DispatchMessage (&msg);
-//	}
     }
 
     //================================================================
@@ -822,44 +560,8 @@ object win_main {
     }
 
     fun Sys_StartAsyncThread() {
-
         // create an auto-reset event that happens 60 times a second
-//        hTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread("bla" + (thread++)));
-//        hTimer = Executors.newSingleThreadScheduledExecutor { r: Runnable ->
-//            val thread = Thread(r, "bla-" + count++)
-//            thread.priority = Thread.MAX_PRIORITY
-//            thread
-//        }
-        //        hTimer = Executors.newScheduledThreadPool(1);
-//        threadInfo = xthreadInfo()
-//        if (null == hTimer) {
-//            Common.common.Error("idPacketServer::Spawn: CreateWaitableTimer failed")
-//        }
-
-//        Sys_CreateThread(new Sys_AsyncThread(), null, THREAD_ABOVE_NORMAL, threadInfo, "Async", g_threads, g_thread_count);
-//        if (NOT(threadInfo.threadHandle)) {
-//            common.Error("Sys_StartAsyncThread: failed");
-//        }
-
-//        hTimer.scheduleAtFixedRate(threadInfo.threadHandle, 0, USERCMD_MSEC, TimeUnit.MILLISECONDS);
-//        hTimer.scheduleAtFixedRate(Runnable { //TODO:debug the line above.(info.threadHandle.start();??)
-////                if (!DEBUG) {//TODO:Session_local.java::742
-//       var timerTime = System.currentTimeMillis()
-//        while (true) {
-//            if (System.currentTimeMillis() - timerTime > USERCMD_MSEC) {
-//                Common.common.Async()
-//                println(System.currentTimeMillis() - timerTime)
-//                timerTime = System.currentTimeMillis()
-//            }
-//        }
         Common.common.Async()
-        //fixedRateTimer("Common", false, Date.from(Instant.now()), USERCMD_MSEC.toLong(),  { Common.common.Async()})
-
-//        }, 0, 1000000000L / 60, TimeUnit.NANOSECONDS)
-        //        if (SET_THREAD_AFFINITY) {
-//            // give the async thread an affinity for the second cpu
-//            SetThreadAffinityMask(threadInfo.threadHandle, 2);
-//        }
     }
 
     /*
@@ -874,15 +576,6 @@ object win_main {
             return false
         }
         throw TODO_Exception()
-        //#ifndef DEBUG
-//	if ( !win32.win_allowMultipleInstances.GetBool() ) {
-//		HANDLE hMutexOneInstance = ::CreateMutex( NULL, FALSE, "DOOM3" );
-//		if ( ::GetLastError() == ERROR_ALREADY_EXISTS || ::GetLastError() == ERROR_ACCESS_DENIED ) {
-//			return true;
-//		}
-//	}
-//#endif
-//	return false;
     }
 
     /*
@@ -893,15 +586,6 @@ object win_main {
      ================
      */
     fun Sys_Init() {
-//
-//        CoInitialize(null);
-//
-//        // make sure the timer is high precision, otherwise
-//        // NT gets 18ms resolution
-//        timeBeginPeriod(1);
-//
-        // get WM_TIMER messages pumped every millisecond
-//	SetTimer( NULL, 0, 100, NULL );
         CmdSystem.cmdSystem.AddCommand(
             "in_restart",
             Sys_In_Restart_f.INSTANCE,
@@ -910,63 +594,11 @@ object win_main {
         )
 
 
-        //
         // Windows user name
-        //
         Win32Vars_t.win_username.SetString(win_shared.Sys_GetCurrentUser())
 
-        //
         // Windows version
-        //
         Win32Vars_t.sys_arch.SetString(System.getProperty("os.name"))
-        //	win32.osversion.dwOSVersionInfoSize = sizeof( win32.osversion );
-//
-//	if ( !GetVersionEx( (LPOSVERSIONINFO)&win32.osversion ) )
-//		Sys_Error( "Couldn't get OS info" );
-//
-//	if ( win32.osversion.dwMajorVersion < 4 ) {
-//		Sys_Error( GAME_NAME " requires Windows version 4 (NT) or greater" );
-//	}
-//	if ( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32s ) {
-//		Sys_Error( GAME_NAME " doesn't run on Win32s" );
-//	}
-//
-//	if( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32_NT ) {
-//		if( win32.osversion.dwMajorVersion <= 4 ) {
-//			win32.sys_arch.SetString( "WinNT (NT)" );
-//		} else if( win32.osversion.dwMajorVersion == 5 && win32.osversion.dwMinorVersion == 0 ) {
-//			win32.sys_arch.SetString( "Win2K (NT)" );
-//		} else if( win32.osversion.dwMajorVersion == 5 && win32.osversion.dwMinorVersion == 1 ) {
-//			win32.sys_arch.SetString( "WinXP (NT)" );
-//		} else if ( win32.osversion.dwMajorVersion == 6 ) {
-//			win32.sys_arch.SetString( "Vista" );
-//		} else {
-//			win32.sys_arch.SetString( "Unknown NT variant" );
-//		}
-//	} else if( win32.osversion.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS ) {
-//		if( win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 0 ) {
-//			// Win95
-//			if( win32.osversion.szCSDVersion[1] == 'C' ) {
-//				win32.sys_arch.SetString( "Win95 OSR2 (95)" );
-//			} else {
-//				win32.sys_arch.SetString( "Win95 (95)" );
-//			}
-//		} else if( win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 10 ) {
-//			// Win98
-//			if( win32.osversion.szCSDVersion[1] == 'A' ) {
-//				win32.sys_arch.SetString( "Win98SE (95)" );
-//			} else {
-//				win32.sys_arch.SetString( "Win98 (95)" );
-//			}
-//		} else if( win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 90 ) {
-//			// WinMe
-//		  	win32.sys_arch.SetString( "WinMe (95)" );
-//		} else {
-//		  	win32.sys_arch.SetString( "Unknown 95 variant" );
-//		}
-//	} else {
-//		win32.sys_arch.SetString( "unknown Windows variant" );
-//	}
 
         //
         // CPU type
@@ -976,32 +608,32 @@ object win_main {
             Common.common.Printf("%1.0f MHz ", win_cpu.Sys_ClockTicksPerSecond() / 1000000.0f)
             win_local.win32.cpuid = win_cpu.Sys_GetCPUId()
             string = idStr() //Clear();
-            if (win_local.win32.cpuid and sys_public.CPUID_AMD != 0) {
+            if (win_local.win32.cpuid and CPUID_AMD != 0) {
                 string.plusAssign("AMD CPU")
-            } else if (win_local.win32.cpuid and sys_public.CPUID_INTEL != 0) {
+            } else if (win_local.win32.cpuid and CPUID_INTEL != 0) {
                 string.plusAssign("Intel CPU")
-            } else if (win_local.win32.cpuid and sys_public.CPUID_UNSUPPORTED != 0) {
+            } else if (win_local.win32.cpuid and CPUID_UNSUPPORTED != 0) {
                 string.plusAssign("unsupported CPU")
             } else {
                 string.plusAssign("generic CPU")
             }
             string.plusAssign(" with ")
-            if (win_local.win32.cpuid and sys_public.CPUID_MMX != 0) {
+            if (win_local.win32.cpuid and CPUID_MMX != 0) {
                 string.plusAssign("MMX & ")
             }
-            if (win_local.win32.cpuid and sys_public.CPUID_3DNOW != 0) {
+            if (win_local.win32.cpuid and CPUID_3DNOW != 0) {
                 string.plusAssign("3DNow! & ")
             }
-            if (win_local.win32.cpuid and sys_public.CPUID_SSE != 0) {
+            if (win_local.win32.cpuid and CPUID_SSE != 0) {
                 string.plusAssign("SSE & ")
             }
-            if (win_local.win32.cpuid and sys_public.CPUID_SSE2 != 0) {
+            if (win_local.win32.cpuid and CPUID_SSE2 != 0) {
                 string.plusAssign("SSE2 & ")
             }
-            if (win_local.win32.cpuid and sys_public.CPUID_SSE3 != 0) {
+            if (win_local.win32.cpuid and CPUID_SSE3 != 0) {
                 string.plusAssign("SSE3 & ")
             }
-            if (win_local.win32.cpuid and sys_public.CPUID_HTT != 0) {
+            if (win_local.win32.cpuid and CPUID_HTT != 0) {
                 string.plusAssign("HTT & ")
             }
             string.StripTrailing(" & ")
@@ -1015,36 +647,36 @@ object win_main {
                 "sys_cpustring"
             )
             val token = idToken()
-            var id = sys_public.CPUID_NONE
+            var id = CPUID_NONE
             while (src.ReadToken(token)) {
                 if (token.Icmp("generic") == 0) {
-                    id = id or sys_public.CPUID_GENERIC
+                    id = id or CPUID_GENERIC
                 } else if (token.Icmp("intel") == 0) {
-                    id = id or sys_public.CPUID_INTEL
+                    id = id or CPUID_INTEL
                 } else if (token.Icmp("amd") == 0) {
-                    id = id or sys_public.CPUID_AMD
+                    id = id or CPUID_AMD
                 } else if (token.Icmp("mmx") == 0) {
-                    id = id or sys_public.CPUID_MMX
+                    id = id or CPUID_MMX
                 } else if (token.Icmp("3dnow") == 0) {
-                    id = id or sys_public.CPUID_3DNOW
+                    id = id or CPUID_3DNOW
                 } else if (token.Icmp("sse") == 0) {
-                    id = id or sys_public.CPUID_SSE
+                    id = id or CPUID_SSE
                 } else if (token.Icmp("sse2") == 0) {
-                    id = id or sys_public.CPUID_SSE2
+                    id = id or CPUID_SSE2
                 } else if (token.Icmp("sse3") == 0) {
-                    id = id or sys_public.CPUID_SSE3
+                    id = id or CPUID_SSE3
                 } else if (token.Icmp("htt") == 0) {
-                    id = id or sys_public.CPUID_HTT
+                    id = id or CPUID_HTT
                 }
             }
-            if (id == sys_public.CPUID_NONE) {
+            if (id == CPUID_NONE) {
                 Common.common.Printf(
                     "WARNING: unknown sys_cpustring '%s'\n",
                     Win32Vars_t.sys_cpustring.GetString()!!
                 )
-                id = sys_public.CPUID_GENERIC
+                id = CPUID_GENERIC
             }
-            win_local.win32.cpuid =  /*(cpuid_t)*/id
+            win_local.win32.cpuid = id
         }
         Common.common.Printf("%s\n", Win32Vars_t.sys_cpustring.GetString()!!)
         Common.common.Printf("%d MB System Memory\n", win_shared.Sys_GetSystemRam())
@@ -1057,8 +689,6 @@ object win_main {
      ================
      */
     fun Sys_Shutdown() {
-        // Nothing else to shutdown
-        //        CoUninitialize();
     }
 
     /*
@@ -1080,8 +710,6 @@ object win_main {
         return Win32Vars_t.sys_cpustring.GetString()!!
     }
 
-    //=======================================================================
-    //#define SET_THREAD_AFFINITY
     /*
      ====================
      Win_Frame
@@ -1104,9 +732,6 @@ object win_main {
      */
     fun TestChkStk() {
         throw TODO_Exception()
-        //	int		buffer[0x1000];
-//
-//	buffer[0] = 1;
     }
 
     /*
@@ -1116,12 +741,6 @@ object win_main {
      */
     fun HackChkStk() {
         throw TODO_Exception()
-        //	DWORD	old;
-//	VirtualProtect( _chkstk, 6, PAGE_EXECUTE_READWRITE, &old );
-//	*(byte *)_chkstk = 0xe9;
-//	*(int *)((int)_chkstk+1) = (int)clrstk - (int)_chkstk - 5;
-//
-//	TestChkStk();
     }
 
     /*
@@ -1511,7 +1130,7 @@ object win_main {
 //        // no abort/retry/fail errors
 //        SetErrorMode(SEM_FAILCRITICALERRORS);
 //
-//        for (i in 0 until sys_public.MAX_CRITICAL_SECTIONS) {
+//        for (i in 0 until MAX_CRITICAL_SECTIONS) {
 ////            InitializeCriticalSection( &win32.criticalSections[i] );
 //            win_local.win32.criticalSections[i] =
 //                ReentrantLock() //TODO: see if we can use synchronized blocks instead?

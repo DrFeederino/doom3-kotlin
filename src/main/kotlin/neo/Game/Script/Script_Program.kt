@@ -29,11 +29,8 @@ object Script_Program {
     const val MAX_STATEMENTS = 81920 // statement_s - 18 bytes last I checked
     const val MAX_STRINGS = 1024
 
-    // C++ sizeof(intptr_t) -- 8 on 64-bit dhewm3, 4 on original 32-bit id builds
     const val SIZEOF_INTPTR = 8
 
-    // C++ E_EVENT_SIZEOF_VEC: ((sizeof(idVec3) + (sizeof(intptr_t) - 1)) & ~(sizeof(intptr_t) - 1))
-    // 64-bit: ((12 + 7) & ~7) = 16, 32-bit: ((12 + 3) & ~3) = 12
     const val E_EVENT_SIZEOF_VEC = (idVec3.BYTES + (SIZEOF_INTPTR - 1)) and (SIZEOF_INTPTR - 1).inv()
     const val ev_argsize = 13
     const val ev_boolean = 14

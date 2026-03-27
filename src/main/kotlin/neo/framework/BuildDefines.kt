@@ -23,10 +23,9 @@ package neo.framework
 
 
 // platform detection
-// NOTE: Differs from C++ — uses JVM system properties instead of compiler-defined macros
-val _WIN32 = System.getProperty("os.name").startsWith("Windows")
+private val _WIN32 = System.getProperty("os.name").startsWith("Windows")
 val WIN32 = _WIN32
-val _MACOSX = System.getProperty("os.name").contains("Mac")
+private val _MACOSX = System.getProperty("os.name").contains("Mac")
 val MACOS_X = _MACOSX
 val __linux__ = System.getProperty("os.name") == "Linux"
 

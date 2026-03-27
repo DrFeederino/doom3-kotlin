@@ -47,8 +47,6 @@ import neo.idlib.containers.List.idList
 import neo.idlib.containers.idStrList
 import neo.idlib.hashing.CRC32
 import neo.sys.*
-import neo.sys.sys_public.sysEventType_t
-import neo.sys.sys_public.sysEvent_s
 import neo.sys.win_shared.Sys_GetDriveFreeSpace
 import neo.ui.ListGUI.idListGUI
 import neo.ui.UserInterface
@@ -560,7 +558,7 @@ object Session_local {
         }
 
         override fun UpdateScreen(outOfSequence: Boolean) {
-            if (_WIN32) {
+            if (WIN32) {
                 if (Common.com_editors != 0) {
                     if (!win_main.Sys_IsWindowVisible()) {
                         return
@@ -719,7 +717,7 @@ object Session_local {
             }
 
             // FIXME: deserves a cleanup and abstraction
-            if (_WIN32 || _MACOSX) {
+            if (WIN32 || MACOS_X) {
                 // Spin in place if needed.  The game should yield the cpu if
                 // it is running over 60 hz, because there is fundamentally
                 // nothing useful for it to do.
@@ -744,7 +742,7 @@ object Session_local {
                     if (latchedTicNumber >= minTic) {
                         break
                     }
-                    win_main.Sys_WaitForEvent(sys_public.TRIGGER_EVENT_ONE)
+                    win_main.Sys_WaitForEvent(TRIGGER_EVENT_ONE)
                 }
             }
             if (authEmitTimeout != 0) {
@@ -2061,7 +2059,7 @@ object Session_local {
                 return false
             }
 
-            if (Sys_GetDriveFreeSpace(CVarSystem.cvarSystem.GetCVarString("fs_savepath")) < 25) {
+            if (Sys_GetDriveFreeSpace(cvarSystem.GetCVarString("fs_savepath")) < 25) {
                 MessageBox(
                     msgBoxType_t.MSG_OK,
                     Common.common.GetLanguageDict().GetString("#str_04313"),
@@ -3929,7 +3927,7 @@ object Session_local {
                         val old = cvarSystem.GetCVarInteger("s_numberOfSpeakers")
                         cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "s_restart\n")
                         if (old != cvarSystem.GetCVarInteger("s_numberOfSpeakers")) {
-                            if (_WIN32) {
+                            if (WIN32) {
                                 MessageBox(
                                     msgBoxType_t.MSG_OK,
                                     Common.common.GetLanguageDict().GetString("#str_04142"),

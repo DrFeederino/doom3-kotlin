@@ -349,10 +349,6 @@ object KeyInput {
     // keys that can be set without a special name
     val unnamedkeys: String = "*,-=./[\\]1234567890abcdefghijklmnopqrstuvwxyz"
 
-    //    
-    //    
-    //
-    //
     var key_overstrikeMode = false
     var keys: Array<idKey> = Array(MAX_KEYS) { idKey() }
     var lastKeyIndex = 0
@@ -585,16 +581,16 @@ object KeyInput {
                     return if (!localized || kn.strId!![0] != '#') {
                         kn.name
                     } else {
-                        if (MACOS_X) {
-                            when (kn.keynum) {
-                                K_ENTER, K_BACKSPACE, K_ALT, K_INS, K_PRINT_SCR -> Common.common.GetLanguageDict()
-                                    .GetString(kn.strId)
-
-                                else -> Common.common.GetLanguageDict().GetString(kn.strId)
-                            }
-                        } else {
+//                        if (MACOS_X) {
+//                            when (kn.keynum) {
+//                                K_ENTER, K_BACKSPACE, K_ALT, K_INS, K_PRINT_SCR -> Common.common.GetLanguageDict()
+//                                    .GetString(kn.strId)
+//
+//                                else -> Common.common.GetLanguageDict().GetString(kn.strId)
+//                            }
+//                        } else {
                             Common.common.GetLanguageDict().GetString(kn.strId)
-                        }
+                        //}
                     }
                 }
             }
@@ -626,7 +622,7 @@ object KeyInput {
             UsercmdGen.usercmdGen.Clear()
 
             // allocate memory for new binding
-            keys[keyNum].binding = idStr(binding)
+            keys[keyNum].binding.set(binding)
 
             // find the action for the async command generation
             keys[keyNum].usercmdAction = UsercmdGen.usercmdGen.CommandStringUsercmdData(binding)
@@ -695,12 +691,10 @@ object KeyInput {
         }
 
         @Throws(idException::class)
-
         fun KeysFromBinding(bind: String?): String {
             var i: Int
             keyName[0] = '\u0000'
-            // FIX: C++ checks bind && *bind (non-null AND non-empty)
-            if (bind != null && bind.isNotEmpty()) {
+            if (!bind.isNullOrEmpty()) {
                 i = 0
                 while (i < MAX_KEYS) {
                     if (keys[i].binding.Icmp(bind) == 0) {
@@ -801,17 +795,12 @@ object KeyInput {
     )
 
     class idKey {
-        var binding: idStr = idStr()
+        val binding: idStr = idStr()
         var down = false
         var repeats // if > 1, it is autorepeating
                 = 0
         var usercmdAction // for testing by the asyncronous usercmd generation
-                : Int
-
-        init {
-            binding = idStr()
-            usercmdAction = 0
-        }
+                : Int = 0
     }
 
     /////////////////////////////
