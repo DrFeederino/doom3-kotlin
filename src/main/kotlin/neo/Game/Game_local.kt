@@ -1019,13 +1019,14 @@ class Game_local {
                 saveGameFile.ForceFlush()
             }
 
+            savegame.WriteBuildNumber(BUILD_NUMBER)
+
             // DG: add some more information to savegame to make future quirks easier
             savegame.WriteInt(INTERNAL_SAVEGAME_VERSION) // to be independent of BUILD_NUMBER
             savegame.WriteString(D3_OSTYPE) // operating system - from CMake
             savegame.WriteString(D3_ARCH) // CPU architecture (e.g. "x86" or "x86_64") - from CMake
             savegame.WriteString(ENGINE_VERSION)
             savegame.WriteShort(D3_SHORT_SIZE) // tells us if it's from a 32bit (4) or 64bit system (8)
-            savegame.WriteBuildNumber(BUILD_NUMBER)
             savegame.WriteShort(0) // byteOrder
             // DG end
             // go through all entities and threads and add them to the object list

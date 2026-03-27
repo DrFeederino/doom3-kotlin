@@ -1432,8 +1432,12 @@ object win_input {
                 GLFW.GLFW_KEY_PAGE_DOWN -> KeyInput.K_PGDN
                 GLFW.GLFW_KEY_INSERT -> KeyInput.K_INS
                 GLFW.GLFW_KEY_DELETE -> KeyInput.K_DEL
+                GLFW.GLFW_KEY_LEFT_SHIFT -> KeyInput.K_SHIFT
+                GLFW.GLFW_KEY_RIGHT_SHIFT -> KeyInput.K_RIGHT_SHIFT
+                GLFW.GLFW_KEY_LEFT_CONTROL -> KeyInput.K_CTRL
+                GLFW.GLFW_KEY_RIGHT_CONTROL -> KeyInput.K_RIGHT_CTRL  // was K_CTRL — RIGHT_CTRL must be distinct so bindings & IsDown() symmetry both work
+                GLFW.GLFW_KEY_LEFT_ALT -> KeyInput.K_ALT
                 GLFW.GLFW_KEY_RIGHT_ALT -> rightAltKey
-                GLFW.GLFW_KEY_RIGHT_CONTROL -> KeyInput.K_CTRL
                 GLFW.GLFW_KEY_KP_ENTER -> KeyInput.K_KP_ENTER
                 GLFW.GLFW_KEY_KP_EQUAL -> KeyInput.K_KP_EQUALS
                 GLFW.GLFW_KEY_PAUSE -> KeyInput.K_PAUSE
@@ -1442,6 +1446,20 @@ object win_input {
                 GLFW.GLFW_KEY_RIGHT_SUPER -> KeyInput.K_RWIN
                 GLFW.GLFW_KEY_MENU -> KeyInput.K_MENU
                 GLFW.GLFW_KEY_PRINT_SCREEN -> KeyInput.K_PRINT_SCR
+                GLFW.GLFW_KEY_CAPS_LOCK -> KeyInput.K_CAPSLOCK
+                GLFW.GLFW_KEY_SCROLL_LOCK -> KeyInput.K_SCROLL
+                GLFW.GLFW_KEY_F1 -> KeyInput.K_F1
+                GLFW.GLFW_KEY_F2 -> KeyInput.K_F2
+                GLFW.GLFW_KEY_F3 -> KeyInput.K_F3
+                GLFW.GLFW_KEY_F4 -> KeyInput.K_F4
+                GLFW.GLFW_KEY_F5 -> KeyInput.K_F5
+                GLFW.GLFW_KEY_F6 -> KeyInput.K_F6
+                GLFW.GLFW_KEY_F7 -> KeyInput.K_F7
+                GLFW.GLFW_KEY_F8 -> KeyInput.K_F8
+                GLFW.GLFW_KEY_F9 -> KeyInput.K_F9
+                GLFW.GLFW_KEY_F10 -> KeyInput.K_F10
+                GLFW.GLFW_KEY_F11 -> KeyInput.K_F11
+                GLFW.GLFW_KEY_F12 -> KeyInput.K_F12
                 GLFW.GLFW_KEY_KP_7 -> KeyInput.K_KP_HOME
                 GLFW.GLFW_KEY_KP_8 -> KeyInput.K_KP_UPARROW
                 GLFW.GLFW_KEY_KP_9 -> KeyInput.K_KP_PGUP
@@ -1788,6 +1806,11 @@ object win_input {
         ch[0] = IN_DIMapKey(key, scancode, mods)
         when (ch[0]) {
             KeyInput.K_BACKSPACE -> {
+                // SE_KEY covers bindings and key-state tracking for all actions.
+                win_main.Sys_QueEvent(
+                    Instant.now().toEpochMilli(), sysEventType_t.SE_KEY, ch[0], action, 0, null
+                )
+                // SE_CHAR on press/repeat drives the console/UI delete-character logic.
                 if (action != GLFW.GLFW_RELEASE) {
                     win_main.Sys_QueEvent(
                         Instant.now().toEpochMilli(), sysEventType_t.SE_CHAR, ch[0], action, 0, null
@@ -1814,13 +1837,19 @@ object win_input {
             )
 
             else -> {
-                val character = Char(ch[0])
-                if (action == GLFW.GLFW_RELEASE && (character in '0'..'9' || character == Char(127)) && ch[0] != '~'.code && ch[0] != '`'.code && ch[0] < 128) {
-                    win_main.Sys_QueEvent(
-                        Instant.now().toEpochMilli(), sysEventType_t.SE_CHAR, ch[0], action, 0, null
-                    )
-                } else {
-                    win_main.Sys_QueEvent(Instant.now().toEpochMilli(), sysEventType_t.SE_KEY, ch[0], action, 0, null)
+                // Always queue SE_KEY so binding execution and key-state tracking
+                // (keys[n].down) work correctly for every key and every action.
+                win_main.Sys_QueEvent(Instant.now().toEpochMilli(), sysEventType_t.SE_KEY, ch[0], action, 0, null)
+                // Additionally queue SE_CHAR for printable ASCII on press/repeat so
+                // the console and UI text-fields receive the typed characters.
+                // Console-toggle keys (grave / tilde) are intentionally excluded —
+                // they open/close the console via SE_KEY and must not echo as text.
+                if (action != GLFW.GLFW_RELEASE
+                    && ch[0] in 32..126
+                    && ch[0] != '`'.code
+                    && ch[0] != '~'.code
+                ) {
+                    win_main.Sys_QueEvent(Instant.now().toEpochMilli(), sysEventType_t.SE_CHAR, ch[0], 0, 0, null)
                 }
             }
         }
