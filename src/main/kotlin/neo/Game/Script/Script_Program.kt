@@ -1009,8 +1009,18 @@ object Script_Program {
             stringPtr = btos(data!!.array(), offset)
         }
 
-        fun setString(string: String?) { //TODO:clean up all these weird string pointers
-            primitive.put(string!!.toByteArray()).rewind()
+        fun setString(string: String?) {
+            // C++ uses idStr::Copynz(stringPtr, src, MAX_STRING_LEN) — null-terminates and zero-pads
+            val bytes = (string ?: "").toByteArray()
+            val copyLen = Math.min(bytes.size, Math.min(primitive.capacity(), MAX_STRING_LEN) - 1)
+            primitive.rewind()
+            primitive.put(bytes, 0, copyLen)
+            // null-terminate and zero-fill remaining space
+            val remaining = Math.min(primitive.remaining(), MAX_STRING_LEN - copyLen)
+            for (i in 0 until remaining) {
+                primitive.put(0.toByte())
+            }
+            primitive.rewind()
         }
 
         fun setEvalPtr(entityNumberIndex: Int) {

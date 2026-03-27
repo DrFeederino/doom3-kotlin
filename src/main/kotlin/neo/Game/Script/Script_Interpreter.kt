@@ -93,10 +93,17 @@ object Script_Interpreter {
             if (localstackUsed + Script_Program.MAX_STRING_LEN > LOCALSTACK_SIZE) {
                 Error("PushString: locals stack overflow\n")
             }
-            //            idStr.Copynz(localstack[localstackUsed], string, MAX_STRING_LEN);
-            val str = string + '\u0000'
-            val length = Math.min(str.length, Script_Program.MAX_STRING_LEN)
-            System.arraycopy(str.toByteArray(), 0, localstack, localstackUsed, length)
+            // C++ uses idStr::Copynz which does strncpy (zero-pads) + null-terminates
+            val bytes = (string ?: "").toByteArray()
+            val copyLen = Math.min(bytes.size, Script_Program.MAX_STRING_LEN - 1)
+            System.arraycopy(bytes, 0, localstack, localstackUsed, copyLen)
+            // zero-fill remainder of the 128-byte slot (strncpy zero-pads + null terminate)
+            Arrays.fill(
+                localstack,
+                localstackUsed + copyLen,
+                localstackUsed + Script_Program.MAX_STRING_LEN,
+                0.toByte()
+            )
             localstackUsed += Script_Program.MAX_STRING_LEN
         }
 
@@ -142,12 +149,24 @@ object Script_Interpreter {
 
         private fun AppendString(def: idVarDef?, from: String?) {
             if (def!!.initialized == initialized_t.stackVariable) {
-//                idStr.Append(localstack[localstackBase + def.value.stackOffset], MAX_STRING_LEN, from);
-                val str = from + '\u0000'
-                val length = Math.min(str.length, Script_Program.MAX_STRING_LEN)
+                // C++ uses idStr::Append(dest, MAX_STRING_LEN, src) which finds strlen(dest),
+                // then Copynz(dest + l1, size - l1, src) — limits write to remaining slot space
                 val offset = localstackBase + def.value!!.stackOffset
-                val appendOffset = strLen(localstack, offset)
-                System.arraycopy(str.toByteArray(), 0, localstack, appendOffset, length)
+                val existingLen = strLen(localstack, offset) - offset
+                if (existingLen >= Script_Program.MAX_STRING_LEN) {
+                    return // already at max, nothing to append
+                }
+                val remaining = Script_Program.MAX_STRING_LEN - existingLen
+                val bytes = (from ?: "").toByteArray()
+                val copyLen = Math.min(bytes.size, remaining - 1)
+                System.arraycopy(bytes, 0, localstack, offset + existingLen, copyLen)
+                // null-terminate and zero-fill remainder
+                Arrays.fill(
+                    localstack,
+                    offset + existingLen + copyLen,
+                    offset + Script_Program.MAX_STRING_LEN,
+                    0.toByte()
+                )
             } else {
                 def.value!!.stringPtr = Append(def.value!!.stringPtr!!, Script_Program.MAX_STRING_LEN, from!!)
             }
@@ -155,10 +174,13 @@ object Script_Interpreter {
 
         private fun SetString(def: idVarDef?, from: String?) {
             if (def!!.initialized == initialized_t.stackVariable) {
-//                idStr.Copynz(localstack[localstackBase + def.value.stackOffset], from, MAX_STRING_LEN);
-                val str = from + '\u0000'
-                val length = Math.min(str.length, Script_Program.MAX_STRING_LEN)
-                System.arraycopy(str.toByteArray(), 0, localstack, localstackBase + def.value!!.stackOffset, length)
+                // C++ uses idStr::Copynz which does strncpy (zero-pads) + null-terminates
+                val offset = localstackBase + def.value!!.stackOffset
+                val bytes = (from ?: "").toByteArray()
+                val copyLen = Math.min(bytes.size, Script_Program.MAX_STRING_LEN - 1)
+                System.arraycopy(bytes, 0, localstack, offset, copyLen)
+                // zero-fill remainder of the 128-byte slot (strncpy zero-pads + null terminate)
+                Arrays.fill(localstack, offset + copyLen, offset + Script_Program.MAX_STRING_LEN, 0.toByte())
             } else {
                 def.value!!.stringPtr = from //idStr.Copynz(def.value.stringPtr, from, MAX_STRING_LEN);
             }
