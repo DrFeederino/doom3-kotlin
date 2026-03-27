@@ -23,8 +23,8 @@ import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
+import neo.Game.Game_local.Companion.gameLocal
 import neo.Game.Game_local.gameSoundChannel_t
-import neo.Game.Game_local.idGameLocal
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics_RigidBody.idPhysics_RigidBody
 import neo.Game.Physics.Physics_StaticMulti.idPhysics_StaticMulti
@@ -374,7 +374,7 @@ object BrittleFracture {
             while (i < shards.Num()) {
                 droppedTime = shards[i]!!.droppedTime
                 if (droppedTime != -1) {
-                    if (Game_local.gameLocal.time - droppedTime > SHARD_ALIVE_TIME) {
+                    if (gameLocal.time - droppedTime > SHARD_ALIVE_TIME) {
                         RemoveShard(i)
                         i--
                     }
@@ -389,8 +389,8 @@ object BrittleFracture {
                 return
             }
             if ((thinkFlags and TH_PHYSICS) != 0) {
-                startTime = Game_local.gameLocal.previousTime
-                endTime = Game_local.gameLocal.time
+                startTime = gameLocal.previousTime
+                endTime = gameLocal.time
 
                 // run physics on shards
                 i = 0
@@ -436,7 +436,7 @@ object BrittleFracture {
             if (shards[id]!!.droppedTime != -1) {
                 shards[id]!!.physicsObj.ApplyImpulse(0, point, impulse)
             } else if (health <= 0 && !disableFracture) {
-                Shatter(point, impulse, Game_local.gameLocal.time)
+                Shatter(point, impulse, gameLocal.time)
             }
         }
 
@@ -447,13 +447,13 @@ object BrittleFracture {
             if (shards[id]!!.droppedTime != -1) {
                 shards[id]!!.physicsObj.AddForce(0, point, force)
             } else if (health <= 0 && !disableFracture) {
-                Shatter(point, force, Game_local.gameLocal.time)
+                Shatter(point, force, gameLocal.time)
             }
         }
 
         override fun AddDamageEffect(collision: trace_s, velocity: idVec3, damageDefName: String) {
             if (!disableFracture) {
-                ProjectDecal(collision.c.point, collision.c.normal, Game_local.gameLocal.time, damageDefName)
+                ProjectDecal(collision.c.point, collision.c.normal, gameLocal.time, damageDefName)
             }
         }
 
@@ -477,7 +477,7 @@ object BrittleFracture {
             val axis: idMat3 = idMat3()
             val axisTemp = idMat3()
             val textureAxis: Array<idPlane> = idPlane.generateArray(2)
-            if (Game_local.gameLocal.isServer) {
+            if (gameLocal.isServer) {
                 val msg = idBitMsg()
                 val msgBuf = ByteBuffer.allocate(Game_local.MAX_EVENT_PARAM_SIZE)
                 msg.Init(msgBuf, Game_local.MAX_EVENT_PARAM_SIZE)
@@ -490,12 +490,12 @@ object BrittleFracture {
                 msg.WriteFloat(dir[2])
                 ServerSendEvent(EVENT_PROJECT_DECAL, msg, true, -1)
             }
-            if (time >= Game_local.gameLocal.time) {
+            if (time >= gameLocal.time) {
                 // try to get the sound from the damage def
                 var damageDef: idDeclEntityDef? = null
                 var sndShader: idSoundShader? = null
                 if (damageDefName != null) {
-                    damageDef = Game_local.gameLocal.FindEntityDef(damageDefName, false)
+                    damageDef = gameLocal.FindEntityDef(damageDefName, false)
                     if (damageDef != null) {
                         sndShader = DeclManager.declManager.FindSound(damageDef.dict.GetString("snd_shatter", "")!!)
                     }
@@ -506,7 +506,7 @@ object BrittleFracture {
                     StartSound("snd_bullethole", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
                 }
             }
-            a = Game_local.gameLocal.random.RandomFloat() * idMath.TWO_PI
+            a = gameLocal.random.RandomFloat() * idMath.TWO_PI
             c = cos(a)
             s = -sin(a)
             axis[2] = dir.unaryMinus()
@@ -567,7 +567,7 @@ object BrittleFracture {
 
         override fun ClientPredictionThink() {
             // only think forward because the state is not synced through snapshots
-            if (!Game_local.gameLocal.isNewFrame) {
+            if (!gameLocal.isNewFrame) {
                 return
             }
             Think()
@@ -632,10 +632,10 @@ object BrittleFracture {
             }
 
             // don't regenerate it if it is current
-            if (lastRenderEntityUpdate == Game_local.gameLocal.time || !changed) {
+            if (lastRenderEntityUpdate == gameLocal.time || !changed) {
                 return false
             }
-            lastRenderEntityUpdate = Game_local.gameLocal.time
+            lastRenderEntityUpdate = gameLocal.time
             changed = false
             numTris = 0
             numDecalTris = 0
@@ -674,7 +674,7 @@ object BrittleFracture {
                 val axis = shards[i]!!.clipModel!!.GetAxis()
                 fade = 1.0f
                 if (shards[i]!!.droppedTime >= 0) {
-                    msec = Game_local.gameLocal.time - shards[i]!!.droppedTime - SHARD_FADE_START
+                    msec = gameLocal.time - shards[i]!!.droppedTime - SHARD_FADE_START
                     if (msec > 0) {
                         fade =
                             1.0f - msec.toFloat() / (SHARD_ALIVE_TIME - SHARD_FADE_START)
@@ -881,7 +881,7 @@ object BrittleFracture {
             shard.physicsObj.SetAxis(axis)
             shard.physicsObj.SetBouncyness(bouncyness)
             shard.physicsObj.SetFriction(0.6f, 0.6f, friction)
-            shard.physicsObj.SetGravity(Game_local.gameLocal.GetGravity())
+            shard.physicsObj.SetGravity(gameLocal.GetGravity())
             shard.physicsObj.SetContents(Material.CONTENTS_RENDERMODEL)
             shard.physicsObj.SetClipMask(Game_local.MASK_SOLID or Material.CONTENTS_MOVEABLECLIP)
             shard.physicsObj.ApplyImpulse(0, origin, dir.times(impulse * linearVelocityScale))
@@ -895,7 +895,7 @@ object BrittleFracture {
             val dir = idVec3()
             var shard: shard_s?
             val m: Float
-            if (Game_local.gameLocal.isServer) {
+            if (gameLocal.isServer) {
                 val msg = idBitMsg()
                 val msgBuf = ByteBuffer.allocate(Game_local.MAX_EVENT_PARAM_SIZE)
                 msg.Init(msgBuf, Game_local.MAX_EVENT_PARAM_SIZE)
@@ -908,7 +908,7 @@ object BrittleFracture {
                 msg.WriteFloat(impulse[2])
                 ServerSendEvent(EVENT_SHATTER, msg, true, -1)
             }
-            if (time > Game_local.gameLocal.time - SHARD_ALIVE_TIME) {
+            if (time > gameLocal.time - SHARD_ALIVE_TIME) {
                 StartSound("snd_shatter", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
             }
             if (!IsBroken()) {
@@ -1036,7 +1036,7 @@ object BrittleFracture {
                 }
 
                 // randomly create a split plane
-                a = Game_local.gameLocal.random.RandomFloat() * idMath.TWO_PI
+                a = gameLocal.random.RandomFloat() * idMath.TWO_PI
                 c = cos(a)
                 s = -sin(a)
                 axis[2] = windingPlane.Normal()
@@ -1249,7 +1249,7 @@ object BrittleFracture {
             }
             point.set(shards[trace.c.id]!!.clipModel!!.GetOrigin())
             impulse.set(other.GetPhysics().GetLinearVelocity().times(other.GetPhysics().GetMass()))
-            Shatter(point, impulse, Game_local.gameLocal.time)
+            Shatter(point, impulse, gameLocal.time)
         }
 
         override fun GetType(): idTypeInfo = Type
@@ -1278,11 +1278,12 @@ object BrittleFracture {
         class ModelCallback private constructor() : deferredEntityCallback_t() {
             override fun run(e: RenderWorld.renderEntity_s?, v: RenderWorld.renderView_s?): Boolean {
                 val ent: idBrittleFracture?
-                ent = Game_local.gameLocal.entities[e!!.entityNum] as idBrittleFracture?
+                ent = gameLocal.entities[e!!.entityNum] as idBrittleFracture?
                 if (null == ent) {
-                    idGameLocal.Error("idBrittleFracture::ModelCallback: callback with NULL game entity")
+                    gameLocal.Warning("idBrittleFracture::ModelCallback: callback with NULL game entity")
+                    return false
                 }
-                return ent!!.UpdateRenderEntity(e, v)
+                return ent.UpdateRenderEntity(e, v)
             }
 
             override fun AllocBuffer(): ByteBuffer {

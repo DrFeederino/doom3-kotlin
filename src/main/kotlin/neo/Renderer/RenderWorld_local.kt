@@ -355,6 +355,8 @@ object RenderWorld_local {
             def.parms.gui[1] = null
             def.parms.gui[2] = null
 
+            def.parms.callback = null
+
             entityDefs[entityHandle] = null
         }
 

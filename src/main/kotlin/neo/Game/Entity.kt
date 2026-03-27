@@ -4292,9 +4292,10 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             val ent: idEntity?
             ent = Game_local.gameLocal.entities[e!!.entityNum]
             if (null == ent) {
-                idGameLocal.Error("idEntity::ModelCallback: callback with NULL game entity")
+                Common.common.Warning("idEntity::ModelCallback: callback with NULL game entity")
+                return false
             }
-            return ent!!.UpdateRenderEntity(e, v)
+            return ent.UpdateRenderEntity(e, v)
         }
 
         override fun AllocBuffer(): ByteBuffer {

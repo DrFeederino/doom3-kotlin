@@ -512,10 +512,9 @@ open class idItem : idEntity() {
             if (null == v) {
                 return false
             }
-            // FIX: was `as idItem` which throws ClassCastException on null instead of calling Error()
             val ent = gameLocal.entities[e!!.entityNum] as? idItem
             if (ent == null) {
-                idGameLocal.Error("idItem::ModelCallback: callback with NULL game entity")
+                gameLocal.Warning("idItem::ModelCallback: callback with NULL game entity")
                 return false
             }
             return ent.UpdateRenderEntity(e, v)
