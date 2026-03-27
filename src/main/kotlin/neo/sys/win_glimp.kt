@@ -300,10 +300,10 @@ object win_glimp {
         glfwFocusWindow(window)
         glfwPollEvents()
 
-        glfwSetInputMode(window, GLFW_LOCK_KEY_MODS, GLFW_FALSE)
+        glfwSetInputMode(window, GLFW_LOCK_KEY_MODS, GLFW_TRUE)
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED)
         glfwSetKeyCallback(window, UsercmdGen.usercmdGen.keyboardCallback)
-        glfwSetCharCallback(window, UsercmdGen.usercmdGen.keyboardCharCallback)
+        //glfwSetCharCallback(window, UsercmdGen.usercmdGen.keyboardCharCallback)
         glfwSetCursorPosCallback(window, UsercmdGen.usercmdGen.mouseCursorCallback)
         glfwSetScrollCallback(window, UsercmdGen.usercmdGen.mouseScrollCallback)
         glfwSetMouseButtonCallback(window, UsercmdGen.usercmdGen.mouseButtonCallback)

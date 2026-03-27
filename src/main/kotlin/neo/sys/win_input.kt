@@ -30,7 +30,6 @@ package neo.sys
 
 import neo.framework.Common
 import neo.framework.KeyInput
-import neo.framework.MACOS_X
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CInt
@@ -1448,10 +1447,15 @@ object win_input {
             }
         }
 
-        // For standard keys (< 256), fall back to thy OS-specific ASCII translations
-        return if (MACOS_X) {
-            Char(key).lowercaseChar().code //a small hack to make controls work
-        } else if (scancode > 256) 0 else keyScanTable[getShiftedScancode(key, scancode, mods)].code
+        // For standard printable keys (< 256), GLFW provides the key code as the
+        // Unicode codepoint of the character (e.g. GLFW_KEY_A = 65 = 'A').
+        // Doom 3 expects lowercase ASCII as key numbers for bindable keys.
+        // The old s_scantokey table was designed for Windows DirectInput scancodes,
+        // which do NOT match GLFW scancodes — using it produces wrong mappings.
+        // Instead, just lowercase the GLFW key code, which works on all platforms.
+        return if (key in 32..126) {
+            Char(key).lowercaseChar().code
+        } else 0
     }
 
     private fun getShiftedScancode(key: Int, scancode: Int, mods: Int): Int {
@@ -1478,6 +1482,60 @@ object win_input {
      */
     private fun isShiftableLetter(key: Int): Boolean {
         return key >= GLFW.GLFW_KEY_A && key <= GLFW.GLFW_KEY_Z
+    }
+
+    /**
+     * Computes the actual typed character for SE_CHAR events, taking shift and
+     * caps lock state into account. GLFW key codes for printable keys are
+     * uppercase ASCII (e.g. GLFW_KEY_A = 65 = 'A'). This function applies
+     * the standard US keyboard shift mapping to produce the character the user
+     * intended to type.
+     */
+    private fun getTypedChar(key: Int, mods: Int): Int {
+        val shift = (mods and GLFW.GLFW_MOD_SHIFT) != 0
+        val caps = (mods and GLFW.GLFW_MOD_CAPS_LOCK) != 0
+
+        // Letters: GLFW_KEY_A..GLFW_KEY_Z are 65..90 (uppercase ASCII)
+        if (key in GLFW.GLFW_KEY_A..GLFW.GLFW_KEY_Z) {
+            val upper = shift xor caps  // shift XOR caps = uppercase
+            return if (upper) key else (key + 32)  // 'A'=65 -> 'a'=97
+        }
+
+        // Non-letter printable keys: only shift matters (caps lock doesn't affect them)
+        if (shift) {
+            return when (key) {
+                GLFW.GLFW_KEY_GRAVE_ACCENT -> '~'.code   // ` -> ~
+                GLFW.GLFW_KEY_1 -> '!'.code
+                GLFW.GLFW_KEY_2 -> '@'.code
+                GLFW.GLFW_KEY_3 -> '#'.code
+                GLFW.GLFW_KEY_4 -> '$'.code
+                GLFW.GLFW_KEY_5 -> '%'.code
+                GLFW.GLFW_KEY_6 -> '^'.code
+                GLFW.GLFW_KEY_7 -> '&'.code
+                GLFW.GLFW_KEY_8 -> '*'.code
+                GLFW.GLFW_KEY_9 -> '('.code
+                GLFW.GLFW_KEY_0 -> ')'.code
+                GLFW.GLFW_KEY_MINUS -> '_'.code           // - -> _
+                GLFW.GLFW_KEY_EQUAL -> '+'.code           // = -> +
+                GLFW.GLFW_KEY_LEFT_BRACKET -> '{'.code    // [ -> {
+                GLFW.GLFW_KEY_RIGHT_BRACKET -> '}'.code   // ] -> }
+                GLFW.GLFW_KEY_BACKSLASH -> '|'.code       // \ -> |
+                GLFW.GLFW_KEY_SEMICOLON -> ':'.code       // ; -> :
+                GLFW.GLFW_KEY_APOSTROPHE -> '"'.code      // ' -> "
+                GLFW.GLFW_KEY_COMMA -> '<'.code           // , -> <
+                GLFW.GLFW_KEY_PERIOD -> '>'.code          // . -> >
+                GLFW.GLFW_KEY_SLASH -> '?'.code           // / -> ?
+                GLFW.GLFW_KEY_SPACE -> ' '.code
+                else -> key  // fallback: return key as-is
+            }
+        }
+
+        // Unshifted: GLFW key codes for digits and punctuation are already
+        // the correct ASCII values (e.g. GLFW_KEY_0 = 48 = '0', GLFW_KEY_SPACE = 32)
+        return when {
+            key in 32..126 -> key
+            else -> 0
+        }
     }
 
     /*
@@ -1652,7 +1710,20 @@ object win_input {
                     && ch[0] != '`'.code
                     && ch[0] != '~'.code
                 ) {
-                    win_main.Sys_QueEvent(Instant.now().toEpochMilli(), sysEventType_t.SE_CHAR, ch[0], 0, 0, null)
+                    // Compute the actual typed character including shift/caps state.
+                    // ch[0] is always lowercase (Doom keynum), but SE_CHAR needs the
+                    // real character the user intended to type.
+                    val typedChar = getTypedChar(key, mods)
+                    if (typedChar != 0) {
+                        win_main.Sys_QueEvent(
+                            Instant.now().toEpochMilli(),
+                            sysEventType_t.SE_CHAR,
+                            typedChar,
+                            0,
+                            0,
+                            null
+                        )
+                    }
                 }
             }
         }
