@@ -49,7 +49,7 @@ class SysCvar {
 
     companion object {
         const val _DEBUG = false
-        val __DATE__: String = Date().toString()
+        val __DATE__: String = java.text.SimpleDateFormat("MMM dd yyyy HH:mm:ss", Locale.US).format(Date())
         val aas_goalArea: idCVar = idCVar("aas_goalArea", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER, "")
         val aas_pullPlayer: idCVar = idCVar("aas_pullPlayer", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER, "")
         val aas_randomPullPlayer: idCVar =
