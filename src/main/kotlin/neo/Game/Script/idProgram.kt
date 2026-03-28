@@ -194,7 +194,7 @@ class idProgram {
         savefile.ReadInt(saved_checksum)
         checksum = CalculateChecksum(false)
 
-        if (saved_checksum.integerValue.toLong() != checksum) {
+        if ((saved_checksum.integerValue.toLong() and 0xFFFFFFFFL) != checksum) {
             Game_local.gameLocal.Warning("WARNING: Real Script checksum didn't match the one from the savegame!")
             result = false
         }

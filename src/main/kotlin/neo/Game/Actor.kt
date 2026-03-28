@@ -2183,12 +2183,6 @@ open class idActor : idAFEntity_Gibbable() {
         val flags: animFlags_t?
         val headEnt: idEntity?
         val anim: Int
-        // NOTE: Differs from C++ — this hack is NOT in the original source. It works around a Kotlin-side
-        // animation name duplication bug (e.g., "standstand" instead of "stand"). The root cause should be
-        // fixed in the animation system rather than patched here.
-        if (animName == "standstand") {
-            animName = animName.substring(0, animName.length / 2)
-        }
         anim = GetAnim(channel, animName)
         if (0 == anim) {
             if (channel == Anim.ANIMCHANNEL_HEAD && head.GetEntity() != null) {

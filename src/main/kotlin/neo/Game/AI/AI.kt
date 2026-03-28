@@ -2159,7 +2159,7 @@ open class idAI : idActor() {
      ============
      */
     fun GetTalkState(): talkState_t {
-        if (talk_state != talkState_t.TALK_NEVER && AI_DEAD.underscore()!!) {
+        if (talk_state != talkState_t.TALK_NEVER && AI_DEAD.underscore() == true) {
             return talkState_t.TALK_DEAD
         }
         return if (IsHidden()) {
@@ -2432,7 +2432,7 @@ open class idAI : idActor() {
      */
     protected fun Activate(activator: idEntity?) {
         val player: idPlayer
-        if (AI_DEAD.underscore()!!) {
+        if (AI_DEAD.underscore() == true) {
             // ignore it when they're dead
             return
         }
@@ -2532,7 +2532,7 @@ open class idAI : idActor() {
      ================
      */
     override fun CanPlayChatterSounds(): Boolean {
-        if (AI_DEAD.underscore()!!) {
+        if (AI_DEAD.underscore() == true) {
             return false
         }
         if (IsHidden()) {
@@ -2581,7 +2581,7 @@ open class idAI : idActor() {
      */
     protected fun PlayChatter() {
         // check if it's time to play a chat sound
-        if (AI_DEAD.underscore()!! || chat_snd == null || chat_time > Game_local.gameLocal.time) {
+        if (AI_DEAD.underscore() == true || chat_snd == null || chat_time > Game_local.gameLocal.time) {
             return
         }
         StartSoundShader(chat_snd, gameSoundChannel_t.SND_CHANNEL_VOICE, 0, false, CInt())
@@ -3462,7 +3462,7 @@ open class idAI : idActor() {
      */
     protected fun StaticMove() {
         val enemyEnt = enemy.GetEntity()
-        if (AI_DEAD.underscore()!!) {
+        if (AI_DEAD.underscore() == true) {
             return
         }
         if (move.moveCommand == moveCommand_t.MOVE_FACE_ENEMY && enemyEnt != null) {
@@ -3543,7 +3543,7 @@ open class idAI : idActor() {
                 }
             }
         }
-        return AI_PAIN.underscore()!! /*!= 0*/
+        return AI_PAIN.underscore() == true /*!= 0*/
     }
 
     /*
@@ -3567,7 +3567,7 @@ open class idAI : idActor() {
         } else {
             AI_SPECIAL_DAMAGE.underscore(0.0f)
         }
-        if (AI_DEAD.underscore()!!) {
+        if (AI_DEAD.underscore() == true) {
             AI_PAIN.underscore(true)
             AI_DAMAGE.underscore(true)
             return
@@ -4293,7 +4293,11 @@ open class idAI : idActor() {
             return false
         }
         if (ReachedPos(lastVisibleReachableEnemyPos, moveCommand_t.MOVE_TO_ENEMY)) {
-            if (!ReachedPos(lastVisibleEnemyPos, moveCommand_t.MOVE_TO_ENEMY) || !AI_ENEMY_VISIBLE.underscore()!!) {
+            if (!ReachedPos(
+                    lastVisibleEnemyPos,
+                    moveCommand_t.MOVE_TO_ENEMY
+                ) || AI_ENEMY_VISIBLE.underscore() != true
+            ) {
                 StopMove(moveStatus_t.MOVE_STATUS_DEST_UNREACHABLE)
                 AI_DEST_UNREACHABLE.underscore(true)
                 return false
@@ -4927,7 +4931,7 @@ open class idAI : idActor() {
         if (null == enemy.GetEntity()) {
             return false
         }
-        if (AI_ENEMY_VISIBLE.underscore()!!) {
+        if (AI_ENEMY_VISIBLE.underscore() == true) {
             return true
         }
         Game_local.gameLocal.clip.TracePoint(
@@ -5111,7 +5115,7 @@ open class idAI : idActor() {
      */
     protected fun SetEnemy(newEnemy: idActor?) {
         val enemyAreaNum = CInt()
-        if (AI_DEAD.underscore()!!) {
+        if (AI_DEAD.underscore() == true) {
             ClearEnemy()
             return
         }
@@ -5723,7 +5727,7 @@ open class idAI : idActor() {
         var i: Int
         val jointAng = idAngles()
         val orientationJointYaw: Float
-        if (AI_DEAD.underscore()!!) {
+        if (AI_DEAD.underscore() == true) {
             return super.UpdateAnimationControllers()
         }
         if (orientationJoint == Model.INVALID_JOINT) {
@@ -7156,7 +7160,7 @@ open class idAI : idActor() {
         val tr = trace_s()
         val hit: idEntity?
         val enemyEnt = enemy.GetEntity()
-        if (!AI_ENEMY_VISIBLE.underscore()!! || enemyEnt == null) {
+        if (AI_ENEMY_VISIBLE.underscore() != true || enemyEnt == null) {
             idThread.ReturnInt(false)
             return
         }
@@ -7199,7 +7203,7 @@ open class idAI : idActor() {
         val tr = trace_s()
         val distance = CFloat()
         val enemyEnt = enemy.GetEntity()
-        if (!AI_ENEMY_VISIBLE.underscore()!! || enemyEnt == null) {
+        if (AI_ENEMY_VISIBLE.underscore() != true || enemyEnt == null) {
             idThread.ReturnInt(false)
             return
         }
@@ -7268,7 +7272,7 @@ open class idAI : idActor() {
         val axis = idMat3()
         val distance = CFloat()
         val enemyEnt = enemy.GetEntity()
-        if (!AI_ENEMY_VISIBLE.underscore()!! || null == enemyEnt) {
+        if (AI_ENEMY_VISIBLE.underscore() != true || null == enemyEnt) {
             idThread.ReturnInt(false)
             return
         }

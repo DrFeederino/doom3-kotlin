@@ -3,6 +3,7 @@ package neo.Game.Script
 import neo.Game.*
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
+import neo.Game.GameSys.Event.idEvent
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -1672,11 +1673,10 @@ object Script_Thread {
                 // reset the threadIndex
                 threadIndex = 0
                 currentThread = null
-                // C++ `delete threadList[i]` triggers ~idClass -> CancelEvents(this) for each thread
-//                val n = threadList.Num()
-//                for (i in n - 1 downTo 0) {
-//                    threadList[i].deconstructor()
-//                }
+                val n = threadList.Num()
+                for (i in n - 1 downTo 0) {
+                    idEvent.CancelEvents(threadList[i])
+                }
                 threadList.Clear()
 
                 trace = trace_s()

@@ -1062,6 +1062,7 @@ object File_h {
             buffer.order(ByteOrder.LITTLE_ENDIAN)
             buffer.limit(len)
 
+
             remaining = len
             tries = 0
             try {
@@ -1094,6 +1095,7 @@ object File_h {
             buffer.clear()
             // for debugging purposes
             positionInFile = o!!.position()
+            println("Current position in file $positionInFile")
             return len
         }
 

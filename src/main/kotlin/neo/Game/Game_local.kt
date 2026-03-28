@@ -4501,6 +4501,7 @@ class Game_local {
             i = if (clearClients) 0 else MAX_CLIENTS
             while (i < MAX_GENTITIES) {
                 if (entities[i] != null) {
+                    idEvent.CancelEvents(entities[i]!!)
                     entities[i] = null
                 }
                 assert(entities[i] == null)
@@ -4521,14 +4522,14 @@ class Game_local {
                 }
             }
 
-//	delete frameCommandThread;
+            if (frameCommandThread != null) {
+                idEvent.CancelEvents(frameCommandThread!!)
+            }
             frameCommandThread = null
             if (editEntities != null) {
-//		delete editEntities;
                 editEntities = null
             }
 
-//	delete[] locationEntities;
             locationEntities = null
         }
 

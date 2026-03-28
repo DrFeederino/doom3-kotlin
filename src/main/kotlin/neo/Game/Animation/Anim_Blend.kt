@@ -2846,7 +2846,9 @@ class idAnimator {
         savefile.WriteInt(AFPoseJointMods.Num())
         i = 0
         while (i < AFPoseJointMods.Num()) {
-            AFPoseJointMods[i] = idAFPoseJointMod()
+            if (AFPoseJointMods[i] == null) {
+                AFPoseJointMods[i] = idAFPoseJointMod()
+            }
             savefile.WriteInt(TempDump.etoi(AFPoseJointMods[i].mod))
             savefile.WriteMat3(AFPoseJointMods[i].axis)
             savefile.WriteVec3(AFPoseJointMods[i].origin)

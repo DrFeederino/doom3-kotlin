@@ -117,6 +117,7 @@ import neo.Game.WorldSpawn.idWorldspawn
 import neo.TempDump
 import neo.cm.contactType_t
 import neo.cm.trace_s
+import neo.framework.DeclManager
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CInt
 import neo.idlib.containers.LinkList.idLinkList
@@ -124,14 +125,13 @@ import neo.idlib.math.idVec3
 import java.nio.ByteBuffer
 
 object Event {
-
-    // NOTE: Differs from C++ — sizeof(intptr_t) is platform-dependent (4 on 32-bit, 8 on 64-bit).
-    // In the Kotlin port, event data is stored as Array<idEventArg<*>?> rather than a flat byte buffer,
-    // so these sizes are only used for Save/Restore size assertions. We use the C++ 32-bit values
-    // for consistency with the original code.
     private const val SIZEOF_INTPTR = 8        // C++: sizeof(intptr_t) on 64-bit (dhewm3)
     private const val SIZEOF_BOOL = 1          // C++: sizeof(bool)
-    private const val SIZEOF_TRACE_T = 68      // C++: sizeof(trace_t) — approximate, platform-dependent
+    private const val SIZEOF_TRACE_T = 120     // C++: sizeof(trace_t) on 64-bit — includes alignment padding
+
+    // C++: #define E_EVENT_SIZEOF_VEC ((sizeof(idVec3) + (sizeof(intptr_t) - 1)) & ~(sizeof(intptr_t) - 1))
+    // On 64-bit: ((12 + 7) & ~7) = 16
+    private const val E_EVENT_SIZEOF_VEC = 16
 
     val D_EVENT_ENTITY: Char = 'e'
     val D_EVENT_ENTITY_NULL: Char = 'E'     // event can handle NULL entity pointers
@@ -216,7 +216,7 @@ object Event {
                     }
 
                     D_EVENT_INTEGER -> argsize += SIZEOF_INTPTR
-                    D_EVENT_VECTOR -> argsize += idVec3.BYTES
+                    D_EVENT_VECTOR -> argsize += E_EVENT_SIZEOF_VEC
                     D_EVENT_STRING -> argsize += Script_Program.MAX_STRING_LEN
                     D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> argsize += SIZEOF_INTPTR
                     D_EVENT_TRACE -> {
@@ -870,7 +870,7 @@ object Event {
                             D_EVENT_VECTOR -> {
                                 val vec = (arg?.value as? idVec3) ?: idVec3()
                                 savefile.WriteVec3(vec)
-                                size += idVec3.BYTES
+                                size += E_EVENT_SIZEOF_VEC
                             }
 
                             D_EVENT_STRING -> {
@@ -1006,7 +1006,7 @@ object Event {
                                     val buffer = idVec3()
                                     savefile.ReadVec3(buffer)
                                     event.data!![j] = idEventArg<Any?>(D_EVENT_VECTOR.code, buffer)
-                                    size += idVec3.BYTES
+                                    size += E_EVENT_SIZEOF_VEC
                                 }
 
                                 D_EVENT_STRING -> {
@@ -1026,11 +1026,17 @@ object Event {
                                         // Use SIZEOF_TRACE_T to match the Save function.
                                         size += SIZEOF_TRACE_T
                                         val t = trace_s()
-                                        RestoreTrace(savefile, t)
+                                        val hadMaterial = RestoreTrace(savefile, t)
                                         event.data!![j] = idEventArg<Any?>(D_EVENT_TRACE.code, t)
-                                        if (t.c.material != null) {
+                                        if (hadMaterial) {
                                             size += Script_Program.MAX_STRING_LEN
+                                            str.clear()
                                             savefile.Read(str, Script_Program.MAX_STRING_LEN)
+                                            // Resolve the material from the name string
+                                            val materialName = String(str.array()).trimEnd('\u0000')
+                                            if (materialName.isNotEmpty()) {
+                                                t.c.material = DeclManager.declManager.FindMaterial(materialName, true)
+                                            }
                                         }
                                     } else {
                                         event.data!![j] = idEventArg<Any?>(D_EVENT_TRACE.code, null)
@@ -1066,10 +1072,7 @@ object Event {
                 savefile.WriteVec3(trace.c.normal)
                 savefile.WriteFloat(trace.c.dist)
                 savefile.WriteInt(trace.c.contents)
-                // FIX: C++ writes (int&)trace.c.material — the raw pointer as an integer placeholder.
-                // The material is re-resolved by name in ServiceEvents. Kotlin was calling
-                // savefile.Write(trace.c.material!!) which serializes the whole object and NPEs on null.
-                savefile.WriteInt(0) // placeholder, material resolved from name string
+                savefile.WriteInt(if (trace.c.material != null) 1 else 0)
                 savefile.WriteInt(trace.c.contents) // NOTE: duplicate write, matches C++ bug (preserved)
                 savefile.WriteInt(trace.c.modelFeature)
                 savefile.WriteInt(trace.c.trmFeature)
@@ -1084,7 +1087,7 @@ object Event {
              string name at the end of the data structure rather than in the middle
              ================
              */
-            fun RestoreTrace(savefile: idRestoreGame, trace: trace_s) {
+            fun RestoreTrace(savefile: idRestoreGame, trace: trace_s): Boolean {
                 trace.fraction = savefile.ReadFloat()
                 savefile.ReadVec3(trace.endpos)
                 savefile.ReadMat3(trace.endAxis)
@@ -1093,14 +1096,12 @@ object Event {
                 savefile.ReadVec3(trace.c.normal)
                 trace.c.dist = savefile.ReadFloat()
                 trace.c.contents = savefile.ReadInt()
-                // FIX: C++ reads (int&)trace.c.material — raw pointer placeholder.
-                // Kotlin was calling savefile.Read(trace.c.material!!) which crashes on null.
-                // Read and discard the placeholder int. Material is resolved from name string later.
-                savefile.ReadInt() // placeholder, was: savefile.Read(trace.c.material!!)
+                val hadMaterial = savefile.ReadInt() != 0
                 trace.c.contents = savefile.ReadInt() // NOTE: duplicate read overwrites, matches C++ bug (preserved)
                 trace.c.modelFeature = savefile.ReadInt()
                 trace.c.trmFeature = savefile.ReadInt()
                 trace.c.id = savefile.ReadInt()
+                return hadMaterial
             }
         }
     }

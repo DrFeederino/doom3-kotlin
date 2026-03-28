@@ -27,7 +27,6 @@ import neo.framework.KeyInput.K_MOUSE3
 import neo.framework.KeyInput.K_SHIFT
 import neo.framework.KeyInput.K_TAB
 import neo.framework.KeyInput.idKeyInput.IsDown
-import neo.framework.Session
 import neo.framework.Session.Companion.session
 import neo.framework.UsercmdGen.USERCMD_MSEC
 import neo.idlib.Dict_h.idDict
@@ -86,6 +85,8 @@ import neo.ui.Winvar.idWinRectangle
 import neo.ui.Winvar.idWinStr
 import neo.ui.Winvar.idWinVar
 import neo.ui.Winvar.idWinVec4
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 object Window {
     //
@@ -2119,7 +2120,10 @@ object Window {
         fun WriteSaveGameString(string: String, savefile: idFile) {
             val len = string.length
             savefile.WriteInt(len)
-            savefile.WriteString(string)
+            val buffer = ByteBuffer.allocate(len).order(ByteOrder.LITTLE_ENDIAN)
+            buffer.put(string.toByteArray())
+            buffer.flip()
+            savefile.Write(buffer, len)
         }
 
         fun WriteSaveGameString(string: idStr?, savefile: idFile) {

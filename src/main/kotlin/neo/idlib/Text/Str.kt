@@ -658,7 +658,6 @@ object Str {
         fun Fill(ch: Char, newlen: Int) {
             EnsureAlloced(newlen + 1)
             len = newlen
-            //	memset( data, ch, len );
             val arr = CharArray(newlen)
             Arrays.fill(arr, ch)
             data = String(arr)

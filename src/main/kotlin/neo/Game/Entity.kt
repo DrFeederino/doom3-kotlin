@@ -4239,36 +4239,38 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         override fun Read(buffer: ByteBuffer) {
             buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
             val bits = buffer.short.toInt()
-            takedamage = (bits and (1 shl 0)) != 0
+            // C++ bitfield order from Entity.h lines 146-158
+            notarget = (bits and (1 shl 0)) != 0
             noknockback = (bits and (1 shl 1)) != 0
-            hidden = (bits and (1 shl 2)) != 0
-            bindOrientated = (bits and (1 shl 3)) != 0
-            solidForTeam = (bits and (1 shl 4)) != 0
-            forcePhysicsUpdate = (bits and (1 shl 5)) != 0
-            neverDormant = (bits and (1 shl 6)) != 0
-            isDormant = (bits and (1 shl 7)) != 0
-            hasAwakened = (bits and (1 shl 8)) != 0
-            networkSync = (bits and (1 shl 9)) != 0
-            selected = (bits and (1 shl 10)) != 0
-            notarget = (bits and (1 shl 11)) != 0
+            takedamage = (bits and (1 shl 2)) != 0
+            hidden = (bits and (1 shl 3)) != 0
+            bindOrientated = (bits and (1 shl 4)) != 0
+            solidForTeam = (bits and (1 shl 5)) != 0
+            forcePhysicsUpdate = (bits and (1 shl 6)) != 0
+            selected = (bits and (1 shl 7)) != 0
+            neverDormant = (bits and (1 shl 8)) != 0
+            isDormant = (bits and (1 shl 9)) != 0
+            hasAwakened = (bits and (1 shl 10)) != 0
+            networkSync = (bits and (1 shl 11)) != 0
         }
 
         override fun Write(): ByteBuffer {
             val buffer = AllocBuffer()
             buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
             var bits = 0
-            if (takedamage) bits = bits or (1 shl 0)
+            // C++ bitfield order from Entity.h lines 146-158
+            if (notarget) bits = bits or (1 shl 0)
             if (noknockback) bits = bits or (1 shl 1)
-            if (hidden) bits = bits or (1 shl 2)
-            if (bindOrientated) bits = bits or (1 shl 3)
-            if (solidForTeam) bits = bits or (1 shl 4)
-            if (forcePhysicsUpdate) bits = bits or (1 shl 5)
-            if (neverDormant) bits = bits or (1 shl 6)
-            if (isDormant) bits = bits or (1 shl 7)
-            if (hasAwakened) bits = bits or (1 shl 8)
-            if (networkSync) bits = bits or (1 shl 9)
-            if (selected) bits = bits or (1 shl 10)
-            if (notarget) bits = bits or (1 shl 11)
+            if (takedamage) bits = bits or (1 shl 2)
+            if (hidden) bits = bits or (1 shl 3)
+            if (bindOrientated) bits = bits or (1 shl 4)
+            if (solidForTeam) bits = bits or (1 shl 5)
+            if (forcePhysicsUpdate) bits = bits or (1 shl 6)
+            if (selected) bits = bits or (1 shl 7)
+            if (neverDormant) bits = bits or (1 shl 8)
+            if (isDormant) bits = bits or (1 shl 9)
+            if (hasAwakened) bits = bits or (1 shl 10)
+            if (networkSync) bits = bits or (1 shl 11)
             buffer.putShort(bits.toShort())
             buffer.flip()
             return buffer
