@@ -169,6 +169,7 @@ object Script_Interpreter {
                 )
             } else {
                 def.value!!.stringPtr = Append(def.value!!.stringPtr!!, Script_Program.MAX_STRING_LEN, from!!)
+                def.value!!.setString(def.value!!.stringPtr) // write bytes into variables[] for save compatibility
             }
         }
 
@@ -182,7 +183,8 @@ object Script_Interpreter {
                 // zero-fill remainder of the 128-byte slot (strncpy zero-pads + null terminate)
                 Arrays.fill(localstack, offset + copyLen, offset + Script_Program.MAX_STRING_LEN, 0.toByte())
             } else {
-                def.value!!.stringPtr = from //idStr.Copynz(def.value.stringPtr, from, MAX_STRING_LEN);
+                def.value!!.stringPtr = from
+                def.value!!.setString(from) // write bytes into variables[] for save compatibility
             }
         }
 

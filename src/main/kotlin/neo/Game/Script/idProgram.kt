@@ -1030,8 +1030,8 @@ class idProgram {
     }
 
     fun ReturnString(string: String?) {
-        returnStringDef!!.value!!.stringPtr =
-            string //idStr.Copynz(returnStringDef.value.stringPtr, string, MAX_STRING_LEN);
+        returnStringDef!!.value!!.stringPtr = string
+        returnStringDef!!.value!!.setString(string) // write bytes into variables[] (C++ Copynz writes to memory directly)
     }
 
     fun ReturnEntity(ent: idEntity?) {
