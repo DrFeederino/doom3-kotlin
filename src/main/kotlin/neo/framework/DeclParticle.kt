@@ -69,8 +69,11 @@ object DeclParticle {
     )
 
     enum class prtCustomPth_t {
-        PPATH_STANDARD, PPATH_HELIX,  // ( sizeX sizeY sizeZ radialSpeed climbSpeed )
-        PPATH_FLIES, PPATH_ORBIT, PPATH_DRIP
+        PPATH_STANDARD,
+        PPATH_HELIX,  // ( sizeX sizeY sizeZ radialSpeed climbSpeed )
+        PPATH_FLIES,
+        PPATH_ORBIT,
+        PPATH_DRIP
     }
 
     enum class prtDirection_t {
@@ -87,8 +90,11 @@ object DeclParticle {
     }
 
     enum class prtOrientation_t {
-        POR_VIEW, POR_AIMED,  // angle and aspect are disregarded
-        POR_X, POR_Y, POR_Z
+        POR_VIEW,
+        POR_AIMED,  // angle and aspect are disregarded
+        POR_X,
+        POR_Y,
+        POR_Z
     }
 
     /*

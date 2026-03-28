@@ -33,30 +33,12 @@
  */
 package neo.Game.GameSys
 
+import neo.Game.*
 import neo.Game.AI.AI_Vagary
-import neo.Game.idAFAttachment
-import neo.Game.idAFEntity_Base
-import neo.Game.idAFEntity_ClawFourFingers
-import neo.Game.idAFEntity_Gibbable
-import neo.Game.idAFEntity_Generic
-import neo.Game.idAFEntity_SteamPipe
-import neo.Game.idAFEntity_Vehicle
-import neo.Game.idAFEntity_VehicleFourWheels
-import neo.Game.idAFEntity_VehicleSimple
-import neo.Game.idAFEntity_VehicleSixWheels
-import neo.Game.idAFEntity_WithAttachedHead
-import neo.Game.idChain
-import neo.Game.idMultiModelAF
 import neo.Game.AI.idAI
 import neo.Game.AI.idCombatNode
 import neo.Game.Animation.Anim_Testmodel.idTestModel
 import neo.Game.BrittleFracture.idBrittleFracture
-import neo.Game.EV_Activate
-import neo.Game.idCamera
-import neo.Game.idCameraAnim
-import neo.Game.idCameraView
-import neo.Game.idEntityFx
-import neo.Game.idTeleporter
 import neo.Game.GameEdit.idCursor3D
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.Event.D_EVENT_MAXARGS
@@ -64,16 +46,6 @@ import neo.Game.GameSys.Event.idEvent
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
-import neo.Game.Game_local
-import neo.Game.idItem
-import neo.Game.idItemPowerup
-import neo.Game.idItemRemover
-import neo.Game.idMoveableItem
-import neo.Game.idMoveablePDAItem
-import neo.Game.idObjective
-import neo.Game.idObjectiveComplete
-import neo.Game.idPDAItem
-import neo.Game.idVideoCDItem
 import neo.Game.Light.idLight
 import neo.Game.Misc.idActivator
 import neo.Game.Misc.idAnimated
@@ -179,10 +151,6 @@ import neo.Game.Trigger.idTrigger_Timer
 import neo.Game.Trigger.idTrigger_Touch
 import neo.Game.Weapon.idWeapon
 import neo.Game.WorldSpawn.idWorldspawn
-import neo.Game.idActor
-import neo.Game.idAnimatedEntity
-import neo.Game.idEntity
-
 import neo.cm.trace_s
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.idlib.CmdArgs

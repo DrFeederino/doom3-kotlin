@@ -42,7 +42,6 @@ import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.EV_SafeRemove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
-import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Script.Script_Program.function_t
@@ -156,16 +155,6 @@ class WorldSpawn {
                 thread.DelayedStart(0)
                 kv = spawnArgs.MatchPrefix("call", kv)
             }
-        }
-
-        /*
-         ================
-         idWorldspawn::Save
-         ================
-         */
-        // NOTE: C++ header incorrectly declares Save(idRestoreGame*) — should be idSaveGame*
-        override fun Save(savefile: idSaveGame) {
-            super.Save(savefile)
         }
 
         /*

@@ -361,12 +361,9 @@ object Anim_Import {
             // the conversion call would go here.
             Maya_Error.set("Maya conversion not available on JVM platform.")
             Common.common.SetRefreshOnPrint(false)
-            if (Maya_Error.toString() != "Ok") {
-                return false
-            }
+            return Maya_Error.toString() == "Ok"
 
             // conversion succeeded
-            return true
         }
 
         /*

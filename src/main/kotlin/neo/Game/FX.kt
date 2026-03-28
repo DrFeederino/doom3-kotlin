@@ -94,7 +94,7 @@ open class idEntityFx : idEntity() {
             val args = idDict()
             args.SetBool("start", true)
             args.Set("fx", fx)
-            val nfx = Game_local.gameLocal.SpawnEntityType(idEntityFx.Type, args) as idEntityFx
+            val nfx = Game_local.gameLocal.SpawnEntityType(Type, args) as idEntityFx
             if (nfx.Joint() != null && !nfx.Joint()!!.isEmpty()) {
                 nfx.BindToJoint(ent!!, nfx.Joint()!!, true)
                 nfx.SetOrigin(vec3_origin)

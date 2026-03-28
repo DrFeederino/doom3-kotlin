@@ -62,7 +62,9 @@ object Session_local {
     var USERCMD_PER_DEMO_FRAME = 2
 
     enum class timeDemo_t {
-        TD_NO, TD_YES, TD_YES_THEN_QUIT
+        TD_NO,
+        TD_YES,
+        TD_YES_THEN_QUIT
     }
 
     class logCmd_t : SERiAL {

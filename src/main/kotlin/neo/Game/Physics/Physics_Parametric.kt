@@ -1298,6 +1298,7 @@ object Physics_Parametric {
 
         companion object {
             val Type = idTypeInfo("idPhysics_Parametric", "idPhysics_Base") { idPhysics_Parametric() }
+
             // CLASS_PROTOTYPE( idPhysics_Parametric );
             private val curAngularVelocity: idVec3 = idVec3()
             private val curLinearVelocity: idVec3 = idVec3()

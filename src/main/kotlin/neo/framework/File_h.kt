@@ -186,7 +186,9 @@ object File_h {
      */
     // mode parm for Seek
     enum class fsOrigin_t {
-        FS_SEEK_CUR, FS_SEEK_END, FS_SEEK_SET
+        FS_SEEK_CUR,
+        FS_SEEK_END,
+        FS_SEEK_SET
     }
 
     /*

@@ -175,6 +175,7 @@ object Misc {
         : idEntity() {
         companion object {
             val Type = idTypeInfo("idPlayerStart", "idEntity") { idPlayerStart() }
+
             // enum {
             val EVENT_TELEPORTPLAYER: Int = idEntity.EVENT_MAXEVENTS
             val EVENT_MAXEVENTS = EVENT_TELEPORTPLAYER + 1
@@ -362,6 +363,7 @@ object Misc {
     class idActivator : idEntity() {
         companion object {
             val Type = idTypeInfo("idActivator", "idEntity") { idActivator() }
+
             // public 	CLASS_PROTOTYPE( idActivator );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -452,6 +454,7 @@ object Misc {
     class idPathCorner : idEntity() {
         companion object {
             val Type = idTypeInfo("idPathCorner", "idEntity") { idPathCorner() }
+
             // public 	CLASS_PROTOTYPE( idPathCorner );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun DrawDebugInfo() {
@@ -523,6 +526,7 @@ object Misc {
     class idDamagable : idEntity() {
         companion object {
             val Type = idTypeInfo("idDamagable", "idEntity") { idDamagable() }
+
             // CLASS_PROTOTYPE( idDamagable );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             private fun Event_BecomeBroken(d: idDamagable, activator: idEventArg<idEntity>) {
@@ -678,6 +682,7 @@ object Misc {
     class idExplodable : idEntity() {
         companion object {
             val Type = idTypeInfo("idExplodable", "idEntity") { idExplodable() }
+
             //	CLASS_PROTOTYPE( idExplodable );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             private fun Event_Explode(e: idExplodable, activator: idEventArg<idEntity>) {
@@ -744,6 +749,7 @@ object Misc {
     class idSpring : idEntity() {
         companion object {
             val Type = idTypeInfo("idSpring", "idEntity") { idSpring() }
+
             //	CLASS_PROTOTYPE( idSpring );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -860,6 +866,7 @@ object Misc {
     class idForceField : idEntity() {
         companion object {
             val Type = idTypeInfo("idForceField", "idEntity") { idForceField() }
+
             // CLASS_PROTOTYPE( idForceField );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -979,6 +986,7 @@ object Misc {
     class idAnimated : idAFEntity_Gibbable() {
         companion object {
             val Type = idTypeInfo("idAnimated", "idAFEntity_Gibbable") { idAnimated() }
+
             // CLASS_PROTOTYPE( idAnimated );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -1449,6 +1457,7 @@ object Misc {
     open class idStaticEntity : idEntity() {
         companion object {
             val Type = idTypeInfo("idStaticEntity", "idEntity") { idStaticEntity() }
+
             // CLASS_PROTOTYPE( idStaticEntity );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1676,6 +1685,7 @@ object Misc {
     open class idFuncEmitter : idStaticEntity() {
         companion object {
             val Type = idTypeInfo("idFuncEmitter", "idStaticEntity") { idFuncEmitter() }
+
             // CLASS_PROTOTYPE( idFuncEmitter );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1769,6 +1779,7 @@ object Misc {
         : idEntity() {
         companion object {
             val Type = idTypeInfo("idFuncSmoke", "idEntity") { idFuncSmoke() }
+
             // CLASS_PROTOTYPE( idFuncSmoke );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1872,6 +1883,7 @@ object Misc {
     class idFuncSplat : idFuncEmitter() {
         companion object {
             val Type = idTypeInfo("idFuncSplat", "idFuncEmitter") { idFuncSplat() }
+
             // CLASS_PROTOTYPE( idFuncSplat );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -1938,6 +1950,7 @@ object Misc {
         companion object {
             val Type = idTypeInfo("idTextEntity", "idEntity") { idTextEntity() }
         }
+
         // CLASS_PROTOTYPE( idTextEntity );
         private var playerOriented = false
         private val text: idStr = idStr()
@@ -2011,6 +2024,7 @@ object Misc {
         companion object {
             val Type = idTypeInfo("idLocationEntity", "idEntity") { idLocationEntity() }
         }
+
         // CLASS_PROTOTYPE( idLocationEntity );
         override fun Spawn() {
             super.Spawn()
@@ -2043,6 +2057,7 @@ object Misc {
         companion object {
             val Type = idTypeInfo("idLocationSeparatorEntity", "idEntity") { idLocationSeparatorEntity() }
         }
+
         // CLASS_PROTOTYPE( idLocationSeparatorEntity );
         override fun Spawn() {
             super.Spawn()
@@ -2075,6 +2090,7 @@ object Misc {
     class idVacuumSeparatorEntity : idEntity() {
         companion object {
             val Type = idTypeInfo("idVacuumSeparatorEntity", "idEntity") { idVacuumSeparatorEntity() }
+
             // CLASS_PROTOTYPE( idVacuumSeparatorEntity );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2156,6 +2172,7 @@ object Misc {
         companion object {
             val Type = idTypeInfo("idVacuumEntity", "idEntity") { idVacuumEntity() }
         }
+
         // public:
         // CLASS_PROTOTYPE( idVacuumEntity );
         override fun Spawn() {
@@ -2183,6 +2200,7 @@ object Misc {
     class idBeam : idEntity() {
         companion object {
             val Type = idTypeInfo("idBeam", "idEntity") { idBeam() }
+
             // CLASS_PROTOTYPE( idBeam );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2344,6 +2362,7 @@ object Misc {
     class idLiquid : idEntity() {
         companion object {
             val Type = idTypeInfo("idLiquid", "idEntity") { idLiquid() }
+
             // CLASS_PROTOTYPE( idLiquid );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
@@ -2366,11 +2385,6 @@ object Misc {
         }
 
         private val model: idRenderModelLiquid? = null
-
-        override fun Save(savefile: idSaveGame) {
-            super.Save(savefile)
-            // Nothing to save
-        }
 
         override fun Restore(savefile: idRestoreGame) {
             super.Restore(savefile)
@@ -2407,6 +2421,7 @@ object Misc {
     class idShaking : idEntity() {
         companion object {
             val Type = idTypeInfo("idShaking", "idEntity") { idShaking() }
+
             // CLASS_PROTOTYPE( idShaking );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2517,6 +2532,7 @@ object Misc {
         : idEntity() {
         companion object {
             val Type = idTypeInfo("idEarthQuake", "idEntity") { idEarthQuake() }
+
             // CLASS_PROTOTYPE( idEarthQuake );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2686,6 +2702,7 @@ object Misc {
     class idFuncPortal : idEntity() {
         companion object {
             val Type = idTypeInfo("idFuncPortal", "idEntity") { idFuncPortal() }
+
             // CLASS_PROTOTYPE( idFuncPortal );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2769,6 +2786,7 @@ object Misc {
         : idEntity() {
         companion object {
             val Type = idTypeInfo("idFuncAASPortal", "idEntity") { idFuncAASPortal() }
+
             // CLASS_PROTOTYPE( idFuncAASPortal );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2830,6 +2848,7 @@ object Misc {
     class idFuncAASObstacle : idEntity() {
         companion object {
             val Type = idTypeInfo("idFuncAASObstacle", "idEntity") { idFuncAASObstacle() }
+
             // CLASS_PROTOTYPE( idFuncAASObstacle );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2900,6 +2919,7 @@ object Misc {
         : idEntity() {
         companion object {
             val Type = idTypeInfo("idFuncRadioChatter", "idEntity") { idFuncRadioChatter() }
+
             // CLASS_PROTOTYPE( idFuncRadioChatter );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
@@ -2985,6 +3005,7 @@ object Misc {
     class idPhantomObjects : idEntity() {
         companion object {
             val Type = idTypeInfo("idPhantomObjects", "idEntity") { idPhantomObjects() }
+
             // CLASS_PROTOTYPE( idPhantomObjects );
             private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
             fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {

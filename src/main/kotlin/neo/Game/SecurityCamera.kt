@@ -18,10 +18,7 @@
 
 package neo.Game
 
-import neo.Game.GameSys.Class
-import neo.Game.GameSys.Class.eventCallback_t
-import neo.Game.GameSys.Class.eventCallback_t0
-import neo.Game.GameSys.Class.idTypeInfo
+import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
@@ -538,7 +535,7 @@ object SecurityCamera {
         }
 
         override fun GetType(): idTypeInfo = Type
-        override fun CreateInstance(): Class.idClass = idSecurityCamera()
+        override fun CreateInstance(): idClass = idSecurityCamera()
 
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
             return eventCallbacks[event]

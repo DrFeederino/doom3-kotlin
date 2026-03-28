@@ -8,7 +8,6 @@
 
 package neo.Game.Physics
 
-import neo.Game.GameSys.Class
 import neo.Game.GameSys.Class.idClass
 import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.SaveGame.idRestoreGame
@@ -820,6 +819,7 @@ class Physics_Static {
 
         companion object {
             val Type = idTypeInfo("idPhysics_Static", "idPhysics") { idPhysics_Static() }
+
             // CLASS_PROTOTYPE( idPhysics_Static );
             private val gravity: idVec3 = idVec3(0.0f, 0.0f, -SysCvar.g_gravity.GetFloat())
             private val gravityNormal: idVec3 = idVec3(0, 0, -1)

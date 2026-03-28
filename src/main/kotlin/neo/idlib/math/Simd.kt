@@ -24,7 +24,12 @@ var SIMDProcessor: idSIMDProcessor? = generic
 var processor: idSIMDProcessor? = null // pointer to SIMD processor
 
 enum class speakerLabel {
-    SPEAKER_LEFT, SPEAKER_RIGHT, SPEAKER_CENTER, SPEAKER_LFE, SPEAKER_BACKLEFT, SPEAKER_BACKRIGHT
+    SPEAKER_LEFT,
+    SPEAKER_RIGHT,
+    SPEAKER_CENTER,
+    SPEAKER_LFE,
+    SPEAKER_BACKLEFT,
+    SPEAKER_BACKRIGHT
 }
 
 /*

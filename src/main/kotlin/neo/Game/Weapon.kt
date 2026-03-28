@@ -129,7 +129,12 @@ object Weapon {
      ===============================================================================
      */
     enum class weaponStatus_t {
-        WP_READY, WP_OUTOFAMMO, WP_RELOAD, WP_HOLSTERED, WP_RISING, WP_LOWERING
+        WP_READY,
+        WP_OUTOFAMMO,
+        WP_RELOAD,
+        WP_HOLSTERED,
+        WP_RISING,
+        WP_LOWERING
     }
 
     /* **********************************************************************

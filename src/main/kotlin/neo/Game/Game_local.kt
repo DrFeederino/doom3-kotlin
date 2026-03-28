@@ -181,8 +181,18 @@ class Game_local {
     enum class gameSoundChannel_t {
         SND_CHANNEL_ANY,  //= SCHANNEL_ANY,
         SND_CHANNEL_VOICE,  // = SCHANNEL_ONE,
-        SND_CHANNEL_VOICE2, SND_CHANNEL_BODY, SND_CHANNEL_BODY2, SND_CHANNEL_BODY3, SND_CHANNEL_WEAPON, SND_CHANNEL_ITEM, SND_CHANNEL_HEART, SND_CHANNEL_PDA, SND_CHANNEL_DEMONIC, SND_CHANNEL_RADIO,  // internal use only.  not exposed to script or framecommands.
-        SND_CHANNEL_AMBIENT, SND_CHANNEL_DAMAGE
+        SND_CHANNEL_VOICE2,
+        SND_CHANNEL_BODY,
+        SND_CHANNEL_BODY2,
+        SND_CHANNEL_BODY3,
+        SND_CHANNEL_WEAPON,
+        SND_CHANNEL_ITEM,
+        SND_CHANNEL_HEART,
+        SND_CHANNEL_PDA,
+        SND_CHANNEL_DEMONIC,
+        SND_CHANNEL_RADIO,  // internal use only.  not exposed to script or framecommands.
+        SND_CHANNEL_AMBIENT,
+        SND_CHANNEL_DAMAGE
     }
 
     enum class gameState_t {

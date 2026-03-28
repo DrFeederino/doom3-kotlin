@@ -8,12 +8,8 @@
 
 package neo.Game.Physics
 
-import neo.Game.GameSys.Class.eventCallback_t
-import neo.Game.GameSys.Class.idClass
-import neo.Game.GameSys.Class.idTypeInfo
+import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.Event.idEventDef
-import neo.Game.GameSys.SaveGame.idRestoreGame
-import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.idEntity
 import neo.cm.contactInfo_t
@@ -72,25 +68,6 @@ object Physics {
     }
 
     abstract class idPhysics : idClass() {
-
-        // Must not be virtual
-        /*
-        ================
-        idPhysics::Save
-        ================
-        */
-        override fun Save(savefile: idSaveGame) {
-            super.Save(savefile)
-        }
-
-        /*
-        ================
-        idPhysics::Restore
-        ================
-        */
-        override fun Restore(savefile: idRestoreGame) {
-            super.Restore(savefile)
-        }
 
         // common physics interface
         // set pointer to entity using physics

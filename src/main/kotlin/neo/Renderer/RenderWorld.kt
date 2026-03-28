@@ -668,7 +668,7 @@ object RenderWorld {
         }
 
         override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.order(ByteOrder.LITTLE_ENDIAN)
             viewID = buffer.int
             x = buffer.int
             y = buffer.int
@@ -695,7 +695,7 @@ object RenderWorld {
 
         override fun Write(): ByteBuffer {
             val buffer = AllocBuffer()
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            buffer.order(ByteOrder.LITTLE_ENDIAN)
             buffer.putInt(viewID)
             buffer.putInt(x)
             buffer.putInt(y)

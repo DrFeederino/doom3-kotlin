@@ -1214,7 +1214,10 @@ object Script_Program {
         }
 
         enum class initialized_t {
-            uninitialized, initializedVariable, initializedConstant, stackVariable
+            uninitialized,
+            initializedVariable,
+            initializedConstant,
+            stackVariable
         }
 
         companion object {

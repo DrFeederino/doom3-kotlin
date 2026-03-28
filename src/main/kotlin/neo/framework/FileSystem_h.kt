@@ -270,11 +270,14 @@ object FileSystem_h {
     }
 
     enum class binaryStatus_t {
-        BINARY_UNKNOWN, BINARY_YES, BINARY_NO
+        BINARY_UNKNOWN,
+        BINARY_YES,
+        BINARY_NO
     }
 
     enum class dlMime_t {
-        FILE_EXEC, FILE_OPEN
+        FILE_EXEC,
+        FILE_OPEN
     }
 
     enum class dlStatus_t {
@@ -286,16 +289,21 @@ object FileSystem_h {
     }
 
     enum class dlType_t {
-        DLTYPE_URL, DLTYPE_FILE
+        DLTYPE_URL,
+        DLTYPE_FILE
     }
 
     enum class findFile_t {
-        FIND_NO, FIND_YES, FIND_ADDON
+        FIND_NO,
+        FIND_YES,
+        FIND_ADDON
     }
 
     // modes for OpenFileByMode. used as bit mask internally
     enum class fsMode_t {
-        FS_READ, FS_WRITE, FS_APPEND
+        FS_READ,
+        FS_WRITE,
+        FS_APPEND
     }
 
     enum class fsPureReply_t {

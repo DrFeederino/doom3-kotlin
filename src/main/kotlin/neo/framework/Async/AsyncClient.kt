@@ -50,11 +50,15 @@ object AsyncClient {
 
     //
     internal enum class authBadKeyStatus_t {
-        AUTHKEY_BAD_INVALID, AUTHKEY_BAD_BANNED, AUTHKEY_BAD_INUSE, AUTHKEY_BAD_MSG
+        AUTHKEY_BAD_INVALID,
+        AUTHKEY_BAD_BANNED,
+        AUTHKEY_BAD_INUSE,
+        AUTHKEY_BAD_MSG
     }
 
     internal enum class authKeyMsg_t {
-        AUTHKEY_BADKEY, AUTHKEY_GUID
+        AUTHKEY_BADKEY,
+        AUTHKEY_GUID
     }
 
     /*
@@ -65,11 +69,20 @@ object AsyncClient {
      ===============================================================================
      */
     internal enum class clientState_t {
-        CS_DISCONNECTED, CS_PURERESTART, CS_CHALLENGING, CS_CONNECTING, CS_CONNECTED, CS_INGAME
+        CS_DISCONNECTED,
+        CS_PURERESTART,
+        CS_CHALLENGING,
+        CS_CONNECTING,
+        CS_CONNECTED,
+        CS_INGAME
     }
 
     internal enum class clientUpdateState_t {
-        UPDATE_NONE, UPDATE_SENT, UPDATE_READY, UPDATE_DLING, UPDATE_DONE
+        UPDATE_NONE,
+        UPDATE_SENT,
+        UPDATE_READY,
+        UPDATE_DLING,
+        UPDATE_DONE
     }
 
     internal class pakDlEntry_t {

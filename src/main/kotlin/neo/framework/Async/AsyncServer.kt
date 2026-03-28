@@ -94,7 +94,11 @@ object AsyncServer {
 
         // this is subject to timeout if we don't hear from auth
         // or a permanent wait if auth said so
-        CDK_OK, CDK_ONLYLAN, CDK_PUREWAIT, CDK_PUREOK, CDK_MAXSTATES
+        CDK_OK,
+        CDK_ONLYLAN,
+        CDK_PUREWAIT,
+        CDK_PUREOK,
+        CDK_MAXSTATES
     }
 
     internal enum class serverClientState_t {

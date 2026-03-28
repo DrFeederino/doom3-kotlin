@@ -8,7 +8,6 @@
 
 package neo.Game.Physics
 
-import neo.Game.GameSys.Class
 import neo.Game.GameSys.Class.idClass
 import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.GameSys.SaveGame.idRestoreGame

@@ -15,7 +15,14 @@ class snd_local {
     // demo sound commands
     enum class soundDemoCommand_t {
         SCMD_STATE,  // followed by a load game state
-        SCMD_PLACE_LISTENER, SCMD_ALLOC_EMITTER, SCMD_FREE, SCMD_UPDATE, SCMD_START, SCMD_MODIFY, SCMD_STOP, SCMD_FADE
+        SCMD_PLACE_LISTENER,
+        SCMD_ALLOC_EMITTER,
+        SCMD_FREE,
+        SCMD_UPDATE,
+        SCMD_START,
+        SCMD_MODIFY,
+        SCMD_STOP,
+        SCMD_FADE
     }
 
     /*

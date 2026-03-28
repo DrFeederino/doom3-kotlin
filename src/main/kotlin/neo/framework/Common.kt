@@ -58,7 +58,8 @@ import java.util.logging.Logger
 
 class Common {
     internal enum class errorParm_t {
-        ERP_NONE, ERP_FATAL,  // exit the entire game with a popup window
+        ERP_NONE,
+        ERP_FATAL,  // exit the entire game with a popup window
         ERP_DROP,  // print to console and disconnect from game
         ERP_DISCONNECT // don't kill server
     }

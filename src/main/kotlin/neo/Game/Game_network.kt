@@ -196,7 +196,9 @@ class Game_network {
         }
 
         enum class outOfOrderBehaviour_t {
-            OUTOFORDER_IGNORE, OUTOFORDER_DROP, OUTOFORDER_SORT
+            OUTOFORDER_IGNORE,
+            OUTOFORDER_DROP,
+            OUTOFORDER_SORT
         }
     }
 

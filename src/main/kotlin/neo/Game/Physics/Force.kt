@@ -13,10 +13,7 @@
 
 package neo.Game.Physics
 
-import neo.Game.GameSys.Class
-import neo.Game.GameSys.Class.eventCallback_t
-import neo.Game.GameSys.Class.idClass
-import neo.Game.GameSys.Class.idTypeInfo
+import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.Physics.Physics.idPhysics
 import neo.idlib.containers.List.idList

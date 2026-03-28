@@ -2002,6 +2002,7 @@ object Physics_RigidBody {
 
         companion object {
             val Type = idTypeInfo("idPhysics_RigidBody", "idPhysics_Base") { idPhysics_RigidBody() }
+
             // CLASS_PROTOTYPE( idPhysics_RigidBody );
             const val MAX_INERTIA_SCALE = 10.0f
             val curAngularVelocity: idVec3 = idVec3()

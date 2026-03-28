@@ -24,7 +24,6 @@ import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
-import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Game_local.idEntityPtr
@@ -114,15 +113,6 @@ class Anim_Testmodel {
         private var mode = 0
         private val physicsObj: idPhysics_Parametric = idPhysics_Parametric()
         private var startTime = 0
-
-        /*
-         ================
-         idTestModel::Save
-         ================
-         */
-        override fun Save(savefile: idSaveGame) {
-            super.Save(savefile)
-        }
 
         /*
          ================

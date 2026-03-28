@@ -24,7 +24,9 @@ import neo.idlib.math.idVec3
 
 class Force_Field {
     enum class forceFieldApplyType {
-        FORCEFIELD_APPLY_FORCE, FORCEFIELD_APPLY_VELOCITY, FORCEFIELD_APPLY_IMPULSE;
+        FORCEFIELD_APPLY_FORCE,
+        FORCEFIELD_APPLY_VELOCITY,
+        FORCEFIELD_APPLY_IMPULSE;
 
         companion object {
             fun oGet(index: Int): forceFieldApplyType {
@@ -45,7 +47,9 @@ class Force_Field {
      ===============================================================================
      */
     enum class forceFieldType {
-        FORCEFIELD_UNIFORM, FORCEFIELD_EXPLOSION, FORCEFIELD_IMPLOSION;
+        FORCEFIELD_UNIFORM,
+        FORCEFIELD_EXPLOSION,
+        FORCEFIELD_IMPLOSION;
 
         companion object {
             fun oGet(index: Int): forceFieldType {

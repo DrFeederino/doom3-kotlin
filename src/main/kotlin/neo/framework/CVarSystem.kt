@@ -1128,7 +1128,10 @@ object CVarSystem {
         }
 
         enum class show {
-            SHOW_VALUE, SHOW_DESCRIPTION, SHOW_TYPE, SHOW_FLAGS
+            SHOW_VALUE,
+            SHOW_DESCRIPTION,
+            SHOW_TYPE,
+            SHOW_FLAGS
         }
 
         /*

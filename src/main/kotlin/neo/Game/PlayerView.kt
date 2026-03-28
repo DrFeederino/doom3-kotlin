@@ -23,7 +23,6 @@ import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Player.idPlayer
 import neo.Renderer.Material
-import neo.Renderer.RenderSystem
 import neo.Renderer.RenderSystem.SCREEN_HEIGHT
 import neo.Renderer.RenderSystem.SCREEN_WIDTH
 import neo.Renderer.RenderSystem.renderSystem
@@ -669,8 +668,8 @@ object PlayerView {
             renderSystem.DrawStretchPic(
                 0.0f,
                 0.0f,
-                RenderSystem.SCREEN_WIDTH.toFloat(),
-                RenderSystem.SCREEN_HEIGHT.toFloat(),
+                SCREEN_WIDTH.toFloat(),
+                SCREEN_HEIGHT.toFloat(),
                 shift.toFloat(),
                 1.0f,
                 1.0f,
@@ -681,8 +680,8 @@ object PlayerView {
             renderSystem.DrawStretchPic(
                 0.0f,
                 0.0f,
-                RenderSystem.SCREEN_WIDTH.toFloat(),
-                RenderSystem.SCREEN_HEIGHT.toFloat(),
+                SCREEN_WIDTH.toFloat(),
+                SCREEN_HEIGHT.toFloat(),
                 0.0f,
                 1.0f,
                 (1 - shift).toFloat(),
@@ -700,8 +699,8 @@ object PlayerView {
             renderSystem.DrawStretchPic(
                 0.0f,
                 0.0f,
-                RenderSystem.SCREEN_WIDTH.toFloat(),
-                RenderSystem.SCREEN_HEIGHT.toFloat(),
+                SCREEN_WIDTH.toFloat(),
+                SCREEN_HEIGHT.toFloat(),
                 0.0f,
                 1.0f,
                 1.0f,

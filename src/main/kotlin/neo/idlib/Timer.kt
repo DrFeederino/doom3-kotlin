@@ -6,7 +6,8 @@ import neo.idlib.containers.idStrList
 
 class Timer {
     internal enum class State {
-        TS_STARTED, TS_STOPPED
+        TS_STARTED,
+        TS_STOPPED
     }
 
     /*

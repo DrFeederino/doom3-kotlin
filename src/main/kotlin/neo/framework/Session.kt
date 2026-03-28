@@ -65,7 +65,14 @@ class Session {
     }
 
     enum class msgBoxType_t {
-        MSG_OK, MSG_ABORT, MSG_OKCANCEL, MSG_YESNO, MSG_PROMPT, MSG_CDKEY, MSG_INFO, MSG_WAIT
+        MSG_OK,
+        MSG_ABORT,
+        MSG_OKCANCEL,
+        MSG_YESNO,
+        MSG_PROMPT,
+        MSG_CDKEY,
+        MSG_INFO,
+        MSG_WAIT
     }
 
     //
@@ -1046,6 +1053,7 @@ class Session {
      */
 
         val session: idSession = sessLocal
+
         // these must be kept up to date with window Levelshot in guis/mainmenu.gui
         const val PREVIEW_X = 211
         const val PREVIEW_Y = 31

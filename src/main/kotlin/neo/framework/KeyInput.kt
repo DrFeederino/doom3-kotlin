@@ -184,12 +184,16 @@ object KeyInput {
     // are bindable (otherwise they get bound as one of the special keys in this table)
     const val K_TAB = 9
     const val K_TILDE_N = 241 // lowercase n with tilde
+
     //
     const val K_UPARROW = 133
+
     //
     const val ID_DOOM_LEGACY = false // FIX: was false, but C++ always #defines ID_DOOM_LEGACY
+
     //
     const val MAX_KEYS = 256
+
     //
     val cheatCodes: Array<String?> = arrayOf(
         "iddqd",  // Invincibility

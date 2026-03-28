@@ -322,7 +322,7 @@ class Interpolate {
             // 4 floats + 2*typeSize + extrapolate(int + 2*float + 3*typeSize + float + typeSize)
             // = 16 + 2*typeSize + 12 + 4*typeSize = 28 + 6*typeSize
             val bytes = 4 * java.lang.Float.BYTES + 2 * typeSize +
-                    java.lang.Integer.BYTES + 2 * java.lang.Float.BYTES + 3 * typeSize +
+                    Integer.BYTES + 2 * java.lang.Float.BYTES + 3 * typeSize +
                     java.lang.Float.BYTES + typeSize
             return ByteBuffer.allocate(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
         }

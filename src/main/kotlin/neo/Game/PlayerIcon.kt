@@ -35,7 +35,9 @@ object PlayerIcon {
     )
 
     enum class playerIconType_t {
-        ICON_LAG, ICON_CHAT, ICON_NONE
+        ICON_LAG,
+        ICON_CHAT,
+        ICON_NONE
     }
 
     class idPlayerIcon {

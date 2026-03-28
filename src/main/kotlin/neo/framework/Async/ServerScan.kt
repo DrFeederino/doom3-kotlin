@@ -37,11 +37,19 @@ class ServerScan {
 
     //    
     enum class scan_state_t {
-        IDLE, WAIT_ON_INIT, LAN_SCAN, NET_SCAN
+        IDLE,
+        WAIT_ON_INIT,
+        LAN_SCAN,
+        NET_SCAN
     }
 
     enum class serverSort_t {
-        SORT_PING, SORT_SERVERNAME, SORT_PLAYERS, SORT_GAMETYPE, SORT_MAP, SORT_GAME
+        SORT_PING,
+        SORT_SERVERNAME,
+        SORT_PLAYERS,
+        SORT_GAMETYPE,
+        SORT_MAP,
+        SORT_GAME
     }
 
     // storage for incoming servers / server scan

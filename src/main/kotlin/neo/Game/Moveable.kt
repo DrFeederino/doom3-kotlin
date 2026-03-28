@@ -1129,7 +1129,9 @@ object Moveable {
 
         enum class explode_state_t {
             NORMAL,  //= 0,
-            BURNING, BURNEXPIRED, EXPLODING
+            BURNING,
+            BURNEXPIRED,
+            EXPLODING
         }
 
         init {

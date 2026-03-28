@@ -80,7 +80,11 @@ object Physics_Monster {
      ===================================================================================
      */
     enum class monsterMoveResult_t {
-        MM_OK, MM_SLIDING, MM_BLOCKED, MM_STEPPED, MM_FALLING
+        MM_OK,
+        MM_SLIDING,
+        MM_BLOCKED,
+        MM_STEPPED,
+        MM_FALLING
     }
 
     class monsterPState_s {

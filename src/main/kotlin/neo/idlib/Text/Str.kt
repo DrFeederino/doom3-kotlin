@@ -98,7 +98,8 @@ object Str {
     }
 
     enum class Measure_t {
-        MEASURE_SIZE, MEASURE_BANDWIDTH
+        MEASURE_SIZE,
+        MEASURE_BANDWIDTH
     }
 
     open class idStr : SERiAL {

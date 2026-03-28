@@ -182,18 +182,35 @@ enum class moveCommand_t {
 // status results from move commands
 // make sure to change script/doom_defs.script if you add any, or change their order
 enum class moveStatus_t {
-    MOVE_STATUS_DONE, MOVE_STATUS_MOVING, MOVE_STATUS_WAITING, MOVE_STATUS_DEST_NOT_FOUND, MOVE_STATUS_DEST_UNREACHABLE, MOVE_STATUS_BLOCKED_BY_WALL, MOVE_STATUS_BLOCKED_BY_OBJECT, MOVE_STATUS_BLOCKED_BY_ENEMY, MOVE_STATUS_BLOCKED_BY_MONSTER
+    MOVE_STATUS_DONE,
+    MOVE_STATUS_MOVING,
+    MOVE_STATUS_WAITING,
+    MOVE_STATUS_DEST_NOT_FOUND,
+    MOVE_STATUS_DEST_UNREACHABLE,
+    MOVE_STATUS_BLOCKED_BY_WALL,
+    MOVE_STATUS_BLOCKED_BY_OBJECT,
+    MOVE_STATUS_BLOCKED_BY_ENEMY,
+    MOVE_STATUS_BLOCKED_BY_MONSTER
 }
 
 // } stopEvent_t;
 //
 // defined in script/ai_base.script.  please keep them up to date.
 enum class moveType_t {
-    MOVETYPE_DEAD, MOVETYPE_ANIM, MOVETYPE_SLIDE, MOVETYPE_FLY, MOVETYPE_STATIC, NUM_MOVETYPES
+    MOVETYPE_DEAD,
+    MOVETYPE_ANIM,
+    MOVETYPE_SLIDE,
+    MOVETYPE_FLY,
+    MOVETYPE_STATIC,
+    NUM_MOVETYPES
 }
 
 enum class talkState_t {
-    TALK_NEVER, TALK_DEAD, TALK_OK, TALK_BUSY, NUM_TALK_STATES
+    TALK_NEVER,
+    TALK_DEAD,
+    TALK_OK,
+    TALK_BUSY,
+    NUM_TALK_STATES
 }
 
 // obstacle avoidance
@@ -4257,23 +4274,23 @@ open class idAI : idActor() {
             missileLaunchOffset[attack_anim]
         )
         try {
-        if (!aas!!.FindNearestGoal(goal, areaNum, org, pos, travelFlags, obstacle, 1, findGoal)) {
-            StopMove(moveStatus_t.MOVE_STATUS_DEST_UNREACHABLE)
-            AI_DEST_UNREACHABLE.underscore(true)
-            return false
-        }
-        move.moveDest.set(goal.origin)
-        move.toAreaNum = goal.areaNum
-        move.goalEntity.oSet(ent)
-        move.moveCommand = moveCommand_t.MOVE_TO_ATTACK_POSITION
-        move.moveStatus = moveStatus_t.MOVE_STATUS_MOVING
-        move.speed = fly_speed
-        move.startTime = Game_local.gameLocal.time
-        move.anim = attack_anim
-        AI_MOVE_DONE.underscore(false)
-        AI_DEST_UNREACHABLE.underscore(false)
-        AI_FORWARD.underscore(true)
-        return true
+            if (!aas!!.FindNearestGoal(goal, areaNum, org, pos, travelFlags, obstacle, 1, findGoal)) {
+                StopMove(moveStatus_t.MOVE_STATUS_DEST_UNREACHABLE)
+                AI_DEST_UNREACHABLE.underscore(true)
+                return false
+            }
+            move.moveDest.set(goal.origin)
+            move.toAreaNum = goal.areaNum
+            move.goalEntity.oSet(ent)
+            move.moveCommand = moveCommand_t.MOVE_TO_ATTACK_POSITION
+            move.moveStatus = moveStatus_t.MOVE_STATUS_MOVING
+            move.speed = fly_speed
+            move.startTime = Game_local.gameLocal.time
+            move.anim = attack_anim
+            AI_MOVE_DONE.underscore(false)
+            AI_DEST_UNREACHABLE.underscore(false)
+            AI_FORWARD.underscore(true)
+            return true
         } finally {
             findGoal.cleanup()
         }
@@ -4470,26 +4487,26 @@ open class idAI : idActor() {
         obstacle[0].absBounds.set(entity.GetPhysics().GetAbsBounds())
         val findCover = idAASFindCover(hideFromPos)
         try {
-        if (!aas!!.FindNearestGoal(hideGoal, areaNum, org, hideFromPos, travelFlags, obstacle, 1, findCover)) {
-            StopMove(moveStatus_t.MOVE_STATUS_DEST_UNREACHABLE)
-            AI_DEST_UNREACHABLE.underscore(true)
-            return false
-        }
-        if (ReachedPos(hideGoal.origin, move.moveCommand)) {
-            StopMove(moveStatus_t.MOVE_STATUS_DONE)
+            if (!aas!!.FindNearestGoal(hideGoal, areaNum, org, hideFromPos, travelFlags, obstacle, 1, findCover)) {
+                StopMove(moveStatus_t.MOVE_STATUS_DEST_UNREACHABLE)
+                AI_DEST_UNREACHABLE.underscore(true)
+                return false
+            }
+            if (ReachedPos(hideGoal.origin, move.moveCommand)) {
+                StopMove(moveStatus_t.MOVE_STATUS_DONE)
+                return true
+            }
+            move.moveDest.set(hideGoal.origin)
+            move.toAreaNum = hideGoal.areaNum
+            move.goalEntity.oSet(entity)
+            move.moveCommand = moveCommand_t.MOVE_TO_COVER
+            move.moveStatus = moveStatus_t.MOVE_STATUS_MOVING
+            move.startTime = Game_local.gameLocal.time
+            move.speed = fly_speed
+            AI_MOVE_DONE.underscore(false)
+            AI_DEST_UNREACHABLE.underscore(false)
+            AI_FORWARD.underscore(true)
             return true
-        }
-        move.moveDest.set(hideGoal.origin)
-        move.toAreaNum = hideGoal.areaNum
-        move.goalEntity.oSet(entity)
-        move.moveCommand = moveCommand_t.MOVE_TO_COVER
-        move.moveStatus = moveStatus_t.MOVE_STATUS_MOVING
-        move.startTime = Game_local.gameLocal.time
-        move.speed = fly_speed
-        AI_MOVE_DONE.underscore(false)
-        AI_DEST_UNREACHABLE.underscore(false)
-        AI_FORWARD.underscore(true)
-        return true
         } finally {
             findCover.cleanup()
         }

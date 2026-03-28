@@ -124,7 +124,10 @@ object Physics_Player {
 
     //
     enum class waterLevel_t {
-        WATERLEVEL_NONE, WATERLEVEL_FEET, WATERLEVEL_WAIST, WATERLEVEL_HEAD
+        WATERLEVEL_NONE,
+        WATERLEVEL_FEET,
+        WATERLEVEL_WAIST,
+        WATERLEVEL_HEAD
     }
 
     class playerPState_s {
@@ -2171,6 +2174,7 @@ object Physics_Player {
 
         companion object {
             val Type = idTypeInfo("idPhysics_Player", "idPhysics_Actor") { idPhysics_Player() }
+
             // CLASS_PROTOTYPE( idPhysics_Player );
             const val MAX_CLIP_PLANES = 5
         }

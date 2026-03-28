@@ -38,11 +38,19 @@ class DeclAF {
      ===============================================================================
      */
     enum class declAFConstraintType_t {
-        DECLAF_CONSTRAINT_INVALID, DECLAF_CONSTRAINT_FIXED, DECLAF_CONSTRAINT_BALLANDSOCKETJOINT, DECLAF_CONSTRAINT_UNIVERSALJOINT, DECLAF_CONSTRAINT_HINGE, DECLAF_CONSTRAINT_SLIDER, DECLAF_CONSTRAINT_SPRING
+        DECLAF_CONSTRAINT_INVALID,
+        DECLAF_CONSTRAINT_FIXED,
+        DECLAF_CONSTRAINT_BALLANDSOCKETJOINT,
+        DECLAF_CONSTRAINT_UNIVERSALJOINT,
+        DECLAF_CONSTRAINT_HINGE,
+        DECLAF_CONSTRAINT_SLIDER,
+        DECLAF_CONSTRAINT_SPRING
     }
 
     enum class declAFJointMod_t {
-        DECLAF_JOINTMOD_AXIS, DECLAF_JOINTMOD_ORIGIN, DECLAF_JOINTMOD_BOTH
+        DECLAF_JOINTMOD_AXIS,
+        DECLAF_JOINTMOD_ORIGIN,
+        DECLAF_JOINTMOD_BOTH
     }
 
     abstract class getJointTransform_t {
@@ -228,7 +236,10 @@ class DeclAF {
         }
 
         enum class idFVectorTypes {
-            VEC_COORDS, VEC_JOINT, VEC_BONECENTER, VEC_BONEDIR
+            VEC_COORDS,
+            VEC_JOINT,
+            VEC_BONECENTER,
+            VEC_BONEDIR
         }
 
         init {

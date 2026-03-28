@@ -28,8 +28,8 @@ import neo.framework.CmdSystem
 import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
-import neo.framework.File_h.idFile
 import neo.framework.FileSystem_h
+import neo.framework.File_h.idFile
 import neo.idlib.CmdArgs
 import neo.idlib.Text.Lexer.LEXFL_NOSTRINGESCAPECHARS
 import neo.idlib.Text.Lexer.idLexer
@@ -505,22 +505,27 @@ object TypeInfo {
                         out[i++] = '\\'
                         out[i] = '\\'
                     }
+
                     '\n' -> {
                         out[i++] = '\\'
                         out[i] = 'n'
                     }
+
                     '\r' -> {
                         out[i++] = '\\'
                         out[i] = 'r'
                     }
+
                     '\t' -> {
                         out[i++] = '\\'
                         out[i] = 't'
                     }
+
                     '\u000B' -> {
                         out[i++] = '\\'
                         out[i] = 'v'
                     }
+
                     else -> out[i] = ch
                 }
                 i++

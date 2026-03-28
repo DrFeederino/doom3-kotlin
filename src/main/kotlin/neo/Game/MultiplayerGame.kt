@@ -80,17 +80,33 @@ object MultiplayerGame {
      ===============================================================================
      */
     enum class gameType_t {
-        GAME_SP, GAME_DM, GAME_TOURNEY, GAME_TDM, GAME_LASTMAN
+        GAME_SP,
+        GAME_DM,
+        GAME_TOURNEY,
+        GAME_TDM,
+        GAME_LASTMAN
     }
 
     //
     enum class playerVote_t {
-        PLAYER_VOTE_NONE, PLAYER_VOTE_NO, PLAYER_VOTE_YES, PLAYER_VOTE_WAIT // mark a player allowed to vote
+        PLAYER_VOTE_NONE,
+        PLAYER_VOTE_NO,
+        PLAYER_VOTE_YES,
+        PLAYER_VOTE_WAIT // mark a player allowed to vote
     }
 
     enum class snd_evt_t {
         SND_YOUWIN,  //= 0,
-        SND_YOULOSE, SND_FIGHT, SND_VOTE, SND_VOTE_PASSED, SND_VOTE_FAILED, SND_THREE, SND_TWO, SND_ONE, SND_SUDDENDEATH, SND_COUNT
+        SND_YOULOSE,
+        SND_FIGHT,
+        SND_VOTE,
+        SND_VOTE_PASSED,
+        SND_VOTE_FAILED,
+        SND_THREE,
+        SND_TWO,
+        SND_ONE,
+        SND_SUDDENDEATH,
+        SND_COUNT
     }
 
     class mpPlayerState_s {
@@ -3522,23 +3538,49 @@ object MultiplayerGame {
             GAMEON,  // game is on
             SUDDENDEATH,  // game is on but in sudden death, first frag wins
             GAMEREVIEW,  // game is over, scoreboard is up. we wait si_gameReviewPause seconds (which has a min value)
-            NEXTGAME, STATE_COUNT
+            NEXTGAME,
+            STATE_COUNT
         }
 
         // more compact than a chat line
         enum class msg_evt_t {
             MSG_SUICIDE,  // = 0,
-            MSG_KILLED, MSG_KILLEDTEAM, MSG_DIED, MSG_VOTE, MSG_VOTEPASSED, MSG_VOTEFAILED, MSG_SUDDENDEATH, MSG_FORCEREADY, MSG_JOINEDSPEC, MSG_TIMELIMIT, MSG_FRAGLIMIT, MSG_TELEFRAGGED, MSG_JOINTEAM, MSG_HOLYSHIT, MSG_COUNT
+            MSG_KILLED,
+            MSG_KILLEDTEAM,
+            MSG_DIED,
+            MSG_VOTE,
+            MSG_VOTEPASSED,
+            MSG_VOTEFAILED,
+            MSG_SUDDENDEATH,
+            MSG_FORCEREADY,
+            MSG_JOINEDSPEC,
+            MSG_TIMELIMIT,
+            MSG_FRAGLIMIT,
+            MSG_TELEFRAGGED,
+            MSG_JOINTEAM,
+            MSG_HOLYSHIT,
+            MSG_COUNT
         }
 
         enum class vote_flags_t {
             VOTE_RESTART,  //= 0,
-            VOTE_TIMELIMIT, VOTE_FRAGLIMIT, VOTE_GAMETYPE, VOTE_KICK, VOTE_MAP, VOTE_SPECTATORS, VOTE_NEXTMAP, VOTE_COUNT, VOTE_NONE
+            VOTE_TIMELIMIT,
+            VOTE_FRAGLIMIT,
+            VOTE_GAMETYPE,
+            VOTE_KICK,
+            VOTE_MAP,
+            VOTE_SPECTATORS,
+            VOTE_NEXTMAP,
+            VOTE_COUNT,
+            VOTE_NONE
         }
 
         enum class vote_result_t {
-            VOTE_UPDATE, VOTE_FAILED, VOTE_PASSED,  // passed, but no reset yet
-            VOTE_ABORTED, VOTE_RESET // tell clients to reset vote state
+            VOTE_UPDATE,
+            VOTE_FAILED,
+            VOTE_PASSED,  // passed, but no reset yet
+            VOTE_ABORTED,
+            VOTE_RESET // tell clients to reset vote state
         }
 
         class ForceReady_f private constructor() : cmdFunction_t() {

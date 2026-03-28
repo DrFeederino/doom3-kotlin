@@ -1929,7 +1929,7 @@ object Image {
                 header.dwFlags = header.dwFlags or DDSF_LINEARSIZE
                 header.dwPitchOrLinearSize =
                     (((uploadWidth.integerValue + 3) / 4) * ((uploadHeight.integerValue + 3) / 4)
-                        * (if (altInternalFormat <= EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) 8 else 16))
+                            * (if (altInternalFormat <= EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) 8 else 16))
             } else {
                 // 4 Byte aligned line width (from nv_dds)
                 header.dwFlags = header.dwFlags or DDSF_PITCH

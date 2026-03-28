@@ -58,7 +58,10 @@ object DemoFile {
      ===============================================================================
      */
     enum class demoSystem_t {
-        DS_FINISHED, DS_RENDER, DS_SOUND, DS_VERSION
+        DS_FINISHED,
+        DS_RENDER,
+        DS_SOUND,
+        DS_VERSION
     }
 
     class idDemoFile : idFile() {

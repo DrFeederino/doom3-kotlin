@@ -1328,7 +1328,10 @@ object Interaction {
         }
 
         internal enum class frustumStates {
-            FRUSTUM_UNINITIALIZED, FRUSTUM_INVALID, FRUSTUM_VALID, FRUSTUM_VALIDAREAS
+            FRUSTUM_UNINITIALIZED,
+            FRUSTUM_INVALID,
+            FRUSTUM_VALID,
+            FRUSTUM_VALIDAREAS
         }
 
         companion object {

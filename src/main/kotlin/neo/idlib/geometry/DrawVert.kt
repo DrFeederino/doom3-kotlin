@@ -145,7 +145,7 @@ object DrawVert {
         }
 
         override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
         }
 
         override fun Read(buffer: ByteBuffer) {

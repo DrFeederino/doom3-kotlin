@@ -140,7 +140,10 @@ object Mover {
      ===============================================================================
      */
     enum class moverState_t {
-        MOVER_POS1, MOVER_POS2, MOVER_1TO2, MOVER_2TO1
+        MOVER_POS1,
+        MOVER_POS2,
+        MOVER_1TO2,
+        MOVER_2TO1
     }
 
     /*
@@ -1493,11 +1496,17 @@ object Mover {
         //
         //
         enum class moveStage_t {
-            ACCELERATION_STAGE, LINEAR_STAGE, DECELERATION_STAGE, FINISHED_STAGE
+            ACCELERATION_STAGE,
+            LINEAR_STAGE,
+            DECELERATION_STAGE,
+            FINISHED_STAGE
         }
 
         enum class moverCommand_t {
-            MOVER_NONE, MOVER_ROTATING, MOVER_MOVING, MOVER_SPLINE
+            MOVER_NONE,
+            MOVER_ROTATING,
+            MOVER_MOVING,
+            MOVER_SPLINE
         }
 
         protected class moveState_t {
@@ -1972,7 +1981,9 @@ object Mover {
         }
 
         enum class elevatorState_t {
-            INIT, IDLE, WAITING_ON_DOORS
+            INIT,
+            IDLE,
+            WAITING_ON_DOORS
         }
 
         init {

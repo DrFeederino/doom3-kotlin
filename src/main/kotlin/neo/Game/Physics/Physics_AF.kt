@@ -65,13 +65,13 @@ object Physics_AF {
     const val TEST_COLLISION_DETECTION = false
     private val vec6_lcp_epsilon: idVec6
         get() = idVec6(
-        LCP_EPSILON,
-        LCP_EPSILON,
-        LCP_EPSILON,
-        LCP_EPSILON,
-        LCP_EPSILON,
-        LCP_EPSILON
-    )
+            LCP_EPSILON,
+            LCP_EPSILON,
+            LCP_EPSILON,
+            LCP_EPSILON,
+            LCP_EPSILON,
+            LCP_EPSILON
+        )
 
     // #ifdef AF_TIMINGS
     var lastTimerReset = 0
@@ -128,7 +128,22 @@ object Physics_AF {
      ===================================================================================
      */
     enum class constraintType_t {
-        CONSTRAINT_INVALID, CONSTRAINT_FIXED, CONSTRAINT_BALLANDSOCKETJOINT, CONSTRAINT_UNIVERSALJOINT, CONSTRAINT_HINGE, CONSTRAINT_HINGESTEERING, CONSTRAINT_SLIDER, CONSTRAINT_CYLINDRICALJOINT, CONSTRAINT_LINE, CONSTRAINT_PLANE, CONSTRAINT_SPRING, CONSTRAINT_CONTACT, CONSTRAINT_FRICTION, CONSTRAINT_CONELIMIT, CONSTRAINT_PYRAMIDLIMIT, CONSTRAINT_SUSPENSION;
+        CONSTRAINT_INVALID,
+        CONSTRAINT_FIXED,
+        CONSTRAINT_BALLANDSOCKETJOINT,
+        CONSTRAINT_UNIVERSALJOINT,
+        CONSTRAINT_HINGE,
+        CONSTRAINT_HINGESTEERING,
+        CONSTRAINT_SLIDER,
+        CONSTRAINT_CYLINDRICALJOINT,
+        CONSTRAINT_LINE,
+        CONSTRAINT_PLANE,
+        CONSTRAINT_SPRING,
+        CONSTRAINT_CONTACT,
+        CONSTRAINT_FRICTION,
+        CONSTRAINT_CONELIMIT,
+        CONSTRAINT_PYRAMIDLIMIT,
+        CONSTRAINT_SUSPENSION;
 
         companion object {
             fun oGet(index: Int): constraintType_t {

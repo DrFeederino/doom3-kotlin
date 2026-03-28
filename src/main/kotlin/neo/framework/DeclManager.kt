@@ -37,7 +37,8 @@ class DeclManager {
 
 
     enum class declState_t {
-        DS_UNPARSED, DS_DEFAULTED,  // set if a parse failed due to an error, or the lack of any source
+        DS_UNPARSED,
+        DS_DEFAULTED,  // set if a parse failed due to an error, or the lack of any source
         DS_PARSED
     }
 
@@ -79,10 +80,36 @@ class DeclManager {
         DECL_SKIN,
         DECL_SOUND,
         DECL_ENTITYDEF,
-        DECL_MODELDEF, DECL_FX, DECL_PARTICLE, DECL_AF, DECL_PDA, DECL_VIDEO, DECL_AUDIO, DECL_EMAIL, DECL_MODELEXPORT, DECL_MAPDEF,  //14
+        DECL_MODELDEF,
+        DECL_FX,
+        DECL_PARTICLE,
+        DECL_AF,
+        DECL_PDA,
+        DECL_VIDEO,
+        DECL_AUDIO,
+        DECL_EMAIL,
+        DECL_MODELEXPORT,
+        DECL_MAPDEF,  //14
 
         // new decl types can be added here
-        _15_, _16_, _17_, _18_, _19_, _20_, _21_, _22_, _23_, _24_, _25_, _26_, _27_, _28_, _29_, _30_, _31_, DECL_MAX_TYPES //32
+        _15_,
+        _16_,
+        _17_,
+        _18_,
+        _19_,
+        _20_,
+        _21_,
+        _22_,
+        _23_,
+        _24_,
+        _25_,
+        _26_,
+        _27_,
+        _28_,
+        _29_,
+        _30_,
+        _31_,
+        DECL_MAX_TYPES //32
     }
 
     abstract class idDeclBase {

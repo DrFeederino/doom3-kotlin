@@ -565,12 +565,15 @@ object CmdSystem {
                 cmdExecution_t.CMD_EXEC_NOW -> {
                     ExecuteCommandText(text)
                 }
+
                 cmdExecution_t.CMD_EXEC_INSERT -> {
                     InsertCommandText(text)
                 }
+
                 cmdExecution_t.CMD_EXEC_APPEND -> {
                     AppendCommandText(text)
                 }
+
                 else -> {
                     idLib.common.FatalError("idCmdSystemLocal::BufferCommandText: bad exec type")
                 }
@@ -749,10 +752,12 @@ object CmdSystem {
                 cmdExecution_t.CMD_EXEC_NOW -> {
                     ExecuteTokenizedString(args)
                 }
+
                 cmdExecution_t.CMD_EXEC_APPEND -> {
                     AppendCommandText("_execTokenized\n")
                     tokenizedCmds.Append(args)
                 }
+
                 else -> {
                     idLib.common.FatalError("idCmdSystemLocal::BufferCommandArgs: bad exec type")
                 }

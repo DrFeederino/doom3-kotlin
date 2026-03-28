@@ -46,7 +46,16 @@ class DeclFX {
      ===============================================================================
      */
     enum class fx_enum {
-        FX_LIGHT, FX_PARTICLE, FX_DECAL, FX_MODEL, FX_SOUND, FX_SHAKE, FX_ATTACHLIGHT, FX_ATTACHENTITY, FX_LAUNCH, FX_SHOCKWAVE
+        FX_LIGHT,
+        FX_PARTICLE,
+        FX_DECAL,
+        FX_MODEL,
+        FX_SOUND,
+        FX_SHAKE,
+        FX_ATTACHLIGHT,
+        FX_ATTACHENTITY,
+        FX_LAUNCH,
+        FX_SHOCKWAVE
     }
 
     //
@@ -203,6 +212,7 @@ class DeclFX {
                         "FX_ATTACHENTITY %s\n",
                         list.events[i].data.toString()
                     )
+
                     fx_enum.FX_LAUNCH -> Common.common.Printf("FX_LAUNCH %s\n", list.events[i].data.toString())
                     fx_enum.FX_SHOCKWAVE -> Common.common.Printf("FX_SHOCKWAVE %s\n", list.events[i].data.toString())
                     null -> {} // C++ type == -1: switch falls through with no match

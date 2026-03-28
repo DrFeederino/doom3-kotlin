@@ -2222,9 +2222,6 @@ class idAFEntity_SteamPipe : idAFEntity_Base() {
         BecomeActive(TH_THINK)
     }
 
-    override fun Save(savefile: idSaveGame) {
-        super.Save(savefile)
-    }
     override fun Restore(savefile: idRestoreGame) {
         super.Restore(savefile)
         Spawn()
