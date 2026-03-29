@@ -27,7 +27,7 @@ package neo.framework
 object Licensee {
 
     const val GAME_NAME: String = "dhewm 3"                            // appears on window titles and errors
-    const val ENGINE_VERSION: String = "dhewm3 1.5.5rc2"           // printed in console
+    const val ENGINE_VERSION: String = "dhewm3 1.5.5rc3"           // printed in console
     const val D3_OSTYPE = "windows" // we are faking it
     const val D3_ARCH = "x86_64"
     const val D3_SHORT_SIZE: Short = 8

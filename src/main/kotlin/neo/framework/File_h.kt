@@ -253,7 +253,6 @@ object File_h {
             return Write(`object`.Write())
         }
 
-        @Deprecated("") // Write some data from the buffer to the file.
         open fun Write(buffer: ByteBuffer, len: Int): Int {
             idLib.common.FatalError("idFile::Write: cannot write to idFile")
             return 0

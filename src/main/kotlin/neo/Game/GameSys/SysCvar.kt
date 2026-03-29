@@ -1030,7 +1030,7 @@ class SysCvar {
         // server info
         val si_name: idCVar = idCVar(
             "si_name",
-            "DOOM Server",
+            "dhewm server",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_SERVERINFO or CVarSystem.CVAR_ARCHIVE,
             "name of the server"
         )
