@@ -270,6 +270,7 @@ object Trigger {
          ================
          */
         open fun Enable() {
+            GetPhysics().SetContents(Material.CONTENTS_TRIGGER)
             GetPhysics().EnableClip()
         }
 
@@ -327,7 +328,7 @@ object Trigger {
 
      ===============================================================================
      */
-    class idTrigger_Multi     //
+    open class idTrigger_Multi     //
     //
         : idTrigger() {
         companion object {
@@ -359,17 +360,17 @@ object Trigger {
             }
         }
 
-        private var delay = 0.0f
-        private var nextTriggerTime = 0
-        private var random = 0.0f
-        private var random_delay = 0.0f
-        private var removeItem = 0
-        private val requires: idStr = idStr()
-        private var touchClient = false
-        private var touchOther = false
-        private var triggerFirst = false
-        private var triggerWithSelf = false
-        private var wait = 0.0f
+        protected var delay = 0.0f
+        protected var nextTriggerTime = 0
+        protected var random = 0.0f
+        protected var random_delay = 0.0f
+        protected var removeItem = 0
+        protected val requires: idStr = idStr()
+        protected var touchClient = false
+        protected var touchOther = false
+        protected var triggerFirst = false
+        protected var triggerWithSelf = false
+        protected var wait = 0.0f
 
         /*
          ================
@@ -461,7 +462,7 @@ object Trigger {
             triggerWithSelf = savefile.ReadBool()
         }
 
-        private fun CheckFacing(activator: idEntity?): Boolean {
+        protected fun CheckFacing(activator: idEntity?): Boolean {
             if (spawnArgs.GetBool("facing")) {
                 if (activator !is idPlayer) {
                     return true
@@ -474,7 +475,7 @@ object Trigger {
             return true
         }
 
-        private fun TriggerAction(activator: idEntity?) {
+        protected fun TriggerAction(activator: idEntity?) {
             ActivateTargets(if (triggerWithSelf) this else activator)
             CallScript()
             if (wait >= 0) {
@@ -493,7 +494,7 @@ object Trigger {
             }
         }
 
-        private fun Event_TriggerAction(activator: idEventArg<idEntity?>) {
+        protected fun Event_TriggerAction(activator: idEventArg<idEntity?>) {
             TriggerAction(activator.value)
         }
 
@@ -507,7 +508,7 @@ object Trigger {
          so wait for the delay time before firing
          ================
          */
-        private fun Event_Trigger(_activator: idEventArg<idEntity?>) {
+        protected fun Event_Trigger(_activator: idEventArg<idEntity?>) {
             val activator = _activator.value
             if (nextTriggerTime > Game_local.gameLocal.time) {
                 // can't retrigger until the wait is over
@@ -539,7 +540,7 @@ object Trigger {
             }
         }
 
-        private fun Event_Touch(_other: idEventArg<idEntity?>, trace: idEventArg<trace_s>) {
+        protected fun Event_Touch(_other: idEventArg<idEntity?>, trace: idEventArg<trace_s>) {
             val other = _other.value
             if (triggerFirst) {
                 return
@@ -1308,6 +1309,124 @@ object Trigger {
 
         override fun GetType(): idTypeInfo = Type
         override fun CreateInstance(): idClass = idTrigger_Touch()
+
+        override fun oSet(oGet: idClass?) {
+            throw UnsupportedOperationException("Not supported yet.")
+        }
+
+        override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
+            return eventCallbacks[event]
+        }
+    }
+
+    /*
+     ===============================================================================
+
+     Trigger that responds to CTF flags (D3XP/CTF only)
+
+     ===============================================================================
+     */
+    class idTrigger_Flag : idTrigger_Multi() {
+        companion object {
+            val Type = idTypeInfo("idTrigger_Flag", "idTrigger_Multi") { idTrigger_Flag() }
+
+            private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+            fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
+                return eventCallbacks
+            }
+
+            init {
+                eventCallbacks.putAll(idTrigger_Multi.getEventCallBacks())
+                eventCallbacks[EV_Touch] =
+                    eventCallback_t2 { obj: idTrigger_Flag, _other: idEventArg<*>?, trace: idEventArg<*>? ->
+                        obj.Event_Touch_Flag(
+                            _other as idEventArg<idEntity?>,
+                            trace as idEventArg<trace_s>
+                        )
+                    }
+            }
+        }
+
+        private var team: Int = -1
+        private var player: Boolean = false  // flag must be attached/carried by player
+        private var eventFlag: idEventDef? = null
+
+        override fun Spawn() {
+            team = spawnArgs.GetInt("team", "0")
+            player = spawnArgs.GetBool("player", "0")
+
+            val funcname = idStr(spawnArgs.GetString("eventflag", "")!!)
+            if (funcname.Length() != 0) {
+                eventFlag = idEventDef.FindEvent(funcname.toString())
+                if (eventFlag == null) {
+                    Game_local.gameLocal.Warning(
+                        "trigger '%s' at (%s) event unknown '%s'",
+                        name, GetPhysics().GetOrigin().ToString(0), funcname
+                    )
+                }
+            } else {
+                eventFlag = null
+            }
+
+            super.Spawn()
+        }
+
+        private fun Event_Touch_Flag(_other: idEventArg<idEntity?>, trace: idEventArg<trace_s>) {
+            val other = _other.value ?: return
+
+            var flag: idItemTeam? = null
+
+            if (player) {
+                if (other !is idPlayer) return
+
+                val thePlayer = other
+                if (!thePlayer.carryingFlag) return
+
+                if (team != -1 && (thePlayer.team != team || (thePlayer.team != 0 && thePlayer.team != 1))) return
+
+                val flags = arrayOfNulls<idItemTeam>(2)
+                flags[0] = Game_local.gameLocal.mpGame.GetTeamFlag(0)
+                flags[1] = Game_local.gameLocal.mpGame.GetTeamFlag(1)
+
+                if (flags[0] == null || flags[1] == null) return
+
+                val iFriend = 1 - thePlayer.team  // index to the flag player team wants
+                val iOpp = thePlayer.team          // index to the flag opp team wants
+
+                // flag is captured if:
+                // 1) flag is truly bound to the player
+                // 2) opponent flag has been returned
+                if (flags[iFriend]!!.carried && !flags[iFriend]!!.dropped &&
+                    !flags[iOpp]!!.carried && !flags[iOpp]!!.dropped
+                ) {
+                    flag = flags[iFriend]
+                } else {
+                    return
+                }
+            } else {
+                if (other !is idItemTeam) return
+
+                val item = other
+                if (item.team == team || team == -1) {
+                    flag = item
+                } else {
+                    return
+                }
+            }
+
+            if (flag != null && eventFlag != null) {
+                when (eventFlag!!.GetNumArgs()) {
+                    0 -> flag.PostEventMS(eventFlag!!, 0)
+                    1 -> flag.PostEventMS(eventFlag!!, 0, 0)
+                    else -> flag.PostEventMS(eventFlag!!, 0, 0, 0)
+                }
+
+                super.Event_Touch(_other, trace)
+            }
+        }
+
+        override fun GetType(): idTypeInfo = Type
+        override fun CreateInstance(): idClass = idTrigger_Flag()
 
         override fun oSet(oGet: idClass?) {
             throw UnsupportedOperationException("Not supported yet.")

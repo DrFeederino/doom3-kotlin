@@ -610,7 +610,7 @@ object Moveable {
             nextDamageTime = 0
             nextSoundTime = 0
             initialSpline = null
-            initialSplineDir = vec3_zero
+            initialSplineDir = idVec3(vec3_zero)
             explode = false
             unbindOnDeath = false
             allowStep = false
@@ -1033,6 +1033,9 @@ object Moveable {
             physicsObj.PutToRest()
             CancelEvents(EV_Explode)
             CancelEvents(EV_Activate)
+            if (isD3XP) {
+                CancelEvents(EV_Respawn)
+            }
             f = spawnArgs.GetFloat("respawn")
             if (f > 0.0f) {
                 PostEventSec(EV_Respawn, f)

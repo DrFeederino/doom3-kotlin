@@ -364,22 +364,15 @@ object SaveGame {
             if (null == dict) {
                 WriteInt(-1)
             } else {
-                val posStart = file.Tell()
                 num = dict.GetNumKeyVals()
                 WriteInt(num)
                 i = 0
                 while (i < num) {
                     kv = dict.GetKeyVal(i)!!
-                    val posBefore = file.Tell()
                     WriteString(kv.GetKey())
                     WriteString(kv.GetValue())
-                    val posAfter = file.Tell()
-                    val keyLen = kv.GetKey().Length()
-                    val valLen = kv.GetValue().Length()
-                    println("  WriteDict[$i] pos=$posBefore->$posAfter bytes=${posAfter - posBefore} key(${keyLen})=\"${kv.GetKey()}\" val(${valLen})=\"${kv.GetValue()}\"")
                     i++
                 }
-                println("WriteDict total: pos=$posStart->${file.Tell()} bytes=${file.Tell() - posStart} entries=$num")
             }
         }
 

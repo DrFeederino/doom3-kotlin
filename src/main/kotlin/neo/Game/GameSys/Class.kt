@@ -34,7 +34,6 @@
 package neo.Game.GameSys
 
 import neo.Game.*
-import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.AI.AI_Vagary
 import neo.Game.AI.idAI
 import neo.Game.AI.idCombatNode
@@ -47,6 +46,7 @@ import neo.Game.GameSys.Event.idEvent
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Light.idLight
 import neo.Game.Misc.idActivator
 import neo.Game.Misc.idAnimated
@@ -67,10 +67,10 @@ import neo.Game.Misc.idLocationEntity
 import neo.Game.Misc.idLocationSeparatorEntity
 import neo.Game.Misc.idPathCorner
 import neo.Game.Misc.idPhantomObjects
-import neo.Game.Misc.idShockwave
-import neo.Game.Misc.idPortalSky
 import neo.Game.Misc.idPlayerStart
+import neo.Game.Misc.idPortalSky
 import neo.Game.Misc.idShaking
+import neo.Game.Misc.idShockwave
 import neo.Game.Misc.idSpawnableEntity
 import neo.Game.Misc.idSpring
 import neo.Game.Misc.idStaticEntity
@@ -95,6 +95,7 @@ import neo.Game.Physics.Force.idForce
 import neo.Game.Physics.Force_Constant.idForce_Constant
 import neo.Game.Physics.Force_Drag.idForce_Drag
 import neo.Game.Physics.Force_Field.idForce_Field
+import neo.Game.Physics.Force_Grab.idForce_Grab
 import neo.Game.Physics.Force_Spring.idForce_Spring
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Physics.Physics_AF.idPhysics_AF
@@ -148,6 +149,7 @@ import neo.Game.Trigger.idTrigger
 import neo.Game.Trigger.idTrigger_Count
 import neo.Game.Trigger.idTrigger_EntityName
 import neo.Game.Trigger.idTrigger_Fade
+import neo.Game.Trigger.idTrigger_Flag
 import neo.Game.Trigger.idTrigger_Hurt
 import neo.Game.Trigger.idTrigger_Multi
 import neo.Game.Trigger.idTrigger_Timer
@@ -1017,6 +1019,8 @@ class Class {
                 timeState
             } else null
 
+            try {
+
             if (SysCvar.g_debugTriggers.GetBool() && ev === EV_Activate && this is idEntity) {
                 val name: String =
                     if (data[0] != null && data[0]!!.value as idClass? is idEntity) (data[0]!!.value as idEntity).GetName() else "NULL"
@@ -1051,6 +1055,10 @@ class Class {
             }
 
             return true
+
+            } finally {
+                ts?.close()
+            }
         }
 
         /*
@@ -1646,6 +1654,7 @@ fun registerAllTypes() {
     idTrigger_Hurt.Type
     idTrigger_Fade.Type
     idTrigger_Touch.Type
+    idTrigger_Flag.Type
 
     // Weapon
     idWeapon.Type
@@ -1662,6 +1671,7 @@ fun registerAllTypes() {
     idForce_Constant.Type
     idForce_Drag.Type
     idForce_Field.Type
+    idForce_Grab.Type
     idForce_Spring.Type
     idPhysics_Base.Type
     idPhysics_Static.Type
@@ -1672,6 +1682,8 @@ fun registerAllTypes() {
     idPhysics_Parametric.Type
     idPhysics_RigidBody.Type
     idPhysics_AF.Type
-    idPhysics_RigidBody.Type
-    idPhysics_Parametric.Type
+
+    // D3XP entity types
+    Grabber.idGrabber.Type
+    idItemTeam.Type
 }

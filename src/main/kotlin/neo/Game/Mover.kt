@@ -23,8 +23,8 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
-import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.*
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Physics.Physics_Parametric.idPhysics_Parametric
@@ -3540,9 +3540,10 @@ object Mover {
                     }
                 }
             } else if (sndTrigger != null && trace.c.id == sndTrigger!!.GetId()) {
-                if (other != null && other is idPlayer && IsLocked() != 0 && Game_local.gameLocal.time > nextSndTriggerTime) {
+                val sndTime = if (isD3XP) Game_local.gameLocal.slow.time else Game_local.gameLocal.time
+                if (other != null && other is idPlayer && IsLocked() != 0 && sndTime > nextSndTriggerTime) {
                     StartSound("snd_locked", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
-                    nextSndTriggerTime = Game_local.gameLocal.time + 10000
+                    nextSndTriggerTime = sndTime + 10000
                 }
             }
         }

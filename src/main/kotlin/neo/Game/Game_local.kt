@@ -1164,7 +1164,6 @@ class Game_local {
             savegame.WriteShort(D3_SHORT_SIZE) // tells us if it's from a 32bit (4) or 64bit system (8)
             savegame.WriteShort(0) // byteOrder
             // DG end
-            println("SAVE_POS after header: ${saveGameFile.Tell()}")
             // go through all entities and threads and add them to the object list
             i = 0
             while (i < MAX_GENTITIES) {

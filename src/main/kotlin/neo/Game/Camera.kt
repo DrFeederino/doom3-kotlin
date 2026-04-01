@@ -401,6 +401,7 @@ class idCameraAnim : idCamera() {
             return
         }
         val ts = if (isD3XP) SetTimeState(timeGroup) else null
+        try {
         if (frameRate == UsercmdGen.USERCMD_HZ) {
             frameTime = Game_local.gameLocal.time - starttime
             frame = (frameTime / idGameLocal.msecPrecise).toInt()
@@ -501,6 +502,9 @@ class idCameraAnim : idCamera() {
 
         if (SysCvar.g_showcamerainfo.GetBool()) {
             Game_local.gameLocal.Printf("^5Frame: ^7%d/%d\n\n\n", realFrame + 1, camera.Num() - cameraCuts.Num())
+        }
+        } finally {
+            ts?.close()
         }
     }
 

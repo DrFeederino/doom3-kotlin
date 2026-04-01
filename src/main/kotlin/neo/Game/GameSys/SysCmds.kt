@@ -42,7 +42,6 @@ import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
 import neo.framework.FileSystem_h
 import neo.framework.File_h.idFile
-import neo.idlib.BIT
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.CmdArgs
 import neo.idlib.Dict_h.idDict
@@ -149,6 +148,18 @@ object SysCmds {
                 if (Game_local.gameLocal.localClientNum >= 0) Game_local.gameLocal.entities[Game_local.gameLocal.localClientNum] as idPlayer else null
             if (player != null) {
                 name = player.GetUserInfo().GetString("ui_name", "player")!!
+
+                // D3XP CTF: prepend player location to team chat messages
+                if (isD3XP && team && Game_local.gameLocal.mpGame.IsGametypeFlagBased()) {
+                    val locationEntity = Game_local.gameLocal.LocationForPoint(player.GetEyePosition())
+                    if (locationEntity != null) {
+                        val temp = idStr("[")
+                        temp.plusAssign(locationEntity.GetLocation())
+                        temp.plusAssign("] ")
+                        temp.plusAssign(text)
+                        text.set(temp)
+                    }
+                }
             }
         } else {
             name = "server"
@@ -2527,7 +2538,11 @@ object SysCmds {
             // Argv(3) = comments
             val str = idStr(args.Argv(1))
             str.SetFileExtension(".txt")
-            val file = FileSystem_h.fileSystem.OpenFileAppend(str.toString())
+            val file = if (isD3XP) {
+                FileSystem_h.fileSystem.OpenFileAppend(str.toString(), false, "fs_cdpath")
+            } else {
+                FileSystem_h.fileSystem.OpenFileAppend(str.toString())
+            }
             if (file != null) {
                 file.WriteFloatString("\"view\"\t( %s )\t( %s )\r\n", origin.ToString(), axis.ToString())
                 file.WriteFloatString("\"comments\"\t\"%s: %s\"\r\n\r\n", args.Argv(2), args.Argv(3))
