@@ -1617,8 +1617,8 @@ class idItemTeam : idMoveableItem() {
             val player = gameLocal.entities[i] as? idPlayer ?: continue
             val hud = player.hud ?: continue
 
-            hud.SetStateInt("red_flagstatus", gameLocal.mpGame.GetFlagStatus(0))
-            hud.SetStateInt("blue_flagstatus", gameLocal.mpGame.GetFlagStatus(1))
+            hud.SetStateInt("red_flagstatus", gameLocal.mpGame.GetFlagStatus(0).ordinal)
+            hud.SetStateInt("blue_flagstatus", gameLocal.mpGame.GetFlagStatus(1).ordinal)
             hud.SetStateInt("red_team_score", gameLocal.mpGame.GetFlagPoints(0))
             hud.SetStateInt("blue_team_score", gameLocal.mpGame.GetFlagPoints(1))
         }

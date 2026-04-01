@@ -2503,7 +2503,11 @@ class Game_local {
                 // if the entity is not in the snapshot PVS
                 if (snapshot.pvs[ent.entityNumber shr 5] and (1 shl (ent.entityNumber and 31)) == 0) {
                     if (ent.PhysicsTeamInPVS(pvsHandle)) {
-                        if (ent.entityNumber >= MAX_CLIENTS && ent.entityNumber < mapSpawnCount) {
+                        if (ent.entityNumber >= MAX_CLIENTS && ent.entityNumber < mapSpawnCount && !ent.spawnArgs.GetBool(
+                                "net_dynamic",
+                                "0"
+                            )
+                        ) {
                             // server says it's not in PVS, client says it's in PVS
                             Common.common.DWarning(
                                 "client thinks map entity 0x%x (%s) is stale, sequence 0x%x",
@@ -2513,6 +2517,10 @@ class Game_local {
                             )
                         } else {
                             ent.FreeModelDef()
+                            // D3XP CTF: free leftover light defs on flags going stale
+                            if (isD3XP) {
+                                ent.FreeLightDef()
+                            }
                             ent.UpdateVisuals()
                             ent.GetPhysics().UnlinkClip()
                         }
@@ -2715,6 +2723,13 @@ class Game_local {
                 }
 
                 GAME_RELIABLE_MESSAGE_RESTART -> {
+                    // D3XP: read server info delta that the server writes
+                    val newServerInfo = msg.ReadBits(1)
+                    if (newServerInfo != 0) {
+                        val info = idDict()
+                        msg.ReadDeltaDict(info, null)
+                        gameLocal.SetServerInfo(info)
+                    }
                     MapRestart()
                 }
 
@@ -2802,6 +2817,12 @@ class Game_local {
                 isNewFrame = true
             } else {
                 isNewFrame = false
+            }
+
+            // D3XP: sync slow/fast time states
+            if (isD3XP) {
+                slow.Set(time, previousTime, msec, framenum, realClientTime, msecPrecise)
+                fast.Set(time, previousTime, msec, framenum, realClientTime, msecPrecise)
             }
 
             // set the user commands for this frame
@@ -3080,6 +3101,15 @@ class Game_local {
             var i: Int
             var keyval: idKeyValue?
             var keyval2: idKeyValue?
+            // D3XP: auto-correct gametype if current map doesn't support it
+            if (isD3XP && isMultiplayer && isServer) {
+                val buf = CharArray(MAX_STRING_CHARS)
+                GetBestGameType(SysCvar.si_map.GetString()!!, SysCvar.si_gameType.GetString()!!, buf)
+                val bestGametype = String(buf).substringBefore('\u0000')
+                if (bestGametype != SysCvar.si_gameType.GetString()) {
+                    CVarSystem.cvarSystem.SetCVarString("si_gameType", bestGametype)
+                }
+            }
             if (isClient) {
                 LocalMapRestart()
             } else {
@@ -6407,7 +6437,7 @@ class Game_local {
          ============
          */
         private fun RandomizeInitialSpawns() {
-            val spot = spawnSpot_t()
+            var spot = spawnSpot_t()  // create fresh copies for each append (value semantics)
             var i: Int
             var j: Int
             var k: Int
@@ -6433,14 +6463,16 @@ class Game_local {
                     spot.team = spot.ent!!.spawnArgs.GetInt("team", "-1")
                     if (mpGame.IsGametypeFlagBased()) {
                         if (spot.team == 0 || spot.team == 1) {
-                            teamSpawnSpots[spot.team].Append(spot)
+                            teamSpawnSpots[spot.team].Append(spawnSpot_t().also {
+                                it.ent = spot.ent; it.dist = spot.dist; it.team = spot.team
+                            })
                         } else {
                             Common.common.Warning("info_player_deathmatch : invalid or no team attached to spawn point")
                         }
                     }
                 }
 
-                spawnSpots.Append(spot)
+                spawnSpots.Append(spawnSpot_t().also { it.ent = spot.ent; it.dist = spot.dist; it.team = spot.team })
                 if (spot.ent!!.spawnArgs.GetBool("initial")) {
                     // D3XP CTF
                     if (isD3XP && mpGame.IsGametypeFlagBased()) {
@@ -6679,8 +6711,9 @@ class Game_local {
         }
 
         override fun GetBestGameType(map: String, gametype: String, buf: CharArray /*[MAX_STRING_CHARS ]*/) {
-//	strncpy( buf, gametype, MAX_STRING_CHARS );
-            val src = gametype.toCharArray()
+            // D3XP: delegate to mpGame to check map's supported gametypes
+            val aux = mpGame.GetBestGametype(map, gametype)
+            val src = aux.toCharArray()
             val len = minOf(src.size, MAX_STRING_CHARS - 1)
             System.arraycopy(src, 0, buf, 0, len)
             buf[len] = '\u0000'

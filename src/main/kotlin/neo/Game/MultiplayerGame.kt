@@ -20,7 +20,6 @@ package neo.Game
 
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.gameSoundChannel_t
-import neo.Game.Game_local.idEntityPtr
 import neo.Game.Player.idPlayer
 import neo.Sound.snd_shader.idSoundShader
 import neo.TempDump
@@ -55,7 +54,7 @@ object MultiplayerGame {
 
     // could be a problem if players manage to go down sudden deaths till this .. oh well
     const val LASTMAN_NOLIVES = -20
-    const val MP_PLAYER_MAXFRAGS = 100
+    const val MP_PLAYER_MAXFRAGS = 400  // D3XP: in CTF frags are player points, needs higher range
     const val MP_PLAYER_MAXPING = 999
     const val MP_PLAYER_MAXWINS = 100
 
@@ -120,14 +119,14 @@ object MultiplayerGame {
         SND_ONE,
         SND_SUDDENDEATH,
 
-        // D3XP CTF sounds
+        // D3XP CTF sounds — order must match C++ (captured, return, taken, dropped)
+        SND_FLAG_CAPTURED_YOURS,
+        SND_FLAG_CAPTURED_THEIRS,
+        SND_FLAG_RETURN,
         SND_FLAG_TAKEN_YOURS,
         SND_FLAG_TAKEN_THEIRS,
         SND_FLAG_DROPPED_YOURS,
         SND_FLAG_DROPPED_THEIRS,
-        SND_FLAG_RETURN,
-        SND_FLAG_CAPTURED_YOURS,
-        SND_FLAG_CAPTURED_THEIRS,
         SND_COUNT
     }
 
@@ -268,12 +267,13 @@ object MultiplayerGame {
 
         // D3XP: CTF state
         // teamFlags[0] = red team flag, teamFlags[1] = blue team flag
-        val teamFlags: Array<idEntityPtr<idEntity>> = Array(2) { idEntityPtr() }
+        private var teamFlags: Array<idItemTeam?> = arrayOfNulls(2)
         val teamFlagStatus: Array<flagStatus_t> = Array(2) { flagStatus_t.FLAGSTATUS_NONE }
         val teamPoints: IntArray = IntArray(2)   // CTF score (captures) per team
-        var flagMsgOn: Boolean = false            // flag event message pending
+        var flagMsgOn: Boolean = true             // flag event messages allowed
         var player_red_flag: Int = -1            // entity num of red flag carrier (-1 = none)
         var player_blue_flag: Int = -1           // entity num of blue flag carrier (-1 = none)
+        private var gameTypeVoteMap: Array<String?> = arrayOfNulls(gameType_t.entries.size)
 
         fun Shutdown() {
             Clear()
@@ -283,7 +283,12 @@ object MultiplayerGame {
         fun Reset() {
             Clear()
             assert(null == scoreBoard && null == spectateGui && null == guiChat && null == mainGui && null == mapList)
-            scoreBoard = UserInterface.uiManager.FindGui("guis/scoreboard.gui", true, false, true)
+            // D3XP CTF: use CTF scoreboard if flag-based gametype
+            scoreBoard = if (IsGametypeFlagBased()) {
+                UserInterface.uiManager.FindGui("guis/ctfscoreboard.gui", true, false, true)
+            } else {
+                UserInterface.uiManager.FindGui("guis/scoreboard.gui", true, false, true)
+            }
             spectateGui = UserInterface.uiManager.FindGui("guis/spectate.gui", true, false, true)
             guiChat = UserInterface.uiManager.FindGui("guis/chat.gui", true, false, true)
             mainGui = UserInterface.uiManager.FindGui("guis/mpmain.gui", true, false, true)
@@ -308,7 +313,7 @@ object MultiplayerGame {
             if (!Game_local.gameLocal.isClient) {
                 val p = Game_local.gameLocal.entities[clientNum] as idPlayer
                 p.spawnedTime = Game_local.gameLocal.time
-                if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
+                if (IsGametypeTeamBased()) {  // D3XP: includes CTF
                     SwitchToTeam(clientNum, -1, p.team)
                 }
                 p.tourneyRank = 0
@@ -365,6 +370,13 @@ object MultiplayerGame {
                             CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "serverMapRestart\n")
                             return
                         }
+                        // D3XP CTF: make sure flags are returned before warmup
+                        if (IsGametypeFlagBased()) {
+                            val flag0 = GetTeamFlag(0)
+                            if (flag0 != null) flag0.Return()
+                            val flag1 = GetTeamFlag(1)
+                            if (flag1 != null) flag1.Return()
+                        }
                         NewState(gameState_t.WARMUP)
                         if (Game_local.gameLocal.gameType == gameType_t.GAME_TOURNEY) {
                             CycleTourneyPlayers()
@@ -412,6 +424,23 @@ object MultiplayerGame {
                 }
 
                 gameState_t.GAMEON -> {
+                    // D3XP CTF: totally different logic branch
+                    if (IsGametypeFlagBased()) {
+                        if (PointLimitHit()) {
+                            val team = WinningTeam()
+                            assert(team != -1)
+                            NewState(gameState_t.GAMEREVIEW, null)
+                            PrintMessageEvent(-1, msg_evt_t.MSG_POINTLIMIT, team)
+                        } else if (TimeLimitHit()) {
+                            val team = WinningTeam()
+                            if (EnoughClientsToPlay() && team == -1) {
+                                NewState(gameState_t.SUDDENDEATH)
+                            } else {
+                                NewState(gameState_t.GAMEREVIEW, null)
+                                PrintMessageEvent(-1, msg_evt_t.MSG_TIMELIMIT)
+                            }
+                        }
+                    } else {
                     player = FragLimitHit()
                     if (player != null) {
                         // delay between detecting frag limit and ending game. let the death anims play
@@ -441,9 +470,18 @@ object MultiplayerGame {
                             }
                         }
                     }
+                    } // end else (non-CTF GAMEON)
                 }
 
                 gameState_t.SUDDENDEATH -> {
+                    // D3XP CTF: check point limit in sudden death
+                    if (IsGametypeFlagBased()) {
+                        val team = WinningTeam()
+                        if (team != -1) {
+                            NewState(gameState_t.GAMEREVIEW, null)
+                            PrintMessageEvent(-1, msg_evt_t.MSG_POINTLIMIT, team)
+                        }
+                    } else {
                     player = FragLeader()
                     if (player != null) {
                         if (0 == fragLimitTimeout) {
@@ -462,6 +500,7 @@ object MultiplayerGame {
                         PrintMessageEvent(-1, msg_evt_t.MSG_HOLYSHIT)
                         fragLimitTimeout = 0
                     }
+                    } // end else (non-CTF SUDDENDEATH)
                 }
 
                 else -> {}
@@ -598,7 +637,7 @@ object MultiplayerGame {
             if (killer != null) {
                 if (Game_local.gameLocal.gameType == gameType_t.GAME_LASTMAN) {
                     playerState[dead.entityNumber].fragCount--
-                } else if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
+                } else if (IsGametypeTeamBased()) {  // D3XP: includes CTF
                     if (killer === dead || killer.team == dead.team) {
                         // suicide or teamkill
                         TeamScore(killer.entityNumber, killer.team, -1)
@@ -614,7 +653,7 @@ object MultiplayerGame {
             } else if (killer != null) {
                 if (telefrag) {
                     PrintMessageEvent(-1, msg_evt_t.MSG_TELEFRAGGED, dead.entityNumber, killer.entityNumber)
-                } else if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM && dead.team == killer.team) {
+                } else if (IsGametypeTeamBased() && dead.team == killer.team) {  // D3XP: includes CTF
                     PrintMessageEvent(-1, msg_evt_t.MSG_KILLEDTEAM, dead.entityNumber, killer.entityNumber)
                 } else {
                     PrintMessageEvent(-1, msg_evt_t.MSG_KILLED, dead.entityNumber, killer.entityNumber)
@@ -663,9 +702,9 @@ object MultiplayerGame {
                 Common.common.GetLanguageDict().GetString("#str_04247")
             }
             mainGui.SetStateString("ui_ready", strReady)
-            mainGui.SetStateInt("teamon", if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) 1 else 0)
-            mainGui.SetStateInt("teamoff", if (Game_local.gameLocal.gameType != gameType_t.GAME_TDM) 1 else 0)
-            if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
+            mainGui.SetStateInt("teamon", if (IsGametypeTeamBased()) 1 else 0)
+            mainGui.SetStateInt("teamoff", if (!IsGametypeTeamBased()) 1 else 0)
+            if (IsGametypeTeamBased()) {
                 val p = Game_local.gameLocal.GetClientByNum(Game_local.gameLocal.localClientNum)!!
                 mainGui.SetStateInt("team", p.team)
             }
@@ -750,6 +789,34 @@ object MultiplayerGame {
                     i++
                 }
                 mainGui.SetStateString("kickChoices", kickList)
+
+                // D3XP CTF: build gametype vote choice list based on current map's supported gametypes
+                val gametype = Game_local.gameLocal.serverInfo.GetString("si_gameType")
+                val map = Game_local.gameLocal.serverInfo.GetString("si_map")
+                val numDecls = DeclManager.declManager.GetNumDecls(declType_t.DECL_MAPDEF)
+                for (mi in 0 until numDecls) {
+                    val mapDef = DeclManager.declManager.DeclByIndex(
+                        declType_t.DECL_MAPDEF,
+                        mi
+                    ) as? DeclEntityDef.idDeclEntityDef
+                    if (mapDef != null && idStr.Icmp(mapDef.GetName(), map) == 0 && mapDef.dict.GetBool(gametype)) {
+                        var k = 0
+                        var gametypeList = ""
+                        var gtj = 0
+                        while (SysCvar.si_gameTypeArgs[gtj] != null) {
+                            if (mapDef.dict.GetBool(SysCvar.si_gameTypeArgs[gtj]!!)) {
+                                if (gametypeList.isNotEmpty()) gametypeList += ";"
+                                gametypeList += SysCvar.si_gameTypeArgs[gtj]!!
+                                gameTypeVoteMap[k] = SysCvar.si_gameTypeArgs[gtj]
+                                k++
+                            }
+                            gtj++
+                        }
+                        mainGui.SetStateString("gametypeChoices", gametypeList)
+                        break
+                    }
+                }
+
                 mainGui.SetStateString("chattext", "")
                 mainGui.Activate(true, Game_local.gameLocal.time)
                 return mainGui
@@ -889,6 +956,23 @@ object MultiplayerGame {
                         if (voteIndex == vote_flags_t.VOTE_KICK) {
                             vote_clientNum = kickVoteMap[voteValue.toInt()]
                             ClientCallVote(voteIndex, Str.va("%d", vote_clientNum))
+                        } else if (voteIndex == vote_flags_t.VOTE_GAMETYPE) {
+                            // D3XP CTF: send the actual gametype index via gameTypeVoteMap
+                            var found = false
+                            var j = 0
+                            while (SysCvar.si_gameTypeArgs[j] != null) {
+                                if (gameTypeVoteMap[voteValue.toInt()] != null &&
+                                    idStr.Icmp(gameTypeVoteMap[voteValue.toInt()]!!, SysCvar.si_gameTypeArgs[j]!!) == 0
+                                ) {
+                                    ClientCallVote(voteIndex, Str.va("%d", j))
+                                    found = true
+                                    break
+                                }
+                                j++
+                            }
+                            if (!found) {
+                                ClientCallVote(voteIndex, voteValue)
+                            }
                         } else {
                             ClientCallVote(voteIndex, voteValue)
                         }
@@ -1043,6 +1127,11 @@ object MultiplayerGame {
                 msg.WriteBits(TempDump.btoi(playerState[i].ingame), 1)
                 i++
             }
+            // D3XP CTF: write team points and flag carriers
+            msg.WriteShort(teamPoints[0])
+            msg.WriteShort(teamPoints[1])
+            msg.WriteShort(player_red_flag)
+            msg.WriteShort(player_blue_flag)
         }
 
         fun ReadFromSnapshot(msg: idBitMsgDelta) {
@@ -1075,6 +1164,11 @@ object MultiplayerGame {
                 playerState[i].ingame = msg.ReadBits(1) != 0
                 i++
             }
+            // D3XP CTF: read team points and flag carriers
+            teamPoints[0] = msg.ReadShort()
+            teamPoints[1] = msg.ReadShort()
+            player_red_flag = msg.ReadShort()
+            player_blue_flag = msg.ReadShort()
         }
 
         fun GetGameState(): gameState_t {
@@ -1206,7 +1300,15 @@ object MultiplayerGame {
 
                 msg_evt_t.MSG_HOLYSHIT -> AddChatLine("%s", Common.common.GetLanguageDict().GetString("#str_06732"))
 
-                // D3XP CTF flag messages
+                // D3XP CTF messages
+                msg_evt_t.MSG_POINTLIMIT -> {
+                    AddChatLine(
+                        Common.common.GetLanguageDict().GetString("#str_11100"),
+                        if (parm1 != 0) Common.common.GetLanguageDict().GetString("#str_11110")
+                        else Common.common.GetLanguageDict().GetString("#str_11111")
+                    )
+                }
+
                 msg_evt_t.MSG_FLAGTAKEN -> {
                     val localPlayer = Game_local.gameLocal.GetLocalPlayer()
                     if (localPlayer != null && parm2 >= 0 && parm2 < Game_local.MAX_CLIENTS) {
@@ -1324,7 +1426,7 @@ object MultiplayerGame {
             val vote_fragLimit: Long
             val vote_clientNum: Long
             val vote_gameTypeIndex: Long //, vote_kickIndex;
-            var value: String?
+            var value: String
             val value2 = CharArray(MAX_STRING_CHARS)
             assert(clientNum != -1)
             assert(!Game_local.gameLocal.isClient)
@@ -1422,13 +1524,9 @@ object MultiplayerGame {
 
                 vote_flags_t.VOTE_GAMETYPE -> {
                     vote_gameTypeIndex = value.toLong(10)
-                    assert(vote_gameTypeIndex >= 0 && vote_gameTypeIndex <= 3)
-                    when (vote_gameTypeIndex.toInt()) {
-                        0 -> value = "Deathmatch"
-                        1 -> value = "Tourney"
-                        2 -> value = "Team DM"
-                        3 -> value = "Last Man"
-                    }
+                    // D3XP: use si_gameTypeArgs lookup instead of hardcoded switch (supports CTF)
+                    assert(vote_gameTypeIndex > 0 && vote_gameTypeIndex < gameType_t.entries.size)
+                    value = SysCvar.si_gameTypeArgs[vote_gameTypeIndex.toInt()]!!
                     if (
                         idStr.Icmp(
                             value,
@@ -1787,7 +1885,12 @@ object MultiplayerGame {
                 nextState = gameState_t.INACTIVE
                 nextStateSwitch = 0
             }
-            if (SysCvar.g_balanceTDM.GetBool() && lastGameType != gameType_t.GAME_TDM && Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
+            // D3XP CTF: reset team points and HUD
+            teamPoints[0] = 0
+            teamPoints[1] = 0
+            ClearHUDStatus()
+            // D3XP CTF: use IsGametypeTeamBased to include CTF in balance check
+            if (SysCvar.g_balanceTDM.GetBool() && lastGameType != gameType_t.GAME_TDM && lastGameType != gameType_t.GAME_CTF && IsGametypeTeamBased()) {
                 clientNum = 0
                 while (clientNum < Game_local.gameLocal.numClients) {
                     if (Game_local.gameLocal.entities[clientNum] != null && Game_local.gameLocal.entities[clientNum] is idPlayer) {
@@ -1809,7 +1912,7 @@ object MultiplayerGame {
         fun SwitchToTeam(clientNum: Int, oldteam: Int, newteam: Int) {
             var ent: idEntity?
             var i: Int
-            assert(Game_local.gameLocal.gameType == gameType_t.GAME_TDM)
+            assert(IsGametypeTeamBased())  // D3XP: CTF is also team-based
             assert(oldteam != newteam)
             assert(!Game_local.gameLocal.isClient)
             if (!Game_local.gameLocal.isClient && newteam >= 0 && IsInGame(clientNum)) {
@@ -1833,7 +1936,8 @@ object MultiplayerGame {
                 // alone on this team
                 playerState[clientNum].teamFragCount = 0
             }
-            if (gameState == gameState_t.GAMEON && oldteam != -1) {
+            // D3XP CTF: also kill during sudden death in flag-based games
+            if ((gameState == gameState_t.GAMEON || (IsGametypeFlagBased() && gameState == gameState_t.SUDDENDEATH)) && oldteam != -1) {
                 // when changing teams during game, kill and respawn
                 val p = Game_local.gameLocal.entities[clientNum] as idPlayer
                 if (p.IsInTeleport()) {
@@ -1841,7 +1945,15 @@ object MultiplayerGame {
                     p.SetPrivateCameraView(null)
                 }
                 p.Kill(true, true)
+                // D3XP CTF: drop flag when switching teams
+                if (IsGametypeFlagBased()) {
+                    p.DropFlag()
+                }
                 CheckAbortGame()
+            } else if (IsGametypeFlagBased() && oldteam != -1) {
+                // D3XP CTF: drop flag even outside GAMEON if switching teams
+                val p = Game_local.gameLocal.entities[clientNum] as idPlayer
+                p.DropFlag()
             }
         }
 
@@ -2270,7 +2382,7 @@ object MultiplayerGame {
                 j = 0
                 while (j < numRankedPlayers) {
                     var insert = false
-                    if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
+                    if (IsGametypeTeamBased()) {  // D3XP: includes CTF
                         if (player.team != players[j]!!.team) {
                             if (playerState[i].teamFragCount > playerState[players[j]!!.entityNumber].teamFragCount) {
                                 // team scores
@@ -2497,7 +2609,7 @@ object MultiplayerGame {
                         Str.va("player%d", iline),
                         rankedPlayers[i].GetUserInfo().GetString("ui_name")
                     )
-                    if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
+                    if (IsGametypeTeamBased()) {  // D3XP: includes CTF (in UpdateScoreboard)
                         value = idMath.ClampInt(
                             MP_PLAYER_MINFRAGS,
                             MP_PLAYER_MAXFRAGS,
@@ -2649,7 +2761,7 @@ object MultiplayerGame {
 
             // clear remaining lines (empty slots)
             iline++
-            while (iline < 5) {
+            while (iline < Game_local.MAX_CLIENTS) {  // D3XP: MAX_CLIENTS instead of 5
                 scoreBoard.SetStateString(Str.va("player%d", iline), "")
                 scoreBoard.SetStateString(Str.va("player%d_score", iline), "")
                 scoreBoard.SetStateString(Str.va("player%d_tdm_tscore", iline), "")
@@ -2674,12 +2786,14 @@ object MultiplayerGame {
                         Game_local.gameLocal.serverInfo.GetInt("si_fragLimit")
                     )
                 }
-            } else {
+            } else if (Game_local.gameLocal.gameType != gameType_t.GAME_CTF) {  // D3XP CTF: don't show fraglimit for CTF
                 Str.va(
                     "%s: %d",
                     Common.common.GetLanguageDict().GetString("#str_01982"),
                     Game_local.gameLocal.serverInfo.GetInt("si_fragLimit")
                 )
+            } else {
+                ""
             }
             timeinfo = if (Game_local.gameLocal.serverInfo.GetInt("si_timeLimit") > 0) {
                 Str.va(
@@ -2721,6 +2835,8 @@ object MultiplayerGame {
                 player.hud!!.SetStateInt("rank_self", 0)
                 i++
             }
+            // D3XP CTF: clear flag status on HUD
+            ClearHUDStatus()
         }
 
         private fun DrawScoreBoard(player: idPlayer) {
@@ -2766,11 +2882,17 @@ object MultiplayerGame {
             } else {
                 hud.SetStateString("vote", "")
             }
+            // D3XP CTF: set self_team on HUD
+            if (IsGametypeFlagBased()) {
+                hud.SetStateInt("self_team", player.team)
+            } else {
+                hud.SetStateInt("self_team", -1)
+            }
             hud.SetStateInt("rank_self", 0)
             if (gameState == gameState_t.GAMEON) {
                 i = 0
                 while (i < numRankedPlayers) {
-                    if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
+                    if (IsGametypeTeamBased()) {  // D3XP: includes CTF
                         hud.SetStateInt(
                             Str.va("player%d_score", i + 1),
                             playerState[rankedPlayers[i].entityNumber].teamFragCount
@@ -2789,8 +2911,9 @@ object MultiplayerGame {
                     i++
                 }
             }
+            // D3XP: use MAX_CLIENTS instead of 5
             i = if (gameState == gameState_t.GAMEON) numRankedPlayers else 0
-            while (i < 5) {
+            while (i < Game_local.MAX_CLIENTS) {
                 hud.SetStateString(Str.va("player%d", i + 1), "")
                 hud.SetStateString(Str.va("player%d_score", i + 1), "")
                 hud.SetStateInt(Str.va("rank%d", i + 1), 0)
@@ -2858,7 +2981,7 @@ object MultiplayerGame {
             if (NumActualClients(false, team) <= 1) {
                 return false
             }
-            if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
+            if (IsGametypeTeamBased()) {  // D3XP: includes CTF
                 if (0 == team[0] || 0 == team[1]) {
                     return false
                 }
@@ -2896,6 +3019,8 @@ object MultiplayerGame {
          ================
          */
         private fun FragLimitHit(): idPlayer? {
+            // D3XP CTF: flag-based games use point limit, not frag limit
+            if (IsGametypeFlagBased()) return null
             var i: Int
             var fragLimit = Game_local.gameLocal.serverInfo.GetInt("si_fragLimit")
             val leader: idPlayer?
@@ -2980,7 +3105,7 @@ object MultiplayerGame {
                     continue
                 }
                 val fragc =
-                    if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) playerState[i].teamFragCount else playerState[i].fragCount
+                    if (IsGametypeTeamBased()) playerState[i].teamFragCount else playerState[i].fragCount
                 if (fragc > high) {
                     high = fragc
                 }
@@ -3017,13 +3142,13 @@ object MultiplayerGame {
                     leader = p
                     count++
                     p.SetLeader(true)
-                    if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
+                    if (IsGametypeTeamBased()) {
                         teamLead[p.team] = true
                     }
                 }
                 i++
             }
-            return if (Game_local.gameLocal.gameType != gameType_t.GAME_TDM) {
+            return if (!IsGametypeTeamBased()) {
                 // more than one player at the highest frags
                 if (count > 1) {
                     null
@@ -3069,6 +3194,10 @@ object MultiplayerGame {
                     PlayGlobalSound(-1, snd_evt_t.SND_FIGHT)
                     matchStartedTime = Game_local.gameLocal.time
                     fragLimitTimeout = 0
+                    // D3XP CTF: reset team points and HUD
+                    teamPoints[0] = 0
+                    teamPoints[1] = 0
+                    ClearHUDStatus()
                     i = 0
                     while (i < Game_local.gameLocal.numClients) {
                         val ent = Game_local.gameLocal.entities[i]
@@ -3104,6 +3233,7 @@ object MultiplayerGame {
                 }
 
                 gameState_t.GAMEREVIEW -> {
+                    SetFlagMsg(false)  // D3XP CTF: suppress flag messages during review
                     nextState =
                         gameState_t.INACTIVE // used to abort a game. cancel out any upcoming state change
                     // set all players not ready and spectating
@@ -3119,6 +3249,7 @@ object MultiplayerGame {
                         i++
                     }
                     UpdateWinsLosses(player)
+                    SetFlagMsg(true)  // D3XP CTF: re-enable flag messages
                 }
 
                 gameState_t.SUDDENDEATH -> {
@@ -3137,6 +3268,19 @@ object MultiplayerGame {
                     NetworkSystem.networkSystem.ServerSendReliableMessage(-1, outMsg2)
                 }
 
+                // D3XP CTF: reset team points and player frag counts in warmup
+                gameState_t.WARMUP -> {
+                    teamPoints[0] = 0
+                    teamPoints[1] = 0
+                    if (IsGametypeFlagBased()) {
+                        for (j in 0 until Game_local.gameLocal.numClients) {
+                            val ent = Game_local.gameLocal.entities[j]
+                            if (ent == null || ent !is idPlayer) continue
+                            playerState[j].fragCount = 0
+                        }
+                    }
+                }
+
                 else -> {}
             }
             gameState = news
@@ -3151,7 +3295,7 @@ object MultiplayerGame {
                         continue
                     }
                     val player = ent
-                    if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
+                    if (IsGametypeTeamBased()) {
                         if (player === winner || player !== winner && player.team == winner.team) {
                             playerState[i].wins++
                             PlayGlobalSound(player.entityNumber, snd_evt_t.SND_YOUWIN)
@@ -3178,6 +3322,20 @@ object MultiplayerGame {
                             PlayGlobalSound(player.entityNumber, snd_evt_t.SND_YOUWIN)
                         } else if (!player.wantSpectate) {
                             PlayGlobalSound(player.entityNumber, snd_evt_t.SND_YOULOSE)
+                        }
+                    }
+                }
+            } else if (IsGametypeFlagBased()) {
+                // D3XP CTF: no specific winner player, but check winning team
+                val winteam = WinningTeam()
+                if (winteam != -1) {
+                    for (i in 0 until Game_local.gameLocal.numClients) {
+                        val ent = Game_local.gameLocal.entities[i]
+                        if (ent == null || ent !is idPlayer) continue
+                        if (ent.team == winteam) {
+                            PlayGlobalSound(ent.entityNumber, snd_evt_t.SND_YOUWIN)
+                        } else {
+                            PlayGlobalSound(ent.entityNumber, snd_evt_t.SND_YOULOSE)
                         }
                     }
                 }
@@ -3414,7 +3572,7 @@ object MultiplayerGame {
         private fun EnoughClientsToPlay(): Boolean {
             val team = IntArray(2)
             val clients = NumActualClients(false, team)
-            return if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
+            return if (IsGametypeTeamBased()) {  // D3XP: includes CTF
                 clients >= 2 && team[0] != 0 && team[1] != 0
             } else {
                 clients >= 2
@@ -3490,7 +3648,7 @@ object MultiplayerGame {
                         // sudden death may trigger while a player is dead, so there are still cases where we need to respawn
                         // don't do any respawns while we are in end game delay though
                         if (0 == fragLimitTimeout) {
-                            if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM || p.IsLeader()) {
+                            if (IsGametypeTeamBased() || p.IsLeader()) {  // D3XP: includes CTF
                                 if (_DEBUG) {
                                     assert(
                                         Game_local.gameLocal.gameType != gameType_t.GAME_TOURNEY || p.entityNumber == currentTourneyPlayer[0] || p.entityNumber == currentTourneyPlayer[1]
@@ -3505,7 +3663,7 @@ object MultiplayerGame {
                         }
                     } else {
                         if (Game_local.gameLocal.gameType == gameType_t.GAME_DM
-                            || Game_local.gameLocal.gameType == gameType_t.GAME_TDM
+                            || IsGametypeTeamBased()  // D3XP: includes CTF
                         ) {
                             if (gameState == gameState_t.WARMUP || gameState == gameState_t.COUNTDOWN || gameState == gameState_t.GAMEON) {
                                 p.ServerSpectate(false)
@@ -3824,6 +3982,7 @@ object MultiplayerGame {
             MSG_HOLYSHIT,
 
             // D3XP CTF messages
+            MSG_POINTLIMIT,
             MSG_FLAGTAKEN,
             MSG_FLAGDROP,
             MSG_FLAGRETURN,
@@ -3932,8 +4091,9 @@ object MultiplayerGame {
         }
 
         companion object {
+            // D3XP: Adding one to frag count to allow for the negative flag in numbers greater than 255
             val ASYNC_PLAYER_FRAG_BITS =
-                -idMath.BitsForInteger(MP_PLAYER_MAXFRAGS - MP_PLAYER_MINFRAGS) // player can have negative frags
+                -(idMath.BitsForInteger(MP_PLAYER_MAXFRAGS - MP_PLAYER_MINFRAGS) + 1) // player can have negative frags
             val ASYNC_PLAYER_PING_BITS = idMath.BitsForInteger(MP_PLAYER_MAXPING)
             val ASYNC_PLAYER_WINS_BITS = idMath.BitsForInteger(MP_PLAYER_MAXWINS)
 
@@ -3960,7 +4120,15 @@ object MultiplayerGame {
                 "sound/feedback/three.wav",
                 "sound/feedback/two.wav",
                 "sound/feedback/one.wav",
-                "sound/feedback/sudden_death.wav"
+                "sound/feedback/sudden_death.wav",
+                // D3XP CTF sounds
+                "sound/ctf/flag_capped_yours.wav",
+                "sound/ctf/flag_capped_theirs.wav",
+                "sound/ctf/flag_return.wav",
+                "sound/ctf/flag_taken_yours.wav",
+                "sound/ctf/flag_taken_theirs.wav",
+                "sound/ctf/flag_dropped_yours.wav",
+                "sound/ctf/flag_dropped_theirs.wav"
             )
 
             //
@@ -4022,18 +4190,49 @@ object MultiplayerGame {
             }
         }
 
-        fun IsFlagMsgOn(): Boolean {
-            return flagMsgOn
+        fun SetFlagMsg(b: Boolean) {
+            flagMsgOn = b
         }
 
-        fun GetFlagStatus(team: Int): Int {
-            if (team < 0 || team > 1) return flagStatus_t.FLAGSTATUS_NONE.ordinal
-            return teamFlagStatus[team].ordinal
+        fun IsFlagMsgOn(): Boolean {
+            return (GetGameState() == gameState_t.WARMUP || GetGameState() == gameState_t.GAMEON || GetGameState() == gameState_t.SUDDENDEATH) && flagMsgOn
+        }
+
+        fun GetFlagStatus(team: Int): flagStatus_t {
+            val teamFlag = GetTeamFlag(team)
+            if (teamFlag != null) {
+                if (!teamFlag.carried && !teamFlag.dropped) return flagStatus_t.FLAGSTATUS_INBASE
+                if (teamFlag.carried) return flagStatus_t.FLAGSTATUS_TAKEN
+                if (!teamFlag.carried && teamFlag.dropped) return flagStatus_t.FLAGSTATUS_STRAY
+            }
+            return flagStatus_t.FLAGSTATUS_NONE
         }
 
         fun GetFlagPoints(team: Int): Int {
             if (team < 0 || team > 1) return 0
             return teamPoints[team]
+        }
+
+        fun GetTeamFlag(team: Int): idItemTeam? {
+            assert(team == 0 || team == 1)
+            if (!IsGametypeFlagBased() || (team != 0 && team != 1)) return null
+            FindTeamFlags()
+            return teamFlags[team]
+        }
+
+        private fun FindTeamFlags() {
+            val flagDefs = arrayOf("team_CTF_redflag", "team_CTF_blueflag")
+            for (i in 0 until 2) {
+                var entity = Game_local.gameLocal.FindEntityUsingDef(null, flagDefs[i])
+                while (entity != null) {
+                    val flag = entity as? idItemTeam
+                    if (flag != null && flag.team == i) {
+                        teamFlags[i] = flag
+                        break
+                    }
+                    entity = Game_local.gameLocal.FindEntityUsingDef(entity, flagDefs[i])
+                }
+            }
         }
 
         fun GetFlagCarrier(team: Int): Int {
@@ -4075,6 +4274,89 @@ object MultiplayerGame {
                 if (ent.team != team) continue
                 PlayGlobalSound(i, evt, shader)
             }
+        }
+
+        fun ClearHUDStatus() {
+            for (i in 0 until Game_local.MAX_CLIENTS) {
+                val player = Game_local.gameLocal.entities[i] as? idPlayer ?: continue
+                if (player.hud == null) continue
+                player.hud!!.SetStateInt("red_flagstatus", 0)
+                player.hud!!.SetStateInt("blue_flagstatus", 0)
+                if (IsGametypeFlagBased()) {
+                    player.hud!!.SetStateInt("self_team", player.team)
+                } else {
+                    player.hud!!.SetStateInt("self_team", -1)
+                }
+            }
+        }
+
+        private fun PointLimitHit(): Boolean {
+            var pointLimit = Game_local.gameLocal.serverInfo.GetInt("si_fragLimit")
+            if (pointLimit > MP_CTF_MAXPOINTS) pointLimit = MP_CTF_MAXPOINTS
+            else if (pointLimit <= 0) pointLimit = MP_CTF_MAXPOINTS
+            if (teamPoints[0] == teamPoints[1]) return false
+            return teamPoints[0] >= pointLimit || teamPoints[1] >= pointLimit
+        }
+
+        private fun WinningTeam(): Int {
+            if (teamPoints[0] > teamPoints[1]) return 0
+            if (teamPoints[0] < teamPoints[1]) return 1
+            return -1
+        }
+
+        fun SetBestGametype(map: String) {
+            val gametype = Game_local.gameLocal.serverInfo.GetString("si_gameType")
+            val num = DeclManager.declManager.GetNumDecls(declType_t.DECL_MAPDEF)
+            for (i in 0 until num) {
+                val mapDef = DeclManager.declManager.DeclByIndex(
+                    declType_t.DECL_MAPDEF,
+                    i
+                ) as? DeclEntityDef.idDeclEntityDef
+                if (mapDef != null && idStr.Icmp(mapDef.GetName(), map) == 0) {
+                    if (mapDef.dict.GetBool(gametype)) return  // current gametype supported
+                    var j = 1
+                    while (SysCvar.si_gameTypeArgs[j] != null) {
+                        if (mapDef.dict.GetBool(SysCvar.si_gameTypeArgs[j]!!)) {
+                            SysCvar.si_gameType.SetString(SysCvar.si_gameTypeArgs[j]!!)
+                            return
+                        }
+                        j++
+                    }
+                    return  // no valid gametype found
+                }
+            }
+        }
+
+        fun ReloadScoreboard() {
+            scoreBoard = if (IsGametypeFlagBased()) {
+                UserInterface.uiManager.FindGui("guis/ctfscoreboard.gui", true, false, true)
+            } else {
+                UserInterface.uiManager.FindGui("guis/scoreboard.gui", true, false, true)
+            }
+            Precache()
+        }
+
+        fun GetBestGametype(map: String, gametype: String): String {
+            val num = DeclManager.declManager.GetNumDecls(declType_t.DECL_MAPDEF)
+            for (i in 0 until num) {
+                val mapDef = DeclManager.declManager.DeclByIndex(
+                    declType_t.DECL_MAPDEF,
+                    i
+                ) as? DeclEntityDef.idDeclEntityDef
+                if (mapDef != null && idStr.Icmp(mapDef.GetName(), map) == 0) {
+                    if (mapDef.dict.GetBool(gametype)) return gametype  // current gametype supported
+                    var j = 1
+                    while (SysCvar.si_gameTypeArgs[j] != null) {
+                        if (mapDef.dict.GetBool(SysCvar.si_gameTypeArgs[j]!!)) {
+                            return SysCvar.si_gameTypeArgs[j]!!
+                        }
+                        j++
+                    }
+                    return "deathmatch"  // no valid gametype found
+                }
+            }
+            // for testing a new map let it play any gametype
+            return gametype
         }
 
         init {
