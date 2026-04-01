@@ -38,6 +38,7 @@ import neo.idlib.LittleLong
 import neo.idlib.LittleShort
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.snPrintf
+import neo.idlib.containers.CInt
 import org.lwjgl.BufferUtils
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
@@ -781,7 +782,7 @@ object Image_files {
         val name = idStr((cname)!!)
         var pic: ByteBuffer? = null
         if (timestamp != null) {
-            timestamp[0] = -0x1
+            timestamp[0] = FILE_NOT_FOUND_TIMESTAMP.toLong()
         }
         if (width != null) {
             width[0] = 0
@@ -844,10 +845,18 @@ object Image_files {
                 if (idImageManager.image_roundDown.GetBool() && scaled_height > h) {
                     scaled_height = scaled_height shr 1
                 }
-                resampledBuffer = Image_process.R_ResampleTexture(pic, w, h, scaled_width, scaled_height)
+                val outWidth = CInt(scaled_width)
+                val outHeight = CInt(scaled_height)
+                resampledBuffer = Image_process.R_ResampleTexture(pic, w, h, outWidth, outHeight)
+                if (outWidth._val != scaled_width || outHeight._val != scaled_height) {
+                    common.Warning(
+                        "Texture '%s' didn't have power-of-two size *and* was too big, scaled from %dx%d to %dx%d",
+                        name.toString(), w, h, outWidth._val, outHeight._val
+                    )
+                }
                 pic = resampledBuffer
-                width[0] = scaled_width
-                height[0] = scaled_height
+                width[0] = outWidth._val
+                height[0] = outHeight._val
             }
         }
         return pic

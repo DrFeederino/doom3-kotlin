@@ -368,7 +368,6 @@ object draw_common {
         if (backEnd!!.viewDef!!.viewEntitys == null) {
             return
         }
-        tr_backend.RB_LogComment("---------- RB_STD_FillDepthBuffer ----------\n")
 
         // enable the second texture for mirror plane clipping if needed
         if (backEnd!!.viewDef!!.numClipPlanes != 0) {
@@ -396,6 +395,19 @@ object draw_common {
         qglEnable(GL_STENCIL_TEST)
         qgl.qglStencilFunc(GL_ALWAYS, 1, 255)
         tr_render.RB_RenderDrawSurfListWithFunction(drawSurfs!!, numDrawSurfs, RB_T_FillDepthBuffer.INSTANCE)
+
+        // DG: #3877 capture depth buffer for soft particles
+        val getDepthCapture = r_enableDepthCapture.GetInteger() == 1
+                || (r_enableDepthCapture.GetInteger() == -1 && r_useSoftParticles.GetBool())
+        if (getDepthCapture) {
+            Image.globalImages.currentDepthImage?.CopyDepthbuffer(
+                backEnd!!.viewDef!!.viewport.x1,
+                backEnd!!.viewDef!!.viewport.y1,
+                backEnd!!.viewDef!!.viewport.x2 - backEnd!!.viewDef!!.viewport.x1 + 1,
+                backEnd!!.viewDef!!.viewport.y2 - backEnd!!.viewDef!!.viewport.y1 + 1
+            )
+        }
+
         if (backEnd!!.viewDef!!.numClipPlanes != 0) {
             tr_backend.GL_SelectTexture(1)
             Image.globalImages.BindNull()
@@ -444,10 +456,10 @@ object draw_common {
         // screen power of two correction factor, assuming the copy to _currentRender
         // also copied an extra row and column for the bilerp
         val w = backEnd!!.viewDef!!.viewport.x2 - backEnd!!.viewDef!!.viewport.x1 + 1
-        pot = Image.globalImages.currentRenderImage!!.uploadWidth.integerValue
+        pot = Image.globalImages.currentRenderImage!!.uploadWidth._val
         parm.put(0, w.toFloat() / pot)
         val h = backEnd!!.viewDef!!.viewport.y2 - backEnd!!.viewDef!!.viewport.y1 + 1
-        pot = Image.globalImages.currentRenderImage!!.uploadHeight.integerValue
+        pot = Image.globalImages.currentRenderImage!!.uploadHeight._val
         parm.put(1, h.toFloat() / pot)
         parm.put(2, 0.0f)
         parm.put(3, 1.0f)
@@ -484,6 +496,26 @@ object draw_common {
                 programParameter_t.PP_GAMMA_BRIGHTNESS,
                 parm
             )
+        }
+
+        // DG: #3877 depth image reciprocal for soft particles
+        val depthImg = Image.globalImages.currentDepthImage
+        if (depthImg != null) {
+            val dw = depthImg.uploadWidth._val
+            val dh = depthImg.uploadHeight._val
+            val crw = Image.globalImages.currentRenderImage!!.uploadWidth._val
+            val crh = Image.globalImages.currentRenderImage!!.uploadHeight._val
+            if (dw > 0 && dh > 0) {
+                parm.put(0, 1.0f / dw)
+                parm.put(1, 1.0f / dh)
+                parm.put(2, dw.toFloat() / crw.toFloat())
+                parm.put(3, dh.toFloat() / crh.toFloat())
+                qglProgramEnvParameter4fvARB(
+                    ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB,
+                    programParameter_t.PP_CURDEPTH_RECIPR,
+                    parm
+                )
+            }
         }
 
         //
@@ -581,6 +613,9 @@ object draw_common {
         // get the expressions for conditionals / color / texcoords
         regs = surf.shaderRegisters!!
 
+        // DG: #3878 soft particles
+        val soft_particle = (surf.dsFlags and DSF_SOFT_PARTICLE) != 0
+
         // set face culling appropriately
         GL_Cull(shader.GetCullType()!!)
 
@@ -595,7 +630,7 @@ object draw_common {
         if (surf.space!!.weaponDepthHack) {
             tr_render.RB_EnterWeaponDepthHack()
         }
-        if (surf.space!!.modelDepthHack != 0.0f) {
+        if (surf.space!!.modelDepthHack != 0.0f && !soft_particle) { // #3878 soft particles don't want modelDepthHack
             tr_render.RB_EnterModelDepthHack(surf.space!!.modelDepthHack)
         }
         val ac =
@@ -623,6 +658,9 @@ object draw_common {
                 stage++
                 continue
             }
+
+            // DG: #3878 extract src_blend for soft particle check
+            val src_blend = pStage.drawStateBits and GLS_SRCBLEND_BITS
 
             // see if we are a new-style stage
             val newStage = pStage.newStage
@@ -716,6 +754,125 @@ object draw_common {
                 qgl.qglDisableVertexAttribArrayARB(9)
                 qgl.qglDisableVertexAttribArrayARB(10)
                 qgl.qglDisableClientState(GL_NORMAL_ARRAY)
+                stage++
+                continue
+            }
+
+            // DG: #3878 Soft particle rendering path
+            // Particles are automatically softened by the engine, unless they have shader programs
+            // of their own (i.e. are "newstages" handled above).
+            if (soft_particle
+                && surf.particle_radius > 0.0f
+                && (src_blend == GLS_SRCBLEND_ONE || src_blend == GLS_SRCBLEND_SRC_ALPHA)
+                && !r_skipNewAmbient!!.GetBool()
+            ) {
+                if (pStage.vertexColor == stageVertexColor_t.SVC_IGNORE) {
+                    // Ignoring vertexColor is not recommended for particles. Default to material color.
+                    color.put(0, regs[pStage.color.registers[0]])
+                    color.put(1, regs[pStage.color.registers[1]])
+                    color.put(2, regs[pStage.color.registers[2]])
+                    color.put(3, regs[pStage.color.registers[3]])
+                    glColor4fv(color)
+                } else {
+                    // A properly set-up particle shader
+                    qgl.qglColorPointer(4, GL_UNSIGNED_BYTE, idDrawVert.BYTES, ac.colorOffset().toLong())
+                    qgl.qglEnableClientState(GL_COLOR_ARRAY)
+                }
+
+                // Disable depth clipping. The fragment program will handle it to allow overdraw.
+                tr_backend.GL_State(pStage.drawStateBits or GLS_DEPTHFUNC_ALWAYS)
+
+                qgl.qglBindProgramARB(GL_VERTEX_PROGRAM_ARB, program_t.VPROG_SOFT_PARTICLE.ordinal)
+                qglEnable(GL_VERTEX_PROGRAM_ARB)
+
+                // Bind image and _currentDepth
+                tr_backend.GL_SelectTexture(0)
+                pStage.texture.image[0]!!.Bind()
+                tr_backend.GL_SelectTexture(1)
+                Image.globalImages.currentDepthImage!!.Bind()
+
+                qgl.qglBindProgramARB(ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB, program_t.FPROG_SOFT_PARTICLE.ordinal)
+                qglEnable(ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB)
+
+                // Texture matrix support
+                val texMatrix = Array(2) { idVec4() }
+                if (pStage.texture.hasMatrix) {
+                    texMatrix[0][0] = regs[pStage.texture.matrix[0][0]]
+                    texMatrix[0][1] = regs[pStage.texture.matrix[0][1]]
+                    texMatrix[0][2] = 0.0f
+                    texMatrix[0][3] = regs[pStage.texture.matrix[0][2]]
+
+                    texMatrix[1][0] = regs[pStage.texture.matrix[1][0]]
+                    texMatrix[1][1] = regs[pStage.texture.matrix[1][1]]
+                    texMatrix[1][2] = 0.0f
+                    texMatrix[1][3] = regs[pStage.texture.matrix[1][2]]
+
+                    if (texMatrix[0][3] < -40 || texMatrix[0][3] > 40) {
+                        texMatrix[0][3] -= texMatrix[0][3].toInt()
+                    }
+                    if (texMatrix[1][3] < -40 || texMatrix[1][3] > 40) {
+                        texMatrix[1][3] -= texMatrix[1][3].toInt()
+                    }
+                } else {
+                    texMatrix[0].set(1f, 0f, 0f, 0f)
+                    texMatrix[1].set(0f, 1f, 0f, 0f)
+                }
+                val parm4 = BufferUtils.createFloatBuffer(4)
+                parm4.put(0, texMatrix[0][0]); parm4.put(1, texMatrix[0][1]); parm4.put(
+                    2,
+                    texMatrix[0][2]
+                ); parm4.put(3, texMatrix[0][3])
+                qglProgramEnvParameter4fvARB(GL_VERTEX_PROGRAM_ARB, programParameter_t.PP_DIFFUSE_MATRIX_S, parm4)
+                parm4.put(0, texMatrix[1][0]); parm4.put(1, texMatrix[1][1]); parm4.put(
+                    2,
+                    texMatrix[1][2]
+                ); parm4.put(3, texMatrix[1][3])
+                qglProgramEnvParameter4fvARB(GL_VERTEX_PROGRAM_ARB, programParameter_t.PP_DIFFUSE_MATRIX_T, parm4)
+
+                // program.env[23] is the particle radius, given as { radius, 1/(fadeRange), 1/radius }
+                var fadeRange = 1.0f
+                if (src_blend == GLS_SRCBLEND_SRC_ALPHA) { // alpha blend
+                    fadeRange = surf.particle_radius * 2.0f
+                } else if (src_blend == GLS_SRCBLEND_ONE) { // additive blend
+                    fadeRange = surf.particle_radius
+                }
+                parm4.put(0, surf.particle_radius)
+                parm4.put(1, 1.0f / fadeRange)
+                parm4.put(2, 1.0f / surf.particle_radius)
+                parm4.put(3, 0.0f)
+                qglProgramEnvParameter4fvARB(
+                    ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB,
+                    programParameter_t.PP_PARTICLE_RADIUS,
+                    parm4
+                )
+
+                // program.env[24] is the color channel mask
+                if (src_blend == GLS_SRCBLEND_SRC_ALPHA) { // alpha blend
+                    parm4.put(0, 1.0f); parm4.put(1, 1.0f); parm4.put(2, 1.0f); parm4.put(3, 0.0f)
+                } else if (src_blend == GLS_SRCBLEND_ONE) { // additive blend
+                    parm4.put(0, 0.0f); parm4.put(1, 0.0f); parm4.put(2, 0.0f); parm4.put(3, 1.0f)
+                }
+                qglProgramEnvParameter4fvARB(
+                    ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB,
+                    programParameter_t.PP_PARTICLE_COLCHAN_MASK,
+                    parm4
+                )
+
+                // draw it
+                tr_render.RB_DrawElementsWithCounters(tri)
+
+                // Clean up GL state
+                tr_backend.GL_SelectTexture(1)
+                Image.globalImages.BindNull()
+                tr_backend.GL_SelectTexture(0)
+                Image.globalImages.BindNull()
+
+                qglDisable(GL_VERTEX_PROGRAM_ARB)
+                qglDisable(ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB)
+
+                if (pStage.vertexColor != stageVertexColor_t.SVC_IGNORE) {
+                    qgl.qglDisableClientState(GL_COLOR_ARRAY)
+                }
                 stage++
                 continue
             }
@@ -833,7 +990,7 @@ object draw_common {
         if (shader.TestMaterialFlag(Material.MF_POLYGONOFFSET)) {
             qglDisable(GL_POLYGON_OFFSET_FILL)
         }
-        if (surf.space!!.weaponDepthHack || surf.space!!.modelDepthHack != 0.0f) {
+        if (surf.space!!.weaponDepthHack || (!soft_particle && surf.space!!.modelDepthHack != 0.0f)) { // #3878 soft particles
             tr_render.RB_LeaveDepthHack()
         }
     }
@@ -852,7 +1009,6 @@ object draw_common {
         if (backEnd!!.viewDef!!.viewEntitys != null && r_skipAmbient!!.GetBool()) {
             return numDrawSurfs
         }
-        tr_backend.RB_LogComment("---------- RB_STD_DrawShaderPasses ----------\n")
 
         var isPostProcess = false
 
@@ -936,7 +1092,6 @@ object draw_common {
         if (drawSurfs == null) {
             return
         }
-        tr_backend.RB_LogComment("---------- RB_StencilShadowPass ----------\n")
         Image.globalImages.BindNull()
         qgl.qglDisableClientState(GL_TEXTURE_COORD_ARRAY)
 
@@ -996,7 +1151,6 @@ object draw_common {
         if (r_skipBlendLights!!.GetBool()) {
             return
         }
-        tr_backend.RB_LogComment("---------- RB_BlendLight ----------\n")
         lightShader = backEnd!!.vLight!!.lightShader!!
         regs = backEnd!!.vLight!!.shaderRegisters!!
 
@@ -1070,7 +1224,6 @@ object draw_common {
         val lightShader: idMaterial
         val stage: shaderStage_t?
         val regs: FloatArray
-        tr_backend.RB_LogComment("---------- RB_FogPass ----------\n")
 
         // create a surface for the light frustom triangles, which are oriented drawn side out
         frustumTris = backEnd!!.vLight!!.frustumTris!!
@@ -1173,7 +1326,6 @@ object draw_common {
         if (r_skipFogLights!!.GetBool() || r_showOverDraw!!.GetInteger() != 0 || backEnd!!.viewDef!!.isXraySubview /* dont fog in xray mode*/) {
             return
         }
-        tr_backend.RB_LogComment("---------- RB_STD_FogAllLights ----------\n")
         qglDisable(GL_STENCIL_TEST)
         vLight = backEnd!!.viewDef!!.viewLights
         while (vLight != null) {
@@ -1235,7 +1387,6 @@ object draw_common {
         if (r_skipLightScale!!.GetBool()) {
             return
         }
-        tr_backend.RB_LogComment("---------- RB_STD_LightScale ----------\n")
 
         // the scissor may be smaller than the viewport for subviews
         if (r_useScissor!!.GetBool()) {
@@ -1290,7 +1441,6 @@ object draw_common {
     fun RB_STD_DrawView() {
         val drawSurfs: Array<drawSurf_s>
         val numDrawSurfs: Int
-        tr_backend.RB_LogComment("---------- RB_STD_DrawView ----------\n")
         backEnd!!.depthFunc = GLS_DEPTHFUNC_EQUAL
         drawSurfs = backEnd!!.viewDef!!.drawSurfs
         numDrawSurfs = backEnd!!.viewDef!!.numDrawSurfs

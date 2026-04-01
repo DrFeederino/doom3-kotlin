@@ -36,6 +36,7 @@ import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
 import neo.framework.DeclParticle.idParticleStage
 import neo.framework.DeclParticle.particleGen_t
+import neo.framework.DeclParticle.prtOrientation_t
 import neo.idlib.BV.idBounds
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
@@ -56,10 +57,12 @@ object Model_prt {
      */
     class idRenderModelPrt : idRenderModelStatic() {
         private var particleSystem: idDeclParticle? = null
+        private val softeningRadii: ArrayList<Float> = ArrayList()
 
         override fun InitFromFile(fileName: String?) {
             name = idStr((fileName)!!)
             particleSystem = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, (fileName)) as idDeclParticle?
+            SetSofteningRadii()
         }
 
         override fun TouchData() {
@@ -132,7 +135,7 @@ object Model_prt {
                 val surfaceNum = CInt()
                 var surf: modelSurface_s?
                 if (staticModel.FindSurfaceWithId(stageNum, surfaceNum)) {
-                    surf = staticModel.surfaces[surfaceNum.integerValue]
+                    surf = staticModel.surfaces[surfaceNum._val]
                     R_FreeStaticTriSurfVertexCaches(surf!!.geometry!!)
                 } else {
                     surf = modelSurface_s()
@@ -220,6 +223,33 @@ object Model_prt {
                 surf.geometry!!.bounds.set(stage.bounds) // just always draw the particles
             }
             return staticModel
+        }
+
+        fun SofteningRadius(stage: Int): Float {
+            assert(particleSystem != null)
+            assert(stage > -1 && stage < softeningRadii.size)
+            return softeningRadii[stage]
+        }
+
+        private fun SetSofteningRadii() {
+            val ps = particleSystem ?: return
+            softeningRadii.clear()
+            softeningRadii.ensureCapacity(ps.stages.Num())
+            for (i in 0 until ps.stages.Num()) {
+                val stage = ps.stages[i]
+                if (stage.orientation == prtOrientation_t.POR_VIEW) {
+                    var diameter = maxOf(stage.size.from, stage.size.to)
+                    val scale = maxOf(stage.aspect.from, stage.aspect.to)
+                    diameter *= maxOf(scale, 1.0f)
+                    if (diameter > 2.0f) {
+                        softeningRadii.add(diameter * 0.8f / 2.0f)
+                    } else {
+                        softeningRadii.add(0.0f)
+                    }
+                } else {
+                    softeningRadii.add(-1.0f)
+                }
+            }
         }
 
         override fun Bounds(ent: renderEntity_s?): idBounds {

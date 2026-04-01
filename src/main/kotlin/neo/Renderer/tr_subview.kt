@@ -110,7 +110,6 @@ object tr_subview {
      */
     fun R_PreciseCullSurface(drawSurf: drawSurf_s, ndcBounds: idBounds): Boolean {
         val tri: srfTriangles_s
-        val numTriangles: Int
         val clip = idPlane()
         val eye = idPlane()
         var i: Int
@@ -153,7 +152,6 @@ object tr_subview {
         }
 
         // backface and frustum cull
-        numTriangles = tri.numIndexes / 3
         tr_main.R_GlobalPointToLocal(drawSurf.space!!.modelMatrix, tr.viewDef!!.renderView.vieworg, localView)
         i = 0
         while (i < tri.numIndexes) {

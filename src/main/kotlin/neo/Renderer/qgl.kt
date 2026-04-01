@@ -1907,7 +1907,17 @@ object qgl {
         pixels: ByteArray?
     ) {
         DEBUG_printName("glTexImage2D")
-        qglTexImage2D(target, level, internalformat, width, height, border, format, type, wrap(pixels!!))
+        qglTexImage2D(
+            target,
+            level,
+            internalformat,
+            width,
+            height,
+            border,
+            format,
+            type,
+            if (pixels != null) wrap(pixels) else null as ByteBuffer?
+        )
     }
 
     fun qglTexImage2D(

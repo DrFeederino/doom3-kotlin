@@ -113,7 +113,7 @@ object MegaTexture {
         //
         var image: idImage? = null
         var mega: idMegaTexture? = null
-        var tileMap: Array<Array<idTextureTile?>> = Array(TILE_PER_LEVEL, { arrayOfNulls(TILE_PER_LEVEL) })
+        var tileMap: Array<Array<idTextureTile>> = Array(TILE_PER_LEVEL) { Array(TILE_PER_LEVEL) { idTextureTile() } }
 
         //
         var tileOffset: Int = 0
@@ -179,8 +179,8 @@ object MegaTexture {
          ====================
          */
         fun UpdateTile(localX: Int, localY: Int, globalX: Int, globalY: Int) {
-            val tile: idTextureTile? = tileMap[localX][localY]
-            if (tile!!.x == globalX && tile.y == globalY) {
+            val tile: idTextureTile = tileMap[localX][localY]
+            if (tile.x == globalX && tile.y == globalY) {
                 return
             }
             if ((globalX and (TILE_PER_LEVEL - 1)) != localX || (globalY and (TILE_PER_LEVEL - 1)) != localY) {
@@ -274,8 +274,8 @@ object MegaTexture {
         fun Invalidate() {
             for (x in 0 until TILE_PER_LEVEL) {
                 for (y in 0 until TILE_PER_LEVEL) {
-                    tileMap[x][y]!!.y = -99999
-                    tileMap[x][y]!!.x = tileMap[x][y]!!.y
+                    tileMap[x][y].y = -99999
+                    tileMap[x][y].x = tileMap[x][y].y
                 }
             }
         }
@@ -300,7 +300,7 @@ object MegaTexture {
             @Transient
             val BYTES: Int = Integer.BYTES * 3
             fun ReadDdsFileHeader_t(): ByteBuffer {
-                return ByteBuffer.allocate(BYTES)
+                return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
             }
 
             fun ReadDdsFileHeader_t(buffer: ByteBuffer): megaTextureHeader_t {

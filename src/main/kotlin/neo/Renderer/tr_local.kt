@@ -185,6 +185,7 @@ val DEFAULT_FOG_DISTANCE: Float = 500.0f
 // unique srfTriangles_t
 // drawSurf_t are always allocated and freed every frame, they are never cached
 val DSF_VIEW_INSIDE_SHADOW: Int = 1
+val DSF_SOFT_PARTICLE: Int = 2
 
 //
 val FALLOFF_TEXTURE_SIZE: Int = 64
@@ -325,6 +326,8 @@ enum class program_t {
     FPROG_AMBIENT,
     VPROG_GLASSWARP,
     FPROG_GLASSWARP,
+    VPROG_SOFT_PARTICLE,
+    FPROG_SOFT_PARTICLE,
     PROG_USER
 }
 
@@ -491,6 +494,7 @@ class drawSurf_s {
     var geo: srfTriangles_s? = null
     var material: idMaterial? = null // may be NULL for shadow volumes
     var nextOnLight: drawSurf_s? = null // viewLight chains
+    var particle_radius: Float = 0.0f // DG: for soft particle rendering
     var scissorRect: idScreenRect? = null // for scissor clipping, local inside renderView viewport
     var shaderRegisters // evaluated and adjusted for referenceShaders
             : FloatArray? = null
@@ -1325,7 +1329,6 @@ class idRenderSystemLocal : idRenderSystem() {
     var identitySpace: viewEntity_s? = null // can use if we don't know viewDef->worldSpace is valid
 
     //
-    var lockSurfacesCmd: drawSurfsCommand_t? = null // use this when r_lockSurfaces = 1
     var lockSurfacesViewDef: viewDef_s? = null
     var lockSurfacesRealViewDef: viewDef_s? = null
     var  /*FILE*/logFile: FileChannel? = null // for logging GL calls and frame breaks
@@ -1409,7 +1412,6 @@ class idRenderSystemLocal : idRenderSystem() {
         ambientCubeImage = null
         viewDef = null
         pc = performanceCounters_t()
-        lockSurfacesCmd = drawSurfsCommand_t()
         identitySpace = viewEntity_s()
         stencilIncr = 0
         stencilDecr = 0
@@ -1827,8 +1829,8 @@ class idRenderSystemLocal : idRenderSystem() {
     }
 
     override fun GetGLSettings(width: CInt, height: CInt) {
-        width.integerValue = glConfig.vidWidth
-        height.integerValue = glConfig.vidHeight
+        width._val = glConfig.vidWidth
+        height._val = glConfig.vidHeight
     }
 
     override fun PrintMemInfo(mi: MemInfo_t) {
@@ -2374,9 +2376,6 @@ class idRenderSystemLocal : idRenderSystem() {
                 Common.common.Printf("write DC_UNCROP\n")
             }
         }
-    }
-
-    override fun GetCardCaps(oldCard: BooleanArray, nv10or20: BooleanArray) {
     }
 
     override fun UploadImage(imageName: String?, data: ByteBuffer?, width: Int, height: Int): Boolean {

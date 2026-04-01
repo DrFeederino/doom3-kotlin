@@ -547,6 +547,25 @@ fun R_FreeStaticTriSurfSilIndexes(tri: srfTriangles_s) {
 }
 
 /*
+ =================
+ R_FreeStaticTriSurfSilEdges
+ =================
+ */
+fun R_FreeStaticTriSurfSilEdges(tri: srfTriangles_s) {
+    tri.silEdges = null
+    tri.numSilEdges = 0
+}
+
+/*
+ =================
+ R_FreeStaticTriSurfIndexes
+ =================
+ */
+fun R_FreeStaticTriSurfIndexes(tri: srfTriangles_s) {
+    tri.indexes = null
+}
+
+/*
  ===============
  R_RangeCheckIndexes
 

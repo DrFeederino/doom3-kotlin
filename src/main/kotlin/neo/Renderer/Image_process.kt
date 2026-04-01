@@ -27,6 +27,7 @@ along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 package neo.Renderer
 
 import neo.framework.Common.Companion.common
+import neo.idlib.containers.CInt
 import org.lwjgl.BufferUtils
 import java.nio.ByteBuffer
 
@@ -46,9 +47,15 @@ object Image_process {
      after resampling to the next lower power of two.
      ================
      */
-    fun R_ResampleTexture(`in`: ByteBuffer, inwidth: Int, inheight: Int, outwidth: Int, outheight: Int): ByteBuffer {
-        var outwidth: Int = outwidth
-        var outheight: Int = outheight
+    fun R_ResampleTexture(
+        `in`: ByteBuffer,
+        inwidth: Int,
+        inheight: Int,
+        _outwidth: CInt,
+        _outheight: CInt
+    ): ByteBuffer {
+        var outwidth: Int = _outwidth._val
+        var outheight: Int = _outheight._val
         var i: Int
         var j: Int
         var frac: Int
@@ -62,6 +69,9 @@ object Image_process {
         if (outheight > MAX_DIMENSION) {
             outheight = MAX_DIMENSION
         }
+        // write clamped values back
+        _outwidth._val = outwidth
+        _outheight._val = outheight
         // FIX: was ByteBuffer.allocate() (heap) — must be direct for potential OpenGL upload
         out = BufferUtils.createByteBuffer(outwidth * outheight * 4)
         fracstep = inwidth * 0x10000 / outwidth

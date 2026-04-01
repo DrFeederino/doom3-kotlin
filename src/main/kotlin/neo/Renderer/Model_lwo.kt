@@ -2035,9 +2035,7 @@ object Model_lwo {
 
                 ID_TFLG -> {
                     flags = getU2(fp)
-                    if (flags and 1 == 1) {
-                        i = 0
-                    }
+                    i = 0
                     if (flags and 2 == 2) {
                         i = 1
                     }

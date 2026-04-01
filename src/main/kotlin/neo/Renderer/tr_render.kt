@@ -694,14 +694,6 @@ object tr_render {
             allowNoSpecular = tr.allowNoSpecular
         }
 
-        if (tr.logFile != null) {
-            tr_backend.RB_LogComment(
-                "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n",
-                lightShader.GetName(),
-                surfaceShader.GetName()
-            )
-        }
-
         // change the matrix and light projection vectors if needed
         if (surf.space !== backEnd!!.currentSpace) {
             backEnd!!.currentSpace = surf.space

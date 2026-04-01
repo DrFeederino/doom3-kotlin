@@ -36,12 +36,8 @@ import org.lwjgl.opengl.ARBMultitexture
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL13
-import java.io.IOException
 import java.nio.*
-import java.nio.channels.FileChannel
 import java.util.*
-import java.util.logging.Level
-import java.util.logging.Logger
 
 object tr_backend {
     /*
@@ -61,8 +57,6 @@ object tr_backend {
      This routine is responsible for setting the most commonly changed state
      ====================
      */
-    private var DBG_GL_State: Int = 0
-
     /*
      ======================
      RB_SetDefaultGLState
@@ -73,7 +67,6 @@ object tr_backend {
      */
     fun RB_SetDefaultGLState() {
         var i: Int
-        RB_LogComment("--- R_SetDefaultGLState ---\n")
         qgl.qglClearDepth(1.0)
         qgl.qglColor4f(1.0f, 1.0f, 1.0f, 1.0f)
 
@@ -124,19 +117,6 @@ object tr_backend {
         }
     }
 
-    /*
-     ====================
-     RB_LogComment
-     ====================
-     */
-    fun RB_LogComment(vararg comment: Any?) {
-        if (null == tr.logFile) {
-            return
-        }
-        fprintf(tr.logFile!!, "// ")
-        vfprintf(tr.logFile!!, comment)
-    }
-
     //=============================================================================
     /*
      ====================
@@ -153,7 +133,6 @@ object tr_backend {
         }
         qgl.qglActiveTextureARB(ARBMultitexture.GL_TEXTURE0_ARB + unit)
         qgl.qglClientActiveTextureARB(ARBMultitexture.GL_TEXTURE0_ARB + unit)
-        RB_LogComment("glActiveTextureARB( %d );\nglClientActiveTextureARB( %d );\n", unit, unit)
         backEnd!!.glState.currenttmu = unit
     }
 
@@ -238,7 +217,6 @@ object tr_backend {
      */
     fun GL_State(stateBits: Int) {
         val diff: Int
-        DBG_GL_State++
         if (!r_useStateCaching!!.GetBool() || backEnd!!.glState.forceGlState) {
             // make sure everything is set all the time, so we
             // can see if our delta checking is screwing up
@@ -465,8 +443,8 @@ object tr_backend {
 
             // show in proportional size in mode 2
             if (r_showImages!!.GetInteger() == 2) {
-                w *= image.uploadWidth.integerValue / 512.0f
-                h *= image.uploadHeight.integerValue / 512.0f
+                w *= image.uploadWidth._val / 512.0f
+                h *= image.uploadHeight._val / 512.0f
             }
             image.Bind()
             qgl.qglBegin(GL11.GL_QUADS)
@@ -502,8 +480,6 @@ object tr_backend {
         if (r_finish!!.GetBool()) {
             qgl.qglFinish()
         }
-        RB_LogComment("***************** RB_SwapBuffers *****************\n\n\n")
-
         // don't flip if drawing to front buffer
         if (!r_frontBuffer!!.GetBool()) {
             GLimp_SwapBuffers()
@@ -523,13 +499,12 @@ object tr_backend {
         if (r_skipCopyTexture!!.GetBool()) {
             return
         }
-        RB_LogComment("***************** RB_CopyRender *****************\n")
         if (cmd.image != null) {
             val imageWidth = CInt(cmd.imageWidth)
             val imageHeight = CInt(cmd.imageHeight)
             cmd.image!!.CopyFramebuffer(cmd.x, cmd.y, imageWidth, imageHeight, false)
-            cmd.imageWidth = imageWidth.integerValue
-            cmd.imageHeight = imageHeight.integerValue
+            cmd.imageWidth = imageWidth._val
+            cmd.imageHeight = imageHeight._val
         }
     }
 
@@ -601,32 +576,6 @@ object tr_backend {
                 backEnd!!.c_copyFrameBuffer
             )
             backEnd!!.c_copyFrameBuffer = 0
-        }
-    }
-
-    private fun fprintf(logFile: FileChannel?, string: String) {
-        if (logFile == null) {
-            return
-        }
-        try {
-            logFile.write(ByteBuffer.wrap(string.toByteArray()))
-        } catch (ex: IOException) {
-            Logger.getLogger(tr_backend::class.java.getName()).log(Level.SEVERE, null, ex)
-        }
-    }
-
-    private fun vfprintf(logFile: FileChannel?, vararg comments: Any) {
-        if (logFile == null) {
-            return
-        }
-        try {
-            var bla = ""
-            for (c: Any in comments) {
-                bla += c
-            }
-            logFile.write(ByteBuffer.wrap(bla.toByteArray()))
-        } catch (ex: IOException) {
-            Logger.getLogger(tr_backend::class.java.getName()).log(Level.SEVERE, null, ex)
         }
     }
 }

@@ -973,7 +973,7 @@ object Interaction {
                         if ((entityDef!!.parms.suppressShadowInViewID != 0 && entityDef!!.parms.suppressShadowInViewID == tr.viewDef!!.renderView.viewID)) {
                             continue
                         }
-                        if ((entityDef!!.parms.suppressShadowInLightID != 0 && entityDef!!.parms.suppressShadowInLightID == lightDef!!.parms.lightId.integerValue)) {
+                        if ((entityDef!!.parms.suppressShadowInLightID != 0 && entityDef!!.parms.suppressShadowInLightID == lightDef!!.parms.lightId._val)) {
                             continue
                         }
                     }

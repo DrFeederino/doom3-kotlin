@@ -65,7 +65,6 @@ import neo.idlib.Text.Str.idStr.Companion.Cmpn
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.VectorSet.idVectorSubset
-import neo.idlib.geometry.DrawVert
 import neo.idlib.geometry.JointTransform.idJointQuat
 import neo.idlib.geometry.Winding.idWinding.Companion.TriangleArea
 import neo.idlib.idException
@@ -619,21 +618,21 @@ object Model_local {
             val vert = CInt()
             f.ReadInt(numSurfaces)
             i = 0
-            while (i < numSurfaces.integerValue) {
+            while (i < numSurfaces._val) {
                 val surf = modelSurface_s()
                 surf.shader = DeclManager.declManager.FindMaterial(f.ReadHashString())
                 val tri: srfTriangles_s = R_AllocStaticTriSurf()
                 f.ReadInt(index)
-                tri.numIndexes = index.integerValue
+                tri.numIndexes = index._val
                 R_AllocStaticTriSurfIndexes(tri, tri.numIndexes)
                 j = 0
                 while (j < tri.numIndexes) {
                     f.ReadInt(index)
-                    tri.indexes!![j] = index.integerValue
+                    tri.indexes!![j] = index._val
                     ++j
                 }
                 f.ReadInt(vert)
-                tri.numVerts = vert.integerValue
+                tri.numVerts = vert._val
                 R_AllocStaticTriSurfVerts(tri, tri.numVerts)
                 j = 0
                 while (j < tri.numVerts) {
@@ -1791,7 +1790,7 @@ object Model_local {
                     val expand: Float = 2 * 32 * vertexEpsilon
                     val mins = idVec3()
                     val maxs = idVec3()
-                    SIMDProcessor!!.MinMax(mins, maxs, mesh.vertexes as Array<DrawVert.idDrawVert>, mesh.numVertexes)
+                    SIMDProcessor!!.MinMax(mins, maxs, mesh.vertexes!!, mesh.numVertexes)
                     mins.minusAssign(idVec3(expand, expand, expand))
                     maxs.plusAssign(idVec3(expand, expand, expand))
                     vertexSubset.Init(mins, maxs, 32, 1024)
@@ -2186,7 +2185,7 @@ object Model_local {
             i = 0
             while (i < surfaces.Num()) {
                 if (surfaces[i]!!.id == id) {
-                    surfaceNum.integerValue = i
+                    surfaceNum._val = i
                     return true
                 }
                 i++

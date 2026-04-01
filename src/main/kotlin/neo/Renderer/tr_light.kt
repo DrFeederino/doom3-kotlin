@@ -689,8 +689,8 @@ object tr_light {
 
             // see if we are suppressing the light in this view
             if (!r_skipSuppress!!.GetBool()) {
-                if ((light.parms.suppressLightInViewID.integerValue != 0
-                            && light.parms.suppressLightInViewID.integerValue == tr.viewDef!!.renderView.viewID)
+                if ((light.parms.suppressLightInViewID._val != 0
+                            && light.parms.suppressLightInViewID._val == tr.viewDef!!.renderView.viewID)
                 ) {
                     if (vLight === tr.viewDef!!.viewLights) {
                         ptr = vLight.next
@@ -702,8 +702,8 @@ object tr_light {
                     light.viewCount = -1
                     continue
                 }
-                if ((light.parms.allowLightInViewID.integerValue != 0
-                            && light.parms.allowLightInViewID.integerValue != tr.viewDef!!.renderView.viewID)
+                if ((light.parms.allowLightInViewID._val != 0
+                            && light.parms.allowLightInViewID._val != tr.viewDef!!.renderView.viewID)
                 ) {
                     if (vLight === tr.viewDef!!.viewLights) {
                         ptr = vLight.next
@@ -883,7 +883,8 @@ object tr_light {
     fun R_IssueEntityDefCallback(def: idRenderEntityLocal): Boolean {
         val update: Boolean
         val oldBounds = idBounds()
-        if (r_checkBounds!!.GetBool()) {
+        val checkBounds = r_checkBounds!!.GetBool()
+        if (checkBounds) {
             oldBounds.set(def.referenceBounds)
         }
         def.archived = false
@@ -895,8 +896,9 @@ object tr_light {
         }
         if (null == def.parms.hModel) {
             Common.common.Error("R_IssueEntityDefCallback: dynamic entity callback didn't set model")
+            return false
         }
-        if (r_checkBounds!!.GetBool()) {
+        if (checkBounds) {
             if ((oldBounds[0, 0] > def.referenceBounds[0, 0] + CHECK_BOUNDS_EPSILON
                         ) || (oldBounds[0, 1] > def.referenceBounds[0, 1] + CHECK_BOUNDS_EPSILON
                         ) || (oldBounds[0, 2] > def.referenceBounds[0, 2] + CHECK_BOUNDS_EPSILON
@@ -996,7 +998,8 @@ object tr_light {
 
     fun R_AddDrawSurf(
         tri: srfTriangles_s?, space: viewEntity_s, renderEntity: renderEntity_s,
-        shader: idMaterial, scissor: idScreenRect?
+        shader: idMaterial, scissor: idScreenRect?,
+        soft_particle_radius: Float = -1.0f
     ) {
         val drawSurf: drawSurf_s
         val shaderParms: FloatArray
@@ -1007,7 +1010,14 @@ object tr_light {
         drawSurf.material = shader
         drawSurf.scissorRect = idScreenRect(scissor!!)
         drawSurf.sort = shader.GetSort() + tr.sortOffset
-        drawSurf.dsFlags = 0
+
+        if (soft_particle_radius != -1.0f) { // #3878
+            drawSurf.dsFlags = DSF_SOFT_PARTICLE
+            drawSurf.particle_radius = soft_particle_radius
+        } else {
+            drawSurf.dsFlags = 0
+            drawSurf.particle_radius = 0.0f
+        }
 
         // bumping this offset each time causes surfaces with equal sort orders to still
         // deterministically draw in the order they are added
@@ -1233,8 +1243,27 @@ object tr_light {
                     VertexCache.vertexCache.Touch(tri.indexCache)
                 }
 
+                // Soft Particles -- SteveL #3878
+                var particle_radius = -1.0f
+                if (r_useSoftParticles.GetBool() && r_enableDepthCapture.GetInteger() != 0
+                    && !shader[0]!!.ReceivesLighting()
+                    && tr.viewDef!!.renderView.viewID >= 0
+                ) {
+                    val prt = def.parms.hModel as? Model_prt.idRenderModelPrt
+                    if (prt != null) {
+                        particle_radius = prt.SofteningRadius(surf!!.id)
+                    }
+                }
+
                 // add the surface for drawing
-                R_AddDrawSurf(tri, vEntity, vEntity.entityDef!!.parms, shader[0]!!, vEntity.scissorRect)
+                R_AddDrawSurf(
+                    tri,
+                    vEntity,
+                    vEntity.entityDef!!.parms,
+                    shader[0]!!,
+                    vEntity.scissorRect,
+                    particle_radius
+                )
 
                 // ambientViewCount is used to allow light interactions to be rejected
                 // if the ambient surface isn't visible at all
@@ -1415,6 +1444,20 @@ object tr_light {
                 i++
                 continue
             } else if (!tr.viewDef!!.isXraySubview && vEntity.entityDef!!.parms.xrayIndex == 2) {
+                if (vEntity.entityDef!!.parms.timeGroup != 0) {
+                    tr.viewDef!!.floatTime = oldFloatTime
+                    tr.viewDef!!.renderView.time = oldTime
+                }
+                vEntity = vEntity.next
+                i++
+                continue
+            }
+
+            // Don't let particle entities re-instantiate their dynamic model during
+            // non-visible views -- SteveL #3970
+            if (tr.viewDef!!.renderView.viewID < 0
+                && vEntity.entityDef!!.parms.hModel is Model_prt.idRenderModelPrt
+            ) {
                 if (vEntity.entityDef!!.parms.timeGroup != 0) {
                     tr.viewDef!!.floatTime = oldFloatTime
                     tr.viewDef!!.renderView.time = oldTime

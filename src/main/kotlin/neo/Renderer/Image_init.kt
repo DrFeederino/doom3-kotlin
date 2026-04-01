@@ -329,7 +329,7 @@ object Image_init {
                 image = Image.globalImages.images[i]
                 if (uncompressedOnly) {
                     if (((image!!.internalFormat >= EXTTextureCompressionS3TC.GL_COMPRESSED_RGB_S3TC_DXT1_EXT && image.internalFormat <= EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
-                                || image.internalFormat == 0x80E5)
+                                || image.internalFormat == 0x80E5 || image.internalFormat == Image.GL_COMPRESSED_RGBA_BPTC_UNORM)
                     ) {
                         i++
                         continue
@@ -431,7 +431,7 @@ object Image_init {
                     while (j < classifications[i].Num()) {
                         partialSize += sortedArray[classifications[i][j]]!!.image!!.StorageSize()
                         if (overSized) {
-                            if (sortedArray[classifications[i][j]]!!.image!!.uploadWidth.integerValue > IC_Info[i].maxWidth && sortedArray[classifications[i][j]]!!.image!!.uploadHeight.integerValue > IC_Info[i].maxHeight
+                            if (sortedArray[classifications[i][j]]!!.image!!.uploadWidth._val > IC_Info[i].maxWidth && sortedArray[classifications[i][j]]!!.image!!.uploadHeight._val > IC_Info[i].maxHeight
                             ) {
                                 overSizedList.Append(classifications[i][j])
                             }
@@ -861,6 +861,32 @@ object Image_init {
 
         companion object {
             val instance: GeneratorFunction = R_RGBA8Image()
+        }
+    }
+
+    // DG: for soft particles (#3877) - depth image placeholder
+    internal class R_DepthImage private constructor() : GeneratorFunction() {
+        override fun run(image: idImage) {
+            val data: ByteBuffer =
+                ByteBuffer.allocate(idImage.DEFAULT_SIZE * idImage.DEFAULT_SIZE * 4)
+
+            data.put(0, 16.toByte())
+            data.put(1, 32.toByte())
+            data.put(2, 48.toByte())
+            data.put(3, 96.toByte())
+            image.GenerateImage(
+                data,
+                idImage.DEFAULT_SIZE,
+                idImage.DEFAULT_SIZE,
+                textureFilter_t.TF_NEAREST,
+                false,
+                textureRepeat_t.TR_CLAMP,
+                textureDepth_t.TD_HIGH_QUALITY
+            )
+        }
+
+        companion object {
+            val instance: GeneratorFunction = R_DepthImage()
         }
     }
 

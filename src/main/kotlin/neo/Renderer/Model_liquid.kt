@@ -117,9 +117,7 @@ object Model_liquid {
             size_x = scale_x * verts_x
             size_y = scale_y * verts_y
             while (parser.ReadToken(token)) {
-                if (0 == token.Icmp("seed")) {
-                    seed = parser.ParseInt()
-                } else if (0 == token.Icmp("size_x")) {
+                if (0 == token.Icmp("size_x")) {
                     size_x = parser.ParseFloat()
                 } else if (0 == token.Icmp("size_y")) {
                     size_y = parser.ParseFloat()

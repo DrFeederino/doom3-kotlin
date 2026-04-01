@@ -405,7 +405,7 @@ object Model_md5 {
                 w.x = src.x * scale
                 w.y = src.y * scale
                 w.z = src.z * scale
-                w.w = src.w * scale
+                w.w = src.w
                 w
             }
             SIMDProcessor!!.TransformVerts(
@@ -714,8 +714,8 @@ object Model_md5 {
                 }
                 var surf: modelSurface_s?
                 if (staticModel.FindSurfaceWithId(i, surfaceNum)) {
-                    mesh.surfaceNum = surfaceNum.integerValue
-                    surf = staticModel.surfaces[surfaceNum.integerValue]
+                    mesh.surfaceNum = surfaceNum._val
+                    surf = staticModel.surfaces[surfaceNum._val]
                 } else {
 
                     // Remove Overlays before adding new surfaces

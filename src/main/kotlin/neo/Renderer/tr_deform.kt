@@ -444,7 +444,7 @@ object tr_deform {
         tri = surf.geo!!
         if (tri.numVerts != 4 || tri.numIndexes != 6) {
             //FIXME: temp hack for flares on tripleted models
-            Common.common.Warning("R_FlareDeform: not a single quad")
+            Common.common.DPrintf("R_FlareDeform: not a single quad\n")
             return
         }
 
@@ -963,7 +963,6 @@ object tr_deform {
                 val stageAge: Int =
                     (g.renderView.time + renderEntity.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] * 1000 - stage.timeOffset * 1000).toInt()
                 val stageCycle: Int = stageAge / stage.cycleMsec
-                var inCycleTime: Int = stageAge - stageCycle * stage.cycleMsec
 
                 // some particles will be in this cycle, some will be in the previous cycle
                 steppingRandom.SetSeed(
@@ -997,7 +996,7 @@ object tr_deform {
                     } else {
                         g.random = idRandom(steppingRandom2)
                     }
-                    inCycleTime = particleAge - particleCycle * stage.cycleMsec
+                    val inCycleTime = particleAge - particleCycle * stage.cycleMsec
                     if ((renderEntity.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] != 0.0f
                                 && g.renderView.time - inCycleTime >= renderEntity.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] * 1000)
                     ) {

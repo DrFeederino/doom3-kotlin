@@ -41,6 +41,7 @@ import neo.idlib.LittleFloat
 import neo.idlib.LittleLong
 import neo.idlib.LittleShort
 import neo.idlib.geometry.DrawVert.idDrawVert
+import neo.idlib.math.idMath
 import neo.idlib.math.idVec3
 import java.nio.ByteBuffer
 import java.util.*
@@ -241,7 +242,11 @@ object Model_md3 {
             var size: Int
             name.set(fileName)
             size = fileSystem.ReadFile(fileName!!, buffer, null)
-            if (0 == size || size < 0) {
+            if (size <= md3Header_s.BYTES) {
+                if (buffer[0] != null) {
+                    fileSystem.FreeFile(buffer)
+                }
+                MakeDefaultModel()
                 return
             }
             pinmodel = md3Header_s()
@@ -253,6 +258,7 @@ object Model_md3 {
                     "InitFromFile: %s has wrong version (%d should be %d)",
                     (fileName), version, MD3_VERSION
                 )
+                MakeDefaultModel()
                 return
             }
             size = LittleLong(pinmodel.ofsEnd)
@@ -272,6 +278,7 @@ object Model_md3 {
             if (md3!!.numFrames < 1) {
                 Common.common.Warning("InitFromFile: %s has no frames", (fileName))
                 fileSystem.FreeFile(buffer)
+                MakeDefaultModel()
                 return
             }
 
@@ -427,12 +434,18 @@ object Model_md3 {
                 cachedModel = null
             }
             staticModel = idRenderModelStatic()
+            staticModel.InitEmpty("_MD3_Snapshot_")
             staticModel.bounds.Clear()
 
             // TODO: these need set by an entity
-            frame = ent!!.shaderParms[RenderWorld.SHADERPARM_MD3_FRAME]
-                .toInt() // probably want to keep frames < 1000 or so
-            oldframe = ent.shaderParms[RenderWorld.SHADERPARM_MD3_LASTFRAME].toInt()
+            frame = idMath.ClampInt(
+                0, md3!!.numFrames - 1,
+                ent!!.shaderParms[RenderWorld.SHADERPARM_MD3_FRAME].toInt()
+            )
+            oldframe = idMath.ClampInt(
+                0, md3!!.numFrames - 1,
+                ent.shaderParms[RenderWorld.SHADERPARM_MD3_LASTFRAME].toInt()
+            )
             backlerp = ent.shaderParms[RenderWorld.SHADERPARM_MD3_BACKLERP]
 
             for (i in 0 until md3!!.numSurfaces) {
@@ -463,6 +476,7 @@ object Model_md3 {
                     stri.st[1] = surface.verts!![k]!!.st[1]
                 }
                 R_BoundTriSurf(tri)
+                surf.id = staticModel.NumSurfaces()
                 staticModel.AddSurface(surf)
                 staticModel.bounds.AddPoint(surf.geometry!!.bounds[0])
                 staticModel.bounds.AddPoint(surf.geometry!!.bounds[1])
@@ -480,7 +494,10 @@ object Model_md3 {
                 return ret
             }
 
-            val frameIdx = ent.shaderParms[RenderWorld.SHADERPARM_MD3_FRAME].toInt()
+            val frameIdx = idMath.ClampInt(
+                0, md3!!.numFrames - 1,
+                ent.shaderParms[RenderWorld.SHADERPARM_MD3_FRAME].toInt()
+            )
             val frame: md3Frame_s = md3!!.frames!![frameIdx]!!
             ret.AddPoint(frame.bounds[0])
             ret.AddPoint(frame.bounds[1])

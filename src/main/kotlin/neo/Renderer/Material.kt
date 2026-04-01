@@ -1139,7 +1139,7 @@ object Material {
         // special effects from being combined into a single surface
         // guis, merging sprites or other effects, mirrors and remote views are always discrete
         fun IsDiscrete(): Boolean {
-            return ((entityGui != 0) || (gui != null) || (deform != deform_t.DFRM_NONE) || (sort == SS_SUBVIEW.toFloat()
+            return ((entityGui != 0) || (gui != null) || (deform != deform_t.DFRM_NONE) || (sort.toInt() == SS_SUBVIEW
                     ) || ((surfaceFlags and SURF_DISCRETE) != 0))
         }
 
@@ -1395,12 +1395,12 @@ object Material {
 
         fun GetImageWidth(): Int {
             assert((GetStage(0) != null && GetStage(0)!!.texture.image!![0] != null))
-            return GetStage(0)!!.texture.image!![0]!!.uploadWidth.integerValue
+            return GetStage(0)!!.texture.image!![0]!!.uploadWidth._val
         }
 
         fun GetImageHeight(): Int {
             assert((GetStage(0) != null && GetStage(0)!!.texture.image!![0] != null))
-            return GetStage(0)!!.texture.image!![0]!!.uploadHeight.integerValue
+            return GetStage(0)!!.texture.image!![0]!!.uploadHeight._val
         }
 
         fun SetGui(_gui: String?) {
@@ -1637,12 +1637,10 @@ object Material {
          */
         private fun ParseMaterial(src: idLexer) {
             val token = idToken()
-            val s: Int
             val buffer = CharArray(1024)
             var str: String?
             val newSrc = idLexer()
             var i: Int
-            s = 0
             numOps = 0
             numRegisters = expRegister_t.EXP_REG_NUM_PREDEFINED.ordinal // leave space for the parms to be copied in
             i = 0
@@ -1897,10 +1895,8 @@ object Material {
                 i = 0
                 while (i < numStages) {
                     if (pd!!.parseStages[i]!!.lighting != stageLighting_t.SL_AMBIENT || pd!!.parseStages[i]!!.texture.texgen != texgen_t.TG_EXPLICIT) {
-                        if (cullType == cullType_t.CT_TWO_SIDED) {
-                            cullType = cullType_t.CT_FRONT_SIDED
-                            shouldCreateBackSides = true
-                        }
+                        cullType = cullType_t.CT_FRONT_SIDED
+                        shouldCreateBackSides = true
                         break
                     }
                     i++
@@ -1966,7 +1962,7 @@ object Material {
             } else if (0 == token.Icmp("portalSky")) {
                 sort = SS_PORTAL_SKY.toFloat()
             } else {
-                sort = token.toString().toFloat()
+                sort = token.toString().toFloatOrNull() ?: 0.0f
             }
         }
 
@@ -2501,6 +2497,10 @@ object Material {
                 }
                 if (0 == token.Icmp("maskDepth")) {
                     ss.drawStateBits = ss.drawStateBits or GLS_DEPTHMASK
+                    continue
+                }
+                if (0 == token.Icmp("ignoreDepth")) {
+                    ss.drawStateBits = ss.drawStateBits or GLS_DEPTHFUNC_ALWAYS
                     continue
                 }
                 if (0 == token.Icmp("alphaTest")) {

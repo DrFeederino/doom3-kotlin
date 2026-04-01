@@ -241,53 +241,11 @@ object RenderSystem {
         R_GetCommandBuffer(drawSurfsCommand_t().also({ cmd = it }))
         cmd.commandId = renderCommand_t.RC_DRAW_VIEW
         cmd.viewDef = parms
-        if (parms.viewEntitys != null) {
-            // save the command for r_lockSurfaces debugging
-            tr.lockSurfacesCmd = cmd
-        }
         tr.pc!!.c_numViews++
         R_ViewStatistics(parms)
     }
 
     //=================================================================================
-    /*
-     ======================
-     R_LockSurfaceScene
-
-     r_lockSurfaces allows a developer to move around
-     without changing the composition of the scene, including
-     culling.  The only thing that is modified is the
-     view position and axis, no front end work is done at all
-
-
-     Add the stored off command again, so the new rendering will use EXACTLY
-     the same surfaces, including all the culling, even though the transformation
-     matricies have been changed.  This allow the culling tightness to be
-     evaluated interactively.
-     ======================
-     */
-    fun R_LockSurfaceScene(parms: viewDef_s) {
-        var vModel: viewEntity_s?
-
-        // set the matrix for world space to eye space
-        tr_main.R_SetViewMatrix(parms)
-        tr.lockSurfacesCmd!!.viewDef!!.worldSpace = parms.worldSpace
-
-        // update the view origin and axis, and all
-        // the entity matricies
-        vModel = tr.lockSurfacesCmd!!.viewDef!!.viewEntitys
-        while (vModel != null) {
-            tr_main.myGlMultMatrix(
-                vModel.modelMatrix,
-                tr.lockSurfacesCmd!!.viewDef!!.worldSpace.modelViewMatrix,
-                vModel.modelViewMatrix
-            )
-            vModel = vModel.next
-        }
-
-        // add the stored off surface commands again
-        R_GetCommandBuffer(tr.lockSurfacesCmd!!)
-    }
 
     /*
      =============
@@ -320,6 +278,11 @@ object RenderSystem {
                 R_SetColorMappings()
             }
         }
+
+        if (r_swapInterval.IsModified()) {
+            r_swapInterval.ClearModified()
+            org.lwjgl.glfw.GLFW.glfwSwapInterval(r_swapInterval.GetInteger())
+        }
     }
 
     fun setRenderSystems(renderSystem: idRenderSystem?) {
@@ -342,11 +305,6 @@ object RenderSystem {
         var allowARB2Path: Boolean = true
         var anisotropicAvailable: Boolean = false
 
-        // ati r200 extensions
-        var atiFragmentShaderAvailable: Boolean = false
-
-        // ati r300
-        var atiTwoSidedStencilAvailable: Boolean = false
         var colorBits: Int = 0
         var depthBits: Int = 0
         var stencilBits: Int = 8
@@ -382,6 +340,7 @@ object RenderSystem {
         var sharedTexturePaletteAvailable: Boolean = false
         var texture3DAvailable: Boolean = false
         var textureCompressionAvailable: Boolean = false
+        var bptcTextureCompressionAvailable: Boolean = false
         var textureEnvAddAvailable: Boolean = false
         var textureEnvCombineAvailable: Boolean = false
         var textureLODBiasAvailable: Boolean = false
@@ -396,7 +355,6 @@ object RenderSystem {
 
         var vidWidth: Int = 0
         var vidHeight: Int = 0 // passed to R_BeginFrame
-        var wgl_extensions_string: String? = null
         // For some reason people decided that we need displays with ultra small pixels,
         // so everything rendered on them must be scaled up to be legible.
         // unfortunately, this bullshit feature was "improved" upon by deciding that the best
@@ -664,7 +622,6 @@ object RenderSystem {
         }
 
         abstract fun UnCrop()
-        abstract fun GetCardCaps(oldCard: BooleanArray, nv10or20: BooleanArray)
 
         // the image has to be already loaded ( most straightforward way would be through a FindMaterial )
         // texture filter / mipmapping / repeat won't be modified by the upload

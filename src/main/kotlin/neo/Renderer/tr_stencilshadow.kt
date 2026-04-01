@@ -547,7 +547,7 @@ object tr_stencilshadow {
      other point is on the plane, it will be completely removed.
      ===================
      */
-    fun R_ClipLineToLight(a: idVec3, b: idVec3, frustum: Array<idPlane> /*[4]*/, p1: idVec4, p2: idVec4): Boolean {
+    fun R_ClipLineToLight(a: idVec3, b: idVec3, frustum: Array<idPlane> /*[6]*/, p1: idVec4, p2: idVec4): Boolean {
         var d1: Float
         var d2: Float
         var f: Float

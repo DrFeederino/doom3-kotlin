@@ -327,15 +327,15 @@ object RenderWorld {
 
         fun atomicSet(shadow: renderEntityShadow) {
             hModel = shadow.hModel
-            entityNum = shadow.entityNum.integerValue
-            bodyId = shadow.bodyId.integerValue
+            entityNum = shadow.entityNum._val
+            bodyId = shadow.bodyId._val
             bounds.set(shadow.bounds)
             callback = shadow.callback
             callbackData = shadow.callbackData
-            suppressSurfaceInViewID = shadow.suppressSurfaceInViewID.integerValue
-            suppressShadowInViewID = shadow.suppressShadowInViewID.integerValue
-            suppressShadowInLightID = shadow.suppressShadowInLightID.integerValue
-            allowSurfaceInViewID = shadow.allowSurfaceInViewID.integerValue
+            suppressSurfaceInViewID = shadow.suppressSurfaceInViewID._val
+            suppressShadowInViewID = shadow.suppressShadowInViewID._val
+            suppressShadowInLightID = shadow.suppressShadowInLightID._val
+            allowSurfaceInViewID = shadow.allowSurfaceInViewID._val
             origin.set(shadow.origin)
             axis.set(shadow.axis)
             customShader = shadow.customShader
@@ -343,16 +343,16 @@ object RenderWorld {
             customSkin = shadow.customSkin
             referenceSound = shadow.referenceSound
             remoteRenderView = shadow.remoteRenderView
-            numJoints = shadow.numJoints.integerValue
+            numJoints = shadow.numJoints._val
             joints = shadow.joints as Array<idJointMat?>
             modelDepthHack = shadow.modelDepthHack._val
             noSelfShadow = shadow.noSelfShadow._val
             noShadow = shadow.noShadow._val
             noDynamicInteractions = shadow.noDynamicInteractions._val
             weaponDepthHack = shadow.weaponDepthHack._val
-            forceUpdate = shadow.forceUpdate.integerValue
-            timeGroup = shadow.timeGroup.integerValue
-            xrayIndex = shadow.xrayIndex.integerValue
+            forceUpdate = shadow.forceUpdate._val
+            timeGroup = shadow.timeGroup._val
+            xrayIndex = shadow.xrayIndex._val
         }
 
         fun clear() {
@@ -593,9 +593,9 @@ object RenderWorld {
             noShadows._val = other.noShadows._val
             noSpecular._val = other.noSpecular._val
             parallel._val = other.parallel._val
-            lightId.integerValue = other.lightId.integerValue
-            allowLightInViewID.integerValue = other.allowLightInViewID.integerValue
-            suppressLightInViewID.integerValue = other.suppressLightInViewID.integerValue
+            lightId._val = other.lightId._val
+            allowLightInViewID._val = other.allowLightInViewID._val
+            suppressLightInViewID._val = other.suppressLightInViewID._val
             shader = other.shader
             prelightModel = other.prelightModel
             referenceSound = other.referenceSound
@@ -645,18 +645,18 @@ object RenderWorld {
         }
 
         fun atomicSet(shadow: renderViewShadow) {
-            viewID = shadow.viewID.integerValue
-            x = shadow.x.integerValue
-            y = shadow.y.integerValue
-            width = shadow.width.integerValue
-            height = shadow.height.integerValue
+            viewID = shadow.viewID._val
+            x = shadow.x._val
+            y = shadow.y._val
+            width = shadow.width._val
+            height = shadow.height._val
             fov_x = shadow.fov_x._val
             fov_y = shadow.fov_y._val
             vieworg.set(shadow.vieworg)
             viewaxis.set(shadow.viewaxis)
             cramZNear = shadow.cramZNear._val
             forceUpdate = shadow.forceUpdate._val
-            time = shadow.time.integerValue
+            time = shadow.time._val
             for (a in 0 until MAX_GLOBAL_SHADER_PARMS) {
                 shaderParms[a] = shadow.shaderParms[a]._val
             }

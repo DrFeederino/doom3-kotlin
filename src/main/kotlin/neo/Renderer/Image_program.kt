@@ -27,6 +27,7 @@ along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 package neo.Renderer
 
 import neo.Renderer.Image.textureDepth_t
+import neo.framework.FileSystem_h.FILE_NOT_FOUND_TIMESTAMP
 import neo.idlib.Text.Lexer.LEXFL_ALLOWPATHNAMES
 import neo.idlib.Text.Lexer.LEXFL_NOFATALERRORS
 import neo.idlib.Text.Lexer.LEXFL_NOSTRINGCONCAT
@@ -310,7 +311,7 @@ object Image_program {
 
         // load it as an image
         pic!![0] = Image_files.R_LoadImage(token.toString(), width, height, timestamp, true)
-        if (timestamp[0] == -1L) {
+        if (timestamp[0] == FILE_NOT_FOUND_TIMESTAMP.toLong()) {
             return false
         }
 

@@ -116,7 +116,7 @@ val MAX_BLENDS: Int = 256 // to keep the accumulation in shorts
 
 //============================================================================
 val cubeAxis: Array<idMat3> = Array(6) { idMat3() }
-val r_rendererArgs: Array<String?> = arrayOf("best", "arb", "arb2", "Cg", "exp", "nv10", "nv20", "r200", null)
+val r_rendererArgs: Array<String?> = arrayOf("best", "arb2", null)
 val r_vidModes: Array<vidmode_s> = arrayOf(
     vidmode_s("Mode  0: 320x240", 320, 240),
     vidmode_s("Mode  1: 400x300", 400, 300),
@@ -141,7 +141,18 @@ val r_vidModes: Array<vidmode_s> = arrayOf(
     vidmode_s("Mode 20: 3840x2160", 3840, 2160),
     vidmode_s("Mode 21: 4096x2304", 4096, 2304),
     vidmode_s("Mode 22: 2880x1800", 2880, 1800),
-    vidmode_s("Mode 23: 2560x1440", 2560, 1440)
+    vidmode_s("Mode 23: 2560x1440", 2560, 1440),
+    vidmode_s("Mode 24: 1440x1080", 1440, 1080),
+    vidmode_s("Mode 25: 1280x800", 1280, 800),
+    // 21:9 resolutions
+    vidmode_s("Mode 26: 2560x1080", 2560, 1080),
+    vidmode_s("Mode 27: 3440x1440", 3440, 1440),
+    vidmode_s("Mode 28: 3840x1600", 3840, 1600),
+    vidmode_s("Mode 29: 5120x2160", 5120, 2160),
+    // 32:9 resolutions
+    vidmode_s("Mode 30: 3840x1080", 3840, 1080),
+    vidmode_s("Mode 31: 5120x1440", 5120, 1440),
+    vidmode_s("Mode 32: 7680x2160", 7680, 2160)
 )
 
 /*
@@ -186,14 +197,13 @@ private var glCheck: Boolean = false
 
 val r_inhibitFragmentProgram =
     idCVar("r_inhibitFragmentProgram", "0", CVAR_RENDERER or CVAR_BOOL, "ignore the fragment program extension")
-val r_glDriver = idCVar("r_glDriver", "", CVAR_RENDERER, "\"opengl32\", etc.")
 val r_useLightPortalFlow = idCVar(
     "r_useLightPortalFlow", "1", CVAR_RENDERER or CVAR_BOOL, "use a more precise area reference determination"
 )
 val r_multiSamples = idCVar(
     "r_multiSamples", "0", CVAR_RENDERER or CVAR_ARCHIVE or CVAR_INTEGER, "number of antialiasing samples"
 )
-val r_mode = idCVar("r_mode", "3", CVAR_ARCHIVE or CVAR_RENDERER or CVAR_INTEGER, "video mode number")
+val r_mode = idCVar("r_mode", "5", CVAR_ARCHIVE or CVAR_RENDERER or CVAR_INTEGER, "video mode number")
 val r_displayRefresh = idCVar(
     "r_displayRefresh",
     "0",
@@ -224,6 +234,22 @@ var r_gammaInShader: idCVar = idCVar(
     "Set gamma and brightness in shaders instead using hardware gamma"
 )
 
+// DG: for soft particles (#3877, #3878)
+var r_enableDepthCapture: idCVar = idCVar(
+    "r_enableDepthCapture",
+    "-1",
+    CVAR_RENDERER or CVAR_INTEGER,
+    "Enable capturing depth buffer for soft particles. -1 = auto (on if r_useSoftParticles), 0 = off, 1 = on",
+    -1f,
+    1f
+)
+var r_useSoftParticles: idCVar = idCVar(
+    "r_useSoftParticles",
+    "1",
+    CVAR_RENDERER or CVAR_ARCHIVE or CVAR_BOOL,
+    "Soften particle transitions when player walks through them or they cross solid geometry. Needs r_enableDepthCapture. Can slow down rendering!"
+)
+
 var r_supportNoSpecular: idCVar = idCVar(
     "r_supportNoSpecular",
     "-1",
@@ -238,16 +264,8 @@ val r_singleTriangle =
 val r_checkBounds = idCVar(
     "r_checkBounds", "0", CVAR_RENDERER or CVAR_BOOL, "compare all surface bounds with precalculated ones"
 )
-val r_useNV20MonoLights =
-    idCVar("r_useNV20MonoLights", "1", CVAR_RENDERER or CVAR_INTEGER, "use pass optimization for mono lights")
 val r_useConstantMaterials = idCVar(
     "r_useConstantMaterials", "1", CVAR_RENDERER or CVAR_BOOL, "use pre-calculated material registers if possible"
-)
-val r_useTripleTextureARB = idCVar(
-    "r_useTripleTextureARB",
-    "1",
-    CVAR_RENDERER or CVAR_BOOL,
-    "cards with 3+ texture units do a two pass instead of three pass"
 )
 val r_useSilRemap = idCVar(
     "r_useSilRemap",
@@ -324,7 +342,7 @@ val r_znear = idCVar("r_znear", "3", CVAR_RENDERER or CVAR_FLOAT, "near Z clip p
 val r_ignoreGLErrors = idCVar("r_ignoreGLErrors", "1", CVAR_RENDERER or CVAR_BOOL, "ignore GL errors")
 val r_finish = idCVar("r_finish", "0", CVAR_RENDERER or CVAR_BOOL, "force a call to glFinish=new idCVar() every frame")
 val r_swapInterval =
-    idCVar("r_swapInterval", "0", CVAR_RENDERER or CVAR_ARCHIVE or CVAR_INTEGER, "changes wglSwapIntarval")
+    idCVar("r_swapInterval", "0", CVAR_RENDERER or CVAR_ARCHIVE or CVAR_INTEGER, "changes the GL swap interval")
 val r_gamma = idCVar("r_gamma", "1", CVAR_RENDERER or CVAR_ARCHIVE or CVAR_FLOAT, "changes gamma tables", 0.5f, 3.0f)
 val r_brightness =
     idCVar("r_brightness", "1", CVAR_RENDERER or CVAR_ARCHIVE or CVAR_FLOAT, "changes gamma tables", 0.5f, 2.0f)
@@ -332,7 +350,7 @@ val r_renderer = idCVar(
     "r_renderer",
     "best",
     CVAR_RENDERER or CVAR_ARCHIVE,
-    "hardware specific renderer path to use",
+    "arb2, etc",
     r_rendererArgs,
     ArgCompletion_String(r_rendererArgs)
 )
@@ -775,8 +793,6 @@ val r_jointNameScale = idCVar(
 val r_jointNameOffset = idCVar(
     "r_jointNameOffset", "0.5", CVAR_RENDERER or CVAR_FLOAT, "offset of joint names when r_showskel is set to 1"
 )
-val r_cgVertexProfile = idCVar("r_cgVertexProfile", "best", CVAR_RENDERER or CVAR_ARCHIVE, "arbvp1, vp20, vp30")
-val r_cgFragmentProfile = idCVar("r_cgFragmentProfile", "best", CVAR_RENDERER or CVAR_ARCHIVE, "arbfp1, fp30")
 val r_debugLineDepthTest = idCVar(
     "r_debugLineDepthTest", "0", CVAR_RENDERER or CVAR_ARCHIVE or CVAR_BOOL, "perform depth test on debug lines"
 )
@@ -852,11 +868,11 @@ fun R_ScreenshotFilename(lastNumber: CInt, base: String?, fileName: idStr) {
     val restrict: Boolean = cvarSystem.GetCVarBool("fs_restrict")
     cvarSystem.SetCVarBool("fs_restrict", false)
     lastNumber.increment()
-    if (lastNumber.integerValue > 99999) {
-        lastNumber.integerValue = 99999
+    if (lastNumber._val > 99999) {
+        lastNumber._val = 99999
     }
-    while (lastNumber.integerValue < 99999) {
-        var frac: Int = lastNumber.integerValue
+    while (lastNumber._val < 99999) {
+        var frac: Int = lastNumber._val
         a = frac / 10000
         frac -= a * 10000
         b = frac / 1000
@@ -867,7 +883,7 @@ fun R_ScreenshotFilename(lastNumber: CInt, base: String?, fileName: idStr) {
         frac -= d * 10
         e = frac
         fileName.set(String.format("%s%d%d%d%d%d.tga", base, a, b, c, d, e))
-        if (lastNumber.integerValue == 99999) {
+        if (lastNumber._val == 99999) {
             break
         }
         val len: Int = fileSystem.ReadFile(fileName.toString(), null, null)
@@ -1057,6 +1073,9 @@ fun R_CheckPortableExtensions() {
     glConfig.textureCompressionAvailable =
         R_CheckExtension("GL_ARB_texture_compression") && R_CheckExtension("GL_EXT_texture_compression_s3tc")
     //
+    // GL_ARB_texture_compression_bptc (BC7)
+    glConfig.bptcTextureCompressionAvailable = R_CheckExtension("GL_ARB_texture_compression_bptc")
+    //
     // GL_EXT_texture_filter_anisotropic
     glConfig.anisotropicAvailable = R_CheckExtension("GL_EXT_texture_filter_anisotropic")
     if (glConfig.anisotropicAvailable) {
@@ -1099,22 +1118,8 @@ fun R_CheckPortableExtensions() {
         tr.stencilDecr = GL11.GL_DECR
     }
     //
-    // GL_NV_register_combiners
-    glConfig.registerCombinersAvailable = R_CheckExtension("GL_NV_register_combiners")
-    //
     // GL_EXT_stencil_two_side
     glConfig.twoSidedStencilAvailable = R_CheckExtension("GL_EXT_stencil_two_side")
-    if (glConfig.twoSidedStencilAvailable) {
-    } else {
-        glConfig.atiTwoSidedStencilAvailable = R_CheckExtension("GL_ATI_separate_stencil")
-    }
-    //
-    // GL_ATI_fragment_shader
-    glConfig.atiFragmentShaderAvailable = R_CheckExtension("GL_ATI_fragment_shader")
-    if (!glConfig.atiFragmentShaderAvailable) {
-        // only on OSX: ATI_fragment_shader is faked through ATI_text_fragment_shader (macosx_glimp.cpp)
-        glConfig.atiFragmentShaderAvailable = R_CheckExtension("GL_ATI_text_fragment_shader")
-    }
     //
     // ARB_vertex_buffer_object
     glConfig.ARBVertexBufferObjectAvailable = R_CheckExtension("GL_ARB_vertex_buffer_object")
@@ -1917,9 +1922,6 @@ internal class GfxInfo_f private constructor() : cmdFunction_t() {
         common.Printf("GL_RENDERER: %s\n", glConfig.renderer_string!!)
         common.Printf("GL_VERSION: %s\n", glConfig.version_string!!)
         common.Printf("GL_EXTENSIONS: %s\n", glConfig.extensions_string!!)
-        if (glConfig.wgl_extensions_string != null) {
-            common.Printf("WGL_EXTENSIONS: %s\n", glConfig.wgl_extensions_string!!)
-        }
         common.Printf("GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize)
         common.Printf("GL_MAX_TEXTURE_UNITS_ARB: %d\n", glConfig.maxTextureUnits)
         common.Printf("GL_MAX_TEXTURE_COORDS_ARB: %d\n", glConfig.maxTextureCoords)
@@ -1970,7 +1972,7 @@ internal class GfxInfo_f private constructor() : cmdFunction_t() {
                 common.Printf("swapInterval not forced\n")
             }
         }
-        val tss: Boolean = glConfig.twoSidedStencilAvailable || glConfig.atiTwoSidedStencilAvailable
+        val tss: Boolean = glConfig.twoSidedStencilAvailable
         if (!r_useTwoSidedStencil.GetBool() && tss) {
             common.Printf("Two sided stencil available but disabled\n")
         } else if (!tss) {

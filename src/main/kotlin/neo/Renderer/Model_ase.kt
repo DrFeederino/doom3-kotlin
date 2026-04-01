@@ -34,7 +34,6 @@ import neo.idlib.Text.Str.idStr.Companion.Copynz
 import neo.idlib.containers.List.idList
 import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
-import neo.idlib.math.idVec3.Companion.copyVec
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
 
@@ -894,17 +893,7 @@ object Model_ase {
                 "*NODE_PARENT" -> ASE_SkipRestOfLine()
                 "*NODE_TM", "*TM_ANIMATION" -> ASE_ParseBracedBlock(ASE_KeyNODE_TM.instance)
                 "*MESH" -> {
-                    val transform: Array<idVec3> =
-                        copyVec(ase!!.currentObject!!.mesh.transform)
-                    run({
-                        ase!!.currentObject!!.mesh = aseMesh_t()
-                        ase!!.currentMesh = ase!!.currentObject!!.mesh
-                    })
-                    var i = 0
-                    while (i < transform.size) {
-                        ase!!.currentMesh!!.transform[i].set(transform[i])
-                        i++
-                    }
+                    ase!!.currentMesh = ase!!.currentObject!!.mesh
                     ASE_ParseBracedBlock(ASE_KeyMESH.instance)
                 }
 

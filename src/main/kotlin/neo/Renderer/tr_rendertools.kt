@@ -493,7 +493,6 @@ object tr_rendertools {
      ===================
      */
     fun RB_ShowDepthBuffer() {
-        val depthReadback: ByteBuffer
         if (!r_showDepth!!.GetBool()) {
             return
         }
@@ -504,30 +503,60 @@ object tr_rendertools {
         qgl.qglLoadIdentity()
         qgl.qglOrtho(0.0, 1.0, 0.0, 1.0, -1.0, 1.0)
         qgl.qglRasterPos2f(0.0f, 0.0f)
-        qgl.qglPopMatrix()
-        qgl.qglMatrixMode(GL11.GL_MODELVIEW)
-        qgl.qglPopMatrix()
+
         tr_backend.GL_State(GLS_DEPTHFUNC_ALWAYS)
         qgl.qglColor3f(1.0f, 1.0f, 1.0f)
-        Image.globalImages.BindNull()
-        depthReadback =
-            BufferUtils.createByteBuffer(glConfig.vidWidth * glConfig.vidHeight * 4)
-        qgl.qglReadPixels(
-            0,
-            0,
-            glConfig.vidWidth,
-            glConfig.vidHeight,
-            GL11.GL_DEPTH_COMPONENT,
-            GL11.GL_FLOAT,
-            depthReadback
-        )
-        qgl.qglDrawPixels(
-            glConfig.vidWidth,
-            glConfig.vidHeight,
-            GL11.GL_RGBA,
-            GL11.GL_UNSIGNED_BYTE,
-            depthReadback
-        )
+
+        val haveDepthCapture = r_enableDepthCapture.GetInteger() == 1
+                || (r_enableDepthCapture.GetInteger() == -1 && r_useSoftParticles.GetBool())
+
+        if (haveDepthCapture) {
+            Image.globalImages.currentDepthImage?.Bind()
+
+            val x = 0.0f
+            val y = 0.0f
+            val w = 1.0f
+            val h = 1.0f
+            val tx = 0.0f
+            val ty = 0.0f
+            // the actual texturesize of currentDepthImage is the next bigger power of two (POT),
+            // so the normalized width/height of the part of it we actually wanna show is the following
+            val tw = glConfig.vidWidth.toFloat() / Image.globalImages.currentDepthImage!!.uploadWidth._val.toFloat()
+            val th = glConfig.vidHeight.toFloat() / Image.globalImages.currentDepthImage!!.uploadHeight._val.toFloat()
+
+            qgl.qglBegin(GL11.GL_QUADS)
+            qgl.qglTexCoord2f(tx, ty)
+            qgl.qglVertex2f(x, y)
+            qgl.qglTexCoord2f(tx, ty + th)
+            qgl.qglVertex2f(x, y + h)
+            qgl.qglTexCoord2f(tx + tw, ty + th)
+            qgl.qglVertex2f(x + w, y + h)
+            qgl.qglTexCoord2f(tx + tw, ty)
+            qgl.qglVertex2f(x + w, y)
+            qgl.qglEnd()
+
+            qgl.qglPopMatrix()
+            qgl.qglMatrixMode(GL11.GL_MODELVIEW)
+            qgl.qglPopMatrix()
+        } else {
+            qgl.qglPopMatrix()
+            qgl.qglMatrixMode(GL11.GL_MODELVIEW)
+            qgl.qglPopMatrix()
+            Image.globalImages.BindNull()
+
+            val depthReadback = BufferUtils.createByteBuffer(glConfig.vidWidth * glConfig.vidHeight * 4)
+            qgl.qglReadPixels(
+                0, 0,
+                glConfig.vidWidth, glConfig.vidHeight,
+                GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT,
+                depthReadback
+            )
+            qgl.qglDrawPixels(
+                glConfig.vidWidth, glConfig.vidHeight,
+                GL11.GL_LUMINANCE, GL11.GL_FLOAT,
+                depthReadback
+            )
+        }
     }
 
     /*
@@ -2367,9 +2396,9 @@ object tr_rendertools {
             w = 0.25f
             h = 0.25f
         } else {
-            max = max(image.uploadWidth.integerValue.toFloat(), image.uploadHeight.integerValue.toFloat()).toInt()
-            w = 0.25f * image.uploadWidth.integerValue / max
-            h = 0.25f * image.uploadHeight.integerValue / max
+            max = max(image.uploadWidth._val.toFloat(), image.uploadHeight._val.toFloat()).toInt()
+            w = 0.25f * image.uploadWidth._val / max
+            h = 0.25f * image.uploadHeight._val / max
             w *= glConfig.vidHeight.toFloat() / glConfig.vidWidth
         }
         qgl.qglLoadIdentity()
@@ -2404,7 +2433,6 @@ object tr_rendertools {
         if (null == backEnd!!.viewDef!!.viewEntitys) {
             return
         }
-        tr_backend.RB_LogComment("---------- RB_RenderDebugTools ----------\n")
         tr_backend.GL_State(GLS_DEFAULT)
         backEnd!!.currentScissor = backEnd!!.viewDef!!.scissor
         qgl.qglScissor(

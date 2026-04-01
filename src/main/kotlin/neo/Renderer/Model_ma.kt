@@ -188,14 +188,14 @@ object Model_ma {
         if (header.parent.isNotEmpty()) {
             //Find the parent
             val parent: Array<maTransform_s?> = arrayOfNulls(1)
-            maGlobal!!.model!!.transforms!!.Get(header.parent, parent)
+            maGlobal!!.model!!.transforms.Get(header.parent, parent)
             if (parent != null) {
                 transform.parent = parent[0]
             }
         }
 
         //Add this transform to the list
-        maGlobal!!.model!!.transforms!!.Set(header.name, transform)
+        maGlobal!!.model!!.transforms.Set(header.name, transform)
         return true
     }
 
@@ -559,7 +559,7 @@ object Model_ma {
         if (nodeHeader.parent.isNotEmpty()) {
             //Find the parent
             val parent: Array<maTransform_s?> = arrayOfNulls(1)
-            maGlobal!!.model!!.transforms!!.Get(nodeHeader.parent, parent)
+            maGlobal!!.model!!.transforms.Get(nodeHeader.parent, parent)
             if (parent[0] != null) {
                 maGlobal!!.currentObject!!.mesh.transform = parent[0]
             }
@@ -699,7 +699,7 @@ object Model_ma {
                     fileNode = maFileNode_t()
                     fileNode.name = header.name
                     fileNode.path = token.toString()
-                    maGlobal!!.model!!.fileNodes!!.Set(fileNode.name, fileNode)
+                    maGlobal!!.model!!.fileNodes.Set(fileNode.name, fileNode)
                 } else {
                     parser.SkipRestOfLine()
                 }
@@ -714,7 +714,7 @@ object Model_ma {
         MA_ParseNodeHeader(parser, header)
         val matNode = maMaterialNode_s()
         matNode.name = header.name
-        maGlobal!!.model!!.materialNodes!!.Set(matNode.name, matNode)
+        maGlobal!!.model!!.materialNodes.Set(matNode.name, matNode)
     }
 
     @Throws(idException::class)
@@ -737,7 +737,7 @@ object Model_ma {
 
     fun MA_AddMaterial(materialName: String?): Int {
         val destNode: Array<maMaterialNode_s?> = arrayOfNulls(1)
-        maGlobal!!.model!!.materialNodes!!.Get(materialName, destNode)
+        maGlobal!!.model!!.materialNodes.Get(materialName, destNode)
         if (destNode[0] != null) {
             var matNode: maMaterialNode_s? = destNode[0]
 
@@ -790,10 +790,10 @@ object Model_ma {
 
             //Is this attribute a material node attribute
             val matNode: Array<maMaterialNode_s?> = arrayOfNulls(1)
-            maGlobal!!.model!!.materialNodes!!.Get(srcName.toString(), matNode)
+            maGlobal!!.model!!.materialNodes.Get(srcName.toString(), matNode)
             if (matNode[0] != null) {
                 val destNode: Array<maMaterialNode_s?> = arrayOfNulls(1)
-                maGlobal!!.model!!.materialNodes!!.Get(destName.toString(), destNode)
+                maGlobal!!.model!!.materialNodes.Get(destName.toString(), destNode)
                 if (destNode[0] != null) {
                     destNode[0]!!.child = matNode[0]
                 }
@@ -801,10 +801,10 @@ object Model_ma {
 
             //Is this attribute a file node
             val fileNode: Array<maFileNode_t?> = arrayOfNulls(1)
-            maGlobal!!.model!!.fileNodes!!.Get(srcName.toString(), fileNode)
+            maGlobal!!.model!!.fileNodes.Get(srcName.toString(), fileNode)
             if (fileNode[0] != null) {
                 val destNode: Array<maMaterialNode_s?> = arrayOfNulls(1)
-                maGlobal!!.model!!.materialNodes!!.Get(destName.toString(), destNode)
+                maGlobal!!.model!!.materialNodes.Get(destName.toString(), destNode)
                 if (destNode[0] != null) {
                     destNode[0]!!.file = fileNode[0]
                 }
@@ -970,9 +970,9 @@ object Model_ma {
         }
         ma.objects.Clear()
         ma.materials.Clear()
-        ma.transforms?.Clear()
-        ma.fileNodes?.Clear()
-        ma.materialNodes?.Clear()
+        ma.transforms.Clear()
+        ma.fileNodes.Clear()
+        ma.materialNodes.Clear()
     }
 
     /*
@@ -1077,12 +1077,12 @@ object Model_ma {
 
     class maModel_s {
         //Material Resolution
-        var fileNodes: idHashTable<maFileNode_t>? = null
-        var materialNodes: idHashTable<maMaterialNode_s>? = null
+        var fileNodes: idHashTable<maFileNode_t> = idHashTable()
+        var materialNodes: idHashTable<maMaterialNode_s> = idHashTable()
         val materials: idList<maMaterial_t?> = idList()
         val objects: idList<maObject_t?> = idList()
         var  /*ID_TIME_T*/timeStamp: LongArray = LongArray(1)
-        var transforms: idHashTable<maTransform_s>? = null
+        var transforms: idHashTable<maTransform_s> = idHashTable()
     }
 
     // working variables used during parsing

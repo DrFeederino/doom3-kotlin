@@ -29,50 +29,6 @@ import neo.framework.Common
 import neo.idlib.idException
 
 object tr_orderIndexes {
-    /*
-     ===============
-     R_MeshCost
-     ===============
-     */
-    val CACHE_SIZE: Int = 24
-    val STALL_SIZE: Int = 8
-    fun R_MeshCost(numIndexes: Int, indexes: IntArray): Int {
-        val inCache: IntArray = IntArray(CACHE_SIZE)
-        var i: Int
-        var j: Int
-        var v: Int
-        var c_stalls: Int
-        var c_loads: Int
-        var fifo: Int
-        i = 0
-        while (i < CACHE_SIZE) {
-            inCache[i] = -1
-            i++
-        }
-        c_loads = 0
-        c_stalls = 0
-        fifo = 0
-        i = 0
-        while (i < numIndexes) {
-            v = indexes[i]
-            j = 0
-            while (j < CACHE_SIZE) {
-                if (inCache[(fifo + j) % CACHE_SIZE] == v) {
-                    break
-                }
-                j++
-            }
-            if (j == CACHE_SIZE) {
-                c_loads++
-                inCache[fifo % CACHE_SIZE] = v
-                fifo++
-            } else if (j < STALL_SIZE) {
-                c_stalls++
-            }
-            i++
-        }
-        return c_loads
-    }
 
     /*
      ====================

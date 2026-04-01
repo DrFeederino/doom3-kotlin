@@ -476,6 +476,11 @@ object ModelManager {
             } else if (extension.Icmp("md3") == 0) {
                 model = idRenderModelMD3()
                 model.InitFromFile(modelName)
+                // DG: no idea why this needs special treatment, but otherwise
+                //     idRenderModelMD3::InstantiateDynamicModel() is called all the time
+                if (model.IsDefaultModel()) {
+                    return null
+                }
             } else if (extension.Icmp("prt") == 0) {
                 model = idRenderModelPrt()
                 model.InitFromFile(modelName)
