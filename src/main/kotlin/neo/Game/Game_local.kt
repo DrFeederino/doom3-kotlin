@@ -2983,6 +2983,14 @@ class Game_local {
             msec = UsercmdGen.USERCMD_MSEC
             sessionCommand.set("")
             nextGibTime = 0
+
+            // D3XP: reset portal sky and slow-mo state on map load
+            if (isD3XP) {
+                portalSkyEnt.oSet(null)
+                portalSkyActive = false
+                ResetSlowTimeVars()
+            }
+
             vacuumAreaNum = -1 // if an info_vacuum is spawned, it will set this
             if (null == editEntities) {
                 editEntities = idEditEntities()
