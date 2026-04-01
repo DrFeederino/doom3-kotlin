@@ -15,6 +15,7 @@ import neo.idlib.Text.Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT
 import neo.idlib.Text.Lexer.LEXFL_ALLOWMULTICHARLITERALS
 import neo.idlib.Text.Lexer.LEXFL_NOSTRINGCONCAT
 import neo.idlib.Text.Parser.idParser
+import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Cmpn
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.idStr.Companion.Icmpn
@@ -431,6 +432,18 @@ object GuiScript {
                     } else {
                         window.AddCommand(dest.data.toString())
                     }
+                    return
+                }
+
+                // DG: allow debugprinting to the console with `set "print" "this windowDefs rect:" "$rect"`
+                if (Icmp(dest.data!!, "print") == 0) {
+                    val msg = idStr()
+                    val parmCount = src.Num()
+                    for (i in 1 until parmCount) {
+                        msg.plusAssign(src[i].`var`!!.c_str()!!)
+                        msg.plusAssign(" ")
+                    }
+                    Common.common.Printf("GUI debug: %s\n", msg)
                     return
                 }
             }

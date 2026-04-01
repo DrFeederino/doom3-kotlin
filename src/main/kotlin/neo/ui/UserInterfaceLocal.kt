@@ -36,6 +36,8 @@ import neo.ui.Rectangle.idRectangle
 import neo.ui.UserInterface.idUserInterface
 import neo.ui.UserInterface.idUserInterface.idUserInterfaceManager
 import neo.ui.Window.WIN_MENUGUI
+import neo.ui.Window.WIN_NO_SCALETO43
+import neo.ui.Window.WIN_SCALETO43
 import neo.ui.Window.idWindow
 import neo.ui.Winvar.idWinStr
 import java.nio.ByteBuffer
@@ -75,6 +77,8 @@ class UserInterfaceLocal {
         private var time = 0
         private val timeStamp = longArrayOf(0)
         private var uniqued = false
+        private var lastGlWidth = 0
+        private var lastGlHeight = 0
 
         //
         //
@@ -226,6 +230,11 @@ class UserInterfaceLocal {
                 return
             }
             if (!loading && desktop != null) {
+                if (desktop!!.GetFlags() and WIN_MENUGUI != 0) {
+                    if (MaybeSetCstWinRegs()) {
+                        HandleNamedEvent("CstScreenSizeChange")
+                    }
+                }
                 time = _time
                 UserInterface.uiManagerLocal.dc.PushClipRect(UserInterface.uiManagerLocal.screenRect)
                 desktop!!.Redraw(0.0f, 0.0f)
@@ -254,11 +263,11 @@ class UserInterfaceLocal {
                 // if the window is no fullscreen menu (but an ingame menu or noninteractive like the HUD)
                 // or scaling menus to 4:3 by default (r_scaleMenusTo43) is disabled,
                 // they only get scaled if they explicitly requested it with "scaleto43 1"
-                (winFlags and Window.WIN_SCALETO43) != 0
+                (winFlags and WIN_SCALETO43) != 0
             } else {
                 // if it's a fullscreen menu and r_scaleMenusTo43 is enabled,
                 // they get scaled to 4:3 unless they explicitly disable it with "scaleto43 0"
-                (winFlags and Window.WIN_NO_SCALETO43) == 0
+                (winFlags and WIN_NO_SCALETO43) == 0
             }
         }
 
@@ -318,6 +327,16 @@ class UserInterfaceLocal {
         override fun StateChanged(_time: Int, redraw: Boolean) {
             time = _time
             if (desktop != null) {
+                // DG: allow game DLLs to set scaleto43 via state
+                val scaleTo43 = state.GetInt("scaleto43", "-1")
+                if (scaleTo43 > 0) {
+                    desktop!!.SetFlag(WIN_SCALETO43)
+                    desktop!!.ClearFlag(WIN_NO_SCALETO43)
+                } else if (scaleTo43 == 0) {
+                    desktop!!.ClearFlag(WIN_SCALETO43)
+                    desktop!!.SetFlag(WIN_NO_SCALETO43)
+                }
+                // DG end
                 desktop!!.StateChanged(redraw)
             }
             interactive = if (state.GetBool("noninteractive")) {
@@ -336,6 +355,10 @@ class UserInterfaceLocal {
             active = activate
             if (desktop != null) {
                 activateStr.set("")
+                if (desktop!!.GetFlags() and WIN_MENUGUI != 0) {
+                    // DG: calculate and set the "gui::cst*" window register variables
+                    MaybeSetCstWinRegs(true)
+                }
                 desktop!!.Activate(activate, activateStr)
                 return activateStr.toString()
             }
@@ -514,6 +537,47 @@ class UserInterfaceLocal {
 
         fun Active(): Boolean {
             return active
+        }
+
+        // DG: used so we can notify GUI scripts about changes in side padding
+        private fun MaybeSetCstWinRegs(force: Boolean = false): Boolean {
+            if (desktop == null) {
+                return false
+            }
+            val glWidth = glConfig.winWidth
+            val glHeight = glConfig.winHeight
+            if (glWidth <= 0 || glHeight <= 0 || (!force && glWidth.toInt() == lastGlWidth && glHeight.toInt() == lastGlHeight)) {
+                return false
+            }
+            lastGlWidth = glWidth.toInt()
+            lastGlHeight = glHeight.toInt()
+
+            val glAspectRatio = glWidth / glHeight
+            val vidAspectRatio = VIRTUAL_WIDTH.toFloat() / VIRTUAL_HEIGHT.toFloat()
+
+            val desktopWidth = desktop!!.forceAspectWidth
+            val desktopHeight = desktop!!.forceAspectHeight
+
+            var horizPadding = 0f
+            var vertPadding = 0f
+            var modWidth = desktopWidth
+            var modHeight = desktopHeight
+
+            if (glAspectRatio >= vidAspectRatio) {
+                modWidth = desktopHeight * glAspectRatio
+                horizPadding = 0.5f * (modWidth - desktopWidth)
+            } else {
+                modHeight = desktopWidth / glAspectRatio
+                vertPadding = 0.5f * (modHeight - desktopHeight)
+            }
+
+            SetStateFloat("cstAspectRatio", glAspectRatio)
+            SetStateFloat("cstWidth", modWidth)
+            SetStateFloat("cstHeight", modHeight)
+            SetStateFloat("cstHorPad", horizPadding)
+            SetStateFloat("cstVertPad", vertPadding)
+
+            return true
         }
 
         fun GetTime(): Int {

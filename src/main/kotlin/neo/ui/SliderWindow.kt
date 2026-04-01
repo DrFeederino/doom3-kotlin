@@ -17,9 +17,11 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Cmpn
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.containers.CBool
+import neo.idlib.math.idVec2
 import neo.idlib.math.idVec4
 import neo.sys.sysEventType_t
 import neo.sys.sysEvent_s
+import neo.ui.DeviceContext.CstGetParams
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.Rectangle.idRectangle
 import neo.ui.SimpleWindow.drawWin_t
@@ -262,6 +264,17 @@ class SliderWindow {
             r.y = actualY
             r.x += (thumbWidth / 2.0f)
             r.w -= thumbWidth
+
+            // DG: adjust r for anchors, like in idWindow::Contains()
+            val scale = idVec2()
+            val offset = idVec2()
+            if (CstGetParams(cstAnchor.data, cstAnchorTo.data, cstAnchorFactor.data, scale, offset)) {
+                r.x = r.x * scale.x + offset.x
+                r.y = r.y * scale.y + offset.y
+                r.w *= scale.x
+                r.h *= scale.y
+            }
+
             if (vertical) {
                 r.y += thumbHeight / 2
                 r.h -= thumbHeight

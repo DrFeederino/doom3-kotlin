@@ -552,35 +552,11 @@ object Winvar {
         }
 
         override fun Set(`val`: String?) {
-            Scanner(`val`).use { sscanf ->
-                if (`val`!!.contains(",")) {
-                    if (sscanf.hasNext()) {
-                        data.x = sscanf.nextFloat()
-                    }
-                    if (sscanf.hasNext()) {
-                        data.y = sscanf.skip(",").nextFloat()
-                    }
-                    if (sscanf.hasNext()) {
-                        data.w = sscanf.skip(",").nextFloat()
-                    }
-                    if (sscanf.hasNext()) {
-                        data.h = sscanf.skip(",").nextFloat()
-                    }
-                } else {
-                    if (sscanf.hasNextFloat()) {
-                        data.x = sscanf.nextFloat()
-                    }
-                    if (sscanf.hasNextFloat()) {
-                        data.y = sscanf.nextFloat()
-                    }
-                    if (sscanf.hasNextFloat()) {
-                        data.w = sscanf.nextFloat()
-                    }
-                    if (sscanf.hasNextFloat()) {
-                        data.h = sscanf.nextFloat()
-                    }
-                }
-            }
+            val parts = if (`val`!!.contains(",")) `val`.split(",") else `val`.trim().split("\\s+".toRegex())
+            if (parts.size > 0) data.x = parts[0].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 1) data.y = parts[1].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 2) data.w = parts[2].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 3) data.h = parts[3].trim().toFloatOrNull() ?: 0f
             if (guiDict != null) {
                 val v = data.ToVec4()
                 guiDict!!.SetVec4(GetName(), v)
@@ -700,25 +676,9 @@ object Winvar {
         }
 
         override fun Set(`val`: String?) {
-            Scanner(`val`).use { sscanf ->
-                if (`val`!!.contains(",")) {
-//			sscanf( val, "%f,%f,%f,%f", data.x, data.y, data.w, data.h );
-                    if (sscanf.hasNext()) {
-                        data.x = sscanf.nextFloat()
-                    }
-                    if (sscanf.hasNext()) {
-                        data.y = sscanf.skip(",").nextFloat()
-                    }
-                } else {
-//			sscanf( val, "%f %f %f %f", data.x, data.y, data.w, data.h );
-                    if (sscanf.hasNextFloat()) {
-                        data.x = sscanf.nextFloat()
-                    }
-                    if (sscanf.hasNextFloat()) {
-                        data.y = sscanf.nextFloat()
-                    }
-                }
-            }
+            val parts = if (`val`!!.contains(",")) `val`.split(",") else `val`.trim().split("\\s+".toRegex())
+            if (parts.size > 0) data.x = parts[0].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 1) data.y = parts[1].trim().toFloatOrNull() ?: 0f
             if (guiDict != null) {
                 guiDict!!.SetVec2(GetName(), data)
             }
@@ -841,37 +801,11 @@ object Winvar {
         }
 
         override fun Set(`val`: String?) {
-            Scanner(`val`).use { sscanf ->
-                if (`val`!!.contains(",")) {
-//			sscanf( val, "%f,%f,%f,%f", data.x, data.y, data.z, data.w );
-                    if (sscanf.hasNext()) {
-                        data.x = sscanf.nextFloat()
-                    }
-                    if (sscanf.hasNext()) {
-                        data.y = sscanf.skip(",").nextFloat()
-                    }
-                    if (sscanf.hasNext()) {
-                        data.z = sscanf.skip(",").nextFloat()
-                    }
-                    if (sscanf.hasNext()) {
-                        data.w = sscanf.skip(",").nextFloat()
-                    }
-                } else {
-//			sscanf( val, "%f %f %f %f", data.x, data.y, data.z, data.w );
-                    if (sscanf.hasNextFloat()) {
-                        data.x = sscanf.nextFloat()
-                    }
-                    if (sscanf.hasNextFloat()) {
-                        data.y = sscanf.nextFloat()
-                    }
-                    if (sscanf.hasNextFloat()) {
-                        data.z = sscanf.nextFloat()
-                    }
-                    if (sscanf.hasNextFloat()) {
-                        data.w = sscanf.nextFloat()
-                    }
-                }
-            }
+            val parts = if (`val`!!.contains(",")) `val`.split(",") else `val`.trim().split("\\s+".toRegex())
+            if (parts.size > 0) data.x = parts[0].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 1) data.y = parts[1].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 2) data.z = parts[2].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 3) data.w = parts[3].trim().toFloatOrNull() ?: 0f
             if (guiDict != null) {
                 guiDict!!.SetVec4(GetName(), data)
             }
@@ -986,18 +920,10 @@ object Winvar {
         }
 
         override fun Set(`val`: String?) {
-            Scanner(`val`).use { sscanf ->
-//		sscanf( val, "%f %f %f", data.x, data.y, data.z);
-                if (sscanf.hasNextFloat()) {
-                    data.x = sscanf.nextFloat()
-                }
-                if (sscanf.hasNextFloat()) {
-                    data.y = sscanf.nextFloat()
-                }
-                if (sscanf.hasNextFloat()) {
-                    data.z = sscanf.nextFloat()
-                }
-            }
+            val parts = `val`!!.trim().split("\\s+".toRegex())
+            if (parts.size > 0) data.x = parts[0].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 1) data.y = parts[1].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 2) data.z = parts[2].trim().toFloatOrNull() ?: 0f
             if (guiDict != null) {
                 guiDict!!.SetVector(GetName(), data)
             }

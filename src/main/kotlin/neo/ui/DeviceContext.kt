@@ -54,11 +54,11 @@ object DeviceContext {
         var glWidth: CInt = CInt()
         var glHeight: CInt = CInt()
         renderSystem.GetGLSettings(glWidth, glHeight)
-        if (glWidth.integerValue <= 0 || glHeight.integerValue <= 0) {
+        if (glWidth._val <= 0 || glHeight._val <= 0) {
             return false
         }
 
-        val glAspectRatio = glWidth.integerValue.toFloat() / glHeight.integerValue.toFloat()
+        val glAspectRatio = glWidth._val.toFloat() / glHeight._val.toFloat()
 
         val vidWidth = VIRTUAL_WIDTH.toFloat()
         val vidHeight = VIRTUAL_HEIGHT.toFloat()
@@ -273,6 +273,10 @@ object DeviceContext {
         // DG: this is used for the "make sure menus are rendered as 4:3" hack
         val fixScaleForMenu = idVec2()
         val fixOffsetForMenu = idVec2()
+
+        fun IsMenuScaleFixActive(): Boolean {
+            return fixOffsetForMenu.x != 0.0f || fixOffsetForMenu.y != 0.0f || cstAdjustCoords
+        }
 
         init {
             fontLang = idStr()

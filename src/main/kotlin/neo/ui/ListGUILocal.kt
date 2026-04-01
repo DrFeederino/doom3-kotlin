@@ -91,7 +91,12 @@ class ListGUILocal {
                 return -1
             }
             if (s != null) {
-                snPrintf(s as Array<String>, size, m_pGUI!!.State().GetString(va("%s_item_%d", m_name, sel), "")!!)
+                snPrintf(
+                    s as Array<String>,
+                    size,
+                    "%s",
+                    m_pGUI!!.State().GetString(va("%s_item_%d", m_name, sel), "")!!
+                )
             }
             // don't let overflow
             if (sel >= m_ids.Num()) {

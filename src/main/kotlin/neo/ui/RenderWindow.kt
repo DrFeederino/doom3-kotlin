@@ -75,10 +75,24 @@ class RenderWindow {
             refdef!!.shaderParms[2] = 1.0f
             refdef!!.shaderParms[3] = 1.0f
 
-            refdef!!.x = drawRect.x.toInt()
-            refdef!!.y = drawRect.y.toInt()
-            refdef!!.width = drawRect.w.toInt()
-            refdef!!.height = drawRect.h.toInt()
+            // DG: for scaling menus to 4:3 (like that spinning mars globe in the main menu)
+            var rx = drawRect.x
+            var ry = drawRect.y
+            var rw = drawRect.w
+            var rh = drawRect.h
+            if (dc!!.IsMenuScaleFixActive()) {
+                val xa = floatArrayOf(rx)
+                val ya = floatArrayOf(ry)
+                val wa = floatArrayOf(rw)
+                val ha = floatArrayOf(rh)
+                dc!!.AdjustCoords(xa, ya, wa, ha)
+                rx = xa[0]; ry = ya[0]; rw = wa[0]; rh = ha[0]
+            }
+            refdef!!.x = rx.toInt()
+            refdef!!.y = ry.toInt()
+            refdef!!.width = rw.toInt()
+            refdef!!.height = rh.toInt()
+            // DG end
             refdef!!.fov_x = 90.0f
             refdef!!.fov_y = (2 * atan((drawRect.h / drawRect.w)) * idMath.M_RAD2DEG)
             refdef!!.time = time

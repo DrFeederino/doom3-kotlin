@@ -38,6 +38,7 @@ import neo.idlib.math.idVec4
 import neo.sys.sys
 import neo.sys.sysEventType_t
 import neo.sys.sysEvent_s
+import neo.ui.DeviceContext.CstGetParams
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.DeviceContext.idDeviceContext.ALIGN
 import neo.ui.Rectangle.idRectangle
@@ -140,8 +141,16 @@ object ListWindow {
                     key = K_DOWNARROW
                 }
                 if (key == K_MOUSE1) {
-                    if (Contains(gui!!.CursorX(), gui!!.CursorY())) {
-                        val cur = ((gui!!.CursorY() - actualY - pixelOffset) / vert).toInt() + top
+                    var cursorY = gui!!.CursorY()
+                    if (Contains(gui!!.CursorX(), cursorY)) {
+                        // DG: adjust cursorY for cst anchors
+                        val scale = idVec2()
+                        val offset = idVec2()
+                        if (CstGetParams(cstAnchor.data, cstAnchorTo.data, cstAnchorFactor.data, scale, offset)) {
+                            cursorY -= offset.y
+                            cursorY /= scale.y
+                        }
+                        val cur = ((cursorY - actualY - pixelOffset) / vert).toInt() + top
                         if (cur >= 0 && cur < listItems.size()) {
                             if (multipleSel && IsDown(K_CTRL)) {
                                 if (IsSelected(cur)) {

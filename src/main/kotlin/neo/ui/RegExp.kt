@@ -34,7 +34,7 @@ class RegExp {
         var enabled = false
         var name: idStr = idStr()
         var regCount = 0
-        var type: Short = 0
+        var type: Short = -1
         var `var`: idWinVar? = null
 
         //
@@ -333,7 +333,7 @@ class RegExp {
             val c = CInt()
             f.ReadInt(c)
             regs.DeleteContents(true)
-            for (i in 0 until c.integerValue) {
+            for (i in 0 until c._val) {
                 val reg = idRegister()
                 reg.ReadFromDemoFile(f)
                 regs.Append(reg)

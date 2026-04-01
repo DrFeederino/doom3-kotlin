@@ -173,7 +173,9 @@ class ChoiceWindow {
             if (flags and Window.WIN_FOCUS != 0) {
                 color = hoverColor.oCastIdVec4()
             }
-            dc!!.DrawText(choices[currentChoice], textScale.data, textAlign.code, color, textRect, false, -1)
+            if (choices.size() > 0) {
+                dc!!.DrawText(choices[currentChoice], textScale.data, textAlign.code, color, textRect, false, -1)
+            }
         }
 
         override fun Activate(activate: Boolean, act: idStr) {
@@ -296,12 +298,14 @@ class ChoiceWindow {
             if (cvarStr.Length() != 0) {
                 cvar = cvarSystem.Find(cvarStr.c_str()!!)
                 if (null == cvar) {
-                    Common.common.Warning(
-                        "idChoiceWindow::InitVars: gui '%s' window '%s' references undefined cvar '%s'",
-                        gui!!.GetSourceFile(),
-                        name!!,
-                        cvarStr.c_str()!!
-                    )
+                    if (cvarStr.c_str() != "s_driver" && cvarStr.c_str() != "net_serverAllowServerMod") {
+                        Common.common.Warning(
+                            "idChoiceWindow::InitVars: gui '%s' window '%s' references undefined cvar '%s'",
+                            gui!!.GetSourceFile(),
+                            name!!,
+                            cvarStr.c_str()!!
+                        )
+                    }
                     return
                 }
                 updateStr.Append(cvarStr)

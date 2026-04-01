@@ -615,11 +615,7 @@ object GameBustOutWindow {
             }
         }
 
-        fun Activate(activate: Boolean): String {
-            return ""
-        }
-
-        //        
+        //
         override fun GetWinVarByName(
             _name: String?,
             winLookup: Boolean /*= false*/,
@@ -749,7 +745,10 @@ object GameBustOutWindow {
                     }
 
 //			memcpy( currentBoard, pic, boardSize );
-                    System.arraycopy(pic.array(), 0, currentBoard, boardIndex, boardSize)
+                    val picBytes = ByteArray(boardSize)
+                    pic.position(0)
+                    pic.get(picBytes, 0, boardSize)
+                    System.arraycopy(picBytes, 0, currentBoard, boardIndex, boardSize)
                     pic = null //Mem_Free(pic);
                 }
                 boardIndex += boardSize
