@@ -34,6 +34,7 @@
 package neo.Game.GameSys
 
 import neo.Game.*
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.AI.AI_Vagary
 import neo.Game.AI.idAI
 import neo.Game.AI.idCombatNode
@@ -66,6 +67,8 @@ import neo.Game.Misc.idLocationEntity
 import neo.Game.Misc.idLocationSeparatorEntity
 import neo.Game.Misc.idPathCorner
 import neo.Game.Misc.idPhantomObjects
+import neo.Game.Misc.idShockwave
+import neo.Game.Misc.idPortalSky
 import neo.Game.Misc.idPlayerStart
 import neo.Game.Misc.idShaking
 import neo.Game.Misc.idSpawnableEntity
@@ -1005,6 +1008,15 @@ class Class {
             assert(ev != null)
             assert(Event.initialized)
 
+            // D3XP: push entity's timeGroup for correct time context during event processing
+            val ts = if (isD3XP) {
+                val timeState = SetTimeState()
+                if (this is idEntity) {
+                    timeState.push(this.timeGroup)
+                }
+                timeState
+            } else null
+
             if (SysCvar.g_debugTriggers.GetBool() && ev === EV_Activate && this is idEntity) {
                 val name: String =
                     if (data[0] != null && data[0]!!.value as idClass? is idEntity) (data[0]!!.value as idEntity).GetName() else "NULL"
@@ -1483,6 +1495,8 @@ fun registerAllTypes() {
     idAFEntity_Gibbable.Type
     idAFEntity_Generic.Type
     idAFEntity_WithAttachedHead.Type
+    idHarvestable.Type       // D3XP
+    idAFEntity_Harvest.Type   // D3XP
     idAFEntity_Vehicle.Type
     idAFEntity_VehicleSimple.Type
     idAFEntity_VehicleFourWheels.Type
@@ -1555,6 +1569,8 @@ fun registerAllTypes() {
     idFuncAASObstacle.Type
     idFuncRadioChatter.Type
     idPhantomObjects.Type
+    idShockwave.Type    // D3XP
+    idPortalSky.Type    // D3XP
 
     // Moveable
     idMoveable.Type

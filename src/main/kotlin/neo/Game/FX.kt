@@ -24,6 +24,7 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Projectile.idProjectile
@@ -208,9 +209,9 @@ open class idEntityFx : idEntity() {
         }
         savefile.ReadString(systemName)
         savefile.ReadInt(num)
-        actions.SetNum(num.integerValue)
+        actions.SetNum(num._val)
         i = 0
-        while (i < num.integerValue) {
+        while (i < num._val) {
             actions[i] = idFXLocalAction()
             savefile.ReadBool(hasObject)
             if (hasObject._val) {
@@ -511,6 +512,13 @@ open class idEntityFx : idEntity() {
                     } else if (fxaction.trackOrigin) {
                         useAction.renderEntity.origin.set(GetPhysics().GetOrigin().plus(fxaction.offset))
                         useAction.renderEntity.axis.set(if (fxaction.explicitAxis) fxaction.axis else GetPhysics().GetAxis())
+                        // D3XP: actually update the render entity so the change is visible
+                        if (isD3XP) {
+                            Game_local.gameRenderWorld!!.UpdateEntityDef(
+                                useAction.modelDefHandle,
+                                useAction.renderEntity
+                            )
+                        }
                     }
                     ApplyFade(fxaction, useAction, time, actualStart)
                 }
@@ -536,6 +544,29 @@ open class idEntityFx : idEntity() {
                                     GetPhysics().GetAxis()[0],
                                     vec3_origin
                                 )
+                            }
+                        }
+                    }
+                }
+
+                fx_enum.FX_SHOCKWAVE -> {
+                    // D3XP: spawn a shockwave entity
+                    if (Game_local.gameLocal.isClient) {
+                        useAction.shakeStarted = true
+                    } else if (!useAction.shakeStarted) {
+                        useAction.shakeStarted = true
+                        var shockDefName = fxaction.data.toString()
+                        if (shockDefName.isEmpty()) {
+                            shockDefName = "func_shockwave"
+                        }
+                        projectileDef = Game_local.gameLocal.FindEntityDefDict(shockDefName, false)
+                        if (projectileDef == null) {
+                            Game_local.gameLocal.Warning("shockwave '%s' not found", shockDefName)
+                        } else {
+                            Game_local.gameLocal.SpawnEntityDef(projectileDef, ent, false)
+                            if (ent.isNotEmpty() && ent[0] != null) {
+                                ent[0]!!.SetOrigin(GetPhysics().GetOrigin().plus(fxaction.offset))
+                                ent[0]!!.PostEventMS(EV_Remove, ent[0]!!.spawnArgs.GetInt("duration"))
                             }
                         }
                     }
@@ -618,7 +649,7 @@ open class idEntityFx : idEntity() {
         start_time = msg.ReadLong()
         if (fx_index != -1 && start_time > 0 && fxEffect == null && started < 0) {
             spawnArgs.GetInt("effect_lapse", "1000", max_lapse)
-            if (Game_local.gameLocal.time - start_time > max_lapse.integerValue) {
+            if (Game_local.gameLocal.time - start_time > max_lapse._val) {
                 // too late, skip the effect completely
                 started = 0
                 return

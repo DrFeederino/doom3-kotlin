@@ -626,7 +626,7 @@ class AAS_local {
             }
             return if (!RouteToGoalArea(areaNum, origin, goalAreaNum, travelFlags, travelTime, reach)) {
                 0
-            } else travelTime.integerValue
+            } else travelTime._val
         }
 
         /*
@@ -658,7 +658,7 @@ class AAS_local {
             var bestReach: idReachability?
             var r: idReachability?
             var nextr: idReachability?
-            travelTime.integerValue = 0
+            travelTime._val = 0
             reach[0] = null
             if (file == null) {
                 return false
@@ -692,7 +692,7 @@ class AAS_local {
                 portalCache = GetPortalRoutingCache(goalClusterNum, goalAreaNum, travelFlags)
                 // FIX: mask with 0xFF to prevent byte sign extension (C++ uses unsigned char)
                 reach[0] = GetAreaReachability(areaNum, portalCache.reachabilities[-clusterNum].toInt() and 0xFF)
-                travelTime.integerValue = (portalCache.travelTimes[-clusterNum] + AreaTravelTime(
+                travelTime._val = (portalCache.travelTimes[-clusterNum] + AreaTravelTime(
                     areaNum, origin, reach[0]!!.start
                 ))
                 return true
@@ -795,7 +795,7 @@ class AAS_local {
                 return false
             }
             reach[0] = bestReach
-            travelTime.integerValue = bestTime
+            travelTime._val = bestTime
             return true
         }
 
@@ -852,7 +852,7 @@ class AAS_local {
                                     areaNum, origin, path.moveGoal, reach[0]!!.start, travelFlags, moveAreaNum
                                 )
                             )
-                            path.moveAreaNum = moveAreaNum.integerValue
+                            path.moveAreaNum = moveAreaNum._val
                         }
                         return true
                     }
@@ -863,7 +863,7 @@ class AAS_local {
                                     areaNum, origin, path.moveGoal, reach[0]!!.start, travelFlags, moveAreaNum
                                 )
                             )
-                            path.moveAreaNum = moveAreaNum.integerValue
+                            path.moveAreaNum = moveAreaNum._val
                         }
                         return true
                     }
@@ -886,7 +886,7 @@ class AAS_local {
                                     areaNum, origin, path.moveGoal, goalOrigin, travelFlags, moveAreaNum
                                 )
                             )
-                            path.moveAreaNum = moveAreaNum.integerValue
+                            path.moveAreaNum = moveAreaNum._val
                         }
                         return true
                     }
@@ -963,7 +963,7 @@ class AAS_local {
             val dir = idVec3()
             if (file == null) {
                 endPos.set(goalOrigin)
-                endAreaNum.integerValue = 0
+                endAreaNum._val = 0
                 return true
             }
             lastAreas[3] = areaNum
@@ -1056,7 +1056,7 @@ class AAS_local {
                 lastAreaIndex = lastAreaIndex + 1 and 3
                 curAreaNum = reach.toAreaNum.toInt()
             }
-            endAreaNum.integerValue = curAreaNum
+            endAreaNum._val = curAreaNum
             return true
         }
 
@@ -1112,7 +1112,7 @@ class AAS_local {
                                     areaNum, origin, path.moveGoal, reach[0]!!.start, travelFlags, moveAreaNum
                                 )
                             )
-                            path.moveAreaNum = moveAreaNum.integerValue
+                            path.moveAreaNum = moveAreaNum._val
                         }
                         return true
                     }
@@ -1123,7 +1123,7 @@ class AAS_local {
                                     areaNum, origin, path.moveGoal, reach[0]!!.start, travelFlags, moveAreaNum
                                 )
                             )
-                            path.moveAreaNum = moveAreaNum.integerValue
+                            path.moveAreaNum = moveAreaNum._val
                         }
                         return true
                     }
@@ -1143,7 +1143,7 @@ class AAS_local {
                                     areaNum, origin, path.moveGoal, goalOrigin, travelFlags, moveAreaNum
                                 )
                             )
-                            path.moveAreaNum = moveAreaNum.integerValue
+                            path.moveAreaNum = moveAreaNum._val
                         }
                         return true
                     }
@@ -1186,12 +1186,12 @@ class AAS_local {
             val trace = aasTrace_s()
             if (file == null) {
                 endPos.set(goalOrigin)
-                endAreaNum.integerValue = 0
+                endAreaNum._val = 0
                 return true
             }
             file!!.Trace(trace, origin, goalOrigin)
             endPos.set(trace.endpos)
-            endAreaNum.integerValue = trace.lastAreaNum
+            endAreaNum._val = trace.lastAreaNum
             return trace.fraction >= 1.0f
         }
 
@@ -2513,7 +2513,7 @@ class AAS_local {
                     return point
                 }
                 point.set(nextPoint)
-                endAreaNum.integerValue = curAreaNum.integerValue
+                endAreaNum._val = curAreaNum._val
                 i++
             }
             return point
@@ -2547,7 +2547,7 @@ class AAS_local {
                     return point
                 }
                 point.set(nextPoint)
-                endAreaNum.integerValue = curAreaNum.integerValue
+                endAreaNum._val = curAreaNum._val
                 i++
             }
             return point
@@ -2735,7 +2735,7 @@ class AAS_local {
                     travelTime,
                     reach
                 )
-                Game_local.gameLocal.Printf("\rtt = %4d", travelTime.integerValue)
+                Game_local.gameLocal.Printf("\rtt = %4d", travelTime._val)
                 if (reach[0] != null) {
                     Game_local.gameLocal.Printf(" to area %4d", reach[0]!!.toAreaNum)
                     DrawArea(reach[0]!!.toAreaNum.toInt())

@@ -29,6 +29,8 @@ import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.*
+import neo.Game.Game_local.Companion.gameRenderWorld
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Physics.Physics.impactInfo_s
@@ -138,6 +140,13 @@ val EV_SetAngularVelocity: idEventDef = idEventDef("setAngularVelocity", "v")
 val EV_SetColor: idEventDef = idEventDef("setColor", "fff")
 val EV_SetGuiFloat: idEventDef = idEventDef("setGuiFloat", "sf")
 val EV_SetGuiParm: idEventDef = idEventDef("setGuiParm", "ss")
+
+// D3XP GUI events
+val EV_SetGui: idEventDef = idEventDef("setGui", "ds")
+val EV_PrecacheGui: idEventDef = idEventDef("precacheGui", "s")
+val EV_GetGuiParm: idEventDef = idEventDef("getGuiParm", "ds", 's')
+val EV_GetGuiParmFloat: idEventDef = idEventDef("getGuiParmFloat", "ds", 'f')
+val EV_GuiNamedEvent: idEventDef = idEventDef("guiNamedEvent", "ds")
 val EV_SetJointAngle: idEventDef = idEventDef("setJointAngle", "ddv")
 val EV_SetJointPos: idEventDef = idEventDef("setJointPos", "ddv")
 val EV_SetKey: idEventDef = idEventDef("setKey", "ss")
@@ -210,12 +219,12 @@ fun UpdateGuiParms(gui: idUserInterface?, args: idDict?) {
      AddRenderGui
      ================
      */
-fun AddRenderGui(name: String, args: idDict): idUserInterface {
+fun AddRenderGui(name: String, args: idDict): idUserInterface? {
     val gui: idUserInterface?
     val kv = args.MatchPrefix("gui_parm", null)
     gui = UserInterface.uiManager.FindGui(name, true, kv != null)
     UpdateGuiParms(gui, args)
-    return gui!!
+    return gui
 }
 
 //
@@ -417,6 +426,12 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             soundName: idEventArg<String>,
             channel: idEventArg<Int>
         ) {
+            // DG: some d3xp map scripts pass "" to stop a playing sound
+            if (soundName.value.isEmpty()) {
+                e.StopSound(channel.value, false)
+                idThread.ReturnFloat(0.0f)
+                return
+            }
             val length = CInt()
             e.StartSoundShader(
                 DeclManager.declManager.FindSound(soundName.value),  /*(s_channelType)*/
@@ -425,7 +440,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                 false,
                 length
             )
-            idThread.ReturnFloat(MS2SEC(length.integerValue.toFloat()))
+            idThread.ReturnFloat(MS2SEC(length._val.toFloat()))
         }
 
         private fun Event_StopSound(e: idEntity, channel: idEventArg<Int>, netSync: idEventArg<Int>) {
@@ -440,7 +455,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         ) {
             val time = CInt()
             e.StartSound(soundName.value,  /*(s_channelType)*/channel.value, 0, netSync.value != 0, time)
-            idThread.ReturnFloat(MS2SEC(time.integerValue.toFloat()))
+            idThread.ReturnFloat(MS2SEC(time._val.toFloat()))
         }
 
         private fun Event_FadeSound(
@@ -512,6 +527,48 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             }
         }
 
+        // D3XP GUI events
+        private fun Event_SetGui(e: idEntity, guiNum: idEventArg<Int>, guiName: idEventArg<String>) {
+            val num = guiNum.value
+            if (num >= 1 && num <= RenderWorld.MAX_RENDERENTITY_GUI) {
+                e.renderEntity!!.gui[num - 1] = UserInterface.uiManager.FindGui(guiName.value, true, false)
+                UpdateGuiParms(e.renderEntity!!.gui[num - 1], e.spawnArgs)
+                e.UpdateChangeableSpawnArgs(null)
+                Game_local.gameRenderWorld!!.UpdateEntityDef(e.modelDefHandle, e.renderEntity!!)
+            } else {
+                idGameLocal.Error("Entity '%s' doesn't have a GUI %d", e.name, num)
+            }
+        }
+
+        private fun Event_PrecacheGui(e: idEntity, guiName: idEventArg<String>) {
+            UserInterface.uiManager.FindGui(guiName.value, true, true)
+        }
+
+        private fun Event_GetGuiParm(e: idEntity, guiNum: idEventArg<Int>, key: idEventArg<String>) {
+            val num = guiNum.value
+            if (e.renderEntity!!.gui[num - 1] != null) {
+                idThread.ReturnString(e.renderEntity!!.gui[num - 1]!!.GetStateString(key.value) ?: "")
+                return
+            }
+            idThread.ReturnString("")
+        }
+
+        private fun Event_GetGuiParmFloat(e: idEntity, guiNum: idEventArg<Int>, key: idEventArg<String>) {
+            val num = guiNum.value
+            if (e.renderEntity!!.gui[num - 1] != null) {
+                idThread.ReturnFloat(e.renderEntity!!.gui[num - 1]!!.GetStateFloat(key.value))
+                return
+            }
+            idThread.ReturnFloat(0.0f)
+        }
+
+        private fun Event_GuiNamedEvent(e: idEntity, guiNum: idEventArg<Int>, event: idEventArg<String>) {
+            val num = guiNum.value
+            if (e.renderEntity!!.gui[num - 1] != null) {
+                e.renderEntity!!.gui[num - 1]!!.HandleNamedEvent(event.value)
+            }
+        }
+
         private fun Event_GetNextKey(e: idEntity, prefix: idEventArg<String>, lastMatch: idEventArg<String>) {
             val kv: idKeyValue?
             val previous: idKeyValue?
@@ -543,7 +600,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             e.spawnArgs.GetInt(key.value, "0", value)
 
             // scripts only support floats
-            idThread.ReturnFloat(value.integerValue.toFloat())
+            idThread.ReturnFloat(value._val.toFloat())
         }
 
         private fun Event_GetFloatKey(e: idEntity, key: idEventArg<String>) {
@@ -766,6 +823,27 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                 eventCallback_t2<idEntity> { e: idEntity, key: idEventArg<*>?, f: idEventArg<*>? ->
                     Event_SetGuiFloat(e, key as idEventArg<String>, f as idEventArg<Float>)
                 }
+            // D3XP GUI events
+            eventCallbacks[EV_SetGui] =
+                eventCallback_t2<idEntity> { e: idEntity, guiNum: idEventArg<*>?, guiName: idEventArg<*>? ->
+                    Event_SetGui(e, guiNum as idEventArg<Int>, guiName as idEventArg<String>)
+                }
+            eventCallbacks[EV_PrecacheGui] =
+                eventCallback_t1<idEntity> { e: idEntity, guiName: idEventArg<*>? ->
+                    Event_PrecacheGui(e, guiName as idEventArg<String>)
+                }
+            eventCallbacks[EV_GetGuiParm] =
+                eventCallback_t2<idEntity> { e: idEntity, guiNum: idEventArg<*>?, key: idEventArg<*>? ->
+                    Event_GetGuiParm(e, guiNum as idEventArg<Int>, key as idEventArg<String>)
+                }
+            eventCallbacks[EV_GetGuiParmFloat] =
+                eventCallback_t2<idEntity> { e: idEntity, guiNum: idEventArg<*>?, key: idEventArg<*>? ->
+                    Event_GetGuiParmFloat(e, guiNum as idEventArg<Int>, key as idEventArg<String>)
+                }
+            eventCallbacks[EV_GuiNamedEvent] =
+                eventCallback_t2<idEntity> { e: idEntity, guiNum: idEventArg<*>?, event: idEventArg<*>? ->
+                    Event_GuiNamedEvent(e, guiNum as idEventArg<Int>, event as idEventArg<String>)
+                }
             eventCallbacks[EV_GetNextKey] =
                 eventCallback_t2<idEntity> { e: idEntity, prefix: idEventArg<*>?, lastMatch: idEventArg<*>? ->
                     Event_GetNextKey(e, prefix as idEventArg<String>, lastMatch as idEventArg<String>)
@@ -872,6 +950,17 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
     //
     var thinkFlags // TH_? flags
             : Int
+
+    // D3XP: dual-timeline group assignment (TIME_GROUP1 = fast, TIME_GROUP2 = slow)
+    var timeGroup: Int = Game_local.TIME_GROUP1
+
+    // D3XP: prevents the grabber from picking up this entity
+    var noGrab: Boolean = false
+
+    // D3XP: x-ray vision — secondary render entity shown through walls
+    var xrayEntity: renderEntity_s? = null
+    var xrayEntityHandle: Int = -1
+    var xraySkin: idDeclSkin? = null
     protected var modelDefHandle // handle to static renderer model
             : Int
     protected var refSound // used to present sound to the audio engine
@@ -979,6 +1068,12 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         renderView = null // delete renderView;
         signals = null // delete signals;
 
+        // D3XP: free xray render entity
+        if (isD3XP && xrayEntityHandle != -1) {
+            gameRenderWorld!!.FreeEntityDef(xrayEntityHandle)
+            xrayEntityHandle = -1
+        }
+
         FreeModelDef()
         FreeSoundEmitter(false)
 
@@ -1015,8 +1110,19 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         GameEdit.gameEdit.ParseSpawnArgsToRenderEntity(spawnArgs, renderEntity!!)
         renderEntity!!.entityNum = entityNumber
 
+        // D3XP: initialize grab, xray, and time group fields from spawnArgs
+        if (isD3XP) {
+            noGrab = spawnArgs.GetBool("noGrab", "0")
+            xraySkin = null
+            renderEntity!!.xrayIndex = 1
+            val xraySkinStr = spawnArgs.GetString("skin_xray", "")
+            if (!xraySkinStr.isNullOrEmpty()) {
+                xraySkin = DeclManager.declManager.FindSkin(xraySkinStr) as? idDeclSkin
+            }
+        }
+
         // go dormant within 5 frames so that when the map starts most monsters are dormant
-        dormantStart = Game_local.gameLocal.time - DELAY_DORMANT_TIME + idGameLocal.msec * 5
+        dormantStart = Game_local.gameLocal.time - DELAY_DORMANT_TIME + Game_local.gameLocal.msec * 5
         origin.set(renderEntity!!.origin)
         axis.set(idMat3(renderEntity!!.axis))
 
@@ -1105,6 +1211,11 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             }
             ConstructScriptObject()
         }
+
+        // D3XP: determine time group from "slowmo" spawnarg (default true = slow timeline)
+        if (isD3XP) {
+            DetermineTimeGroup(spawnArgs.GetBool("slowmo", "1"))
+        }
     }
 
     override fun Save(savefile: idSaveGame) {
@@ -1134,6 +1245,14 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         val flags = fl
         LittleBitField(flags /*, sizeof(flags)*/)
         savefile.Write(flags /*, sizeof(flags)*/)
+        // D3XP: save time group, grab, and xray state
+        if (isD3XP) {
+            savefile.WriteInt(timeGroup)
+            savefile.WriteBool(noGrab)
+            savefile.WriteRenderEntity(xrayEntity ?: renderEntity_s())
+            savefile.WriteInt(xrayEntityHandle)
+            savefile.WriteSkin(xraySkin)
+        }
         savefile.WriteRenderEntity(renderEntity!!)
         savefile.WriteInt(modelDefHandle)
         savefile.WriteRefSound(refSound)
@@ -1191,15 +1310,26 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         health = savefile.ReadInt()
         targets.Clear()
         savefile.ReadInt(num)
-        targets.SetNum(num.integerValue)
+        targets.SetNum(num._val)
         i = 0
-        while (i < num.integerValue) {
+        while (i < num._val) {
             targets[i] = idEntityPtr()
             targets[i].Restore(savefile)
             i++
         }
         savefile.Read(fl)
         LittleBitField(fl)
+        // D3XP: restore time group, grab, and xray state
+        if (isD3XP) {
+            timeGroup = savefile.ReadInt()
+            noGrab = savefile.ReadBool()
+            xrayEntity = savefile.ReadRenderEntity()
+            xrayEntityHandle = savefile.ReadInt()
+            if (xrayEntityHandle != -1) {
+                xrayEntityHandle = gameRenderWorld!!.AddEntityDef(xrayEntity!!)
+            }
+            xraySkin = savefile.ReadSkin() as? idDeclSkin
+        }
         renderEntity = savefile.ReadRenderEntity()
         modelDefHandle = savefile.ReadInt()
         savefile.ReadRefSound(refSound)
@@ -1223,9 +1353,9 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             i = 0
             while (i < signalNum_t.NUM_SIGNALS.ordinal) {
                 savefile.ReadInt(num)
-                signals!!.signal[i].SetNum(num.integerValue)
+                signals!!.signal[i].SetNum(num._val)
                 j = 0
-                while (j < num.integerValue) {
+                while (j < num._val) {
                     signals!!.signal[i][j].threadnum = savefile.ReadInt()
                     savefile.ReadString(funcname)
                     signals!!.signal[i][j].function = Game_local.gameLocal.program.FindFunction(funcname)
@@ -1241,7 +1371,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
 
         // restore must retrieve modelDefHandle from the renderer
         if (modelDefHandle != -1) {
-            modelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(renderEntity!!)
+            modelDefHandle = gameRenderWorld!!.AddEntityDef(renderEntity!!)
         }
     }
 
@@ -1493,9 +1623,9 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
 
         // add to refresh list
         if (modelDefHandle == -1) {
-            modelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(renderEntity!!)
+            modelDefHandle = gameRenderWorld!!.AddEntityDef(renderEntity!!)
         } else {
-            Game_local.gameRenderWorld!!.UpdateEntityDef(modelDefHandle, renderEntity!!)
+            gameRenderWorld!!.UpdateEntityDef(modelDefHandle, renderEntity!!)
         }
     }
 
@@ -1578,12 +1708,28 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
 
     open fun FreeModelDef() {
         if (modelDefHandle != -1) {
-            Game_local.gameRenderWorld!!.FreeEntityDef(modelDefHandle)
+            gameRenderWorld!!.FreeEntityDef(modelDefHandle)
             modelDefHandle = -1
         }
     }
 
     open fun FreeLightDef() {}
+
+    // D3XP: determine which timeline this entity runs on based on spawn arg "slowmo"
+    fun DetermineTimeGroup(slowmo: Boolean) {
+        timeGroup = if (slowmo || Game_local.gameLocal.isMultiplayer) {
+            Game_local.TIME_GROUP1 // fast (player-speed) timeline
+        } else {
+            Game_local.TIME_GROUP2 // slow timeline (affected by slow-mo)
+        }
+    }
+
+    // D3XP: grabbed state for the gravity gun (grabber) mechanic
+    fun SetGrabbedState(grabbed: Boolean) {
+        fl.grabbed = grabbed
+    }
+
+    fun IsGrabbed(): Boolean = fl.grabbed
     open fun Hide() {
         if (!IsHidden()) {
             fl.hidden = true
@@ -1609,6 +1755,10 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
     }
 
     fun UpdateModel() {
+        if (isD3XP) {
+            renderEntity!!.timeGroup = timeGroup
+        }
+
         UpdateModelTransform()
 
         // check if the entity has an MD5 model
@@ -1623,6 +1773,18 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
 
         // ensure that we call Present this frame
         BecomeActive(TH_UPDATEVISUALS)
+
+        // D3XP: if the entity has an xray skin, go ahead and add/update it
+        if (isD3XP && xraySkin != null) {
+            xrayEntity = renderEntity_s(renderEntity!!)
+            xrayEntity!!.xrayIndex = 2
+            xrayEntity!!.customSkin = xraySkin
+            if (xrayEntityHandle == -1) {
+                xrayEntityHandle = gameRenderWorld!!.AddEntityDef(xrayEntity!!)
+            } else {
+                gameRenderWorld!!.UpdateEntityDef(xrayEntityHandle, xrayEntity!!)
+            }
+        }
     }
 
     fun UpdateModelTransform() {
@@ -1674,7 +1836,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         val mtr: Material.idMaterial? = DeclManager.declManager.FindMaterial(material)
 
         // project an overlay onto the model
-        Game_local.gameRenderWorld!!.ProjectOverlay(modelDefHandle, localPlane as Array<idPlane?>, mtr)
+        gameRenderWorld!!.ProjectOverlay(modelDefHandle, localPlane as Array<idPlane?>, mtr)
 
         // make sure non-animating models update their overlay
         UpdateVisuals()
@@ -1836,7 +1998,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         UpdateSound()
         len = refSound.referenceSound!!.StartSound(shader, channel, diversity, soundShaderFlags)
 
-        length?.integerValue = len
+        length?._val = len
 
         // set reference to the sound for shader synced effects
         renderEntity!!.referenceSound = refSound.referenceSound
@@ -2780,16 +2942,16 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
 
         // inform the attacker that they hit someone
         attacker!!.DamageFeedback(this, inflictor, damage)
-        if (0 != damage.integerValue) {
+        if (0 != damage._val) {
             // do the damage
-            health -= damage.integerValue
+            health -= damage._val
             if (health <= 0) {
                 if (health < -999) {
                     health = -999
                 }
-                Killed(inflictor, attacker, damage.integerValue, dir, location)
+                Killed(inflictor, attacker, damage._val, dir, location)
             } else {
-                Pain(inflictor, attacker, damage.integerValue, dir, location)
+                Pain(inflictor, attacker, damage._val, dir, location)
             }
         }
     }
@@ -3737,10 +3899,10 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                 if (setClipModel) {
                     val numSides = CInt()
                     val trm = idTraceModel()
-                    if (spawnArgs.GetInt("cylinder", "0", numSides) && numSides.integerValue > 0) {
-                        trm.SetupCylinder(bounds, max(numSides.integerValue, 3))
-                    } else if (spawnArgs.GetInt("cone", "0", numSides) && numSides.integerValue > 0) {
-                        trm.SetupCone(bounds, max(numSides.integerValue, 3))
+                    if (spawnArgs.GetInt("cylinder", "0", numSides) && numSides._val > 0) {
+                        trm.SetupCylinder(bounds, max(numSides._val, 3))
+                    } else if (spawnArgs.GetInt("cone", "0", numSides) && numSides._val > 0) {
+                        trm.SetupCone(bounds, max(numSides._val, 3))
                     } else {
                         trm.SetupBox(bounds)
                     }
@@ -4024,7 +4186,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                     }
                 } // bind to a body of the physics object of the parent
                 else if (spawnArgs.GetInt("bindToBody", "0", id)) {
-                    BindToBody(parent, id.integerValue, bindOrientated)
+                    BindToBody(parent, id._val, bindOrientated)
                 } // bind to the parent
                 else {
                     Bind(parent, bindOrientated)
@@ -4101,6 +4263,8 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             angles[1] = spawnArgs.GetFloat("angle")
             angles[2] = 0.0f
         }
+        // DG: save old origin for debug warning
+        val oldOrg = idVec3(GetPhysics().GetOrigin())
         Teleport(org, angles, null)
         part = teamChain
         while (part != null) {
@@ -4115,12 +4279,20 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                         GetName(),
                         part.GetName()
                     )
+                    Game_local.gameLocal.Warning(
+                        "  from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)\n",
+                        oldOrg.x, oldOrg.y, oldOrg.z, org.x, org.y, org.z
+                    )
                 }
             } else if (part.GetPhysics() is idPhysics_AF) {
                 Game_local.gameLocal.Warning(
                     "teleported '%s' which has the articulated figure '%s' bound to it\n",
                     GetName(),
                     part.GetName()
+                )
+                Game_local.gameLocal.Warning(
+                    "  from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)\n",
+                    oldOrg.x, oldOrg.y, oldOrg.z, org.x, org.y, org.z
                 )
             }
             part = part.teamChain
@@ -4219,6 +4391,8 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                 = false
         var networkSync // if true the entity is synchronized over the network
                 = false
+        var grabbed // D3XP: if true object is currently being grabbed
+                = false
         var neverDormant // if true the entity never goes dormant
                 = false
         var noknockback // if true no knockback from hits
@@ -4252,6 +4426,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             isDormant = (bits and (1 shl 9)) != 0
             hasAwakened = (bits and (1 shl 10)) != 0
             networkSync = (bits and (1 shl 11)) != 0
+            grabbed = (bits and (1 shl 12)) != 0
         }
 
         override fun Write(): ByteBuffer {
@@ -4271,6 +4446,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             if (isDormant) bits = bits or (1 shl 9)
             if (hasAwakened) bits = bits or (1 shl 10)
             if (networkSync) bits = bits or (1 shl 11)
+            if (grabbed) bits = bits or (1 shl 12)
             buffer.putShort(bits.toShort())
             buffer.flip()
             return buffer
@@ -4577,7 +4753,7 @@ open class idAnimatedEntity : idEntity() {
             renderEntity!!.numJoints = animator.GetJoints(renderEntity!!)
             animator.GetBounds(Game_local.gameLocal.time, renderEntity!!.bounds)
             if (modelDefHandle != -1) {
-                Game_local.gameRenderWorld!!.UpdateEntityDef(modelDefHandle, renderEntity!!)
+                gameRenderWorld!!.UpdateEntityDef(modelDefHandle, renderEntity!!)
             }
         }
     }
@@ -5005,5 +5181,39 @@ open class idAnimatedEntity : idEntity() {
         animator = idAnimator()
         animator.SetEntity(this)
         damageEffects = null
+    }
+}
+
+/**
+ * D3XP: scoped time state switcher — saves current fast/slow timeline context,
+ * switches to the specified timeGroup, and restores on close().
+ *
+ * In C++ this was RAII (destructor restores). In Kotlin, call with try/finally:
+ *   val ts = SetTimeState(timeGroup)
+ *   try { ... } finally { ts.close() }
+ *
+ * Or use Kotlin's built-in use block pattern (implements AutoCloseable).
+ */
+class SetTimeState(timeGroup: Int = -1) : AutoCloseable {
+    private var activated = false
+    private var previousFast = false
+
+    init {
+        if (timeGroup >= 0) push(timeGroup)
+    }
+
+    fun push(timeGroup: Int) {
+        if (Game_local.gameLocal.isMultiplayer) return
+        activated = true
+        // remember which timeline we were on
+        previousFast = Game_local.gameLocal.time != Game_local.gameLocal.slow.time
+        // switch to the requested timeline
+        Game_local.gameLocal.SelectTimeGroup(timeGroup)
+    }
+
+    override fun close() {
+        if (activated && !Game_local.gameLocal.isMultiplayer) {
+            Game_local.gameLocal.SelectTimeGroup(if (previousFast) Game_local.TIME_GROUP2 else Game_local.TIME_GROUP1)
+        }
     }
 }

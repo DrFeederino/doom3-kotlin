@@ -21,8 +21,10 @@ package neo.Game
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Player.idPlayer
 import neo.Renderer.Material
+import neo.Renderer.RenderSystem
 import neo.Renderer.RenderSystem.SCREEN_HEIGHT
 import neo.Renderer.RenderSystem.SCREEN_WIDTH
 import neo.Renderer.RenderSystem.renderSystem
@@ -68,6 +70,542 @@ object PlayerView {
         var h = 0.0f
     }
 
+    /*
+    ===============================================================================
+
+      D3XP Fullscreen FX System
+
+    ===============================================================================
+    */
+
+    // D3XP warp effect polygon
+    class WarpPolygon_t {
+        val outer1: idVec4 = idVec4()
+        val outer2: idVec4 = idVec4()
+        val center: idVec4 = idVec4()
+    }
+
+    // D3XP warp effect
+    class Warp_t {
+        var id: Int = 0
+        var active: Boolean = false
+        var startTime: Int = 0
+        var initialRadius: Float = 0f
+        val worldOrigin: idVec3 = idVec3()
+        val screenOrigin: idVec2 = idVec2()
+        var durationMsec: Int = 0
+        val polys: MutableList<WarpPolygon_t> = mutableListOf()
+    }
+
+    // D3XP FX fader
+    class FxFader {
+        companion object {
+            const val FX_STATE_OFF = 0
+            const val FX_STATE_RAMPUP = 1
+            const val FX_STATE_RAMPDOWN = 2
+            const val FX_STATE_ON = 3
+        }
+
+        private var time: Int = 0
+        private var state: Int = FX_STATE_OFF
+        private var alpha: Float = 0f
+        private var msec: Int = 0
+
+        fun SetTriggerState(active: Boolean): Boolean {
+            // handle on/off states
+            if (active && state == FX_STATE_OFF) {
+                state = FX_STATE_RAMPUP
+                time = Game_local.gameLocal.slow.time + msec
+            } else if (!active && state == FX_STATE_ON) {
+                state = FX_STATE_RAMPDOWN
+                time = Game_local.gameLocal.slow.time + msec
+            }
+
+            // handle rampup/rampdown states
+            if (state == FX_STATE_RAMPUP) {
+                if (Game_local.gameLocal.slow.time >= time) {
+                    state = FX_STATE_ON
+                }
+            } else if (state == FX_STATE_RAMPDOWN) {
+                if (Game_local.gameLocal.slow.time >= time) {
+                    state = FX_STATE_OFF
+                }
+            }
+
+            // compute alpha
+            when (state) {
+                FX_STATE_ON -> alpha = 1f
+                FX_STATE_OFF -> alpha = 0f
+                FX_STATE_RAMPUP -> alpha = 1f - (time - Game_local.gameLocal.slow.time).toFloat() / msec
+                FX_STATE_RAMPDOWN -> alpha = (time - Game_local.gameLocal.slow.time).toFloat() / msec
+            }
+
+            return alpha > 0f
+        }
+
+        fun Save(savefile: idSaveGame) {
+            savefile.WriteInt(time)
+            savefile.WriteInt(state)
+            savefile.WriteFloat(alpha)
+            savefile.WriteInt(msec)
+        }
+
+        fun Restore(savefile: idRestoreGame) {
+            time = savefile.ReadInt()
+            state = savefile.ReadInt()
+            alpha = savefile.ReadFloat()
+            msec = savefile.ReadInt()
+        }
+
+        fun SetFadeTime(t: Int) {
+            msec = t
+        }
+
+        fun GetFadeTime(): Int = msec
+        fun GetAlpha(): Float = alpha
+    }
+
+    // D3XP fullscreen effect base class
+    abstract class FullscreenFX {
+        protected var name: idStr = idStr()
+        protected var fader: FxFader = FxFader()
+        var fxman: FullscreenFXManager? = null
+
+        abstract fun Initialize()
+        abstract fun Active(): Boolean
+        abstract fun HighQuality()
+        open fun LowQuality() {}
+        open fun AccumPass(view: renderView_s) {}
+        open fun HasAccum(): Boolean = false
+
+        fun SetName(n: idStr) {
+            name = n
+        }
+
+        fun GetName(): idStr = name
+
+        fun SetFXManager(fx: FullscreenFXManager) {
+            fxman = fx
+        }
+
+        fun SetTriggerState(state: Boolean): Boolean = fader.SetTriggerState(state)
+        fun SetFadeSpeed(msec: Int) {
+            fader.SetFadeTime(msec)
+        }
+
+        fun GetFadeAlpha(): Float = fader.GetAlpha()
+
+        open fun Save(savefile: idSaveGame) {
+            fader.Save(savefile)
+        }
+
+        open fun Restore(savefile: idRestoreGame) {
+            fader.Restore(savefile)
+        }
+    }
+
+    // D3XP helltime effect
+    class FullscreenFX_Helltime : FullscreenFX() {
+        private val acInitMaterials = arrayOfNulls<Material.idMaterial>(3)
+        private val acCaptureMaterials = arrayOfNulls<Material.idMaterial>(3)
+        private val acDrawMaterials = arrayOfNulls<Material.idMaterial>(3)
+        private val crCaptureMaterials = arrayOfNulls<Material.idMaterial>(3)
+        private val crDrawMaterials = arrayOfNulls<Material.idMaterial>(3)
+        private var clearAccumBuffer: Boolean = false
+
+        private fun DetermineLevel(): Int {
+            val player = fxman?.GetPlayer() ?: return -1
+            if (player.PowerUpActive(Player.HELLTIME)) {
+                if (player.PowerUpActive(Player.INVULNERABILITY)) return 2
+                if (player.PowerUpActive(Player.BERSERK)) return 1
+                return 0
+            }
+            return -1
+        }
+
+        override fun Initialize() {
+            acInitMaterials[0] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb1/ac_init")
+            acInitMaterials[1] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb2/ac_init")
+            acInitMaterials[2] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb3/ac_init")
+            acCaptureMaterials[0] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb1/ac_capture")
+            acCaptureMaterials[1] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb2/ac_capture")
+            acCaptureMaterials[2] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb3/ac_capture")
+            acDrawMaterials[0] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb1/ac_draw")
+            acDrawMaterials[1] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb2/ac_draw")
+            acDrawMaterials[2] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb3/ac_draw")
+            crCaptureMaterials[0] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb1/cr_capture")
+            crCaptureMaterials[1] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb2/cr_capture")
+            crCaptureMaterials[2] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb3/cr_capture")
+            crDrawMaterials[0] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb1/cr_draw")
+            crDrawMaterials[1] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb2/cr_draw")
+            crDrawMaterials[2] = DeclManager.declManager.FindMaterial("textures/smf/bloodorb3/cr_draw")
+            clearAccumBuffer = true
+        }
+
+        override fun Active(): Boolean {
+            if (Game_local.gameLocal.inCinematic || Game_local.gameLocal.isMultiplayer) return false
+            if (DetermineLevel() >= 0) return true
+            if (fader.GetAlpha() == 0f) clearAccumBuffer = true
+            return false
+        }
+
+        override fun HighQuality() {
+            // TODO T6.4: port GL rendering for helltime effect
+        }
+
+        override fun AccumPass(view: renderView_s) {
+            // TODO T6.4: port GL accumulation pass for helltime
+        }
+
+        override fun HasAccum(): Boolean = true
+
+        override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
+            clearAccumBuffer = true
+        }
+    }
+
+    // D3XP multiplayer effect
+    class FullscreenFX_Multiplayer : FullscreenFX() {
+        private var acInitMaterials: Material.idMaterial? = null
+        private var acCaptureMaterials: Material.idMaterial? = null
+        private var acDrawMaterials: Material.idMaterial? = null
+        private var crCaptureMaterials: Material.idMaterial? = null
+        private var crDrawMaterials: Material.idMaterial? = null
+        private var clearAccumBuffer: Boolean = false
+
+        private fun DetermineLevel(): Int {
+            val player = fxman?.GetPlayer() ?: return -1
+            if (player.PowerUpActive(Player.HELLTIME)) return 0
+            return -1
+        }
+
+        override fun Initialize() {
+            acInitMaterials = DeclManager.declManager.FindMaterial("textures/smf/multiplayer1/ac_init")
+            acCaptureMaterials = DeclManager.declManager.FindMaterial("textures/smf/multiplayer1/ac_capture")
+            acDrawMaterials = DeclManager.declManager.FindMaterial("textures/smf/multiplayer1/ac_draw")
+            crCaptureMaterials = DeclManager.declManager.FindMaterial("textures/smf/multiplayer1/cr_capture")
+            crDrawMaterials = DeclManager.declManager.FindMaterial("textures/smf/multiplayer1/cr_draw")
+            clearAccumBuffer = true
+        }
+
+        override fun Active(): Boolean {
+            if (!Game_local.gameLocal.isMultiplayer) return false
+            if (DetermineLevel() >= 0) return true
+            if (fader.GetAlpha() == 0f) clearAccumBuffer = true
+            return false
+        }
+
+        override fun HighQuality() { /* TODO T6.4: GL rendering for multiplayer effect */
+        }
+
+        override fun AccumPass(view: renderView_s) { /* TODO T6.4: GL accumulation pass */
+        }
+
+        override fun HasAccum(): Boolean = true
+
+        override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
+            clearAccumBuffer = true
+        }
+    }
+
+    // D3XP warp effect (grabber)
+    class FullscreenFX_Warp : FullscreenFX() {
+        private var material: Material.idMaterial? = null
+        private var grabberEnabled: Boolean = false
+        private var startWarpTime: Int = 0
+
+        private fun DrawWarp(wp: WarpPolygon_t, interp: Float) { /* TODO T6.4: GL warp polygon */
+        }
+
+        override fun Initialize() {
+            material = DeclManager.declManager.FindMaterial("textures/smf/warp")
+            grabberEnabled = false
+            startWarpTime = 0
+        }
+
+        override fun Active(): Boolean = grabberEnabled
+        override fun HighQuality() { /* TODO T6.4: GL warp rendering */
+        }
+
+        fun EnableGrabber(active: Boolean) {
+            grabberEnabled = active
+            startWarpTime = Game_local.gameLocal.slow.time
+        }
+
+        override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
+            savefile.WriteBool(grabberEnabled)
+            savefile.WriteInt(startWarpTime)
+        }
+
+        override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
+            grabberEnabled = savefile.ReadBool()
+            startWarpTime = savefile.ReadInt()
+        }
+    }
+
+    // D3XP envirosuit effect
+    class FullscreenFX_EnviroSuit : FullscreenFX() {
+        private var material: Material.idMaterial? = null
+
+        override fun Initialize() {
+            material = DeclManager.declManager.FindMaterial("textures/smf/enviro_suit")
+        }
+
+        override fun Active(): Boolean {
+            val player = fxman?.GetPlayer() ?: return false
+            return player.PowerUpActive(Player.ENVIROSUIT)
+        }
+
+        override fun HighQuality() { /* TODO T6.4: envirosuit screen distortion */
+        }
+    }
+
+    // D3XP double vision effect
+    class FullscreenFX_DoubleVision : FullscreenFX() {
+        private var material: Material.idMaterial? = null
+
+        override fun Initialize() {
+            material = DeclManager.declManager.FindMaterial("textures/smf/doubleVision")
+        }
+
+        override fun Active(): Boolean {
+            val pv = fxman?.GetPlayerView() ?: return false
+            return Game_local.gameLocal.fast.time < pv.dvFinishTime
+        }
+
+        override fun HighQuality() { /* TODO T6.4: double vision rendering */
+        }
+    }
+
+    // D3XP influence vision effect
+    class FullscreenFX_InfluenceVision : FullscreenFX() {
+        override fun Initialize() {}
+
+        override fun Active(): Boolean {
+            val player = fxman?.GetPlayer() ?: return false
+            return player.GetInfluenceMaterial() != null || player.GetInfluenceEntity() != null
+        }
+
+        override fun HighQuality() { /* TODO T6.4: influence vision rendering */
+        }
+    }
+
+    // D3XP bloom effect
+    class FullscreenFX_Bloom : FullscreenFX() {
+        private var drawMaterial: Material.idMaterial? = null
+        private var initMaterial: Material.idMaterial? = null
+        private var currentMaterial: Material.idMaterial? = null
+        private var currentIntensity: Float = 0f
+        private var targetIntensity: Float = 0f
+
+        override fun Initialize() {
+            drawMaterial = DeclManager.declManager.FindMaterial("textures/smf/bloom2/draw")
+            initMaterial = DeclManager.declManager.FindMaterial("textures/smf/bloom2/init")
+            currentMaterial = DeclManager.declManager.FindMaterial("textures/smf/bloom2/currentMaterial")
+            currentIntensity = 0f
+            targetIntensity = 0f
+        }
+
+        override fun Active(): Boolean {
+            val player = fxman?.GetPlayer() ?: return false
+            return player.bloomEnabled
+        }
+
+        override fun HighQuality() { /* TODO T6.4: bloom rendering */
+        }
+
+        override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
+            savefile.WriteFloat(currentIntensity)
+            savefile.WriteFloat(targetIntensity)
+        }
+
+        override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
+            currentIntensity = savefile.ReadFloat()
+            targetIntensity = savefile.ReadFloat()
+        }
+    }
+
+    // D3XP fullscreen FX manager
+    class FullscreenFXManager {
+        private val fx: MutableList<FullscreenFX> = mutableListOf()
+        private var highQualityMode: Boolean = false
+        private val shiftScale: idVec2 = idVec2()
+
+        var playerView: idPlayerView? = null
+            private set
+        private var blendBackMaterial: Material.idMaterial? = null
+
+        private fun CreateFX(name: idStr, fxtype: idStr, fade: Int) {
+            val pfx: FullscreenFX? = when (fxtype.toString()) {
+                "helltime" -> FullscreenFX_Helltime()
+                "warp" -> FullscreenFX_Warp()
+                "envirosuit" -> FullscreenFX_EnviroSuit()
+                "doublevision" -> FullscreenFX_DoubleVision()
+                "multiplayer" -> FullscreenFX_Multiplayer()
+                "influencevision" -> FullscreenFX_InfluenceVision()
+                "bloom" -> FullscreenFX_Bloom()
+                else -> {
+                    assert(false); null
+                }
+            }
+            if (pfx != null) {
+                pfx.Initialize()
+                pfx.SetFXManager(this)
+                pfx.SetName(name)
+                pfx.SetFadeSpeed(fade)
+                fx.add(pfx)
+            }
+        }
+
+        fun Initialize(pv: idPlayerView) {
+            playerView = pv
+            blendBackMaterial = DeclManager.declManager.FindMaterial("textures/smf/blendBack")
+
+            CreateFX(idStr("helltime"), idStr("helltime"), 1000)
+            CreateFX(idStr("warp"), idStr("warp"), 0)
+            CreateFX(idStr("envirosuit"), idStr("envirosuit"), 500)
+            CreateFX(idStr("doublevision"), idStr("doublevision"), 0)
+            CreateFX(idStr("multiplayer"), idStr("multiplayer"), 1000)
+            CreateFX(idStr("influencevision"), idStr("influencevision"), 1000)
+            CreateFX(idStr("bloom"), idStr("bloom"), 0)
+
+            // pre-cache texture grabs
+            RenderSystem.renderSystem.CropRenderSize(512, 512, true)
+            RenderSystem.renderSystem.CaptureRenderToImage("_accum")
+            RenderSystem.renderSystem.UnCrop()
+
+            RenderSystem.renderSystem.CropRenderSize(512, 256, true)
+            RenderSystem.renderSystem.CaptureRenderToImage("_scratch")
+            RenderSystem.renderSystem.UnCrop()
+
+            RenderSystem.renderSystem.CaptureRenderToImage("_currentRender")
+        }
+
+        fun Process(view: renderView_s) {
+            var allpass = false
+
+            if (SysCvar.g_testFullscreenFX.GetInteger() == -2) {
+                allpass = true
+            }
+
+            highQualityMode = !SysCvar.g_lowresFullscreenFX.GetBool()
+
+            // compute the shift scale
+            if (highQualityMode) {
+                val vidWidth = CInt()
+                val vidHeight = CInt()
+                RenderSystem.renderSystem.GetGLSettings(vidWidth, vidHeight)
+
+                var pot = 1
+                while (pot < vidWidth._val) pot = pot shl 1
+                shiftScale.x = vidWidth._val.toFloat() / pot
+
+                pot = 1
+                while (pot < vidHeight._val) pot = pot shl 1
+                shiftScale.y = vidHeight._val.toFloat() / pot
+            } else {
+                shiftScale.x = 1f
+                shiftScale.y = 1f
+                RenderSystem.renderSystem.CropRenderSize(512, 512, true)
+            }
+
+            // do the first render
+            Game_local.gameRenderWorld!!.RenderScene(view)
+
+            // process each effect
+            for (i in 0 until fx.size) {
+                val pfx = fx[i]
+                val drawIt: Boolean
+
+                if (pfx.Active() || SysCvar.g_testFullscreenFX.GetInteger() == i || allpass) {
+                    drawIt = pfx.SetTriggerState(true)
+                } else {
+                    drawIt = pfx.SetTriggerState(false)
+                }
+
+                if (drawIt) {
+                    CaptureCurrentRender()
+
+                    if (pfx.HasAccum()) {
+                        if (highQualityMode) {
+                            RenderSystem.renderSystem.CropRenderSize(512, 512, true)
+                            pfx.AccumPass(view)
+                            RenderSystem.renderSystem.UnCrop()
+                        } else {
+                            pfx.AccumPass(view)
+                        }
+                    }
+
+                    pfx.HighQuality()
+                    Blendback(pfx.GetFadeAlpha())
+                }
+            }
+
+            if (!highQualityMode) {
+                CaptureCurrentRender()
+                RenderSystem.renderSystem.UnCrop()
+                RenderSystem.renderSystem.SetColor4(1f, 1f, 1f, 1f)
+                RenderSystem.renderSystem.DrawStretchPic(0f, 0f, 640f, 480f, 0f, 1f, 1f, 0f, blendBackMaterial)
+            }
+        }
+
+        fun CaptureCurrentRender() {
+            RenderSystem.renderSystem.CaptureRenderToImage("_currentRender")
+        }
+
+        fun Blendback(alpha: Float) {
+            if (alpha < 1f) {
+                RenderSystem.renderSystem.SetColor4(1f, 1f, 1f, 1f - alpha)
+                RenderSystem.renderSystem.DrawStretchPic(
+                    0f,
+                    0f,
+                    640f,
+                    480f,
+                    0f,
+                    shiftScale.y,
+                    shiftScale.x,
+                    0f,
+                    blendBackMaterial
+                )
+            }
+        }
+
+        fun GetShiftScale(): idVec2 = shiftScale
+        fun GetPlayerView(): idPlayerView? = playerView
+        fun GetPlayer(): idPlayer? = Game_local.Companion.gameLocal.GetLocalPlayer()
+
+        fun GetNum(): Int = fx.size
+        fun GetFX(index: Int): FullscreenFX = fx[index]
+        fun FindFX(name: idStr): FullscreenFX? {
+            for (i in 0 until fx.size) {
+                if (fx[i].GetName() == name) return fx[i]
+            }
+            return null
+        }
+
+        fun Save(savefile: idSaveGame) {
+            savefile.WriteBool(highQualityMode)
+            savefile.WriteVec2(shiftScale)
+            for (i in 0 until fx.size) {
+                fx[i].Save(savefile)
+            }
+        }
+
+        fun Restore(savefile: idRestoreGame) {
+            highQualityMode = savefile.ReadBool()
+            savefile.ReadVec2(shiftScale)
+            for (i in 0 until fx.size) {
+                fx[i].Restore(savefile)
+            }
+        }
+    }
+
     class idPlayerView {
         private val screenBlobs: Array<screenBlob_t> = Array(MAX_SCREEN_BLOBS) { screenBlob_t() }
         private var armorMaterial // armor damage view effect
@@ -83,7 +621,7 @@ object PlayerView {
                 : Material.idMaterial?
 
         //
-        private var dvFinishTime // double vision will be stopped at this time
+        var dvFinishTime // double vision will be stopped at this time
                 : Int
         private var dvMaterial // material to take the double vision screen shot
                 : Material.idMaterial?
@@ -122,6 +660,28 @@ object PlayerView {
         private var tunnelMaterial // health tunnel vision
                 : Material.idMaterial?
         private val view: renderView_s
+
+        // D3XP fullscreen FX manager
+        var fxManager: FullscreenFXManager? = null
+
+        // D3XP warp effects
+        fun AddWarp(
+            worldOrigin: idVec3,
+            centerx: Float,
+            centery: Float,
+            initialRadius: Float,
+            durationMsec: Float
+        ): Int {
+            val fx = fxManager?.FindFX(idStr("warp")) as? FullscreenFX_Warp
+            fx?.EnableGrabber(true)
+            return 1
+        }
+
+        fun FreeWarp(id: Int) {
+            val fx = fxManager?.FindFX(idStr("warp")) as? FullscreenFX_Warp
+            fx?.EnableGrabber(false)
+        }
+
         fun Save(savefile: idSaveGame) {
             for (i in 0 until MAX_SCREEN_BLOBS) {
                 val blob = screenBlobs[i]
@@ -390,8 +950,8 @@ object PlayerView {
                     var glWidth: CInt = CInt()
                     var glHeight: CInt = CInt()
                     renderSystem.GetGLSettings(glWidth, glHeight)
-                    if (glWidth.integerValue > 0 && glHeight.integerValue > 0) {
-                        val glAspectRatio = glWidth.integerValue.toFloat() / glHeight.integerValue.toFloat()
+                    if (glWidth._val > 0 && glHeight._val > 0) {
+                        val glAspectRatio = glWidth._val.toFloat() / glHeight._val.toFloat()
 
                         val vidWidth = SCREEN_WIDTH
                         val vidHeight = SCREEN_HEIGHT
@@ -506,6 +1066,44 @@ object PlayerView {
             // hack the shake in at the very last moment, so it can't cause any consistency problems
             val hackedView = renderView_s(view)
             hackedView.viewaxis.set(hackedView.viewaxis.times(ShakeAxis()))
+
+            // D3XP: portal sky rendering
+            if (isD3XP && Game_local.gameLocal.portalSkyEnt.GetEntity() != null
+                && Game_local.gameLocal.IsPortalSkyActive()
+                && SysCvar.g_enablePortalSky.GetBool()
+            ) {
+                val portalView = renderView_s(hackedView)
+                portalView.vieworg.set(
+                    Game_local.gameLocal.portalSkyEnt.GetEntity()!!.GetPhysics().GetOrigin()
+                )
+
+                // setup global fixup projection vars
+                val vidWidth = CInt()
+                val vidHeight = CInt()
+                RenderSystem.renderSystem.GetGLSettings(vidWidth, vidHeight)
+
+                var pot = 1
+                while (pot < vidWidth._val) pot = pot shl 1
+                val shiftX = vidWidth._val.toFloat() / pot
+
+                pot = 1
+                while (pot < vidHeight._val) pot = pot shl 1
+                val shiftY = vidHeight._val.toFloat() / pot
+
+                hackedView.shaderParms[4] = shiftX
+                hackedView.shaderParms[5] = shiftY
+
+                Game_local.gameRenderWorld!!.RenderScene(portalView)
+                RenderSystem.renderSystem.CaptureRenderToImage("_currentRender")
+
+                hackedView.forceUpdate = true // FIX: for smoke particles not drawing when portalSky present
+            }
+
+            // D3XP: process fullscreen effects
+            if (isD3XP) {
+                fxManager?.Process(hackedView)
+            }
+
             Game_local.gameRenderWorld!!.RenderScene(hackedView)
             if (player!!.spectating) {
                 return

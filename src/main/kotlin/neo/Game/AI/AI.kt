@@ -33,7 +33,11 @@ import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.*
+import neo.Game.Game_local.Companion.MASK_SHOT_RENDERMODEL
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Misc.idPathCorner
+import neo.Game.Moveable.idBarrel
+import neo.Game.Moveable.idExplodingBarrel
 import neo.Game.Moveable.idMoveable
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics.idPhysics
@@ -69,6 +73,7 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
+import neo.idlib.containers.HashTable.idHashTable
 import neo.idlib.containers.List.idList
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.math.*
@@ -155,7 +160,7 @@ fun Seek(vel: idVec3, org: idVec3, goal: idVec3, prediction: Float): idVec3 {
     // predict our position
     predictedPos.set(org + vel * prediction)
     goalDelta.set(goal - predictedPos)
-    seekVel.set(goalDelta * MS2SEC(idGameLocal.msec.toFloat()))
+    seekVel.set(goalDelta * MS2SEC(Game_local.gameLocal.msec.toFloat()))
     return seekVel
 }
 
@@ -242,6 +247,13 @@ class particleEmitter_s {
     var   /*jointHandle_t*/joint: Int = Model.INVALID_JOINT
     var particle: idDeclParticle? = null
     var time = 0
+}
+
+// D3XP: named particle emitter attached to an AI joint (used by script frame commands)
+class funcEmitter_t {
+    var name: String = ""
+    var particle: idEntity? = null  // idFuncEmitter entity
+    var joint: Int = Model.INVALID_JOINT /*jointHandle_t*/
 }
 
 class idMoveState {
@@ -605,8 +617,8 @@ open class idAI : idActor() {
                 CInt()
             )
             path.startPosOutsideObstacles.set(startPosVec2)
-            if (insideObstacle.integerValue != -1) {
-                path.startPosObstacle = obstacles[insideObstacle.integerValue].entity
+            if (insideObstacle._val != -1) {
+                path.startPosObstacle = obstacles[insideObstacle._val].entity
             }
 
             // get a goal position outside the obstacles
@@ -619,8 +631,8 @@ open class idAI : idActor() {
                 CInt()
             )
             path.seekPosOutsideObstacles.set(seekPosVec2)
-            if (insideObstacle.integerValue != -1) {
-                path.seekPosObstacle = obstacles[insideObstacle.integerValue].entity
+            if (insideObstacle._val != -1) {
+                path.seekPosObstacle = obstacles[insideObstacle._val].entity
             }
 
             // if start and destination are pushed to the same point, we don't have a path around the obstacle
@@ -1505,6 +1517,40 @@ open class idAI : idActor() {
                 eventCallback_t1<idAI> { obj: idAI, _ent: idEventArg<*>? ->
                     obj.Event_GetReachableEntityPosition(_ent as idEventArg<idEntity>)
                 }
+
+            // D3XP: new event registrations
+            eventCallbacks[AI_LaunchProjectile] =
+                eventCallback_t1<idAI> { obj: idAI, name: idEventArg<*>? ->
+                    obj.Event_LaunchProjectile((name as idEventArg<String>).value)
+                }
+            eventCallbacks[AI_MoveToPositionDirect] =
+                eventCallback_t1<idAI> { obj: idAI, pos: idEventArg<*>? ->
+                    obj.Event_MoveToPositionDirect(pos as idEventArg<idVec3>)
+                }
+            eventCallbacks[AI_AvoidObstacles] =
+                eventCallback_t1<idAI> { obj: idAI, ignore: idEventArg<*>? ->
+                    obj.Event_AvoidObstacles((ignore as idEventArg<Int>).value)
+                }
+            eventCallbacks[AI_TriggerFX] =
+                eventCallback_t2<idAI> { obj: idAI, joint: idEventArg<*>?, fx: idEventArg<*>? ->
+                    obj.Event_TriggerFX((joint as idEventArg<String>).value, (fx as idEventArg<String>).value)
+                }
+            eventCallbacks[AI_StartEmitter] =
+                eventCallback_t3<idAI> { obj: idAI, name: idEventArg<*>?, joint: idEventArg<*>?, particle: idEventArg<*>? ->
+                    obj.Event_StartEmitter(
+                        (name as idEventArg<String>).value,
+                        (joint as idEventArg<String>).value,
+                        (particle as idEventArg<String>).value
+                    )
+                }
+            eventCallbacks[AI_GetEmitter] =
+                eventCallback_t1<idAI> { obj: idAI, name: idEventArg<*>? ->
+                    obj.Event_GetEmitter((name as idEventArg<String>).value)
+                }
+            eventCallbacks[AI_StopEmitter] =
+                eventCallback_t1<idAI> { obj: idAI, name: idEventArg<*>? ->
+                    obj.Event_StopEmitter((name as idEventArg<String>).value)
+                }
         }
     }
 
@@ -1673,6 +1719,13 @@ open class idAI : idActor() {
             : renderLight_s
     protected var worldMuzzleFlashHandle: Int
 
+    // D3XP: named particle emitters attached to AI joints
+    var spawnClearMoveables: Boolean = false
+    val funcEmitters: idHashTable<funcEmitter_t> = idHashTable()
+
+    // D3XP: harvestable body entity (soul cube charges from dead AI)
+    val harvestEnt: idEntityPtr<idHarvestable> = idEntityPtr()
+
     /*
      ============
      idAI::Save
@@ -1790,6 +1843,20 @@ open class idAI : idActor() {
         savefile.WriteJoint(orientationJoint)
         savefile.WriteJoint(flyTiltJoint)
         savefile.WriteBool(GetPhysics() == physicsObj)
+
+        // D3XP: save emitters and harvest entity
+        if (isD3XP) {
+            savefile.WriteInt(funcEmitters.Num())
+            for (i in 0 until funcEmitters.Num()) {
+                val emitter = funcEmitters.GetIndex(i)
+                if (emitter != null) {
+                    savefile.WriteString(emitter.name)
+                    savefile.WriteJoint(emitter.joint)
+                    savefile.WriteObject(emitter.particle)
+                }
+            }
+            harvestEnt.Save(savefile)
+        }
     }
 
     /*
@@ -1943,6 +2010,31 @@ open class idAI : idActor() {
         LinkScriptVariables()
         if (restorePhysics._val) {
             RestorePhysics(physicsObj)
+        }
+
+        // D3XP: restore emitters and harvest entity
+        if (isD3XP) {
+            // Clean up existing emitters
+            for (i in 0 until funcEmitters.Num()) {
+                val emitter = funcEmitters.GetIndex(i)
+                if (emitter?.particle != null) {
+                    emitter.particle!!.PostEventMS(EV_Remove, 0)
+                }
+            }
+            funcEmitters.Clear()
+
+            val emitterCount = savefile.ReadInt()
+            for (i in 0 until emitterCount) {
+                val newEmitter = funcEmitter_t()
+                val emitterName = idStr()
+                savefile.ReadString(emitterName)
+                newEmitter.name = emitterName.toString()
+                newEmitter.joint = savefile.ReadJoint()
+                newEmitter.particle = savefile.ReadObject() as? idEntity
+                funcEmitters.Set(newEmitter.name, newEmitter)
+            }
+
+            harvestEnt.Restore(savefile)
         }
     }
 
@@ -2146,6 +2238,27 @@ open class idAI : idActor() {
 
         // init the move variables
         StopMove(moveStatus_t.MOVE_STATUS_DONE)
+
+        // D3XP
+        if (isD3XP) {
+            spawnClearMoveables = spawnArgs.GetBool("spawnClearMoveables", "0")
+        }
+    }
+
+    /*
+     ============
+     idAI::Gib
+     D3XP: notify harvestEnt when AI is gibbed
+     ============
+     */
+    override fun Gib(dir: idVec3, damageDefName: String) {
+        if (isD3XP) {
+            val harvest = harvestEnt.GetEntity()
+            if (harvest != null) {
+                harvest.Gib()
+            }
+        }
+        super.Gib(dir, damageDefName)
     }
 
     /*
@@ -2834,7 +2947,7 @@ open class idAI : idActor() {
     protected fun GetMoveDelta(oldaxis: idMat3, axis: idMat3, delta: idVec3) {
         val oldModelOrigin = idVec3()
         val modelOrigin = idVec3()
-        animator.GetDelta(Game_local.gameLocal.time - idGameLocal.msec, Game_local.gameLocal.time, delta)
+        animator.GetDelta(Game_local.gameLocal.time - Game_local.gameLocal.msec, Game_local.gameLocal.time, delta)
         delta.set(axis.times(delta))
         if (modelOffset != vec3_zero) {
             // the pivot of the monster's model is around its origin, and not around the bounding
@@ -2872,13 +2985,13 @@ open class idAI : idActor() {
                 colorBlue,
                 goalPos.plus(idVec3(1.0f, 1.0f, 0.0f)),
                 goalPos.plus(idVec3(1.0f, 1.0f, 64.0f)),
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugLine(
                 if (foundPath) colorYellow else colorRed,
                 path.seekPos,
                 path.seekPos.plus(idVec3(0.0f, 0.0f, 64.0f)),
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
         }
         if (!foundPath) {
@@ -3039,13 +3152,13 @@ open class idAI : idActor() {
                 colorMagenta,
                 physicsObj.GetBounds(),
                 org,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugBounds(
                 colorMagenta,
                 physicsObj.GetBounds(),
                 move.moveDest,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugLine(
                 colorYellow,
@@ -3055,7 +3168,7 @@ open class idAI : idActor() {
                         viewAxis[0].times(physicsObj.GetGravityAxis().times(16.0f))
                     )
                 ),
-                idGameLocal.msec,
+                Game_local.gameLocal.msec,
                 true
             )
             DrawRoute()
@@ -3114,8 +3227,8 @@ open class idAI : idActor() {
 
         // seek the goal position
         goalDelta.set(goalPos.minus(predictedPos))
-        vel.minusAssign(vel.times(AI_FLY_DAMPENING * MS2SEC(idGameLocal.msec.toFloat())))
-        vel.plusAssign(goalDelta.times(MS2SEC(idGameLocal.msec.toFloat())))
+        vel.minusAssign(vel.times(AI_FLY_DAMPENING * MS2SEC(Game_local.gameLocal.msec.toFloat())))
+        vel.plusAssign(goalDelta.times(MS2SEC(Game_local.gameLocal.msec.toFloat())))
 
         // cap our speed
         vel.Truncate(fly_speed)
@@ -3156,13 +3269,13 @@ open class idAI : idActor() {
                 colorMagenta,
                 physicsObj.GetBounds(),
                 org,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugBounds(
                 colorMagenta,
                 physicsObj.GetBounds(),
                 move.moveDest,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugLine(
                 colorYellow,
@@ -3172,7 +3285,7 @@ open class idAI : idActor() {
                         viewAxis[0].times(physicsObj.GetGravityAxis().times(16.0f))
                     )
                 ),
-                idGameLocal.msec,
+                Game_local.gameLocal.msec,
                 true
             )
             DrawRoute()
@@ -3235,7 +3348,7 @@ open class idAI : idActor() {
                 viewAxis[1].times(idMath.Sin16(t * fly_bob_horz))
                     .plus(viewAxis[2].times(idMath.Sin16(t * fly_bob_vert))).times(fly_bob_strength)
             )
-            vel.plusAssign(fly_bob_add.times(MS2SEC(idGameLocal.msec.toFloat())))
+            vel.plusAssign(fly_bob_add.times(MS2SEC(Game_local.gameLocal.msec.toFloat())))
             if (SysCvar.ai_debugMove.GetBool()) {
                 val origin = physicsObj.GetOrigin()
                 Game_local.gameRenderWorld!!.DebugArrow(
@@ -3278,7 +3391,7 @@ open class idAI : idActor() {
                     if (goLower) colorRed else colorGreen,
                     physicsObj.GetBounds(),
                     path.endPos,
-                    idGameLocal.msec
+                    Game_local.gameLocal.msec
                 )
             }
         }
@@ -3328,11 +3441,11 @@ open class idAI : idActor() {
         var speed: Float
 
         // apply dampening
-        vel.minusAssign(vel.times(AI_FLY_DAMPENING * MS2SEC(idGameLocal.msec.toFloat())))
+        vel.minusAssign(vel.times(AI_FLY_DAMPENING * MS2SEC(Game_local.gameLocal.msec.toFloat())))
 
         // gradually speed up/slow down to desired speed
         speed = vel.Normalize()
-        speed += (move.speed - speed) * MS2SEC(idGameLocal.msec.toFloat())
+        speed += (move.speed - speed) * MS2SEC(Game_local.gameLocal.msec.toFloat())
         if (speed < 0.0f) {
             speed = 0.0f
         } else if (move.speed != 0.0f && speed > move.speed) {
@@ -3435,26 +3548,26 @@ open class idAI : idActor() {
                 colorOrange,
                 physicsObj.GetBounds(),
                 org,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugBounds(
                 colorMagenta,
                 physicsObj.GetBounds(),
                 move.moveDest,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugLine(
                 colorRed,
                 org,
                 org.plus(physicsObj.GetLinearVelocity()),
-                idGameLocal.msec,
+                Game_local.gameLocal.msec,
                 true
             )
             Game_local.gameRenderWorld!!.DebugLine(
                 colorBlue,
                 org,
                 goalPos,
-                idGameLocal.msec,
+                Game_local.gameLocal.msec,
                 true
             )
             Game_local.gameRenderWorld!!.DebugLine(
@@ -3465,7 +3578,7 @@ open class idAI : idActor() {
                         viewAxis[0].times(physicsObj.GetGravityAxis().times(16.0f))
                     )
                 ),
-                idGameLocal.msec,
+                Game_local.gameLocal.msec,
                 true
             )
             DrawRoute()
@@ -3502,13 +3615,13 @@ open class idAI : idActor() {
                 colorMagenta,
                 physicsObj.GetBounds(),
                 org,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugLine(
                 colorBlue,
                 org,
                 move.moveDest,
-                idGameLocal.msec,
+                Game_local.gameLocal.msec,
                 true
             )
             Game_local.gameRenderWorld!!.DebugLine(
@@ -3519,7 +3632,7 @@ open class idAI : idActor() {
                         viewAxis[0].times(physicsObj.GetGravityAxis().times(16.0f))
                     )
                 ),
-                idGameLocal.msec,
+                Game_local.gameLocal.msec,
                 true
             )
         }
@@ -3632,6 +3745,10 @@ open class idAI : idActor() {
             physicsObj.SetLinearVelocity(vec3_zero)
             physicsObj.PutToRest()
             physicsObj.DisableImpact()
+            if (isD3XP) {
+                // No grabbing if "model_death"
+                noGrab = true
+            }
         }
         restartParticles = false
         state = GetScriptFunction("state_Killed")
@@ -3645,8 +3762,28 @@ open class idAI : idActor() {
             Game_local.gameLocal.SpawnEntityDef(args)
             kv = spawnArgs.MatchPrefix("def_drops", kv)
         }
-        if (attacker != null && attacker is idPlayer && inflictor != null && inflictor !is idSoulCubeMissile) {
-            attacker.AddAIKill()
+        if (!isD3XP) {
+            if (attacker != null && attacker is idPlayer && inflictor != null && inflictor !is idSoulCubeMissile) {
+                attacker.AddAIKill()
+            }
+        }
+
+        // D3XP: spawn harvestable entity on death
+        if (isD3XP && spawnArgs.GetBool("harvest_on_death")) {
+            val harvestDef = Game_local.gameLocal.FindEntityDefDict(spawnArgs.GetString("def_harvest_type"), false)
+            if (harvestDef != null) {
+                val temp = arrayOfNulls<idEntity>(1)
+                Game_local.gameLocal.SpawnEntityDef(harvestDef, temp, false)
+                if (temp[0] != null) {
+                    harvestEnt.oSet(temp[0] as idHarvestable)
+                }
+            }
+            val harvest = harvestEnt.GetEntity()
+            if (harvest != null) {
+                // Let the harvest entity set itself up
+                harvest.Init(this)
+                harvest.BecomeActive(TH_THINK)
+            }
         }
     }
 
@@ -3767,7 +3904,7 @@ open class idAI : idActor() {
                     colorBlue,
                     start,
                     end,
-                    idGameLocal.msec,
+                    Game_local.gameLocal.msec,
                     false
                 )
                 Game_local.gameRenderWorld!!.DrawText(
@@ -3795,7 +3932,7 @@ open class idAI : idActor() {
                     colorBlue,
                     start,
                     end,
-                    idGameLocal.msec,
+                    Game_local.gameLocal.msec,
                     false
                 )
                 Game_local.gameRenderWorld!!.DrawText(
@@ -3820,7 +3957,7 @@ open class idAI : idActor() {
                 aas!!.ShowWalkPath(start, toArea, end)
             }
         }
-        return travelTime.integerValue.toFloat()
+        return travelTime._val.toFloat()
     }
 
     /*
@@ -3984,7 +4121,7 @@ open class idAI : idActor() {
                     colorYellow,
                     org,
                     seekPos,
-                    idGameLocal.msec,
+                    Game_local.gameLocal.msec,
                     true
                 )
             }
@@ -4844,18 +4981,18 @@ open class idAI : idActor() {
             current_yaw = idMath.AngleNormalize180(anim_turn_yaw + rotateAxis[0].ToYaw())
         } else {
             diff = idMath.AngleNormalize180(ideal_yaw - current_yaw)
-            turnVel += AI_TURN_SCALE * diff * MS2SEC(idGameLocal.msec.toFloat())
+            turnVel += AI_TURN_SCALE * diff * MS2SEC(Game_local.gameLocal.msec.toFloat())
             if (turnVel > turnRate) {
                 turnVel = turnRate
             } else if (turnVel < -turnRate) {
                 turnVel = -turnRate
             }
-            turnAmount = turnVel * MS2SEC(idGameLocal.msec.toFloat())
+            turnAmount = turnVel * MS2SEC(Game_local.gameLocal.msec.toFloat())
             if (diff >= 0.0f && turnAmount >= diff) {
-                turnVel = diff / MS2SEC(idGameLocal.msec.toFloat())
+                turnVel = diff / MS2SEC(Game_local.gameLocal.msec.toFloat())
                 turnAmount = diff
             } else if (diff <= 0.0f && turnAmount <= diff) {
-                turnVel = diff / MS2SEC(idGameLocal.msec.toFloat())
+                turnVel = diff / MS2SEC(Game_local.gameLocal.msec.toFloat())
                 turnAmount = diff
             }
             current_yaw += turnAmount
@@ -4872,19 +5009,19 @@ open class idAI : idActor() {
                 colorRed,
                 org,
                 org.plus(idAngles(0.0f, ideal_yaw, 0.0f).ToForward().times(64.0f)),
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugLine(
                 colorGreen,
                 org,
                 org.plus(idAngles(0.0f, current_yaw, 0.0f).ToForward().times(48.0f)),
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugLine(
                 colorYellow,
                 org,
                 org.plus(idAngles(0.0f, current_yaw + turnVel, 0.0f).ToForward().times(32.0f)),
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
         }
     }
@@ -5114,13 +5251,13 @@ open class idAI : idActor() {
                 colorLtGrey,
                 enemyEnt.GetPhysics().GetBounds(),
                 lastReachableEnemyPos,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugBounds(
                 colorWhite,
                 enemyEnt.GetPhysics().GetBounds(),
                 lastVisibleReachableEnemyPos,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
         }
     }
@@ -5152,9 +5289,9 @@ open class idAI : idActor() {
             SetChatSound()
             lastReachableEnemyPos.set(lastVisibleEnemyPos)
             lastVisibleReachableEnemyPos.set(lastReachableEnemyPos)
-            enemyAreaNum.integerValue = (PointReachableAreaNum(lastReachableEnemyPos, 1.0f))
-            if (aas != null && enemyAreaNum.integerValue != 0) {
-                aas!!.PushPointIntoAreaNum(enemyAreaNum.integerValue, lastReachableEnemyPos)
+            enemyAreaNum._val = (PointReachableAreaNum(lastReachableEnemyPos, 1.0f))
+            if (aas != null && enemyAreaNum._val != 0) {
+                aas!!.PushPointIntoAreaNum(enemyAreaNum._val, lastReachableEnemyPos)
                 lastVisibleReachableEnemyPos.set(lastReachableEnemyPos)
             }
         }
@@ -5358,7 +5495,7 @@ open class idAI : idActor() {
     override fun DamageFeedback(victim: idEntity?, inflictor: idEntity?, damage: CInt) {
         if (victim == this && inflictor is idProjectile) {
             // monsters only get half damage from their own projectiles
-            damage.integerValue = ((damage.integerValue + 1) / 2) // round up so we don't do 0 damage
+            damage._val = ((damage._val + 1) / 2) // round up so we don't do 0 damage
         } else if (victim == enemy.GetEntity()) {
             AI_HIT_ENEMY.underscore(true)
         }
@@ -5446,7 +5583,7 @@ open class idAI : idActor() {
                 colorYellow,
                 bounds,
                 vec3_zero,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
         }
         if (!bounds.IntersectsBounds(enemyBounds)) {
@@ -5497,7 +5634,7 @@ open class idAI : idActor() {
             val armor = CInt()
             val player = enemyEnt
             player.CalcDamagePoints(this, this, meleeDef, 1.0f, Model.INVALID_JOINT, damage, armor)
-            if (enemyEnt.health <= damage.integerValue) {
+            if (enemyEnt.health <= damage._val) {
                 var t = Game_local.gameLocal.time - player.lastSavingThrowTime
                 if (t > Player.SAVING_THROW_TIME) {
                     player.lastSavingThrowTime = Game_local.gameLocal.time
@@ -5770,7 +5907,7 @@ open class idAI : idActor() {
                     colorRed,
                     eyepos,
                     eyepos.plus(orientationJointAxis[0].times(32.0f)),
-                    idGameLocal.msec
+                    Game_local.gameLocal.msec
                 )
             }
         } else {
@@ -5983,6 +6120,107 @@ open class idAI : idActor() {
                 particles[i].time = Game_local.gameLocal.time
                 BecomeActive(TH_UPDATEPARTICLES)
             }
+        }
+    }
+
+    /*
+     =====================
+     idAI::TriggerFX
+     D3XP: triggers an FX declaration on the named joint
+     =====================
+     */
+    fun TriggerFX(joint: String, fx: String) {
+        if (joint == "origin") {
+            idEntityFx.StartFx(fx, null, null, this, true)
+        } else {
+            val jointOrigin = idVec3()
+            val jointAxis = idMat3()
+            val jointNum = animator.GetJointHandle(joint)
+            if (jointNum == Model.INVALID_JOINT) {
+                Game_local.gameLocal.Warning("Unknown fx joint '%s' on entity %s", joint, name)
+                return
+            }
+            GetJointWorldTransform(jointNum, Game_local.gameLocal.time, jointOrigin, jointAxis)
+            idEntityFx.StartFx(fx, jointOrigin, jointAxis, this, true)
+        }
+    }
+
+    /*
+     =====================
+     idAI::StartEmitter
+     D3XP: creates an idFuncEmitter entity, attaches it to the named joint
+     =====================
+     */
+    fun StartEmitter(emitterName: String, joint: String, particle: String): idEntity? {
+        val existing = GetEmitter(emitterName)
+        if (existing != null) {
+            return existing
+        }
+
+        val jointNum = animator.GetJointHandle(joint)
+        val offset = idVec3()
+        val axis = idMat3()
+        GetJointWorldTransform(jointNum, Game_local.gameLocal.time, offset, axis)
+
+        val args = idDict()
+        val emitterDef = Game_local.gameLocal.FindEntityDef("func_emitter", false)
+        if (emitterDef != null) {
+            args.Copy(emitterDef.dict)
+        }
+        args.Set("model", particle)
+        args.Set("origin", offset.ToString())
+        args.SetBool("start_off", true)
+
+        val ent = arrayOfNulls<idEntity>(1)
+        Game_local.gameLocal.SpawnEntityDef(args, ent, false)
+        val spawnedEnt = ent[0] ?: return null
+
+        spawnedEnt.GetPhysics().SetOrigin(offset)
+        val gravAxis = physicsObj.GetGravityAxis()
+        spawnedEnt.GetPhysics().SetAxis(gravAxis)
+        spawnedEnt.GetPhysics().GetClipModel()!!.SetOwner(this)
+
+        // Keep a reference to the emitter so we can track it
+        val newEmitter = funcEmitter_t()
+        newEmitter.name = emitterName
+        newEmitter.particle = spawnedEnt
+        newEmitter.joint = jointNum
+        funcEmitters.Set(newEmitter.name, newEmitter)
+
+        // Bind it to the joint and make it active
+        spawnedEnt.BindToJoint(this, jointNum, true)
+        spawnedEnt.BecomeActive(TH_THINK)
+        spawnedEnt.Show()
+        spawnedEnt.PostEventMS(EV_Activate, 0, this)
+        return spawnedEnt
+    }
+
+    /*
+     =====================
+     idAI::GetEmitter
+     D3XP: looks up a running emitter by name
+     =====================
+     */
+    fun GetEmitter(emitterName: String): idEntity? {
+        val result = arrayOfNulls<funcEmitter_t>(1)
+        if (funcEmitters.Get(emitterName, result) && result[0] != null) {
+            return result[0]!!.particle
+        }
+        return null
+    }
+
+    /*
+     =====================
+     idAI::StopEmitter
+     D3XP: stops and removes a named emitter
+     =====================
+     */
+    fun StopEmitter(emitterName: String) {
+        val result = arrayOfNulls<funcEmitter_t>(1)
+        if (funcEmitters.Get(emitterName, result) && result[0] != null) {
+            result[0]!!.particle?.Unbind()
+            result[0]!!.particle?.PostEventMS(EV_Remove, 0)
+            funcEmitters.Remove(emitterName)
         }
     }
 
@@ -6480,7 +6718,7 @@ open class idAI : idActor() {
         )
         start.set(GetEyePosition())
         if (SysCvar.ai_debugMove.GetBool()) {
-            Game_local.gameRenderWorld!!.DebugLine(colorYellow, start, end, idGameLocal.msec)
+            Game_local.gameRenderWorld!!.DebugLine(colorYellow, start, end, Game_local.gameLocal.msec)
         }
         Game_local.gameLocal.clip.TranslationEntities(
             trace,
@@ -6521,6 +6759,7 @@ open class idAI : idActor() {
     protected fun Event_CanBecomeSolid() {
         var i: Int
         val num: Int
+        var returnValue = true  // D3XP: track result without early return
         var hit: idEntity
         var cm: idClipModel
         val clipModels = arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES)
@@ -6544,13 +6783,31 @@ open class idAI : idActor() {
                 i++
                 continue
             }
+            // D3XP: push moveables and barrels out of the way instead of blocking
+            if (isD3XP) {
+                if ((spawnClearMoveables && hit is idMoveable) || hit is idBarrel || hit is idExplodingBarrel) {
+                    val push = hit.GetPhysics().GetOrigin() - GetPhysics().GetOrigin()
+                    push.z = 30f
+                    push.NormalizeFast()
+                    if (idMath.Fabs(push.x) < 0.15f && idMath.Fabs(push.y) < 0.15f) {
+                        push.x = 10f; push.y = 10f; push.z = 15f
+                        push.NormalizeFast()
+                    }
+                    push.timesAssign(300f)
+                    hit.GetPhysics().SetLinearVelocity(push)
+                }
+            }
             if (physicsObj.ClipContents(cm) != 0) {
-                idThread.ReturnFloat(0.0f) //(false);
-                return
+                if (isD3XP) {
+                    returnValue = false
+                } else {
+                    idThread.ReturnFloat(0.0f) //(false);
+                    return
+                }
             }
             i++
         }
-        idThread.ReturnFloat(1.0f) //(true);
+        idThread.ReturnFloat(if (isD3XP) (if (returnValue) 1.0f else 0.0f) else 1.0f)
     }
 
     /*
@@ -6866,6 +7123,33 @@ open class idAI : idActor() {
         if (null == enemyEnt || !EnemyPositionValid()) {
             // don't return a combat node if we don't have an enemy or
             // if we can see he's not in the last place we saw him
+            if (isD3XP && team == 0) {
+                // D3XP: find the closest attack node to the player
+                bestNode = null
+                val myPos = physicsObj.GetOrigin()
+                val playerPos = Game_local.gameLocal.GetLocalPlayer()!!.GetPhysics().GetOrigin()
+                bestDist = (myPos - playerPos).LengthSqr()
+                i = 0
+                while (i < targets.Num()) {
+                    targetEnt = targets[i].GetEntity()
+                    if (null == targetEnt || targetEnt !is idCombatNode) {
+                        i++
+                        continue
+                    }
+                    node = targetEnt
+                    if (!node.IsDisabled()) {
+                        val org = idVec3(node.GetPhysics().GetOrigin())
+                        dist = (playerPos - org).LengthSqr()
+                        if (dist < bestDist) {
+                            bestNode = node
+                            bestDist = dist
+                        }
+                    }
+                    i++
+                }
+                idThread.ReturnEntity(bestNode)
+                return
+            }
             idThread.ReturnEntity(null)
             return
         }
@@ -6924,6 +7208,11 @@ open class idAI : idActor() {
             return
         }
         node = ent
+        // D3XP: neverLeave attack nodes always return true (enemy always considered in cone)
+        if (isD3XP && ent.spawnArgs.GetBool("neverLeave", "0")) {
+            idThread.ReturnInt(true)
+            return
+        }
         result = if (use_current_enemy_location.value != 0) {
             val pos = enemyEnt.GetPhysics().GetOrigin()
             node.EntityInView(enemyEnt, pos)
@@ -7421,13 +7710,13 @@ open class idAI : idActor() {
                 colorGreen,
                 physicsObj.GetOrigin(),
                 end,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugBounds(
                 if (path.endEvent == 0) colorYellow else colorRed,
                 physicsObj.GetBounds(),
                 end,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
         }
         if (path.endEvent == 0 || path.blockingEntity == enemyEnt) {
@@ -7488,13 +7777,13 @@ open class idAI : idActor() {
                 colorGreen,
                 physicsObj.GetOrigin(),
                 physicsObj.GetOrigin().plus(moveVec),
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugBounds(
                 if (path.endEvent == 0) colorYellow else colorRed,
                 physicsObj.GetBounds(),
                 physicsObj.GetOrigin().plus(moveVec),
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
         }
         idThread.ReturnInt(path.endEvent == 0)
@@ -7539,13 +7828,13 @@ open class idAI : idActor() {
                 colorGreen,
                 physicsObj.GetOrigin(),
                 physicsObj.GetOrigin().plus(moveVec),
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugBounds(
                 if (path.endEvent == 0) colorYellow else colorRed,
                 physicsObj.GetBounds(),
                 physicsObj.GetOrigin().plus(moveVec),
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
         }
         idThread.ReturnInt(path.endEvent == 0)
@@ -7574,20 +7863,20 @@ open class idAI : idActor() {
                 colorGreen,
                 physicsObj.GetOrigin(),
                 position,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             Game_local.gameRenderWorld!!.DebugBounds(
                 colorYellow,
                 physicsObj.GetBounds(),
                 position,
-                idGameLocal.msec
+                Game_local.gameLocal.msec
             )
             if (path.endEvent != 0) {
                 Game_local.gameRenderWorld!!.DebugBounds(
                     colorRed,
                     physicsObj.GetBounds(),
                     path.endPos,
-                    idGameLocal.msec
+                    Game_local.gameLocal.msec
                 )
             }
         }
@@ -7680,6 +7969,10 @@ open class idAI : idActor() {
      ================
      */
     protected fun Event_PreBurn() {
+        // D3XP: prevent grabbing after burn starts
+        if (isD3XP) {
+            noGrab = true
+        }
         // for now this just turns shadows off
         renderEntity!!.noShadow = true
     }
@@ -8458,15 +8751,15 @@ open class idAI : idActor() {
             enemyEnt.GetAASLocation(aas, pos, toAreaNum)
         } else {
             pos.set(enemyEnt.GetPhysics().GetOrigin())
-            toAreaNum.integerValue = (PointReachableAreaNum(pos))
+            toAreaNum._val = (PointReachableAreaNum(pos))
         }
-        if (0 == toAreaNum.integerValue) {
+        if (0 == toAreaNum._val) {
             idThread.ReturnInt(false)
             return
         }
         val org = physicsObj.GetOrigin()
         areaNum = PointReachableAreaNum(org)
-        idThread.ReturnInt(PathToGoal(path, areaNum, org, toAreaNum.integerValue, pos))
+        idThread.ReturnInt(PathToGoal(path, areaNum, org, toAreaNum._val, pos))
     }
 
     /*
@@ -8503,6 +8796,84 @@ open class idAI : idActor() {
         throw UnsupportedOperationException("Not supported yet.")
     }
 
+    // D3XP: new event handlers
+    protected fun Event_LaunchProjectile(entityDefName: String) {
+        val muzzle = idVec3()
+        val axis = idMat3()
+        val dir = idVec3()
+        val start = idVec3()
+        val tr = trace_s()
+
+        val projDef = Game_local.gameLocal.FindEntityDefDict(entityDefName) ?: return
+        val ent = arrayOfNulls<idEntity>(1)
+        Game_local.gameLocal.SpawnEntityDef(projDef, ent, false)
+        val spawnedEnt = ent[0]
+
+        if (spawnedEnt == null) {
+            idGameLocal.Error("Could not spawn entityDef '%s'", entityDefName)
+            return
+        }
+        if (spawnedEnt !is Projectile.idProjectile) {
+            idGameLocal.Error("'%s' is not an idProjectile", spawnedEnt.GetClassname())
+            return
+        }
+
+        GetMuzzle("pistol", muzzle, axis)
+        spawnedEnt.Create(this, muzzle, axis[0])
+
+        val ownerBounds = physicsObj.GetAbsBounds()
+        val projClip = spawnedEnt.GetPhysics().GetClipModel()
+        val projBounds = if (projClip != null) projClip.GetBounds().Rotate(projClip.GetAxis()) else idBounds()
+        val distance = CFloat()
+        if (projClip != null && (ownerBounds - projBounds).RayIntersection(muzzle, viewAxis[0], distance)) {
+            start.set(muzzle + viewAxis[0].times(distance._val))
+        } else {
+            start.set(ownerBounds.GetCenter())
+        }
+        if (projClip != null) {
+            Game_local.gameLocal.clip.Translation(
+                tr,
+                start,
+                muzzle,
+                projClip,
+                projClip.GetAxis(),
+                MASK_SHOT_RENDERMODEL,
+                this
+            )
+            muzzle.set(tr.endpos)
+        }
+
+        GetAimDir(muzzle, enemy.GetEntity(), this, dir)
+        spawnedEnt.Launch(muzzle, dir, vec3_origin)
+        TriggerWeaponEffects(muzzle)
+    }
+
+    protected fun Event_MoveToPositionDirect(pos: idEventArg<idVec3>) {
+        StopMove(moveStatus_t.MOVE_STATUS_DONE)
+        DirectMoveToPosition(pos.value)
+    }
+
+    protected fun Event_AvoidObstacles(ignore: Int) {
+        ignore_obstacles = (ignore != 1)
+    }
+
+    protected fun Event_TriggerFX(joint: String, fx: String) {
+        TriggerFX(joint, fx)
+    }
+
+    protected fun Event_StartEmitter(name: String, joint: String, particle: String) {
+        val ent = StartEmitter(name, joint, particle)
+        idThread.ReturnEntity(ent)
+    }
+
+    protected fun Event_GetEmitter(name: String) {
+        idThread.ReturnEntity(GetEmitter(name))
+    }
+
+    protected fun Event_StopEmitter(name: String) {
+        StopEmitter(name)
+    }
+
     override fun GetType(): idTypeInfo = Type
     override fun CreateInstance(): idClass = idAI()
 
@@ -8522,6 +8893,13 @@ open class idAI : idActor() {
         if (worldMuzzleFlashHandle != -1) {
             Game_local.gameRenderWorld!!.FreeLightDef(worldMuzzleFlashHandle)
             worldMuzzleFlashHandle = -1
+        }
+        // D3XP: remove harvest entity
+        if (isD3XP) {
+            val harvest = harvestEnt.GetEntity()
+            if (harvest != null) {
+                harvest.PostEventMS(EV_Remove, 0)
+            }
         }
         super._deconstructor()
     }
@@ -8744,13 +9122,13 @@ class idCombatNode : idEntity() {
                         color,
                         node.GetPhysics().GetOrigin(),
                         pos1.plus(pos3).times(0.5f),
-                        idGameLocal.msec
+                        Game_local.gameLocal.msec
                     )
-                    Game_local.gameRenderWorld!!.DebugLine(color, pos1, pos2, idGameLocal.msec)
-                    Game_local.gameRenderWorld!!.DebugLine(color, pos1, pos3, idGameLocal.msec)
-                    Game_local.gameRenderWorld!!.DebugLine(color, pos3, pos4, idGameLocal.msec)
-                    Game_local.gameRenderWorld!!.DebugLine(color, pos2, pos4, idGameLocal.msec)
-                    Game_local.gameRenderWorld!!.DebugBounds(color, bounds, org, idGameLocal.msec)
+                    Game_local.gameRenderWorld!!.DebugLine(color, pos1, pos2, Game_local.gameLocal.msec)
+                    Game_local.gameRenderWorld!!.DebugLine(color, pos1, pos3, Game_local.gameLocal.msec)
+                    Game_local.gameRenderWorld!!.DebugLine(color, pos3, pos4, Game_local.gameLocal.msec)
+                    Game_local.gameRenderWorld!!.DebugLine(color, pos2, pos4, Game_local.gameLocal.msec)
+                    Game_local.gameRenderWorld!!.DebugBounds(color, bounds, org, Game_local.gameLocal.msec)
                 }
                 ent = ent.spawnNode.Next()
             }

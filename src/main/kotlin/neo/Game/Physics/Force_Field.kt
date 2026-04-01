@@ -264,6 +264,7 @@ class Force_Field {
 
                     else -> {
                         idGameLocal.Error("idForce_Field: invalid type")
+                        return
                     }
                 }
                 if (randomTorque != 0.0f) {
@@ -323,6 +324,7 @@ class Force_Field {
 
                     else -> {
                         idGameLocal.Error("idForce_Field: invalid apply type")
+                        return
                     }
                 }
                 i++

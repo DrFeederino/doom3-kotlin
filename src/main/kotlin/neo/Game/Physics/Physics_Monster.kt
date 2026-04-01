@@ -65,7 +65,7 @@ object Physics_Monster {
         savefile.ReadBool(onGround)
         savefile.ReadInt(atRest)
         state.onGround = onGround._val
-        state.atRest = atRest.integerValue
+        state.atRest = atRest._val
     }
 
     //

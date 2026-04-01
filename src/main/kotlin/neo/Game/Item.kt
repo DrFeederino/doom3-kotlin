@@ -26,17 +26,20 @@ import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.Companion.gameLocal
 import neo.Game.Game_local.Companion.gameRenderWorld
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics_RigidBody.idPhysics_RigidBody
 import neo.Game.Player.idPlayer
+import neo.Game.Script.Script_Program.function_t
 import neo.Renderer.Material
 import neo.Renderer.RenderSystem.SCREEN_HEIGHT
 import neo.Renderer.RenderSystem.SCREEN_WIDTH
 import neo.Renderer.RenderSystem.renderSystem
 import neo.Renderer.RenderWorld.deferredEntityCallback_t
 import neo.Renderer.RenderWorld.renderEntity_s
+import neo.Renderer.RenderWorld.renderLight_s
 import neo.Renderer.RenderWorld.renderView_s
 import neo.TempDump
 import neo.cm.CM_CLIP_EPSILON
@@ -89,9 +92,15 @@ open class idItem : idEntity() {
 
         // enum {
         val EVENT_PICKUP: Int = idEntity.EVENT_MAXEVENTS
-        val EVENT_MAXEVENTS = EVENT_PICKUP + 3
         val EVENT_RESPAWN = EVENT_PICKUP + 1
         val EVENT_RESPAWNFX = EVENT_PICKUP + 2
+
+        // D3XP CTF flag events
+        val EVENT_TAKEFLAG = EVENT_PICKUP + 3
+        val EVENT_DROPFLAG = EVENT_PICKUP + 4
+        val EVENT_FLAGRETURN = EVENT_PICKUP + 5
+        val EVENT_FLAGCAPTURE = EVENT_PICKUP + 6
+        val EVENT_MAXEVENTS = EVENT_PICKUP + 7
 
         // public	CLASS_PROTOTYPE( idItem );
         private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
@@ -572,8 +581,8 @@ class idItemPowerup : idItem() {
     private val type: CInt = CInt()
     override fun Save(savefile: idSaveGame) {
         super.Save(savefile)
-        savefile.WriteInt(time.integerValue)
-        savefile.WriteInt(type.integerValue)
+        savefile.WriteInt(time._val)
+        savefile.WriteInt(type._val)
     }
 
     override fun Restore(savefile: idRestoreGame) {
@@ -584,23 +593,23 @@ class idItemPowerup : idItem() {
 
     override fun Spawn() {
         super.Spawn()
-        time.integerValue = (spawnArgs.GetInt("time", "30"))
-        type.integerValue = (spawnArgs.GetInt("type", "0"))
+        time._val = (spawnArgs.GetInt("time", "30"))
+        type._val = (spawnArgs.GetInt("type", "0"))
     }
 
     override fun GiveToPlayer(player: idPlayer?): Boolean {
         if (player!!.spectating) {
             return false
         }
-        player.GivePowerUp(type.integerValue, time.integerValue * 1000)
+        player.GivePowerUp(type._val, time._val * 1000)
         return true
     }
 
     //
     //
     init {
-        time.integerValue = 0
-        type.integerValue = 0
+        time._val = 0
+        type._val = 0
     }
 }
 
@@ -730,6 +739,35 @@ class idObjective : idItem() {
                 val fullView = renderView_s(view!!)
                 fullView.width = SCREEN_WIDTH
                 fullView.height = SCREEN_HEIGHT
+
+                // D3XP: HACK - always draw sky-portal view if there is one in the map
+                if (isD3XP && gameLocal.portalSkyEnt.GetEntity() != null
+                    && SysCvar.g_enablePortalSky.GetBool()
+                ) {
+                    val portalView = renderView_s(fullView)
+                    portalView.vieworg.set(
+                        gameLocal.portalSkyEnt.GetEntity()!!.GetPhysics().GetOrigin()
+                    )
+
+                    // setup global fixup projection vars
+                    var pot: Int
+                    val w = fullView.width
+                    pot = 1
+                    while (pot < w) pot = pot shl 1
+                    val shiftX = w.toFloat() / pot
+
+                    val h = fullView.height
+                    pot = 1
+                    while (pot < h) pot = pot shl 1
+                    val shiftY = h.toFloat() / pot
+
+                    fullView.shaderParms[4] = shiftX
+                    fullView.shaderParms[5] = shiftY
+
+                    gameRenderWorld!!.RenderScene(portalView)
+                    renderSystem.CaptureRenderToImage("_currentRender")
+                }
+
                 // draw a view to a texture
                 renderSystem.CropRenderSize(256, 256, true)
                 gameRenderWorld!!.RenderScene(fullView)
@@ -952,10 +990,12 @@ open class idMoveableItem : idItem() {
         }
     }
 
-    private val physicsObj: idPhysics_RigidBody
+    val physicsObj: idPhysics_RigidBody
     private var smoke: idDeclParticle?
     private var smokeTime: Int
-    private var trigger: idClipModel?
+    private var nextSoundTime: Int  // D3XP: rate-limit bounce sounds
+    private var repeatSmoke: Boolean // CTF: repeat smoke trail
+    var trigger: idClipModel?
 
     // virtual					~idMoveableItem();
     override fun _deconstructor() {
@@ -971,6 +1011,7 @@ open class idMoveableItem : idItem() {
         savefile.WriteClipModel(trigger)
         savefile.WriteParticle(smoke)
         savefile.WriteInt(smokeTime)
+        savefile.WriteInt(nextSoundTime)
     }
 
     override fun Restore(savefile: idRestoreGame) {
@@ -980,6 +1021,7 @@ open class idMoveableItem : idItem() {
         trigger = savefile.ReadClipModel()
         smoke = savefile.ReadParticle()
         smokeTime = savefile.ReadInt()
+        nextSoundTime = savefile.ReadInt()
     }
 
     override fun Spawn() {
@@ -1035,12 +1077,26 @@ open class idMoveableItem : idItem() {
         SetPhysics(physicsObj)
         smoke = null
         smokeTime = 0
+        nextSoundTime = 0
         val smokeName = spawnArgs.GetString("smoke_trail")
         if (!smokeName.isEmpty()) { // != '\0' ) {
             smoke = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, smokeName) as idDeclParticle
             smokeTime = gameLocal.time
             BecomeActive(TH_UPDATEPARTICLES)
         }
+        repeatSmoke = spawnArgs.GetBool("repeatSmoke", "false")
+    }
+
+    override fun Collide(collision: trace_s, velocity: idVec3): Boolean {
+        val v = -(velocity.times(collision.c.normal))
+        if (v > 80f && gameLocal.time > nextSoundTime) {
+            val f = if (v > 200f) 1.0f else idMath.Sqrt(v - 80f) * 0.091f
+            if (StartSound("snd_bounce", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)) {
+                SetSoundVolume(f)
+            }
+            nextSoundTime = gameLocal.time + 500
+        }
+        return false
     }
 
     override fun Think() {
@@ -1064,8 +1120,12 @@ open class idMoveableItem : idItem() {
                     GetPhysics().GetAxis()
                 )
             ) {
-                smokeTime = 0
-                BecomeInactive(TH_UPDATEPARTICLES)
+                if (!repeatSmoke) {
+                    smokeTime = 0
+                    BecomeInactive(TH_UPDATEPARTICLES)
+                } else {
+                    smokeTime = gameLocal.time
+                }
             }
         }
         Present()
@@ -1129,6 +1189,8 @@ open class idMoveableItem : idItem() {
         trigger = null
         smoke = null
         smokeTime = 0
+        nextSoundTime = 0
+        repeatSmoke = false
     }
 }
 
@@ -1305,4 +1367,557 @@ class idObjectiveComplete : idItemRemover() {
         return eventCallbacks[event]
     }
 
+}
+
+/*
+===============================================================================
+
+  idItemTeam - CTF flag entity
+
+===============================================================================
+*/
+
+// CTF flag events
+val EV_FlagReturn = idEventDef("flagreturn", "e")
+val EV_TakeFlag = idEventDef("takeflag", "e")
+val EV_DropFlag = idEventDef("dropflag", "d")
+val EV_FlagCapture = idEventDef("flagcapture")
+
+class idItemTeam : idMoveableItem() {
+
+    var team: Int = -1
+    var carried: Boolean = false           // is it being carried by a player?
+    var dropped: Boolean = false            // was it dropped?
+
+    private var returnOrigin: idVec3 = idVec3()
+    private var returnAxis: idMat3 = idMat3()
+    private var lastDrop: Int = 0
+
+    private var skinDefault: idDeclSkin? = null
+    private var skinCarried: idDeclSkin? = null
+
+    private var scriptTaken: function_t? = null
+    private var scriptDropped: function_t? = null
+    private var scriptReturned: function_t? = null
+    private var scriptCaptured: function_t? = null
+
+    private var itemGlow: renderLight_s = renderLight_s()
+    private var itemGlowHandle: Int = -1
+
+    private var lastNuggetDrop: Int = 0
+    private var nuggetName: String? = null
+
+    override fun Spawn() {
+        team = spawnArgs.GetInt("team")
+        returnOrigin.set(GetPhysics().GetOrigin().plus(idVec3(0f, 0f, 20f)))
+        returnAxis.set(GetPhysics().GetAxis())
+
+        BecomeActive(TH_THINK)
+
+        var skinName = spawnArgs.GetString("skin", "")
+        if (!skinName.isNullOrEmpty()) {
+            skinDefault = DeclManager.declManager!!.FindSkin(skinName)
+        }
+
+        skinName = spawnArgs.GetString("skin_carried", "")
+        if (!skinName.isNullOrEmpty()) {
+            skinCarried = DeclManager.declManager!!.FindSkin(skinName)
+        }
+
+        val nugget = spawnArgs.GetString("nugget_name", "")
+        nuggetName = if (!nugget.isNullOrEmpty()) nugget else null
+
+        scriptTaken = LoadScript("script_taken")
+        scriptDropped = LoadScript("script_dropped")
+        scriptReturned = LoadScript("script_returned")
+        scriptCaptured = LoadScript("script_captured")
+
+        super.Spawn()
+
+        physicsObj.SetContents(0)
+        physicsObj.SetClipMask(Game_local.MASK_SOLID or Material.CONTENTS_MOVEABLECLIP)
+        physicsObj.SetGravity(idVec3(0f, 0f, spawnArgs.GetInt("gravity", "-30").toFloat()))
+    }
+
+    override fun Think() {
+        super.Think()
+
+        TouchTriggers()
+
+        // should only the server do this?
+        if (gameLocal.isServer && nuggetName != null && carried
+            && (lastNuggetDrop == 0 || (gameLocal.time - lastNuggetDrop) > spawnArgs.GetInt("nugget_frequency"))
+        ) {
+            SpawnNugget(GetPhysics().GetOrigin())
+            lastNuggetDrop = gameLocal.time
+        }
+
+        // return dropped flag after si_flagDropTimeLimit seconds
+        if (dropped && !carried && lastDrop != 0
+            && (gameLocal.time - lastDrop) > (SysCvar.si_flagDropTimeLimit.GetInteger() * 1000)
+        ) {
+            Return()
+            return
+        }
+    }
+
+    override fun Pickup(player: idPlayer?): Boolean {
+        if (player == null) return false
+        if (!gameLocal.mpGame.IsGametypeFlagBased()) {
+            return false
+        }
+
+        if (gameLocal.mpGame.GetGameState() == MultiplayerGame.idMultiplayerGame.gameState_t.WARMUP
+            || gameLocal.mpGame.GetGameState() == MultiplayerGame.idMultiplayerGame.gameState_t.COUNTDOWN
+        ) {
+            return false
+        }
+
+        // wait after drop before being picked up again
+        if (lastDrop != 0 && (gameLocal.time - lastDrop) < spawnArgs.GetInt("pickupDelay", "500")) {
+            return false
+        }
+
+        if (!carried && player.team != this.team) {
+            PostEventMS(EV_TakeFlag, 0, player)
+            return true
+        } else if (!carried && dropped && player.team == this.team) {
+            gameLocal.mpGame.PlayerScoreCTF(player.entityNumber, 5)
+            // return flag
+            PostEventMS(EV_FlagReturn, 0, player)
+            return false
+        }
+
+        return false
+    }
+
+    fun Drop(death: Boolean = false) {
+        // had to remove the delayed drop because of drop flag on disconnect
+        Event_DropFlag(death)
+    }
+
+    fun Return(player: idPlayer? = null) {
+        if (team != 0 && team != 1) return
+        Event_FlagReturn(player)
+    }
+
+    fun Capture() {
+        if (team != 0 && team != 1) return
+        PostEventMS(EV_FlagCapture, 0)
+    }
+
+    override fun FreeLightDef() {
+        if (itemGlowHandle != -1) {
+            gameRenderWorld!!.FreeLightDef(itemGlowHandle)
+            itemGlowHandle = -1
+        }
+    }
+
+    override fun Present() {
+        // hide the flag for localplayer if in first person
+        if (carried && GetBindMaster() != null) {
+            val player = GetBindMaster() as? idPlayer
+            if (player === gameLocal.GetLocalPlayer() && !SysCvar.pm_thirdPerson.GetBool()) {
+                FreeModelDef()
+                BecomeActive(TH_UPDATEVISUALS)
+                return
+            }
+        }
+        super.Present()
+    }
+
+    override fun WriteToSnapshot(msg: idBitMsgDelta) {
+        msg.WriteBits(if (carried) 1 else 0, 1)
+        msg.WriteBits(if (dropped) 1 else 0, 1)
+        WriteBindToSnapshot(msg)
+        super.WriteToSnapshot(msg)
+    }
+
+    override fun ReadFromSnapshot(msg: idBitMsgDelta) {
+        carried = msg.ReadBits(1) == 1
+        dropped = msg.ReadBits(1) == 1
+        ReadBindFromSnapshot(msg)
+
+        if (msg.HasChanged()) {
+            UpdateGuis()
+            SetSkin(if (carried) skinCarried else skinDefault)
+        }
+        super.ReadFromSnapshot(msg)
+    }
+
+    private fun PrivateReturn() {
+        Unbind()
+
+        if (gameLocal.isServer && carried && !dropped) {
+            val playerIdx = gameLocal.mpGame.GetFlagCarrier(1 - team)
+            if (playerIdx != -1) {
+                val player = gameLocal.entities[playerIdx] as? idPlayer
+                if (player != null) {
+                    player.carryingFlag = false
+                }
+            } else {
+                gameLocal.Warning("BUG: carried flag has no carrier before return")
+            }
+        }
+
+        dropped = false
+        carried = false
+
+        SetOrigin(returnOrigin)
+        SetAxis(returnAxis)
+
+        // Re-link trigger
+        trigger?.Link(gameLocal.clip, this, 0, GetPhysics().GetOrigin(), idMat3.getMat3_identity())
+
+        SetSkin(skinDefault)
+
+        GetPhysics().SetLinearVelocity(idVec3(0f, 0f, 0f))
+        GetPhysics().SetAngularVelocity(idVec3(0f, 0f, 0f))
+    }
+
+    private fun LoadScript(script: String): function_t? {
+        val funcname = spawnArgs.GetString(script, "")
+        if (!funcname.isNullOrEmpty()) {
+            val function = gameLocal.program.FindFunction(funcname)
+            if (function == null) {
+                gameLocal.Warning(
+                    "idItemTeam '%s' at (%s) calls unknown function '%s'",
+                    name, GetPhysics().GetOrigin().ToString(0), funcname
+                )
+            }
+            return function
+        }
+        return null
+    }
+
+    private fun SpawnNugget(pos: idVec3) {
+        val angle = idAngles(
+            gameLocal.random.RandomInt(spawnArgs.GetInt("nugget_pitch", "30")).toFloat(),
+            gameLocal.random.RandomInt(spawnArgs.GetInt("nugget_yaw", "360")).toFloat(),
+            0f
+        )
+        var velocity = (gameLocal.random.RandomInt(40) + 15).toFloat()
+        velocity *= spawnArgs.GetFloat("nugget_velocity", "1")
+
+        val velVec = angle.ToMat3().times(idVec3(velocity, velocity, velocity))
+        val ent = DropItem(
+            nuggetName!!, pos, GetPhysics().GetAxis(),
+            velVec, 0, spawnArgs.GetInt("nugget_removedelay")
+        )
+        if (ent != null) {
+            val physics = ent.GetPhysics()
+            if (physics is idPhysics_RigidBody) {
+                physics.DisableImpact()
+            }
+        }
+    }
+
+    private fun UpdateGuis() {
+        for (i in 0 until gameLocal.numClients) {
+            val player = gameLocal.entities[i] as? idPlayer ?: continue
+            val hud = player.hud ?: continue
+
+            hud.SetStateInt("red_flagstatus", gameLocal.mpGame.GetFlagStatus(0))
+            hud.SetStateInt("blue_flagstatus", gameLocal.mpGame.GetFlagStatus(1))
+            hud.SetStateInt("red_team_score", gameLocal.mpGame.GetFlagPoints(0))
+            hud.SetStateInt("blue_team_score", gameLocal.mpGame.GetFlagPoints(1))
+        }
+    }
+
+    // Events
+    private fun Event_TakeFlag(player: idPlayer) {
+        gameLocal.DPrintf("Event_TakeFlag()!\n")
+
+        if (gameLocal.isServer) {
+            val msg = idBitMsg()
+            val msgBuf = ByteBuffer.allocate(128) // MAX_EVENT_PARAM_SIZE
+            msg.Init(msgBuf, msgBuf.capacity())
+            msg.BeginWriting()
+            msg.WriteBits(player.entityNumber, Game_local.GENTITYNUM_BITS)
+            ServerSendEvent(EVENT_TAKEFLAG, msg, false, -1)
+
+            gameLocal.mpGame.PlayTeamSound(player.team, MultiplayerGame.snd_evt_t.SND_FLAG_TAKEN_THEIRS)
+            gameLocal.mpGame.PlayTeamSound(team, MultiplayerGame.snd_evt_t.SND_FLAG_TAKEN_YOURS)
+
+            gameLocal.mpGame.PrintMessageEvent(
+                -1,
+                MultiplayerGame.idMultiplayerGame.msg_evt_t.MSG_FLAGTAKEN,
+                team,
+                player.entityNumber
+            )
+
+            // dont drop a nugget RIGHT away
+            lastNuggetDrop = gameLocal.time - gameLocal.random.RandomInt(1000)
+        }
+
+        BindToJoint(player, SysCvar.g_flagAttachJoint.GetString()!!, true)
+        val origin = idVec3(
+            SysCvar.g_flagAttachOffsetX.GetFloat(),
+            SysCvar.g_flagAttachOffsetY.GetFloat(),
+            SysCvar.g_flagAttachOffsetZ.GetFloat()
+        )
+        val angle = idAngles(
+            SysCvar.g_flagAttachAngleX.GetFloat(),
+            SysCvar.g_flagAttachAngleY.GetFloat(),
+            SysCvar.g_flagAttachAngleZ.GetFloat()
+        )
+        SetAngles(angle)
+        SetOrigin(origin)
+
+        if (scriptTaken != null) {
+            val thread = neo.Game.Script.Script_Thread.idThread()
+            thread.CallFunction(scriptTaken!!, false)
+            thread.DelayedStart(0)
+        }
+
+        dropped = false
+        carried = true
+        player.carryingFlag = true
+
+        SetSkin(skinCarried)
+
+        UpdateVisuals()
+        UpdateGuis()
+
+        if (gameLocal.isServer) {
+            if (team == 0) {
+                gameLocal.mpGame.player_red_flag = player.entityNumber
+            } else {
+                gameLocal.mpGame.player_blue_flag = player.entityNumber
+            }
+        }
+    }
+
+    private fun Event_DropFlag(death: Boolean) {
+        gameLocal.DPrintf("Event_DropFlag()!\n")
+
+        if (gameLocal.isServer) {
+            val msg = idBitMsg()
+            val msgBuf = ByteBuffer.allocate(128) // MAX_EVENT_PARAM_SIZE
+            msg.Init(msgBuf, msgBuf.capacity())
+            msg.BeginWriting()
+            msg.WriteBits(if (death) 1 else 0, 1)
+            ServerSendEvent(EVENT_DROPFLAG, msg, false, -1)
+
+            if (gameLocal.mpGame.IsFlagMsgOn()) {
+                gameLocal.mpGame.PlayTeamSound(1 - team, MultiplayerGame.snd_evt_t.SND_FLAG_DROPPED_THEIRS)
+                gameLocal.mpGame.PlayTeamSound(team, MultiplayerGame.snd_evt_t.SND_FLAG_DROPPED_YOURS)
+                gameLocal.mpGame.PrintMessageEvent(-1, MultiplayerGame.idMultiplayerGame.msg_evt_t.MSG_FLAGDROP, team)
+            }
+        }
+
+        lastDrop = gameLocal.time
+
+        BecomeActive(TH_THINK)
+        Show()
+
+        if (death) {
+            GetPhysics().SetLinearVelocity(idVec3(0f, 0f, 0f))
+        } else {
+            GetPhysics().SetLinearVelocity(idVec3(0f, 0f, 20f))
+        }
+        GetPhysics().SetAngularVelocity(idVec3(0f, 0f, 0f))
+
+        if (GetBindMaster() != null) {
+            val bounds = GetPhysics().GetBounds()
+            val origin = GetBindMaster()!!.GetPhysics().GetOrigin()
+                .plus(idVec3(0f, 0f, (bounds[1].z - bounds[0].z) * 0.6f))
+            Unbind()
+            SetOrigin(origin)
+        }
+
+        val angle = GetPhysics().GetAxis().ToAngles()
+        angle.roll = 0f
+        angle.pitch = 0f
+        SetAxis(angle.ToMat3())
+
+        dropped = true
+        carried = false
+
+        if (scriptDropped != null) {
+            val thread = neo.Game.Script.Script_Thread.idThread()
+            thread.CallFunction(scriptDropped!!, false)
+            thread.DelayedStart(0)
+        }
+
+        SetSkin(skinDefault)
+        UpdateVisuals()
+        UpdateGuis()
+
+        if (gameLocal.isServer) {
+            if (team == 0) {
+                gameLocal.mpGame.player_red_flag = -1
+            } else {
+                gameLocal.mpGame.player_blue_flag = -1
+            }
+        }
+    }
+
+    private fun Event_FlagReturn(player: idPlayer? = null) {
+        gameLocal.DPrintf("Event_FlagReturn()!\n")
+
+        if (gameLocal.isServer) {
+            ServerSendEvent(EVENT_FLAGRETURN, null, false, -1)
+
+            if (gameLocal.mpGame.IsFlagMsgOn()) {
+                gameLocal.mpGame.PlayTeamSound(1 - team, MultiplayerGame.snd_evt_t.SND_FLAG_RETURN)
+                gameLocal.mpGame.PlayTeamSound(team, MultiplayerGame.snd_evt_t.SND_FLAG_RETURN)
+
+                val entitynum = player?.entityNumber ?: 255
+                gameLocal.mpGame.PrintMessageEvent(
+                    -1,
+                    MultiplayerGame.idMultiplayerGame.msg_evt_t.MSG_FLAGRETURN,
+                    team,
+                    entitynum
+                )
+            }
+        }
+
+        BecomeActive(TH_THINK)
+        Show()
+
+        PrivateReturn()
+
+        if (scriptReturned != null) {
+            val thread = neo.Game.Script.Script_Thread.idThread()
+            thread.CallFunction(scriptReturned!!, false)
+            thread.DelayedStart(0)
+        }
+
+        UpdateVisuals()
+        UpdateGuis()
+
+        if (gameLocal.isServer) {
+            if (team == 0) {
+                gameLocal.mpGame.player_red_flag = -1
+            } else {
+                gameLocal.mpGame.player_blue_flag = -1
+            }
+        }
+    }
+
+    private fun Event_FlagCapture() {
+        gameLocal.DPrintf("Event_FlagCapture()!\n")
+
+        if (gameLocal.isServer) {
+            ServerSendEvent(EVENT_FLAGCAPTURE, null, false, -1)
+
+            gameLocal.mpGame.PlayTeamSound(1 - team, MultiplayerGame.snd_evt_t.SND_FLAG_CAPTURED_THEIRS)
+            gameLocal.mpGame.PlayTeamSound(team, MultiplayerGame.snd_evt_t.SND_FLAG_CAPTURED_YOURS)
+
+            gameLocal.mpGame.TeamScoreCTF(1 - team, 1)
+
+            val playerIdx = gameLocal.mpGame.GetFlagCarrier(1 - team)
+            if (playerIdx != -1) {
+                gameLocal.mpGame.PlayerScoreCTF(playerIdx, 10)
+            }
+
+            gameLocal.mpGame.PrintMessageEvent(
+                -1, MultiplayerGame.idMultiplayerGame.msg_evt_t.MSG_FLAGCAPTURE, team,
+                if (playerIdx != -1) playerIdx else 255
+            )
+        }
+
+        BecomeActive(TH_THINK)
+        Show()
+
+        PrivateReturn()
+
+        if (scriptCaptured != null) {
+            val thread = neo.Game.Script.Script_Thread.idThread()
+            thread.CallFunction(scriptCaptured!!, false)
+            thread.DelayedStart(0)
+        }
+
+        UpdateVisuals()
+        UpdateGuis()
+
+        if (gameLocal.isServer) {
+            if (team == 0) {
+                gameLocal.mpGame.player_red_flag = -1
+            } else {
+                gameLocal.mpGame.player_blue_flag = -1
+            }
+        }
+    }
+
+    override fun ClientReceiveEvent(event: Int, time: Int, msg: idBitMsg): Boolean {
+        gameLocal.DPrintf("ClientReceiveEvent: %d\n", event)
+        return when (event) {
+            EVENT_TAKEFLAG -> {
+                val player = gameLocal.entities[msg.ReadBits(Game_local.GENTITYNUM_BITS)] as? idPlayer
+                if (player == null) {
+                    gameLocal.Warning("NULL player takes flag?\n")
+                    false
+                } else {
+                    Event_TakeFlag(player)
+                    true
+                }
+            }
+
+            EVENT_DROPFLAG -> {
+                val death = msg.ReadBits(1) == 1
+                Event_DropFlag(death)
+                true
+            }
+
+            EVENT_FLAGRETURN -> {
+                Hide()
+                FreeModelDef()
+                FreeLightDef()
+                Event_FlagReturn()
+                true
+            }
+
+            EVENT_FLAGCAPTURE -> {
+                Hide()
+                FreeModelDef()
+                FreeLightDef()
+                Event_FlagCapture()
+                true
+            }
+
+            else -> false
+        }
+    }
+
+    override fun _deconstructor() {
+        FreeLightDef()
+        super._deconstructor()
+    }
+
+    override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
+        return eventCallbacks[event]
+    }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idItemTeam()
+
+    companion object {
+        val Type: idTypeInfo = idTypeInfo(
+            "idItemTeam",
+            "idMoveableItem"
+        ) { idItemTeam() }
+
+        private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = buildEventCallbacks()
+
+        private fun buildEventCallbacks(): MutableMap<idEventDef, eventCallback_t<*>> {
+            val callbacks = idMoveableItem.getEventCallBacks().toMutableMap()
+            callbacks[EV_FlagReturn] = eventCallback_t1<idItemTeam> { obj, player ->
+                obj.Event_FlagReturn(player as? idPlayer)
+            }
+            callbacks[EV_TakeFlag] = eventCallback_t1<idItemTeam> { obj, player ->
+                obj.Event_TakeFlag(player as idPlayer)
+            }
+            callbacks[EV_DropFlag] = eventCallback_t1<idItemTeam> { obj, death ->
+                obj.Event_DropFlag((death as Number).toInt() != 0)
+            }
+            callbacks[EV_FlagCapture] = eventCallback_t0<idItemTeam> { obj ->
+                obj.Event_FlagCapture()
+            }
+            return callbacks
+        }
+
+        fun getEventCallBacks(): Map<idEventDef, eventCallback_t<*>> = eventCallbacks
+    }
 }

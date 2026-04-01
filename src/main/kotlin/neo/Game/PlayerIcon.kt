@@ -18,6 +18,8 @@
 
 package neo.Game
 
+import neo.Game.Game_local.Companion.isD3XP
+import neo.Game.GameSys.SysCvar
 import neo.Game.Player.idPlayer
 import neo.Renderer.Model
 import neo.Renderer.ModelManager
@@ -31,12 +33,16 @@ import neo.idlib.math.idVec3
 object PlayerIcon {
     val iconKeys /*[ ICON_NONE ]*/: Array<String> = arrayOf(
         "mtr_icon_lag",
-        "mtr_icon_chat"
+        "mtr_icon_chat",
+        "mtr_icon_redteam",   // D3XP CTF
+        "mtr_icon_blueteam"   // D3XP CTF
     )
 
     enum class playerIconType_t {
         ICON_LAG,
         ICON_CHAT,
+        ICON_TEAM_RED,   // D3XP CTF
+        ICON_TEAM_BLUE,  // D3XP CTF
         ICON_NONE
     }
 
@@ -65,13 +71,28 @@ object PlayerIcon {
                 return
             }
             val axis = localPlayer.GetRenderView()!!.viewaxis
-            if (player.isLagged) {
+            if (player.isLagged && !player.spectating) {
                 // create the icon if necessary, or update if already created
                 if (!CreateIcon(player, playerIconType_t.ICON_LAG, origin, axis)) {
                     UpdateIcon(player, origin, axis)
                 }
-            } else if (player.isChatting) {
+            } else if (player.isChatting && !player.spectating) {
                 if (!CreateIcon(player, playerIconType_t.ICON_CHAT, origin, axis)) {
+                    UpdateIcon(player, origin, axis)
+                }
+            } else if (isD3XP
+                && SysCvar.g_CTFArrows.GetBool()
+                && Game_local.gameLocal.mpGame.IsGametypeFlagBased()
+                && Game_local.gameLocal.GetLocalPlayer() != null
+                && player.team == Game_local.gameLocal.GetLocalPlayer()!!.team
+                && !player.IsHidden()
+                && !player.AI_DEAD.underscore()!!
+            ) {
+                val icon = playerIconType_t.ICON_TEAM_RED.ordinal + player.team
+                if (icon != playerIconType_t.ICON_TEAM_RED.ordinal && icon != playerIconType_t.ICON_TEAM_BLUE.ordinal) {
+                    return
+                }
+                if (!CreateIcon(player, playerIconType_t.entries[icon], origin, axis)) {
                     UpdateIcon(player, origin, axis)
                 }
             } else {

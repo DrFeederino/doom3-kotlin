@@ -172,19 +172,19 @@ class idProgram {
         val scriptname = idStr()
 
         savefile.ReadInt(num)
-        for (i in 0 until num.integerValue) {
+        for (i in 0 until num._val) {
             savefile.ReadString(scriptname)
             CompileFile(scriptname.toString())
         }
 
         savefile.ReadInt(index)
-        while (index.integerValue >= 0) {
-            variables[index.integerValue] = savefile.ReadByte()
+        while (index._val >= 0) {
+            variables[index._val] = savefile.ReadByte()
             savefile.ReadInt(index)
         }
 
         savefile.ReadInt(num)
-        for (i in variableDefaults.Num() until num.integerValue) {
+        for (i in variableDefaults.Num() until num._val) {
             variables[i] = savefile.ReadByte()
         }
 
@@ -192,9 +192,10 @@ class idProgram {
         val checksum: Long
 
         savefile.ReadInt(saved_checksum)
-        checksum = CalculateChecksum(false)
+        val isOldSavegame = savefile.GetBuildNumber() <= 1304
+        checksum = CalculateChecksum(isOldSavegame)
 
-        if ((saved_checksum.integerValue.toLong() and 0xFFFFFFFFL) != checksum) {
+        if ((saved_checksum._val.toLong() and 0xFFFFFFFFL) != checksum) {
             Game_local.gameLocal.Warning("WARNING: Real Script checksum didn't match the one from the savegame!")
             result = false
         }
@@ -217,6 +218,19 @@ class idProgram {
         val totalBytes = SIZEOF_STATEMENT_BLOCK * numStatements
         val buffer = ByteBuffer.allocate(totalBytes).order(ByteOrder.LITTLE_ENDIAN)
 
+        // DG hack: get the vardef for the argSize == 0 constant for savegame-compat
+        var constantZeroNum = -1
+        if (forOldSavegame) {
+            var def = GetDefList("<IMMEDIATE>")
+            while (def != null) {
+                if (def.Type() == Script_Program.ev_argsize && def.value!!.argSize == 0) {
+                    constantZeroNum = def.num
+                    break
+                }
+                def = def.Next()
+            }
+        }
+
         // memset equivalent — ByteBuffer.allocate() already zero-fills
 
         // Copy info into new list, using the variable numbers instead of a pointer to the variable
@@ -226,7 +240,18 @@ class idProgram {
             buffer.putShort(0)                              // padding (2 bytes)
             buffer.putInt(if (st.a != null) st.a!!.num else -1)  // a
             buffer.putInt(if (st.b != null) st.b!!.num else -1)  // b
-            buffer.putInt(if (st.c != null) st.c!!.num else -1)  // c
+            // DG: old savegames wrongly assumed argSize 0 for some statements.
+            if (st.c != null) {
+                if (forOldSavegame && st.op == OP_OBJECTCALL
+                    && st.flags == statement_s.FLAG_OBJECTCALL_IMPL_NOT_PARSED_YET
+                ) {
+                    buffer.putInt(constantZeroNum)  // c - use zero constant for old savegame compat
+                } else {
+                    buffer.putInt(st.c!!.num)  // c
+                }
+            } else {
+                buffer.putInt(-1)  // c
+            }
             buffer.putShort((st.linenumber and 0xFFFF).toShort()) // linenumber (unsigned short)
             buffer.putShort((st.file and 0xFFFF).toShort())       // file (unsigned short)
         }
@@ -995,17 +1020,15 @@ class idProgram {
     }
 
     fun AllocStatement(): statement_s? {
-        if (statements.Num() == 61960) {
-        }
         if (statements.Num() >= statements.Max()) {
             throw idCompileError(String.format("Exceeded maximum allowed number of statements (%d)", statements.Max()))
         }
-        return statements.Alloc()
+        val ret = statements.Alloc()!!
+        ret.flags = 0
+        return ret
     }
 
     fun GetStatement(index: Int): statement_s {
-        if (index == 61961) {
-        }
         return statements[index]
     }
 

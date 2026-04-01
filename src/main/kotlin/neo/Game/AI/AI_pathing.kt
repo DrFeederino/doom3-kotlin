@@ -168,8 +168,8 @@ fun GetPointOutsideObstacles(
     val obstacleVisited: BooleanArray
     val w1 = idWinding2D()
     val w2 = idWinding2D()
-    obstacle.integerValue = -1
-    edgeNum.integerValue = -1
+    obstacle._val = -1
+    edgeNum._val = -1
     bestObstacle = PointInsideObstacle(obstacles, numObstacles, point)
     if (bestObstacle == -1) {
         return
@@ -200,8 +200,8 @@ fun GetPointOutsideObstacles(
     newPoint.set(point - bestPlane.ToVec2() * (bestd + PUSH_OUTSIDE_OBSTACLES))
     if (PointInsideObstacle(obstacles, numObstacles, newPoint) == -1) {
         point.set(newPoint)
-        obstacle.integerValue = bestObstacle
-        edgeNum.integerValue = bestEdgeNum
+        obstacle._val = bestObstacle
+        edgeNum._val = bestEdgeNum
         return
     }
     queue = IntArray(numObstacles)
@@ -265,8 +265,8 @@ fun GetPointOutsideObstacles(
         }
         if (bestd < idMath.INFINITY) {
             point.set(bestPoint)
-            obstacle.integerValue = bestObstacle
-            edgeNum.integerValue = bestEdgeNum
+            obstacle._val = bestObstacle
+            edgeNum._val = bestEdgeNum
             return
         }
         queueStart++
@@ -319,8 +319,8 @@ fun GetFirstBlockingObstacle(
         if (obstacles[i].winding.RayIntersection(startPos, delta, scale1, scale2, edgeNums)) {
             if (scale1._val < blockingScale._val && scale1._val * dist > -0.01f && scale2._val * dist > 0.01f) {
                 blockingScale._val = scale1._val
-                blockingObstacle.integerValue = i
-                blockingEdgeNum.integerValue = edgeNums[0]
+                blockingObstacle._val = i
+                blockingEdgeNum._val = edgeNums[0]
             }
         }
         i++
@@ -763,7 +763,7 @@ fun BuildPathTree(
             )
         ) {
             if (path.firstObstacle == null) {
-                path.firstObstacle = obstacles[blockingObstacle.integerValue].entity
+                path.firstObstacle = obstacles[blockingObstacle._val].entity
             }
             node.delta.timesAssign(blockingScale._val)
             if (node.edgeNum == -1) {
@@ -777,9 +777,9 @@ fun BuildPathTree(
                 node.children[0]!!.parent = node.children[1]!!.parent
                 node.children[1]!!.pos.set(node.pos + node.delta)
                 node.children[0]!!.pos.set(node.children[1]!!.pos)
-                node.children[1]!!.obstacle = blockingObstacle.integerValue
+                node.children[1]!!.obstacle = blockingObstacle._val
                 node.children[0]!!.obstacle = node.children[1]!!.obstacle
-                node.children[1]!!.edgeNum = blockingEdgeNum.integerValue
+                node.children[1]!!.edgeNum = blockingEdgeNum._val
                 node.children[0]!!.edgeNum = node.children[1]!!.edgeNum
                 node.children[1]!!.numNodes = node.numNodes + 1
                 node.children[0]!!.numNodes = node.children[1]!!.numNodes
@@ -796,8 +796,8 @@ fun BuildPathTree(
                 child.dir = node.dir
                 child.parent = node
                 child.pos.set(node.pos + node.delta)
-                child.obstacle = blockingObstacle.integerValue
-                child.edgeNum = blockingEdgeNum.integerValue
+                child.obstacle = blockingObstacle._val
+                child.edgeNum = blockingEdgeNum._val
                 child.numNodes = node.numNodes + 1
                 if (GetPathNodeDelta(child, obstacles, seekPos, true)) {
                     pathNodeQueue.Add(child)

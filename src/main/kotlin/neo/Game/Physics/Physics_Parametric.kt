@@ -106,8 +106,8 @@ object Physics_Parametric {
         savefile.ReadInt(time)
         savefile.ReadInt(atRest)
         savefile.ReadBool(useSplineAngles)
-        state.time = time.integerValue
-        state.atRest = atRest.integerValue
+        state.time = time._val
+        state.atRest = atRest._val
         state.useSplineAngles = useSplineAngles._val
         savefile.ReadVec3(state.origin)
         savefile.ReadAngles(state.angles)
@@ -126,7 +126,7 @@ object Physics_Parametric {
             linearStartValue,
             linearBaseSpeed,
             linearSpeed,
-            etype.integerValue
+            etype._val
         )
         savefile.ReadInt(etype)
         savefile.ReadFloat(startTime)
@@ -140,7 +140,7 @@ object Physics_Parametric {
             angularStartValue,
             angularBaseSpeed,
             angularSpeed,
-            etype.integerValue
+            etype._val
         )
         savefile.ReadFloat(startTime)
         savefile.ReadFloat(accelTime)
@@ -332,7 +332,7 @@ object Physics_Parametric {
             this.isBlocked = isBlocked._val
             this.hasMaster = hasMaster._val
             this.isOrientated = isOrientated._val
-            this.pushFlags = pushFlags.integerValue
+            this.pushFlags = pushFlags._val
         }
 
         /*

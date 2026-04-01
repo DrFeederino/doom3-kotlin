@@ -534,7 +534,7 @@ class SysCvar {
             "g_showTargets",
             "0",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "draws entities and thier targets.  hidden entities are drawn grey."
+            "draws entities and their targets.  hidden entities are drawn grey."
         )
         val g_showTestModelFrame: idCVar = idCVar(
             "g_showTestModelFrame",
@@ -546,7 +546,7 @@ class SysCvar {
             "g_showTriggers",
             "0",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
-            "draws trigger entities (orange) and thier targets (green).  disabled triggers are drawn grey."
+            "draws trigger entities (orange) and their targets (green).  disabled triggers are drawn grey."
         )
         val g_showcamerainfo: idCVar = idCVar(
             "g_showcamerainfo",
@@ -694,7 +694,7 @@ class SysCvar {
             "net_serverDlTable",
             "",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_ARCHIVE,
-            "pak names for which download is provided, seperated by ;"
+            "pak names for which download is provided, separated by ;"
         )
 
         //
@@ -793,7 +793,7 @@ class SysCvar {
             "pm_jumpheight",
             "48",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_FLOAT,
-            "approximate hieght the player can jump"
+            "approximate height the player can jump"
         )
         val pm_maxviewpitch: idCVar = idCVar(
             "pm_maxviewpitch",
@@ -956,7 +956,7 @@ class SysCvar {
             "r_aspectRatio",
             "-1",
             CVarSystem.CVAR_RENDERER or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE,
-            "aspect ratio of view:\n0 = 4:3\n1 = 16:9\n2 = 16:10",
+            "aspect ratio of view:\n0 = 4:3\n1 = 16:9\n2 = 16:10\n-1 = auto (guess from resolution)",
             -1.0f,
             2.0f
         )
@@ -1162,6 +1162,175 @@ class SysCvar {
             "player team",
             ui_teamArgs,
             ArgCompletion_String(ui_teamArgs)
+        )
+
+        // -----------------------------------------------------------------------
+        // D3XP (Resurrection of Evil) CVars — always registered, used when isD3XP
+        // -----------------------------------------------------------------------
+
+        // AI
+        val ai_showHealth: idCVar = idCVar(
+            "ai_showHealth",
+            "0",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
+            "Draws the AI's health above its head"
+        )
+
+        // Vehicle / portal sky / shockwave debug
+        val g_vehicleDebug: idCVar = idCVar("g_vehicleDebug", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "")
+        val g_debugShockwave: idCVar =
+            idCVar("g_debugShockwave", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "Debug the shockwave")
+        val g_enablePortalSky: idCVar =
+            idCVar("g_enablePortalSky", "1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "enables the portal sky")
+
+        // Slow-motion
+        val g_enableSlowmo: idCVar =
+            idCVar("g_enableSlowmo", "0", CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL, "for testing purposes only")
+        val g_slowmoStepRate: idCVar =
+            idCVar("g_slowmoStepRate", "0.02", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
+
+        // Fullscreen FX
+        val g_testFullscreenFX: idCVar = idCVar(
+            "g_testFullscreenFX",
+            "-1",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER,
+            "index will activate specific fx, -2 is for all on, -1 is off"
+        )
+        val g_testHelltimeFX: idCVar = idCVar(
+            "g_testHelltimeFX",
+            "-1",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER,
+            "set to 0, 1, 2 to test helltime, -1 is off"
+        )
+        val g_testMultiplayerFX: idCVar = idCVar(
+            "g_testMultiplayerFX",
+            "-1",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER,
+            "set to 0, 1, 2 to test multiplayer, -1 is off"
+        )
+        val g_lowresFullscreenFX: idCVar = idCVar(
+            "g_lowresFullscreenFX",
+            "0",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL,
+            "enable lores mode for fx"
+        )
+
+        // Damage
+        val g_moveableDamageScale: idCVar = idCVar(
+            "g_moveableDamageScale",
+            "0.1",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT,
+            "scales damage wrt mass of object in multiplayer"
+        )
+
+        // Bloom
+        val g_testBloomSpeed: idCVar =
+            idCVar("g_testBloomSpeed", "1", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
+        val g_testBloomIntensity: idCVar =
+            idCVar("g_testBloomIntensity", "-0.01", CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT, "")
+        val g_testBloomNumPasses: idCVar =
+            idCVar("g_testBloomNumPasses", "30", CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER, "")
+
+        // CTF
+        val si_flagDropTimeLimit: idCVar = idCVar(
+            "si_flagDropTimeLimit",
+            "30",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_SERVERINFO or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_INTEGER,
+            "seconds before a dropped CTF flag is returned"
+        )
+        val si_midnight: idCVar = idCVar(
+            "si_midnight",
+            "0",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SERVERINFO,
+            "Start the game up in midnight CTF (completely dark)"
+        )
+        val g_CTFArrows: idCVar = idCVar(
+            "g_CTFArrows",
+            "1",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_NETWORKSYNC or CVarSystem.CVAR_BOOL,
+            "draw arrows over teammates in CTF"
+        )
+        val g_flagAttachJoint: idCVar = idCVar(
+            "g_flagAttachJoint",
+            "Chest",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_CHEAT,
+            "player joint to attach CTF flag to"
+        )
+        val g_flagAttachOffsetX: idCVar = idCVar(
+            "g_flagAttachOffsetX",
+            "8",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_CHEAT,
+            "X offset of CTF flag when carried"
+        )
+        val g_flagAttachOffsetY: idCVar = idCVar(
+            "g_flagAttachOffsetY",
+            "4",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_CHEAT,
+            "Y offset of CTF flag when carried"
+        )
+        val g_flagAttachOffsetZ: idCVar = idCVar(
+            "g_flagAttachOffsetZ",
+            "-12",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_CHEAT,
+            "Z offset of CTF flag when carried"
+        )
+        val g_flagAttachAngleX: idCVar = idCVar(
+            "g_flagAttachAngleX",
+            "90",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_CHEAT,
+            "X angle of CTF flag when carried"
+        )
+        val g_flagAttachAngleY: idCVar = idCVar(
+            "g_flagAttachAngleY",
+            "25",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_CHEAT,
+            "Y angle of CTF flag when carried"
+        )
+        val g_flagAttachAngleZ: idCVar = idCVar(
+            "g_flagAttachAngleZ",
+            "-90",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_CHEAT,
+            "Z angle of CTF flag when carried"
+        )
+
+        // Grabber (gravity gun)
+        val g_grabberHoldSeconds: idCVar = idCVar(
+            "g_grabberHoldSeconds",
+            "3",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT or CVarSystem.CVAR_CHEAT,
+            "number of seconds to hold object"
+        )
+        val g_grabberEnableShake: idCVar = idCVar(
+            "g_grabberEnableShake",
+            "1",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_CHEAT,
+            "enable the grabber shake"
+        )
+        val g_grabberRandomMotion: idCVar = idCVar(
+            "g_grabberRandomMotion",
+            "1",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_CHEAT,
+            "enable random motion on the grabbed object"
+        )
+        val g_grabberHardStop: idCVar = idCVar(
+            "g_grabberHardStop",
+            "1",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_CHEAT,
+            "hard stops object if too fast"
+        )
+        val g_grabberDamping: idCVar = idCVar(
+            "g_grabberDamping",
+            "0.5",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_FLOAT or CVarSystem.CVAR_CHEAT,
+            "damping of grabber"
+        )
+
+        // Key binding migration
+        val g_xp_bind_run_once: idCVar = idCVar(
+            "g_xp_bind_run_once",
+            "0",
+            CVarSystem.CVAR_GAME or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_ARCHIVE,
+            "Rebind all controls once for D3XP."
         )
 
     }

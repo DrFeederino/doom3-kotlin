@@ -580,6 +580,64 @@ class idAnim {
             fc.type = frameCommandType_t.FC_FIREMISSILEATTARGET
             fc.string.set(token)
             fc.index = jointInfo.num
+            // D3XP: new frame command types
+        } else if (token.toString() == "launch_projectile") {
+            if (!src.ReadTokenOnLine(token)) {
+                return "Unexpected end of line"
+            }
+            if (DeclManager.declManager.FindDeclWithoutParsing(
+                    declType_t.DECL_ENTITYDEF,
+                    token.toString(),
+                    false
+                ) == null
+            ) {
+                return "Unknown projectile def"
+            }
+            fc.type = frameCommandType_t.FC_LAUNCH_PROJECTILE
+            fc.string.set(token)
+        } else if (token.toString() == "trigger_fx") {
+            if (!src.ReadTokenOnLine(token)) {
+                return "Unexpected end of line"
+            }
+            jointInfo = modelDef.FindJoint(token.toString())
+            if (jointInfo == null) {
+                return Str.va("Joint '%s' not found", token)
+            }
+            if (!src.ReadTokenOnLine(token)) {
+                return "Unexpected end of line"
+            }
+            if (DeclManager.declManager.FindType(declType_t.DECL_FX, token.toString(), false) == null) {
+                return "Unknown FX def"
+            }
+            fc.type = frameCommandType_t.FC_TRIGGER_FX
+            fc.string.set(token)
+            fc.index = jointInfo.num
+        } else if (token.toString() == "start_emitter") {
+            val str = idStr()
+            if (!src.ReadTokenOnLine(token)) {
+                return "Unexpected end of line"
+            }
+            str.set(token.toString() + " ")
+            if (!src.ReadTokenOnLine(token)) {
+                return "Unexpected end of line"
+            }
+            jointInfo = modelDef.FindJoint(token.toString())
+            if (jointInfo == null) {
+                return Str.va("Joint '%s' not found", token)
+            }
+            if (!src.ReadTokenOnLine(token)) {
+                return "Unexpected end of line"
+            }
+            str.Append(token.toString())
+            fc.type = frameCommandType_t.FC_START_EMITTER
+            fc.string.set(str)
+            fc.index = jointInfo.num
+        } else if (token.toString() == "stop_emitter") {
+            if (!src.ReadTokenOnLine(token)) {
+                return "Unexpected end of line"
+            }
+            fc.type = frameCommandType_t.FC_STOP_EMITTER
+            fc.string.set(token)
         } else if (token.toString() == "footstep") {
             fc.type = frameCommandType_t.FC_FOOTSTEP
         } else if (token.toString() == "leftfoot") {
@@ -939,9 +997,12 @@ class idAnim {
                         var target: idEntity?
                         target = Game_local.gameLocal.FindEntity(command.string.toString())
                         if (target != null) {
-                            target.Signal(signalNum_t.SIG_TRIGGER)
-                            target.ProcessEvent(EV_Activate, ent)
-                            target.TriggerGuis()
+                            // D3XP: switch to target's time group
+                            SetTimeState(target.timeGroup).use {
+                                target.Signal(signalNum_t.SIG_TRIGGER)
+                                target.ProcessEvent(EV_Activate, ent)
+                                target.TriggerGuis()
+                            }
                         } else {
                             Game_local.gameLocal.Warning(
                                 "Framecommand 'trigger' on entity '%s', anim '%s', frame %d: Could not find entity '%s'",
@@ -991,6 +1052,37 @@ class idAnim {
                             modelDef!!.GetJointName(command.index),
                             command.string.toString()
                         )
+                    }
+
+                    // D3XP: new frame command dispatch
+                    frameCommandType_t.FC_LAUNCH_PROJECTILE -> {
+                        ent.ProcessEvent(AI_LaunchProjectile, command.string.toString())
+                    }
+
+                    frameCommandType_t.FC_TRIGGER_FX -> {
+                        ent.ProcessEvent(
+                            AI_TriggerFX,
+                            modelDef!!.GetJointName(command.index),
+                            command.string.toString()
+                        )
+                    }
+
+                    frameCommandType_t.FC_START_EMITTER -> {
+                        val index = command.string.toString().indexOf(" ")
+                        if (index >= 0) {
+                            val emitterName = command.string.toString().substring(0, index)
+                            val particle = command.string.toString().substring(index + 1)
+                            ent.ProcessEvent(
+                                AI_StartEmitter,
+                                emitterName,
+                                modelDef!!.GetJointName(command.index),
+                                particle
+                            )
+                        }
+                    }
+
+                    frameCommandType_t.FC_STOP_EMITTER -> {
+                        ent.ProcessEvent(AI_StopEmitter, command.string.toString())
                     }
 
                     frameCommandType_t.FC_FOOTSTEP -> {
@@ -1454,7 +1546,7 @@ class idDeclModelDef : idDecl {
         SIMDProcessor!!.TransformJoints(
             list, itoi(jointParents.getList(Array<Int>::class.java))!!, 1, joints.Num() - 1
         )
-        numJoints.integerValue = num
+        numJoints._val = num
         jointList[0] = list
 
         // get the bounds of the default pose
@@ -2795,7 +2887,7 @@ class idAnimator {
     fun  /*size_t*/Allocated(): Int {
         val   /*size_t*/size: Int
         size =
-            jointMods.Allocated() + numJoints.integerValue + AFPoseJointMods.Allocated() + AFPoseJointFrame.Allocated() + AFPoseJoints.Allocated()
+            jointMods.Allocated() + numJoints._val + AFPoseJointMods.Allocated() + AFPoseJointFrame.Allocated() + AFPoseJoints.Allocated()
         return size
     }
 
@@ -2821,9 +2913,9 @@ class idAnimator {
             savefile.WriteInt(TempDump.etoi(jointMods[i].transform_axis))
             i++
         }
-        savefile.WriteInt(numJoints.integerValue)
+        savefile.WriteInt(numJoints._val)
         i = 0
-        while (i < numJoints.integerValue) {
+        while (i < numJoints._val) {
             val data = joints!![i].ToFloatArray()
             j = 0
             while (j < 12) {
@@ -2892,9 +2984,9 @@ class idAnimator {
         modelDef = savefile.ReadModelDef()
         entity = savefile.ReadObject() as idEntity?
         savefile.ReadInt(num)
-        jointMods.SetNum(num.integerValue)
+        jointMods.SetNum(num._val)
         i = 0
-        while (i < num.integerValue) {
+        while (i < num._val) {
             jointMods[i] = jointMod_t()
             jointMods[i].jointnum = savefile.ReadInt()
             savefile.ReadMat3(jointMods[i].mat)
@@ -2903,10 +2995,10 @@ class idAnimator {
             jointMods[i].transform_axis = jointModTransform_t.values()[savefile.ReadInt()]
             i++
         }
-        numJoints.integerValue = (savefile.ReadInt())
-        joints = Array(numJoints.integerValue) { idJointMat() }
+        numJoints._val = (savefile.ReadInt())
+        joints = Array(numJoints._val) { idJointMat() }
         i = 0
-        while (i < numJoints.integerValue) {
+        while (i < numJoints._val) {
             val data = joints!![i].ToFloatArray()
             j = 0
             while (j < 12) {
@@ -2923,10 +3015,10 @@ class idAnimator {
         savefile.ReadInt(num)
 
         AFPoseJoints.SetGranularity(1)
-        AFPoseJoints.SetNum(num.integerValue)
+        AFPoseJoints.SetNum(num._val)
 
         i = 0
-        while (i < num.integerValue) {
+        while (i < num._val) {
             if (i >= AFPoseJoints.Num()) {
                 AFPoseJoints[i] = savefile.ReadInt()
             } else {
@@ -2936,9 +3028,9 @@ class idAnimator {
         }
         savefile.ReadInt(num)
         AFPoseJointMods.SetGranularity(1)
-        AFPoseJointMods.SetNum(num.integerValue)
+        AFPoseJointMods.SetNum(num._val)
         i = 0
-        while (i < num.integerValue) {
+        while (i < num._val) {
             AFPoseJointMods[i] = idAFPoseJointMod()
             AFPoseJointMods[i].mod = AFJointModType_t.values()[savefile.ReadInt()]
             savefile.ReadMat3(AFPoseJointMods[i].axis)
@@ -2947,10 +3039,10 @@ class idAnimator {
         }
         savefile.ReadInt(num)
         AFPoseJointFrame.SetGranularity(1)
-        AFPoseJointFrame.SetNum(num.integerValue)
+        AFPoseJointFrame.SetNum(num._val)
 
         i = 0
-        while (i < num.integerValue) {
+        while (i < num._val) {
             AFPoseJointFrame[i] = idJointQuat()
             AFPoseJointFrame[i].q.x = savefile.ReadFloat()
             AFPoseJointFrame[i].q.y = savefile.ReadFloat()
@@ -3086,11 +3178,11 @@ class idAnimator {
 
     fun GetJoints(renderEntity: renderEntity_s): Int {
         renderEntity.joints = joints as Array<idJointMat?>
-        return numJoints.integerValue
+        return numJoints._val
     }
 
     fun NumJoints(): Int {
-        return numJoints.integerValue
+        return numJoints._val
     }
 
     fun  /*jointHandle_t*/GetFirstChild(   /*jointHandle_t*/jointnum: Int): Int {
@@ -3693,7 +3785,7 @@ class idAnimator {
     fun SetJointPos(   /*jointHandle_t*/jointnum: Int, transform_type: jointModTransform_t, pos: idVec3) {
         var i: Int
         var jointMod: jointMod_t?
-        if (null == modelDef || null == modelDef!!.ModelHandle() || jointnum < 0 || jointnum >= numJoints.integerValue) {
+        if (null == modelDef || null == modelDef!!.ModelHandle() || jointnum < 0 || jointnum >= numJoints._val) {
             return
         }
         jointMod = null
@@ -3723,7 +3815,7 @@ class idAnimator {
     fun SetJointAxis(   /*jointHandle_t*/jointnum: Int, transform_type: jointModTransform_t, mat: idMat3) {
         var i: Int
         var jointMod: jointMod_t?
-        if (null == modelDef || null == modelDef!!.ModelHandle() || jointnum < 0 || jointnum >= numJoints.integerValue) {
+        if (null == modelDef || null == modelDef!!.ModelHandle() || jointnum < 0 || jointnum >= numJoints._val) {
             return
         }
         jointMod = null
@@ -3752,7 +3844,7 @@ class idAnimator {
 
     fun ClearJoint(   /*jointHandle_t*/jointnum: Int) {
         var i: Int
-        if (null == modelDef || null == modelDef!!.ModelHandle() || jointnum < 0 || jointnum >= numJoints.integerValue) {
+        if (null == modelDef || null == modelDef!!.ModelHandle() || jointnum < 0 || jointnum >= numJoints._val) {
             return
         }
         i = 0
@@ -4002,7 +4094,7 @@ class idAnimator {
         if (null == modelDef) {
             idGameLocal.Error("idAnimator::GetChannelForJoint: NULL model")
         }
-        if (joint < 0 || joint >= numJoints.integerValue) {
+        if (joint < 0 || joint >= numJoints._val) {
             idGameLocal.Error("idAnimator::GetChannelForJoint: invalid joint num (%d)", joint)
         }
         return modelDef!!.GetJoint(joint).channel
@@ -4116,7 +4208,7 @@ class idAnimator {
 
 //	Mem_Free16( joints );
         joints = null
-        numJoints.integerValue = 0
+        numJoints._val = 0
         modelDef = null
         ForceUpdate()
     }

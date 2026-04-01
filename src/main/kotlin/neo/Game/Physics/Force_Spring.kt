@@ -10,6 +10,8 @@ package neo.Game.Physics
 
 import neo.Game.GameSys.Class.idClass
 import neo.Game.GameSys.Class.idTypeInfo
+import neo.Game.GameSys.SaveGame.idRestoreGame
+import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Physics.Force.idForce
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Physics.Physics.impactInfo_s
@@ -58,19 +60,52 @@ class Force_Spring {
         private var physics2 // second physics object
                 : idPhysics? = null
         private var restLength = 0.0f
+        private var maxLength = 0.0f // added by ivan for FraggingFree
+        private var pullEntity1 = false // added by ivan for FraggingFree
 
         //	virtual				~idForce_Spring( void );
+
+        // ivan start
+        override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
+            savefile.WriteFloat(Kstretch)
+            savefile.WriteFloat(Kcompress)
+            savefile.WriteFloat(damping)
+            savefile.WriteFloat(restLength)
+            savefile.WriteFloat(maxLength)
+            savefile.WriteBool(pullEntity1)
+        }
+
+        override fun Restore(savefile: idRestoreGame) {
+            Kstretch = savefile.ReadFloat()
+            Kcompress = savefile.ReadFloat()
+            damping = savefile.ReadFloat()
+            restLength = savefile.ReadFloat()
+            maxLength = savefile.ReadFloat()
+            pullEntity1 = savefile.ReadBool()
+        }
+        // ivan end
+
         /*
         ================
         idForce_Spring::InitSpring
         ================
         */
         // initialize the spring
-        fun InitSpring(Kstretch: Float, Kcompress: Float, damping: Float, restLength: Float) {
+        fun InitSpring(
+            Kstretch: Float,
+            Kcompress: Float,
+            damping: Float,
+            restLength: Float,
+            maxLength: Float = 0.0f,
+            pullEntity1: Boolean = false
+        ) {
             this.Kstretch = Kstretch
             this.Kcompress = Kcompress
             this.damping = damping
             this.restLength = restLength
+            this.maxLength = maxLength
+            this.pullEntity1 = pullEntity1
         }
 
         /*
@@ -95,7 +130,7 @@ class Force_Spring {
         */
         // common force interface
         override fun Evaluate(time: Int) {
-            val length: Float
+            var length: Float
             val axis = idMat3()
             val pos1 = idVec3()
             val pos2 = idVec3()
@@ -132,11 +167,15 @@ class Force_Spring {
             dampingForce.set(force * (damping * (relVel / forceLen2)))
             length = force.Normalize()
 
+            if (maxLength > 0.0f && length > maxLength) { // ff1.3
+                length = maxLength
+            }
+
             // if the spring is stretched
             if (length > restLength) {
                 if (Kstretch > 0.0f) {
                     force.set(force * (Square(length - restLength) * Kstretch) - dampingForce)
-                    if (physics1 != null) {
+                    if (pullEntity1 && physics1 != null) {
                         physics1!!.AddForce(id1, pos1, force)
                     }
                     if (physics2 != null) {
@@ -146,7 +185,7 @@ class Force_Spring {
             } else {
                 if (Kcompress > 0.0f) {
                     force.set(force * (Square(length - restLength) * Kcompress) - dampingForce)
-                    if (physics1 != null) {
+                    if (pullEntity1 && physics1 != null) {
                         physics1!!.AddForce(id1, pos1, force.unaryMinus())
                     }
                     if (physics2 != null) {

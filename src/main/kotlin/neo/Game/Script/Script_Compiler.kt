@@ -1108,6 +1108,12 @@ internal class idCompiler {
             val statement =
                 Game_local.gameLocal.program.GetStatement(Game_local.gameLocal.program.NumStatements() - 1)
             statement.c = SizeConstant(func.value!!.functionPtr!!.parmTotal)
+            // DG: set flag for savegame compat when prototype was parsed but implementation wasn't yet
+            if (op == OP_OBJECTCALL && func.value!!.functionPtr!!.parmTotal > 0
+                && func.value!!.functionPtr!!.parmSize.Num() == 0
+            ) {
+                statement.flags = statement_s.FLAG_OBJECTCALL_IMPL_NOT_PARSED_YET
+            }
         } else {
             EmitOpcode(op, func, SizeConstant(size))
         }

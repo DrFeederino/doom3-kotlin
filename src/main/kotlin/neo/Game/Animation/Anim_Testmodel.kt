@@ -222,14 +222,14 @@ class Anim_Testmodel {
                             jointName.StripLeadingOnce("copy_joint ")
                             copyJoint.mod = jointModTransform_t.JOINTMOD_LOCAL_OVERRIDE
                         }
-                        copyJoint.from.integerValue = animator.GetJointHandle(jointName.toString())
-                        if (copyJoint.from.integerValue == Model.INVALID_JOINT) {
+                        copyJoint.from._val = animator.GetJointHandle(jointName.toString())
+                        if (copyJoint.from._val == Model.INVALID_JOINT) {
                             Game_local.gameLocal.Warning("Unknown copy_joint '%s'", jointName)
                             kv = spawnArgs.MatchPrefix("copy_joint", kv)
                             continue
                         }
-                        copyJoint.to.integerValue = headAnimator!!.GetJointHandle(jointName.toString())
-                        if (copyJoint.to.integerValue == Model.INVALID_JOINT) {
+                        copyJoint.to._val = headAnimator!!.GetJointHandle(jointName.toString())
+                        if (copyJoint.to._val == Model.INVALID_JOINT) {
                             Game_local.gameLocal.Warning("Unknown copy_joint '%s' on head", jointName)
                             kv = spawnArgs.MatchPrefix("copy_joint", kv)
                             continue
@@ -696,21 +696,21 @@ class Anim_Testmodel {
                         if (copyJoints[i].mod == jointModTransform_t.JOINTMOD_WORLD_OVERRIDE) {
                             val mat = head.GetEntity()!!.GetPhysics().GetAxis().Transpose()
                             GetJointWorldTransform(
-                                copyJoints[i].from.integerValue, Game_local.gameLocal.time, pos, axis
+                                copyJoints[i].from._val, Game_local.gameLocal.time, pos, axis
                             )
                             pos.minusAssign(head.GetEntity()!!.GetPhysics().GetOrigin())
                             headAnimator!!.SetJointPos(
-                                copyJoints[i].to.integerValue, copyJoints[i].mod, pos.times(mat)
+                                copyJoints[i].to._val, copyJoints[i].mod, pos.times(mat)
                             )
                             headAnimator!!.SetJointAxis(
-                                copyJoints[i].to.integerValue, copyJoints[i].mod, axis.times(mat)
+                                copyJoints[i].to._val, copyJoints[i].mod, axis.times(mat)
                             )
                         } else {
                             animator.GetJointLocalTransform(
-                                copyJoints[i].from.integerValue, Game_local.gameLocal.time, pos, axis
+                                copyJoints[i].from._val, Game_local.gameLocal.time, pos, axis
                             )
-                            headAnimator!!.SetJointPos(copyJoints[i].to.integerValue, copyJoints[i].mod, pos)
-                            headAnimator!!.SetJointAxis(copyJoints[i].to.integerValue, copyJoints[i].mod, axis)
+                            headAnimator!!.SetJointPos(copyJoints[i].to._val, copyJoints[i].mod, pos)
+                            headAnimator!!.SetJointAxis(copyJoints[i].to._val, copyJoints[i].mod, axis)
                         }
                         i++
                     }

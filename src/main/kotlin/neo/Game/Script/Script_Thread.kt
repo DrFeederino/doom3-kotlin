@@ -33,9 +33,12 @@ import neo.idlib.Text.Str.idStr.Companion.Cmpn
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.List.idList
 import neo.idlib.math.*
+import neo.idlib.math.idMath.ACos
+import neo.idlib.math.idMath.ASin
 import neo.idlib.math.idMath.Cos
 import neo.idlib.math.idMath.Sin
 import neo.idlib.math.idMath.Sqrt
+import neo.idlib.math.Matrix.idMat3
 
 
 val EV_Thread_SetCallback = idEventDef("<script_setcallback>", null)
@@ -85,6 +88,7 @@ val EV_Thread_Print = idEventDef("print", "s")
 val EV_Thread_PrintLn = idEventDef("println", "s")
 val EV_Thread_RadiusDamage = idEventDef("radiusDamage", "vEEEsf")
 val EV_Thread_Random = idEventDef("random", "f", 'f')
+val EV_Thread_RandomInt = idEventDef("randomInt", "d", 'd')  // D3XP
 val EV_Thread_Say = idEventDef("say", "s")
 val EV_Thread_SetCamera = idEventDef("setCamera", "e")
 val EV_Thread_SetCvar = idEventDef("setcvar", "ss")
@@ -92,6 +96,8 @@ val EV_Thread_SetPersistantArg = idEventDef("setPersistantArg", "ss")
 val EV_Thread_SetSpawnArg = idEventDef("setSpawnArg", "ss")
 val EV_Thread_SetThreadName = idEventDef("threadname", "s")
 val EV_Thread_Sine = idEventDef("sin", "f", 'f')
+val EV_Thread_ArcSine = idEventDef("asin", "f", 'f')        // D3XP
+val EV_Thread_ArcCosine = idEventDef("acos", "f", 'f')      // D3XP
 val EV_Thread_Spawn = idEventDef("spawn", "s", 'e')
 val EV_Thread_SpawnFloat = idEventDef("SpawnFloat", "sf", 'f')
 val EV_Thread_SpawnString = idEventDef("SpawnString", "ss", 's')
@@ -115,6 +121,8 @@ val EV_Thread_VecCrossProduct = idEventDef("CrossProduct", "vv", 'v')
 val EV_Thread_VecDotProduct = idEventDef("DotProduct", "vv", 'f')
 val EV_Thread_VecLength = idEventDef("vecLength", "v", 'f')
 val EV_Thread_VecToAngles = idEventDef("VecToAngles", "v", 'v')
+val EV_Thread_VecToOrthoBasisAngles = idEventDef("VecToOrthoBasisAngles", "v", 'v')  // D3XP
+val EV_Thread_RotateVector = idEventDef("rotateVector", "vv", 'v')                   // D3XP
 val EV_Thread_WaitFor = idEventDef("waitFor", "e")
 val EV_Thread_WaitForThread = idEventDef("waitForThread", "d")
 val EV_Thread_Warning = idEventDef("warning", "s")
@@ -306,7 +314,7 @@ object Script_Thread {
         }
 
         private fun Event_GetFrameTime() {
-            ReturnFloat(MS2SEC(idGameLocal.msec.toFloat()))
+            ReturnFloat(MS2SEC(Game_local.gameLocal.msec.toFloat()))
         }
 
         private fun Event_GetTicsPerSecond() {
@@ -405,7 +413,7 @@ object Script_Thread {
             // manual control threads don't set waitingUntil so that they can be run again
             // that frame if necessary.
             if (!manualControl) {
-                waitingUntil = gameLocal.time + idGameLocal.msec
+                waitingUntil = gameLocal.time + idGameLocal.msecPrecise.toInt()
             }
         }
 
@@ -525,7 +533,7 @@ object Script_Thread {
                 if (waitingUntil > lastExecuteTime) {
                     PostEventMS(EV_Thread_Execute, waitingUntil - lastExecuteTime)
                 } else if (interpreter.MultiFrameEventInProgress()) {
-                    PostEventMS(EV_Thread_Execute, idGameLocal.msec)
+                    PostEventMS(EV_Thread_Execute, Game_local.gameLocal.msec)
                 }
             }
             currentThread = oldThread
@@ -633,12 +641,12 @@ object Script_Thread {
 
         fun Error(fmt: String?, vararg objects: Any?) { // const id_attribute((format(printf,2,3)));
             val text = String.format(fmt!!, *objects)
-            interpreter.Error(text)
+            interpreter.Error("%s", text)
         }
 
         fun Warning(fmt: String?, vararg objects: Any?) { // const id_attribute((format(printf,2,3)));
             val text = String.format(fmt!!, *objects)
-            interpreter.Warning(text)
+            interpreter.Warning("%s", text)
         }
 
         override fun oSet(oGet: idClass?) {}
@@ -757,6 +765,9 @@ object Script_Thread {
                         t, range as idEventArg<Float>
                     )
                 })
+                eventCallbacks[EV_Thread_RandomInt] = (eventCallback_t1 { t: idThread, range: idEventArg<*> ->
+                    Event_RandomInt(t, range as idEventArg<Int>)
+                })
                 eventCallbacks[EV_Thread_GetTime] = (eventCallback_t0 { obj: idThread -> obj.Event_GetTime() })
                 eventCallbacks[EV_Thread_KillThread] = (eventCallback_t1 { t: idThread, name: idEventArg<*> ->
                     Event_KillThread(
@@ -855,6 +866,12 @@ object Script_Thread {
                         t, angle as idEventArg<Float>
                     )
                 })
+                eventCallbacks[EV_Thread_ArcSine] = (eventCallback_t1 { t: idThread, angle: idEventArg<*> ->
+                    Event_GetArcSine(t, angle as idEventArg<Float>)
+                })
+                eventCallbacks[EV_Thread_ArcCosine] = (eventCallback_t1 { t: idThread, angle: idEventArg<*> ->
+                    Event_GetArcCosine(t, angle as idEventArg<Float>)
+                })
                 eventCallbacks[EV_Thread_SquareRoot] = (eventCallback_t1 { t: idThread, theSquare: idEventArg<*> ->
                     Event_GetSquareRoot(
                         t, theSquare as idEventArg<Float>
@@ -887,6 +904,13 @@ object Script_Thread {
                         t, vec as idEventArg<idVec3>
                     )
                 })
+                eventCallbacks[EV_Thread_VecToOrthoBasisAngles] = (eventCallback_t1 { t: idThread, vec: idEventArg<*> ->
+                    Event_VecToOrthoBasisAngles(t, vec as idEventArg<idVec3>)
+                })
+                eventCallbacks[EV_Thread_RotateVector] =
+                    (eventCallback_t2 { t: idThread, vec: idEventArg<*>, ang: idEventArg<*> ->
+                        Event_RotateVector(t, vec as idEventArg<idVec3>, ang as idEventArg<idVec3>)
+                    })
                 eventCallbacks[EV_Thread_OnSignal] =
                     (eventCallback_t3 { t: idThread, s: idEventArg<*>, e: idEventArg<*>, f: idEventArg<*> ->
                         Event_OnSignal(
@@ -1293,6 +1317,14 @@ object Script_Thread {
                 ReturnFloat(Cos(DEG2RAD(angle.value)))
             }
 
+            private fun Event_GetArcSine(t: idThread, angle: idEventArg<Float>) {
+                ReturnFloat(RAD2DEG(ASin(angle.value)))
+            }
+
+            private fun Event_GetArcCosine(t: idThread, angle: idEventArg<Float>) {
+                ReturnFloat(RAD2DEG(ACos(angle.value)))
+            }
+
             private fun Event_GetSquareRoot(t: idThread, theSquare: idEventArg<Float>) {
                 ReturnFloat(Sqrt(theSquare.value))
             }
@@ -1318,6 +1350,21 @@ object Script_Thread {
             private fun Event_VecToAngles(t: idThread, vec: idEventArg<idVec3>) {
                 val ang = vec.value.ToAngles()
                 ReturnVector(idVec3(ang[0], ang[1], ang[2]))
+            }
+
+            private fun Event_VecToOrthoBasisAngles(t: idThread, vec: idEventArg<idVec3>) {
+                val left = idVec3()
+                val up = idVec3()
+                vec.value.OrthogonalBasis(left, up)
+                val axis = idMat3(left, up, vec.value)
+                val ang = axis.ToAngles()
+                ReturnVector(idVec3(ang[0], ang[1], ang[2]))
+            }
+
+            private fun Event_RotateVector(t: idThread, vec: idEventArg<idVec3>, ang: idEventArg<idVec3>) {
+                val tempAng = idAngles(ang.value.x, ang.value.y, ang.value.z)
+                val axis = tempAng.ToMat3()
+                ReturnVector(vec.value * axis)
             }
 
             private fun Event_OnSignal(
@@ -1425,8 +1472,6 @@ object Script_Thread {
 // script callable Events
 //
             private fun Event_TerminateThread(t: idThread, num: idEventArg<Int>) {
-                val thread: idThread?
-                thread = GetThread(num.value)
                 KillThread(num.value)
             }
 
@@ -1496,6 +1541,10 @@ object Script_Thread {
                 val result: Float
                 result = gameLocal.random.RandomFloat()
                 ReturnFloat(range.value * result)
+            }
+
+            private fun Event_RandomInt(t: idThread, range: idEventArg<Int>) {
+                ReturnInt(gameLocal.random.RandomInt(range.value))
             }
 
             private fun Event_KillThread(t: idThread, name: idEventArg<String>) {

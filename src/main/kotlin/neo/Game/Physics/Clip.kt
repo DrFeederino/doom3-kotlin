@@ -22,6 +22,7 @@ import neo.Game.GameSys.Class
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.idGameLocal
 import neo.Game.idEntity
 import neo.Renderer.Material
@@ -95,17 +96,27 @@ object Clip {
             results.endAxis.set(trmAxis)
             results.c = contactInfo_t() //memset( results.c, 0, sizeof( results.c ) );
             results.c.point.set(start)
-            results.c.entityNum = Game_local.ENTITYNUM_WORLD
+            // D3XP/CTF: removed ENTITYNUM_WORLD assignment here — the memset/constructor
+            // already sets entityNum to 0. In CTF, huge translations can occur benignly when
+            // a player connects near a flag spawning nuggets.
+            if (!isD3XP) {
+                results.c.entityNum = Game_local.ENTITYNUM_WORLD
+            }
             if (mdl.GetEntity() != null) {
-                Game_local.gameLocal.Printf(
-                    "huge translation for clip model %d on entity %d '%s'\n",
+                Game_local.gameLocal.Warning(
+                    "huge translation for clip model %d on entity %d '%s'",
                     mdl.GetId(),
                     mdl.GetEntity()!!.entityNumber,
                     mdl.GetEntity()!!.GetName()
                 )
             } else {
-                Game_local.gameLocal.Printf("huge translation for clip model %d\n", mdl.GetId())
+                Game_local.gameLocal.Warning("huge translation for clip model %d", mdl.GetId())
             }
+            // DG: also print coordinates for debugging
+            Game_local.gameLocal.Warning(
+                "  from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)",
+                start.x, start.y, start.z, end.x, end.y, end.z
+            )
             return true
         }
         return false
@@ -258,7 +269,7 @@ object Clip {
                 run {
                     val contents = CInt()
                     collisionModelManager.GetModelContents(collisionModelHandle, contents)
-                    this.contents = contents.integerValue
+                    this.contents = contents._val
                 }
                 true
             } else {
@@ -738,9 +749,9 @@ object Clip {
                 val num = CInt()
                 ClearTraceModelCache()
                 savefile.ReadInt(num)
-                traceModelCache.SetNum(num.integerValue)
+                traceModelCache.SetNum(num._val)
                 i = 0
-                while (i < num.integerValue) {
+                while (i < num._val) {
                     val entry = trmCache_s()
                     savefile.ReadTraceModel(entry.trm)
                     entry.volume = savefile.ReadFloat()

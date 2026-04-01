@@ -126,7 +126,13 @@ object Anim {
         FC_ENABLE_LEG_IK,
         FC_DISABLE_LEG_IK,
         FC_RECORDDEMO,
-        FC_AVIGAME
+        FC_AVIGAME,
+
+        // D3XP: AI particle emitter and FX frame commands
+        FC_LAUNCH_PROJECTILE,
+        FC_TRIGGER_FX,
+        FC_START_EMITTER,
+        FC_STOP_EMITTER
     }
 
     //

@@ -17,6 +17,7 @@ import neo.Game.Game.refSound_t
 import neo.Game.GameSys.Class.idClass
 import neo.Game.GameSys.Class.idTypeInfo
 import neo.Game.Game_local
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.idEntity
@@ -363,15 +364,22 @@ object SaveGame {
             if (null == dict) {
                 WriteInt(-1)
             } else {
+                val posStart = file.Tell()
                 num = dict.GetNumKeyVals()
                 WriteInt(num)
                 i = 0
                 while (i < num) {
                     kv = dict.GetKeyVal(i)!!
+                    val posBefore = file.Tell()
                     WriteString(kv.GetKey())
                     WriteString(kv.GetValue())
+                    val posAfter = file.Tell()
+                    val keyLen = kv.GetKey().Length()
+                    val valLen = kv.GetValue().Length()
+                    println("  WriteDict[$i] pos=$posBefore->$posAfter bytes=${posAfter - posBefore} key(${keyLen})=\"${kv.GetKey()}\" val(${valLen})=\"${kv.GetValue()}\"")
                     i++
                 }
+                println("WriteDict total: pos=$posStart->${file.Tell()} bytes=${file.Tell() - posStart} entries=$num")
             }
         }
 
@@ -537,6 +545,10 @@ object SaveGame {
             WriteBool(renderEntity.noDynamicInteractions)
             WriteBool(renderEntity.weaponDepthHack)
             WriteInt(renderEntity.forceUpdate)
+            if (isD3XP) {
+                WriteInt(renderEntity.timeGroup)
+                WriteInt(renderEntity.xrayIndex)
+            }
         }
 
         /*
@@ -548,8 +560,8 @@ object SaveGame {
             var i: Int
             WriteMat3(renderLight.axis)
             WriteVec3(renderLight.origin)
-            WriteInt(renderLight.suppressLightInViewID.integerValue)
-            WriteInt(renderLight.allowLightInViewID.integerValue)
+            WriteInt(renderLight.suppressLightInViewID._val)
+            WriteInt(renderLight.allowLightInViewID._val)
             WriteBool(renderLight.noShadows._val)
             WriteBool(renderLight.noSpecular._val)
             WriteBool(renderLight.pointLight._val)
@@ -564,7 +576,7 @@ object SaveGame {
 
             // only idLight has a prelightModel and it's always based on the entityname, so we'll restore it there
             // WriteModel( renderLight.prelightModel );
-            WriteInt(renderLight.lightId.integerValue)
+            WriteInt(renderLight.lightId._val)
             WriteMaterial(renderLight.shader)
             i = 0
             while (i < Material.MAX_ENTITY_SHADER_PARMS) {
@@ -796,7 +808,7 @@ object SaveGame {
         fun ReadInternalSavegameVersion() {
             val readVersion = CInt()
             ReadInt(readVersion)
-            internalSavegameVersion = readVersion.integerValue
+            internalSavegameVersion = readVersion._val
         }
 
         // if it's 0, this is from a GetBuildNumber() < 1305 savegame
@@ -818,7 +830,7 @@ object SaveGame {
             var type: idTypeInfo?
             ReadInt(num)
 
-            objects.SetNum(num.integerValue + 1)
+            objects.SetNum(num._val + 1)
             for (i in 1 until objects.Num()) {
                 ReadString(className)
                 type = idClass.GetClass(className.toString())
@@ -907,7 +919,7 @@ object SaveGame {
         fun ReadInt(): Int {
             val value = CInt()
             this.ReadInt(value)
-            return value.integerValue
+            return value._val
         }
 
         /*
@@ -922,7 +934,7 @@ object SaveGame {
         fun ReadJoint(): Int {
             val jointHandle_t = CInt()
             this.ReadJoint(jointHandle_t)
-            return jointHandle_t.integerValue
+            return jointHandle_t._val
         }
 
         /*
@@ -1003,11 +1015,11 @@ object SaveGame {
         fun ReadString(string: idStr) {
             val len = CInt()
             ReadInt(len)
-            if (len.integerValue < 0) {
+            if (len._val < 0) {
                 Error("idRestoreGame::ReadString: invalid length")
             }
-            string.Fill(' ', len.integerValue)
-            file.Read(string, len.integerValue)
+            string.Fill(' ', len._val)
+            file.Read(string, len._val)
         }
 
         /*
@@ -1055,9 +1067,9 @@ object SaveGame {
             var i: Int
             val num = CInt()
             file.ReadInt(num)
-            w.SetNumPoints(num.integerValue)
+            w.SetNumPoints(num._val)
             i = 0
-            while (i < num.integerValue) {
+            while (i < num._val) {
                 file.Read(w[i])
                 LittleRevBytes(w[i])
                 i++
@@ -1124,13 +1136,13 @@ object SaveGame {
             val key = idStr()
             val value = idStr()
             ReadInt(num)
-            if (num.integerValue < 0) {
+            if (num._val < 0) {
                 return null
             } else {
                 val dict = idDict()
                 dict.Clear()
                 i = 0
-                while (i < num.integerValue) {
+                while (i < num._val) {
                     ReadString(key)
                     ReadString(value)
                     dict.Set(key, value)
@@ -1300,7 +1312,7 @@ object SaveGame {
             renderEntity.referenceShader = ReadMaterial()
             renderEntity.customSkin = ReadSkin()
             ReadInt(index)
-            renderEntity.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index.integerValue)
+            renderEntity.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index._val)
             i = 0
             while (i < Material.MAX_ENTITY_SHADER_PARMS) {
                 renderEntity.shaderParms[i] = ReadFloat()
@@ -1322,6 +1334,10 @@ object SaveGame {
             renderEntity.noDynamicInteractions = ReadBool()
             renderEntity.weaponDepthHack = ReadBool()
             renderEntity.forceUpdate = ReadInt()
+            if (isD3XP) {
+                renderEntity.timeGroup = ReadInt()
+                renderEntity.xrayIndex = ReadInt()
+            }
 
             return renderEntity
         }
@@ -1336,8 +1352,8 @@ object SaveGame {
             var i: Int
             ReadMat3(renderLight.axis)
             ReadVec3(renderLight.origin)
-            renderLight.suppressLightInViewID.integerValue = ReadInt()
-            renderLight.allowLightInViewID.integerValue = ReadInt()
+            renderLight.suppressLightInViewID._val = ReadInt()
+            renderLight.allowLightInViewID._val = ReadInt()
             renderLight.noShadows._val = ReadBool()
             renderLight.noSpecular._val = ReadBool()
             renderLight.pointLight._val = ReadBool()
@@ -1353,7 +1369,7 @@ object SaveGame {
             // only idLight has a prelightModel and it's always based on the entityname, so we'll restore it there
             // ReadModel( renderLight.prelightModel );
             renderLight.prelightModel = null
-            renderLight.lightId.integerValue = ReadInt()
+            renderLight.lightId._val = ReadInt()
             renderLight.shader = ReadMaterial()
             i = 0
             while (i < Material.MAX_ENTITY_SHADER_PARMS) {
@@ -1361,7 +1377,7 @@ object SaveGame {
                 i++
             }
             ReadInt(index)
-            renderLight.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index.integerValue)
+            renderLight.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index._val)
         }
 
         /*
@@ -1372,7 +1388,7 @@ object SaveGame {
         fun ReadRefSound(refSound: refSound_t) {
             val index = CInt()
             ReadInt(index)
-            refSound.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index.integerValue)
+            refSound.referenceSound = Game_local.gameSoundWorld!!.EmitterForIndex(index._val)
             ReadVec3(refSound.origin)
             refSound.listenerId = ReadInt()
             refSound.shader = ReadSoundShader()
@@ -1546,7 +1562,7 @@ object SaveGame {
         fun ReadBuildNumber() {
             val buildNumber = CInt()
             file.ReadInt(buildNumber)
-            this.buildNumber = buildNumber.integerValue
+            this.buildNumber = buildNumber._val
         }
 
         /*

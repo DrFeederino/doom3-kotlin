@@ -29,6 +29,10 @@ import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.*
+import neo.Game.Game_local.Companion.MAX_GENTITIES
+import neo.Game.Game_local.Companion.gameLocal
+import neo.Game.Game_local.Companion.gameRenderWorld
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Moveable.idMoveable
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Force_Field.forceFieldApplyType
@@ -76,6 +80,8 @@ val EV_LaunchMissiles: idEventDef = idEventDef("launchMissiles", "ssssdf")
 val EV_LaunchMissilesUpdate: idEventDef = idEventDef("<launchMissiles>", "dddd")
 val EV_ResetRadioHud: idEventDef = idEventDef("<resetradiohud>", "e")
 val EV_RestoreDamagable: idEventDef = idEventDef("<RestoreDamagable>")
+val EV_SetAnimation: idEventDef = idEventDef("setAnimation", "s") // D3XP
+val EV_GetAnimationLength: idEventDef = idEventDef("getAnimationLength", null, 'f') // D3XP
 val EV_Splat: idEventDef = idEventDef("<Splat>")
 val EV_StartRagdoll: idEventDef = idEventDef("startRagdoll")
 val EV_TeleportStage: idEventDef = idEventDef("<TeleportStage>", "e")
@@ -113,8 +119,7 @@ object Misc {
      idDamagable
 	
      ===============================================================================
-     */
-    /*
+     *//*
      ===============================================================================
 
      idFuncSplat
@@ -284,7 +289,7 @@ object Misc {
             super.Restore(savefile)
             val teleportStage = CInt()
             savefile.ReadInt(teleportStage)
-            this.teleportStage = teleportStage.integerValue
+            this.teleportStage = teleportStage._val
         }
 
         override fun ClientReceiveEvent(event: Int, time: Int, msg: idBitMsg): Boolean {
@@ -443,8 +448,7 @@ object Misc {
      Path entities for monsters to follow.
 
      ===============================================================================
-     */
-    /*
+     *//*
      ===============================================================================
 
      idPathCorner
@@ -552,8 +556,8 @@ object Misc {
         private val nextTriggerTime: CInt = CInt()
         override fun Save(savefile: idSaveGame) {
             super.Save(savefile)
-            savefile.WriteInt(count.integerValue)
-            savefile.WriteInt(nextTriggerTime.integerValue)
+            savefile.WriteInt(count._val)
+            savefile.WriteInt(nextTriggerTime._val)
         }
 
         override fun Restore(savefile: idRestoreGame) {
@@ -567,7 +571,7 @@ object Misc {
             val broken = idStr()
             health = spawnArgs.GetInt("health", "5")
             spawnArgs.GetInt("count", "1", count)
-            nextTriggerTime.integerValue = (0)
+            nextTriggerTime._val = (0)
 
             // make sure the model gets cached
             spawnArgs.GetString("broken", "", broken)
@@ -584,7 +588,7 @@ object Misc {
         }
 
         override fun Killed(inflictor: idEntity?, attacker: idEntity?, damage: Int, dir: idVec3, location: Int) {
-            if (Game_local.gameLocal.time < nextTriggerTime.integerValue) {
+            if (Game_local.gameLocal.time < nextTriggerTime._val) {
                 health += damage
                 return
             }
@@ -596,14 +600,14 @@ object Misc {
             val numStates = CInt()
             val cycle = CInt()
             val wait = CFloat()
-            if (Game_local.gameLocal.time < nextTriggerTime.integerValue) {
+            if (Game_local.gameLocal.time < nextTriggerTime._val) {
                 return
             }
             spawnArgs.GetFloat("wait", "0.1f", wait)
-            nextTriggerTime.integerValue = ((Game_local.gameLocal.time + SEC2MS(wait._val)))
-            if (count.integerValue > 0) {
+            nextTriggerTime._val = ((Game_local.gameLocal.time + SEC2MS(wait._val)))
+            if (count._val > 0) {
                 count.decrement()
-                if (0 == count.integerValue) {
+                if (0 == count._val) {
                     fl.takedamage = false
                 } else {
                     health = spawnArgs.GetInt("health", "5")
@@ -616,30 +620,28 @@ object Misc {
             }
 
             // offset the start time of the shader to sync it to the gameLocal time
-            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                -MS2SEC(Game_local.gameLocal.time.toFloat())
+            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
             spawnArgs.GetInt("numstates", "1", numStates)
             spawnArgs.GetInt("cycle", "0", cycle)
             spawnArgs.GetFloat("forcestate", "0", forceState)
 
             // set the state parm
-            if (cycle.integerValue != 0) {
+            if (cycle._val != 0) {
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE]++
-                if (renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] > numStates.integerValue) {
+                if (renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] > numStates._val) {
                     renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] = 0.0f
                 }
             } else if (forceState._val != 0.0f) {
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] = forceState._val
             } else {
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] =
-                    (Game_local.gameLocal.random.RandomInt(numStates.integerValue) + 1).toFloat()
+                    (Game_local.gameLocal.random.RandomInt(numStates._val) + 1).toFloat()
             }
-            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                -MS2SEC(Game_local.gameLocal.time.toFloat())
+            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
             ActivateTargets(activator)
             if (spawnArgs.GetBool("hideWhenBroken")) {
                 Hide()
-                PostEventMS(EV_RestoreDamagable, nextTriggerTime.integerValue - Game_local.gameLocal.time)
+                PostEventMS(EV_RestoreDamagable, nextTriggerTime._val - Game_local.gameLocal.time)
                 BecomeActive(TH_THINK)
             }
         }
@@ -657,11 +659,26 @@ object Misc {
             return eventCallbacks[event]
         }
 
+        // D3XP: also clear physics contents when hidden/shown
+        override fun Hide() {
+            super.Hide()
+            if (isD3XP) {
+                GetPhysics().SetContents(0)
+            }
+        }
+
+        override fun Show() {
+            super.Show()
+            if (isD3XP) {
+                GetPhysics().SetContents(Material.CONTENTS_SOLID)
+            }
+        }
+
         //
         //
         init {
-            count.integerValue = (0)
-            nextTriggerTime.integerValue = (0)
+            count._val = (0)
+            nextTriggerTime._val = (0)
         }
     }
 
@@ -671,8 +688,7 @@ object Misc {
      Hidden object that explodes when activated
 
      ===============================================================================
-     */
-    /*
+     *//*
      ===============================================================================
 
      idExplodable
@@ -689,12 +705,7 @@ object Misc {
                 val temp = arrayOfNulls<String>(1)
                 if (e.spawnArgs.GetString("def_damage", "damage_explosion", temp)) {
                     Game_local.gameLocal.RadiusDamage(
-                        e.GetPhysics().GetOrigin(),
-                        activator.value,
-                        activator.value,
-                        e,
-                        e,
-                        temp[0]!!
+                        e.GetPhysics().GetOrigin(), activator.value, activator.value, e, e, temp[0]!!
                     )
                 }
                 e.StartSound("snd_explode", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
@@ -761,23 +772,34 @@ object Misc {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[EV_PostSpawn] =
-                    eventCallback_t0<idSpring> { obj: idSpring -> obj.Event_LinkSpring() }
+                eventCallbacks[EV_PostSpawn] = eventCallback_t0<idSpring> { obj: idSpring -> obj.Event_LinkSpring() }
+                eventCallbacks[EV_Activate] = eventCallback_t1<idSpring> { obj: idSpring, activator: idEventArg<*>? ->
+                    obj.Event_Activate(activator as idEventArg<idEntity>)
+                }
             }
         }
 
         private val id1: CInt = CInt()
         private val id2: CInt = CInt()
-        private var ent1: idEntity? = null
-        private var ent2: idEntity? = null
+
+        // DG: changed from raw idEntity* to idEntityPtr for save/restore safety
+        private var ent1: idEntityPtr<idEntity> = idEntityPtr()
+        private var ent2: idEntityPtr<idEntity> = idEntityPtr()
         private val p1: idVec3 = idVec3()
         private val p2: idVec3 = idVec3()
         private val spring: idForce_Spring = idForce_Spring()
+        private var enabled: Boolean = false
+
         override fun Spawn() {
             super.Spawn()
             val Kstretch = CFloat()
+            val Kcompress = CFloat()
             val damping = CFloat()
             val restLength = CFloat()
+            val maxLength = CFloat()
+            val pullEnt1 = CBool(true)
+
+            enabled = !spawnArgs.GetBool("start_off")
             spawnArgs.GetInt("id1", "0", id1)
             spawnArgs.GetInt("id2", "0", id2)
             spawnArgs.GetVector("point1", "0 0 0", p1)
@@ -785,36 +807,51 @@ object Misc {
             spawnArgs.GetFloat("constant", "100.0f", Kstretch)
             spawnArgs.GetFloat("damping", "10.0f", damping)
             spawnArgs.GetFloat("restlength", "0.0f", restLength)
-            spring.InitSpring(Kstretch._val, 0.0f, damping._val, restLength._val)
-            ent2 = null
-            ent1 = ent2
+            spawnArgs.GetFloat("maxLength", "200.0f", maxLength)
+            // DG: added compress and pullEntity1
+            spawnArgs.GetFloat("compress", "0.0f", Kcompress)
+            spawnArgs.GetBool("pullEnt1", "1", pullEnt1)
+
+            spring.InitSpring(
+                Kstretch._val, Kcompress._val, damping._val, restLength._val, maxLength._val, pullEnt1._val
+            )
+
+            ent1.oSet(null)
+            ent2.oSet(null)
             PostEventMS(EV_PostSpawn, 0)
         }
 
         override fun Think() {
-            val start = idVec3()
-            val end = idVec3()
-            val origin = idVec3()
-            val axis: idMat3 = idMat3()
-
             // run physics
             RunPhysics()
             if ((thinkFlags and TH_THINK) != 0) {
-                // evaluate force
-                spring.Evaluate(Game_local.gameLocal.time)
-                start.set(p1)
-                if (ent1!!.GetPhysics() != null) {
-                    axis.set(ent1!!.GetPhysics().GetAxis())
-                    origin.set(ent1!!.GetPhysics().GetOrigin())
-                    start.set(origin.plus(start.times(axis)))
+                if (enabled && ent1.GetEntity() != null && ent2.GetEntity() != null) {
+                    // evaluate force
+                    spring.Evaluate(Game_local.gameLocal.time)
+
+                    if (SysCvar.g_debugMover.GetBool()) {
+                        val start = idVec3()
+                        val end = idVec3()
+                        val origin = idVec3()
+                        val axis = idMat3()
+
+                        start.set(p1)
+                        if (ent1.GetEntity()!!.GetPhysics() != null) {
+                            axis.set(ent1.GetEntity()!!.GetPhysics().GetAxis())
+                            origin.set(ent1.GetEntity()!!.GetPhysics().GetOrigin())
+                            start.set(origin.plus(start.times(axis)))
+                        }
+                        end.set(p2)
+                        if (ent2.GetEntity()!!.GetPhysics() != null) {
+                            axis.set(ent2.GetEntity()!!.GetPhysics().GetAxis())
+                            origin.set(ent2.GetEntity()!!.GetPhysics().GetOrigin())
+                            end.set(origin.plus(p2.times(axis)))
+                        }
+                        Game_local.gameRenderWorld!!.DebugLine(idVec4(1.0f, 1.0f, 0.0f, 1.0f), start, end, 0, true)
+                    }
+                } else {
+                    BecomeInactive(TH_THINK)
                 }
-                end.set(p2)
-                if (ent2!!.GetPhysics() != null) {
-                    axis.set(ent2!!.GetPhysics().GetAxis())
-                    origin.set(ent2!!.GetPhysics().GetOrigin())
-                    end.set(origin.plus(p2.times(axis)))
-                }
-                Game_local.gameRenderWorld!!.DebugLine(idVec4(1.0f, 1.0f, 0.0f, 1.0f), start, end, 0, true)
             }
             Present()
         }
@@ -825,9 +862,10 @@ object Misc {
             spawnArgs.GetString("ent1", "", name1)
             spawnArgs.GetString("ent2", "", name2)
             if (name1.Length() != 0) {
-                ent1 = Game_local.gameLocal.FindEntity(name1.toString())
-                if (null == ent1) {
-                    idGameLocal.Error(
+                ent1.oSet(Game_local.gameLocal.FindEntity(name1.toString()))
+                if (ent1.GetEntity() == null) {
+                    // DG: changed from Error to Warning (dhewm3)
+                    Game_local.gameLocal.Warning(
                         "idSpring '%s' at (%s): cannot find first entity '%s'",
                         name,
                         GetPhysics().GetOrigin().ToString(0),
@@ -835,12 +873,12 @@ object Misc {
                     )
                 }
             } else {
-                ent1 = Game_local.gameLocal.entities[Game_local.ENTITYNUM_WORLD]
+                ent1.oSet(Game_local.gameLocal.entities[Game_local.ENTITYNUM_WORLD])
             }
             if (name2.Length() != 0) {
-                ent2 = Game_local.gameLocal.FindEntity(name2.toString())
-                if (null == ent2) {
-                    idGameLocal.Error(
+                ent2.oSet(Game_local.gameLocal.FindEntity(name2.toString()))
+                if (ent2.GetEntity() == null) {
+                    Game_local.gameLocal.Warning(
                         "idSpring '%s' at (%s): cannot find second entity '%s'",
                         name,
                         GetPhysics().GetOrigin().ToString(0),
@@ -848,10 +886,50 @@ object Misc {
                     )
                 }
             } else {
-                ent2 = Game_local.gameLocal.entities[Game_local.ENTITYNUM_WORLD]
+                ent2.oSet(Game_local.gameLocal.entities[Game_local.ENTITYNUM_WORLD])
             }
-            spring.SetPosition(ent1!!.GetPhysics(), id1.integerValue, p1, ent2!!.GetPhysics(), id2.integerValue, p2)
-            BecomeActive(TH_THINK)
+            if (ent1.GetEntity() != null && ent2.GetEntity() != null) {
+                spring.SetPosition(
+                    ent1.GetEntity()!!.GetPhysics(), id1._val, p1, ent2.GetEntity()!!.GetPhysics(), id2._val, p2
+                )
+                if (enabled) {
+                    BecomeActive(TH_THINK)
+                }
+            }
+        }
+
+        // DG: added Event_Activate toggle (from FraggingFree)
+        private fun Event_Activate(activator: idEventArg<idEntity>) {
+            enabled = !enabled
+            if (enabled) {
+                BecomeActive(TH_THINK)
+            } else {
+                BecomeInactive(TH_THINK)
+            }
+        }
+
+        // DG: added Save/Restore (from FraggingFree)
+        override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
+            ent1.Save(savefile)
+            ent2.Save(savefile)
+            savefile.WriteInt(id1._val)
+            savefile.WriteInt(id2._val)
+            savefile.WriteVec3(p1)
+            savefile.WriteVec3(p2)
+            savefile.WriteBool(enabled)
+        }
+
+        override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
+            ent1.Restore(savefile)
+            ent2.Restore(savefile)
+            id1._val = savefile.ReadInt()
+            id2._val = savefile.ReadInt()
+            savefile.ReadVec3(p1)
+            savefile.ReadVec3(p2)
+            enabled = savefile.ReadBool()
+            PostEventMS(EV_PostSpawn, 0) // initialize the spring asap but not now!
         }
 
         override fun CreateInstance(): idClass = idSpring()
@@ -882,8 +960,7 @@ object Misc {
                     eventCallback_t1<idForceField> { obj: idForceField, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
-                eventCallbacks[EV_Toggle] =
-                    eventCallback_t0<idForceField> { obj: idForceField -> obj.Event_Toggle() }
+                eventCallbacks[EV_Toggle] = eventCallback_t0<idForceField> { obj: idForceField -> obj.Event_Toggle() }
                 eventCallbacks[EV_FindTargets] =
                     eventCallback_t0<idForceField> { obj: idForceField -> obj.Event_FindTargets() }
             }
@@ -1009,15 +1086,13 @@ object Misc {
                     eventCallback_t1<idAnimated> { obj: idAnimated, animIndex: idEventArg<*>? ->
                         obj.Event_AnimDone(animIndex as idEventArg<Int>)
                     }
-                eventCallbacks[EV_Footstep] =
-                    eventCallback_t0<idAnimated> { obj: idAnimated -> obj.Event_Footstep() }
+                eventCallbacks[EV_Footstep] = eventCallback_t0<idAnimated> { obj: idAnimated -> obj.Event_Footstep() }
                 eventCallbacks[EV_FootstepLeft] =
                     eventCallback_t0<idAnimated> { obj: idAnimated -> obj.Event_Footstep() }
                 eventCallbacks[EV_FootstepRight] =
                     eventCallback_t0<idAnimated> { obj: idAnimated -> obj.Event_Footstep() }
                 eventCallbacks[EV_LaunchMissiles] =
-                    eventCallback_t6<idAnimated> { obj: idAnimated, projectilename: idEventArg<*>?, sound: idEventArg<*>?, launchjoint: idEventArg<*>?,
-                                                   targetjoint: idEventArg<*>?, numshots: idEventArg<*>?, framedelay: idEventArg<*>? ->
+                    eventCallback_t6<idAnimated> { obj: idAnimated, projectilename: idEventArg<*>?, sound: idEventArg<*>?, launchjoint: idEventArg<*>?, targetjoint: idEventArg<*>?, numshots: idEventArg<*>?, framedelay: idEventArg<*>? ->
                         obj.Event_LaunchMissiles(
                             projectilename as idEventArg<String>,
                             sound as idEventArg<String>,
@@ -1028,10 +1103,7 @@ object Misc {
                         )
                     }
                 eventCallbacks[EV_LaunchMissilesUpdate] =
-                    eventCallback_t4<idAnimated> { obj: idAnimated, launchjoint: idEventArg<*>?,
-                                                   targetjoint: idEventArg<*>?,
-                                                   numshots: idEventArg<*>?,
-                                                   framedelay: idEventArg<*>? ->
+                    eventCallback_t4<idAnimated> { obj: idAnimated, launchjoint: idEventArg<*>?, targetjoint: idEventArg<*>?, numshots: idEventArg<*>?, framedelay: idEventArg<*>? ->
                         obj.Event_LaunchMissilesUpdate(
                             launchjoint as idEventArg<Int>,
                             targetjoint as idEventArg<Int>,
@@ -1039,6 +1111,13 @@ object Misc {
                             framedelay as idEventArg<Int>
                         )
                     }
+                // D3XP
+                eventCallbacks[EV_SetAnimation] =
+                    eventCallback_t1<idAnimated> { obj: idAnimated, animName: idEventArg<*>? ->
+                        obj.Event_SetAnimation(animName as idEventArg<String>)
+                    }
+                eventCallbacks[EV_GetAnimationLength] =
+                    eventCallback_t0<idAnimated> { obj: idAnimated -> obj.Event_GetAnimationLength() }
             }
         }
 
@@ -1075,11 +1154,11 @@ object Misc {
             savefile.ReadJoint(soundJoint)
             activator.Restore(savefile)
             savefile.ReadBool(activated)
-            this.current_anim_index = current_anim_index.integerValue
-            this.num_anims = num_anims.integerValue
-            this.anim = anim.integerValue
-            this.blendFrames = blendFrames.integerValue
-            this.soundJoint = soundJoint.integerValue
+            this.current_anim_index = current_anim_index._val
+            this.num_anims = num_anims._val
+            this.anim = anim._val
+            this.blendFrames = blendFrames._val
+            this.soundJoint = soundJoint._val
             this.activated = activated._val
         }
 
@@ -1114,7 +1193,7 @@ object Misc {
             blendFrames = 0
             current_anim_index = 0
             spawnArgs.GetInt("num_anims", "0", num_anims2)
-            num_anims = num_anims2.integerValue
+            num_anims = num_anims2._val
             blendFrames = spawnArgs.GetInt("blend_in")
             animname[0] = spawnArgs.GetString(if (num_anims != 0) "anim1" else "anim")
             if (0 == animname[0]!!.length) {
@@ -1221,26 +1300,22 @@ object Misc {
             }
             if (SysCvar.g_debugCinematic.GetBool()) {
                 Game_local.gameLocal.Printf(
-                    "%d: '%s' start anim '%s'\n",
-                    Game_local.gameLocal.framenum,
-                    GetName(),
-                    animName[0]
+                    "%d: '%s' start anim '%s'\n", Game_local.gameLocal.framenum, GetName(), animName[0]
                 )
             }
             spawnArgs.GetInt("cycle", "1", cycle)
             if (current_anim_index == num_anims && spawnArgs.GetBool("loop_last_anim")) {
-                cycle.integerValue = (-1)
+                cycle._val = (-1)
             }
             animator.CycleAnim(Anim.ANIMCHANNEL_ALL, anim, Game_local.gameLocal.time, Anim.FRAME2MS(blendFrames))
-            animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(cycle.integerValue)
+            animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(cycle._val)
             len = animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).PlayLength()
             if (len >= 0) {
                 PostEventMS(EV_AnimDone, len, current_anim_index)
             }
 
             // offset the start time of the shader to sync it to the game time
-            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                -MS2SEC(Game_local.gameLocal.time.toFloat())
+            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
             animator.ForceUpdate()
             UpdateAnimation()
             UpdateVisuals()
@@ -1282,7 +1357,7 @@ object Misc {
                 }
                 spawnArgs.GetInt("cycle", "1", cycle)
                 animator.CycleAnim(Anim.ANIMCHANNEL_ALL, anim, Game_local.gameLocal.time, Anim.FRAME2MS(blendFrames))
-                animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(cycle.integerValue)
+                animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(cycle._val)
                 len = animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).PlayLength()
                 if (len >= 0) {
                     PostEventMS(EV_AnimDone, len, 1)
@@ -1290,8 +1365,7 @@ object Misc {
             }
 
             // offset the start time of the shader to sync it to the game time
-            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                -MS2SEC(Game_local.gameLocal.time.toFloat())
+            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
             animator.ForceUpdate()
             UpdateAnimation()
             UpdateVisuals()
@@ -1328,8 +1402,12 @@ object Misc {
         }
 
         private fun Event_LaunchMissiles(
-            projectilename: idEventArg<String>, sound: idEventArg<String>, launchjoint: idEventArg<String>,
-            targetjoint: idEventArg<String>, numshots: idEventArg<Int>, framedelay: idEventArg<Int>
+            projectilename: idEventArg<String>,
+            sound: idEventArg<String>,
+            launchjoint: idEventArg<String>,
+            targetjoint: idEventArg<String>,
+            numshots: idEventArg<Int>,
+            framedelay: idEventArg<Int>
         ) {
             val projectileDef: idDict?
             val   /*jointHandle_t*/launch: Int
@@ -1425,6 +1503,28 @@ object Misc {
             }
         }
 
+        // D3XP
+        private fun Event_SetAnimation(animName: idEventArg<String>) {
+            anim = animator.GetAnim(animName.value)
+            if (anim == 0) {
+                idGameLocal.Error(
+                    "idAnimated '%s' at (%s): cannot find anim '%s'",
+                    name,
+                    GetPhysics().GetOrigin().ToString(0),
+                    animName.value
+                )
+            }
+        }
+
+        // D3XP
+        private fun Event_GetAnimationLength() {
+            var length = 0f
+            if (anim != 0) {
+                length = animator.AnimLength(anim).toFloat() / 1000f
+            }
+            idThread.ReturnFloat(length)
+        }
+
         override fun CreateInstance(): idClass = idAnimated()
 
         override fun GetType(): idTypeInfo = Type
@@ -1505,9 +1605,9 @@ object Misc {
             savefile.ReadInt(fadeStart)
             savefile.ReadInt(fadeEnd)
             savefile.ReadBool(runGui)
-            this.spawnTime = spawnTime.integerValue
-            this.fadeStart = fadeStart.integerValue
-            this.fadeEnd = fadeEnd.integerValue
+            this.spawnTime = spawnTime._val
+            this.fadeStart = fadeStart._val
+            this.fadeEnd = fadeEnd._val
             this.active = active._val
             this.runGui = runGui._val
         }
@@ -1831,7 +1931,7 @@ object Misc {
             savefile.ReadInt(smokeTime)
             smoke = savefile.ReadParticle()
             savefile.ReadBool(restart)
-            this.smokeTime = smokeTime.integerValue
+            this.smokeTime = smokeTime._val
             this.restart = restart._val
         }
 
@@ -1896,8 +1996,7 @@ object Misc {
                     eventCallback_t1<idFuncSplat> { obj: idFuncSplat, activator: idEventArg<*>? ->
                         obj.Event_Activate(activator as idEventArg<idEntity>)
                     }
-                eventCallbacks[EV_Splat] =
-                    eventCallback_t0<idFuncSplat> { obj: idFuncSplat -> obj.Event_Splat() }
+                eventCallbacks[EV_Splat] = eventCallback_t0<idFuncSplat> { obj: idFuncSplat -> obj.Event_Splat() }
             }
         }
 
@@ -1917,13 +2016,7 @@ object Misc {
                     val dist = spawnArgs.GetFloat("splatDistance", "128")
                     val angle = spawnArgs.GetFloat("splatAngle", "0")
                     Game_local.gameLocal.ProjectDecal(
-                        GetPhysics().GetOrigin(),
-                        GetPhysics().GetAxis()[2],
-                        dist,
-                        true,
-                        size,
-                        splat,
-                        angle
+                        GetPhysics().GetOrigin(), GetPhysics().GetAxis()[2], dist, true, size, splat, angle
                     )
                 }
             }
@@ -1996,10 +2089,7 @@ object Misc {
                 for (i in 0 until targets.Num()) {
                     if (targets[i].GetEntity() != null) {
                         Game_local.gameRenderWorld!!.DebugArrow(
-                            colorBlue,
-                            GetPhysics().GetOrigin(),
-                            targets[i].GetEntity()!!.GetPhysics().GetOrigin(),
-                            1
+                            colorBlue, GetPhysics().GetOrigin(), targets[i].GetEntity()!!.GetPhysics().GetOrigin(), 1
                         )
                     }
                 }
@@ -2066,8 +2156,7 @@ object Misc {
             val   /*qhandle_t*/portal = Game_local.gameRenderWorld!!.FindPortal(b)
             if (0 == portal) {
                 Game_local.gameLocal.Warning(
-                    "LocationSeparator '%s' didn't contact a portal",
-                    spawnArgs.GetString("name")
+                    "LocationSeparator '%s' didn't contact a portal", spawnArgs.GetString("name")
                 )
             }
             Game_local.gameLocal.SetPortalState(portal, TempDump.etoi(portalConnection_t.PS_BLOCK_LOCATION))
@@ -2116,8 +2205,7 @@ object Misc {
             portal = Game_local.gameRenderWorld!!.FindPortal(b)
             if (0 == portal) {
                 Game_local.gameLocal.Warning(
-                    "VacuumSeparator '%s' didn't contact a portal",
-                    spawnArgs.GetString("name")
+                    "VacuumSeparator '%s' didn't contact a portal", spawnArgs.GetString("name")
                 )
                 return
             }
@@ -2139,8 +2227,8 @@ object Misc {
             val portal = CInt()
             savefile.ReadInt(portal)
             savefile.ReadInt(state)
-            this.portal = portal.integerValue
-            Game_local.gameLocal.SetPortalState(portal.integerValue, state.integerValue)
+            this.portal = portal._val
+            Game_local.gameLocal.SetPortalState(portal._val, state._val)
         }
 
         fun Event_Activate(activator: idEventArg<idEntity>) {
@@ -2209,8 +2297,7 @@ object Misc {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[EV_PostSpawn] =
-                    eventCallback_t0<idBeam> { obj: idBeam -> obj.Event_MatchTarget() }
+                eventCallbacks[EV_PostSpawn] = eventCallback_t0<idBeam> { obj: idBeam -> obj.Event_MatchTarget() }
                 eventCallbacks[EV_Activate] =
                     eventCallback_t1<idBeam> { obj: idBeam, activator: idEventArg<*>? -> obj.Event_Activate(activator as idEventArg<idEntity>) }
             }
@@ -2377,8 +2464,7 @@ object Misc {
                 eventCallbacks[EV_Touch] =
                     eventCallback_t2<idLiquid> { obj: idLiquid, other: idEventArg<*>?, trace: idEventArg<*>? ->
                         obj.Event_Touch(
-                            other as idEventArg<idEntity>,
-                            trace as idEventArg<trace_s?>
+                            other as idEventArg<idEntity>, trace as idEventArg<trace_s?>
                         )
                     }
             }
@@ -2430,12 +2516,11 @@ object Misc {
 
             init {
                 eventCallbacks.putAll(idEntity.getEventCallBacks())
-                eventCallbacks[EV_Activate] =
-                    eventCallback_t1<idShaking> { obj: idShaking, activator: idEventArg<*>? ->
-                        obj.Event_Activate(
-                            activator as idEventArg<idEntity>
-                        )
-                    }
+                eventCallbacks[EV_Activate] = eventCallback_t1<idShaking> { obj: idShaking, activator: idEventArg<*>? ->
+                    obj.Event_Activate(
+                        activator as idEventArg<idEntity>
+                    )
+                }
             }
         }
 
@@ -2494,12 +2579,7 @@ object Misc {
             } else {
                 active = false
                 physicsObj.SetAngularExtrapolation(
-                    Extrapolate.EXTRAPOLATION_NONE,
-                    0,
-                    0,
-                    physicsObj.GetAxis().ToAngles(),
-                    ang_zero,
-                    ang_zero
+                    Extrapolate.EXTRAPOLATION_NONE, 0, 0, physicsObj.GetAxis().ToAngles(), ang_zero, ang_zero
                 )
             }
         }
@@ -2602,15 +2682,15 @@ object Misc {
             savefile.ReadBool(playerOriented)
             savefile.ReadBool(disabled)
             savefile.ReadFloat(shakeTime)
-            this.nextTriggerTime = nextTriggerTime.integerValue
-            this.shakeStopTime = shakeStopTime.integerValue
+            this.nextTriggerTime = nextTriggerTime._val
+            this.shakeStopTime = shakeStopTime._val
             this.wait = wait._val
             this.random = random._val
             this.triggered = triggered._val
             this.playerOriented = playerOriented._val
             this.disabled = disabled._val
             this.shakeTime = shakeTime._val
-            if (shakeStopTime.integerValue > Game_local.gameLocal.time) {
+            if (shakeStopTime._val > Game_local.gameLocal.time) {
                 BecomeActive(TH_THINK)
             }
         }
@@ -2625,17 +2705,10 @@ object Misc {
                     return
                 }
                 val shakeVolume = Game_local.gameSoundWorld!!.CurrentShakeAmplitudeForPosition(
-                    Game_local.gameLocal.time,
-                    Game_local.gameLocal.GetLocalPlayer()!!.firstPersonViewOrigin
+                    Game_local.gameLocal.time, Game_local.gameLocal.GetLocalPlayer()!!.firstPersonViewOrigin
                 )
                 Game_local.gameLocal.RadiusPush(
-                    GetPhysics().GetOrigin(),
-                    256.0f,
-                    1500 * shakeVolume,
-                    this,
-                    this,
-                    1.0f,
-                    true
+                    GetPhysics().GetOrigin(), 256.0f, 1500 * shakeVolume, this, this, 1.0f, true
                 )
             }
             BecomeInactive(TH_UPDATEVISUALS)
@@ -2722,11 +2795,11 @@ object Misc {
         private val state: CBool = CBool()
         override fun Spawn() {
             super.Spawn()
-            portal.integerValue = (Game_local.gameRenderWorld!!.FindPortal(GetPhysics().GetAbsBounds().Expand(32.0f)))
-            if (portal.integerValue > 0) {
+            portal._val = (Game_local.gameRenderWorld!!.FindPortal(GetPhysics().GetAbsBounds().Expand(32.0f)))
+            if (portal._val > 0) {
                 state._val = (spawnArgs.GetBool("start_on"))
                 Game_local.gameLocal.SetPortalState(
-                    portal.integerValue,
+                    portal._val,
                     (if (state._val) portalConnection_t.PS_BLOCK_ALL else portalConnection_t.PS_BLOCK_NONE).ordinal
                 )
             }
@@ -2734,7 +2807,7 @@ object Misc {
 
         override fun Save(savefile: idSaveGame) {
             super.Save(savefile)
-            savefile.WriteInt(portal.integerValue)
+            savefile.WriteInt(portal._val)
             savefile.WriteBool(state._val)
         }
 
@@ -2743,16 +2816,16 @@ object Misc {
             savefile.ReadInt(portal)
             savefile.ReadBool(state)
             Game_local.gameLocal.SetPortalState(
-                portal.integerValue,
+                portal._val,
                 (if (state._val) portalConnection_t.PS_BLOCK_ALL else portalConnection_t.PS_BLOCK_NONE).ordinal
             )
         }
 
         private fun Event_Activate(activator: idEventArg<idEntity>) {
-            if (portal.integerValue > 0) {
+            if (portal._val > 0) {
                 state._val = (!state._val)
                 Game_local.gameLocal.SetPortalState(
-                    portal.integerValue,
+                    portal._val,
                     (if (state._val) portalConnection_t.PS_BLOCK_ALL else portalConnection_t.PS_BLOCK_NONE).ordinal
                 )
             }
@@ -2769,7 +2842,7 @@ object Misc {
         //
         //
         init {
-            portal.integerValue = (0)
+            portal._val = (0)
             state._val = (false)
         }
     }
@@ -2819,9 +2892,7 @@ object Misc {
             val state = CBool()
             savefile.ReadBool(state)
             Game_local.gameLocal.SetAASAreaState(
-                GetPhysics().GetAbsBounds(),
-                AASFile.AREACONTENTS_CLUSTERPORTAL,
-                state._val.also { this.state = it })
+                GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_CLUSTERPORTAL, state._val.also { this.state = it })
         }
 
         private fun Event_Activate(activator: idEventArg<idEntity>) {
@@ -2869,9 +2940,7 @@ object Misc {
             super.Spawn()
             state._val = (spawnArgs.GetBool("start_on"))
             Game_local.gameLocal.SetAASAreaState(
-                GetPhysics().GetAbsBounds(),
-                AASFile.AREACONTENTS_OBSTACLE,
-                state._val
+                GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_OBSTACLE, state._val
             )
         }
 
@@ -2884,18 +2953,14 @@ object Misc {
             super.Restore(savefile)
             savefile.ReadBool(state)
             Game_local.gameLocal.SetAASAreaState(
-                GetPhysics().GetAbsBounds(),
-                AASFile.AREACONTENTS_OBSTACLE,
-                state._val
+                GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_OBSTACLE, state._val
             )
         }
 
         private fun Event_Activate(activator: idEventArg<idEntity>) {
             state._val = (state._val xor true)
             Game_local.gameLocal.SetAASAreaState(
-                GetPhysics().GetAbsBounds(),
-                AASFile.AREACONTENTS_OBSTACLE,
-                state._val
+                GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_OBSTACLE, state._val
             )
         }
 
@@ -2972,7 +3037,7 @@ object Misc {
             if (sound != null && !sound.isEmpty()) {
                 shader = DeclManager.declManager.FindSound(sound)
                 player.StartSoundShader(shader, gameSoundChannel_t.SND_CHANNEL_RADIO, Sound.SSF_GLOBAL, false, length)
-                time = MS2SEC((length.integerValue + 150).toFloat())
+                time = MS2SEC((length._val + 150).toFloat())
             }
             // we still put the hud up because this is used with no sound on
             // certain frame commands when the chatter is triggered
@@ -3275,5 +3340,197 @@ object Misc {
             targetTime = List.idList()
             lastTargetPos = List.idList()
         }
+    }
+
+    // D3XP
+    class idShockwave : idEntity() {
+        companion object {
+            val Type = idTypeInfo("idShockwave", "idEntity") { idShockwave() }
+            private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+            fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> = eventCallbacks
+
+            init {
+                eventCallbacks.putAll(idEntity.getEventCallBacks())
+                eventCallbacks[EV_Activate] =
+                    eventCallback_t1<idShockwave> { obj: idShockwave, activator: idEventArg<*>? ->
+                        obj.Event_Activate(activator as idEventArg<idEntity>)
+                    }
+            }
+        }
+
+        private var isActive: Boolean = false
+        private var startTime: Int = 0
+        private var duration: Int = 0
+        private var startSize: Float = 0f
+        private var endSize: Float = 0f
+        private var currentSize: Float = 0f
+        private var magnitude: Float = 0f
+        private var height: Float = 0f
+        private var playerDamaged: Boolean = false
+        private var playerDamageSize: Float = 0f
+
+        override fun Spawn() {
+            duration = spawnArgs.GetInt("duration", "1000")
+            startSize = spawnArgs.GetFloat("startsize", "8")
+            endSize = spawnArgs.GetFloat("endsize", "512")
+            magnitude = spawnArgs.GetFloat("magnitude", "100")
+            height = spawnArgs.GetFloat("height", "0")
+            playerDamageSize = spawnArgs.GetFloat("player_damage_size", "20")
+            if (spawnArgs.GetBool("start_on")) {
+                ProcessEvent(EV_Activate, this)
+            }
+        }
+
+        override fun Save(savefile: idSaveGame) {
+            super.Save(savefile)
+            savefile.WriteBool(isActive)
+            savefile.WriteInt(startTime)
+            savefile.WriteInt(duration)
+            savefile.WriteFloat(startSize)
+            savefile.WriteFloat(endSize)
+            savefile.WriteFloat(currentSize)
+            savefile.WriteFloat(magnitude)
+            savefile.WriteFloat(height)
+            savefile.WriteBool(playerDamaged)
+            savefile.WriteFloat(playerDamageSize)
+        }
+
+        override fun Restore(savefile: idRestoreGame) {
+            super.Restore(savefile)
+            isActive = savefile.ReadBool()
+            startTime = savefile.ReadInt()
+            duration = savefile.ReadInt()
+            startSize = savefile.ReadFloat()
+            endSize = savefile.ReadFloat()
+            currentSize = savefile.ReadFloat()
+            magnitude = savefile.ReadFloat()
+            height = savefile.ReadFloat()
+            playerDamaged = savefile.ReadBool()
+            playerDamageSize = savefile.ReadFloat()
+        }
+
+        override fun Think() {
+            if (!isActive) {
+                BecomeInactive(TH_THINK)
+                return
+            }
+            val endTime = startTime + duration
+            if (gameLocal.time < endTime) {
+                val u = (gameLocal.time - startTime).toFloat() / duration.toFloat()
+                val newSize = startSize + u * (endSize - startSize)
+                val pos = idVec3(GetPhysics().GetOrigin())
+                val zVal = if (height == 0f) newSize else height / 2.0f
+
+                val bounds = idBounds(pos.plus(idVec3(newSize, newSize, zVal)))
+                bounds.AddPoint(pos.plus(idVec3(-newSize, -newSize, -zVal)))
+
+                if (SysCvar.g_debugShockwave.GetBool()) {
+                    gameRenderWorld!!.DebugBounds(colorRed, bounds, vec3_origin, 0)
+                }
+
+                val clipModelList = arrayOfNulls<idClipModel>(MAX_GENTITIES)
+                val listedClipModels = gameLocal.clip.ClipModelsTouchingBounds(bounds, -1, clipModelList, MAX_GENTITIES)
+
+                for (i in 0 until listedClipModels) {
+                    val clip = clipModelList[i] ?: continue
+                    val ent = clip.GetEntity() ?: continue
+                    if (ent.IsHidden()) continue
+                    if (!ent.IsType(idMoveable.Type) && !ent.IsType(idAFEntity_Base.Type) && !ent.IsType(idPlayer.Type)) continue
+
+                    val point = idVec3(ent.GetPhysics().GetOrigin())
+                    val force = idVec3(point.minus(pos))
+                    val dist = force.Normalize()
+
+                    if (ent.IsType(idPlayer.Type)) {
+                        if (ent.GetPhysics().GetAbsBounds().IntersectsBounds(bounds)) {
+                            if (dist <= newSize && dist > newSize - playerDamageSize) {
+                                val damageDef = spawnArgs.GetString("def_player_damage", "")
+                                if (!damageDef.isNullOrEmpty() && !playerDamaged) {
+                                    playerDamaged = true
+                                    val player = ent as idPlayer
+                                    val dir = idVec3(ent.GetPhysics().GetOrigin().minus(pos))
+                                    dir.NormalizeFast()
+                                    player.Damage(null, null, dir, damageDef, 1.0f, Model.INVALID_JOINT)
+                                }
+                            }
+                        }
+                    } else {
+                        if (dist <= newSize && dist > currentSize) {
+                            force.z += 4f
+                            force.NormalizeFast()
+                            val scaledForce = if (ent.IsType(idAFEntity_Base.Type)) {
+                                force.times(ent.GetPhysics().GetMass() * magnitude * 0.01f)
+                            } else {
+                                force.times(ent.GetPhysics().GetMass() * magnitude)
+                            }
+                            val rad = ent.GetPhysics().GetBounds().GetRadius()
+                            point.x += gameLocal.random.CRandomFloat() * rad
+                            point.y += gameLocal.random.CRandomFloat() * rad
+                            for (j in 0 until ent.GetPhysics().GetNumClipModels()) {
+                                ent.GetPhysics().AddForce(j, point, scaledForce)
+                            }
+                        }
+                    }
+                }
+                currentSize = newSize
+            } else {
+                isActive = false
+            }
+        }
+
+        private fun Event_Activate(activator: idEventArg<idEntity>) {
+            isActive = true
+            startTime = gameLocal.time
+            playerDamaged = false
+            BecomeActive(TH_THINK)
+        }
+
+        override fun CreateInstance(): idClass = idShockwave()
+        override fun GetType(): idTypeInfo = Type
+        override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? = eventCallbacks[event]
+    }
+
+    // D3XP: portal sky entity
+    class idPortalSky : idEntity() {
+        companion object {
+            private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+
+            fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
+                return eventCallbacks
+            }
+
+            val Type: idTypeInfo = idTypeInfo(
+                "idPortalSky", "idEntity"
+            ) { idPortalSky() }
+
+            init {
+                eventCallbacks.putAll(idEntity.getEventCallBacks())
+                eventCallbacks[EV_PostSpawn] =
+                    eventCallback_t0<idPortalSky> { obj: idPortalSky -> obj.Event_PostSpawn() }
+                eventCallbacks[EV_Activate] =
+                    eventCallback_t1<idPortalSky> { obj: idPortalSky, activator: idEventArg<*>? ->
+                        obj.Event_Activate(activator as idEventArg<idEntity>)
+                    }
+            }
+        }
+
+        override fun Spawn() {
+            super.Spawn()
+            if (!spawnArgs.GetBool("triggered")) {
+                PostEventMS(EV_PostSpawn, 1)
+            }
+        }
+
+        private fun Event_PostSpawn() {
+            gameLocal.SetPortalSkyEnt(this)
+        }
+
+        private fun Event_Activate(activator: idEventArg<idEntity>) {
+            gameLocal.SetPortalSkyEnt(this)
+        }
+
+        override fun CreateInstance(): idClass = idPortalSky()
+        override fun GetType(): idTypeInfo = Type
+        override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? = eventCallbacks[event]
     }
 }

@@ -24,6 +24,7 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local.Companion.gameLocal
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics_RigidBody.idPhysics_RigidBody
@@ -130,6 +131,7 @@ object BrittleFracture {
         private var disableFracture: Boolean
         private var friction: Float
         private val fxFracture: idStr
+        private var isXraySurface: Boolean = false // D3XP: x-ray glass surface flag
 
         //
         // for rendering
@@ -208,6 +210,11 @@ object BrittleFracture {
                 savefile.WriteStaticObject(shards[i]!!.physicsObj)
                 i++
             }
+
+            // D3XP: portal sky x-ray surface flag
+            if (isD3XP) {
+                savefile.WriteBool(isXraySurface)
+            }
         }
 
         override fun Restore(savefile: idRestoreGame) {
@@ -248,14 +255,14 @@ object BrittleFracture {
             savefile.ReadStaticObject(physicsObj)
             RestorePhysics(physicsObj)
             savefile.ReadInt(num)
-            shards.SetNum(num.integerValue)
+            shards.SetNum(num._val)
             i = 0
-            while (i < num.integerValue) {
+            while (i < num._val) {
                 shards[i] = shard_s()
                 i++
             }
             i = 0
-            while (i < num.integerValue) {
+            while (i < num._val) {
                 savefile.ReadWinding(shards[i]!!.winding)
                 j = savefile.ReadInt()
                 shards[i]!!.decals.SetNum(j)
@@ -271,8 +278,8 @@ object BrittleFracture {
                 while (j < shards[i]!!.neighbours.Num()) {
                     val index = CInt()
                     savefile.ReadInt(index)
-                    assert(index.integerValue != -1)
-                    shards[i]!!.neighbours[j] = shards[index.integerValue]
+                    assert(index._val != -1)
+                    shards[i]!!.neighbours[j] = shards[index._val]
                     j++
                 }
                 j = savefile.ReadInt()
@@ -292,6 +299,11 @@ object BrittleFracture {
                     shards[i]!!.clipModel = shards[i]!!.physicsObj.GetClipModel()!!
                 }
                 i++
+            }
+
+            // D3XP: portal sky x-ray surface flag
+            if (isD3XP) {
+                isXraySurface = savefile.ReadBool()
             }
         }
 
@@ -327,6 +339,26 @@ object BrittleFracture {
 
             // FIXME: set "bleed" so idProjectile calls AddDamageEffect
             spawnArgs.SetBool("bleed", true)
+
+            // D3XP: detect x-ray surface by checking for "textures/smf/window_scratch" shader
+            if (isD3XP) {
+                isXraySurface = false
+                val model = renderEntity!!.hModel
+                if (model != null) {
+                    var si = 0
+                    while (si < model.NumSurfaces()) {
+                        val surf = model.Surface(si)
+                        if (surf != null && surf.shader != null &&
+                            surf.shader!!.GetName() == "textures/smf/window_scratch"
+                        ) {
+                            isXraySurface = true
+                            break
+                        }
+                        si++
+                    }
+                }
+            }
+
             CreateFractures(renderEntity!!.hModel)
             FindNeighbours()
             renderEntity!!.hModel = ModelManager.renderModelManager.AllocModel()
@@ -1036,7 +1068,11 @@ object BrittleFracture {
                 }
 
                 // randomly create a split plane
-                a = gameLocal.random.RandomFloat() * idMath.TWO_PI
+                a = if (isD3XP && isXraySurface) {
+                    idMath.TWO_PI / 2f
+                } else {
+                    gameLocal.random.RandomFloat() * idMath.TWO_PI
+                }
                 c = cos(a)
                 s = -sin(a)
                 axis[2] = windingPlane.Normal()
@@ -1104,25 +1140,50 @@ object BrittleFracture {
             physicsObj.SetSelf(this)
             physicsObj.SetOrigin(GetPhysics().GetOrigin(), 0)
             physicsObj.SetAxis(GetPhysics().GetAxis(), 0)
-            i = 0
-            while (i < 1 /*renderModel.NumSurfaces()*/) {
-                surf = renderModel.Surface(i)
-                material = surf!!.shader
-                j = 0
-                while (j < surf.geometry!!.numIndexes) {
+
+            if (isD3XP && isXraySurface) {
+                // D3XP: x-ray surface — build one quad from the first 4 verts (indices 0,1,3,2)
+                i = 0
+                while (i < 1 /*renderModel.NumSurfaces()*/) {
+                    surf = renderModel.Surface(i)
+                    material = surf!!.shader
                     w.Clear()
-                    k = 0
-                    while (k < 3) {
-                        v = surf.geometry!!.verts!![surf.geometry!!.indexes!![j + 2 - k]]!!
-                        w.AddPoint(v.xyz)
-                        w[k].s = v.st[0]
-                        w[k].t = v.st[1]
-                        k++
-                    }
+                    var k = 0
+                    v = surf.geometry!!.verts!![k]!!
+                    w.AddPoint(v.xyz); w[k].s = v.st[0]; w[k].t = v.st[1]
+                    k = 1
+                    v = surf.geometry!!.verts!![k]!!
+                    w.AddPoint(v.xyz); w[k].s = v.st[0]; w[k].t = v.st[1]
+                    k = 3
+                    v = surf.geometry!!.verts!![k]!!
+                    w.AddPoint(v.xyz); w[k].s = v.st[0]; w[k].t = v.st[1]
+                    k = 2
+                    v = surf.geometry!!.verts!![k]!!
+                    w.AddPoint(v.xyz); w[k].s = v.st[0]; w[k].t = v.st[1]
                     Fracture_r(w)
-                    j += 3
+                    i++
                 }
-                i++
+            } else {
+                i = 0
+                while (i < 1 /*renderModel.NumSurfaces()*/) {
+                    surf = renderModel.Surface(i)
+                    material = surf!!.shader
+                    j = 0
+                    while (j < surf.geometry!!.numIndexes) {
+                        w.Clear()
+                        k = 0
+                        while (k < 3) {
+                            v = surf.geometry!!.verts!![surf.geometry!!.indexes!![j + 2 - k]]!!
+                            w.AddPoint(v.xyz)
+                            w[k].s = v.st[0]
+                            w[k].t = v.st[1]
+                            k++
+                        }
+                        Fracture_r(w)
+                        j += 3
+                    }
+                    i++
+                }
             }
             physicsObj.SetContents(material!!.GetContentFlags())
             SetPhysics(physicsObj)

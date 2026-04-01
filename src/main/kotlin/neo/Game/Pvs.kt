@@ -637,6 +637,29 @@ object Pvs {
             }
         }
 
+        // D3XP: returns true if any area visible from the handle's PVS contains a portal sky
+        fun CheckAreasForPortalSky(handle: pvsHandle_t, origin: idVec3): Boolean {
+            if (handle.i < 0 || handle.i >= MAX_CURRENT_PVS || handle.h != currentPVS[handle.i].handle.h) {
+                return false
+            }
+            val sourceArea = Game_local.gameRenderWorld!!.PointInArea(origin)
+            if (sourceArea == -1) {
+                return false
+            }
+            var j = 0
+            while (j < numAreas) {
+                if (currentPVS[handle.i].pvs!![j shr 3].toInt() and (1 shl (j and 7)) == 0) {
+                    j++
+                    continue
+                }
+                if (Game_local.gameRenderWorld!!.CheckAreaForPortalSky(j)) {
+                    return true
+                }
+                j++
+            }
+            return false
+        }
+
         private fun GetPortalCount(): Int {
             var i: Int
             val na: Int
@@ -1124,20 +1147,20 @@ object Pvs {
 
                     // check if the plane is already a passage boundary
                     k = 0
-                    while (k < numBounds.integerValue) {
+                    while (k < numBounds._val) {
                         if (plane.Compare(bounds[k], 0.001f, 0.01f)) {
                             break
                         }
                         k++
                     }
-                    if (k < numBounds.integerValue) {
+                    if (k < numBounds._val) {
                         break
                     }
-                    if (numBounds.integerValue >= maxBounds) {
+                    if (numBounds._val >= maxBounds) {
                         Game_local.gameLocal.Warning("max passage boundaries.")
                         break
                     }
-                    bounds[numBounds.integerValue].set(plane)
+                    bounds[numBounds._val].set(plane)
                     numBounds.increment()
                     break
                     j++
@@ -1192,7 +1215,7 @@ object Pvs {
                     passageMemory += portalVisBytes
 
                     // boundary plane normals point inwards
-                    numBounds.integerValue = 0
+                    numBounds._val = 0
                     AddPassageBoundaries(source.w!!, target.w!!, false, passageBounds, numBounds, MAX_PASSAGE_BOUNDS)
                     AddPassageBoundaries(target.w!!, source.w!!, true, passageBounds, numBounds, MAX_PASSAGE_BOUNDS)
 
@@ -1217,7 +1240,7 @@ object Pvs {
                             }
                             front = 0
                             l = 0
-                            while (l < numBounds.integerValue) {
+                            while (l < numBounds._val) {
                                 sides[l] = p.bounds.PlaneSide(passageBounds[l])
                                 // if completely at the back of the passage bounding plane
                                 if (sides[l] == PLANESIDE_BACK) {
@@ -1230,16 +1253,16 @@ object Pvs {
                                 l++
                             }
                             // if completely outside the passage
-                            if (l < numBounds.integerValue) {
+                            if (l < numBounds._val) {
                                 bitNum++
                                 continue
                             }
 
                             // if not at the front of all bounding planes and thus not completely inside the passage
-                            if (front != numBounds.integerValue) {
+                            if (front != numBounds._val) {
                                 winding.set(p.w!!)
                                 l = 0
-                                while (l < numBounds.integerValue) {
+                                while (l < numBounds._val) {
 
                                     // only clip if the winding possibly crosses this plane
                                     if (sides[l] != PLANESIDE_CROSS) {
@@ -1255,7 +1278,7 @@ object Pvs {
                                     l++
                                 }
                                 // if completely outside the passage
-                                if (l < numBounds.integerValue) {
+                                if (l < numBounds._val) {
                                     bitNum++
                                     continue
                                 }

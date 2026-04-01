@@ -17,6 +17,7 @@ import neo.Game.AI.idAI
 import neo.Game.Animation.Anim.idAnimManager
 import neo.Game.Animation.Anim_Import.idModelExport
 import neo.Game.Animation.idAnimator
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Light.idLight
 import neo.Game.Moveable.idMoveable
@@ -173,7 +174,7 @@ object SysCmds {
      ==================
      */
     fun PrintFloat(f: Float) {
-        Game_local.gameLocal.Printf(String.format("%3.2f", f))
+        Game_local.gameLocal.Printf("%s", String.format("%3.2f", f))
     }
 
     /*
@@ -360,6 +361,24 @@ object SysCmds {
             // recompile the scripts
             Game_local.gameLocal.program.Startup(Game.SCRIPT_DEFAULT)
 
+            // D3XP: loads game-specific main script files
+            if (isD3XP) {
+                for (i in 0..1) {
+                    val gamedir = if (i == 0) {
+                        neo.framework.CVarSystem.cvarSystem.GetCVarString("fs_game_base")
+                    } else {
+                        neo.framework.CVarSystem.cvarSystem.GetCVarString("fs_game")
+                    }
+                    if (gamedir != null && gamedir.isNotEmpty()) {
+                        val scriptFile = "script/${gamedir}_main.script"
+                        if (FileSystem_h.fileSystem.ReadFile(scriptFile, null, null) > 0) {
+                            Game_local.gameLocal.program.CompileFile(scriptFile)
+                            Game_local.gameLocal.program.FinishCompilation()
+                        }
+                    }
+                }
+            }
+
             // error out so that the user can rerun the scripts
             idGameLocal.Error("Exiting map to reload scripts")
         }
@@ -534,7 +553,7 @@ object SysCmds {
                 }
             }
             if (give_all || idStr.Icmp(name, "weapons") == 0) {
-                player.inventory.weapons = BIT(Player.MAX_WEAPONS) - 1
+                player.inventory.weapons = -1 ushr (32 - Player.MAX_WEAPONS)
                 player.CacheWeapons()
                 if (!give_all) {
                     return
@@ -564,6 +583,24 @@ object SysCmds {
             if (idStr.Icmp(name, "invis") == 0) {
                 player.GivePowerUp(Player.INVISIBILITY, SEC2MS(30.0f))
                 return
+            }
+            // D3XP powerups
+            if (isD3XP) {
+                if (idStr.Icmp(name, "invulnerability") == 0) {
+                    val duration = if (args.Argc() > 2) args.Argv(2).toIntOrNull() ?: 30000 else 30000
+                    player.GivePowerUp(Player.INVULNERABILITY, duration)
+                    return
+                }
+                if (idStr.Icmp(name, "helltime") == 0) {
+                    val duration = if (args.Argc() > 2) args.Argv(2).toIntOrNull() ?: 30000 else 30000
+                    player.GivePowerUp(Player.HELLTIME, duration)
+                    return
+                }
+                if (idStr.Icmp(name, "envirosuit") == 0) {
+                    val duration = if (args.Argc() > 2) args.Argv(2).toIntOrNull() ?: 30000 else 30000
+                    player.GivePowerUp(Player.ENVIROSUIT, duration)
+                    return
+                }
             }
             if (idStr.Icmp(name, "pda") == 0) {
                 player.GivePDA(idStr.parseStr(args.Argv(2)), null)
@@ -840,7 +877,7 @@ object SysCmds {
      */
     class Cmd_AddChatLine_f private constructor() : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            Game_local.gameLocal.mpGame.AddChatLine(args!!.Argv(1))
+            Game_local.gameLocal.mpGame.AddChatLine("%s", args!!.Argv(1))
         }
 
         companion object {
@@ -2627,7 +2664,7 @@ object SysCmds {
             if (ent == null) {
                 newEnt = true
             } else if (FindEntityGUIs(ent, surfaces, MAX_RENDERENTITY_GUI, guiSurfaces) == true) {
-                if (Game_local.gameLocal.lastGUI >= guiSurfaces.integerValue) {
+                if (Game_local.gameLocal.lastGUI >= guiSurfaces._val) {
                     newEnt = true
                 }
             } else {
@@ -2666,7 +2703,7 @@ object SysCmds {
             if (FindEntityGUIs(ent!!, surfaces, MAX_RENDERENTITY_GUI, guiSurfaces) == false) {
                 Game_local.gameLocal.Printf("Entity \"%s\" has gui properties but no gui surfaces.\n", ent.name)
             }
-            if (guiSurfaces.integerValue == 0) {
+            if (guiSurfaces._val == 0) {
                 Game_local.gameLocal.Printf("Entity \"%s\" has gui properties but no gui surfaces!\n", ent.name)
                 return
             }
@@ -2712,7 +2749,7 @@ object SysCmds {
             var i: Int
             assert(surfaces != null)
             assert(ent != null)
-            guiSurfaces.integerValue = 0
+            guiSurfaces._val = 0
             renderEnt = ent.GetRenderEntity()!!
             renderModel = renderEnt.hModel
             if (renderModel == null) {
@@ -2735,7 +2772,7 @@ object SysCmds {
                 }
                 i++
             }
-            return guiSurfaces.integerValue != 0
+            return guiSurfaces._val != 0
         }
 
         companion object {
@@ -2788,6 +2825,34 @@ object SysCmds {
 
         companion object {
             private val instance: cmdFunction_t = Cmd_TestId_f()
+            fun getInstance(): cmdFunction_t {
+                return instance
+            }
+        }
+    }
+
+    // D3XP: setActorState console command
+    class Cmd_SetActorState_f private constructor() : cmdFunction_t() {
+        override fun run(args: CmdArgs.idCmdArgs?) {
+            if (args!!.Argc() != 3) {
+                Common.common.Printf("usage: setActorState <entity name> <state>\n")
+                return
+            }
+            val ent = Game_local.gameLocal.FindEntity(args.Argv(1))
+            if (ent == null) {
+                Game_local.gameLocal.Printf("entity not found\n")
+                return
+            }
+            if (!ent.IsType(neo.Game.idActor.Type)) {
+                Game_local.gameLocal.Printf("entity not an actor\n")
+                return
+            }
+            val actor = ent as neo.Game.idActor
+            actor.PostEventMS(neo.Game.AI_SetState, 0, args.Argv(2))
+        }
+
+        companion object {
+            private val instance: cmdFunction_t = Cmd_SetActorState_f()
             fun getInstance(): cmdFunction_t {
                 return instance
             }

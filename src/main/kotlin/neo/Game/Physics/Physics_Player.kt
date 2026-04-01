@@ -253,6 +253,13 @@ object Physics_Player {
             savefile.ReadVec3(ladderNormal)
             waterLevel = waterLevel_t.values()[savefile.ReadInt()]
             waterType = savefile.ReadInt()
+
+            // DG: fix for dhewm3 issue #328 - clipModel axis may have been modified by
+            // idPush::TryRotatePushEntity() at save time. Reset to identity to avoid clipping bugs
+            // (e.g. CheckGround() reporting steep ground on normal stairs).
+            if (clipModel != null) {
+                clipModel!!.SetPosition(clipModel!!.GetOrigin(), idMat3.getMat3_identity())
+            }
         }
 
         /*

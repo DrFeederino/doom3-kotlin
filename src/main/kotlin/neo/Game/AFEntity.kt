@@ -27,7 +27,9 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
+import neo.Game.GameSys.SysCvar.Companion.g_vehicleDebug
 import neo.Game.Game_local.*
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Physics.Clip
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Force_Constant.idForce_Constant
@@ -55,6 +57,7 @@ import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
 import neo.framework.DeclSkin.idDeclSkin
+import neo.idlib.BV.idBounds
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
 import neo.idlib.Text.Str
@@ -234,10 +237,10 @@ class idChain : idMultiModelAF() {
         val origin = idVec3()
         spawnArgs.GetBool("drop", "0", drop)
         spawnArgs.GetInt("links", "3", numLinks)
-        spawnArgs.GetFloat("length", "" + numLinks.integerValue * 32.0f, length)
+        spawnArgs.GetFloat("length", "" + numLinks._val * 32.0f, length)
         spawnArgs.GetFloat("width", "8", linkWidth)
         spawnArgs.GetFloat("density", "0.2f", density)
-        linkLength = length._val / numLinks.integerValue
+        linkLength = length._val / numLinks._val
         origin.set(GetPhysics().GetOrigin())
 
         // initialize physics
@@ -245,7 +248,7 @@ class idChain : idMultiModelAF() {
         physicsObj.SetGravity(Game_local.gameLocal.GetGravity())
         physicsObj.SetClipMask(Game_local.MASK_SOLID or Material.CONTENTS_BODY)
         SetPhysics(physicsObj)
-        BuildChain("link", origin, linkLength, linkWidth._val, density._val, numLinks.integerValue, !drop._val)
+        BuildChain("link", origin, linkLength, linkWidth._val, density._val, numLinks._val, !drop._val)
     }
 
     /*
@@ -331,8 +334,7 @@ class idChain : idMultiModelAF() {
  idAFEntity_Gibbable
 
  ===============================================================================
- */
-/*
+ *//*
  ===============================================================================
 
  idAFAttachment
@@ -472,12 +474,7 @@ class idAFAttachment : idAnimatedEntity() {
      ============
      */
     override fun Damage(
-        inflictor: idEntity?,
-        attacker: idEntity?,
-        dir: idVec3,
-        damageDefName: String,
-        damageScale: Float,
-        location: Int
+        inflictor: idEntity?, attacker: idEntity?, dir: idVec3, damageDefName: String, damageScale: Float, location: Int
     ) {
         if (body != null) {
             body!!.Damage(inflictor, attacker, dir, damageDefName, damageScale, attachJoint)
@@ -513,12 +510,7 @@ class idAFAttachment : idAnimatedEntity() {
         }
         if (combatModel != null) {
             combatModel!!.Link(
-                Game_local.gameLocal.clip,
-                this,
-                0,
-                renderEntity!!.origin,
-                renderEntity!!.axis,
-                modelDefHandle
+                Game_local.gameLocal.clip, this, 0, renderEntity!!.origin, renderEntity!!.axis, modelDefHandle
             )
         }
     }
@@ -539,9 +531,7 @@ class idAFAttachment : idAnimatedEntity() {
 open class idAFEntity_Base : idAnimatedEntity() {
     companion object {
         val Type = idTypeInfo("idAFEntity_Base", "idAnimatedEntity") { idAFEntity_Base() }
-
-        // public	CLASS_PROTOTYPE( idAFEntity_Base );
-        private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+        val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
 
         // virtual					~idAFEntity_Base( void );
         fun DropAFs(ent: idEntity, type: String, list: idList<idEntity>?) {
@@ -717,9 +707,7 @@ open class idAFEntity_Base : idAnimatedEntity() {
         af.SetAnimator(GetAnimator())
         if (!af.Load(this, fileName[0]!!)) {
             idGameLocal.Error(
-                "idAFEntity_Base::LoadAF: Couldn't load af file '%s' on entity '%s'",
-                fileName[0],
-                name
+                "idAFEntity_Base::LoadAF: Couldn't load af file '%s' on entity '%s'", fileName[0], name
             )
         }
         af.Start()
@@ -777,12 +765,7 @@ open class idAFEntity_Base : idAnimatedEntity() {
         }
         if (combatModel != null) {
             combatModel!!.Link(
-                Game_local.gameLocal.clip,
-                this,
-                0,
-                renderEntity!!.origin,
-                renderEntity!!.axis,
-                modelDefHandle
+                Game_local.gameLocal.clip, this, 0, renderEntity!!.origin, renderEntity!!.axis, modelDefHandle
             )
         }
     }
@@ -890,6 +873,9 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
     protected var gibbed: Boolean
     protected var skeletonModel: idRenderModel? = null
     protected var skeletonModelDefHandle: Int
+
+    // D3XP: grabber interaction — thrown ragdolls behave differently on collision
+    var wasThrown: Boolean = false
     override fun Spawn() {
         super.Spawn()
         InitSkeletonModel()
@@ -900,6 +886,8 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
         super.Save(savefile)
         savefile.WriteBool(gibbed)
         savefile.WriteBool(combatModel != null)
+        // D3XP
+        savefile.WriteBool(wasThrown)
     }
 
     override fun Restore(savefile: idRestoreGame) {
@@ -914,6 +902,10 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
             SetCombatModel()
             LinkCombat()
         }
+        // D3XP
+        val _wasThrown = CBool(false)
+        savefile.ReadBool(_wasThrown)
+        wasThrown = _wasThrown._val
     }
 
     override fun Present() {
@@ -941,12 +933,7 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
     }
 
     override fun Damage(
-        inflictor: idEntity?,
-        attacker: idEntity?,
-        dir: idVec3,
-        damageDefName: String,
-        damageScale: Float,
-        location: Int
+        inflictor: idEntity?, attacker: idEntity?, dir: idVec3, damageDefName: String, damageScale: Float, location: Int
     ) {
         if (!fl.takedamage) {
             return
@@ -987,7 +974,12 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
                 list[i].GetPhysics().UnlinkClip()
                 list[i].GetPhysics().PutToRest()
             } else {
-                list[i].GetPhysics().SetContents(Material.CONTENTS_CORPSE)
+                // D3XP: use 0 contents instead of CONTENTS_CORPSE when isD3XP
+                if (isD3XP) {
+                    list[i].GetPhysics().SetContents(0)
+                } else {
+                    list[i].GetPhysics().SetContents(Material.CONTENTS_CORPSE)
+                }
                 list[i].GetPhysics().SetClipMask(Material.CONTENTS_SOLID)
                 velocity.set(list[i].GetPhysics().GetAbsBounds().GetCenter().minus(entityCenter))
                 velocity.NormalizeFast()
@@ -1027,8 +1019,7 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
                 Game_local.gameLocal.SetGibTime(Game_local.gameLocal.time + GIB_DELAY)
                 SpawnGibs(dir, damageDefName)
                 renderEntity!!.noShadow = true
-                renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIME_OF_DEATH] =
-                    Game_local.gameLocal.time * 0.001f
+                renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIME_OF_DEATH] = Game_local.gameLocal.time * 0.001f
                 StartSound("snd_gibbed", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
                 gibbed = true
             }
@@ -1038,6 +1029,47 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
         PostEventSec(EV_Gibbed, 4.0f)
     }
 
+    // D3XP: SetThrown — sets thrown state for grabber-thrown ragdolls
+    fun SetThrown(isThrown: Boolean) {
+        if (isThrown) {
+            val num = af.GetPhysics().GetNumBodies()
+            for (i in 0 until num) {
+                val body = af.GetPhysics().GetBody(i)!!
+                body.SetClipMask(Game_local.MASK_MONSTERSOLID)
+            }
+        }
+        wasThrown = isThrown
+    }
+
+    // D3XP: IsGibbed — check if entity has been gibbed
+    fun IsGibbed(): Boolean = gibbed
+
+    // D3XP: Collide — thrown ragdolls gib on collision
+    override fun Collide(collision: trace_s, velocity: idVec3): Boolean {
+        if (!gibbed && wasThrown) {
+            // Everything gibs (if possible)
+            if (spawnArgs.GetBool("gib")) {
+                val ent = Game_local.gameLocal.entities[collision.c.entityNum]
+                if (ent != null && ent.fl.takedamage) {
+                    ent.Damage(
+                        this,
+                        Game_local.gameLocal.GetLocalPlayer(),
+                        collision.c.normal,
+                        "damage_thrown_ragdoll",
+                        1f,
+                        Clip.CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id)
+                    )
+                }
+
+                val vel = idVec3(velocity)
+                vel.NormalizeFast()
+                Gib(vel, "damage_gib")
+            }
+        }
+
+        return super.Collide(collision, velocity)
+    }
+
     protected fun InitSkeletonModel() {
         val modelName: String?
         val modelDef: idDeclModelDef?
@@ -1045,8 +1077,7 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
         skeletonModelDefHandle = -1
         modelName = spawnArgs.GetString("model_gib")
         if (!modelName.isEmpty()) { //[0] != '\0' ) {
-            modelDef =
-                DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, modelName, false) as idDeclModelDef?
+            modelDef = DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, modelName, false) as idDeclModelDef?
             skeletonModel = if (modelDef != null) {
                 modelDef.ModelHandle()
             } else {
@@ -1056,7 +1087,8 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
                 if (skeletonModel!!.NumJoints() != renderEntity!!.hModel!!.NumJoints()) {
                     idGameLocal.Error(
                         "gib model '%s' has different number of joints than model '%s'",
-                        skeletonModel!!.Name(), renderEntity!!.hModel!!.Name()
+                        skeletonModel!!.Name(),
+                        renderEntity!!.hModel!!.Name()
                     )
                 }
             }
@@ -1217,7 +1249,7 @@ class idAFEntity_Generic : idAFEntity_Gibbable() {
 
  ===============================================================================
  */
-class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
+open class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
     companion object {
         val Type = idTypeInfo("idAFEntity_WithAttachedHead", "idAFEntity_Gibbable") { idAFEntity_WithAttachedHead() }
 
@@ -1240,7 +1272,8 @@ class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
         }
     }
 
-    private val head: idEntityPtr<idAFAttachment>
+    // D3XP: public to allow idHarvestable access
+    val head: idEntityPtr<idAFAttachment>
 
     // ~idAFEntity_WithAttachedHead();
     override fun _deconstructor() {
@@ -1265,8 +1298,7 @@ class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
         if (head.GetEntity() != null) {
             val anim = head.GetEntity()!!.GetAnimator().GetAnim("dead")
             if (anim != 0) {
-                head.GetEntity()!!.GetAnimator()
-                    .SetFrame(Anim.ANIMCHANNEL_ALL, anim, 0, Game_local.gameLocal.time, 0)
+                head.GetEntity()!!.GetAnimator().SetFrame(Anim.ANIMCHANNEL_ALL, anim, 0, Game_local.gameLocal.time, 0)
             }
         }
     }
@@ -1294,9 +1326,7 @@ class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
             joint = animator.GetJointHandle(jointName)
             if (joint == Model.INVALID_JOINT) {
                 idGameLocal.Error(
-                    "Joint '%s' not found for 'head_joint' on '%s'",
-                    jointName,
-                    name.toString()
+                    "Joint '%s' not found for 'head_joint' on '%s'", jointName, name.toString()
                 )
             }
             headEnt = Game_local.gameLocal.SpawnEntityType(idAFAttachment.Type, null) as idAFAttachment
@@ -1346,12 +1376,7 @@ class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
         }
         if (combatModel != null) {
             combatModel!!.Link(
-                Game_local.gameLocal.clip,
-                this,
-                0,
-                renderEntity!!.origin,
-                renderEntity!!.axis,
-                modelDefHandle
+                Game_local.gameLocal.clip, this, 0, renderEntity!!.origin, renderEntity!!.axis, modelDefHandle
             )
         }
         headEnt = head.GetEntity()
@@ -1429,6 +1454,7 @@ class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
 open class idAFEntity_Vehicle : idAFEntity_Base() {
     companion object {
         val Type = idTypeInfo("idAFEntity_Vehicle", "idAFEntity_Base") { idAFEntity_Vehicle() }
+        fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> = idAFEntity_Base.getEventCallBacks()
     }
 
     override fun GetType(): idTypeInfo = Type
@@ -1548,28 +1574,20 @@ class idAFEntity_VehicleSimple : idAFEntity_Vehicle() {
             //		if ( !wheelJointName[0] ) {
             if (wheelJointName.isEmpty()) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleSimple '%s' no '%s' specified",
-                    name,
-                    wheelJointKeys[i]
+                    "idAFEntity_VehicleSimple '%s' no '%s' specified", name, wheelJointKeys[i]
                 )
             }
             wheelJoints[i] = animator.GetJointHandle(wheelJointName)
             if (wheelJoints[i] == Model.INVALID_JOINT) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleSimple '%s' can't find wheel joint '%s'",
-                    name,
-                    wheelJointName
+                    "idAFEntity_VehicleSimple '%s' can't find wheel joint '%s'", name, wheelJointName
                 )
             }
             GetAnimator().GetJointTransform(wheelJoints[i], 0, origin, axis)
             origin.set(renderEntity!!.origin.plus(origin.times(renderEntity!!.axis)))
             suspension[i] = idAFConstraint_Suspension()
             suspension[i]!!.Setup(
-                Str.va("suspension%d", i),
-                af.GetPhysics().GetBody(0),
-                origin,
-                af.GetPhysics().GetAxis(0),
-                wheelModel
+                Str.va("suspension%d", i), af.GetPhysics().GetBody(0), origin, af.GetPhysics().GetAxis(0), wheelModel
             )
             suspension[i]!!.SetSuspension(
                 SysCvar.g_vehicleSuspensionUp.GetFloat(),
@@ -1650,7 +1668,7 @@ class idAFEntity_VehicleSimple : idAFEntity_Vehicle() {
                 val body = af.GetPhysics().GetBody(0)
                 origin.set(suspension[i]!!.GetWheelOrigin())
                 velocity = body!!.GetPointVelocity(origin).times(body.GetWorldAxis()[0])
-                wheelAngles[i] += velocity * MS2SEC(idGameLocal.msec.toFloat()) / wheelRadius
+                wheelAngles[i] += velocity * MS2SEC(Game_local.gameLocal.msec.toFloat()) / wheelRadius
 
                 // additional rotation about the wheel axis
                 wheelRotation.SetAngle(RAD2DEG(wheelAngles[i]))
@@ -1668,9 +1686,7 @@ class idAFEntity_VehicleSimple : idAFEntity_Vehicle() {
                 } else {
                     // set wheel rotation
                     animator.SetJointAxis(
-                        wheelJoints[i],
-                        jointModTransform_t.JOINTMOD_WORLD,
-                        wheelRotation.ToMat3()
+                        wheelJoints[i], jointModTransform_t.JOINTMOD_WORLD, wheelRotation.ToMat3()
                     )
                 }
 
@@ -1678,8 +1694,7 @@ class idAFEntity_VehicleSimple : idAFEntity_Vehicle() {
                 origin.set(origin.minus(renderEntity!!.origin).times(renderEntity!!.axis.Transpose()))
                 GetAnimator().SetJointPos(wheelJoints[i], jointModTransform_t.JOINTMOD_WORLD_OVERRIDE, origin)
                 i++
-            }
-            /*
+            }/*
              // spawn dust particle effects
              if ( force != 0 && !( gameLocal.framenum & 7 ) ) {
              int numContacts;
@@ -1705,16 +1720,10 @@ class idAFEntity_VehicleSimple : idAFEntity_Vehicle() {
 
         // ~idAFEntity_VehicleSimple();
         private val wheelJointKeys: Array<String> = arrayOf(
-            "wheelJointFrontLeft",
-            "wheelJointFrontRight",
-            "wheelJointRearLeft",
-            "wheelJointRearRight"
+            "wheelJointFrontLeft", "wheelJointFrontRight", "wheelJointRearLeft", "wheelJointRearRight"
         )
         private val wheelPoly /*[4]*/: Array<idVec3> = arrayOf(
-            idVec3(2, 2, 0),
-            idVec3(2, -2, 0),
-            idVec3(-2, -2, 0),
-            idVec3(-2, 2, 0)
+            idVec3(2, 2, 0), idVec3(2, -2, 0), idVec3(-2, -2, 0), idVec3(-2, 2, 0)
         )
     }
 
@@ -1747,35 +1756,27 @@ class idAFEntity_VehicleFourWheels : idAFEntity_Vehicle() {
             //		if ( !wheelBodyName[0] ) {
             if (wheelBodyName.isEmpty()) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleFourWheels '%s' no '%s' specified",
-                    name,
-                    wheelBodyKeys[i]
+                    "idAFEntity_VehicleFourWheels '%s' no '%s' specified", name, wheelBodyKeys[i]
                 )
             }
             // FIX: Removed !! that would NPE before null check could execute
             wheels[i] = af.GetPhysics().GetBody(wheelBodyName)
             if (wheels[i] == null) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleFourWheels '%s' can't find wheel body '%s'",
-                    name,
-                    wheelBodyName
+                    "idAFEntity_VehicleFourWheels '%s' can't find wheel body '%s'", name, wheelBodyName
                 )
             }
             wheelJointName = spawnArgs.GetString(wheelJointKeys[i], "")!!
             //		if ( !wheelJointName[0] ) {
             if (wheelJointName.isEmpty()) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleFourWheels '%s' no '%s' specified",
-                    name,
-                    wheelJointKeys[i]
+                    "idAFEntity_VehicleFourWheels '%s' no '%s' specified", name, wheelJointKeys[i]
                 )
             }
             wheelJoints[i] = animator.GetJointHandle(wheelJointName)
             if (wheelJoints[i] == Model.INVALID_JOINT) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleFourWheels '%s' can't find wheel joint '%s'",
-                    name,
-                    wheelJointName
+                    "idAFEntity_VehicleFourWheels '%s' can't find wheel joint '%s'", name, wheelJointName
                 )
             }
             i++
@@ -1786,17 +1787,13 @@ class idAFEntity_VehicleFourWheels : idAFEntity_Vehicle() {
             //		if ( !steeringHingeName[0] ) {
             if (steeringHingeName.isEmpty()) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleFourWheels '%s' no '%s' specified",
-                    name,
-                    steeringHingeKeys[i]
+                    "idAFEntity_VehicleFourWheels '%s' no '%s' specified", name, steeringHingeKeys[i]
                 )
             }
             steering[i] = af.GetPhysics().GetConstraint(steeringHingeName) as idAFConstraint_Hinge
             if (steering[i] == null) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleFourWheels '%s': can't find steering hinge '%s'",
-                    name,
-                    steeringHingeName
+                    "idAFEntity_VehicleFourWheels '%s': can't find steering hinge '%s'", name, steeringHingeName
                 )
             }
             i++
@@ -1865,7 +1862,7 @@ class idAFEntity_VehicleFourWheels : idAFEntity_Vehicle() {
                 if (force == 0.0f) {
                     velocity = wheels[i]!!.GetLinearVelocity().times(wheels[i]!!.GetWorldAxis()[0])
                 }
-                wheelAngles[i] += velocity * MS2SEC(idGameLocal.msec.toFloat()) / wheelRadius
+                wheelAngles[i] += velocity * MS2SEC(Game_local.gameLocal.msec.toFloat()) / wheelRadius
                 // give the wheel joint an additional rotation about the wheel axis
                 rotation.SetAngle(RAD2DEG(wheelAngles[i]))
                 axis.set(af.GetPhysics().GetAxis(0))
@@ -1906,20 +1903,13 @@ class idAFEntity_VehicleFourWheels : idAFEntity_Vehicle() {
         val Type = idTypeInfo("idAFEntity_VehicleFourWheels", "idAFEntity_Vehicle") { idAFEntity_VehicleFourWheels() }
 
         private val steeringHingeKeys: Array<String> = arrayOf(
-            "steeringHingeFrontLeft",
-            "steeringHingeFrontRight"
+            "steeringHingeFrontLeft", "steeringHingeFrontRight"
         )
         private val wheelBodyKeys: Array<String> = arrayOf(
-            "wheelBodyFrontLeft",
-            "wheelBodyFrontRight",
-            "wheelBodyRearLeft",
-            "wheelBodyRearRight"
+            "wheelBodyFrontLeft", "wheelBodyFrontRight", "wheelBodyRearLeft", "wheelBodyRearRight"
         )
         private val wheelJointKeys: Array<String> = arrayOf(
-            "wheelJointFrontLeft",
-            "wheelJointFrontRight",
-            "wheelJointRearLeft",
-            "wheelJointRearRight"
+            "wheelJointFrontLeft", "wheelJointFrontRight", "wheelJointRearLeft", "wheelJointRearRight"
         )
     }
 
@@ -1944,11 +1934,16 @@ class idAFEntity_VehicleFourWheels : idAFEntity_Vehicle() {
  idAFEntity_VehicleSixWheels
  ===============================================================================
  */
-class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
+open class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
     private val steering: Array<idAFConstraint_Hinge?> = arrayOfNulls(4)
     private val wheelAngles: FloatArray = FloatArray(6)
     private val wheelJoints: IntArray = IntArray(6)
     private val wheels: Array<idAFBody?> = arrayOfNulls(6)
+
+    // D3XP: scripted vehicle control
+    var force: Float = 0f
+    var velocity: Float = 0f
+
     override fun Spawn() {
         super.Spawn()
         var i: Int
@@ -1961,35 +1956,27 @@ class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
             //		if ( !wheelBodyName[0] ) {
             if (wheelBodyName.isEmpty()) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleSixWheels '%s' no '%s' specified",
-                    name,
-                    wheelBodyKeys[i]
+                    "idAFEntity_VehicleSixWheels '%s' no '%s' specified", name, wheelBodyKeys[i]
                 )
             }
             // FIX: Removed !! that would NPE before null check could execute
             wheels[i] = af.GetPhysics().GetBody(wheelBodyName)
             if (wheels[i] == null) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleSixWheels '%s' can't find wheel body '%s'",
-                    name,
-                    wheelBodyName
+                    "idAFEntity_VehicleSixWheels '%s' can't find wheel body '%s'", name, wheelBodyName
                 )
             }
             wheelJointName = spawnArgs.GetString(wheelJointKeys[i], "")!!
             //		if ( !wheelJointName[0] ) {
             if (wheelJointName.isEmpty()) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleSixWheels '%s' no '%s' specified",
-                    name,
-                    wheelJointKeys[i]
+                    "idAFEntity_VehicleSixWheels '%s' no '%s' specified", name, wheelJointKeys[i]
                 )
             }
             wheelJoints[i] = animator.GetJointHandle(wheelJointName)
             if (wheelJoints[i] == Model.INVALID_JOINT) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleSixWheels '%s' can't find wheel joint '%s'",
-                    name,
-                    wheelJointName
+                    "idAFEntity_VehicleSixWheels '%s' can't find wheel joint '%s'", name, wheelJointName
                 )
             }
             i++
@@ -2000,17 +1987,13 @@ class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
             //		if ( !steeringHingeName[0] ) {
             if (steeringHingeName.isEmpty()) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleSixWheels '%s' no '%s' specified",
-                    name,
-                    steeringHingeKeys[i]
+                    "idAFEntity_VehicleSixWheels '%s' no '%s' specified", name, steeringHingeKeys[i]
                 )
             }
             steering[i] = af.GetPhysics().GetConstraint(steeringHingeName) as idAFConstraint_Hinge
             if (steering[i] == null) {
                 idGameLocal.Error(
-                    "idAFEntity_VehicleSixWheels '%s': can't find steering hinge '%s'",
-                    name,
-                    steeringHingeName
+                    "idAFEntity_VehicleSixWheels '%s': can't find steering hinge '%s'", name, steeringHingeName
                 )
             }
             i++
@@ -2023,9 +2006,6 @@ class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
 
     override fun Think() {
         var i: Int
-        var force = 0.0f
-        var velocity = 0.0f
-        var steerAngle = 0.0f
         val origin = idVec3()
         val axis = idMat3()
         val rotation = idRotation()
@@ -2089,7 +2069,7 @@ class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
                 if (force == 0.0f) {
                     velocity = wheels[i]!!.GetLinearVelocity().times(wheels[i]!!.GetWorldAxis()[0])
                 }
-                wheelAngles[i] += velocity * MS2SEC(idGameLocal.msec.toFloat()) / wheelRadius
+                wheelAngles[i] += velocity * MS2SEC(Game_local.gameLocal.msec.toFloat()) / wheelRadius
                 // give the wheel joint an additional rotation about the wheel axis
                 rotation.SetAngle(RAD2DEG(wheelAngles[i]))
                 axis.set(af.GetPhysics().GetAxis(0))
@@ -2112,7 +2092,8 @@ class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
                             Game_local.gameLocal.time,
                             Game_local.gameLocal.random.RandomFloat(),
                             contacts[j]!!.GetContact().point,
-                            contacts[j]!!.GetContact().normal.ToMat3()
+                            contacts[j]!!.GetContact().normal.ToMat3(),
+                            timeGroup
                         )
                     }
                     i++
@@ -2129,11 +2110,10 @@ class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
     companion object {
         val Type = idTypeInfo("idAFEntity_VehicleSixWheels", "idAFEntity_Vehicle") { idAFEntity_VehicleSixWheels() }
 
+        fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> =
+            idAFEntity_Vehicle.getEventCallBacks()
         private val steeringHingeKeys: Array<String> = arrayOf(
-            "steeringHingeFrontLeft",
-            "steeringHingeFrontRight",
-            "steeringHingeRearLeft",
-            "steeringHingeRearRight"
+            "steeringHingeFrontLeft", "steeringHingeFrontRight", "steeringHingeRearLeft", "steeringHingeRearRight"
         )
         private val wheelBodyKeys: Array<String> = arrayOf(
             "wheelBodyFrontLeft",
@@ -2259,8 +2239,7 @@ class idAFEntity_SteamPipe : idAFEntity_Base() {
         if (!temp.isEmpty()) { // != '\0' ) {
 //		if ( !strstr( temp, "." ) ) {
             if (!temp.contains(".")) {
-                modelDef =
-                    DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, temp, false) as idDeclModelDef?
+                modelDef = DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, temp, false) as idDeclModelDef?
                 if (modelDef != null) {
                     steamRenderEntity.hModel = modelDef.ModelHandle()
                 }
@@ -2332,9 +2311,7 @@ class idAFEntity_ClawFourFingers : idAFEntity_Base() {
             fingers[i] = af.GetPhysics().GetConstraint(clawConstraintNames[i]) as idAFConstraint_Hinge
             if (fingers[i] == null) {
                 idGameLocal.Error(
-                    "idClaw_FourFingers '%s': can't find claw constraint '%s'",
-                    name,
-                    clawConstraintNames[i]
+                    "idClaw_FourFingers '%s': can't find claw constraint '%s'", name, clawConstraintNames[i]
                 )
             }
             i++
@@ -2407,8 +2384,7 @@ class idAFEntity_ClawFourFingers : idAFEntity_Base() {
  editor support routines
 
  ===============================================================================
- */
-/*
+ *//*
  ================
  GetJointTransform
  ================
@@ -2420,11 +2396,7 @@ class jointTransformData_t {
 
 internal class GetJointTransform private constructor() : getJointTransform_t() {
     override fun run(
-        model: Any,
-        frame: Array<idJointMat>,
-        jointName: idStr,
-        origin: idVec3,
-        axis: idMat3
+        model: Any, frame: Array<idJointMat>, jointName: idStr, origin: idVec3, axis: idMat3
     ): Boolean {
         var i = 0
         val data = model as jointTransformData_t
@@ -2445,5 +2417,634 @@ internal class GetJointTransform private constructor() : getJointTransform_t() {
 
     companion object {
         val INSTANCE: getJointTransform_t = GetJointTransform()
+    }
+}
+
+// ===============================================================================
+// D3XP: Automated vehicle that follows waypoints
+// ===============================================================================
+
+val EV_Vehicle_setVelocity = idEventDef("setVelocity", "f")
+val EV_Vehicle_setTorque = idEventDef("setTorque", "f")
+val EV_Vehicle_setSteeringSpeed = idEventDef("setSteeringSpeed", "f")
+val EV_Vehicle_setWaypoint = idEventDef("setWaypoint", "e")
+
+class idAFEntity_VehicleAutomated : idAFEntity_VehicleSixWheels() {
+    companion object {
+        const val HIT_WAYPOINT_THRESHOLD = 80f
+
+        val Type =
+            idTypeInfo("idAFEntity_VehicleAutomated", "idAFEntity_VehicleSixWheels") { idAFEntity_VehicleAutomated() }
+        private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+        fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> = eventCallbacks
+
+        init {
+            eventCallbacks.putAll(idAFEntity_VehicleSixWheels.getEventCallBacks())
+            eventCallbacks[EV_PostSpawn] = eventCallback_t0<idAFEntity_VehicleAutomated> { obj -> obj.PostSpawn() }
+            eventCallbacks[EV_Vehicle_setVelocity] =
+                eventCallback_t1<idAFEntity_VehicleAutomated> { obj, v -> obj.Event_SetVelocity((v as Number).toFloat()) }
+            eventCallbacks[EV_Vehicle_setTorque] =
+                eventCallback_t1<idAFEntity_VehicleAutomated> { obj, t -> obj.Event_SetTorque((t as Number).toFloat()) }
+            eventCallbacks[EV_Vehicle_setSteeringSpeed] =
+                eventCallback_t1<idAFEntity_VehicleAutomated> { obj, s -> obj.Event_SetSteeringSpeed((s as Number).toFloat()) }
+            eventCallbacks[EV_Vehicle_setWaypoint] =
+                eventCallback_t1<idAFEntity_VehicleAutomated> { obj, e -> obj.Event_SetWayPoint(e as? idEntity) }
+        }
+    }
+
+    override fun GetType(): idTypeInfo = Type
+    override fun CreateInstance(): idClass = idAFEntity_VehicleAutomated()
+    override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? = eventCallbacks[event]
+
+    private var waypoint: idEntity? = null
+    private var steeringSpeed: Float = 0f
+    private var currentSteering: Float = 0f
+    private var idealSteering: Float = 0f
+    private var originHeight: Float = 0f
+
+    override fun Spawn() {
+        super.Spawn()
+
+        velocity = 0f; force = 0f; steerAngle = 0f
+        currentSteering = 0f; steeringSpeed = 0f
+        originHeight = 0f
+        waypoint = null
+
+        val _velocity = CFloat()
+        val _force = CFloat()
+        val _steeringSpeed = CFloat()
+        val _originHeight = CFloat()
+        spawnArgs.GetFloat("velocity", "150", _velocity)
+        velocity = _velocity._val
+        spawnArgs.GetFloat("torque", "200000", _force)
+        force = _force._val
+        spawnArgs.GetFloat("steeringSpeed", "1", _steeringSpeed)
+        steeringSpeed = _steeringSpeed._val
+        spawnArgs.GetFloat("originHeight", "0", _originHeight)
+        originHeight = _originHeight._val
+
+        PostEventMS(EV_PostSpawn, 0)
+    }
+
+    fun PostSpawn() {
+        if (targets.Num() > 0) {
+            waypoint = targets[0].GetEntity()
+        }
+    }
+
+    private fun Event_SetVelocity(_velocity: Float) {
+        velocity = _velocity
+    }
+
+    private fun Event_SetTorque(_torque: Float) {
+        force = _torque
+    }
+
+    private fun Event_SetSteeringSpeed(_steeringSpeed: Float) {
+        steeringSpeed = _steeringSpeed
+    }
+
+    private fun Event_SetWayPoint(_waypoint: idEntity?) {
+        waypoint = _waypoint
+    }
+
+    override fun Think() {
+        // If we don't have a waypoint, coast to a stop
+        if (waypoint == null) {
+            velocity = 0f; force = 0f; steerAngle = 0f
+            super.Think()
+            return
+        }
+
+        // Set up the vector from the vehicle origin, to the waypoint
+        val vehicleOrigin = idVec3(GetPhysics().GetOrigin())
+        vehicleOrigin.z -= originHeight
+
+        val waypointOrigin = waypoint!!.GetPhysics().GetOrigin()
+        val travelVector = waypointOrigin.minus(vehicleOrigin)
+        val distanceFromWaypoint = travelVector.Length()
+
+        // Check if we've hit the waypoint (within a certain threshold)
+        if (distanceFromWaypoint < HIT_WAYPOINT_THRESHOLD) {
+            // Waypoints can call script functions
+            val callfunc = waypoint!!.spawnArgs.GetString("call", "")
+            if (!callfunc.isNullOrEmpty()) {
+                val func = Game_local.gameLocal.program.FindFunction(callfunc)
+                if (func != null) {
+                    val thread = neo.Game.Script.Script_Thread.idThread(func)
+                    thread.DelayedStart(0)
+                }
+            }
+
+            // Get next waypoint
+            if (waypoint!!.targets.Num() > 0) {
+                waypoint = waypoint!!.targets[0].GetEntity()
+            } else {
+                waypoint = null
+            }
+
+            // We are switching waypoints, adjust steering next frame
+            super.Think()
+            return
+        }
+
+        // Get the angles we need to steer towards
+        val travelAngles = travelVector.ToAngles().Normalize360()
+        val vehicleAngles = GetPhysics().GetAxis().ToAngles().Normalize360()
+
+        // Get the shortest steering angle towards the travel angles
+        var deltaYaw = vehicleAngles.yaw - travelAngles.yaw
+        if (idMath.Fabs(deltaYaw) > 180f) {
+            deltaYaw = if (deltaYaw > 0) deltaYaw - 360f else deltaYaw + 360f
+        }
+
+        // Maximum steering angle is 35 degrees
+        deltaYaw = idMath.ClampFloat(-35f, 35f, deltaYaw)
+
+        idealSteering = deltaYaw
+
+        // Adjust steering incrementally so it doesn't snap to the ideal angle
+        if (idMath.Fabs(idealSteering - currentSteering) > steeringSpeed) {
+            if (idealSteering > currentSteering) {
+                currentSteering += steeringSpeed
+            } else {
+                currentSteering -= steeringSpeed
+            }
+        } else {
+            currentSteering = idealSteering
+        }
+
+        // DEBUG
+        if (g_vehicleDebug.GetBool()) {
+            Game_local.gameRenderWorld!!.DebugBounds(
+                neo.idlib.colorRed, idBounds(idVec3(-4f, -4f, -4f), idVec3(4f, 4f, 4f)), vehicleOrigin
+            )
+            Game_local.gameRenderWorld!!.DebugBounds(
+                neo.idlib.colorRed, idBounds(idVec3(-4f, -4f, -4f), idVec3(4f, 4f, 4f)), waypointOrigin
+            )
+        }
+
+        // Set the final steerAngle for the vehicle
+        steerAngle = currentSteering
+
+        super.Think()
+    }
+}
+
+// ===============================================================================
+// D3XP: Harvestable — bodies that burn and yield soul-cube charges
+// ===============================================================================
+val EV_Harvest_SpawnHarvestTrigger: idEventDef = idEventDef("<spawnHarvestTrigger>")
+
+open class idHarvestable : idEntity() {
+    companion object {
+        val Type = idTypeInfo("idHarvestable", "idEntity") { idHarvestable() }
+        private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+        fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> = eventCallbacks
+
+        init {
+            eventCallbacks.putAll(idEntity.getEventCallBacks())
+            eventCallbacks[EV_Harvest_SpawnHarvestTrigger] =
+                eventCallback_t0<idHarvestable> { obj: idHarvestable -> obj.Event_SpawnHarvestTrigger() }
+            eventCallbacks[EV_Touch] =
+                eventCallback_t2<idHarvestable> { obj: idHarvestable, other: idEventArg<*>?, trace: idEventArg<*>? ->
+                    obj.Event_Touch(
+                        other as idEventArg<idEntity>,
+                        trace as idEventArg<trace_s>
+                    )
+                }
+        }
+    }
+
+    override fun CreateInstance(): idClass = idHarvestable()
+    override fun GetType(): idTypeInfo = Type
+    override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? = eventCallbacks[event]
+
+    protected var parentEnt: idEntityPtr<idEntity> = idEntityPtr()
+    protected var triggersize: Float = 0f
+    protected var trigger: idClipModel? = null
+    protected var giveDelay: Float = 0f
+    protected var removeDelay: Float = 0f
+    protected var given: Boolean = false
+
+    protected var player: idEntityPtr<idPlayer> = idEntityPtr()
+    protected var startTime: Int = 0
+
+    protected var fxFollowPlayer: Boolean = false
+    protected var fx: idEntityPtr<idEntityFx> = idEntityPtr()
+    protected var fxOrient: String = ""
+
+    fun Init(parent: idEntity) {
+        assert(parent != null)
+
+        parentEnt.oSet(parent)
+
+        GetPhysics().SetOrigin(parent.GetPhysics().GetOrigin())
+        this.Bind(parent, true)
+
+        // Set the skin of the entity to the harvest skin
+        val skin = parent.spawnArgs.GetString("skin_harvest", "")
+        if (!skin.isNullOrEmpty()) {
+            parent.SetSkin(DeclManager.declManager.FindSkin(skin))
+        }
+
+        var head: idEntity? = null
+        if (parent.IsType(idActor.Type)) {
+            val withHead = parent as idActor
+            head = withHead.GetHeadEntity()
+        }
+        if (parent.IsType(idAFEntity_WithAttachedHead.Type)) {
+            val withHead = parent as idAFEntity_WithAttachedHead
+            head = withHead.head.GetEntity()
+        }
+        if (head != null) {
+            val headskin = parent.spawnArgs.GetString("skin_harvest_head", "")
+            if (!headskin.isNullOrEmpty()) {
+                head.SetSkin(DeclManager.declManager.FindSkin(headskin))
+            }
+        }
+
+        val sound = parent.spawnArgs.GetString("harvest_sound")
+        if (!sound.isNullOrEmpty()) {
+            parent.StartSound(sound, gameSoundChannel_t.SND_CHANNEL_ANY.ordinal, 0, false, null)
+        }
+
+        PostEventMS(EV_Harvest_SpawnHarvestTrigger, 0)
+    }
+
+    fun SetParent(parent: idEntity) {
+        parentEnt.oSet(parent)
+    }
+
+    override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
+        savefile.WriteFloat(triggersize)
+        savefile.WriteClipModel(trigger)
+        savefile.WriteFloat(giveDelay)
+        savefile.WriteFloat(removeDelay)
+        savefile.WriteBool(given)
+
+        player.Save(savefile)
+        savefile.WriteInt(startTime)
+
+        savefile.WriteBool(fxFollowPlayer)
+        fx.Save(savefile)
+        savefile.WriteString(fxOrient)
+
+        parentEnt.Save(savefile)
+    }
+
+    override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
+        triggersize = savefile.ReadFloat()
+        trigger = savefile.ReadClipModel()
+        giveDelay = savefile.ReadFloat()
+        removeDelay = savefile.ReadFloat()
+        given = savefile.ReadBool()
+
+        player.Restore(savefile)
+        startTime = savefile.ReadInt()
+
+        fxFollowPlayer = savefile.ReadBool()
+        fx.Restore(savefile)
+        val _fxOrient = idStr()
+        savefile.ReadString(_fxOrient)
+        fxOrient = _fxOrient.toString()
+
+        parentEnt.Restore(savefile)
+    }
+
+    override fun Spawn() {
+        super.Spawn()
+
+        startTime = 0
+
+        val _triggersize = CFloat()
+        spawnArgs.GetFloat("triggersize", "120", _triggersize)
+        triggersize = _triggersize._val
+
+        val _giveDelay = CFloat()
+        spawnArgs.GetFloat("give_delay", "3", _giveDelay)
+        giveDelay = _giveDelay._val * 1000f
+
+        given = false
+
+        removeDelay = spawnArgs.GetFloat("remove_delay") * 1000f
+
+        fxFollowPlayer = spawnArgs.GetBool("fx_follow_player", "1")
+        fxOrient = spawnArgs.GetString("fx_orient")
+    }
+
+    override fun Think() {
+        val parent = parentEnt.GetEntity() ?: return
+
+        // Update the orientation of the box
+        if (trigger != null && !parent.GetPhysics().IsAtRest()) {
+            trigger!!.Link(
+                Game_local.gameLocal.clip,
+                this,
+                0,
+                parent.GetPhysics().GetOrigin(),
+                parent.GetPhysics().GetAxis()
+            )
+        }
+
+        if (startTime != 0 && Game_local.gameLocal.slow.time - startTime > giveDelay && !given) {
+            val thePlayer = player.GetEntity()
+            thePlayer!!.Give(spawnArgs.GetString("give_item"), spawnArgs.GetString("give_value"))
+            thePlayer.harvest_lock = false
+            given = true
+        }
+
+        if (startTime != 0 && Game_local.gameLocal.slow.time - startTime > removeDelay) {
+            parent.PostEventMS(EV_Remove, 0)
+            PostEventMS(EV_Remove, 0)
+        }
+
+        if (fxFollowPlayer) {
+            val fxEnt = fx.GetEntity()
+            if (fxEnt != null) {
+                val orientAxisLocal = idMat3()
+                if (GetFxOrientationAxis(orientAxisLocal)) {
+                    fxEnt.GetPhysics().SetAxis(orientAxisLocal)
+                }
+            }
+        }
+    }
+
+    fun Gib() {
+        // Stop any looping sound that was playing
+        val parent = parentEnt.GetEntity() ?: return
+        val sound = parent.spawnArgs.GetString("harvest_sound")
+        if (!sound.isNullOrEmpty()) {
+            parent.StopSound(gameSoundChannel_t.SND_CHANNEL_ANY.ordinal, false)
+        }
+    }
+
+    protected fun BeginBurn() {
+        val parent = parentEnt.GetEntity() ?: return
+
+        if (!spawnArgs.GetBool("burn")) {
+            return
+        }
+
+        // Switch Skins if the parent would like us to
+        val skin = parent.spawnArgs.GetString("skin_harvest_burn", "")
+        if (!skin.isNullOrEmpty()) {
+            parent.SetSkin(DeclManager.declManager.FindSkin(skin))
+        }
+        parent.GetRenderEntity()!!.noShadow = true
+        parent.SetShaderParm(RenderWorld.SHADERPARM_TIME_OF_DEATH, Game_local.gameLocal.slow.time * 0.001f)
+
+        var head: idEntity? = null
+        if (parent.IsType(idActor.Type)) {
+            val withHead = parent as idActor
+            head = withHead.GetHeadEntity()
+        }
+        if (parent.IsType(idAFEntity_WithAttachedHead.Type)) {
+            val withHead = parent as idAFEntity_WithAttachedHead
+            head = withHead.head.GetEntity()
+        }
+        if (head != null) {
+            val headskin = parent.spawnArgs.GetString("skin_harvest_burn_head", "")
+            if (!headskin.isNullOrEmpty()) {
+                head.SetSkin(DeclManager.declManager.FindSkin(headskin))
+            }
+            head.GetRenderEntity()!!.noShadow = true
+            head.SetShaderParm(RenderWorld.SHADERPARM_TIME_OF_DEATH, Game_local.gameLocal.slow.time * 0.001f)
+        }
+    }
+
+    protected fun BeginFX() {
+        if (spawnArgs.GetString("fx").isNullOrEmpty()) {
+            return
+        }
+
+        var orientAxis: idMat3? = null
+        val orientAxisLocal = idMat3()
+
+        if (GetFxOrientationAxis(orientAxisLocal)) {
+            orientAxis = orientAxisLocal
+        }
+        fx.oSet(idEntityFx.StartFx(spawnArgs.GetString("fx"), null, orientAxis, this, spawnArgs.GetBool("fx_bind")))
+    }
+
+    protected fun CalcTriggerBounds(size: Float, bounds: idBounds) {
+        val parent = parentEnt.GetEntity() ?: return
+
+        // Simple trigger bounds is the absolute bounds of the AF plus a defined size
+        bounds.set(parent.GetPhysics().GetAbsBounds())
+        bounds.ExpandSelf(size)
+        bounds[0].minusAssign(parent.GetPhysics().GetOrigin())
+        bounds[1].minusAssign(parent.GetPhysics().GetOrigin())
+    }
+
+    protected fun GetFxOrientationAxis(mat: idMat3): Boolean {
+        val parent = parentEnt.GetEntity() ?: return false
+
+        val thePlayer = player.GetEntity()
+
+        if (idStr.Icmp(fxOrient, "up") == 0) {
+            // Orient up
+            val grav = parent.GetPhysics().GetGravityNormal().times(-1f)
+            val left = idVec3()
+            val up = idVec3()
+            grav.OrthogonalBasis(left, up)
+            mat.set(idMat3(left.x, left.y, left.z, up.x, up.y, up.z, grav.x, grav.y, grav.z))
+            return true
+        } else if (idStr.Icmp(fxOrient, "weapon") == 0) {
+            // Orient the fx towards the muzzle of the weapon
+            val joint_origin = idVec3()
+            val joint_axis = idMat3()
+
+            val joint =
+                thePlayer!!.weapon.GetEntity()!!.GetAnimator()!!.GetJointHandle(spawnArgs.GetString("fx_weapon_joint"))
+            if (joint != Model.INVALID_JOINT) {
+                thePlayer.weapon.GetEntity()!!
+                    .GetJointWorldTransform(joint, Game_local.gameLocal.slow.time, joint_origin, joint_axis)
+            } else {
+                joint_origin.set(thePlayer.GetPhysics().GetOrigin())
+            }
+
+            val toPlayer = joint_origin.minus(parent.GetPhysics().GetOrigin())
+            toPlayer.NormalizeFast()
+
+            val left = idVec3()
+            val up = idVec3()
+            toPlayer.OrthogonalBasis(left, up)
+            mat.set(idMat3(left.x, left.y, left.z, up.x, up.y, up.z, toPlayer.x, toPlayer.y, toPlayer.z))
+            return true
+        } else if (idStr.Icmp(fxOrient, "player") == 0) {
+            // Orient the fx towards the eye of the player
+            val eye = thePlayer!!.GetEyePosition()
+            val toPlayer = eye.minus(parent.GetPhysics().GetOrigin())
+            toPlayer.Normalize()
+
+            val up = idVec3(0f, 1f, 0f)
+            val left = toPlayer.Cross(up)
+            up.set(left.Cross(toPlayer))
+
+            mat.set(idMat3(left.x, left.y, left.z, up.x, up.y, up.z, toPlayer.x, toPlayer.y, toPlayer.z))
+            return true
+        }
+
+        // Returning false indicates that the orientation is not used
+        return false
+    }
+
+    private fun Event_SpawnHarvestTrigger() {
+        val bounds = idBounds()
+
+        val parent = parentEnt.GetEntity() ?: return
+
+        CalcTriggerBounds(triggersize, bounds)
+
+        // Create a trigger clip model
+        trigger = idClipModel(idTraceModel(bounds))
+        trigger!!.Link(Game_local.gameLocal.clip, this, 255, parent.GetPhysics().GetOrigin(), idMat3.getMat3_identity())
+        trigger!!.SetContents(Material.CONTENTS_TRIGGER)
+
+        startTime = 0
+    }
+
+    private fun Event_Touch(_other: idEventArg<idEntity>, _trace: idEventArg<trace_s>) {
+        val other = _other.value
+        val parent = parentEnt.GetEntity() ?: return
+
+        if (parent.IsType(idAFEntity_Gibbable.Type)) {
+            val gibParent = parent as idAFEntity_Gibbable
+            if (gibParent.IsGibbed()) return
+        }
+
+        if (startTime == 0 && other.IsType(idPlayer.Type)) {
+            val thePlayer = other as idPlayer
+
+            if (thePlayer.harvest_lock) {
+                // Don't harvest if the player is in mid harvest
+                return
+            }
+
+            player.oSet(thePlayer)
+
+            var okToGive = true
+            val requiredWeapons = spawnArgs.GetString("required_weapons")
+
+            if (!requiredWeapons.isNullOrEmpty()) {
+                val playerWeap = thePlayer.GetCurrentWeapon()
+                if (playerWeap.isEmpty() || idStr(requiredWeapons).Find(playerWeap, false) == -1) {
+                    okToGive = false
+                }
+            }
+
+            if (okToGive) {
+                if (thePlayer.CanGive(spawnArgs.GetString("give_item"), spawnArgs.GetString("give_value"))) {
+                    startTime = Game_local.gameLocal.slow.time
+
+                    // Lock the player from harvesting to prevent multiple harvests
+                    thePlayer.harvest_lock = true
+
+                    val weap = thePlayer.weapon.GetEntity()
+                    if (weap != null) {
+                        weap.ProcessEvent(EV_Weapon_State, "Charge", 8)
+                    }
+
+                    BeginBurn()
+                    BeginFX()
+
+                    // Stop any looping sound that was playing
+                    val sound = parent.spawnArgs.GetString("harvest_sound")
+                    if (!sound.isNullOrEmpty()) {
+                        parent.StopSound(gameSoundChannel_t.SND_CHANNEL_ANY.ordinal, false)
+                    }
+
+                    // Make the parent object non-solid
+                    parent.GetPhysics().SetContents(0)
+                    parent.GetPhysics().GetClipModel()!!.Unlink()
+
+                    // Turn off the trigger so it doesn't process twice
+                    trigger!!.SetContents(0)
+                }
+            }
+        }
+    }
+
+    override fun _deconstructor() {
+        if (trigger != null) {
+            idClipModel.delete(trigger)
+            trigger = null
+        }
+        super._deconstructor()
+    }
+}
+
+// D3XP: AF entity that spawns a harvestable on death
+val EV_Harvest_SpawnHarvestEntity: idEventDef = idEventDef("<spawnHarvestEntity>")
+
+class idAFEntity_Harvest : idAFEntity_WithAttachedHead() {
+    companion object {
+        val Type = idTypeInfo("idAFEntity_Harvest", "idAFEntity_WithAttachedHead") { idAFEntity_Harvest() }
+        private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+        fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> = eventCallbacks
+
+        init {
+            eventCallbacks.putAll(idAFEntity_WithAttachedHead.getEventCallBacks())
+            eventCallbacks[EV_Harvest_SpawnHarvestEntity] =
+                eventCallback_t0<idAFEntity_Harvest> { obj: idAFEntity_Harvest -> obj.Event_SpawnHarvestEntity() }
+        }
+    }
+
+    override fun CreateInstance(): idClass = idAFEntity_Harvest()
+    override fun GetType(): idTypeInfo = Type
+    override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? = eventCallbacks[event]
+
+    protected var harvestEnt: idEntityPtr<idHarvestable> = idEntityPtr()
+
+    override fun Save(savefile: idSaveGame) {
+        super.Save(savefile)
+        harvestEnt.Save(savefile)
+    }
+
+    override fun Restore(savefile: idRestoreGame) {
+        super.Restore(savefile)
+        harvestEnt.Restore(savefile)
+    }
+
+    override fun Spawn() {
+        super.Spawn()
+        PostEventMS(EV_Harvest_SpawnHarvestEntity, 0)
+    }
+
+    override fun Think() {
+        super.Think()
+    }
+
+    override fun Gib(dir: idVec3, damageDefName: String) {
+        // Gib the harvestable entity too
+        if (harvestEnt.GetEntity() != null) {
+            harvestEnt.GetEntity()!!.Gib()
+        }
+        super.Gib(dir, damageDefName)
+    }
+
+    private fun Event_SpawnHarvestEntity() {
+        val harvestDef = Game_local.gameLocal.FindEntityDefDict(spawnArgs.GetString("def_harvest_type"), false)
+        if (harvestDef != null) {
+            val temp = arrayOfNulls<idEntity>(1)
+            Game_local.gameLocal.SpawnEntityDef(harvestDef, temp, false)
+            harvestEnt.oSet(temp[0] as? idHarvestable)
+        }
+
+        if (harvestEnt.GetEntity() != null) {
+            // Let the harvest entity set itself up
+            harvestEnt.GetEntity()!!.Init(this)
+            harvestEnt.GetEntity()!!.BecomeActive(TH_THINK)
+        }
+    }
+
+    override fun _deconstructor() {
+        if (harvestEnt.GetEntity() != null) {
+            harvestEnt.GetEntity()!!.PostEventMS(EV_Remove, 0)
+        }
+        super._deconstructor()
     }
 }

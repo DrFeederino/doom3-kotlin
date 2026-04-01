@@ -41,6 +41,7 @@ import neo.Game.Animation.Anim_Testmodel.idTestModel
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Light.idLight
 import neo.Game.Misc.idActivator
@@ -148,6 +149,7 @@ object Event {
 
     var EventPool: Array<idEvent> = Array(MAX_EVENTS) { idEvent() }
     var EventQueue: idLinkList<idEvent> = idLinkList()
+    var FastEventQueue: idLinkList<idEvent> = idLinkList()  // D3XP: fast timeline events
     var FreeEvents: idLinkList<idEvent> = idLinkList()
 
     var eventError = false
@@ -452,7 +454,28 @@ object Event {
 
             // wraps after 24 days...like I care. ;)
             this.time = Game_local.gameLocal.time + time
+
             eventNode.Remove()
+
+            // D3XP: route TIME_GROUP2 entities to FastEventQueue
+            if (isD3XP && obj is idEntity && obj.timeGroup == Game_local.TIME_GROUP2) {
+                event = FastEventQueue.Next()
+                while (event != null && this.time >= event.time) {
+                    event = event.eventNode.Next()
+                }
+                if (event != null) {
+                    eventNode.InsertBefore(event.eventNode)
+                } else {
+                    eventNode.AddToEnd(FastEventQueue)
+                }
+                return
+            }
+
+            // D3XP: use slow timeline for regular events
+            if (isD3XP) {
+                this.time = Game_local.gameLocal.slow.time + time
+            }
+
             event = EventQueue.Next()
             while (event != null && this.time >= event.time) {
                 event = event.eventNode.Next()
@@ -574,6 +597,20 @@ object Event {
                     }
                     event = next
                 }
+
+                // D3XP: also cancel events in the fast event queue
+                if (isD3XP) {
+                    event = FastEventQueue.Next()
+                    while (event != null) {
+                        next = event.eventNode.Next()
+                        if (event.`object` === obj) {
+                            if (null == evdef || evdef == event.eventdef) {
+                                event.Free()
+                            }
+                        }
+                        event = next
+                    }
+                }
             }
 
             /*
@@ -587,6 +624,7 @@ object Event {
                 // initialize lists
                 FreeEvents.Clear()
                 EventQueue.Clear()
+                FastEventQueue.Clear()  // D3XP
 
                 // add the events to the free list
                 i = 0
@@ -648,6 +686,65 @@ object Event {
 
                     // Don't allow ourselves to stay in here too long.  An abnormally high number
                     // of events being processed is evidence of an infinite loop of events.
+                    num++
+                    if (num > MAX_EVENTSPERFRAME) {
+                        idGameLocal.Error("Event overflow.  Possible infinite loop in script.")
+                    }
+                }
+            }
+
+            /*
+             ================
+             idEvent::ServiceFastEvents
+
+             D3XP: Processes events on the fast timeline (TIME_GROUP2).
+             Structurally identical to ServiceEvents but uses FastEventQueue
+             and compares against gameLocal.fast.time.
+             ================
+             */
+            fun ServiceFastEvents() {
+                var event: idEvent?
+                var num: Int
+                val args: Array<idEventArg<*>?> = arrayOfNulls(D_EVENT_MAXARGS)
+                var i: Int
+                var numargs: Int
+                var formatspec: String
+                var ev: idEventDef
+
+                num = 0
+                while (!FastEventQueue.IsListEmpty()) {
+                    event = FastEventQueue.Next()
+                    assert(event != null)
+                    if (event!!.time > Game_local.gameLocal.fast.time) {
+                        break
+                    }
+
+                    // copy the data into the local args array and set up pointers
+                    ev = event.eventdef!!
+                    formatspec = ev.GetArgFormat()!!
+                    numargs = ev.GetNumArgs()
+                    i = 0
+                    while (i < numargs) {
+                        when (formatspec[i]) {
+                            D_EVENT_INTEGER, D_EVENT_FLOAT, D_EVENT_VECTOR, D_EVENT_STRING, D_EVENT_ENTITY, D_EVENT_ENTITY_NULL, D_EVENT_TRACE -> args[i] =
+                                event.data!![i]
+
+                            else -> idGameLocal.Error(
+                                "idEvent::ServiceFastEvents : Invalid arg format '%s' string for '%s' event.",
+                                formatspec,
+                                ev.GetName()
+                            )
+                        }
+                        i++
+                    }
+
+                    event.eventNode.Remove()
+                    assert(event.`object` != null)
+                    event.`object`!!.ProcessEventArgPtr(ev, args)
+
+                    // return the event to the free list
+                    event.Free()
+
                     num++
                     if (num > MAX_EVENTSPERFRAME) {
                         idGameLocal.Error("Event overflow.  Possible infinite loop in script.")
@@ -912,6 +1009,92 @@ object Event {
                     assert(size == event.eventdef!!.GetArgSize())
                     event = event.eventNode.Next()
                 }
+
+                // D3XP: Save the FastEventQueue
+                // Note: C++ uses raw byte writes for fast events; in Kotlin we use the same
+                // per-field serialization as regular events since we use idEventArg arrays.
+                if (isD3XP) {
+                    savefile.WriteInt(FastEventQueue.Num())
+                    event = FastEventQueue.Next()
+                    while (event != null) {
+                        savefile.WriteInt(event.time)
+                        savefile.WriteString(event.eventdef!!.GetName())
+                        savefile.WriteString(event.typeinfo!!.name)
+                        savefile.WriteObject(event.`object`)
+                        savefile.WriteInt(event.eventdef!!.GetArgSize())
+                        format = event.eventdef!!.GetArgFormat()
+                        i = 0
+                        size = 0
+                        while (i < event.eventdef!!.GetNumArgs()) {
+                            val arg = event.data?.get(i)
+                            when (format!![i]) {
+                                D_EVENT_FLOAT -> {
+                                    savefile.WriteFloat((arg?.value as? Float) ?: 0f)
+                                    size += SIZEOF_INTPTR
+                                }
+
+                                D_EVENT_INTEGER -> {
+                                    savefile.WriteInt((arg?.value as? Int) ?: 0)
+                                    size += SIZEOF_INTPTR
+                                }
+
+                                D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> {
+                                    val entity = arg?.value as? idEntity
+                                    val entityPtr = Game_local.idEntityPtr<idEntity>()
+                                    if (entity != null) {
+                                        entityPtr.oSet(entity)
+                                    }
+                                    entityPtr.Save(savefile)
+                                    size += SIZEOF_INTPTR
+                                }
+
+                                D_EVENT_VECTOR -> {
+                                    val vec = (arg?.value as? idVec3) ?: idVec3()
+                                    savefile.WriteVec3(vec)
+                                    size += E_EVENT_SIZEOF_VEC
+                                }
+
+                                D_EVENT_STRING -> {
+                                    val s = idStr()
+                                    val strVal = arg?.value
+                                    if (strVal is String) s.set(strVal)
+                                    else if (strVal is idStr) s.set(strVal)
+                                    savefile.WriteString(s)
+                                    size += Script_Program.MAX_STRING_LEN
+                                }
+
+                                D_EVENT_TRACE -> {
+                                    val traceVal = arg?.value
+                                    val validTrace = traceVal is trace_s
+                                    savefile.WriteBool(validTrace)
+                                    size += SIZEOF_BOOL
+                                    if (validTrace) {
+                                        val t = traceVal as trace_s
+                                        size += SIZEOF_TRACE_T
+                                        SaveTrace(savefile, t)
+                                        if (t.c.material != null) {
+                                            size += Script_Program.MAX_STRING_LEN
+                                            val materialName = t.c.material!!.GetName()
+                                            val buf = ByteBuffer.allocate(Script_Program.MAX_STRING_LEN)
+                                            val nameBytes = materialName.toByteArray()
+                                            buf.put(
+                                                nameBytes,
+                                                0,
+                                                minOf(nameBytes.size, Script_Program.MAX_STRING_LEN - 1)
+                                            )
+                                            savefile.Write(buf, Script_Program.MAX_STRING_LEN)
+                                        }
+                                    }
+                                }
+
+                                else -> {}
+                            }
+                            ++i
+                        }
+                        assert(size == event.eventdef!!.GetArgSize())
+                        event = event.eventNode.Next()
+                    }
+                }
             }
 
             /*
@@ -931,7 +1114,7 @@ object Event {
                 var format: String?
                 savefile.ReadInt(num)
                 i = 0
-                while (i < num.integerValue) {
+                while (i < num._val) {
                     if (FreeEvents.IsListEmpty()) {
                         idGameLocal.Error("idEvent::Restore : No more free events")
                     }
@@ -962,15 +1145,15 @@ object Event {
 
                     // read the args
                     savefile.ReadInt(argsize)
-                    if (argsize.integerValue != event.eventdef!!.GetArgSize()) {
+                    if (argsize._val != event.eventdef!!.GetArgSize()) {
                         savefile.Error(
                             "idEvent::Restore: arg size (%d) doesn't match saved arg size(%d) on event '%s'",
                             event.eventdef!!.GetArgSize(),
-                            argsize.integerValue,
+                            argsize._val,
                             event.eventdef!!.GetName()
                         )
                     }
-                    if (argsize.integerValue != 0) {
+                    if (argsize._val != 0) {
                         // FIX: Was arrayOfNulls(argsize._val) — allocating by byte-size instead of arg count.
                         // The array is indexed by argument number, so it needs GetNumArgs() elements.
                         val numArgs = event.eventdef!!.GetNumArgs()
@@ -1052,6 +1235,121 @@ object Event {
                         event.data = null
                     }
                     i++
+                }
+
+                // D3XP: Restore the FastEventQueue
+                if (isD3XP) {
+                    savefile.ReadInt(num)
+                    i = 0
+                    while (i < num._val) {
+                        if (FreeEvents.IsListEmpty()) {
+                            idGameLocal.Error("idEvent::Restore : No more free events")
+                        }
+                        event = FreeEvents.Next()!!
+                        event.eventNode.Remove()
+                        event.eventNode.AddToEnd(FastEventQueue)
+                        event.time = savefile.ReadInt()
+
+                        savefile.ReadString(name)
+                        event.eventdef = idEventDef.FindEvent(name.toString())
+                        if (null == event.eventdef) {
+                            savefile.Error("idEvent::Restore: unknown event '%s'", name.toString())
+                        }
+
+                        savefile.ReadString(name)
+                        event.typeinfo = idClass.GetClass(name.toString())
+                        if (event.typeinfo == null) {
+                            savefile.Error(
+                                "idEvent::Restore: unknown class '%s' on event '%s'",
+                                name.toString(),
+                                event.eventdef!!.GetName()
+                            )
+                        }
+
+                        event.`object` = savefile.ReadObject()
+
+                        savefile.ReadInt(argsize)
+                        if (argsize._val != event.eventdef!!.GetArgSize()) {
+                            savefile.Error(
+                                "idEvent::Restore: arg size (%d) doesn't match saved arg size(%d) on event '%s'",
+                                event.eventdef!!.GetArgSize(),
+                                argsize._val,
+                                event.eventdef!!.GetName()
+                            )
+                        }
+                        if (argsize._val != 0) {
+                            val numArgs = event.eventdef!!.GetNumArgs()
+                            event.data = arrayOfNulls(numArgs)
+                            format = event.eventdef!!.GetArgFormat()
+                            assert(format != null)
+                            j = 0
+                            size = 0
+                            while (j < numArgs) {
+                                when (format!![j]) {
+                                    D_EVENT_FLOAT -> {
+                                        event.data!![j] = idEventArg<Any?>(D_EVENT_FLOAT.code, savefile.ReadFloat())
+                                        size += SIZEOF_INTPTR
+                                    }
+
+                                    D_EVENT_INTEGER -> {
+                                        event.data!![j] = idEventArg<Any?>(D_EVENT_INTEGER.code, savefile.ReadInt())
+                                        size += SIZEOF_INTPTR
+                                    }
+
+                                    D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> {
+                                        val entityPtr = Game_local.idEntityPtr<idEntity>()
+                                        entityPtr.Restore(savefile)
+                                        event.data!![j] = idEventArg<Any?>(format[j].code, entityPtr.GetEntity())
+                                        size += SIZEOF_INTPTR
+                                    }
+
+                                    D_EVENT_VECTOR -> {
+                                        val buffer = idVec3()
+                                        savefile.ReadVec3(buffer)
+                                        event.data!![j] = idEventArg<Any?>(D_EVENT_VECTOR.code, buffer)
+                                        size += E_EVENT_SIZEOF_VEC
+                                    }
+
+                                    D_EVENT_STRING -> {
+                                        val s = idStr()
+                                        savefile.ReadString(s)
+                                        event.data!![j] = idEventArg<Any?>(D_EVENT_STRING.code, s.toString())
+                                        size += Script_Program.MAX_STRING_LEN
+                                    }
+
+                                    D_EVENT_TRACE -> {
+                                        val readBool = savefile.ReadBool()
+                                        size += SIZEOF_BOOL
+                                        if (readBool) {
+                                            size += SIZEOF_TRACE_T
+                                            val t = trace_s()
+                                            val hadMaterial = RestoreTrace(savefile, t)
+                                            event.data!![j] = idEventArg<Any?>(D_EVENT_TRACE.code, t)
+                                            if (hadMaterial) {
+                                                size += Script_Program.MAX_STRING_LEN
+                                                str.clear()
+                                                savefile.Read(str, Script_Program.MAX_STRING_LEN)
+                                                val materialName = String(str.array()).trimEnd('\u0000')
+                                                if (materialName.isNotEmpty()) {
+                                                    t.c.material =
+                                                        DeclManager.declManager.FindMaterial(materialName, true)
+                                                }
+                                            }
+                                        } else {
+                                            event.data!![j] = idEventArg<Any?>(D_EVENT_TRACE.code, null)
+                                        }
+                                    }
+
+                                    else -> {}
+                                }
+                                ++j
+                            }
+                            assert(size == event.eventdef!!.GetArgSize())
+                        } else {
+                            event.data = null
+                        }
+                        i++
+                    }
                 }
             }
 

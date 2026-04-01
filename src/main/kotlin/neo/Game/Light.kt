@@ -23,6 +23,7 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Physics.Clip.idClipModel
@@ -194,8 +195,8 @@ object Light {
 
             // set the number of light levels
             spawnArgs.GetInt("levels", "1", levels)
-            currentLevel = levels.integerValue
-            if (levels.integerValue <= 0) {
+            currentLevel = levels._val
+            if (levels._val <= 0) {
                 idGameLocal.Error("Invalid light level set on entity #%d(%s)", entityNumber, name)
             }
 
@@ -225,6 +226,15 @@ object Light {
             if (start_off._val) {
                 Off()
             }
+
+            // D3XP CTF: Midnight mode turns off all lights unless overridden
+            if (isD3XP && Game_local.gameLocal.mpGame.IsGametypeFlagBased()
+                && Game_local.gameLocal.serverInfo.GetBool("si_midnight")
+                && !spawnArgs.GetBool("midnight_override")
+            ) {
+                Off()
+            }
+
             health = spawnArgs.GetInt("health", "0")
             spawnArgs.GetString("broken", "", brokenModel)
             breakOnTrigger = spawnArgs.GetBool("break", "0")
@@ -301,7 +311,7 @@ object Light {
             savefile.WriteVec3(localLightOrigin)
             savefile.WriteMat3(localLightAxis)
             savefile.WriteString(brokenModel)
-            savefile.WriteInt(levels.integerValue)
+            savefile.WriteInt(levels._val)
             savefile.WriteInt(currentLevel)
             savefile.WriteVec3(baseColor)
             savefile.WriteBool(breakOnTrigger)
@@ -524,7 +534,7 @@ object Light {
         }
 
         fun On() {
-            currentLevel = levels.integerValue
+            currentLevel = levels._val
             // offset the start time of the shader to sync it to the game time
             renderLight.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
                 -MS2SEC(Game_local.gameLocal.time.toFloat())
@@ -562,7 +572,7 @@ object Light {
         fun FadeIn(time: Float) {
             val color = idVec3()
             val color4 = idVec4()
-            currentLevel = levels.integerValue
+            currentLevel = levels._val
             spawnArgs.GetVector("_color", "1 1 1", color)
             color4.set(color.x, color.y, color.z, 1.0f)
             Fade(color4, time)
@@ -641,7 +651,7 @@ object Light {
         fun SetLightLevel() {
             val color = idVec3()
             val intensity: Float
-            intensity = currentLevel.toFloat() / levels.integerValue.toFloat()
+            intensity = currentLevel.toFloat() / levels._val.toFloat()
             color.set(baseColor.times(intensity))
             renderLight.shaderParms[RenderWorld.SHADERPARM_RED] = color[0]
             renderLight.shaderParms[RenderWorld.SHADERPARM_GREEN] = color[1]
@@ -921,7 +931,7 @@ object Light {
             localLightAxis.set(idMat3.getMat3_identity())
             lightDefHandle = -1
             brokenModel = idStr()
-            levels.integerValue = 0
+            levels._val = 0
             currentLevel = 0
             baseColor.set(vec3_zero)
             breakOnTrigger = false

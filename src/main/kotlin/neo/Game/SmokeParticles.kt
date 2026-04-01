@@ -26,6 +26,7 @@ along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
 package neo.Game
 
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.idGameLocal
 import neo.Renderer.Model.modelSurface_s
 import neo.Renderer.ModelManager
@@ -76,6 +77,7 @@ object SmokeParticles {
         var random: idRandom = idRandom()
         val origin: idVec3 = idVec3()
         val axis: idMat3 = idMat3()
+        var timeGroup: Int = 0         // D3XP: which timeline this particle belongs to
     }
 
     class activeSmokeStage_t {
@@ -206,8 +208,16 @@ object SmokeParticles {
                 while (smoke != null) {
                     next = smoke.next
 
-                    val frac =
+                    val frac = if (isD3XP) {
+                        // D3XP: use correct timeline based on particle's timeGroup
+                        if (smoke.timeGroup != 0) {
+                            (Game_local.gameLocal.fast.time - smoke.privateStartTime).toFloat() / (stage.particleLife * 1000)
+                        } else {
+                            (Game_local.gameLocal.slow.time - smoke.privateStartTime).toFloat() / (stage.particleLife * 1000)
+                        }
+                    } else {
                         (Game_local.gameLocal.time - smoke.privateStartTime).toFloat() / (stage.particleLife * 1000)
+                    }
                     if (frac >= 1.0f) {
                         // remove the particle from the stage list
                         if (last != null) {
@@ -249,9 +259,14 @@ object SmokeParticles {
             systemStartTime: Int,
             diversity: Float,
             origin: idVec3,
-            axis: idMat3
+            axis: idMat3,
+            timeGroup: Int = 0 // D3XP: which timeline this smoke belongs to
         ): Boolean {
             var continues = false
+
+            // D3XP: switch to the correct timeline for the duration of this call
+            val ts = if (isD3XP) SetTimeState(timeGroup) else null
+            try {
 
             if (null == smoke) {
                 return false
@@ -311,7 +326,7 @@ object SmokeParticles {
                         nowCount = stage.totalParticles - 1
                     }
                     prevCount =
-                        floor(((deltaMsec - UsercmdGen.USERCMD_MSEC).toFloat() / finalParticleTime * stage.totalParticles))
+                        floor(((deltaMsec - if (isD3XP) Game_local.gameLocal.msec else UsercmdGen.USERCMD_MSEC).toFloat() / finalParticleTime * stage.totalParticles))
                             .toInt()
                     if (prevCount < -1) {
                         prevCount = -1
@@ -362,6 +377,9 @@ object SmokeParticles {
                     freeSmokes = freeSmokes!!.next
                     numActiveSmokes++
 
+                    if (isD3XP) {
+                        newSmoke.timeGroup = timeGroup
+                    }
                     newSmoke.index = prevCount
                     newSmoke.axis.set(axis)
                     newSmoke.origin.set(origin)
@@ -376,6 +394,9 @@ object SmokeParticles {
             }
 
             return continues
+            } finally {
+                ts?.close()
+            }
         }
 
         /*
@@ -445,8 +466,11 @@ object SmokeParticles {
                 while (smoke != null) {
                     next = smoke.next
 
-                    g.frac =
+                    g.frac = if (isD3XP && smoke.timeGroup != 0) {
+                        (Game_local.gameLocal.fast.time - smoke.privateStartTime).toFloat() / (stage.particleLife * 1000)
+                    } else {
                         (Game_local.gameLocal.time - smoke.privateStartTime).toFloat() / (stage.particleLife * 1000)
+                    }
                     if (g.frac >= 1.0f) {
                         // remove the particle from the stage list
                         if (last != null) {

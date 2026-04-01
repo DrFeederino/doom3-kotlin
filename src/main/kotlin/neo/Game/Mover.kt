@@ -23,6 +23,7 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.*
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics.idPhysics
@@ -74,6 +75,7 @@ val EV_Door_StartOpen: idEventDef = idEventDef("<startOpen>", null)
 val EV_EnableSplineAngles: idEventDef = idEventDef("enableSplineAngles", null)
 val EV_FindGuiTargets: idEventDef = idEventDef("<FindGuiTargets>", null)
 val EV_GotoFloor: idEventDef = idEventDef("gotoFloor", "d")
+val EV_SetGuiStates: idEventDef = idEventDef("setGuiStates") // D3XP
 val EV_IsMoving: idEventDef = idEventDef("isMoving", null, 'd')
 val EV_IsRotating: idEventDef = idEventDef("isRotating", null, 'd')
 val EV_Move: idEventDef = idEventDef("move", "ff")
@@ -503,13 +505,13 @@ object Mover {
             if (areaPortal > 0) {
                 val portalState = CInt()
                 savefile.ReadInt(portalState)
-                Game_local.gameLocal.SetPortalState(areaPortal, portalState.integerValue)
+                Game_local.gameLocal.SetPortalState(areaPortal, portalState._val)
             }
             guiTargets.Clear()
             savefile.ReadInt(num)
-            guiTargets.SetNum(num.integerValue)
+            guiTargets.SetNum(num._val)
             i = 0
-            while (i < num.integerValue) {
+            while (i < num._val) {
                 guiTargets[i].Restore(savefile)
                 i++
             }
@@ -1622,6 +1624,9 @@ object Mover {
                             trace as idEventArg<trace_s>
                         )
                     }
+                // D3XP
+                eventCallbacks[EV_SetGuiStates] =
+                    eventCallback_t0<idElevator> { obj: idElevator -> obj.Event_SetGuiStates() }
             }
         }
 
@@ -1973,6 +1978,11 @@ object Mover {
             }
         }
 
+        // D3XP
+        private fun Event_SetGuiStates() {
+            SetGuiStates(if (currentFloor == 1) guiBinaryMoverStates[0] else guiBinaryMoverStates[1])
+        }
+
         override fun GetType(): idTypeInfo = Type
         override fun CreateInstance(): idClass = idElevator()
 
@@ -2079,6 +2089,7 @@ object Mover {
         protected var   /*qhandle_t*/areaPortal // 0 = no portal
                 : Int
         protected var blocked: Boolean
+        protected var playerOnly: Boolean = false // D3XP
         protected var buddies: idStrList
         protected var damage: Float
         protected var decelTime: Int
@@ -2242,6 +2253,7 @@ object Mover {
                 savefile.WriteInt(Game_local.gameRenderWorld!!.GetPortalState(areaPortal))
             }
             savefile.WriteBool(blocked)
+            if (isD3XP) savefile.WriteBool(playerOnly) // D3XP
             savefile.WriteInt(guiTargets.Num())
             i = 0
             while (i < guiTargets.Num()) {
@@ -2292,6 +2304,7 @@ object Mover {
                 Game_local.gameLocal.SetPortalState(areaPortal, portalState)
             }
             blocked = savefile.ReadBool()
+            if (isD3XP) playerOnly = savefile.ReadBool() // D3XP
             guiTargets.Clear()
             num = savefile.ReadInt()
             guiTargets.SetNum(num)
@@ -2875,6 +2888,13 @@ object Mover {
                 if (slave.areaPortal != 0) {
                     slave.SetPortalState(true)
                 }
+                if (isD3XP && slave.playerOnly) {
+                    Game_local.gameLocal.SetAASAreaState(
+                        slave.GetPhysics().GetAbsBounds(),
+                        AASFile.AREACONTENTS_CLUSTERPORTAL,
+                        false
+                    )
+                }
                 slave = slave.activateChain
             }
         }
@@ -2893,6 +2913,13 @@ object Mover {
                 if (!slave.IsHidden()) {
                     if (slave.areaPortal != 0) {
                         slave.SetPortalState(false)
+                    }
+                    if (isD3XP && slave.playerOnly) {
+                        Game_local.gameLocal.SetAASAreaState(
+                            slave.GetPhysics().GetAbsBounds(),
+                            AASFile.AREACONTENTS_CLUSTERPORTAL,
+                            true
+                        )
                     }
                 }
                 slave = slave.activateChain
@@ -3076,6 +3103,9 @@ object Mover {
             crusher = spawnArgs.GetBool("crusher", "0")
             spawnArgs.GetBool("start_open", "0", start_open)
             noTouch = spawnArgs.GetBool("no_touch", "0")
+            if (isD3XP) {
+                playerOnly = spawnArgs.GetBool("player_only", "0")
+            }
 
             // expects syncLock to be a door that must be closed before this door will open
             spawnArgs.GetString("syncLock", "", syncLock)
@@ -3129,6 +3159,13 @@ object Mover {
             if (!start_open._val) {
                 // start closed
                 ProcessEvent(EV_Mover_ClosePortal)
+                if (isD3XP && playerOnly) {
+                    Game_local.gameLocal.SetAASAreaState(
+                        GetPhysics().GetAbsBounds(),
+                        AASFile.AREACONTENTS_CLUSTERPORTAL,
+                        true
+                    )
+                }
             }
             val locked = spawnArgs.GetInt("locked")
             if (locked != 0) {
@@ -3306,6 +3343,14 @@ object Mover {
 
         fun IsNoTouch(): Boolean {
             return noTouch
+        }
+
+        // D3XP
+        fun AllowPlayerOnly(ent: idEntity): Boolean {
+            if (playerOnly && ent !is idPlayer) {
+                return false
+            }
+            return true
         }
 
         fun IsLocked(): Int {
@@ -3490,7 +3535,9 @@ object Mover {
             }
             if (trigger != null && trace.c.id == trigger!!.GetId()) {
                 if (!IsNoTouch() && 0 == IsLocked() && GetMoverState() != moverState_t.MOVER_1TO2) {
-                    Use(this, other)
+                    if (!isD3XP || AllowPlayerOnly(other)) {
+                        Use(this, other)
+                    }
                 }
             } else if (sndTrigger != null && trace.c.id == sndTrigger!!.GetId()) {
                 if (other != null && other is idPlayer && IsLocked() != 0 && Game_local.gameLocal.time > nextSndTriggerTime) {

@@ -31,6 +31,7 @@ import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.*
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.IK.idIK_Walk
 import neo.Game.Light.idLight
 import neo.Game.Physics.Clip.idClipModel
@@ -104,6 +105,14 @@ val EV_EnableWalkIK: idEventDef = idEventDef("EnableWalkIK")
 val EV_Footstep: idEventDef = idEventDef("footstep")
 val EV_FootstepLeft: idEventDef = idEventDef("leftFoot")
 val EV_FootstepRight: idEventDef = idEventDef("rightFoot")
+
+// D3XP events
+val EV_SetDamageGroupScale: idEventDef = idEventDef("setDamageGroupScale", "sf")
+val EV_SetDamageGroupScaleAll: idEventDef = idEventDef("setDamageGroupScaleAll", "f")
+val EV_GetDamageGroupScale: idEventDef = idEventDef("getDamageGroupScale", "s", 'f')
+val EV_SetDamageCap: idEventDef = idEventDef("setDamageCap", "f")
+val EV_SetWaitState: idEventDef = idEventDef("setWaitState", "s")
+val EV_GetWaitState: idEventDef = idEventDef("getWaitState", null, 's')
 
 /* **********************************************************************
 
@@ -461,6 +470,29 @@ open class idActor : idAFEntity_Gibbable() {
 
             eventCallbacks[AI_GetState] = eventCallback_t0 { obj: idActor -> obj.Event_GetState() }
             eventCallbacks[AI_GetHead] = eventCallback_t0 { obj: idActor -> obj.Event_GetHead() }
+
+            // D3XP events
+            eventCallbacks[EV_SetDamageGroupScale] =
+                eventCallback_t2 { obj: idActor, groupName: idEventArg<*>, scale: idEventArg<*> ->
+                    obj.Event_SetDamageGroupScale(groupName as idEventArg<String>, scale as idEventArg<Float>)
+                }
+            eventCallbacks[EV_SetDamageGroupScaleAll] =
+                eventCallback_t1 { obj: idActor, scale: idEventArg<*>? ->
+                    obj.Event_SetDamageGroupScaleAll(scale as idEventArg<Float>)
+                }
+            eventCallbacks[EV_GetDamageGroupScale] =
+                eventCallback_t1 { obj: idActor, groupName: idEventArg<*>? ->
+                    obj.Event_GetDamageGroupScale(groupName as idEventArg<String>)
+                }
+            eventCallbacks[EV_SetDamageCap] =
+                eventCallback_t1 { obj: idActor, cap: idEventArg<*>? ->
+                    obj.Event_SetDamageCap(cap as idEventArg<Float>)
+                }
+            eventCallbacks[EV_SetWaitState] =
+                eventCallback_t1 { obj: idActor, state: idEventArg<*>? ->
+                    obj.Event_SetWaitState(state as idEventArg<String>)
+                }
+            eventCallbacks[EV_GetWaitState] = eventCallback_t0 { obj: idActor -> obj.Event_GetWaitState() }
         }
 
     }
@@ -504,6 +536,9 @@ open class idActor : idAFEntity_Gibbable() {
             : Float
     protected val head: idEntityPtr<idAFAttachment>
     protected var headAnim: idAnimState
+
+    // D3XP: maximum damage this actor can take in a single hit (-1 = no cap)
+    var damageCap: Int = -1
     protected var idealState: function_t?
 
     //
@@ -558,8 +593,8 @@ open class idActor : idAFEntity_Gibbable() {
 
         spawnArgs.GetInt("rank", "0", rank)
         spawnArgs.GetInt("team", "0", team)
-        this.rank = rank.integerValue
-        this.team = team.integerValue
+        this.rank = rank._val
+        this.team = team._val
         spawnArgs.GetVector("offsetModel", "0 0 0", modelOffset)
         spawnArgs.GetBool("use_combat_bbox", "0", use_combat_bbox)
         this.use_combat_bbox = use_combat_bbox._val
@@ -625,15 +660,15 @@ open class idActor : idAFEntity_Gibbable() {
                     jointName.StripLeadingOnce("copy_joint ")
                     copyJoint.mod = jointModTransform_t.JOINTMOD_LOCAL_OVERRIDE
                 }
-                copyJoint.from.integerValue = (animator.GetJointHandle(jointName))
-                if (copyJoint.from.integerValue == Model.INVALID_JOINT) {
+                copyJoint.from._val = (animator.GetJointHandle(jointName))
+                if (copyJoint.from._val == Model.INVALID_JOINT) {
                     Game_local.gameLocal.Warning("Unknown copy_joint '%s' on entity %s", jointName, name)
                     kv = spawnArgs.MatchPrefix("copy_joint", kv)
                     continue
                 }
                 jointName.set(kv.GetValue())
-                copyJoint.to.integerValue = (headAnimator!!.GetJointHandle(jointName))
-                if (copyJoint.to.integerValue == Model.INVALID_JOINT) {
+                copyJoint.to._val = (headAnimator!!.GetJointHandle(jointName))
+                if (copyJoint.to._val == Model.INVALID_JOINT) {
                     Game_local.gameLocal.Warning("Unknown copy_joint '%s' on head of entity %s", jointName, name)
                     kv = spawnArgs.MatchPrefix("copy_joint", kv)
                     continue
@@ -724,8 +759,8 @@ open class idActor : idAFEntity_Gibbable() {
         i = 0
         while (i < copyJoints.Num()) {
             savefile.WriteInt(TempDump.etoi(copyJoints[i].mod))
-            savefile.WriteJoint(copyJoints[i].from.integerValue)
-            savefile.WriteJoint(copyJoints[i].to.integerValue)
+            savefile.WriteJoint(copyJoints[i].from._val)
+            savefile.WriteJoint(copyJoints[i].to._val)
             i++
         }
         savefile.WriteJoint(leftEyeJoint)
@@ -777,6 +812,9 @@ open class idActor : idAFEntity_Gibbable() {
         } else {
             savefile.WriteString("")
         }
+        if (isD3XP) {
+            savefile.WriteInt(damageCap)
+        }
     }
 
     /*
@@ -796,7 +834,7 @@ open class idActor : idAFEntity_Gibbable() {
         savefile.ReadMat3(viewAxis)
         savefile.ReadInt(num)
         i = 0
-        while (i < num.integerValue) {
+        while (i < num._val) {
             ent = savefile.ReadObject() as idActor?
             assert(ent != null)
             if (ent != null) {
@@ -813,30 +851,30 @@ open class idActor : idAFEntity_Gibbable() {
         pain_threshold = savefile.ReadInt()
         savefile.ReadInt(num)
         damageGroups.SetGranularity(1)
-        damageGroups.setSize(num.integerValue)
+        damageGroups.setSize(num._val)
         i = 0
-        while (i < num.integerValue) {
+        while (i < num._val) {
             savefile.ReadString(damageGroups[i])
             i++
         }
         savefile.ReadInt(num)
-        damageScale.SetNum(num.integerValue)
+        damageScale.SetNum(num._val)
         i = 0
-        while (i < num.integerValue) {
+        while (i < num._val) {
             damageScale[i] = savefile.ReadFloat()
             i++
         }
         use_combat_bbox = savefile.ReadBool()
         head.Restore(savefile)
         savefile.ReadInt(num)
-        copyJoints.SetNum(num.integerValue)
+        copyJoints.SetNum(num._val)
         i = 0
-        while (i < num.integerValue) {
+        while (i < num._val) {
             val `val` = CInt()
             savefile.ReadInt(`val`)
 
             copyJoints[i] = copyJoints_t()
-            copyJoints[i].mod = jointModTransform_t.entries[`val`.integerValue]
+            copyJoints[i].mod = jointModTransform_t.entries[`val`._val]
             savefile.ReadJoint(copyJoints[i].from)
             savefile.ReadJoint(copyJoints[i].to)
             i++
@@ -861,7 +899,7 @@ open class idActor : idAFEntity_Gibbable() {
         painTime = savefile.ReadInt()
         savefile.ReadInt(num)
         i = 0
-        while (i < num.integerValue) {
+        while (i < num._val) {
             val attach = attachments.Alloc()!!
             attach.ent.Restore(savefile)
             attach.channel = savefile.ReadInt()
@@ -876,6 +914,9 @@ open class idActor : idAFEntity_Gibbable() {
         savefile.ReadString(stateName)
         if (stateName.Length() > 0) {
             idealState = GetScriptFunction(stateName.toString())
+        }
+        if (isD3XP) {
+            damageCap = savefile.ReadInt()
         }
     }
 
@@ -913,7 +954,9 @@ open class idActor : idAFEntity_Gibbable() {
             if (ent.GetBindMaster() == this) {
                 ent.Show()
                 if (ent is idLight) {
-                    (ent as idLight).On()
+                    if (!isD3XP || !spawnArgs.GetBool("lights_off", "false")) {
+                        (ent as idLight).On()
+                    }
                 }
             }
             ent = next
@@ -1164,7 +1207,11 @@ open class idActor : idAFEntity_Gibbable() {
         val func: function_t?
         func = scriptObject.GetFunction(funcname)
         if (null == func) {
-            scriptThread!!.Error("Unknown function '%s' in '%s'", funcname, scriptObject.GetTypeName())
+            if (scriptThread != null) {
+                scriptThread!!.Error("Unknown function '%s' in '%s'", funcname, scriptObject.GetTypeName())
+            } else {
+                idGameLocal.Error("Unknown function '%s' in '%s'", funcname, scriptObject.GetTypeName())
+            }
         }
         return func!!
     }
@@ -1205,6 +1252,9 @@ open class idActor : idAFEntity_Gibbable() {
     fun EyeOffset(): idVec3 {
         return GetPhysics().GetGravityNormal().times(-eyeOffset.z)
     }
+
+    // D3XP: expose head entity for damage group targeting
+    fun GetHeadEntity(): idEntity? = head.GetEntity()
 
     open fun GetEyePosition(): idVec3 {
         return GetPhysics().GetOrigin().plus(GetPhysics().GetGravityNormal().times(-eyeOffset.z))
@@ -1380,8 +1430,27 @@ open class idActor : idAFEntity_Gibbable() {
         if (null == attacker) {
             attacker = Game_local.gameLocal.world
         }
-        if (finalBoss && inflictor !is idSoulCubeMissile) {
-            return
+        if (isD3XP) {
+            val ts = SetTimeState(timeGroup)
+            try {
+                // Helltime boss is immune to all projectiles except the helltime killer
+                if (finalBoss && idStr.Icmp(inflictor!!.GetEntityDefName(), "projectile_helltime_killer") != 0) {
+                    return
+                }
+                // Maledict is immune to the falling asteroids
+                if (idStr.Icmp(GetEntityDefName(), "monster_boss_d3xp_maledict") == 0 &&
+                    (idStr.Icmp(damageDefName, "damage_maledict_asteroid") == 0 ||
+                            idStr.Icmp(damageDefName, "damage_maledict_asteroid_splash") == 0)
+                ) {
+                    return
+                }
+            } finally {
+                ts.close()
+            }
+        } else {
+            if (finalBoss && inflictor !is idSoulCubeMissile) {
+                return
+            }
         }
         val damageDef = Game_local.gameLocal.FindEntityDefDict(damageDefName)
         if (null == damageDef) {
@@ -1389,22 +1458,26 @@ open class idActor : idAFEntity_Gibbable() {
             return
         }
         val damage = CInt((damageDef.GetInt("damage") * damageScale).toInt())
-        damage.integerValue = (GetDamageForLocation(damage.integerValue, location))
+        damage._val = (GetDamageForLocation(damage._val, location))
 
         // inform the attacker that they hit someone
         attacker!!.DamageFeedback(this, inflictor, damage)
-        if (damage.integerValue > 0) {
-            health -= damage.integerValue
+        if (damage._val > 0) {
+            health -= damage._val
+            // D3XP: damageCap prevents kill shots during scripted boss phases
+            if (isD3XP && damageCap >= 0 && health < damageCap) {
+                health = damageCap
+            }
             if (health <= 0) {
                 if (health < -999) {
                     health = -999
                 }
-                Killed(inflictor, attacker, damage.integerValue, dir, location)
+                Killed(inflictor, attacker, damage._val, dir, location)
                 if (health < -20 && spawnArgs.GetBool("gib") && damageDef.GetBool("gib")) {
                     Gib(dir, damageDefName)
                 }
             } else {
-                Pain(inflictor, attacker, damage.integerValue, dir, location)
+                Pain(inflictor, attacker, damage._val, dir, location)
             }
         } else {
             // don't accumulate knockback
@@ -1703,16 +1776,16 @@ open class idActor : idAFEntity_Gibbable() {
         val bounds = idBounds()
         GetFloorPos(64.0f, pos)
         if (null == aas) {
-            areaNum.integerValue = 0
+            areaNum._val = 0
             return
         }
         size.set(aas.GetSettings()!!.boundingBoxes[0][1])
         bounds[0] = size.unaryMinus()
         size.z = 32.0f
         bounds[1] = size
-        areaNum.integerValue = aas.PointReachableAreaNum(pos, bounds, AASFile.AREA_REACHABLE_WALK)
-        if (areaNum.integerValue != 0) {
-            aas.PushPointIntoAreaNum(areaNum.integerValue, pos)
+        areaNum._val = aas.PointReachableAreaNum(pos, bounds, AASFile.AREA_REACHABLE_WALK)
+        if (areaNum._val != 0) {
+            aas.PushPointIntoAreaNum(areaNum._val, pos)
         }
     }
 
@@ -1937,18 +2010,18 @@ open class idActor : idAFEntity_Gibbable() {
         while (i < copyJoints.Num()) {
             if (copyJoints[i].mod == jointModTransform_t.JOINTMOD_WORLD_OVERRIDE) {
                 mat.set(headEnt.GetPhysics().GetAxis().Transpose())
-                GetJointWorldTransform(copyJoints[i].from.integerValue, Game_local.gameLocal.time, pos, axis)
+                GetJointWorldTransform(copyJoints[i].from._val, Game_local.gameLocal.time, pos, axis)
                 pos.minusAssign(headEnt.GetPhysics().GetOrigin())
-                headAnimator!!.SetJointPos(copyJoints[i].to.integerValue, copyJoints[i].mod, pos.times(mat))
+                headAnimator!!.SetJointPos(copyJoints[i].to._val, copyJoints[i].mod, pos.times(mat))
                 headAnimator.SetJointAxis(
-                    copyJoints[i].to.integerValue, copyJoints[i].mod, axis.times(mat)
+                    copyJoints[i].to._val, copyJoints[i].mod, axis.times(mat)
                 )
             } else {
                 animator.GetJointLocalTransform(
-                    copyJoints[i].from.integerValue, Game_local.gameLocal.time, pos, axis
+                    copyJoints[i].from._val, Game_local.gameLocal.time, pos, axis
                 )
-                headAnimator!!.SetJointPos(copyJoints[i].to.integerValue, copyJoints[i].mod, pos)
-                headAnimator.SetJointAxis(copyJoints[i].to.integerValue, copyJoints[i].mod, axis)
+                headAnimator!!.SetJointPos(copyJoints[i].to._val, copyJoints[i].mod, pos)
+                headAnimator.SetJointAxis(copyJoints[i].to._val, copyJoints[i].mod, axis)
             }
             i++
         }
@@ -2059,10 +2132,21 @@ open class idActor : idAFEntity_Gibbable() {
                 args.Set(sndKV.GetKey(), sndKV.GetValue())
                 sndKV = spawnArgs.MatchPrefix("snd_", sndKV)
             }
+            if (isD3XP) {
+                // copy slowmo param to the head
+                args.SetBool("slowmo", spawnArgs.GetBool("slowmo", "1"))
+            }
             headEnt = Game_local.gameLocal.SpawnEntityType(idAFAttachment.Type, args) as idAFAttachment
             headEnt.SetName(Str.va("%s_head", name))
             headEnt.SetBody(this, headModel, damageJoint)
             head.oSet(headEnt)
+            if (isD3XP) {
+                val xSkin = idStr()
+                if (spawnArgs.GetString("skin_head_xray", "", xSkin)) {
+                    headEnt.xraySkin = DeclManager.declManager.FindSkin(xSkin.toString())
+                    headEnt.UpdateModel()
+                }
+            }
             val origin = idVec3()
             val axis = idMat3()
             val attach = attachments.Alloc()!!
@@ -2747,6 +2831,54 @@ open class idActor : idAFEntity_Gibbable() {
 
     private fun Event_GetHead() {
         idThread.ReturnEntity(head.GetEntity())
+    }
+
+    // D3XP event handlers
+    private fun Event_SetDamageGroupScale(groupName: idEventArg<String>, scale: idEventArg<Float>) {
+        val name = groupName.value as String
+        val s = scale.value as Float
+        var i = 0
+        while (i < damageScale.Num()) {
+            if (damageGroups[i].toString() == name) {
+                damageScale[i] = s
+            }
+            i++
+        }
+    }
+
+    private fun Event_SetDamageGroupScaleAll(scale: idEventArg<Float>) {
+        val s = scale.value as Float
+        var i = 0
+        while (i < damageScale.Num()) {
+            damageScale[i] = s
+            i++
+        }
+    }
+
+    private fun Event_GetDamageGroupScale(groupName: idEventArg<String>) {
+        val name = groupName.value as String
+        var i = 0
+        while (i < damageScale.Num()) {
+            if (damageGroups[i].toString() == name) {
+                idThread.ReturnFloat(damageScale[i])
+                return
+            }
+            i++
+        }
+        idThread.ReturnFloat(0f)
+    }
+
+    private fun Event_SetDamageCap(cap: idEventArg<Float>) {
+        damageCap = (cap.value as Float).toInt()
+    }
+
+    private fun Event_SetWaitState(state: idEventArg<String>) {
+        SetWaitState(state.value as String)
+    }
+
+    private fun Event_GetWaitState() {
+        val ws = WaitState()
+        idThread.ReturnString(ws ?: "")
     }
 
     override fun GetType(): idTypeInfo = Type

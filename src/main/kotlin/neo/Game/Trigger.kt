@@ -22,6 +22,7 @@ import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Player.idPlayer
@@ -482,7 +483,12 @@ object Trigger {
             } else {
                 // we can't just remove (this) here, because this is a touch function
                 // called while looping through area links...
-                nextTriggerTime = Game_local.gameLocal.time + 1
+                nextTriggerTime = if (isD3XP) {
+                    // D3XP: If the player spawned inside the trigger, prevents double-fire of trigger_once
+                    Game_local.gameLocal.time + 99999
+                } else {
+                    Game_local.gameLocal.time + 1
+                }
                 PostEventMS(EV_Remove, 0)
             }
         }
@@ -1095,8 +1101,23 @@ object Trigger {
             val damage: String
             // FIX: Added null check for other — C++ has: if ( on && other && gameLocal.time >= nextTime )
             if (on && other != null && Game_local.gameLocal.time >= nextTime) {
+                if (isD3XP) {
+                    val playerOnly = spawnArgs.GetBool("playerOnly")
+                    if (playerOnly && other !is idPlayer) {
+                        return
+                    }
+                }
                 damage = spawnArgs.GetString("def_damage", "damage_painTrigger")!!
-                other.Damage(null, null, vec3_origin, damage, 1.0f, Model.INVALID_JOINT)
+                if (isD3XP) {
+                    val dir = idVec3(vec3_origin)
+                    if (spawnArgs.GetBool("kick_from_center", "0")) {
+                        dir.set(other.GetPhysics().GetOrigin().minus(GetPhysics().GetOrigin()))
+                        dir.Normalize()
+                    }
+                    other.Damage(null, null, dir, damage, 1.0f, Model.INVALID_JOINT)
+                } else {
+                    other.Damage(null, null, vec3_origin, damage, 1.0f, Model.INVALID_JOINT)
+                }
                 ActivateTargets(other)
                 CallScript()
                 nextTime = (Game_local.gameLocal.time + SEC2MS(delay))

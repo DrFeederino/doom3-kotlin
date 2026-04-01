@@ -20,6 +20,7 @@ package neo.Game
 
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.gameSoundChannel_t
+import neo.Game.Game_local.idEntityPtr
 import neo.Game.Player.idPlayer
 import neo.Sound.snd_shader.idSoundShader
 import neo.TempDump
@@ -58,6 +59,9 @@ object MultiplayerGame {
     const val MP_PLAYER_MAXPING = 999
     const val MP_PLAYER_MAXWINS = 100
 
+    // D3XP: CTF maximum flag captures
+    const val MP_CTF_MAXPOINTS = 25
+
     //
     const val MP_PLAYER_MINFRAGS = -100
 
@@ -84,7 +88,16 @@ object MultiplayerGame {
         GAME_DM,
         GAME_TOURNEY,
         GAME_TDM,
-        GAME_LASTMAN
+        GAME_LASTMAN,
+        GAME_CTF  // D3XP: Capture The Flag
+    }
+
+    // D3XP: CTF flag status
+    enum class flagStatus_t {
+        FLAGSTATUS_INBASE,   // flag is at home base
+        FLAGSTATUS_TAKEN,    // flag is being carried by a player
+        FLAGSTATUS_STRAY,    // flag is dropped and lying on ground
+        FLAGSTATUS_NONE      // flag doesn't exist yet
     }
 
     //
@@ -106,6 +119,15 @@ object MultiplayerGame {
         SND_TWO,
         SND_ONE,
         SND_SUDDENDEATH,
+
+        // D3XP CTF sounds
+        SND_FLAG_TAKEN_YOURS,
+        SND_FLAG_TAKEN_THEIRS,
+        SND_FLAG_DROPPED_YOURS,
+        SND_FLAG_DROPPED_THEIRS,
+        SND_FLAG_RETURN,
+        SND_FLAG_CAPTURED_YOURS,
+        SND_FLAG_CAPTURED_THEIRS,
         SND_COUNT
     }
 
@@ -243,6 +265,15 @@ object MultiplayerGame {
                 : idStr = idStr()
         private var yesVotes // counter for yes votes
                 = 0f
+
+        // D3XP: CTF state
+        // teamFlags[0] = red team flag, teamFlags[1] = blue team flag
+        val teamFlags: Array<idEntityPtr<idEntity>> = Array(2) { idEntityPtr() }
+        val teamFlagStatus: Array<flagStatus_t> = Array(2) { flagStatus_t.FLAGSTATUS_NONE }
+        val teamPoints: IntArray = IntArray(2)   // CTF score (captures) per team
+        var flagMsgOn: Boolean = false            // flag event message pending
+        var player_red_flag: Int = -1            // entity num of red flag carrier (-1 = none)
+        var player_blue_flag: Int = -1           // entity num of blue flag carrier (-1 = none)
 
         fun Shutdown() {
             Clear()
@@ -651,12 +682,8 @@ object MultiplayerGame {
                 i++
             }
             mainGui.StateChanged(Game_local.gameLocal.time)
-            if (__linux__) {
-                // replacing the oh-so-useful s_reverse with sound backend prompt
-                mainGui.SetStateString("driver_prompt", "1")
-            } else {
-                mainGui.SetStateString("driver_prompt", "0")
-            }
+            // DG: dhewm3 removed platform-specific driver_prompt — always 0
+            mainGui.SetStateString("driver_prompt", "0")
         }
 
         fun StartMenu(): idUserInterface? {
@@ -1135,8 +1162,8 @@ object MultiplayerGame {
                     )
                 }
 
-                msg_evt_t.MSG_VOTE -> AddChatLine(Common.common.GetLanguageDict().GetString("#str_04288"))
-                msg_evt_t.MSG_SUDDENDEATH -> AddChatLine(Common.common.GetLanguageDict().GetString("#str_04287"))
+                msg_evt_t.MSG_VOTE -> AddChatLine("%s", Common.common.GetLanguageDict().GetString("#str_04288"))
+                msg_evt_t.MSG_SUDDENDEATH -> AddChatLine("%s", Common.common.GetLanguageDict().GetString("#str_04287"))
                 msg_evt_t.MSG_FORCEREADY -> {
                     AddChatLine(
                         Common.common.GetLanguageDict().GetString("#str_04286"),
@@ -1152,13 +1179,13 @@ object MultiplayerGame {
                     Game_local.gameLocal.userInfo[parm1].GetString("ui_name")
                 )
 
-                msg_evt_t.MSG_TIMELIMIT -> AddChatLine(Common.common.GetLanguageDict().GetString("#str_04284"))
+                msg_evt_t.MSG_TIMELIMIT -> AddChatLine("%s", Common.common.GetLanguageDict().GetString("#str_04284"))
                 msg_evt_t.MSG_FRAGLIMIT -> if (Game_local.gameLocal.gameType == gameType_t.GAME_LASTMAN) {
                     AddChatLine(
                         Common.common.GetLanguageDict().GetString("#str_04283"),
                         Game_local.gameLocal.userInfo[parm1].GetString("ui_name")
                     )
-                } else if (Game_local.gameLocal.gameType == gameType_t.GAME_TDM) {
+                } else if (IsGametypeTeamBased()) {
                     AddChatLine(
                         Common.common.GetLanguageDict().GetString("#str_04282"),
                         Game_local.gameLocal.userInfo[parm1].GetString("ui_team")
@@ -1177,7 +1204,83 @@ object MultiplayerGame {
                         .GetString("#str_02500") else Common.common.GetLanguageDict().GetString("#str_02499")
                 )
 
-                msg_evt_t.MSG_HOLYSHIT -> AddChatLine(Common.common.GetLanguageDict().GetString("#str_06732"))
+                msg_evt_t.MSG_HOLYSHIT -> AddChatLine("%s", Common.common.GetLanguageDict().GetString("#str_06732"))
+
+                // D3XP CTF flag messages
+                msg_evt_t.MSG_FLAGTAKEN -> {
+                    val localPlayer = Game_local.gameLocal.GetLocalPlayer()
+                    if (localPlayer != null && parm2 >= 0 && parm2 < Game_local.MAX_CLIENTS) {
+                        if (localPlayer.team != parm1) {
+                            AddChatLine(
+                                Common.common.GetLanguageDict().GetString("#str_11101"),
+                                Game_local.gameLocal.userInfo[parm2].GetString("ui_name")
+                            )
+                        } else {
+                            AddChatLine(
+                                Common.common.GetLanguageDict().GetString("#str_11102"),
+                                Game_local.gameLocal.userInfo[parm2].GetString("ui_name")
+                            )
+                        }
+                    }
+                }
+
+                msg_evt_t.MSG_FLAGDROP -> {
+                    val localPlayer = Game_local.gameLocal.GetLocalPlayer()
+                    if (localPlayer != null) {
+                        if (localPlayer.team != parm1) {
+                            AddChatLine("%s", Common.common.GetLanguageDict().GetString("#str_11103"))
+                        } else {
+                            AddChatLine("%s", Common.common.GetLanguageDict().GetString("#str_11104"))
+                        }
+                    }
+                }
+
+                msg_evt_t.MSG_FLAGRETURN -> {
+                    val localPlayer = Game_local.gameLocal.GetLocalPlayer()
+                    if (localPlayer != null) {
+                        if (parm2 >= 0 && parm2 < Game_local.MAX_CLIENTS) {
+                            if (localPlayer.team != parm1) {
+                                AddChatLine(
+                                    Common.common.GetLanguageDict().GetString("#str_11120"),
+                                    Game_local.gameLocal.userInfo[parm2].GetString("ui_name")
+                                )
+                            } else {
+                                AddChatLine(
+                                    Common.common.GetLanguageDict().GetString("#str_11121"),
+                                    Game_local.gameLocal.userInfo[parm2].GetString("ui_name")
+                                )
+                            }
+                        } else {
+                            AddChatLine(
+                                Common.common.GetLanguageDict().GetString("#str_11105"),
+                                if (parm1 != 0) Common.common.GetLanguageDict().GetString("#str_11110")
+                                else Common.common.GetLanguageDict().GetString("#str_11111")
+                            )
+                        }
+                    }
+                }
+
+                msg_evt_t.MSG_FLAGCAPTURE -> {
+                    val localPlayer = Game_local.gameLocal.GetLocalPlayer()
+                    if (localPlayer != null && parm2 >= 0 && parm2 < Game_local.MAX_CLIENTS) {
+                        if (localPlayer.team != parm1) {
+                            AddChatLine(
+                                Common.common.GetLanguageDict().GetString("#str_11122"),
+                                Game_local.gameLocal.userInfo[parm2].GetString("ui_name")
+                            )
+                        } else {
+                            AddChatLine(
+                                Common.common.GetLanguageDict().GetString("#str_11123"),
+                                Game_local.gameLocal.userInfo[parm2].GetString("ui_name")
+                            )
+                        }
+                    }
+                }
+
+                msg_evt_t.MSG_SCOREUPDATE -> {
+                    AddChatLine(Common.common.GetLanguageDict().GetString("#str_11107"), parm1, parm2)
+                }
+
                 else -> {
                     Game_local.gameLocal.DPrintf("PrintMessageEvent: unknown message type %d\n", evt)
                     return
@@ -1444,10 +1547,8 @@ object MultiplayerGame {
             }
             voteString.set(_voteString)
             AddChatLine(
-                Str.va(
-                    Common.common.GetLanguageDict().GetString("#str_04279"),
-                    Game_local.gameLocal.userInfo[clientNum].GetString("ui_name")
-                )
+                Common.common.GetLanguageDict().GetString("#str_04279"),
+                Game_local.gameLocal.userInfo[clientNum].GetString("ui_name")
             )
             Game_local.gameSoundWorld!!.PlayShaderDirectly(GlobalSoundStrings[TempDump.etoi(snd_evt_t.SND_VOTE)])
             voted = clientNum == Game_local.gameLocal.localClientNum
@@ -1499,7 +1600,7 @@ object MultiplayerGame {
             }
             when (status) {
                 vote_result_t.VOTE_FAILED -> {
-                    AddChatLine(Common.common.GetLanguageDict().GetString("#str_04278"))
+                    AddChatLine("%s", Common.common.GetLanguageDict().GetString("#str_04278"))
                     Game_local.gameSoundWorld!!.PlayShaderDirectly(GlobalSoundStrings[TempDump.etoi(snd_evt_t.SND_VOTE_FAILED)])
                     if (Game_local.gameLocal.isClient) {
                         vote = vote_flags_t.VOTE_NONE
@@ -1507,7 +1608,7 @@ object MultiplayerGame {
                 }
 
                 vote_result_t.VOTE_PASSED -> {
-                    AddChatLine(Common.common.GetLanguageDict().GetString("#str_04277"))
+                    AddChatLine("%s", Common.common.GetLanguageDict().GetString("#str_04277"))
                     Game_local.gameSoundWorld!!.PlayShaderDirectly(GlobalSoundStrings[TempDump.etoi(snd_evt_t.SND_VOTE_PASSED)])
                 }
 
@@ -1516,7 +1617,7 @@ object MultiplayerGame {
                 }
 
                 vote_result_t.VOTE_ABORTED -> {
-                    AddChatLine(Common.common.GetLanguageDict().GetString("#str_04276"))
+                    AddChatLine("%s", Common.common.GetLanguageDict().GetString("#str_04276"))
                     if (Game_local.gameLocal.isClient) {
                         vote = vote_flags_t.VOTE_NONE
                     }
@@ -1965,7 +2066,10 @@ object MultiplayerGame {
                 if (Game_local.gameLocal.serverInfo.GetBool("si_spectators")) {
                     CVarSystem.cvarSystem.SetCVarString("ui_spectate", "Spectate")
                 } else {
-                    Game_local.gameLocal.mpGame.AddChatLine(Common.common.GetLanguageDict().GetString("#str_06747"))
+                    Game_local.gameLocal.mpGame.AddChatLine(
+                        "%s",
+                        Common.common.GetLanguageDict().GetString("#str_06747")
+                    )
                 }
             }
         }
@@ -2209,6 +2313,161 @@ object MultiplayerGame {
             for (j in 1..3) {
                 gui.SetStateFloat(Str.va(mask, i, j), vec[j - 1])
             }
+        }
+
+        private fun UpdateCTFScoreboard(scoreBoard: idUserInterface, player: idPlayer) {
+            var i: Int
+            var j: Int
+            var value: Int
+            val ilines = IntArray(2)  // per-team display line counters
+
+            scoreBoard.SetStateString(
+                "scoretext",
+                if (Game_local.gameLocal.gameType == gameType_t.GAME_LASTMAN)
+                    Common.common.GetLanguageDict().GetString("#str_04242")
+                else Common.common.GetLanguageDict().GetString("#str_04243")
+            )
+
+            // Blank the flag carrier on the scoreboard; updated in the loop below
+            if (player_blue_flag == -1) scoreBoard.SetStateInt("player_blue_flag", 0)
+            if (player_red_flag == -1) scoreBoard.SetStateInt("player_red_flag", 0)
+
+            if (gameState != gameState_t.WARMUP) {
+                i = 0
+                while (i < numRankedPlayers) {
+                    val p = rankedPlayers[i]!!
+                    val curTeam = if (p.team == 0) "red" else "blue"
+                    assert(p.team <= 1)
+                    ilines[p.team]++
+
+                    // Update flag carrier display line
+                    if (player_blue_flag == p.entityNumber)
+                        scoreBoard.SetStateInt("player_blue_flag", ilines[p.team])
+                    if (p.team == 1 && player_red_flag == p.entityNumber)
+                        scoreBoard.SetStateInt("player_red_flag", ilines[p.team])
+
+                    scoreBoard.SetStateString(
+                        Str.va("player%d_%s", ilines[p.team], curTeam),
+                        p.GetUserInfo().GetString("ui_name")
+                    )
+
+                    if (IsGametypeTeamBased()) {
+                        value = idMath.ClampInt(
+                            MP_PLAYER_MINFRAGS,
+                            MP_PLAYER_MAXFRAGS,
+                            playerState[rankedPlayers[i]!!.entityNumber].fragCount
+                        )
+                        scoreBoard.SetStateInt(Str.va("player%d_%s_score", ilines[p.team], curTeam), value)
+                        scoreBoard.SetStateString(Str.va("player%d_%s_tscore", ilines[p.team], curTeam), "")
+                    }
+
+                    value = idMath.ClampInt(0, MP_PLAYER_MAXWINS, playerState[rankedPlayers[i]!!.entityNumber].wins)
+                    scoreBoard.SetStateInt(Str.va("player%d_%s_wins", ilines[p.team], curTeam), value)
+                    scoreBoard.SetStateInt(
+                        Str.va("player%d_%s_ping", ilines[p.team], curTeam),
+                        playerState[rankedPlayers[i]!!.entityNumber].ping
+                    )
+                    i++
+                }
+            }
+
+            i = 0
+            while (i < Game_local.MAX_CLIENTS) {
+                val ent = Game_local.gameLocal.entities[i]
+                if (ent == null || ent !is idPlayer) {
+                    i++; continue
+                }
+
+                if (gameState != gameState_t.WARMUP) {
+                    j = 0
+                    while (j < numRankedPlayers) {
+                        if (ent == rankedPlayers[j]) break
+                        j++
+                    }
+                    if (j != numRankedPlayers) {
+                        i++; continue
+                    }
+                }
+
+                val p = ent
+                if (p.spectating) {
+                    i++; continue
+                }
+
+                val curTeam = if (p.team == 0) "red" else "blue"
+                ilines[p.team]++
+
+                if (!playerState[i].ingame) {
+                    scoreBoard.SetStateString(
+                        Str.va("player%d_%s", ilines[p.team], curTeam),
+                        Common.common.GetLanguageDict().GetString("#str_04244")
+                    )
+                    scoreBoard.SetStateString(
+                        Str.va("player%d_%s_score", ilines[p.team], curTeam),
+                        Common.common.GetLanguageDict().GetString("#str_04245")
+                    )
+                } else {
+                    if (!p.spectating)
+                        scoreBoard.SetStateString(
+                            Str.va("player%d_%s", ilines[p.team], curTeam),
+                            Game_local.gameLocal.userInfo[i].GetString("ui_name")
+                        )
+                    if (gameState == gameState_t.WARMUP) {
+                        if (p.spectating) {
+                            scoreBoard.SetStateString(
+                                Str.va("player%d_%s_score", ilines[p.team], curTeam),
+                                Common.common.GetLanguageDict().GetString("#str_04246")
+                            )
+                        } else {
+                            scoreBoard.SetStateString(
+                                Str.va("player%d_%s_score", ilines[p.team], curTeam),
+                                if (p.IsReady()) Common.common.GetLanguageDict().GetString("#str_04247") else ""
+                            )
+                        }
+                    }
+                }
+                i++
+            }
+
+            // Clear remaining slots
+            for (team in 0..1) {
+                val curTeam = if (team == 1) "blue" else "red"
+                j = ilines[team] + 1
+                while (j <= 8) {
+                    scoreBoard.SetStateString(Str.va("player%d_%s", j, curTeam), "")
+                    scoreBoard.SetStateString(Str.va("player%d_%s_score", j, curTeam), "")
+                    scoreBoard.SetStateString(Str.va("player%d_%s_wins", j, curTeam), "")
+                    scoreBoard.SetStateString(Str.va("player%d_%s_ping", j, curTeam), "")
+                    scoreBoard.SetStateInt("rank_self", 0)
+                    j++
+                }
+            }
+
+            if (Game_local.gameLocal.gameType == gameType_t.GAME_CTF) {
+                var captureLimit = Game_local.gameLocal.serverInfo.GetInt("si_fragLimit")
+                if (captureLimit > MP_CTF_MAXPOINTS) captureLimit = MP_CTF_MAXPOINTS
+                val timeLimit = Game_local.gameLocal.serverInfo.GetInt("si_timeLimit")
+                scoreBoard.SetStateString(
+                    "gameinfo_red",
+                    if (captureLimit != 0) Str.va(
+                        Common.common.GetLanguageDict().GetString("#str_11108"),
+                        captureLimit
+                    ) else ""
+                )
+                scoreBoard.SetStateString(
+                    "gameinfo_blue",
+                    if (timeLimit != 0) Str.va(
+                        Common.common.GetLanguageDict().GetString("#str_11109"),
+                        timeLimit
+                    ) else ""
+                )
+            }
+
+            scoreBoard.SetStateInt("red_team_score", GetFlagPoints(0))
+            scoreBoard.SetStateInt("blue_team_score", GetFlagPoints(1))
+            scoreBoard.HandleNamedEvent("BlueFlagStatusChange")
+            scoreBoard.HandleNamedEvent("RedFlagStatusChange")
+            scoreBoard.Redraw(Game_local.gameLocal.time)
         }
 
         private fun UpdateScoreboard(scoreBoard: idUserInterface, player: idPlayer) {
@@ -2470,7 +2729,11 @@ object MultiplayerGame {
                     scoreBoard!!.Activate(true, Game_local.gameLocal.time)
                     playerState[player.entityNumber].scoreBoardUp = true
                 }
-                UpdateScoreboard(scoreBoard!!, player)
+                if (IsGametypeFlagBased()) {
+                    UpdateCTFScoreboard(scoreBoard!!, player)
+                } else {
+                    UpdateScoreboard(scoreBoard!!, player)
+                }
             } else {
                 if (playerState[player.entityNumber].scoreBoardUp) {
                     scoreBoard!!.Activate(false, Game_local.gameLocal.time)
@@ -3559,6 +3822,13 @@ object MultiplayerGame {
             MSG_TELEFRAGGED,
             MSG_JOINTEAM,
             MSG_HOLYSHIT,
+
+            // D3XP CTF messages
+            MSG_FLAGTAKEN,
+            MSG_FLAGDROP,
+            MSG_FLAGRETURN,
+            MSG_FLAGCAPTURE,
+            MSG_SCOREUPDATE,  // D3XP CTF team score update
             MSG_COUNT
         }
 
@@ -3735,6 +4005,76 @@ object MultiplayerGame {
          ================
          */
             fun CallVote_f(args: CmdArgs.idCmdArgs?) {}
+        }
+
+        // =========================================================================
+        // D3XP CTF methods
+        // =========================================================================
+
+        fun IsGametypeFlagBased(): Boolean {
+            return Game_local.gameLocal.gameType == gameType_t.GAME_CTF
+        }
+
+        fun IsGametypeTeamBased(): Boolean {
+            return when (Game_local.gameLocal.gameType) {
+                gameType_t.GAME_TDM, gameType_t.GAME_CTF -> true
+                else -> false
+            }
+        }
+
+        fun IsFlagMsgOn(): Boolean {
+            return flagMsgOn
+        }
+
+        fun GetFlagStatus(team: Int): Int {
+            if (team < 0 || team > 1) return flagStatus_t.FLAGSTATUS_NONE.ordinal
+            return teamFlagStatus[team].ordinal
+        }
+
+        fun GetFlagPoints(team: Int): Int {
+            if (team < 0 || team > 1) return 0
+            return teamPoints[team]
+        }
+
+        fun GetFlagCarrier(team: Int): Int {
+            var flagCarrier = -1
+            for (i in 0 until Game_local.gameLocal.numClients) {
+                val ent = Game_local.gameLocal.entities[i]
+                if (ent == null || ent !is idPlayer) continue
+                if (ent.team != team) continue
+                if (ent.carryingFlag) {
+                    if (flagCarrier != -1) {
+                        Game_local.gameLocal.Warning(
+                            "BUG: more than one flag carrier on %s team",
+                            if (team == 0) "red" else "blue"
+                        )
+                    }
+                    flagCarrier = i
+                }
+            }
+            return flagCarrier
+        }
+
+        fun PlayerScoreCTF(playerIdx: Int, points: Int) {
+            if (playerIdx < 0 || playerIdx >= Game_local.MAX_CLIENTS) return
+            playerState[playerIdx].fragCount += points
+        }
+
+        fun TeamScoreCTF(team: Int, points: Int) {
+            if (team < 0 || team > 1) return
+            teamPoints[team] += points
+            if (gameState == gameState_t.GAMEON || gameState == gameState_t.SUDDENDEATH) {
+                PrintMessageEvent(-1, msg_evt_t.MSG_SCOREUPDATE, teamPoints[0], teamPoints[1])
+            }
+        }
+
+        fun PlayTeamSound(team: Int, evt: snd_evt_t, shader: String? = null) {
+            for (i in 0 until Game_local.gameLocal.numClients) {
+                val ent = Game_local.gameLocal.entities[i]
+                if (ent == null || ent !is idPlayer) continue
+                if (ent.team != team) continue
+                PlayGlobalSound(i, evt, shader)
+            }
         }
 
         init {

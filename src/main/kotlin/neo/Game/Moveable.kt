@@ -17,12 +17,15 @@
  */
 package neo.Game
 
+import neo.Game.AI.idAI
 import neo.Game.Animation.idDeclModelDef
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.EV_Remove
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
+import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Physics.Clip.idClipModel
@@ -156,6 +159,10 @@ object Moveable {
         protected var unbindOnDeath // unbind from master when health drops down to or below zero
                 : Boolean
 
+        // D3XP
+        protected var monsterDamage: idStr = idStr()
+        protected var attacker: idEntity? = null
+
         override fun Spawn() {
             super.Spawn()
             val trm = idTraceModel()
@@ -196,6 +203,11 @@ object Moveable {
             fl.takedamage = true
             damage = idStr(spawnArgs.GetString("def_damage", "")!!)
             canDamage = !spawnArgs.GetBool("damageWhenActive")
+            if (isD3XP) {
+                monsterDamage = idStr(spawnArgs.GetString("monster_damage", "")!!)
+                fl.networkSync = true
+                attacker = null
+            }
             minDamageVelocity = spawnArgs.GetFloat("minDamageVelocity", "100")
             maxDamageVelocity = spawnArgs.GetFloat("maxDamageVelocity", "200")
             nextDamageTime = 0
@@ -264,6 +276,10 @@ object Moveable {
             savefile.WriteInt((if (initialSpline != null) initialSpline!!.GetTime(0) else -1).toInt())
             savefile.WriteVec3(initialSplineDir)
             savefile.WriteStaticObject(physicsObj)
+            if (isD3XP) {
+                savefile.WriteString(monsterDamage)
+                savefile.WriteObject(attacker)
+            }
         }
 
         override fun Restore(savefile: idRestoreGame) {
@@ -283,13 +299,17 @@ object Moveable {
             nextSoundTime = savefile.ReadInt()
             savefile.ReadInt(initialSplineTime)
             savefile.ReadVec3(initialSplineDir)
-            if (initialSplineTime.integerValue != -1) {
-                InitInitialSpline(initialSplineTime.integerValue)
+            if (initialSplineTime._val != -1) {
+                InitInitialSpline(initialSplineTime._val)
             } else {
                 initialSpline = null
             }
             savefile.ReadStaticObject(physicsObj)
             RestorePhysics(physicsObj)
+            if (isD3XP) {
+                savefile.ReadString(monsterDamage)
+                attacker = savefile.ReadObject() as? idEntity
+            }
         }
 
         override fun Think() {
@@ -318,6 +338,9 @@ object Moveable {
         }
 
         fun EnableDamage(enable: Boolean, duration: Float) {
+            if (isD3XP && canDamage == enable) {
+                return
+            }
             canDamage = enable
             if (duration != 0.0f) {
                 PostEventSec(EV_EnableDamage, duration, if (!enable) 0.0f else 1.0f)
@@ -342,25 +365,76 @@ object Moveable {
                 }
                 nextSoundTime = Game_local.gameLocal.time + 500
             }
-            if (canDamage && damage.Length() != 0 && Game_local.gameLocal.time > nextDamageTime) {
-                ent = Game_local.gameLocal.entities[collision.c.entityNum]
-                if (ent != null && v > minDamageVelocity) {
-                    f = if (v > maxDamageVelocity) 1.0f else idMath.Sqrt(v - minDamageVelocity) * (1.0f / idMath.Sqrt(
-                        maxDamageVelocity - minDamageVelocity
-                    ))
-                    dir.set(velocity)
-                    dir.NormalizeFast()
-                    ent.Damage(
-                        this,
-                        GetPhysics().GetClipModel()!!.GetOwner(),
-                        dir,
-                        damage.toString(),
-                        f,
-                        Model.INVALID_JOINT
-                    )
-                    nextDamageTime = Game_local.gameLocal.time + 1000
+
+            // D3XP :: changes relating to the addition of monsterDamage
+            if (!Game_local.gameLocal.isClient && canDamage && Game_local.gameLocal.time > nextDamageTime) {
+                val hasDamage = damage.Length() > 0
+                val hasMonsterDamage = if (isD3XP) monsterDamage.Length() > 0 else false
+
+                if (hasDamage || hasMonsterDamage) {
+                    ent = Game_local.gameLocal.entities[collision.c.entityNum]
+                    if (ent != null && v > minDamageVelocity) {
+                        f =
+                            if (v > maxDamageVelocity) 1.0f else idMath.Sqrt(v - minDamageVelocity) * (1.0f / idMath.Sqrt(
+                                maxDamageVelocity - minDamageVelocity
+                            ))
+                        dir.set(velocity)
+                        dir.NormalizeFast()
+                        if (ent.IsType(idAI.Type) && hasMonsterDamage) {
+                            if (isD3XP && attacker != null) {
+                                ent.Damage(this, attacker, dir, monsterDamage.toString(), f, Model.INVALID_JOINT)
+                            } else {
+                                ent.Damage(
+                                    this,
+                                    GetPhysics().GetClipModel()!!.GetOwner(),
+                                    dir,
+                                    monsterDamage.toString(),
+                                    f,
+                                    Model.INVALID_JOINT
+                                )
+                            }
+                        } else if (hasDamage) {
+                            if (isD3XP) {
+                                // in multiplayer, scale damage wrt mass of object
+                                if (Game_local.gameLocal.isMultiplayer) {
+                                    f *= GetPhysics().GetMass() * SysCvar.g_moveableDamageScale.GetFloat()
+                                }
+                                if (attacker != null) {
+                                    ent.Damage(this, attacker, dir, damage.toString(), f, Model.INVALID_JOINT)
+                                } else {
+                                    ent.Damage(
+                                        this,
+                                        GetPhysics().GetClipModel()!!.GetOwner(),
+                                        dir,
+                                        damage.toString(),
+                                        f,
+                                        Model.INVALID_JOINT
+                                    )
+                                }
+                            } else {
+                                ent.Damage(
+                                    this,
+                                    GetPhysics().GetClipModel()!!.GetOwner(),
+                                    dir,
+                                    damage.toString(),
+                                    f,
+                                    Model.INVALID_JOINT
+                                )
+                            }
+                        }
+                        nextDamageTime = Game_local.gameLocal.time + 1000
+                    }
                 }
             }
+
+            // D3XP: unstable exploding barrel check
+            if (isD3XP && this.IsType(idExplodingBarrel.Type)) {
+                val ebarrel = this as idExplodingBarrel
+                if (!ebarrel.IsStable()) {
+                    PostEventSec(EV_Explode, 0.04f)
+                }
+            }
+
             if (fxCollide.Length() != 0 && Game_local.gameLocal.time > nextCollideFxTime) {
                 idEntityFx.StartFx(fxCollide, collision.c.point, null, this, false)
                 nextCollideFxTime = Game_local.gameLocal.time + 3500
@@ -493,7 +567,16 @@ object Moveable {
         }
 
         protected fun Event_EnableDamage(enable: idEventArg<Float>) {
+            if (isD3XP) {
+                // clear out attacker
+                attacker = null
+            }
             canDamage = enable.value != 0.0f
+        }
+
+        // D3XP
+        fun SetAttacker(ent: idEntity?) {
+            attacker = ent
         }
 
         override fun GetType(): idTypeInfo = Type
@@ -585,6 +668,9 @@ object Moveable {
             lastAxis.set(GetPhysics().GetAxis())
             additionalRotation = 0.0f
             additionalAxis.Identity()
+            if (isD3XP) {
+                fl.networkSync = true
+            }
         }
 
         override fun Save(savefile: idSaveGame) {
@@ -753,6 +839,7 @@ object Moveable {
         private val spawnAxis: idMat3 = idMat3()
         private var state: explode_state_t = explode_state_t.NORMAL
         private var time: Float
+        private var isStable: Boolean = true // D3XP
 
         // ~idExplodingBarrel();
         override fun _deconstructor() {
@@ -777,6 +864,10 @@ object Moveable {
             lightTime = 0
             particleTime = 0
             time = spawnArgs.GetFloat("time")
+            if (isD3XP) {
+                isStable = true
+                fl.networkSync = true
+            }
             particleRenderEntity =
                 renderEntity_s() //	memset( &particleRenderEntity, 0, sizeof( particleRenderEntity ) );
             light = renderLight_s() //	memset( &light, 0, sizeof( light ) );
@@ -794,6 +885,9 @@ object Moveable {
             savefile.WriteInt(particleTime)
             savefile.WriteInt(lightTime)
             savefile.WriteFloat(time)
+            if (isD3XP) {
+                savefile.WriteBool(isStable)
+            }
         }
 
         override fun Restore(savefile: idRestoreGame) {
@@ -808,6 +902,9 @@ object Moveable {
             particleTime = savefile.ReadInt()
             lightTime = savefile.ReadInt()
             time = savefile.ReadFloat()
+            if (isD3XP) {
+                isStable = savefile.ReadBool()
+            }
 
             // DG: enforce getting fresh handle, else this may be tied to an unrelated light!
             if (lightDefHandle != -1) {
@@ -1004,6 +1101,9 @@ object Moveable {
                     if (null == particleRenderEntity.hModel) {
                         particleRenderEntity.hModel = ModelManager.renderModelManager.FindModel(name)
                     }
+                    if (isD3XP) {
+                        particleRenderEntity.timeGroup = timeGroup
+                    }
                     particleModelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(particleRenderEntity)
                     if (burn) {
                         BecomeActive(TH_THINK)
@@ -1062,6 +1162,33 @@ object Moveable {
                     96.0f,
                     temp
                 )
+            }
+        }
+
+        // D3XP
+        fun SetStability(stability: Boolean) {
+            isStable = stability
+        }
+
+        // D3XP
+        fun IsStable(): Boolean {
+            return isStable
+        }
+
+        // D3XP
+        fun StartBurning() {
+            state = explode_state_t.BURNING
+            AddParticles("barrelfire.prt", true)
+        }
+
+        // D3XP
+        fun StopBurning() {
+            state = explode_state_t.NORMAL
+            if (particleModelDefHandle >= 0) {
+                Game_local.gameRenderWorld!!.FreeEntityDef(particleModelDefHandle)
+                particleModelDefHandle = -1
+                particleTime = 0
+                particleRenderEntity = renderEntity_s()
             }
         }
 

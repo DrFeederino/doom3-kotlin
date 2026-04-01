@@ -113,12 +113,12 @@ object Physics_StaticMulti {
             // FIX: AssureSize without fill value leaves new slots null in Kotlin.
             // C++ default-constructs POD structs. Must create objects for each slot.
             val oldNum = current.Num()
-            current.AssureSize(num.integerValue)
-            for (j in oldNum until num.integerValue) {
+            current.AssureSize(num._val)
+            for (j in oldNum until num._val) {
                 current[j] = staticPState_s()
             }
             i = 0
-            while (i < num.integerValue) {
+            while (i < num._val) {
                 savefile.ReadVec3(current[i].origin)
                 savefile.ReadMat3(current[i].axis)
                 savefile.ReadVec3(current[i].localOrigin)
@@ -126,9 +126,9 @@ object Physics_StaticMulti {
                 i++
             }
             savefile.ReadInt(num)
-            clipModels.SetNum(num.integerValue)
+            clipModels.SetNum(num._val)
             i = 0
-            while (i < num.integerValue) {
+            while (i < num._val) {
                 clipModels[i] = savefile.ReadClipModel()
                 i++
             }

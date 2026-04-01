@@ -353,7 +353,7 @@ object Sound {
                     true,
                     playingUntilTime
                 )
-                this.playingUntilTime = playingUntilTime.integerValue + Game_local.gameLocal.time
+                this.playingUntilTime = playingUntilTime._val + Game_local.gameLocal.time
             } else {
                 StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), true)
                 playingUntilTime = 0

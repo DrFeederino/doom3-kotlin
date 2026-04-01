@@ -24,9 +24,10 @@ import java.nio.ByteOrder
 
 object Script_Program {
     const val MAX_STRING_LEN = 128
-    const val MAX_FUNCS = 3072
-    const val MAX_GLOBALS = 296608 // in bytes -- DG: increased for 64-bit compatibility (dhewm3 value)
-    const val MAX_STATEMENTS = 81920 // statement_s - 18 bytes last I checked
+    const val MAX_FUNCS = 3584    // D3XP: 3072 → 3584 (larger d3xp script library)
+    const val MAX_GLOBALS =
+        296608 // in bytes -- DG: increased for 64-bit compatibility (dhewm3 value); D3XP: 196608 → 296608
+    const val MAX_STATEMENTS = 131072 // D3XP: 81920 → 131072
     const val MAX_STRINGS = 1024
 
     const val SIZEOF_INTPTR = 8
@@ -626,12 +627,12 @@ object Script_Program {
                 savefile.Error("idScriptObject::Restore: failed to restore object of type '%s'.", typeName.toString())
             }
             savefile.ReadInt(size)
-            if (size.integerValue != type.Size()) {
+            if (size._val != type.Size()) {
                 savefile.Error(
                     "idScriptObject::Restore: size of object '%s' doesn't match size in save game.", typeName
                 )
             }
-            savefile.Read(data!!, size.integerValue)
+            savefile.Read(data!!, size._val)
         }
 
         fun Free() {
@@ -1286,5 +1287,10 @@ object Script_Program {
         var file = 0
         var linenumber = 0
         var   /*unsigned short*/op = 0
+        var   /*unsigned short*/flags = 0 // DG: added for savegame compat hack
+
+        companion object {
+            const val FLAG_OBJECTCALL_IMPL_NOT_PARSED_YET = 1
+        }
     }
 }

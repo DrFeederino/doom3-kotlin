@@ -111,7 +111,7 @@ object Physics_AF {
         saveFile.ReadFloat(activateTime)
         saveFile.ReadFloat(lastTimeStep)
         saveFile.ReadVec6(state.pushVelocity)
-        state.atRest = atRest.integerValue
+        state.atRest = atRest._val
         state.noMoveTime = noMoveTime._val
         state.activateTime = activateTime._val
         state.lastTimeStep = lastTimeStep._val
@@ -329,7 +329,7 @@ object Physics_AF {
         open fun Restore(saveFile: idRestoreGame) {
             val t = CInt()
             saveFile.ReadInt(t)
-            assert(t.integerValue == type.ordinal)
+            assert(t._val == type.ordinal)
         }
 
         /*
@@ -917,6 +917,7 @@ object Physics_AF {
                         .times(-(invTimeStep * ERROR_REDUCTION))
                 )
             } else {
+                a2.Zero()
                 c1.SubVec3_oSet(
                     0,
                     anchor2.minus(a1.plus(body1!!.GetWorldOrigin()))
@@ -2320,6 +2321,7 @@ object Physics_AF {
         override fun Translate(translation: idVec3) {}
         override fun Rotate(rotation: idRotation) {}
         override fun Save(saveFile: idSaveGame) {
+            super.Save(saveFile)
             saveFile.WriteFloat(steerAngle)
             saveFile.WriteFloat(steerSpeed)
             saveFile.WriteFloat(epsilon)
@@ -3232,7 +3234,7 @@ object Physics_AF {
                 return
             }
 
-            // seperate friction per contact is silly but it's fast and often looks close enough
+            // separate friction per contact is silly but it's fast and often looks close enough
             if (SysCvar.af_useImpulseFriction.GetBool()) {
                 impulse.SetData(6, idVecX.VECX_ALLOCA(6))
                 dv.SetData(6, idVecX.VECX_ALLOCA(6))
@@ -5469,7 +5471,7 @@ object Physics_AF {
             idPhysics_AF_RestorePState(saveFile, saved)
 
             saveFile.ReadInt(num)
-            assert(num.integerValue == bodies.Num())
+            assert(num._val == bodies.Num())
             i = 0
             while (i < bodies.Num()) {
                 bodies[i].Restore(saveFile)
@@ -5481,7 +5483,7 @@ object Physics_AF {
                 masterBody!!.Restore(saveFile)
             }
             saveFile.ReadInt(num)
-            assert(num.integerValue == constraints.Num())
+            assert(num._val == constraints.Num())
             i = 0
             while (i < constraints.Num()) {
                 constraints[i].Restore(saveFile)
@@ -6354,7 +6356,7 @@ object Physics_AF {
                 timer_total.Stop()
                 if (SysCvar.af_showTimings.GetInteger() == 1) {
                     Game_local.gameLocal.Printf(
-                        "%12s: t %1.4f pc %2d, %1.4f ac %2d %1.4f lcp %1.4f cd %1.4f\n",
+                        "%12s: t %d pc %2d, %d ac %2d %d lcp %d cd %d\n",
                         self!!.name,
                         timer_total.Milliseconds(),
                         numPrimary, timer_pc.Milliseconds(),
@@ -6365,7 +6367,7 @@ object Physics_AF {
                     numArticulatedFigures++
                     if (endTimeMSec > lastTimerReset) {
                         Game_local.gameLocal.Printf(
-                            "af %d: t %1.4f pc %2d, %1.4f ac %2d %1.4f lcp %1.4f cd %1.4f\n",
+                            "af %d: t %d pc %2d, %d ac %2d %d lcp %d cd %d\n",
                             numArticulatedFigures,
                             timer_total.Milliseconds(),
                             numPrimary, timer_pc.Milliseconds(),
@@ -7264,7 +7266,7 @@ object Physics_AF {
                 }
                 if (trees.Num() > 1) {
                     Game_local.gameLocal.Warning(
-                        "Articulated figure has multiple seperate tree structures for entity '%s' type '%s'.",
+                        "Articulated figure has multiple separate tree structures for entity '%s' type '%s'.",
                         self!!.name, self!!.GetType().name
                     )
                 }
@@ -7669,7 +7671,7 @@ object Physics_AF {
                             j1[0] * ptr[p_i + 0] + j1[1] * ptr[p_i + 1] + j1[2] * ptr[p_i + 2] + j1[3] * ptr[p_i + 3] + j1[4] * ptr[p_i + 4] + j1[5] * ptr[p_i + 5]
                         p_i += 8
                         n++
-                        m = index[n]
+                        if (n < constraint.body1!!.numResponses) m = index[n]
                     }
                     while (l < s) {
                         dstPtr[c + l++] = 0.0f
@@ -7685,7 +7687,7 @@ object Physics_AF {
                             dstPtr[c + m] += j2[0] * ptr[p_i + 0] + j2[1] * ptr[p_i + 1] + j2[2] * ptr[p_i + 2] + j2[3] * ptr[p_i + 3] + j2[4] * ptr[p_i + 4] + j2[5] * ptr[p_i + 5]
                             p_i += 8
                             n++
-                            m = index[n]
+                            if (n < constraint.body2!!.numResponses) m = index[n]
                         }
                     }
                     j++

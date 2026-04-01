@@ -915,9 +915,6 @@ object Push {
             }
             SaveEntityPosition(check)
             newRotation.Set(rotation.GetOrigin(), rotation.GetVec(), checkAngle)
-            // NOTE:	this code prevents msvc 6.0f & 7.0f from screwing up the above code in
-            //			release builds moving less floats than it should
-//	static float shit = checkAngle;
             newRotation.RotatePoint(rotationPoint)
 
             // rotate the entity

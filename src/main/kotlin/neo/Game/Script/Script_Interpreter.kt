@@ -535,8 +535,8 @@ object Script_Interpreter {
                 callStack[i] = prstack_s()
                 callStack[i]!!.s = savefile.ReadInt()
                 savefile.ReadInt(func_index)
-                if (func_index.integerValue >= 0) {
-                    callStack[i]!!.f = Game_local.gameLocal.program.GetFunction(func_index.integerValue)
+                if (func_index._val >= 0) {
+                    callStack[i]!!.f = Game_local.gameLocal.program.GetFunction(func_index._val)
                 } else {
                     callStack[i]!!.f = null
                 }
@@ -549,8 +549,8 @@ object Script_Interpreter {
             localstackBase = savefile.ReadInt()
             maxLocalstackUsed = savefile.ReadInt()
             savefile.ReadInt(func_index)
-            currentFunction = if (func_index.integerValue >= 0) {
-                Game_local.gameLocal.program.GetFunction(func_index.integerValue)
+            currentFunction = if (func_index._val >= 0) {
+                Game_local.gameLocal.program.GetFunction(func_index._val)
             } else {
                 null
             }

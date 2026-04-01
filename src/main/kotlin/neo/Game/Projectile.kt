@@ -26,6 +26,7 @@ import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.*
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Mover.idDoor
 import neo.Game.Physics.Clip
 import neo.Game.Physics.Clip.idClipModel
@@ -72,6 +73,12 @@ val EV_Explode: idEventDef = idEventDef("<explode>", null)
 val EV_Fizzle: idEventDef = idEventDef("<fizzle>", null)
 val EV_GetProjectileState: idEventDef = idEventDef("getProjectileState", null, 'd')
 val EV_RadiusDamage: idEventDef = idEventDef("<radiusdmg>", "e")
+
+// D3XP
+val EV_CreateProjectile: idEventDef = idEventDef("projectileCreateProjectile", "evv")
+val EV_LaunchProjectile: idEventDef = idEventDef("projectileLaunchProjectile", "vvv")
+val EV_SetGravity: idEventDef = idEventDef("setGravity", "f")
+val EV_SetEnemy: idEventDef = idEventDef("setEnemy", "E")
 
 //
 val EV_RemoveBeams: idEventDef = idEventDef("<removeBeams>", null)
@@ -231,6 +238,27 @@ object Projectile {
                     }
                 eventCallbacks[EV_GetProjectileState] =
                     eventCallback_t0<idProjectile> { obj: idProjectile -> obj.Event_GetProjectileState() }
+                // D3XP
+                eventCallbacks[EV_CreateProjectile] =
+                    eventCallback_t3<idProjectile> { obj: idProjectile, owner: idEventArg<*>?, start: idEventArg<*>?, dir: idEventArg<*>? ->
+                        obj.Event_CreateProjectile(
+                            owner as idEventArg<idEntity>,
+                            start as idEventArg<idVec3>,
+                            dir as idEventArg<idVec3>
+                        )
+                    }
+                eventCallbacks[EV_LaunchProjectile] =
+                    eventCallback_t3<idProjectile> { obj: idProjectile, start: idEventArg<*>?, dir: idEventArg<*>?, push: idEventArg<*>? ->
+                        obj.Event_LaunchProjectile(
+                            start as idEventArg<idVec3>,
+                            dir as idEventArg<idVec3>,
+                            push as idEventArg<idVec3>
+                        )
+                    }
+                eventCallbacks[EV_SetGravity] =
+                    eventCallback_t1<idProjectile> { obj: idProjectile, grav: idEventArg<*>? ->
+                        obj.Event_SetGravity(grav as idEventArg<Float>)
+                    }
             }
         }
 
@@ -252,6 +280,7 @@ object Projectile {
         protected var thrust_end: Int
         protected var thruster: idForce_Constant
         private var netSyncPhysics: Boolean
+        protected var originalTimeGroup: Int = 0  // D3XP: timeGroup at launch time
 
         override fun _deconstructor() {
             StopSound(gameSoundChannel_t.SND_CHANNEL_ANY.ordinal, false)
@@ -285,6 +314,10 @@ object Projectile {
             savefile.WriteVec3(lightColor)
             savefile.WriteParticle(smokeFly)
             savefile.WriteInt(smokeFlyTime)
+            // D3XP
+            if (isD3XP) {
+                savefile.WriteInt(originalTimeGroup)
+            }
             savefile.WriteInt(TempDump.etoi(state))
             savefile.WriteFloat(damagePower)
             savefile.WriteStaticObject(physicsObj)
@@ -309,6 +342,10 @@ object Projectile {
             savefile.ReadVec3(lightColor)
             smokeFly = savefile.ReadParticle()
             smokeFlyTime = savefile.ReadInt()
+            // D3XP
+            if (isD3XP) {
+                originalTimeGroup = savefile.ReadInt()
+            }
             state = projectileState_t.values()[savefile.ReadInt()]
             damagePower = savefile.ReadFloat()
             savefile.ReadStaticObject(physicsObj)
@@ -323,7 +360,8 @@ object Projectile {
                     Game_local.gameLocal.time,
                     Game_local.gameLocal.random.RandomFloat(),
                     GetPhysics().GetOrigin(),
-                    GetPhysics().GetAxis()
+                    GetPhysics().GetAxis(),
+                    if (isD3XP) timeGroup else 0
                 )
             }
         }
@@ -366,6 +404,13 @@ object Projectile {
             lightEndTime = 0
             smokeFlyTime = 0
             damagePower = 1.0f
+
+            // D3XP: reset shader time offset if requested
+            if (isD3XP && spawnArgs.GetBool("reset_time_offset", "0")) {
+                renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
+                    -MS2SEC(Game_local.gameLocal.time.toFloat())
+            }
+
             UpdateVisuals()
             state = projectileState_t.CREATED
             if (spawnArgs.GetBool("net_fullphysics")) {
@@ -449,6 +494,12 @@ object Projectile {
                 clipMask = clipMask or Material.CONTENTS_PROJECTILE
             }
 
+            // D3XP: Helltime Killer projectile uses moveable clip
+            if (isD3XP && idStr.Cmp(GetEntityDefName(), "projectile_helltime_killer") == 0) {
+                contents = Material.CONTENTS_MOVEABLECLIP
+                clipMask = Material.CONTENTS_MOVEABLECLIP
+            }
+
             // don't do tracers on client, we don't know origin and direction
             if (spawnArgs.GetBool("tracers") && Game_local.gameLocal.random.RandomFloat() > 0.5f) {
                 SetModel(spawnArgs.GetString("model_tracer"))
@@ -506,6 +557,12 @@ object Projectile {
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_DIVERSITY] = f
             }
             UpdateVisuals()
+
+            // D3XP: capture timeGroup at launch
+            if (isD3XP) {
+                originalTimeGroup = timeGroup
+            }
+
             state = projectileState_t.LAUNCHED
         }
 
@@ -546,6 +603,8 @@ object Projectile {
 
             // add the particles
             if (smokeFly != null && smokeFlyTime != 0 && !IsHidden()) {
+                // D3XP: use original time group for smoke
+                val ts = if (isD3XP) SetTimeState(originalTimeGroup) else null
                 val dir = idVec3(GetPhysics().GetLinearVelocity().unaryMinus())
                 dir.Normalize()
                 if (!Game_local.gameLocal.smokeParticles!!.EmitSmoke(
@@ -553,11 +612,13 @@ object Projectile {
                         smokeFlyTime,
                         Game_local.gameLocal.random.RandomFloat(),
                         GetPhysics().GetOrigin(),
-                        dir.ToMat3()
+                        dir.ToMat3(),
+                        if (isD3XP) timeGroup else 0
                     )
                 ) {
                     smokeFlyTime = Game_local.gameLocal.time
                 }
+                ts?.close()
             }
 
             // add the light
@@ -767,6 +828,33 @@ object Projectile {
                 GetPhysics().SetAxis(normal.ToMat3())
             }
             GetPhysics().SetOrigin(collision.endpos.plus(collision.c.normal.times(2.0f)))
+
+            // D3XP: if explosion is underwater, spawn a splash particle
+            if (isD3XP) {
+                val testOrg = idVec3(GetPhysics().GetOrigin())
+                val testC = Game_local.gameLocal.clip.Contents(
+                    testOrg,
+                    null,
+                    idMat3.getMat3_identity(),
+                    Material.CONTENTS_WATER,
+                    this
+                )
+                if (testC and Material.CONTENTS_WATER != 0) {
+                    val splashArgs = idDict()
+                    splashArgs.Set("model", "sludgebulletimpact.prt")
+                    splashArgs.Set("start_off", "1")
+                    val splashEnt = Game_local.gameLocal.SpawnEntityType(Misc.idFuncEmitter.Type, splashArgs, false)
+                    if (splashEnt != null) {
+                        splashEnt.GetPhysics().SetOrigin(testOrg)
+                        splashEnt.PostEventMS(EV_Activate, 0, this)
+                        splashEnt.PostEventMS(EV_Remove, 1500)
+                    }
+                    // if this is a chaingun bullet, don't do the normal effect
+                    if (idStr.Cmp(spawnArgs.GetString("def_damage"), "damage_bullet_chaingun") == 0) {
+                        fxname = null
+                    }
+                }
+            }
 
             // default remove time
             removeTime = spawnArgs.GetInt("remove_time", "1500")
@@ -1177,6 +1265,53 @@ object Projectile {
             idThread.ReturnInt(TempDump.etoi(state))
         }
 
+        // D3XP: Used by the grabber to catch and reflect projectiles
+        fun CatchProjectile(o: idEntity, reflectName: String) {
+            if (!isD3XP) return
+            val prevowner = owner.GetEntity()
+
+            owner.oSet(o)
+            physicsObj.GetClipModel()!!.SetOwner(o)
+
+            if (this is idGuidedProjectile) {
+                this.SetEnemy(prevowner)
+            }
+
+            var s = spawnArgs.GetString("def_damage")
+            s += reflectName
+
+            val damageDef = Game_local.gameLocal.FindEntityDefDict(s, false)
+            if (damageDef != null) {
+                spawnArgs.Set("def_damage", s)
+            }
+        }
+
+        fun GetProjectileState(): Int {
+            return TempDump.etoi(state)
+        }
+
+        private fun Event_CreateProjectile(
+            owner: idEventArg<idEntity>,
+            start: idEventArg<idVec3>,
+            dir: idEventArg<idVec3>
+        ) {
+            Create(owner.value, start.value, dir.value)
+        }
+
+        private fun Event_LaunchProjectile(
+            start: idEventArg<idVec3>,
+            dir: idEventArg<idVec3>,
+            pushVelocity: idEventArg<idVec3>
+        ) {
+            Launch(start.value, dir.value, pushVelocity.value)
+        }
+
+        private fun Event_SetGravity(gravity: idEventArg<Float>) {
+            val gravVec = idVec3(Game_local.gameLocal.GetGravity())
+            gravVec.NormalizeFast()
+            physicsObj.SetGravity(gravVec.times(gravity.value))
+        }
+
         override fun GetType(): idTypeInfo = Type
         override fun CreateInstance(): idClass = idProjectile()
 
@@ -1277,10 +1412,27 @@ object Projectile {
     open class idGuidedProjectile : idProjectile() {
         companion object {
             val Type = idTypeInfo("idGuidedProjectile", "idProjectile") { idGuidedProjectile() }
+            private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+            fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> {
+                return eventCallbacks
+            }
+
+            init {
+                eventCallbacks.putAll(idProjectile.getEventCallBacks())
+                // D3XP
+                eventCallbacks[EV_SetEnemy] =
+                    eventCallback_t1<idGuidedProjectile> { obj: idGuidedProjectile, ent: idEventArg<*>? ->
+                        obj.Event_SetEnemy(ent as idEventArg<idEntity?>)
+                    }
+            }
         }
 
         override fun GetType(): idTypeInfo = Type
         override fun CreateInstance(): idClass = idGuidedProjectile()
+
+        override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? {
+            return eventCallbacks[event]
+        }
 
         // CLASS_PROTOTYPE( idGuidedProjectile );
         protected val enemy: idEntityPtr<idEntity>
@@ -1455,6 +1607,15 @@ object Projectile {
             }
         }
 
+        // D3XP: allow grabber/scripts to retarget guided projectiles
+        fun SetEnemy(ent: idEntity?) {
+            enemy.oSet(ent)
+        }
+
+        private fun Event_SetEnemy(ent: idEventArg<idEntity?>) {
+            SetEnemy(ent.value)
+        }
+
         //
         //
         init {
@@ -1559,7 +1720,8 @@ object Projectile {
                                 smokeKillTime,
                                 Game_local.gameLocal.random.CRandomFloat(),
                                 orbitOrg,
-                                idMat3.getMat3_identity()
+                                idMat3.getMat3_identity(),
+                                if (isD3XP) timeGroup else 0
                             )
                         ) {
                             smokeKillTime = Game_local.gameLocal.time
@@ -1743,9 +1905,9 @@ object Projectile {
             var i: Int
             val num = CInt()
             savefile.ReadInt(num)
-            beamTargets.SetNum(num.integerValue)
+            beamTargets.SetNum(num._val)
             i = 0
-            while (i < num.integerValue) {
+            while (i < num._val) {
                 beamTargets[i].target.Restore(savefile)
                 beamTargets[i].renderEntity = savefile.ReadRenderEntity()
                 beamTargets[i].modelDefHandle = savefile.ReadInt()
@@ -1797,7 +1959,32 @@ object Projectile {
                     }
                     val player =
                         if (beamTargets[i].target.GetEntity() is idPlayer) beamTargets[i].target.GetEntity() as idPlayer? else null
-                    val org = idVec3(beamTargets[i].target.GetEntity()!!.GetPhysics().GetAbsBounds().GetCenter())
+
+                    // D3XP: Maledict boss joint targeting
+                    val org: idVec3
+                    var forceDamage = false
+                    if (isD3XP) {
+                        val beamEnt = beamTargets[i].target.GetEntity()
+                        if (beamEnt is idAnimatedEntity && idStr.Cmp(
+                                beamEnt.GetEntityDefName(),
+                                "monster_boss_d3xp_maledict"
+                            ) == 0
+                        ) {
+                            val ts = SetTimeState(beamEnt.timeGroup)
+                            val temp = idMat3()
+                            val bodyJoint = beamEnt.GetAnimator()!!.GetJointHandle("Chest1")
+                            val realPoint = idVec3()
+                            beamEnt.GetJointWorldTransform(bodyJoint, Game_local.gameLocal.time, realPoint, temp)
+                            org = realPoint
+                            forceDamage = true
+                            ts.close()
+                        } else {
+                            org = idVec3(beamEnt!!.GetPhysics().GetAbsBounds().GetCenter())
+                        }
+                    } else {
+                        org = idVec3(beamTargets[i].target.GetEntity()!!.GetPhysics().GetAbsBounds().GetCenter())
+                    }
+
                     beamTargets[i].renderEntity.origin.set(GetPhysics().GetOrigin())
                     beamTargets[i].renderEntity.shaderParms[RenderWorld.SHADERPARM_BEAM_END_X] = org.x
                     beamTargets[i].renderEntity.shaderParms[RenderWorld.SHADERPARM_BEAM_END_Y] = org.y
@@ -1811,8 +1998,8 @@ object Projectile {
                         beamTargets[i].renderEntity.shaderParms[RenderWorld.SHADERPARM_GREEN]
                     if (Game_local.gameLocal.time > nextDamageTime) {
                         var bfgVision = true
-                        if (damageFreq != null &&  /*(const char *)*/!damageFreq.IsEmpty() && beamTargets[i].target.GetEntity() != null && beamTargets[i].target.GetEntity()!!
-                                .CanDamage(GetPhysics().GetOrigin(), org)
+                        if (damageFreq != null &&  /*(const char *)*/!damageFreq.IsEmpty() && beamTargets[i].target.GetEntity() != null && (forceDamage || beamTargets[i].target.GetEntity()!!
+                                .CanDamage(GetPhysics().GetOrigin(), org))
                         ) {
                             org.set(
                                 beamTargets[i].target.GetEntity()!!.GetPhysics().GetOrigin()
@@ -1880,7 +2067,7 @@ object Projectile {
             // damage is not applied until the projectile explodes
             var ent: idEntity?
             val entityList = arrayOfNulls<idEntity>(Game_local.MAX_GENTITIES)
-            val numListedEntities: Int
+            var numListedEntities: Int
             val bounds: idBounds
             val damagePoint = idVec3()
             val radius = CFloat()
@@ -1952,6 +2139,43 @@ object Projectile {
                 bt.modelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(bt.renderEntity)
                 beamTargets.Append(bt)
             }
+
+            // D3XP: explicitly target the Maledict boss if within radius
+            if (isD3XP) {
+                val maledict = Game_local.gameLocal.FindEntity("monster_boss_d3xp_maledict_1")
+                if (maledict != null && maledict is idAnimatedEntity) {
+                    val ts = SetTimeState(maledict.timeGroup)
+                    val realPoint = idVec3()
+                    val temp2 = idMat3()
+                    val bodyJoint = maledict.GetAnimator()!!.GetJointHandle("Chest1")
+                    maledict.GetJointWorldTransform(bodyJoint, Game_local.gameLocal.time, realPoint, temp2)
+                    val dist = (realPoint.minus(GetPhysics().GetOrigin())).Length()
+                    if (dist < radius._val) {
+                        val bt = beamTarget_t()
+                        bt.renderEntity.origin.set(GetPhysics().GetOrigin())
+                        bt.renderEntity.axis.set(GetPhysics().GetAxis())
+                        bt.renderEntity.shaderParms[RenderWorld.SHADERPARM_BEAM_WIDTH] = beamWidth
+                        bt.renderEntity.shaderParms[RenderWorld.SHADERPARM_RED] = 1.0f
+                        bt.renderEntity.shaderParms[RenderWorld.SHADERPARM_GREEN] = 1.0f
+                        bt.renderEntity.shaderParms[RenderWorld.SHADERPARM_BLUE] = 1.0f
+                        bt.renderEntity.shaderParms[RenderWorld.SHADERPARM_ALPHA] = 1.0f
+                        bt.renderEntity.shaderParms[RenderWorld.SHADERPARM_DIVERSITY] =
+                            Game_local.gameLocal.random.CRandomFloat() * 0.75f
+                        bt.renderEntity.hModel = ModelManager.renderModelManager.FindModel("_beam")
+                        bt.renderEntity.callback = null
+                        bt.renderEntity.numJoints = 0
+                        bt.renderEntity.joints = null
+                        bt.renderEntity.bounds.Clear()
+                        bt.renderEntity.customSkin = DeclManager.declManager.FindSkin(skin)
+                        bt.target.oSet(maledict)
+                        bt.modelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(bt.renderEntity)
+                        beamTargets.Append(bt)
+                        numListedEntities++
+                    }
+                    ts.close()
+                }
+            }
+
             if (numListedEntities != 0) {
                 StartSound("snd_beam", gameSoundChannel_t.SND_CHANNEL_BODY2, 0, false)
             }
@@ -2141,6 +2365,10 @@ object Projectile {
             smokeFly = null
             smokeFlyTime = 0
             sndBounce = null
+            // D3XP: debris is not grabbable
+            if (isD3XP) {
+                noGrab = true
+            }
             UpdateVisuals()
         }
 
@@ -2256,7 +2484,8 @@ object Projectile {
                     smokeFlyTime,
                     Game_local.gameLocal.random.CRandomFloat(),
                     GetPhysics().GetOrigin(),
-                    GetPhysics().GetAxis()
+                    GetPhysics().GetAxis(),
+                    if (isD3XP) timeGroup else 0
                 )
             }
             val sndName = spawnArgs.GetString("snd_bounce")
@@ -2277,7 +2506,8 @@ object Projectile {
                         smokeFlyTime,
                         Game_local.gameLocal.random.CRandomFloat(),
                         GetPhysics().GetOrigin(),
-                        GetPhysics().GetAxis()
+                        GetPhysics().GetAxis(),
+                        if (isD3XP) timeGroup else 0
                     )
                 ) {
                     smokeFlyTime = 0
@@ -2314,7 +2544,8 @@ object Projectile {
                     smokeFlyTime,
                     Game_local.gameLocal.random.CRandomFloat(),
                     GetPhysics().GetOrigin(),
-                    GetPhysics().GetAxis()
+                    GetPhysics().GetAxis(),
+                    if (isD3XP) timeGroup else 0
                 )
             }
             fl.takedamage = false
@@ -2342,7 +2573,8 @@ object Projectile {
                     smokeFlyTime,
                     Game_local.gameLocal.random.CRandomFloat(),
                     GetPhysics().GetOrigin(),
-                    GetPhysics().GetAxis()
+                    GetPhysics().GetAxis(),
+                    if (isD3XP) timeGroup else 0
                 )
             }
             fl.takedamage = false

@@ -23,6 +23,7 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.idEntityPtr
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Script.EV_Thread_SetCallback
@@ -399,9 +400,10 @@ class idCameraAnim : idCamera() {
             // FIXME: it would be better to fix it so this doesn't get called during a restore
             return
         }
+        val ts = if (isD3XP) SetTimeState(timeGroup) else null
         if (frameRate == UsercmdGen.USERCMD_HZ) {
             frameTime = Game_local.gameLocal.time - starttime
-            frame = frameTime / idGameLocal.msec
+            frame = (frameTime / idGameLocal.msecPrecise).toInt()
             lerp = 0.0f
         } else {
             frameTime = (Game_local.gameLocal.time - starttime) * frameRate
@@ -423,7 +425,7 @@ class idCameraAnim : idCamera() {
         }
         if (SysCvar.g_debugCinematic.GetBool()) {
             val prevFrameTime: Int =
-                (Game_local.gameLocal.time - starttime - idGameLocal.msec) * frameRate
+                (Game_local.gameLocal.time - starttime - Game_local.gameLocal.msec) * frameRate
             var prevFrame = prevFrameTime / 1000
             var prevCut: Int
             prevCut = 0
@@ -564,7 +566,7 @@ class idCameraAnim : idCamera() {
             }
             if (frameRate == UsercmdGen.USERCMD_HZ) {
                 frameTime = Game_local.gameLocal.time - starttime
-                frame = frameTime / idGameLocal.msec
+                frame = (frameTime / idGameLocal.msecPrecise).toInt()
             } else {
                 frameTime = (Game_local.gameLocal.time - starttime) * frameRate
                 frame = frameTime / 1000

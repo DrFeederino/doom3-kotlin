@@ -24,6 +24,7 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Light.idLight
@@ -957,6 +958,12 @@ object Target {
 
      ===============================================================================
      */
+
+    // D3XP: saved GUI state for influence restore
+    class SavedGui_t {
+        val gui: Array<UserInterface.idUserInterface?> = arrayOfNulls(RenderWorld.MAX_RENDERENTITY_GUI)
+    }
+
     class idTarget_SetInfluence : idTarget() {
         companion object {
             val Type = idTypeInfo("idTarget_SetInfluence", "idTarget") { idTarget_SetInfluence() }
@@ -1001,6 +1008,7 @@ object Target {
         private var soundFaded: Boolean
         private val soundList: idList<Int>
         private var switchToCamera: idEntity?
+        private val savedGuiList: idList<SavedGui_t> = idList() // D3XP
         override fun Save(savefile: idSaveGame) {
             super.Save(savefile)
             var i: Int
@@ -1040,6 +1048,22 @@ object Target {
             savefile.WriteFloat(fovSetting.GetEndValue())
             savefile.WriteBool(soundFaded)
             savefile.WriteBool(restoreOnTrigger)
+            // D3XP
+            if (isD3XP) {
+                savefile.WriteInt(savedGuiList.Num())
+                var si = 0
+                while (si < savedGuiList.Num()) {
+                    var sj = 0
+                    while (sj < RenderWorld.MAX_RENDERENTITY_GUI) {
+                        savefile.WriteUserInterface(
+                            savedGuiList[si].gui[sj],
+                            savedGuiList[si].gui[sj]?.IsUniqued() ?: false
+                        )
+                        sj++
+                    }
+                    si++
+                }
+            }
         }
 
         override fun Restore(savefile: idRestoreGame) {
@@ -1050,30 +1074,30 @@ object Target {
             val set = CFloat()
             savefile.ReadInt(num)
             i = 0
-            while (i < num.integerValue) {
+            while (i < num._val) {
                 savefile.ReadInt(itemNum)
-                lightList.Append(itemNum.integerValue)
+                lightList.Append(itemNum._val)
                 i++
             }
             savefile.ReadInt(num)
             i = 0
-            while (i < num.integerValue) {
+            while (i < num._val) {
                 savefile.ReadInt(itemNum)
-                guiList.Append(itemNum.integerValue)
+                guiList.Append(itemNum._val)
                 i++
             }
             savefile.ReadInt(num)
             i = 0
-            while (i < num.integerValue) {
+            while (i < num._val) {
                 savefile.ReadInt(itemNum)
-                soundList.Append(itemNum.integerValue)
+                soundList.Append(itemNum._val)
                 i++
             }
             savefile.ReadInt(num)
             i = 0
-            while (i < num.integerValue) {
+            while (i < num._val) {
                 savefile.ReadInt(itemNum)
-                genericList.Append(itemNum.integerValue)
+                genericList.Append(itemNum._val)
                 i++
             }
             flashIn = savefile.ReadFloat()
@@ -1092,6 +1116,21 @@ object Target {
             fovSetting.SetEndValue(set._val)
             soundFaded = savefile.ReadBool()
             restoreOnTrigger = savefile.ReadBool()
+            // D3XP
+            if (isD3XP) {
+                savefile.ReadInt(num)
+                var ri = 0
+                while (ri < num._val) {
+                    val temp = SavedGui_t()
+                    var rj = 0
+                    while (rj < RenderWorld.MAX_RENDERENTITY_GUI) {
+                        temp.gui[rj] = savefile.ReadUserInterface()
+                        rj++
+                    }
+                    savedGuiList.Append(temp)
+                    ri++
+                }
+            }
         }
 
         override fun Spawn() {
@@ -1153,7 +1192,7 @@ object Target {
             }
             parm = spawnArgs.GetString("snd_influence")
             if (parm.isNotEmpty()) {
-                PostEventSec(EV_StartSoundShader, flashIn, parm, gameSoundChannel_t.SND_CHANNEL_ANY)
+                PostEventSec(EV_StartSoundShader, flashIn, parm, gameSoundChannel_t.SND_CHANNEL_ANY.ordinal)
             }
             if (switchToCamera != null) {
                 switchToCamera!!.PostEventSec(EV_Activate, flashIn + 0.05f, this)
@@ -1231,6 +1270,10 @@ object Target {
                     if (ent.GetRenderEntity()!!.gui[j] != null
                         && ent.spawnArgs.FindKey(if (j == 0) "gui_demonic" else Str.va("gui_demonic%d", j + 1)) != null
                     ) {
+                        // D3XP: backup the old gui before replacing
+                        if (isD3XP) {
+                            savedGuiList[i].gui[j] = ent.GetRenderEntity()!!.gui[j]
+                        }
                         ent.GetRenderEntity()!!.gui[j] = UserInterface.uiManager.FindGui(
                             ent.spawnArgs.GetString(
                                 if (j == 0) "gui_demonic" else Str.va(
@@ -1338,14 +1381,19 @@ object Target {
                 j = 0
                 while (j < RenderWorld.MAX_RENDERENTITY_GUI) {
                     if (ent.GetRenderEntity()!!.gui[j] != null) {
-                        ent.GetRenderEntity()!!.gui[j] = UserInterface.uiManager.FindGui(
-                            ent.spawnArgs.GetString(
-                                if (j == 0) "gui" else Str.va(
-                                    "gui%d",
-                                    j + 1
+                        if (isD3XP) {
+                            // D3XP: restore from saved gui backup
+                            ent.GetRenderEntity()!!.gui[j] = savedGuiList[i].gui[j]
+                        } else {
+                            ent.GetRenderEntity()!!.gui[j] = UserInterface.uiManager.FindGui(
+                                ent.spawnArgs.GetString(
+                                    if (j == 0) "gui" else Str.va(
+                                        "gui%d",
+                                        j + 1
+                                    )
                                 )
-                            )
-                        )!!
+                            )!!
+                        }
                         update = true
                     }
                     j++
@@ -1382,6 +1430,7 @@ object Target {
             lightList.Clear()
             guiList.Clear()
             soundList.Clear()
+            if (isD3XP) savedGuiList.Clear() // D3XP
 
             if (spawnArgs.GetBool("effect_all")) {
                 vision = true
@@ -1425,6 +1474,7 @@ object Target {
                         ) != null
                     ) {
                         guiList.Append(ent.entityNumber)
+                        if (isD3XP) savedGuiList.Append(SavedGui_t()) // D3XP
                         i++
                         continue
                     }

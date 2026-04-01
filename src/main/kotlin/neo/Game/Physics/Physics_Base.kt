@@ -120,7 +120,7 @@ class Physics_Base {
             savefile.ReadVec3(gravityVector)
             savefile.ReadVec3(gravityNormal)
             savefile.ReadInt(num)
-            contacts.SetNum(num.integerValue)
+            contacts.SetNum(num._val)
             i = 0
             while (i < contacts.Num()) {
                 contacts[i] = contactInfo_t()
@@ -128,7 +128,7 @@ class Physics_Base {
                 i++
             }
             savefile.ReadInt(num)
-            contactEntities.SetNum(num.integerValue)
+            contactEntities.SetNum(num._val)
             i = 0
             while (i < contactEntities.Num()) {
                 contactEntities[i] = contactEntity_t()

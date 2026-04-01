@@ -114,7 +114,7 @@ object Physics_RigidBody {
         savefile.ReadMat3(state.i.orientation)
         savefile.ReadVec3(state.i.linearMomentum)
         savefile.ReadVec3(state.i.angularMomentum)
-        state.atRest = atRest.integerValue
+        state.atRest = atRest._val
         state.lastTimeStep = lastTimeStep._val
     }
 
@@ -702,7 +702,7 @@ object Physics_RigidBody {
                 timer_total.Stop()
                 if (SysCvar.rb_showTimings.GetInteger() == 1) {
                     Game_local.gameLocal.Printf(
-                        "%12s: t %1.4f cd %1.4f\n",
+                        "%12s: t %d cd %d\n",
                         self!!.name,
                         timer_total.Milliseconds(),
                         timer_collision.Milliseconds()
@@ -712,7 +712,7 @@ object Physics_RigidBody {
                     numRigidBodies++
                     if (endTimeMSec > lastTimerReset) {
                         Game_local.gameLocal.Printf(
-                            "rb %d: t %1.4f cd %1.4f\n",
+                            "rb %d: t %d cd %d\n",
                             numRigidBodies,
                             timer_total.Milliseconds(),
                             timer_collision.Milliseconds()
