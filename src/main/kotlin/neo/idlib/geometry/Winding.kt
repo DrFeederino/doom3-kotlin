@@ -223,6 +223,11 @@ object Winding {
             var b: idWinding
             val maxpts: Int
 
+            // DG: unlikely, but makes sure we don't use uninitialized memory below
+            if (numPoints == 0) {
+                return 0
+            }
+
             dists = FloatArray(numPoints + 4)
             sides = IntArray(numPoints + 4)
             counts[2] = 0
@@ -363,6 +368,11 @@ object Winding {
             val p2 = idVec5()
             val mid = idVec5()
             val maxpts: Int
+
+            // DG: this shouldn't happen, probably, but if it does we'd use uninitialized memory below
+            if (numPoints == 0) {
+                return null
+            }
 
             dists = FloatArray(numPoints + 4)
             sides = IntArray(numPoints + 4)
@@ -632,11 +642,13 @@ object Winding {
             var j: Int
             val edgeNormal = idVec3()
             var dist: Float
-            if (numPoints <= 3) {
-                return
-            }
             i = 0
             while (i < numPoints) {
+                // from TDM: don't remove any points when there are only 3 or less left to avoid
+                // degenerating the winding, otherwise this may result in windings with numPoints = 0
+                if (numPoints <= 3) {
+                    return
+                }
                 // create plane through edge orthogonal to winding plane
                 edgeNormal.set((p[i].ToVec3() - p[(i + numPoints - 1) % numPoints].ToVec3()).Cross(normal))
                 edgeNormal.Normalize()

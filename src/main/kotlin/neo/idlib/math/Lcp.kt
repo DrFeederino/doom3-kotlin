@@ -326,30 +326,30 @@ class idLCP_Square : idLCP() {
                 ChangeAccel(i, maxStep._val)
 
                 // clamp/unclamp the variable that limited this step
-                side[limit.integerValue] = limitSide.integerValue
-                when (limitSide.integerValue) {
+                side[limit._val] = limitSide._val
+                when (limitSide._val) {
                     0 -> {
-                        a.p[limit.integerValue] = 0.0f
-                        AddClamped(limit.integerValue)
+                        a.p[limit._val] = 0.0f
+                        AddClamped(limit._val)
                     }
 
                     -1 -> {
-                        f.p[limit.integerValue] = lo.p[limit.integerValue]
-                        if (limit.integerValue != i) {
-                            RemoveClamped(limit.integerValue)
+                        f.p[limit._val] = lo.p[limit._val]
+                        if (limit._val != i) {
+                            RemoveClamped(limit._val)
                         }
                     }
 
                     1 -> {
-                        f.p[limit.integerValue] = hi.p[limit.integerValue]
-                        if (limit.integerValue != i) {
-                            RemoveClamped(limit.integerValue)
+                        f.p[limit._val] = hi.p[limit._val]
+                        if (limit._val != i) {
+                            RemoveClamped(limit._val)
                         }
                     }
                 }
 
                 // if the current variable limited the step we can continue with the next variable
-                if (limit.integerValue == i) {
+                if (limit._val == i) {
                     break
                 }
                 n++
@@ -771,8 +771,8 @@ class idLCP_Square : idLCP() {
         } else {
             maxStep._val = 0.0f
         }
-        limit.integerValue = (d)
-        limitSide.integerValue = (0)
+        limit._val = (d)
+        limitSide._val = (0)
 
         // test the current variable
         if (dir < 0.0f) {
@@ -780,7 +780,7 @@ class idLCP_Square : idLCP() {
                 s = (lo.p[d] - f.p[d]) / dir
                 if (s < maxStep._val) {
                     maxStep._val = (s)
-                    limitSide.integerValue = (-1)
+                    limitSide._val = (-1)
                 }
             }
         } else {
@@ -788,7 +788,7 @@ class idLCP_Square : idLCP() {
                 s = (hi.p[d] - f.p[d]) / dir
                 if (s < maxStep._val) {
                     maxStep._val = (s)
-                    limitSide.integerValue = (1)
+                    limitSide._val = (1)
                 }
             }
         }
@@ -802,8 +802,8 @@ class idLCP_Square : idLCP() {
                     s = (lo.p[i] - f.p[i]) / delta_f.p[i]
                     if (s < maxStep._val) {
                         maxStep._val = (s)
-                        limit.integerValue = (i)
-                        limitSide.integerValue = (-1)
+                        limit._val = (i)
+                        limitSide._val = (-1)
                     }
                 }
             } else if (delta_f.p[i] > LCP_DELTA_FORCE_EPSILON) {
@@ -812,8 +812,8 @@ class idLCP_Square : idLCP() {
                     s = (hi.p[i] - f.p[i]) / delta_f.p[i]
                     if (s < maxStep._val) {
                         maxStep._val = (s)
-                        limit.integerValue = (i)
-                        limitSide.integerValue = (1)
+                        limit._val = (i)
+                        limitSide._val = (1)
                     }
                 }
             }
@@ -845,8 +845,8 @@ class idLCP_Square : idLCP() {
             s = -a.p[i] / delta_a.p[i]
             if (s < maxStep._val) {
                 maxStep._val = (s)
-                limit.integerValue = (i)
-                limitSide.integerValue = (0)
+                limit._val = (i)
+                limitSide._val = (0)
             }
             i++
         }
@@ -1116,30 +1116,30 @@ class idLCP_Symmetric : idLCP() {
                 ChangeAccel(i, maxStep._val)
 
                 // clamp/unclamp the variable that limited this step
-                side[limit.integerValue] = limitSide.integerValue
-                when (limitSide.integerValue) {
+                side[limit._val] = limitSide._val
+                when (limitSide._val) {
                     0 -> {
-                        a.p[limit.integerValue] = 0.0f
-                        AddClamped(limit.integerValue, limit.integerValue == i)
+                        a.p[limit._val] = 0.0f
+                        AddClamped(limit._val, limit._val == i)
                     }
 
                     -1 -> {
-                        f.p[limit.integerValue] = lo.p[limit.integerValue]
-                        if (limit.integerValue != i) {
-                            RemoveClamped(limit.integerValue)
+                        f.p[limit._val] = lo.p[limit._val]
+                        if (limit._val != i) {
+                            RemoveClamped(limit._val)
                         }
                     }
 
                     1 -> {
-                        f.p[limit.integerValue] = hi.p[limit.integerValue]
-                        if (limit.integerValue != i) {
-                            RemoveClamped(limit.integerValue)
+                        f.p[limit._val] = hi.p[limit._val]
+                        if (limit._val != i) {
+                            RemoveClamped(limit._val)
                         }
                     }
                 }
 
                 // if the current variable limited the step we can continue with the next variable
-                if (limit.integerValue == i) {
+                if (limit._val == i) {
                     break
                 }
                 n++
@@ -1584,8 +1584,8 @@ class idLCP_Symmetric : idLCP() {
         } else {
             maxStep._val = 0.0f
         }
-        limit.integerValue = d
-        limitSide.integerValue = 0
+        limit._val = d
+        limitSide._val = 0
 
         // test the current variable
         if (dir < 0.0f) {
@@ -1593,7 +1593,7 @@ class idLCP_Symmetric : idLCP() {
                 s = (lo.p[d] - f.p[d]) / dir
                 if (s < maxStep._val) {
                     maxStep._val = (s)
-                    limitSide.integerValue = (-1)
+                    limitSide._val = (-1)
                 }
             }
         } else {
@@ -1601,7 +1601,7 @@ class idLCP_Symmetric : idLCP() {
                 s = (hi.p[d] - f.p[d]) / dir
                 if (s < maxStep._val) {
                     maxStep._val = (s)
-                    limitSide.integerValue = (1)
+                    limitSide._val = (1)
                 }
             }
         }
@@ -1615,8 +1615,8 @@ class idLCP_Symmetric : idLCP() {
                     s = (lo.p[i] - f.p[i]) / delta_f.p[i]
                     if (s < maxStep._val) {
                         maxStep._val = (s)
-                        limit.integerValue = (i)
-                        limitSide.integerValue = (-1)
+                        limit._val = (i)
+                        limitSide._val = (-1)
                     }
                 }
             } else if (delta_f.p[i] > LCP_DELTA_FORCE_EPSILON) {
@@ -1625,8 +1625,8 @@ class idLCP_Symmetric : idLCP() {
                     s = (hi.p[i] - f.p[i]) / delta_f.p[i]
                     if (s < maxStep._val) {
                         maxStep._val = s
-                        limit.integerValue = i
-                        limitSide.integerValue = 1
+                        limit._val = i
+                        limitSide._val = 1
                     }
                 }
             }
@@ -1658,8 +1658,8 @@ class idLCP_Symmetric : idLCP() {
             s = -a.p[i] / delta_a.p[i]
             if (s < maxStep._val) {
                 maxStep._val = (s)
-                limit.integerValue = (i)
-                limitSide.integerValue = (0)
+                limit._val = (i)
+                limitSide._val = (0)
             }
             i++
         }

@@ -122,16 +122,16 @@ class Timer {
             assert(timers.Num() == names.size())
             idLib.common.Printf("Timing Report for %s\n", reportName)
             idLib.common.Printf("-------------------------------\n")
-            var total = 0.0f
+            var total: Long = 0
             for (i in 0 until names.size()) {
-                idLib.common.Printf("%s consumed %5.2f seconds\n", names[i], timers[i].Milliseconds() * 0.001f)
-                total += timers[i].Milliseconds().toFloat()
+                idLib.common.Printf("%s consumed %5.2f seconds\n", names[i], 0.001f * timers[i].Milliseconds())
+                total += timers[i].Milliseconds()
             }
             idLib.common.Printf(
                 "Total time for report %s was %5.2f\n\n",
                 reportName,
-                total * 0.001f
-            ) //TODO:char[] OR string
+                0.001f * total
+            )
         }
 
         fun AddTime(name: String, time: idTimer) {

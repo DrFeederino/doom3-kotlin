@@ -28,6 +28,7 @@ class LangDict {
         val args: idList<idLangKeyValue> = idList()
         private var baseID: Int
         private val hash: idHashIndex = idHashIndex()
+        private var warnedAboutInvalidKey: Boolean = false
 
         fun Clear() {
             args.Clear()
@@ -66,11 +67,11 @@ class LangDict {
                     val kv = idLangKeyValue()
                     kv.key.set(tok)
                     kv.value.set(tok2)
-                    assert(kv.key.Cmpn(Common.STRTABLE_ID, Common.STRTABLE_ID_LENGTH) == 0)
-                    //                    if (tok.equals("#str_07184")) {
-//                        tok2.oSet("006");
-//                    }
-                    hash.Add(GetHashKey(kv.key), args.Append(kv))
+                    // DG: D3LE has #font_ entries in english.lang, not supported here, just skip them
+                    if (kv.key.Cmpn("#font_", 6) != 0) {
+                        assert(kv.key.Cmpn(Common.STRTABLE_ID, Common.STRTABLE_ID_LENGTH) == 0)
+                        hash.Add(GetHashKey(kv.key), args.Append(kv))
+                    }
                 }
             }
             idLib.common.Printf("%d strings read from %s\n", args.Num(), fileName)
@@ -233,10 +234,19 @@ class LangDict {
             var hashKey = 0
             var i: Int
             var c: Char
+            // DG: Replace assertion for invalid entries with a warning shown only once
+            val strbk = str
             i = Common.STRTABLE_ID_LENGTH
             while (i < str.length) {
                 c = str[i]
-                assert(Character.isDigit(c))
+                if (!warnedAboutInvalidKey && !Character.isDigit(c)) {
+                    idLib.common.Warning(
+                        "We have at least one invalid key in a language dict: %s\n" +
+                                " (might still work, but Doom3 really wants #str_01234, i.e. only a number after '#str_')\n",
+                        strbk
+                    )
+                    warnedAboutInvalidKey = true
+                }
                 hashKey = hashKey * 10 + c.code - '0'.code
                 i++
             }

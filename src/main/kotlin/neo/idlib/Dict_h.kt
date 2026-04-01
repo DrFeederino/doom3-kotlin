@@ -516,7 +516,7 @@ class Dict_h {
             val s = arrayOfNulls<String>(1)
             val found: Boolean
             found = GetString(key, defaultString, s)
-            out.integerValue = (TempDump.atoi(s[0]!!))
+            out._val = (TempDump.atoi(s[0]!!))
             return found
         }
 
@@ -773,8 +773,8 @@ class Dict_h {
 
 //            f.Read(c, sizeof(c));
             f.ReadInt(c)
-            c.integerValue = (LittleLong(c.integerValue))
-            for (i in 0 until c.integerValue) {
+            c._val = (LittleLong(c._val))
+            for (i in 0 until c._val) {
                 key = ReadString(f)
                 `val` = ReadString(f)
                 Set(key, `val`)

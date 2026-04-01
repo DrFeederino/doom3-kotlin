@@ -134,7 +134,10 @@ object Winding2D {
                 planes[numPlanes++].set(plane)
                 i++
             }
-            assert(numPlanes != 0)
+            // DG: make sure planes[] isn't used uninitialized and with index -1 below
+            if (numPlanes == 0) {
+                return
+            }
             if (GetAxialBevel(planes[numPlanes - 1], planes[0], p[0], bevel)) {
                 planes[numPlanes++].set(bevel)
             }
@@ -301,6 +304,12 @@ object Winding2D {
             val p2 = idVec2()
             val mid = idVec2()
             val newPoints = idVec2.generateArray(MAX_POINTS_ON_WINDING_2D + 4)
+
+            // DG: avoid all kinds of uninitialized usages below
+            if (numPoints == 0) {
+                return false
+            }
+
             counts[SIDE_ON] = 0
             counts[SIDE_BACK] = counts[SIDE_ON]
             counts[SIDE_FRONT] = counts[SIDE_BACK]

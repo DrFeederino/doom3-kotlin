@@ -145,8 +145,8 @@ object BitMsg {
 
         // save the write state
         fun SaveWriteState(s: CInt, b: CInt) {
-            s.integerValue = curSize
-            b.integerValue = writeBit
+            s._val = curSize
+            b._val = writeBit
         }
 
         // restore the write state
@@ -192,8 +192,8 @@ object BitMsg {
 
         // save the read state
         fun SaveReadState(c: CInt, b: CInt) {
-            c.integerValue = readCount
-            b.integerValue = readBit
+            c._val = readCount
+            b._val = readBit
         }
 
         // restore the read state
@@ -905,7 +905,7 @@ object BitMsg {
 
         //public					~idBitMsgDelta() {}
         //
-        fun Init(base: idBitMsg, newBase: idBitMsg, delta: idBitMsg) {
+        fun Init(base: idBitMsg?, newBase: idBitMsg?, delta: idBitMsg?) {
             this.base = base
             this.newBase = newBase
             writeDelta = delta
@@ -913,7 +913,7 @@ object BitMsg {
             changed = false
         }
 
-        fun InitReadOnly(base: idBitMsg, newBase: idBitMsg, delta: idBitMsg) {
+        fun InitReadOnly(base: idBitMsg?, newBase: idBitMsg?, delta: idBitMsg?) {
             this.base = base
             this.newBase = newBase
             writeDelta = null

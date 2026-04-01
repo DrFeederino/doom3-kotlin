@@ -676,8 +676,9 @@ class idMatX {
             return false
         }
         var ptr1 = 0
-        var i = 0
-        while (i < numRows) {
+        for (i in 0 until numRows) {
+            var colVecSum = 0.0f
+            var colVecPtr = i // row 0 col i - numRows == numColumns because IsSquare()
             for (j in 0 until numColumns) {
                 ptr2 = j
                 sum = mat[ptr1] * mat[ptr2] - if (i == j) 1 else 0
@@ -688,20 +689,16 @@ class idMatX {
                 if (abs(sum) > epsilon) {
                     return false
                 }
+                // row j, col i - this works because numRows == numColumns
+                colVecSum += mat[colVecPtr] * mat[colVecPtr]
+                colVecPtr += numColumns // next row, same column
             }
             ptr1 += numColumns
-            ptr2 = i
-            sum = mat[ptr2] * mat[ptr2] - 1.0f
-            i = 1
-            while (i < numRows) {
-                ptr2 += numColumns
-                sum += mat[ptr2 + i] * mat[ptr2 + i]
-                i++
-            }
-            if (abs(sum) > epsilon) {
+
+            // check that length of column vector i is 1 (no need for sqrt because sqrt(1)==1)
+            if (abs(colVecSum - 1.0f) > epsilon) {
                 return false
             }
-            i++
         }
         return true
     }

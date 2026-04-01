@@ -858,11 +858,14 @@ object Surface {
             }
             i = 0
             while (i < indexes.Num()) {
-                plane.FromPoints(
+                if (!plane.FromPoints(
                     verts[indexes[i + 0]].xyz,
                     verts[indexes[i + 1]].xyz,
                     verts[indexes[i + 2]].xyz
-                )
+                    )
+                ) {
+                    return false
+                }
                 j = 0
                 while (j < verts.Num()) {
                     if (plane.Side(verts[j].xyz, epsilon) == SIDE_FRONT) {
@@ -992,21 +995,27 @@ object Surface {
                 s1 = sidedness[abs(i1)] xor INTSIGNBITSET(i1)
                 s2 = sidedness[abs(i2)] xor INTSIGNBITSET(i2)
                 if (s0 and s1 and s2 != 0) {
-                    plane.FromPoints(
+                    if (!plane.FromPoints(
                         verts[indexes[i + 0]].xyz,
                         verts[indexes[i + 1]].xyz,
                         verts[indexes[i + 2]].xyz
-                    )
+                        )
+                    ) {
+                        return false
+                    }
                     plane.RayIntersection(start, dir, s)
                     if (abs(s._val) < abs(scale._val)) {
                         scale._val = s._val
                     }
                 } else if (!backFaceCull && s0 or s1 or s2 == 0) {
-                    plane.FromPoints(
+                    if (!plane.FromPoints(
                         verts[indexes[i + 0]].xyz,
                         verts[indexes[i + 1]].xyz,
                         verts[indexes[i + 2]].xyz
-                    )
+                        )
+                    ) {
+                        return false
+                    }
                     plane.RayIntersection(start, dir, s)
                     if (abs(s._val) < abs(scale._val)) {
                         scale._val = s._val

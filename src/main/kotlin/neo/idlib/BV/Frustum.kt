@@ -1168,8 +1168,8 @@ object Frustum {
                     pointCull[p2],
                     projectionBounds
                 )
-                culled = culled and (pointCull[p1].integerValue and pointCull[p2].integerValue)
-                outside = outside or (pointCull[p1].integerValue or pointCull[p2].integerValue)
+                culled = culled and (pointCull[p1]._val and pointCull[p2]._val)
+                outside = outside or (pointCull[p1]._val or pointCull[p2]._val)
                 i++
             }
 
@@ -1191,8 +1191,8 @@ object Frustum {
                 AddLocalLineToProjectionBoundsUseCull(
                     points[p1],
                     points[p2],
-                    pointCull[p1].integerValue,
-                    pointCull[p2].integerValue,
+                    pointCull[p1]._val,
+                    pointCull[p2]._val,
                     projectionBounds
                 )
                 i++
@@ -1204,8 +1204,8 @@ object Frustum {
                 AddLocalLineToProjectionBoundsUseCull(
                     points[p1],
                     points[p2],
-                    pointCull[p1].integerValue,
-                    pointCull[p2].integerValue,
+                    pointCull[p1]._val,
+                    pointCull[p2]._val,
                     projectionBounds
                 )
                 i++
@@ -1365,8 +1365,8 @@ object Frustum {
                     pointCull[p2],
                     projectionBounds
                 )
-                culled = culled and (pointCull[p1].integerValue and pointCull[p2].integerValue)
-                outside = outside or (pointCull[p1].integerValue or pointCull[p2].integerValue)
+                culled = culled and (pointCull[p1]._val and pointCull[p2]._val)
+                outside = outside or (pointCull[p1]._val or pointCull[p2]._val)
                 i++
             }
 
@@ -1389,8 +1389,8 @@ object Frustum {
                     AddLocalLineToProjectionBoundsUseCull(
                         points[p1],
                         points[p2],
-                        pointCull[p1].integerValue,
-                        pointCull[p2].integerValue,
+                        pointCull[p1]._val,
+                        pointCull[p2]._val,
                         projectionBounds
                     )
                     i++
@@ -1403,8 +1403,8 @@ object Frustum {
                 AddLocalLineToProjectionBoundsUseCull(
                     points[p1],
                     points[p2],
-                    pointCull[p1].integerValue,
-                    pointCull[p2].integerValue,
+                    pointCull[p1]._val,
+                    pointCull[p2]._val,
                     projectionBounds
                 )
                 i++
@@ -1508,8 +1508,8 @@ object Frustum {
                     pointCull[p2],
                     projectionBounds
                 )
-                culled = culled and (pointCull[p1].integerValue and pointCull[p2].integerValue)
-                outside = outside or (pointCull[p1].integerValue or pointCull[p2].integerValue)
+                culled = culled and (pointCull[p1]._val and pointCull[p2]._val)
+                outside = outside or (pointCull[p1]._val or pointCull[p2]._val)
                 i += 2
             }
 
@@ -1531,8 +1531,8 @@ object Frustum {
                 AddLocalLineToProjectionBoundsUseCull(
                     localPoints[p1],
                     localPoints[p2],
-                    pointCull[p1].integerValue,
-                    pointCull[p2].integerValue,
+                    pointCull[p1]._val,
+                    pointCull[p2]._val,
                     projectionBounds
                 )
                 i += 2
@@ -1630,7 +1630,7 @@ object Frustum {
             // clip the outer edges of the given frustum to the clip bounds
             frustum.ClipFrustumToBox(clipBox, clipFractions, clipPlanes)
             usedClipPlanes =
-                clipPlanes[0].integerValue or clipPlanes[1].integerValue or clipPlanes[2].integerValue or clipPlanes[3].integerValue
+                clipPlanes[0]._val or clipPlanes[1]._val or clipPlanes[2]._val or clipPlanes[3]._val
 
             // transform the clipped frustum to the space of this frustum
             transpose.set(axis)
@@ -1654,19 +1654,19 @@ object Frustum {
                     clipPointCull_p2,
                     projectionBounds
                 )
-                clipPointCull[p1].integerValue = (clipPointCull_p1.integerValue)
-                clipPointCull[p2].integerValue = (clipPointCull_p2.integerValue)
+                clipPointCull[p1]._val = (clipPointCull_p1._val)
+                clipPointCull[p2]._val = (clipPointCull_p2._val)
                 i++
             }
 
             // get cull bits for the clipped frustum
             outside =
-                (clipPointCull[0].integerValue or clipPointCull[1].integerValue or clipPointCull[2].integerValue or clipPointCull[3].integerValue
-                        or clipPointCull[4].integerValue or clipPointCull[5].integerValue or clipPointCull[6].integerValue or clipPointCull[7].integerValue)
+                (clipPointCull[0]._val or clipPointCull[1]._val or clipPointCull[2]._val or clipPointCull[3]._val
+                        or clipPointCull[4]._val or clipPointCull[5]._val or clipPointCull[6]._val or clipPointCull[7]._val)
             nearCull =
-                clipPointCull[0].integerValue and clipPointCull[1].integerValue and clipPointCull[2].integerValue and clipPointCull[3].integerValue
+                clipPointCull[0]._val and clipPointCull[1]._val and clipPointCull[2]._val and clipPointCull[3]._val
             farCull =
-                clipPointCull[4].integerValue and clipPointCull[5].integerValue and clipPointCull[6].integerValue and clipPointCull[7].integerValue
+                clipPointCull[4]._val and clipPointCull[5]._val and clipPointCull[6]._val and clipPointCull[7]._val
 
             // if the clipped frustum is not completely inside this frustum
             if (outside != 0) {
@@ -1680,8 +1680,8 @@ object Frustum {
                         AddLocalLineToProjectionBoundsUseCull(
                             clipPoints[p1],
                             clipPoints[p2],
-                            clipPointCull[p1].integerValue,
-                            clipPointCull[p2].integerValue,
+                            clipPointCull[p1]._val,
+                            clipPointCull[p2]._val,
                             projectionBounds
                         )
                         i++
@@ -1695,8 +1695,8 @@ object Frustum {
                         AddLocalLineToProjectionBoundsUseCull(
                             clipPoints[p1],
                             clipPoints[p2],
-                            clipPointCull[p1].integerValue,
-                            clipPointCull[p2].integerValue,
+                            clipPointCull[p1]._val,
+                            clipPointCull[p2]._val,
                             projectionBounds
                         )
                         i++
@@ -1724,14 +1724,14 @@ object Frustum {
                 while (i < 8) {
                     val p = localPoints1[i]
                     if (0 == boxVertPlanes[i] and usedClipPlanes || p.x <= 0.0f) {
-                        boxPointCull[i].integerValue = (1 or 2 or 4 or 8)
+                        boxPointCull[i]._val = (1 or 2 or 4 or 8)
                     } else {
-                        boxPointCull[i].integerValue = (0)
+                        boxPointCull[i]._val = (0)
                         if (abs(p.y) > p.x * leftScale) {
-                            boxPointCull[i].integerValue = (boxPointCull[i].integerValue or 1 shl FLOATSIGNBITSET(p.y))
+                            boxPointCull[i]._val = (boxPointCull[i]._val or 1 shl FLOATSIGNBITSET(p.y))
                         }
                         if (abs(p.z) > p.x * upScale) {
-                            boxPointCull[i].integerValue = (boxPointCull[i].integerValue or 4 shl FLOATSIGNBITSET(p.z))
+                            boxPointCull[i]._val = (boxPointCull[i]._val or 4 shl FLOATSIGNBITSET(p.z))
                         }
                     }
                     i++
@@ -1749,7 +1749,7 @@ object Frustum {
                 while (i < 4) {
                     p1 = i
                     p2 = 4 + i
-                    if (0 == boxPointCull[p1].integerValue and boxPointCull[p2].integerValue) {
+                    if (0 == boxPointCull[p1]._val and boxPointCull[p2]._val) {
                         if (frustum.ClipLine(localPoints1, localPoints2, p1, p2, start, end, startClip, endClip)) {
                             AddLocalLineToProjectionBoundsSetCull(start, end, pointCull[1], projectionBounds)
                             AddLocalCapsToProjectionBounds(
@@ -1758,8 +1758,8 @@ object Frustum {
                                 clipPointCull,
                                 4,
                                 start,
-                                pointCull[0].integerValue,
-                                startClip.integerValue,
+                                pointCull[0]._val,
+                                startClip._val,
                                 projectionBounds
                             )
                             AddLocalCapsToProjectionBounds(
@@ -1768,11 +1768,11 @@ object Frustum {
                                 clipPointCull,
                                 4,
                                 end,
-                                pointCull[1].integerValue,
-                                endClip.integerValue,
+                                pointCull[1]._val,
+                                endClip._val,
                                 projectionBounds
                             )
-                            outside = outside or (pointCull[0].integerValue or pointCull[1].integerValue)
+                            outside = outside or (pointCull[0]._val or pointCull[1]._val)
                         }
                     }
                     i++
@@ -1781,7 +1781,7 @@ object Frustum {
                 while (i < 4) {
                     p1 = i
                     p2 = i + 1 and 3
-                    if (0 == boxPointCull[p1].integerValue and boxPointCull[p2].integerValue) {
+                    if (0 == boxPointCull[p1]._val and boxPointCull[p2]._val) {
                         if (frustum.ClipLine(localPoints1, localPoints2, p1, p2, start, end, startClip, endClip)) {
                             AddLocalLineToProjectionBoundsSetCull(start, end, pointCull[1], projectionBounds)
                             AddLocalCapsToProjectionBounds(
@@ -1790,8 +1790,8 @@ object Frustum {
                                 clipPointCull,
                                 4,
                                 start,
-                                pointCull[0].integerValue,
-                                startClip.integerValue,
+                                pointCull[0]._val,
+                                startClip._val,
                                 projectionBounds
                             )
                             AddLocalCapsToProjectionBounds(
@@ -1800,11 +1800,11 @@ object Frustum {
                                 clipPointCull,
                                 4,
                                 end,
-                                pointCull[1].integerValue,
-                                endClip.integerValue,
+                                pointCull[1]._val,
+                                endClip._val,
                                 projectionBounds
                             )
-                            outside = outside or (pointCull[0].integerValue or pointCull[1].integerValue)
+                            outside = outside or (pointCull[0]._val or pointCull[1]._val)
                         }
                     }
                     i++
@@ -1813,7 +1813,7 @@ object Frustum {
                 while (i < 4) {
                     p1 = 4 + i
                     p2 = 4 + (i + 1 and 3)
-                    if (0 == boxPointCull[p1].integerValue and boxPointCull[p2].integerValue) {
+                    if (0 == boxPointCull[p1]._val and boxPointCull[p2]._val) {
                         if (frustum.ClipLine(localPoints1, localPoints2, p1, p2, start, end, startClip, endClip)) {
                             AddLocalLineToProjectionBoundsSetCull(start, end, pointCull[1], projectionBounds)
                             AddLocalCapsToProjectionBounds(
@@ -1822,8 +1822,8 @@ object Frustum {
                                 clipPointCull,
                                 4,
                                 start,
-                                pointCull[0].integerValue,
-                                startClip.integerValue,
+                                pointCull[0]._val,
+                                startClip._val,
                                 projectionBounds
                             )
                             AddLocalCapsToProjectionBounds(
@@ -1832,11 +1832,11 @@ object Frustum {
                                 clipPointCull,
                                 4,
                                 end,
-                                pointCull[1].integerValue,
-                                endClip.integerValue,
+                                pointCull[1]._val,
+                                endClip._val,
                                 projectionBounds
                             )
-                            outside = outside or (pointCull[0].integerValue or pointCull[1].integerValue)
+                            outside = outside or (pointCull[0]._val or pointCull[1]._val)
                         }
                     }
                     i++
@@ -2652,7 +2652,7 @@ object Frustum {
         ) {
             val cull2 = CInt()
             AddLocalLineToProjectionBoundsSetCull(start, end, cull, cull2, bounds)
-            cull.integerValue = (cull2.integerValue)
+            cull._val = (cull2._val)
         }
 
         private fun AddLocalLineToProjectionBoundsSetCull(
@@ -2793,8 +2793,8 @@ object Frustum {
             if (end.x < bounds[0].x) {
                 bounds[0].x = if (end.x < 0.0f) 0.0f else end.x
             }
-            startCull.integerValue = (cull1)
-            endCull.integerValue = (cull2)
+            startCull._val = (cull1)
+            endCull._val = (cull2)
         }
 
         private fun AddLocalLineToProjectionBoundsUseCull(
@@ -2938,14 +2938,14 @@ object Frustum {
             AddLocalLineToProjectionBoundsUseCull(
                 endPoints[endPointsOffset + p[0]],
                 point,
-                endPointCull[endPointCullOffset + p[0]].integerValue,
+                endPointCull[endPointCullOffset + p[0]]._val,
                 pointCull,
                 projectionBounds
             )
             AddLocalLineToProjectionBoundsUseCull(
                 endPoints[endPointsOffset + p[1]],
                 point,
-                endPointCull[endPointCullOffset + p[1]].integerValue,
+                endPointCull[endPointCullOffset + p[1]]._val,
                 pointCull,
                 projectionBounds
             )
@@ -3103,18 +3103,18 @@ object Frustum {
                 index = FLOATSIGNBITNOTSET(cornerVecs[i].x)
                 f = (bounds[index].x - localOrigin.x) / cornerVecs[i].x
                 clipFractions[i]._val = (f)
-                clipPlanes[i].integerValue = (1 shl index)
+                clipPlanes[i]._val = (1 shl index)
                 index = FLOATSIGNBITNOTSET(cornerVecs[i].y)
                 f = (bounds[index].y - localOrigin.y) / cornerVecs[i].y
                 if (f < clipFractions[i]._val) {
                     clipFractions[i]._val = (f)
-                    clipPlanes[i].integerValue = (4 shl index)
+                    clipPlanes[i]._val = (4 shl index)
                 }
                 index = FLOATSIGNBITNOTSET(cornerVecs[i].z)
                 f = (bounds[index].z - localOrigin.z) / cornerVecs[i].z
                 if (f < clipFractions[i]._val) {
                     clipFractions[i]._val = (f)
-                    clipPlanes[i].integerValue = (16 shl index)
+                    clipPlanes[i]._val = (16 shl index)
                 }
 
                 // make sure the frustum is not clipped between the frustum origin and the near plane
@@ -3165,7 +3165,7 @@ object Frustum {
             localStart.set(localPoints[startIndex])
             localEnd.set(localPoints[endIndex])
             localDir.set(localEnd - localStart)
-            startClip.integerValue = (endClip.integerValue - 1)
+            startClip._val = (endClip._val - 1)
             scale1 = idMath.INFINITY
             scale2 = -idMath.INFINITY
             fstart = dFar * localStart.y
@@ -3186,11 +3186,11 @@ object Frustum {
                         if (abs(localStart.z + f * localDir.z) <= x * upScale) {
                             if (f < scale1) {
                                 scale1 = f
-                                startClip.integerValue = (0)
+                                startClip._val = (0)
                             }
                             if (f > scale2) {
                                 scale2 = f
-                                endClip.integerValue = (0)
+                                endClip._val = (0)
                             }
                         }
                     }
@@ -3210,11 +3210,11 @@ object Frustum {
                         if (abs(localStart.z + f * localDir.z) <= x * upScale) {
                             if (f < scale1) {
                                 scale1 = f
-                                startClip.integerValue = (1)
+                                startClip._val = (1)
                             }
                             if (f > scale2) {
                                 scale2 = f
-                                endClip.integerValue = (1)
+                                endClip._val = (1)
                             }
                         }
                     }
@@ -3238,11 +3238,11 @@ object Frustum {
                         if (abs(localStart.y + f * localDir.y) <= x * leftScale) {
                             if (f < scale1) {
                                 scale1 = f
-                                startClip.integerValue = (2)
+                                startClip._val = (2)
                             }
                             if (f > scale2) {
                                 scale2 = f
-                                endClip.integerValue = (2)
+                                endClip._val = (2)
                             }
                         }
                     }
@@ -3262,11 +3262,11 @@ object Frustum {
                         if (abs(localStart.y + f * localDir.y) <= x * leftScale) {
                             if (f < scale1) {
                                 scale1 = f
-                                startClip.integerValue = (3)
+                                startClip._val = (3)
                             }
                             if (f > scale2) {
                                 scale2 = f
-                                endClip.integerValue = (3)
+                                endClip._val = (3)
                             }
                         }
                     }
@@ -3281,7 +3281,7 @@ object Frustum {
             } else if (scale1 <= scale2) {
                 if (0 == startCull) {
                     start.set(points[startIndex])
-                    startClip.integerValue = (-1)
+                    startClip._val = (-1)
                 } else {
                     start.set(
                         points[startIndex] + (points[endIndex] - points[startIndex]) * scale1
@@ -3289,7 +3289,7 @@ object Frustum {
                 }
                 if (0 == endCull) {
                     end.set(points[endIndex])
-                    endClip.integerValue = (-1)
+                    endClip._val = (-1)
                 } else {
                     end.set(points[startIndex] + (points[endIndex] - points[startIndex]) * scale2)
                 }
