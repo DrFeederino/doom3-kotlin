@@ -175,11 +175,6 @@ object sound {
         // shutdown routine
         abstract fun Shutdown()
 
-        // call ClearBuffer if there is a chance that the AsyncUpdate won't get called
-        // for 20+ msec, which would cause a stuttering repeat of the current
-        // buffer contents
-        abstract fun ClearBuffer()
-
         // sound is attached to the window, and must be recreated when the window is changed
         abstract fun InitHW(): Boolean
         abstract fun ShutdownHW(): Boolean
@@ -226,7 +221,7 @@ object sound {
         // prints memory info
         abstract fun PrintMemInfo(mi: MemInfo_t)
 
-        // is EAX support present - -1: disabled at compile time, 0: no suitable hardware, 1: ok, 2: failed to load OpenAL DLL
-        abstract fun IsEAXAvailable(): Int
+        // is EFX support present - -1: disabled at compile time, 0: no suitable hardware, 1: ok, 2: failed to load OpenAL DLL
+        abstract fun IsEFXAvailable(): Int
     }
 }

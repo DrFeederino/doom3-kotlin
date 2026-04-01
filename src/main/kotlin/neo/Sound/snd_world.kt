@@ -528,7 +528,7 @@ class snd_world {
             aviDemoPath.set(path)
             aviDemoName.set(name)
             lastAVI44kHz = game44kHz - game44kHz % MIXBUFFER_SAMPLES
-            if (snd_system.soundSystemLocal.snd_audio_hw!!.GetNumberOfSpeakers() == 6) {
+            if (idSoundSystemLocal.s_numberOfSpeakers.GetInteger() == 6) {
                 fpa[0] = FileSystem_h.fileSystem.OpenFileWrite(aviDemoPath.toString() + "channel_51_left.raw")
                 fpa[1] = FileSystem_h.fileSystem.OpenFileWrite(aviDemoPath.toString() + "channel_51_right.raw")
                 fpa[2] = FileSystem_h.fileSystem.OpenFileWrite(aviDemoPath.toString() + "channel_51_center.raw")
@@ -560,7 +560,7 @@ class snd_world {
                 }
                 i++
             }
-            if (snd_system.soundSystemLocal.snd_audio_hw!!.GetNumberOfSpeakers() == 2) {
+            if (idSoundSystemLocal.s_numberOfSpeakers.GetInteger() == 2) {
                 // convert it to a wave file
                 val rL: idFile?
                 val lL: idFile?
@@ -1046,12 +1046,6 @@ class snd_world {
             enviroSuitActive = false
         }
 
-        // FIX: ClearBuffer was only used with old non-OpenAL hardware audio path.
-        // dhewm3 removed it entirely. Made no-op instead of crashing with TODO_Exception.
-        fun ClearBuffer() {
-            // no-op with OpenAL
-        }
-
         // update
         fun ForegroundUpdate(current44kHzTime: Int) {
             var current44kHzTime = current44kHzTime
@@ -1415,14 +1409,15 @@ class snd_world {
                 }
             }
 
-            // FIX: dhewm3 clamps volume to 1.0 and scales by 0.333 to prevent audio drowning
             // when many loud sounds play simultaneously. Global volume scale is applied AFTER
             // clamping so reducing s_volume doesn't cause different weapon volume issues.
             // See https://github.com/dhewm/dhewm3/issues/179
-            if (volume > 1.0f) {
-                volume = 1.0f
+            if (idSoundSystemLocal.s_scaleDownAndClamp.GetBool()) {
+                if (volume > 1.0f) {
+                    volume = 1.0f
+                }
+                volume *= 0.333f
             }
-            volume *= 0.333f
 
             // global volume scale
             volume *= snd_system.soundSystemLocal.dB2Scale(idSoundSystemLocal.s_volume.GetFloat())
@@ -1443,10 +1438,8 @@ class snd_world {
 //            float[] alignedInputSamples = (float[]) ((((int) inputSamples) + 15) & ~15);
             var alignedInputSamples = FloatArray(MIXBUFFER_SAMPLES * 2 + 16)
 
-            //
             // allocate and initialize hardware source
-            //
-            if (idSoundSystemLocal.useOpenAL && sound.removeStatus < snd_emitter.REMOVE_STATUS_SAMPLEFINISHED) {
+            if (sound.removeStatus < snd_emitter.REMOVE_STATUS_SAMPLEFINISHED) {
                 if (!AL10.alIsSource(chan.openalSource)) {
                     chan.openalSource = snd_system.soundSystemLocal.AllocOpenALSource(
                         chan,
@@ -1598,7 +1591,7 @@ class snd_world {
                         chan.triggered = false
                     }
                 }
-            } else {
+            } else if (Common.com_asyncSound.GetInteger() == 2) {
                 if (slowmoActive && !chan.disallowSlow) {
                     val slow = sound.GetSlowChannel(chan)
                     slow.AttachSoundChannel(chan)
@@ -1739,55 +1732,51 @@ class snd_world {
 
             // if noclip flying outside the world, leave silence
             if (listenerArea == -1) {
-                if (idSoundSystemLocal.useOpenAL) {
-                    AL10.alListenerf(AL10.AL_GAIN, 0.0f)
-                }
+                AL10.alListenerf(AL10.AL_GAIN, 0.0f)
                 return
             }
 
             // update the listener position and orientation
-            if (idSoundSystemLocal.useOpenAL) {
-                val listenerPosition = FloatArray(3)
-                listenerPosition[0] = -listenerPos.y.toFloat()
-                listenerPosition[1] = listenerPos.z.toFloat()
-                listenerPosition[2] = -listenerPos.x.toFloat()
-                val listenerOrientation = BufferUtils.createFloatBuffer(6)
-                listenerOrientation.put(0, -listenerAxis[0].y.toFloat())
-                listenerOrientation.put(1, +listenerAxis[0].z.toFloat())
-                listenerOrientation.put(2, -listenerAxis[0].x.toFloat())
-                listenerOrientation.put(3, -listenerAxis[2].y.toFloat())
-                listenerOrientation.put(4, +listenerAxis[2].z.toFloat())
-                listenerOrientation.put(5, -listenerAxis[2].x.toFloat())
-                AL10.alListenerf(AL10.AL_GAIN, 1.0f)
-                AL10.alListener3f(AL10.AL_POSITION, listenerPosition[0], listenerPosition[1], listenerPosition[2])
-                AL10.alListenerfv(AL10.AL_ORIENTATION, listenerOrientation)
+            val listenerPosition = FloatArray(3)
+            listenerPosition[0] = -listenerPos.y.toFloat()
+            listenerPosition[1] = listenerPos.z.toFloat()
+            listenerPosition[2] = -listenerPos.x.toFloat()
+            val listenerOrientation = BufferUtils.createFloatBuffer(6)
+            listenerOrientation.put(0, -listenerAxis[0].y.toFloat())
+            listenerOrientation.put(1, +listenerAxis[0].z.toFloat())
+            listenerOrientation.put(2, -listenerAxis[0].x.toFloat())
+            listenerOrientation.put(3, -listenerAxis[2].y.toFloat())
+            listenerOrientation.put(4, +listenerAxis[2].z.toFloat())
+            listenerOrientation.put(5, -listenerAxis[2].x.toFloat())
+            AL10.alListenerf(AL10.AL_GAIN, 1.0f)
+            AL10.alListener3f(AL10.AL_POSITION, listenerPosition[0], listenerPosition[1], listenerPosition[2])
+            AL10.alListenerfv(AL10.AL_ORIENTATION, listenerOrientation)
 
-                // FIX: dhewm3 EFX reverb lookup replaces old commented-out EAX code
-                if (idSoundSystemLocal.useEAXReverb && snd_system.soundSystemLocal.efxloaded) {
-                    val effectHandle = intArrayOf(0)
+            // FIX: dhewm3 EFX reverb lookup replaces old commented-out EAX code
+            if (idSoundSystemLocal.useEAXReverb && snd_system.soundSystemLocal.efxloaded) {
+                val effectHandle = intArrayOf(0)
 
-                    // allow reducing the gain effect globally via s_alReverbGain CVar
-                    val gain = idSoundSystemLocal.s_alReverbGain.GetFloat()
-                    if (listenerSlotReverbGain != gain) {
-                        listenerSlotReverbGain = gain
-                        EXTEfx.alAuxiliaryEffectSlotf(listenerSlot, EXTEfx.AL_EFFECTSLOT_GAIN, gain)
-                    }
+                // allow reducing the gain effect globally via s_alReverbGain CVar
+                val gain = idSoundSystemLocal.s_alReverbGain.GetFloat()
+                if (listenerSlotReverbGain != gain) {
+                    listenerSlotReverbGain = gain
+                    EXTEfx.alAuxiliaryEffectSlotf(listenerSlot, EXTEfx.AL_EFFECTSLOT_GAIN, gain)
+                }
 
-                    var found =
-                        snd_system.soundSystemLocal.EFXDatabase.FindEffect(idStr(listenerArea.toString()), effectHandle)
-                    if (!found) {
-                        found =
-                            snd_system.soundSystemLocal.EFXDatabase.FindEffect(idStr(listenerAreaName), effectHandle)
-                    }
-                    if (!found) {
-                        found = snd_system.soundSystemLocal.EFXDatabase.FindEffect(idStr("default"), effectHandle)
-                    }
+                var found =
+                    snd_system.soundSystemLocal.EFXDatabase.FindEffect(idStr(listenerArea.toString()), effectHandle)
+                if (!found) {
+                    found =
+                        snd_system.soundSystemLocal.EFXDatabase.FindEffect(idStr(listenerAreaName), effectHandle)
+                }
+                if (!found) {
+                    found = snd_system.soundSystemLocal.EFXDatabase.FindEffect(idStr("default"), effectHandle)
+                }
 
-                    // only update if change in settings
-                    if (found && listenerEffect != effectHandle[0]) {
-                        listenerEffect = effectHandle[0]
-                        EXTEfx.alAuxiliaryEffectSloti(listenerSlot, EXTEfx.AL_EFFECTSLOT_EFFECT, effectHandle[0])
-                    }
+                // only update if change in settings
+                if (found && listenerEffect != effectHandle[0]) {
+                    listenerEffect = effectHandle[0]
+                    EXTEfx.alAuxiliaryEffectSloti(listenerSlot, EXTEfx.AL_EFFECTSLOT_EFFECT, effectHandle[0])
                 }
             }
 
@@ -1840,7 +1829,8 @@ class snd_world {
                 }
                 i++
             }
-            if (!idSoundSystemLocal.useOpenAL && enviroSuitActive) {
+            // TODO port to OpenAL
+            if (false && enviroSuitActive) {
                 snd_system.soundSystemLocal.DoEnviroSuit(finalMixBuffer, MIXBUFFER_SAMPLES, numSpeakers)
             }
         }
@@ -1859,11 +1849,7 @@ class snd_world {
             if (game44kHz - lastAVI44kHz < MIXBUFFER_SAMPLES) {
                 return
             }
-            numSpeakers = if (snd_system.soundSystemLocal.snd_audio_hw == null) {
-                2
-            } else {
-                snd_system.soundSystemLocal.snd_audio_hw!!.GetNumberOfSpeakers()
-            }
+            numSpeakers = idSoundSystemLocal.s_numberOfSpeakers.GetInteger()
 
             val mix_p = FloatArray(MIXBUFFER_SAMPLES * 6 + 16)
 
@@ -2077,11 +2063,15 @@ class snd_world {
                         j++
                     }
                 } else {
+                    val sample = if (looping) chan.soundShader!!.entries[0] else chan.leadinSample
+                    if (sample == null) { // DG: this happens if sound is disabled (s_noSound 1)
+                        i++
+                        continue
+                    }
+
                     var offset = localTime - localTriggerTimes // offset in samples
-                    val size =
-                        if (looping) chan.soundShader!!.entries[0]!!.LengthIn44kHzSamples() else chan.leadinSample!!.LengthIn44kHzSamples()
-                    val plitudeData =
-                        if (looping) chan.soundShader!!.entries[0]!!.amplitudeData else chan.leadinSample!!.amplitudeData
+                    val size = sample.LengthIn44kHzSamples()
+                    val plitudeData = sample.amplitudeData
                     if (plitudeData != null) {
                         val amplitudeData = plitudeData.asShortBuffer()
                         // when the amplitudeData is present use that fill a dummy sourceBuffer

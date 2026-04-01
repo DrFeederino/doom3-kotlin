@@ -571,10 +571,10 @@ object AASFile {
             fp.WriteFloatString("\tmaxWaterJumpHeight = %f\n", maxWaterJumpHeight._val)
             fp.WriteFloatString("\tmaxFallHeight = %f\n", maxFallHeight._val)
             fp.WriteFloatString("\tminFloorCos = %f\n", minFloorCos._val)
-            fp.WriteFloatString("\ttt_barrierJump = %d\n", tt_barrierJump.integerValue)
-            fp.WriteFloatString("\ttt_startCrouching = %d\n", tt_startCrouching.integerValue)
-            fp.WriteFloatString("\ttt_waterJump = %d\n", tt_waterJump.integerValue)
-            fp.WriteFloatString("\ttt_startWalkOffLedge = %d\n", tt_startWalkOffLedge.integerValue)
+            fp.WriteFloatString("\ttt_barrierJump = %d\n", tt_barrierJump._val)
+            fp.WriteFloatString("\ttt_startCrouching = %d\n", tt_startCrouching._val)
+            fp.WriteFloatString("\ttt_waterJump = %d\n", tt_waterJump._val)
+            fp.WriteFloatString("\ttt_startWalkOffLedge = %d\n", tt_startWalkOffLedge._val)
             fp.WriteFloatString("}\n")
             return true
         }
@@ -636,7 +636,7 @@ object AASFile {
             if (!src.ExpectTokenString("=")) {
                 return false
             }
-            i.integerValue = (src.ParseInt())
+            i._val = (src.ParseInt())
             return true
         }
 
@@ -698,10 +698,10 @@ object AASFile {
             maxFallHeight._val = 64.0f
             minFloorCos._val = 0.7f
             // fixed travel times
-            tt_barrierJump.integerValue = 100
-            tt_startCrouching.integerValue = 100
-            tt_waterJump.integerValue = 100
-            tt_startWalkOffLedge.integerValue = 100
+            tt_barrierJump._val = 100
+            tt_startCrouching._val = 100
+            tt_waterJump._val = 100
+            tt_startWalkOffLedge._val = 100
         }
     }
 

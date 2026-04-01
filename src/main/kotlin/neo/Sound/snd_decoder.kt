@@ -226,6 +226,7 @@ object snd_decoder {
             lastSample = null
             lastSampleOffset = 0
             lastDecodeTime = 0
+            ogg = 0L
         }
 
         /*
@@ -316,6 +317,7 @@ object snd_decoder {
                     failed = true
                     return 0
                 }
+                assert(ogg == 0L) { "stb_vorbis handle should be null before opening new one" }
                 file.SetData(sample.nonCacheData!!, sample.objectMemSize)
                 val error = intArrayOf(0)
                 ogg = ov_openFile(file, error)
@@ -342,10 +344,10 @@ object snd_decoder {
             // seek to the right offset if necessary
             if (sampleOffset != lastSampleOffset) {
                 if (!STBVorbis.stb_vorbis_seek(ogg, sampleOffset / sample.objectInfo.nChannels)) {
-                    // FIX: Added error logging from dhewm3 C++ (was missing)
+                    val stbVorbErr = STBVorbis.stb_vorbis_get_error(ogg)
                     Common.common.Warning(
-                        "idSampleDecoderLocal::DecodeOGG() stb_vorbis_seek(%d) for %s failed\n",
-                        sampleOffset / sample.objectInfo.nChannels, sample.name
+                        "idSampleDecoderLocal::DecodeOGG() stb_vorbis_seek(%d) for %s failed: %s\n",
+                        sampleOffset / sample.objectInfo.nChannels, sample.name, getErrorMessage(stbVorbErr)
                     )
                     failed = true
                     return 0

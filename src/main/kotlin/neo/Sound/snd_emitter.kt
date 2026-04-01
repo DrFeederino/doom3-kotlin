@@ -165,6 +165,12 @@ object snd_emitter {
         }
 
 
+        fun Clear() {
+            freq = 0.0f; res = 0.0f
+            a1 = 0.0f; a2 = 0.0f; a3 = 0.0f
+            b1 = 0.0f; b2 = 0.0f
+        }
+
         fun SetParms(p1: Float = 0.0f /*= 0*/, p2: Float = 0.0f /*= 0*/, p3: Float = 0.0f /*= 0*/) {
             val c: Float
 
@@ -258,7 +264,6 @@ object snd_emitter {
             val slowmoSpeed: Float
             var i: Int
             val neededSamples: Int
-            val orgTime: Int
             val zeroedPos: Int
             var count = 0
 
@@ -267,7 +272,6 @@ object snd_emitter {
             // FIX: C++ checks if sw is null and defaults to 1.0f
             slowmoSpeed = sw?.slowmoSpeed ?: 1.0f
             neededSamples = (sampleCount44k * slowmoSpeed + 4).toInt()
-            orgTime = playPos.time
 
             // get the channel's samples
             chan!!.GatherChannelSamples(playPos.time * 2, neededSamples, FloatBuffer.wrap(src))
@@ -336,6 +340,7 @@ object snd_emitter {
             // FIX: C++ memset(this, 0, sizeof(*this)) zeroes ALL fields before setting overrides.
             // Kotlin was only resetting a subset, leaving active/playbackState/lowpass stale.
             active = false
+            chan = null
             playbackState = 0
             lowpass = SoundFX_LowpassFast()
 
@@ -547,39 +552,40 @@ object snd_emitter {
         }
 
         fun ALStop() {            // free OpenAL resources if any
-            if (idSoundSystemLocal.useOpenAL) {
-                if (AL10.alIsSource(openalSource)) {
-                    AL10.alSourceStop(openalSource)
-                    AL10.alSourcei(openalSource, AL10.AL_BUFFER, 0)
-                    // FIX: C++ unassociates effect slot from source so it can be deleted on shutdown
-                    alSource3i(
-                        openalSource,
-                        EXTEfx.AL_AUXILIARY_SEND_FILTER,
-                        EXTEfx.AL_EFFECTSLOT_NULL,
-                        0,
-                        EXTEfx.AL_FILTER_NULL
-                    )
-                    snd_system.soundSystemLocal.FreeOpenALSource(openalSource)
+            if (!snd_system.soundSystemLocal.isInitialized) {
+                return
+            }
+            if (AL10.alIsSource(openalSource)) {
+                AL10.alSourceStop(openalSource)
+                AL10.alSourcei(openalSource, AL10.AL_BUFFER, 0)
+                // FIX: C++ unassociates effect slot from source so it can be deleted on shutdown
+                alSource3i(
+                    openalSource,
+                    EXTEfx.AL_AUXILIARY_SEND_FILTER,
+                    EXTEfx.AL_EFFECTSLOT_NULL,
+                    0,
+                    EXTEfx.AL_FILTER_NULL
+                )
+                snd_system.soundSystemLocal.FreeOpenALSource(openalSource)
+            }
+            if (openalStreamingBuffer.get(0) != 0 && openalStreamingBuffer.get(1) != 0 && openalStreamingBuffer.get(
+                    2
+                ) != 0
+            ) {
+                AL10.alGetError()
+                AL10.alDeleteBuffers(openalStreamingBuffer)
+                if (AL10.alGetError() == AL10.AL_NO_ERROR) {
+                    openalStreamingBuffer.put(0, 0).put(1, 0).put(2, 0)
                 }
-                if (openalStreamingBuffer.get(0) != 0 && openalStreamingBuffer.get(1) != 0 && openalStreamingBuffer.get(
-                        2
-                    ) != 0
-                ) {
-                    AL10.alGetError()
-                    AL10.alDeleteBuffers(openalStreamingBuffer)
-                    if (AL10.alGetError() == AL10.AL_NO_ERROR) {
-                        openalStreamingBuffer.put(0, 0).put(1, 0).put(2, 0)
-                    }
-                }
-                if (lastopenalStreamingBuffer.get(0) != 0 && lastopenalStreamingBuffer.get(1) != 0 && lastopenalStreamingBuffer.get(
-                        2
-                    ) != 0
-                ) {
-                    AL10.alGetError()
-                    AL10.alDeleteBuffers(lastopenalStreamingBuffer)
-                    if (AL10.alGetError() == AL10.AL_NO_ERROR) {
-                        lastopenalStreamingBuffer.put(0, 0).put(1, 0).put(2, 0)
-                    }
+            }
+            if (lastopenalStreamingBuffer.get(0) != 0 && lastopenalStreamingBuffer.get(1) != 0 && lastopenalStreamingBuffer.get(
+                    2
+                ) != 0
+            ) {
+                AL10.alGetError()
+                AL10.alDeleteBuffers(lastopenalStreamingBuffer)
+                if (AL10.alGetError() == AL10.AL_NO_ERROR) {
+                    lastopenalStreamingBuffer.put(0, 0).put(1, 0).put(2, 0)
                 }
             }
         }
@@ -995,7 +1001,8 @@ object snd_emitter {
                 chan.ALStop()
 
                 // if this was an onDemand sound, purge the sample now
-                if (chan.leadinSample!!.onDemand) {
+                // Note: if sound is disabled (s_noSound 1), leadinSample can be null
+                if (chan.leadinSample != null && chan.leadinSample!!.onDemand) {
                     chan.leadinSample!!.PurgeSoundSample()
                 }
                 chan.leadinSample = null
@@ -1227,7 +1234,7 @@ object snd_emitter {
                     // see if this channel has completed
                     if (0 == chan.parms!!.soundShaderFlags and snd_shader.SSF_LOOPING) {
                         var   /*ALint*/state = AL10.AL_PLAYING
-                        if (idSoundSystemLocal.useOpenAL && AL10.alIsSource(chan.openalSource)) {
+                        if (AL10.alIsSource(chan.openalSource)) {
                             state = AL10.alGetSourcei(chan.openalSource, AL10.AL_SOURCE_STATE)
                         }
                         val slow = GetSlowChannel(chan)

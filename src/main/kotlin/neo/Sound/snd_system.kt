@@ -28,7 +28,6 @@ import neo.idlib.CmdArgs
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.List.idList
 import neo.idlib.math.MIXBUFFER_SAMPLES
-import neo.idlib.math.SIMDProcessor
 import neo.idlib.math.idMath
 import neo.sys.win_main
 import neo.sys.win_main.Sys_EnterCriticalSection
@@ -166,6 +165,12 @@ class snd_system {
                 "1",
                 CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_INIT,
                 ""
+            )
+            val s_scaleDownAndClamp: idCVar = idCVar(
+                "s_scaleDownAndClamp",
+                "1",
+                CVarSystem.CVAR_SOUND or CVarSystem.CVAR_BOOL or CVarSystem.CVAR_ARCHIVE,
+                "clamp and scale down all volumes to prevent drowning by too many loud sounds"
             )
             val s_reverbFeedback: idCVar =
                 idCVar("s_reverbFeedback", "0.333", CVarSystem.CVAR_SOUND or CVarSystem.CVAR_FLOAT, "")
@@ -323,7 +328,7 @@ class snd_system {
          ===============
          */
         override fun Init() {
-            Common.common.Printf("----- Initializing Sound System ------\n")
+            Common.common.Printf("----- Initializing OpenAL -----\n")
             isInitialized = false
             muted = false
             shutdown = false
@@ -343,15 +348,7 @@ class snd_system {
             // make a 16 byte aligned finalMixBuffer
             finalMixBuffer = realAccum //(float[]) ((((int) realAccum) + 15) & ~15);
             graph = null
-            if (!s_noSound.GetBool()) {
-                idSampleDecoder.Init()
-                soundCache = idSoundCache()
-            }
-
-            // FIX: dhewm3 always uses OpenAL (no legacy mixer). Device creation should
-            // not be gated on s_useEAXReverb — only s_noSound prevents initialization.
             // set up openal device and context
-            Common.common.StartupVariable("s_useOpenAL", true)
             Common.common.StartupVariable("s_useEAXReverb", true)
             if (!s_noSound.GetBool()) {
                 if (!win_snd.Sys_LoadOpenAL()) {
@@ -415,12 +412,15 @@ class snd_system {
                         // adjust source count to allow for at least eight stereo sounds to play
                         openalSourceCount -= 8
 
-                        s_useOpenAL.SetBool(true)
+                        useEAXReverb = s_useEAXReverb.GetBool()
+                        efxloaded = false
+
+                        // Initialize decoder and cache after context is confirmed
+                        idSampleDecoder.Init()
+                        soundCache = idSoundCache()
                     }
                 }
             }
-            useOpenAL = s_useOpenAL.GetBool()
-            useEAXReverb = s_useEAXReverb.GetBool()
             CmdSystem.cmdSystem.AddCommand(
                 "listSounds",
                 ListSounds_f.INSTANCE,
@@ -452,8 +452,6 @@ class snd_system {
                 CmdSystem.CMD_FL_SOUND,
                 "restarts the sound system"
             )
-            Common.common.Printf("sound system initialized.\n")
-            Common.common.Printf("--------------------------------------\n")
         }
 
         // shutdown routine
@@ -463,59 +461,37 @@ class snd_system {
             // EAX or not, the list needs to be cleared
             EFXDatabase.Clear()
 
-            // destroy openal sources
-            if (useOpenAL) {
-                efxloaded = false
+            efxloaded = false
 
-                // adjust source count back up to allow for freeing of all resources
-                openalSourceCount += 8
-                // FIX: C++ iterates i < openalSourceCount, not all 256 entries
-                for (i in 0 until openalSourceCount) {
-                    val source = openalSources[i] ?: continue
-                    // stop source
-                    AL10.alSourceStop(source.handle)
-                    AL10.alSourcei(source.handle, AL10.AL_BUFFER, 0)
-                    AL10.alDeleteSources(source.handle)
+            // adjust source count back up to allow for freeing of all resources
+            openalSourceCount += 8
+            for (i in 0 until openalSourceCount) {
+                val source = openalSources[i] ?: continue
+                // stop source
+                AL10.alSourceStop(source.handle)
+                AL10.alSourcei(source.handle, AL10.AL_BUFFER, 0)
+                AL10.alDeleteSources(source.handle)
 
-                    // clear entry in source array
-                    source.handle = 0
-                    source.startTime = 0
-                    source.chan = null
-                    source.inUse = false
-                    source.looping = false
-                }
+                // clear entry in source array
+                source.handle = 0
+                source.startTime = 0
+                source.chan = null
+                source.inUse = false
+                source.looping = false
             }
 
             // destroy all the sounds (hardware buffers as well)
             soundCache = null
 
             // destroy openal device and context
-            if (useOpenAL) {
-                ALC10.alcMakeContextCurrent(0)
-                ALC10.alcDestroyContext(openalContext)
-                openalContext = 0
-                ALC10.alcCloseDevice(openalDevice)
-                openalDevice = 0
-            }
-            win_snd.Sys_FreeOpenAL()
+            ALC10.alcMakeContextCurrent(0)
+            ALC10.alcDestroyContext(openalContext)
+            openalContext = 0
+            ALC10.alcCloseDevice(openalDevice)
+            openalDevice = 0
             idSampleDecoder.Shutdown()
         }
 
-        override fun ClearBuffer() {
-
-            // check to make sure hardware actually exists
-            if (snd_audio_hw == null) {
-                return
-            }
-            val fBlock = intArrayOf(0)
-            val   /*ulong*/fBlockLen: Int = 0
-
-            if (fBlock[0] != 0) {
-                Arrays.fill(fBlock, 0, fBlockLen, 0)
-            }
-        }
-
-        // sound is attached to the window, and must be recreated when the window is changed
         override fun ShutdownHW(): Boolean {
             if (!isInitialized) {
                 return false
@@ -523,7 +499,6 @@ class snd_system {
             shutdown = true // don't do anything at AsyncUpdate() time
             win_main.Sys_Sleep(100) // sleep long enough to make sure any async sound talking to hardware has returned
             Common.common.Printf("Shutting down sound hardware\n")
-
             snd_audio_hw = null
             isInitialized = false
             if (graph != null) {
@@ -546,20 +521,9 @@ class snd_system {
                 return false
             }
 
-            snd_audio_hw = idAudioHardware.Alloc()
-            if (snd_audio_hw == null) {
-                return false
-            }
-            if (!useOpenAL) {
-                if (!snd_audio_hw!!.Initialize()) {
-                    snd_audio_hw = null
-                    return false
-                }
-                if (snd_audio_hw!!.GetNumberOfSpeakers() == 0) {
-                    return false
-                }
-                s_numberOfSpeakers.SetInteger(snd_audio_hw!!.GetNumberOfSpeakers())
-            }
+            // put the real number in there
+            s_numberOfSpeakers.SetInteger(numSpeakers)
+
             isInitialized = true
             shutdown = false
             return true
@@ -573,27 +537,17 @@ class snd_system {
          */
         // async loop, called at 60Hz
         override fun AsyncUpdate(time: Int): Int {
-            if (!isInitialized || shutdown || snd_audio_hw == null) {
+            if (!isInitialized || shutdown) {
                 return 0
             }
-            var   /*ulong*/dwCurrentWritePos: Long = 0
-            val   /*dword*/dwCurrentBlock: Int
+            val dwCurrentWritePos: Long
+            val dwCurrentBlock: Int
 
-            // If not using openal, get actual playback position from sound hardware
-            if (useOpenAL) {
-                // here we do it in samples ( overflows in 27 hours or so )
-                dwCurrentWritePos =
-                    idMath.Ftol(win_shared.Sys_Milliseconds() * 44.1f) % (MIXBUFFER_SAMPLES * snd_local.ROOM_SLICES_IN_BUFFER)
-                dwCurrentBlock = (dwCurrentWritePos / MIXBUFFER_SAMPLES).toInt()
-            } else {
-                // and here in bytes
-                // get the current byte position in the buffer where the sound hardware is currently reading
-                if (!snd_audio_hw!!.GetCurrentPosition(dwCurrentWritePos)) {
-                    return 0
-                }
-                // mixBufferSize is in bytes
-                dwCurrentBlock = (dwCurrentWritePos / snd_audio_hw!!.GetMixBufferSize()).toInt()
-            }
+            // here we do it in samples ( overflows in 27 hours or so )
+            dwCurrentWritePos =
+                idMath.Ftol(win_shared.Sys_Milliseconds() * 44.1f) % (MIXBUFFER_SAMPLES * snd_local.ROOM_SLICES_IN_BUFFER)
+            dwCurrentBlock = (dwCurrentWritePos / MIXBUFFER_SAMPLES).toInt()
+
             if (nextWriteBlock == -0x1) {
                 nextWriteBlock = dwCurrentBlock
             }
@@ -601,19 +555,9 @@ class snd_system {
                 return 0
             }
 
-            // lock the buffer so we can actually write to it
-            val fBlock: ShortArray = ShortArray(1)
-            val   /*ulong*/fBlockLen: Long = 0
-            if (!useOpenAL) {
-                snd_audio_hw!!.Lock( /*(void **)*/fBlock, fBlockLen)
-                if (null == fBlock || fBlock[0] == 0.toShort()) {
-                    return 0
-                }
-            }
-            var j: Int
             soundStats.runs++
             soundStats.activeSounds = 0
-            val numSpeakers = snd_audio_hw!!.GetNumberOfSpeakers()
+            val numSpeakers = s_numberOfSpeakers.GetInteger()
             nextWriteBlock++
             nextWriteBlock %= snd_local.ROOM_SLICES_IN_BUFFER
             val newPosition = nextWriteBlock * MIXBUFFER_SAMPLES
@@ -636,43 +580,18 @@ class snd_system {
             if (newSoundTime - CurrentSoundTime > MIXBUFFER_SAMPLES) {
                 soundStats.missedWindow++
             }
-            if (useOpenAL) {
-                // enable audio hardware caching
-                ALC10.alcSuspendContext(openalContext)
-            } else {
-                // clear the buffer for all the mixing output
-                Arrays.fill(finalMixBuffer, 0, MIXBUFFER_SAMPLES * numSpeakers, 0.0f)
-            }
+
+            // enable audio hardware caching
+            ALC10.alcSuspendContext(openalContext)
 
             // let the active sound world mix all the channels in unless muted or avi demo recording
             if (!muted && currentSoundWorld != null && null == currentSoundWorld!!.fpa[0]) {
                 currentSoundWorld!!.MixLoop(newSoundTime, numSpeakers, finalMixBuffer)
             }
-            if (useOpenAL) {
-                // disable audio hardware caching (this updates ALL settings since last alcSuspendContext)
-                ALC10.alcProcessContext(openalContext)
-            } else {
-//                short[] dest = fBlock + nextWriteSamples * numSpeakers;
-                val dest = nextWriteSamples * numSpeakers
-                SIMDProcessor!!.MixedSoundToSamples(
-                    fBlock,
-                    dest,
-                    finalMixBuffer,
-                    MIXBUFFER_SAMPLES * numSpeakers
-                )
 
-                // allow swapping the left / right speaker channels for people with miswired systems
-                if (numSpeakers == 2 && s_reverse.GetBool()) {
-                    j = 0
-                    while (j < MIXBUFFER_SAMPLES) {
-                        val temp = fBlock[dest + j * 2]
-                        fBlock[dest + j * 2] = fBlock[dest + j * 2 + 1]
-                        fBlock[dest + j * 2 + 1] = temp
-                        j++
-                    }
-                }
-                snd_audio_hw!!.Unlock(fBlock, fBlockLen)
-            }
+            // disable audio hardware caching (this updates ALL settings since last alcSuspendContext)
+            ALC10.alcProcessContext(openalContext)
+
             CurrentSoundTime = newSoundTime
             soundStats.timeinprocess = win_shared.Sys_Milliseconds() - time
             return soundStats.timeinprocess
@@ -681,66 +600,40 @@ class snd_system {
         /*
          ===================
          idSoundSystemLocal::AsyncUpdateWrite
-         sound output using a write API. all the scheduling based on time
-         we mix MIXBUFFER_SAMPLES at a time, but we feed the audio device with smaller chunks (and more often)
-         called by the sound thread when com_asyncSound is 3 ( Linux )
+         DG: using this now for 60Hz sound updates.
+         Called from async sound thread when com_asyncSound is 3 or 1.
+         Also called from main thread if com_asyncSound == 0.
          ===================
          */
         // async loop, when the sound driver uses a write strategy
         override fun AsyncUpdateWrite(inTime: Int): Int {
-            if (!isInitialized || shutdown || snd_audio_hw == null) {
+            if (!isInitialized || shutdown) {
                 return 0
             }
-            if (!useOpenAL) {
-                snd_audio_hw!!.Flush()
-            }
-            val   /*unsigned int*/dwCurrentBlock = (inTime * 44.1 / MIXBUFFER_SAMPLES).toLong()
-            if (nextWriteBlock == -0x1) {
-                nextWriteBlock = dwCurrentBlock.toInt()
-            }
-            if (dwCurrentBlock < nextWriteBlock) {
-                return 0
-            }
-            if (nextWriteBlock.toLong() != dwCurrentBlock) {
-                win_main.Sys_Printf("missed %d sound updates\n", dwCurrentBlock - nextWriteBlock)
-            }
-            val sampleTime = (dwCurrentBlock * MIXBUFFER_SAMPLES).toInt()
-            val numSpeakers = snd_audio_hw!!.GetNumberOfSpeakers()
-            if (useOpenAL) {
-                // enable audio hardware caching
-                ALC10.alcSuspendContext(openalContext)
-            } else {
-                // clear the buffer for all the mixing output
-                Arrays.fill(finalMixBuffer, 0.0f)
-            }
+
+            // inTime is in milliseconds — use Long to prevent overflow
+            // (int * 44.1 overflows after ~13.5 hours)
+            var sampleTime64 = (inTime.toDouble() * 44.1).toLong()
+
+            // sampleTime should be divisible by 8
+            // (at least by 4 for handling 11kHz samples)
+            sampleTime64 = (sampleTime64 + 4) and 7L.inv()
+
+            val sampleTime = (sampleTime64 and Int.MAX_VALUE.toLong()).toInt()
+
+            val numSpeakers = s_numberOfSpeakers.GetInteger()
+
+            // enable audio hardware caching
+            ALC10.alcSuspendContext(openalContext)
 
             // let the active sound world mix all the channels in unless muted or avi demo recording
             if (!muted && currentSoundWorld != null && null == currentSoundWorld!!.fpa[0]) {
                 currentSoundWorld!!.MixLoop(sampleTime, numSpeakers, finalMixBuffer)
             }
-            if (useOpenAL) {
-                // disable audio hardware caching (this updates ALL settings since last alcSuspendContext)
-                ALC10.alcProcessContext(openalContext)
-            } else {
-                val dest = snd_audio_hw!!.GetMixBuffer()
-                SIMDProcessor!!.MixedSoundToSamples(dest, finalMixBuffer, MIXBUFFER_SAMPLES * numSpeakers)
 
-                // allow swapping the left / right speaker channels for people with miswired systems
-                if (numSpeakers == 2 && s_reverse.GetBool()) {
-                    var j: Int
-                    j = 0
-                    while (j < MIXBUFFER_SAMPLES) {
-                        val temp = dest[j * 2]
-                        dest[j * 2] = dest[j * 2 + 1]
-                        dest[j * 2 + 1] = temp
-                        j++
-                    }
-                }
-                snd_audio_hw!!.Write(false)
-            }
+            // disable audio hardware caching (this updates ALL settings since last alcSuspendContext)
+            ALC10.alcProcessContext(openalContext)
 
-            // only move to the next block if the write was successful
-            nextWriteBlock = (dwCurrentBlock + 1).toInt()
             CurrentSoundTime = sampleTime
             return win_shared.Sys_Milliseconds() - inTime
         }
@@ -755,11 +648,11 @@ class snd_system {
         override fun AsyncMix(soundTime: Int, mixBuffer: FloatArray): Int {
             val inTime: Int
             val numSpeakers: Int
-            if (!isInitialized || shutdown || snd_audio_hw == null) {
+            if (!isInitialized || shutdown) {
                 return 0
             }
             inTime = win_shared.Sys_Milliseconds()
-            numSpeakers = snd_audio_hw!!.GetNumberOfSpeakers()
+            numSpeakers = s_numberOfSpeakers.GetInteger()
 
             // let the active sound world mix all the channels in unless muted or avi demo recording
             if (!muted && currentSoundWorld != null && null == currentSoundWorld!!.fpa[0]) {
@@ -777,7 +670,7 @@ class snd_system {
             val ret = cinData_t()
             var i: Int
             var j: Int
-            if (!isInitialized || snd_audio_hw == null) {
+            if (!isInitialized) {
                 return ret
             }
             Sys_EnterCriticalSection()
@@ -787,7 +680,7 @@ class snd_system {
             graph!!.fill(0)
             val accum = finalMixBuffer // unfortunately, these are already clamped
             val time = win_shared.Sys_Milliseconds()
-            val numSpeakers = snd_audio_hw!!.GetNumberOfSpeakers()
+            val numSpeakers = s_numberOfSpeakers.GetInteger()
             if (!waveform) {
                 j = 0
                 while (j < numSpeakers) {
@@ -1021,7 +914,7 @@ class snd_system {
             }
             soundCache!!.BeginLevelLoad()
             if (efxloaded) {
-                EFXDatabase.UnloadFile()
+                EFXDatabase.Clear()
                 efxloaded = false
             }
         }
@@ -1051,9 +944,8 @@ class snd_system {
             soundCache!!.PrintMemInfo(mi)
         }
 
-        // FIX: dhewm3 renamed to IsEFXAvailable and returns the actual EFXAvailable field
         // (set during Init). The old code was hardcoded to return -1 with everything commented out.
-        override fun IsEAXAvailable(): Int {
+        override fun IsEFXAvailable(): Int {
             return EFXAvailable
         }
 
@@ -1093,7 +985,8 @@ class snd_system {
             val out_p = 2
             var `in`: FloatArray
             val in_p = 2
-            assert(!useOpenAL)
+            // TODO: port to OpenAL
+            assert(false)
             if (0 == fxList.Num()) {
                 for (i in 0..5) {
                     var fx: SoundFX

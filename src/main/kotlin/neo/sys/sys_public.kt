@@ -48,25 +48,22 @@ import java.util.*
 
 const val BUILD_OS_ID = 0 //BUILD_OS_ID = 1 for linux
 val BUILD_STRING: String = "win-x86" // "linux-x86")
-const val CPUID_3DNOW = 0x00020 // 3DNow!
-const val CPUID_ALTIVEC = 0x00200 // AltiVec
-const val CPUID_AMD = 0x00008 // AMD
-const val CPUID_CMOV = 0x02000 // Conditional Move (CMOV) and fast floating point comparison (FCOMI) instructions
-const val CPUID_DAZ = 0x08000 // Denormals-Are-Zero mode (denormal source operands are set to zero)
-const val CPUID_FTZ = 0x04000 // Flush-To-Zero mode (denormal results are flushed to zero)
-const val CPUID_GENERIC = 0x00002 // unrecognized processor
-const val CPUID_HTT = 0x01000 // Hyper-Threading Technology
-const val CPUID_INTEL = 0x00004 // Intel
-const val CPUID_MMX = 0x00010 // Multi Media Extensions
 
+// cpuidSimd_t flags
 const val CPUID_NONE = 0x00000
+const val CPUID_UNSUPPORTED = 0x00001 // unsupported (386/486)
+const val CPUID_GENERIC = 0x00002 // unrecognized processor
+const val CPUID_MMX = 0x00010 // Multi Media Extensions
+const val CPUID_3DNOW = 0x00020 // 3DNow!
 const val CPUID_SSE = 0x00040 // Streaming SIMD Extensions
 const val CPUID_SSE2 = 0x00080 // Streaming SIMD Extensions 2
 const val CPUID_SSE3 = 0x00100 // Streaming SIMD Extentions 3 aka Prescott's New Instructions
-const val CPUID_UNSUPPORTED = 0x00001 // unsupported (386/486)
+const val CPUID_ALTIVEC = 0x00200 // AltiVec
+
 const val CRITICAL_SECTION_ONE = 1
 const val CRITICAL_SECTION_THREE = 3
 const val CRITICAL_SECTION_TWO = 2
+const val CRITICAL_SECTION_SYS = 4
 const val RAND_MAX = 32767
 
 // enum {
@@ -80,16 +77,8 @@ const val TRIGGER_EVENT_ONE = 1
 val g_thread_count: IntArray = intArrayOf(0)
 val CPUSTRING: String = "x86"
 const val CPU_EASYARGS = 1
-const val FPU_EXCEPTION_DENORMALIZED_OPERAND = 2
-const val FPU_EXCEPTION_DIVIDE_BY_ZERO = 4
-const val FPU_EXCEPTION_INEXACT_RESULT = 32
-const val FPU_EXCEPTION_INVALID_OPERATION = 1
-const val FPU_EXCEPTION_NUMERIC_OVERFLOW = 8
-const val FPU_EXCEPTION_NUMERIC_UNDERFLOW = 16
-const val MAX_CRITICAL_SECTIONS = 4
-const val MAX_THREADS = 10
+const val MAX_CRITICAL_SECTIONS = 5
 
-//    val g_threads: Array<xthreadInfo> = Array(MAX_THREADS) { xthreadInfo() }
 const val MAX_TRIGGER_EVENTS = 4
 const val TRIGGER_EVENT_THREE = 3
 const val TRIGGER_EVENT_TWO = 2
@@ -109,26 +98,13 @@ fun setSysLocal(sys: idSys) {
     sys_local.sysLocal = sys.also { neo.sys.sys = it } as idSysLocal
 }
 
-internal enum class fpuPrecision_t {
-    FPU_PRECISION_SINGLE,
-    FPU_PRECISION_DOUBLE,
-    FPU_PRECISION_DOUBLE_EXTENDED
-}
-
-internal enum class fpuRounding_t {
-    FPU_ROUNDING_TO_NEAREST,
-    FPU_ROUNDING_DOWN,
-    FPU_ROUNDING_UP,
-    FPU_ROUNDING_TO_ZERO
-}
-
 enum class joystickAxis_t {
-    AXIS_SIDE,
-    AXIS_FORWARD,
-    AXIS_UP,
-    AXIS_ROLL,
-    AXIS_YAW,
-    AXIS_PITCH,
+    AXIS_LEFT_X,
+    AXIS_LEFT_Y,
+    AXIS_RIGHT_X,
+    AXIS_RIGHT_Y,
+    AXIS_LEFT_TRIG,
+    AXIS_RIGHT_TRIG,
     MAX_JOYSTICK_AXIS
 }
 
@@ -149,10 +125,10 @@ enum class netadrtype_t {
 enum class sysEventType_t {
     SE_NONE,  // evTime is still valid
     SE_KEY,  // evValue is a key code, evValue2 is the down flag
-    SE_CHAR,  // evValue is an ascii char
-    SE_MOUSE,  // evValue and evValue2 are reletive signed x / y moves
+    SE_CHAR,  // evValue is a "High ASCII" (ISO-8859-1) char
+    SE_MOUSE,  // evValue and evValue2 are relative signed x / y moves
     SE_MOUSE_ABS,            // evValue and evValue2 are absolute x / y coordinates in the window
-    SE_JOYSTICK_AXIS,  // evValue is an axis number and evValue2 is the current state (-127 to 127)
+    SE_JOYSTICK,  // evValue is an axis number and evValue2 is the current state (-127 to 127)
     SE_CONSOLE // evPtr is a char*, from typing something at a non-game console
 }
 
@@ -170,10 +146,48 @@ enum class sys_mEvents {
     M_DELTAZ
 }
 
-enum class xthreadPriority {
-    THREAD_NORMAL,
-    THREAD_ABOVE_NORMAL,
-    THREAD_HIGHEST
+// sys_jEvents - joystick button/axis event indices (matching dhewm3)
+object sys_jEvents {
+    const val J_ACTION_FIRST = 0
+    const val J_BTN_SOUTH = J_ACTION_FIRST  // bottom face button, like Xbox A
+    const val J_BTN_EAST = 1   // right face button, like Xbox B
+    const val J_BTN_WEST = 2   // left face button, like Xbox X
+    const val J_BTN_NORTH = 3  // top face button, like Xbox Y
+    const val J_BTN_BACK = 4
+    const val J_BTN_GUIDE = 5
+    const val J_BTN_START = 6
+    const val J_BTN_LSTICK = 7  // press left stick
+    const val J_BTN_RSTICK = 8  // press right stick
+    const val J_BTN_LSHOULDER = 9
+    const val J_BTN_RSHOULDER = 10
+    const val J_DPAD_UP = 11
+    const val J_DPAD_DOWN = 12
+    const val J_DPAD_LEFT = 13
+    const val J_DPAD_RIGHT = 14
+    const val J_BTN_MISC1 = 15
+    const val J_BTN_RPADDLE1 = 16
+    const val J_BTN_LPADDLE1 = 17
+    const val J_BTN_RPADDLE2 = 18
+    const val J_BTN_LPADDLE2 = 19
+    const val J_ACTION_MAX = J_BTN_LPADDLE2
+
+    const val J_AXIS_MIN = 32
+    val J_AXIS_LEFT_X = J_AXIS_MIN + joystickAxis_t.AXIS_LEFT_X.ordinal
+    val J_AXIS_LEFT_Y = J_AXIS_MIN + joystickAxis_t.AXIS_LEFT_Y.ordinal
+    val J_AXIS_RIGHT_X = J_AXIS_MIN + joystickAxis_t.AXIS_RIGHT_X.ordinal
+    val J_AXIS_RIGHT_Y = J_AXIS_MIN + joystickAxis_t.AXIS_RIGHT_Y.ordinal
+    val J_AXIS_LEFT_TRIG = J_AXIS_MIN + joystickAxis_t.AXIS_LEFT_TRIG.ordinal
+    val J_AXIS_RIGHT_TRIG = J_AXIS_MIN + joystickAxis_t.AXIS_RIGHT_TRIG.ordinal
+    val J_AXIS_MAX = J_AXIS_MIN + joystickAxis_t.MAX_JOYSTICK_AXIS.ordinal - 1
+
+    const val MAX_JOY_EVENT = 39  // J_AXIS_MIN + MAX_JOYSTICK_AXIS
+}
+
+enum class sysPath_t {
+    PATH_BASE,
+    PATH_CONFIG,
+    PATH_SAVE,
+    PATH_EXE
 }
 
 class sysEvent_s : SERiAL {
@@ -225,17 +239,6 @@ class sysEvent_s : SERiAL {
         @Transient
         val BYTES = SIZE / 8
     }
-}
-
-class sysMemoryStats_s {
-    var availExtendedVirtual = 0
-    var availPageFile = 0
-    var availPhysical = 0
-    var availVirtual = 0
-    var memoryLoad = 0
-    var totalPageFile = 0
-    var totalPhysical = 0
-    var totalVirtual = 0
 }
 
 class netadr_t {
@@ -328,11 +331,11 @@ class idPort {
             }
 
             packetsRead++
-            bytesRead += size.integerValue
+            bytesRead += size._val
 
             if (net_forceLatency.GetInteger() > 0) {
                 val msg: win_net.udpMsg_s = udpPorts[bound_to.port]!!.Alloc()
-                msg.size = size.integerValue
+                msg.size = size._val
                 msg.address = from
                 msg.time = Sys_Milliseconds()
                 msg.next = null
@@ -352,7 +355,7 @@ class idPort {
             val msg = udpPorts[bound_to.port]?.recieveFirst
             if (msg != null && msg.time <= Sys_Milliseconds() - net_forceLatency.GetInteger()) {
                 System.arraycopy(msg.data, 0, data, 0, msg.size)
-                size.integerValue = msg.size
+                size._val = msg.size
                 from.oSet(msg.address!!)
                 udpPorts[bound_to.port]?.recieveFirst = udpPorts[bound_to.port]?.recieveFirst?.next
                 if (udpPorts[bound_to.port]?.recieveFirst != null) {
@@ -419,6 +422,108 @@ class idPort {
     }
 }
 
+class idTCP {
+    private var socket: java.net.Socket? = null
+    private var address: netadr_t = netadr_t()
+
+    fun Init(host: String, port: Short): Boolean {
+        if (!win_net.Sys_StringToNetAdr(host, address, true)) {
+            common.Printf("Couldn't resolve server name \"%s\"\n", host)
+            return false
+        }
+        address.type = netadrtype_t.NA_IP
+        if (address.port == 0) {
+            address.port = port.toInt()
+        }
+        common.Printf(
+            "\"%s\" resolved to %d.%d.%d.%d:%d\n", host,
+            address.ip[0].toInt() and 0xFF, address.ip[1].toInt() and 0xFF,
+            address.ip[2].toInt() and 0xFF, address.ip[3].toInt() and 0xFF, address.port
+        )
+
+        if (socket != null) {
+            common.Warning("idTCP::Init: already initialized?")
+        }
+
+        try {
+            val inetAddr = java.net.InetAddress.getByAddress(
+                byteArrayOf(
+                    address.ip[0].code.toByte(),
+                    address.ip[1].code.toByte(),
+                    address.ip[2].code.toByte(),
+                    address.ip[3].code.toByte()
+                )
+            )
+            socket = java.net.Socket()
+            socket!!.connect(java.net.InetSocketAddress(inetAddr, address.port), 10000)
+            // make it non-blocking by setting a short read timeout
+            socket!!.soTimeout = 1
+            socket!!.tcpNoDelay = true
+        } catch (e: Exception) {
+            common.Printf("ERROR: idTCP::Init: connect: %s\n", e.message ?: "unknown error")
+            socket?.close()
+            socket = null
+            return false
+        }
+
+        common.DPrintf("Opened TCP connection\n")
+        return true
+    }
+
+    fun Close() {
+        if (socket != null) {
+            try {
+                socket!!.close()
+            } catch (_: Exception) {
+            }
+        }
+        socket = null
+    }
+
+    fun Read(data: ByteArray, size: Int): Int {
+        if (socket == null) {
+            common.Printf("idTCP::Read: not initialized\n")
+            return -1
+        }
+
+        try {
+            val nbytes = socket!!.getInputStream().read(data, 0, size)
+
+            if (nbytes == -1) {
+                // end of stream — remote closed connection
+                common.DPrintf("idTCP::Read: read 0 bytes - assume connection closed\n")
+                return -1
+            }
+
+            return nbytes
+        } catch (e: java.net.SocketTimeoutException) {
+            // non-blocking: no data available right now
+            return 0
+        } catch (e: Exception) {
+            common.Printf("ERROR: idTCP::Read: %s\n", e.message ?: "unknown error")
+            Close()
+            return -1
+        }
+    }
+
+    fun Write(data: ByteArray, size: Int): Int {
+        if (socket == null) {
+            common.Printf("idTCP::Write: not initialized\n")
+            return -1
+        }
+
+        try {
+            socket!!.getOutputStream().write(data, 0, size)
+            socket!!.getOutputStream().flush()
+            return size
+        } catch (e: Exception) {
+            common.Printf("ERROR: idTCP::Write: %s\n", e.message ?: "unknown error")
+            Close()
+            return -1
+        }
+    }
+}
+
 /*
  ==============================================================
 
@@ -431,12 +536,8 @@ abstract class idSys {
     abstract fun DebugVPrintf(fmt: String, vararg arg: Any)
     abstract fun GetMilliseconds(): Long
     abstract /*cpuid_t*/  fun GetProcessorId(): Int
-    abstract fun GetProcessorString(): String
-    abstract fun FPU_GetState(): String
-    abstract fun FPU_StackIsEmpty(): Boolean
     abstract fun FPU_SetFTZ(enable: Boolean)
     abstract fun FPU_SetDAZ(enable: Boolean)
-    abstract fun FPU_EnableExceptions(exceptions: Int)
     abstract fun LockMemory(ptr: Any, bytes: Int): Boolean
     abstract fun UnlockMemory(ptr: Any, bytes: Int): Boolean
     abstract fun DLL_Load(dllName: String): Int

@@ -1198,14 +1198,14 @@ object AASFile_local {
             if (nodeNum <= 0) {
                 return
             }
-            depth.integerValue = (depth.integerValue + 1)
-            if (depth.integerValue > maxDepth.integerValue) {
+            depth._val = (depth._val + 1)
+            if (depth._val > maxDepth._val) {
                 maxDepth = depth
             }
             node = nodes[nodeNum]
             MaxTreeDepth_r(node.children[0], depth, maxDepth)
             MaxTreeDepth_r(node.children[1], depth, maxDepth)
-            depth.integerValue = (depth.integerValue - 1)
+            depth._val = (depth._val - 1)
         }
 
         private fun MaxTreeDepth(): Int {
@@ -1214,7 +1214,7 @@ object AASFile_local {
 
 //	depth = maxDepth = 0;
             MaxTreeDepth_r(1, depth, maxDepth)
-            return maxDepth.integerValue
+            return maxDepth._val
         }
 
         private fun AreaContentsTravelFlags(areaNum: Int): Int {

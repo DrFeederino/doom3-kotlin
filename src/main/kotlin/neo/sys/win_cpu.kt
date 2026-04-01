@@ -28,90 +28,13 @@ If you have questions concerning this license or the applicable additional terms
 package neo.sys
 
 import neo.framework.Common.Companion.common
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStreamReader
 
 object win_cpu {
 
     /*
-     ==============================================================
-
-     Clock ticks
-
-     ==============================================================
-     */
-
-    private var ticks = 0.0f
-
-    /*
      ================
-     Sys_GetClockTicks
-     ================
-     */
-    fun Sys_GetClockTicks(): Long {
-        return System.nanoTime()
-    }
-
-    /*
-     ================
-     Sys_ClockTicksPerSecond
-     ================
-     */
-    fun Sys_ClockTicksPerSecond(): Float {
-        if (ticks == 0.0f) {
-            ticks = 1_000_000_000.0f
-        }
-        return ticks
-    }
-
-    /*
-     ================
-     Sys_GetCPUId
-     ================
-     */
-    fun /*cpuid_t*/ Sys_GetCPUId(): Int {
-        // Any system running a modern JVM will have these capabilities.
-        var flags = CPUID_GENERIC
-
-        // Detect AMD vs Intel from processor identifier
-        val procId = System.getenv("PROCESSOR_IDENTIFIER") ?: ""
-        flags = if (procId.contains("AMD", ignoreCase = true)) {
-            CPUID_AMD
-        } else {
-            CPUID_INTEL
-        }
-
-        // Assume modern x86 capabilities
-        flags = flags or CPUID_MMX
-        flags = flags or CPUID_SSE
-        flags = flags or CPUID_FTZ
-        flags = flags or CPUID_SSE2
-        flags = flags or CPUID_SSE3
-        flags = flags or CPUID_HTT
-        flags = flags or CPUID_CMOV
-        flags = flags or CPUID_DAZ
-
-        // check for 3DNow! (AMD only)
-        if (procId.contains("AMD", ignoreCase = true)) {
-            flags = flags or CPUID_3DNOW
-        }
-
-        return flags
-    }
-
-    /*
-     ==============================================================
-
-     FPU
-
-     ==============================================================
-     */
-
-    /*
-     ===============
      Sys_FPU_SetDAZ
-     ===============
+     ================
      */
     fun Sys_FPU_SetDAZ(enable: Boolean) {
         // No-op on JVM — JVM manages its own FP denormal handling
@@ -121,9 +44,9 @@ object win_cpu {
     }
 
     /*
-     ===============
+     ================
      Sys_FPU_SetFTZ
-     ===============
+     ================
      */
     fun Sys_FPU_SetFTZ(enable: Boolean) {
         // No-op on JVM — JVM manages its own FP flush-to-zero behavior
@@ -133,81 +56,28 @@ object win_cpu {
     }
 
     /*
-     ===============
-     Sys_FPU_StackIsEmpty
-     ===============
+     ================
+     Sys_GetProcessorId
+     ================
      */
-    fun Sys_FPU_StackIsEmpty(): Boolean {
-        return true
+    fun Sys_GetProcessorId(): Int {
+        // On JVM, assume modern x86 capabilities
+        var flags = CPUID_GENERIC
+
+        flags = flags or CPUID_MMX
+        flags = flags or CPUID_SSE
+        flags = flags or CPUID_SSE2
+        flags = flags or CPUID_SSE3
+
+        return flags
     }
 
     /*
-     ===============
-     Sys_FPU_ClearStack
-     ===============
-     */
-    fun Sys_FPU_ClearStack() {
-        // No-op on JVM
-    }
-
-    /*
-     ===============
-     Sys_FPU_GetState
-     ===============
-     */
-    fun Sys_FPU_GetState(): String {
-        return "FPU State: JVM-managed (no direct FPU access)\n"
-    }
-
-    /*
-     ===============
-     Sys_FPU_EnableExceptions
-     ===============
-     */
-    fun Sys_FPU_EnableExceptions(exceptions: Int) {
-        // No-op on JVM
-    }
-
-    /*
-     ===============
+     ================
      Sys_FPU_SetPrecision
-     ===============
+     ================
      */
-    fun Sys_FPU_SetPrecision(precision: Int) {
+    fun Sys_FPU_SetPrecision() {
         // No-op on JVM — always uses IEEE 754 double precision
-    }
-
-    /*
-     ===============
-     Sys_FPU_SetRounding
-     ===============
-     */
-    fun Sys_FPU_SetRounding(rounding: Int) {
-        // No-op on JVM — uses IEEE 754 default rounding
-    }
-
-    /*
-     ===============
-     Sys_FPU_PrintStateFlags
-     ===============
-     */
-    fun Sys_FPU_PrintStateFlags(
-        ptr: String, ctrl: Int, stat: Int, tags: Int, inof: Int, inse: Int, opof: Int, opse: Int
-    ): Int {
-        return 0
-    }
-
-    /*
-     ================
-     Helper: run a system command and return output
-     ================
-     */
-    @Throws(IOException::class)
-    fun cmd(query: String): String {
-        val result: String
-        val proc = Runtime.getRuntime().exec(query)
-        BufferedReader(InputStreamReader(proc.inputStream)).use { reader -> result = reader.readLine() ?: "" }
-        proc.destroy()
-        return result
     }
 }

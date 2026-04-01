@@ -605,18 +605,9 @@ object win_main {
         //
         if (idStr.Icmp(Win32Vars_t.sys_cpustring.GetString()!!, "detect") == 0) {
             val string: idStr
-            Common.common.Printf("%1.0f MHz ", win_cpu.Sys_ClockTicksPerSecond() / 1000000.0f)
-            win_local.win32.cpuid = win_cpu.Sys_GetCPUId()
+            win_local.win32.cpuid = win_cpu.Sys_GetProcessorId()
             string = idStr() //Clear();
-            if (win_local.win32.cpuid and CPUID_AMD != 0) {
-                string.plusAssign("AMD CPU")
-            } else if (win_local.win32.cpuid and CPUID_INTEL != 0) {
-                string.plusAssign("Intel CPU")
-            } else if (win_local.win32.cpuid and CPUID_UNSUPPORTED != 0) {
-                string.plusAssign("unsupported CPU")
-            } else {
-                string.plusAssign("generic CPU")
-            }
+            string.plusAssign("generic CPU")
             string.plusAssign(" with ")
             if (win_local.win32.cpuid and CPUID_MMX != 0) {
                 string.plusAssign("MMX & ")
@@ -633,9 +624,6 @@ object win_main {
             if (win_local.win32.cpuid and CPUID_SSE3 != 0) {
                 string.plusAssign("SSE3 & ")
             }
-            if (win_local.win32.cpuid and CPUID_HTT != 0) {
-                string.plusAssign("HTT & ")
-            }
             string.StripTrailing(" & ")
             string.StripTrailing(" with ")
             Win32Vars_t.sys_cpustring.SetString(string.toString())
@@ -651,10 +639,6 @@ object win_main {
             while (src.ReadToken(token)) {
                 if (token.Icmp("generic") == 0) {
                     id = id or CPUID_GENERIC
-                } else if (token.Icmp("intel") == 0) {
-                    id = id or CPUID_INTEL
-                } else if (token.Icmp("amd") == 0) {
-                    id = id or CPUID_AMD
                 } else if (token.Icmp("mmx") == 0) {
                     id = id or CPUID_MMX
                 } else if (token.Icmp("3dnow") == 0) {
@@ -665,8 +649,6 @@ object win_main {
                     id = id or CPUID_SSE2
                 } else if (token.Icmp("sse3") == 0) {
                     id = id or CPUID_SSE3
-                } else if (token.Icmp("htt") == 0) {
-                    id = id or CPUID_HTT
                 }
             }
             if (id == CPUID_NONE) {
@@ -680,7 +662,6 @@ object win_main {
         }
         Common.common.Printf("%s\n", Win32Vars_t.sys_cpustring.GetString()!!)
         Common.common.Printf("%d MB System Memory\n", win_shared.Sys_GetSystemRam())
-        Common.common.Printf("%d MB Video Memory\n", win_shared.Sys_GetVideoRam())
     }
 
     /*

@@ -443,15 +443,6 @@ class snd_efxfile {
 
         /*
          ===============
-         idEFXFile::UnloadFile
-         ===============
-         */
-        fun UnloadFile() {
-            Clear()
-        }
-
-        /*
-         ===============
          idEFXFile::Clear
          ===============
          */

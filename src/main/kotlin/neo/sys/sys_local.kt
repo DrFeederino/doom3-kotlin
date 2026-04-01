@@ -78,18 +78,6 @@ class sys_local {
             return win_main.Sys_GetProcessorId()
         }
 
-        override fun GetProcessorString(): String {
-            return win_main.Sys_GetProcessorString()
-        }
-
-        override fun FPU_GetState(): String {
-            return win_cpu.Sys_FPU_GetState()
-        }
-
-        override fun FPU_StackIsEmpty(): Boolean {
-            return win_cpu.Sys_FPU_StackIsEmpty()
-        }
-
         /*
          ================
          idSysLocal::FPU_SetFTZ
@@ -106,10 +94,6 @@ class sys_local {
          */
         override fun FPU_SetDAZ(enable: Boolean) {
             win_cpu.Sys_FPU_SetDAZ(enable)
-        }
-
-        override fun FPU_EnableExceptions(exceptions: Int) {
-            win_cpu.Sys_FPU_EnableExceptions(exceptions)
         }
 
         /*
