@@ -297,8 +297,8 @@ class DeclAF {
             contactFriction = file.defaultContactFriction
             // FIX: copy integer value, not the CInt reference — otherwise body.contents and
             // file.contents would alias the same CInt object, corrupting file state on ParseContents
-            contents.integerValue = file.contents.integerValue
-            clipMask.integerValue = file.clipMask.integerValue
+            contents._val = file.contents._val
+            clipMask._val = file.clipMask._val
             selfCollision = file.selfCollision
             frictionDirection = idAFVector()
             contactMotorDirection = idAFVector()
@@ -530,8 +530,8 @@ class DeclAF {
             minMoveTime = -1.0f
             maxMoveTime = -1.0f
             selfCollision = true
-            contents.integerValue = (Material.CONTENTS_CORPSE)
-            clipMask.integerValue = (Material.CONTENTS_SOLID or Material.CONTENTS_CORPSE)
+            contents._val = (Material.CONTENTS_CORPSE)
+            clipMask._val = (Material.CONTENTS_SOLID or Material.CONTENTS_CORPSE)
             bodies.DeleteContents(true)
             constraints.DeleteContents(true)
         }
@@ -694,7 +694,7 @@ class DeclAF {
                 }
                 str.Append(",")
             }
-            c.integerValue = (ContentsFromString(str.toString()))
+            c._val = (ContentsFromString(str.toString()))
             return true
         }
 
@@ -865,7 +865,7 @@ class DeclAF {
                 src.Error("no joint set for body")
                 return false
             }
-            body.clipMask.integerValue = (body.clipMask.integerValue or Material.CONTENTS_MOVEABLECLIP)
+            body.clipMask._val = (body.clipMask._val or Material.CONTENTS_MOVEABLECLIP)
             return true
         }
 
@@ -1365,8 +1365,8 @@ class DeclAF {
                     body.contactFriction
                 )
             }
-            f.WriteFloatString("\tcontents %s\n", ContentsToString(body.contents.integerValue, str))
-            f.WriteFloatString("\tclipMask %s\n", ContentsToString(body.clipMask.integerValue, str))
+            f.WriteFloatString("\tcontents %s\n", ContentsToString(body.contents._val, str))
+            f.WriteFloatString("\tclipMask %s\n", ContentsToString(body.clipMask._val, str))
             // FIX: Boolean is not a Number in Kotlin/JVM — FS_WriteFloatString casts %d args
             // via (arg as Number).toLong(), which throws ClassCastException for Boolean.
             // C++ implicitly promotes bool to int for variadic args; Kotlin needs explicit conversion.
@@ -1536,9 +1536,8 @@ class DeclAF {
             f.WriteFloatString("\tminMoveTime %f\n", minMoveTime)
             f.WriteFloatString("\tmaxMoveTime %f\n", maxMoveTime)
             f.WriteFloatString("\ttotalMass %f\n", totalMass)
-            f.WriteFloatString("\tcontents %s\n", ContentsToString(contents.integerValue, str))
-            f.WriteFloatString("\tclipMask %s\n", ContentsToString(clipMask.integerValue, str))
-            // FIX: Boolean → Int for %d format (see WriteBody fix for explanation)
+            f.WriteFloatString("\tcontents %s\n", ContentsToString(contents._val, str))
+            f.WriteFloatString("\tclipMask %s\n", ContentsToString(clipMask._val, str))
             f.WriteFloatString("\tselfCollision %d\n", if (selfCollision) 1 else 0)
             f.WriteFloatString("}\n")
             return true

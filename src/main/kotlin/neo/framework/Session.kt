@@ -326,6 +326,11 @@ class Session {
             val rl_args = CmdArgs.idCmdArgs()
             map = idStr(args!!.Argv(1))
             if (0 == map.Length()) {
+                // DG: if called without arguments, print the current map
+                val curmap = sessLocal.mapSpawnData.serverInfo.GetString("si_map")
+                if (curmap.isNotEmpty()) {
+                    Common.common.Printf("Current Map: %s\n", curmap)
+                }
                 return
             }
             map.StripFileExtension()

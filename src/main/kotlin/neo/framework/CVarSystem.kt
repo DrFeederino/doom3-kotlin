@@ -1591,7 +1591,7 @@ object CVarSystem {
                             string += if (cvar.GetFlags() and CVAR_ARCHIVE != 0) "AR " else "   "
                             string += if (cvar.GetFlags() and CVAR_MODIFIED != 0) "MO " else "   "
                             string += "\n"
-                            idLib.common.Printf(string)
+                            idLib.common.Printf("%s", string)
                             i++
                         }
                     }

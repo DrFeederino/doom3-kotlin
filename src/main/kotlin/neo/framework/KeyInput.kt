@@ -2,6 +2,7 @@ package neo.framework
 
 import neo.TempDump
 import neo.TempDump.void_callback
+import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.File_h.idFile
@@ -194,6 +195,14 @@ object KeyInput {
     //
     const val MAX_KEYS = 256
 
+    // DG: simple cvar to print the name of the key/button pressed
+    val in_namePressed: idCVar = idCVar(
+        "in_namePressed",
+        "0",
+        CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM,
+        "print the name of the key/button pressed"
+    )
+
     //
     val cheatCodes: Array<String?> = arrayOf(
         "iddqd",  // Invincibility
@@ -231,7 +240,7 @@ object KeyInput {
         keyname_t("LEFTARROW", K_LEFTARROW, "#str_07025"),
         keyname_t("RIGHTARROW", K_RIGHTARROW, "#str_07026"),  //
         keyname_t("ALT", K_ALT, "#str_07027"),
-        keyname_t("RIGHTALT", K_RIGHT_ALT, "#str_07027"),
+        //keyname_t("RIGHTALT", K_RIGHT_ALT, "#str_07027"), // DG: renamed, see R_ALT below
         keyname_t("CTRL", K_CTRL, "#str_07028"),
         keyname_t("SHIFT", K_SHIFT, "#str_07029"),  //
         keyname_t("LWIN", K_LWIN, "#str_07030"),
@@ -338,6 +347,10 @@ object KeyInput {
         keyname_t("PAUSE", K_PAUSE, "#str_07128"),  //
         keyname_t("SEMICOLON", ';'.code, "#str_07129"),  // because a raw semicolon separates commands
         keyname_t("APOSTROPHE", '\''.code, "#str_07130"),  // because a raw apostrophe messes with parsing
+        keyname_t("QUOTE", '"'.code, ""),  // DG: raw quote can't be good either
+        keyname_t("R_ALT", K_RIGHT_ALT, ""),  // DG: renamed from RIGHTALT so it's shorter (but discernible) in the menu
+        keyname_t("R_CTRL", K_RIGHT_CTRL, ""),  // DG: added
+        keyname_t("R_SHIFT", K_RIGHT_SHIFT, ""),  // DG: added
         //
         keyname_t(null, 0, null)
     )
@@ -426,6 +439,12 @@ object KeyInput {
         @Throws(idException::class)
         fun PreliminaryKeyEvent(keyNum: Int, down: Boolean) {
             keys[keyNum].down = down
+
+            // DG: print key name if in_namePressed is enabled
+            if (down && in_namePressed.GetBool()) {
+                KeyReveal(keyNum)
+            }
+
             if (ID_DOOM_LEGACY) {
                 // FIX: added keyNum < 127 check — only ASCII keys are of interest for cheat codes
                 if (down && keyNum < 127) {
@@ -659,6 +678,12 @@ object KeyInput {
                 }
             }
             return count
+        }
+
+        // DG: simple print in console of the name of the key pressed
+        fun KeyReveal(keyNum: Int) {
+            val keyName = KeyNumToString(keyNum, false)
+            Common.common.Printf("pressed the \"%s\" key.\n", keyName!!)
         }
 
         @Throws(idException::class)

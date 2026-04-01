@@ -39,7 +39,8 @@ const val _DEBUG = true
 
 // if enabled, the console won't toggle upon ~, unless you start the binary with +set com_allowConsole 1
 // Ctrl+Alt+~ will always toggle the console no matter what
-val ID_CONSOLE_LOCK: Boolean = if (_WIN32 || MACOS_X) !_DEBUG else false
+// DG: dhewm3 always unlocks console (was platform-conditional in original)
+const val ID_CONSOLE_LOCK = false
 
 // useful for network debugging, turns off 'LAN' checks, all IPs are classified 'internet'
 const val ID_NOLANADDRESS = false
@@ -80,4 +81,5 @@ const val ID_FAKE_PURE = false
 
 const val ID_OPENAL = true
 
-val ID_BT_STUB: Boolean = if (__linux__) _DEBUG else true
+// DG: dhewm3 removed backtrace logic entirely
+const val ID_BT_STUB = true

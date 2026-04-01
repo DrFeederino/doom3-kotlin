@@ -323,7 +323,7 @@ object File_h {
         fun ReadInt(value: CInt): Int {
             val intBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
             val result = Read(intBytes)
-            value.integerValue = (LittleLong(intBytes.getInt()))
+            value._val = (LittleLong(intBytes.getInt()))
             return result
         }
 
@@ -338,7 +338,7 @@ object File_h {
         fun ReadInt(): Int {
             val value = CInt()
             this.ReadInt(value)
-            return value.integerValue
+            return value._val
         }
 
         // Endian portable alternatives to Write(...)
@@ -498,10 +498,10 @@ object File_h {
             val len = CInt()
             var result = 0
             ReadInt(len)
-            if (len.integerValue > 0) {
-                assert(len.integerValue <= 1000000)
-                string.Fill(' ', len.integerValue)
-                result = Read(string, len.integerValue)
+            if (len._val > 0) {
+                assert(len._val <= 1000000)
+                string.Fill(' ', len._val)
+                result = Read(string, len._val)
                 string.set(string)
             }
             return result
@@ -1242,8 +1242,6 @@ object File_h {
         override fun Read(buffer: ByteBuffer, len: Int): Int {
             var l = 0
             var len = len
-
-            //buffer.order(ByteOrder.LITTLE_ENDIAN)
 
             try {
                 if (inputStream == null) {

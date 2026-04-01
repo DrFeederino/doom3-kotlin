@@ -559,7 +559,7 @@ object AsyncClient {
                     )
                     if (newPacket) {
                         msg.Init(msgBuf, msgBuf.capacity())
-                        msg.SetSize(size.integerValue)
+                        msg.SetSize(size._val)
                         msg.BeginReading()
                         ProcessMessage(from, msg)
                     }
@@ -689,7 +689,7 @@ object AsyncClient {
             clientPort.SendPacket(idAsyncNetwork.GetMasterAddress(), msg.GetData()!!, msg.GetSize())
             Common.common.DPrintf("sent a version check request\n")
             val sizePackage = CInt()
-            sizePackage.integerValue = MsgChannel.MAX_MESSAGE_SIZE
+            sizePackage._val = MsgChannel.MAX_MESSAGE_SIZE
             updateState = clientUpdateState_t.UPDATE_SENT
             updateSentTime = clientTime
             showUpdateMessage = fromMenu
@@ -1750,10 +1750,10 @@ object AsyncClient {
             }
             val serverMessageSequence = CInt()
             if (!channel.Process(from, clientTime, msg, serverMessageSequence)) {
-                this.serverMessageSequence = serverMessageSequence.integerValue
+                this.serverMessageSequence = serverMessageSequence._val
                 return  // out of order, duplicated, fragment, etc.
             }
-            this.serverMessageSequence = serverMessageSequence.integerValue
+            this.serverMessageSequence = serverMessageSequence._val
             lastPacketTime = clientTime
             ProcessReliableServerMessages()
             ProcessUnreliableServerMessage(msg)
@@ -1849,7 +1849,7 @@ object AsyncClient {
                 outMsg.WriteLong(inChecksums[i++])
             }
             outMsg.WriteLong(0)
-            outMsg.WriteLong(gamePakChecksum.integerValue)
+            outMsg.WriteLong(gamePakChecksum._val)
             clientPort.SendPacket(from, outMsg.GetData()!!, outMsg.GetSize())
         }
 
@@ -1925,7 +1925,7 @@ object AsyncClient {
                                 missingGamePakChecksum[0]
                             )
                         }
-                        Common.common.Printf(message)
+                        Common.common.Printf("%s", message)
                         CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "disconnect")
                         Session.session.MessageBox(
                             msgBoxType_t.MSG_OK,
@@ -2022,7 +2022,7 @@ object AsyncClient {
                 outMsg.WriteLong(inChecksums[i++])
             }
             outMsg.WriteLong(0)
-            outMsg.WriteLong(gamePakChecksum.integerValue)
+            outMsg.WriteLong(gamePakChecksum._val)
             if (!channel.SendReliableMessage(outMsg)) {
                 Common.common.Error("client.server reliable messages overflow\n")
             }

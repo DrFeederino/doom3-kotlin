@@ -782,6 +782,11 @@ object UsercmdGen {
          creates the current command for this frame
          ================
          */
+        // DG: allow always run in SP as well
+        private fun AlwaysRunAllowed(): Boolean {
+            return in_allowAlwaysRunInSP.GetBool() || idAsyncNetwork.IsActive()
+        }
+
         private fun MakeCurrent() {
             val oldAngles = idVec3(viewangles)
             var i: Int
@@ -790,7 +795,7 @@ object UsercmdGen {
                 toggled_crouch.SetKeyState(ButtonState(usercmdButton_t.UB_DOWN), in_toggleCrouch.GetBool())
                 toggled_run.SetKeyState(
                     ButtonState(usercmdButton_t.UB_SPEED),
-                    in_toggleRun.GetBool() && idAsyncNetwork.IsActive()
+                    in_toggleRun.GetBool() && AlwaysRunAllowed()
                 )
                 toggled_zoom.SetKeyState(ButtonState(usercmdButton_t.UB_ZOOM), in_toggleZoom.GetBool())
 
@@ -842,7 +847,7 @@ object UsercmdGen {
             cmd.flags = flags.toByte()
             cmd.impulse = impulse.toByte()
             cmd.buttons =
-                cmd.buttons or (if (in_alwaysRun.GetBool() && idAsyncNetwork.IsActive()) BUTTON_RUN else 0).toByte()
+                cmd.buttons or (if (in_alwaysRun.GetBool() && AlwaysRunAllowed()) BUTTON_RUN else 0).toByte()
             cmd.buttons = cmd.buttons or (if (in_freeLook.GetBool()) BUTTON_MLOOK else 0).toByte()
         }
 
@@ -866,7 +871,7 @@ object UsercmdGen {
          */
         private fun AdjustAngles() {
             val speed: Float
-            speed = if ((toggled_run.on != 0) xor (in_alwaysRun.GetBool() && idAsyncNetwork.IsActive())) {
+            speed = if ((toggled_run.on != 0) xor (in_alwaysRun.GetBool() && AlwaysRunAllowed())) {
                 M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.GetFloat()
             } else {
                 M_MS2SEC * USERCMD_MSEC
@@ -919,7 +924,7 @@ object UsercmdGen {
 
         private fun JoystickMove() {
             val anglespeed: Float
-            anglespeed = if ((toggled_run.on != 0) xor (in_alwaysRun.GetBool() && idAsyncNetwork.IsActive())) {
+            anglespeed = if ((toggled_run.on != 0) xor (in_alwaysRun.GetBool() && AlwaysRunAllowed())) {
                 M_MS2SEC * USERCMD_MSEC * in_angleSpeedKey.GetFloat()
             } else {
                 M_MS2SEC * USERCMD_MSEC
@@ -927,19 +932,19 @@ object UsercmdGen {
             if (0 == ButtonState(usercmdButton_t.UB_STRAFE)) {
                 viewangles.plusAssign(
                     YAW,
-                    anglespeed * in_yawSpeed.GetFloat() * joystickAxis[joystickAxis_t.AXIS_SIDE.ordinal]
+                    anglespeed * in_yawSpeed.GetFloat() * joystickAxis[joystickAxis_t.AXIS_LEFT_X.ordinal]
                 )
                 viewangles.plusAssign(
                     PITCH,
-                    anglespeed * in_pitchSpeed.GetFloat() * joystickAxis[joystickAxis_t.AXIS_FORWARD.ordinal]
+                    anglespeed * in_pitchSpeed.GetFloat() * joystickAxis[joystickAxis_t.AXIS_LEFT_Y.ordinal]
                 )
             } else {
                 cmd.rightmove =
-                    ClampChar(cmd.rightmove + joystickAxis[joystickAxis_t.AXIS_SIDE.ordinal]).code.toByte()
+                    ClampChar(cmd.rightmove + joystickAxis[joystickAxis_t.AXIS_LEFT_X.ordinal]).code.toByte()
                 cmd.forwardmove =
-                    ClampChar(cmd.forwardmove + joystickAxis[joystickAxis_t.AXIS_FORWARD.ordinal]).code.toByte()
+                    ClampChar(cmd.forwardmove + joystickAxis[joystickAxis_t.AXIS_LEFT_Y.ordinal]).code.toByte()
             }
-            cmd.upmove = ClampChar(cmd.upmove + joystickAxis[joystickAxis_t.AXIS_UP.ordinal]).code.toByte()
+            cmd.upmove = ClampChar(cmd.upmove + joystickAxis[joystickAxis_t.AXIS_RIGHT_X.ordinal]).code.toByte()
         }
 
         private fun MouseMove() {
@@ -990,9 +995,11 @@ object UsercmdGen {
             strafeMy /= smooth.toFloat()
             historyCounter++
             if (abs(mx) > 1000 || abs(my) > 1000) {
-                win_main.Sys_DebugPrintf("idUsercmdGenLocal.MouseMove: Ignoring ridiculous mouse delta.\n")
-                my = 0.0f
-                mx = my
+                // DG: dhewm3 no longer zeroes the delta — high DPI mice can produce large deltas
+                if (!ridiculousDeltaWarningShown) {
+                    ridiculousDeltaWarningShown = true
+                    win_main.Sys_DebugPrintf("idUsercmdGenLocal.MouseMove: Detected ridiculous mouse delta (expected with High DPI mice, though!).\n")
+                }
             }
             mx *= sensitivity.GetFloat()
             my *= sensitivity.GetFloat()
@@ -1024,12 +1031,14 @@ object UsercmdGen {
                 }
             }
             if (0 == ButtonState(usercmdButton_t.UB_STRAFE)) {
-                viewangles.minusAssign(YAW, m_yaw.GetFloat() * mx)
+                val invYaw = if (m_invertLook.GetInteger() and 2 != 0) -1.0f else 1.0f
+                viewangles.minusAssign(YAW, m_yaw.GetFloat() * mx * invYaw)
             } else {
                 cmd.rightmove = ClampChar((cmd.rightmove + strafeMx).toInt()).code.toByte()
             }
             if (0 == ButtonState(usercmdButton_t.UB_STRAFE) && cmd.buttons.toInt() and BUTTON_MLOOK != 0) {
-                viewangles.plusAssign(PITCH, m_pitch.GetFloat() * my)
+                val invPitch = if (m_invertLook.GetInteger() and 1 != 0) -1.0f else 1.0f
+                viewangles.plusAssign(PITCH, m_pitch.GetFloat() * my * invPitch)
             } else {
                 cmd.forwardmove = ClampChar((cmd.forwardmove - strafeMy).toInt()).code.toByte()
             }
@@ -1054,7 +1063,7 @@ object UsercmdGen {
             }
 
             // check the run button
-            if ((toggled_run.on != 0) xor (in_alwaysRun.GetBool() && idAsyncNetwork.IsActive())) {
+            if ((toggled_run.on != 0) xor (in_alwaysRun.GetBool() && AlwaysRunAllowed())) {
                 cmd.buttons = cmd.buttons or BUTTON_RUN.toByte()
             }
 
@@ -1184,7 +1193,15 @@ object UsercmdGen {
                 "in_alwaysRun",
                 "0",
                 CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_BOOL,
-                "always run  = new idCVar(reverse _speed button) - only in MP"
+                "always run (reverse _speed button) - only in MP, unless in_allowAlwaysRunInSP is set"
+            )
+
+            // DG: allow always run and toggle run in SP as well
+            private val in_allowAlwaysRunInSP: idCVar = idCVar(
+                "in_allowAlwaysRunInSP",
+                "0",
+                CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_BOOL,
+                "Allow always run and toggle run in Single Player as well - keep in mind you may run out of stamina!"
             )
             private val in_angleSpeedKey: idCVar = idCVar(
                 "in_anglespeedkey",
@@ -1214,7 +1231,7 @@ object UsercmdGen {
                 "in_toggleRun",
                 "0",
                 CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_BOOL,
-                "pressing _speed button toggles run on/off - only in MP"
+                "pressing _speed button toggles run on/off - only in MP, unless in_allowAlwaysRunInSP is set"
             )
             private val in_toggleZoom: idCVar = idCVar(
                 "in_toggleZoom",
@@ -1268,6 +1285,16 @@ object UsercmdGen {
                 CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_FLOAT,
                 "mouse yaw scale"
             )
+
+            // DG: added m_invertLook for mouse invert
+            private val m_invertLook: idCVar = idCVar(
+                "m_invertLook",
+                "0",
+                CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_INTEGER,
+                "invert mouse look 0: don't invert, 1: invert up/down (flight controls), 2: invert left/right, 3: invert both",
+                0.0f,
+                3.0f
+            )
             private val sensitivity: idCVar = idCVar(
                 "sensitivity",
                 "5",
@@ -1276,6 +1303,7 @@ object UsercmdGen {
             )
             var history: Array<DoubleArray> = Array(8) { DoubleArray(2) }
             var historyCounter = 0
+            private var ridiculousDeltaWarningShown = false
         }
 
         init {

@@ -14,7 +14,6 @@ import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.CmdSystem.cmdSystem
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_Integer
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_MapName
-import neo.framework.Common.Companion.com_asyncInput
 import neo.framework.UsercmdGen.inhibit_t
 import neo.framework.UsercmdGen.usercmd_t
 import neo.idlib.BitMsg.idBitMsg
@@ -145,7 +144,6 @@ class AsyncNetwork {
                         Common.common.Printf("USAGE: connect <serverName>\n")
                         return
                     }
-                    com_asyncInput.SetBool(false)
                     client.ConnectToServer(args!!.Argv(1))
                 }
 
@@ -170,7 +168,6 @@ class AsyncNetwork {
                     if (idStr.Icmp(cvarSystem.GetCVarString("si_gameType"), "singleplayer") == 0) {
                         cvarSystem.SetCVarString("si_gameType", "deathmatch")
                     }
-                    com_asyncInput.SetBool(false)
                     when (cvarSystem.GetCVarInteger("net_serverDedicated")) {
                         0, 2 -> if (!renderSystem.IsOpenGLRunning()) {
                             Common.common.Warning(
@@ -373,7 +370,6 @@ class AsyncNetwork {
                 masters[2].cVar = master2
                 masters[3].cVar = master3
                 masters[4].cVar = master4
-                if (!ID_DEMO_BUILD) { //#ifndef
                     cmdSystem.AddCommand(
                         "spawnServer",
                         SpawnServer_f.instance,
@@ -433,7 +429,6 @@ class AsyncNetwork {
                         CmdSystem.CMD_FL_SYSTEM,
                         "internal - cause a sync down of game-modified userinfo"
                     )
-                }
             }
 
             fun Shutdown() {
@@ -829,7 +824,7 @@ class AsyncNetwork {
                  1.3 patch:		    40
                  1.3.1:			    41
         */
-        const val ASYNC_PROTOCOL_MINOR = 41
+        const val ASYNC_PROTOCOL_MINOR = 42 // DG: dhewm3 WIP protocol
         const val ASYNC_PROTOCOL_VERSION = (Licensee.ASYNC_PROTOCOL_MAJOR shl 16) + ASYNC_PROTOCOL_MINOR
 
         // special game init ids

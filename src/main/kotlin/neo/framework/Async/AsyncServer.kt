@@ -693,7 +693,7 @@ object AsyncServer {
                     )
                     if (newPacket) {
                         msg.Init(msgBuf, msgBuf.capacity())
-                        msg.SetSize(size.integerValue)
+                        msg.SetSize(size._val)
                         msg.BeginReading()
                         if (ProcessMessage(from, msg)) {
                             return  // return because rcon was used
@@ -831,7 +831,7 @@ object AsyncServer {
                     }
                     val msg1 = idStr()
                     GetAsyncStatsAvgMsg(msg1)
-                    Common.common.Printf(Str.va("%s\n", msg1.toString()))
+                    Common.common.Printf("%s\n", msg1.toString())
                     nextAsyncStatsTime = serverTime + 1000
                 }
             }
@@ -849,7 +849,7 @@ object AsyncServer {
             }
             while (serverPort.GetPacket(from, msgBuf, size, msgBuf.capacity())) {
                 msg.Init(msgBuf, msgBuf.capacity())
-                msg.SetSize(size.integerValue)
+                msg.SetSize(size._val)
                 msg.BeginReading()
                 id = msg.ReadShort().toInt()
                 if (id == MsgChannel.CONNECTIONLESS_MESSAGE_ID) {
@@ -1075,12 +1075,11 @@ object AsyncServer {
         fun PrintLocalServerInfo() {
             var i: Int
             Common.common.Printf(
-                "server '%s' IP = %s\nprotocol %d.%d OS mask 0x%x\n",
+                "server '%s' IP = %s\nprotocol %d.%d\n",
                 Session.sessLocal.mapSpawnData.serverInfo.GetString("si_name"),
                 win_net.Sys_NetAdrToString(serverPort.GetAdr()),
                 Licensee.ASYNC_PROTOCOL_MAJOR,
-                AsyncNetwork.ASYNC_PROTOCOL_MINOR,
-                FileSystem_h.fileSystem.GetOSMask()
+                AsyncNetwork.ASYNC_PROTOCOL_MINOR
             )
             Session.sessLocal.mapSpawnData.serverInfo.Print()
             i = 0
@@ -1942,6 +1941,7 @@ object AsyncServer {
                     idStr.snPrintf(
                         challenges[ichallenge].guid,
                         challenges[ichallenge].guid.size,
+                        "%s",
                         TempDump.ctos(guid)
                     )
 
@@ -2143,7 +2143,8 @@ object AsyncServer {
                 i++
             }
             outMsg.WriteByte(AsyncNetwork.MAX_ASYNC_CLIENTS.toByte())
-            outMsg.WriteLong(FileSystem_h.fileSystem.GetOSMask())
+            // DG: dhewm3 eliminated GetOSMask(); sending -1 restores compatibility with id's masterserver
+            outMsg.WriteLong(-1)
             serverPort.SendPacket(from, outMsg.GetData()!!, outMsg.GetSize())
         }
 
@@ -2350,7 +2351,7 @@ object AsyncServer {
                 )
                 return
             }
-            idStr.snPrintf(challenges[i].guid, 12, TempDump.ctos(client_guid))
+            idStr.snPrintf(challenges[i].guid, 12, "%s", TempDump.ctos(client_guid))
             if (reply == authReply_t.AUTH_OK) {
                 challenges[i].authState = authState_t.CDK_OK
                 Common.common.Printf("client %s %s is authed\n", win_net.Sys_NetAdrToString(client_from), client_guid)
@@ -2404,7 +2405,7 @@ object AsyncServer {
             outMsg.WriteLong(0)
 
             // write the pak checksum for game code
-            outMsg.WriteLong(gamePakChecksum.integerValue)
+            outMsg.WriteLong(gamePakChecksum._val)
             serverPort.SendPacket(to, outMsg.GetData()!!, outMsg.GetSize())
             return true
         }
@@ -2504,7 +2505,7 @@ object AsyncServer {
                 msg.WriteLong(serverChecksums[i++])
             }
             msg.WriteLong(0)
-            msg.WriteLong(gamePakChecksum.integerValue)
+            msg.WriteLong(gamePakChecksum._val)
             SendReliableMessage(clientNum, msg)
             return true
         }
@@ -2579,7 +2580,7 @@ object AsyncServer {
             assert(serverChecksums[0] != 0)
 
             // compare the lists
-            if (serverGamePakChecksum.integerValue != gamePakChecksum) {
+            if (serverGamePakChecksum._val != gamePakChecksum) {
                 Common.common.Printf(
                     "client %s: invalid game code pak ( 0x%x )\n",
                     if (from != null) win_net.Sys_NetAdrToString(from) else Str.va("%d", clientNum),

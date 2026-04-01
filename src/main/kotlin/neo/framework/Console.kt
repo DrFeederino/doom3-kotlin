@@ -424,7 +424,7 @@ class Console {
             }
 
             // FIX: Restored com_showFPS guard — FPS counter should only show when the cvar is set
-            if (Common.com_showFPS.GetBool()) {
+            if (Common.com_showFPS.GetInteger() != 0) {
                 y = SCR_DrawFPS(0.0f)
             }
             if (Common.com_showMemoryUsage.GetBool()) {
@@ -1089,7 +1089,7 @@ class Console {
                  SCR_DrawFPS
                  ==================
                  */
-        const val FPS_FRAMES = 4
+        const val FPS_FRAMES = 64
         const val TOTAL_LINES = CON_TEXTSIZE / LINE_WIDTH
         const val NUM_CON_TIMES = 4
         val localConsole: idConsoleLocal = idConsoleLocal()
@@ -1107,8 +1107,8 @@ class Console {
 
          =============================================================================
          */
-        var previous = 0
-        var previousTimes: IntArray = IntArray(FPS_FRAMES)
+        var previous = 0.0
+        var previousTimes: FloatArray = FloatArray(FPS_FRAMES)
 
         /*
      ==================
@@ -1155,36 +1155,34 @@ class Console {
         }
 
         fun SCR_DrawFPS(y: Float): Float {
-            val s: String
-            val w: Int
-            var i: Int
-            var total: Int
-            var fps: Int
-            val t: Int
-            val frameTime: Int
-
             // don't use serverTime, because that will be drifting to
             // correct for internet lag changes, timescales, timedemos, etc
-            t = win_shared.Sys_Milliseconds()
-            frameTime = t - previous
+            val t = win_shared.Sys_Milliseconds().toDouble()
+            val frameTime = (t - previous).toFloat()
             previous = t
+
             previousTimes[index % FPS_FRAMES] = frameTime
             index++
             if (index > FPS_FRAMES) {
                 // average multiple frames together to smooth changes out a bit
-                total = 0
-                i = 0
+                var total = 0.0f
+                var minTime = 10000.0f
+                var maxTime = 0.0f
+                var i = 0
                 while (i < FPS_FRAMES) {
-                    total += previousTimes[i]
+                    val pt = previousTimes[i]
+                    total += pt
+                    minTime = Math.min(minTime, pt)
+                    maxTime = Math.max(maxTime, pt)
                     i++
                 }
-                if (0 == total) {
-                    total = 1
+                if (total == 0.0f) {
+                    total = 0.1f
                 }
-                fps = 10000 * FPS_FRAMES / total
-                fps = (fps + 5) / 10
-                s = Str.va("%dfps", fps)
-                w = s.length * RenderSystem.BIGCHAR_WIDTH
+                val fps = (1000.0f * FPS_FRAMES) / total
+
+                var s = Str.va("%.2ffps", fps)
+                var w = s.length * RenderSystem.BIGCHAR_WIDTH
                 RenderSystem.renderSystem.DrawBigStringExt(
                     635 - w,
                     idMath.FtoiFast(y) + 2,
@@ -1193,6 +1191,20 @@ class Console {
                     true,
                     localConsole.charSetShader
                 )
+
+                if (Common.com_showFPS.GetInteger() > 1) {
+                    val y2 = y + RenderSystem.BIGCHAR_HEIGHT + 4
+                    s = Str.va("avg %.2fms min %.2f max %.2f", total * (1.0f / FPS_FRAMES), minTime, maxTime)
+                    w = s.length * RenderSystem.SMALLCHAR_WIDTH
+                    RenderSystem.renderSystem.DrawSmallStringExt(
+                        635 - w,
+                        idMath.FtoiFast(y2) + 2,
+                        s.toCharArray(),
+                        colorWhite,
+                        true,
+                        localConsole.charSetShader
+                    )
+                }
             }
             return y + RenderSystem.BIGCHAR_HEIGHT + 4
         }
@@ -1261,7 +1273,7 @@ class Console {
                 }
                 val msg = idStr()
                 idAsyncNetwork.server.GetAsyncStatsAvgMsg(msg)
-                SCR_DrawTextRightAlign(yy, msg.toString())
+                SCR_DrawTextRightAlign(yy, "%s", msg.toString())
             } else if (idAsyncNetwork.client.IsActive()) {
                 outgoingRate = idAsyncNetwork.client.GetOutgoingRate()
                 incomingRate = idAsyncNetwork.client.GetIncomingRate()

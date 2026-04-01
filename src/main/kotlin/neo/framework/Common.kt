@@ -284,9 +284,7 @@ class Common {
 
                 // override cvars from command line
                 StartupVariable(null, false)
-                if (idAsyncNetwork.serverDedicated.GetInteger() == 0 && win_main.Sys_AlreadyRunning()) {
-                    win_main.Sys_Quit()
-                }
+                // DG: dhewm3 removed Sys_AlreadyRunning() check
 
                 // initialize processor specific SIMD implementation
                 InitSIMD()
@@ -576,7 +574,7 @@ class Common {
          */
         override fun ActivateTool(active: Boolean) {
             com_editorActive = active
-            win_input.Sys_GrabMouseCursor(!active)
+            // DG: dhewm3 removed Sys_GrabMouseCursor from here
         }
 
         override fun WriteConfigToFile(filename: String) {
@@ -823,7 +821,7 @@ class Common {
                 return
             }
             warningList.sort()
-            Printf("------------- Warnings ---------------\n")
+            Printf("----- Warnings -----\n")
             Printf("during %s...\n", warningCaption)
             i = 0
             while (i < warningList.size()) {
@@ -957,8 +955,8 @@ class Common {
             }
             win_main.Sys_Printf(
                 "shutting down: %s\n", errorMessage[0]
-            ) // FIX: was missing — C++ prints this before shutdown
-            win_main.Sys_SetFatalError(errorMessage[0])
+            )
+            // DG: dhewm3 removed Sys_SetFatalError, just uses Printf above
             Shutdown()
             win_main.Sys_Error("%s", errorMessage[0])
         }
@@ -1072,8 +1070,7 @@ class Common {
             // if any archived cvars are modified after this, we will trigger a writing of the config file
             cvarSystem.ClearModifiedFlags(CVarSystem.CVAR_ARCHIVE)
 
-            // cvars are initialized, but not the rendering system. Allow preference startup dialog
-            win_main.Sys_DoPreferences()
+            // DG: dhewm3 removed Sys_DoPreferences()
 
             // init the user command input code
             UsercmdGen.usercmdGen.Init()
@@ -1131,7 +1128,6 @@ class Common {
             // kill sound first
             val sw = snd_system.soundSystem.GetPlayingSoundWorld()
             sw?.StopAllSounds()
-            snd_system.soundSystem.ClearBuffer()
 
             // shutdown the script debugger
             // DebuggerServerShutdown();
@@ -1361,34 +1357,29 @@ class Common {
 
         @Throws(idException::class)
         fun SetMachineSpec() {
-            val cpuid_t = win_main.Sys_GetProcessorId()
-            val ghz = win_cpu.Sys_ClockTicksPerSecond() * 0.000000001
             val cores = Runtime.getRuntime().availableProcessors()
             val vidRam = 512 // Sys_GetVideoRam();
             val sysRam = win_shared.Sys_GetSystemRam()
             val oldCard = booleanArrayOf(false)
             Printf(
                 """Detected
- 	%d x %.2f GHz CPU
+ 	%d cores CPU
 	%d MB of System memory
 	%d MB of Video memory on %s
 
 """,
                 cores,
-                ghz,
                 sysRam,
                 vidRam,
                 if (oldCard[0]) "a less than optimal video architecture" else "an optimal video architecture"
             )
-            val cpuGhz = if (cpuid_t and CPUID_AMD != 0) 1.9 else 2.19
-            val cpuGhzPart2 = if (cpuid_t and CPUID_AMD != 0) 1.1 else 1.25
-            if (ghz >= 2.75 && vidRam >= 512 && sysRam >= 1024 && !oldCard[0]) { //TODO:try to make this shit work.
+            if (vidRam >= 512 && sysRam >= 1024 && !oldCard[0]) {
                 Printf("This system qualifies for Ultra quality!\n")
                 com_machineSpec.SetInteger(3)
-            } else if (ghz >= cpuGhz && vidRam >= 256 && sysRam >= 512 && !oldCard[0]) {
+            } else if (vidRam >= 256 && sysRam >= 512 && !oldCard[0]) {
                 Printf("This system qualifies for High quality!\n")
                 com_machineSpec.SetInteger(2)
-            } else if (ghz >= cpuGhzPart2 && vidRam >= 128 && sysRam >= 384) {
+            } else if (vidRam >= 128 && sysRam >= 384) {
                 Printf("This system qualifies for Medium quality.\n")
                 com_machineSpec.SetInteger(1)
             } else {
@@ -1435,7 +1426,7 @@ class Common {
                 CmdSystem.CMD_FL_SYSTEM,
                 "execs the appropriate config files and sets cvars based on com_machineSpec"
             )
-            if (!ID_DEMO_BUILD && !ID_DEDICATED) {
+            if (!ID_DEDICATED) { // DG: dhewm3 removed ID_DEMO_BUILD guard
                 // compilers
                 CmdSystem.cmdSystem.AddCommand(
                     "dmap",
@@ -1806,7 +1797,7 @@ class Common {
             }
             warningFile = FileSystem_h.fileSystem.OpenFileWrite("warnings.txt", "fs_savepath")
             if (warningFile != null) {
-                warningFile.Printf("------------- Warnings ---------------\n\n")
+                warningFile.Printf("----- Warnings -----\n\n")
                 warningFile.Printf("during %s...\n", warningCaption)
                 warningList.sort()
                 i = 0
@@ -1820,7 +1811,7 @@ class Common {
                 } else {
                     warningFile.Printf("\n%d warnings.\n", warningList.size())
                 }
-                warningFile.Printf("\n\n-------------- Errors ---------------\n\n")
+                warningFile.Printf("\n\n----- Errors -----\n\n")
                 errorList.sort()
                 i = 0
                 while (i < errorList.size()) {
@@ -1848,9 +1839,7 @@ class Common {
             val stat = com_asyncStats[com_ticNumber and MAX_ASYNC_STATS - 1] //memset( stat, 0, sizeof( *stat ) );
             stat.milliseconds = win_shared.Sys_Milliseconds()
             stat.deltaMsec = stat.milliseconds - com_asyncStats[com_ticNumber - 1 and MAX_ASYNC_STATS - 1].milliseconds
-            if (UsercmdGen.usercmdGen != null && com_asyncInput.GetBool()) {
-                UsercmdGen.usercmdGen.UsercmdInterrupt()
-            }
+            // DG: dhewm3 removed com_asyncInput — input is always synchronous now
             // FIX: Cases 1,3 both call AsyncUpdateWrite (dhewm3 fall-through); case 2 calls AsyncUpdate
             when (com_asyncSound.GetInteger()) {
                 1, 3 -> snd_system.soundSystem.AsyncUpdateWrite(stat.milliseconds)
@@ -2377,8 +2366,9 @@ class Common {
      */
     internal class Com_ExecMachineSpec_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            if (com_machineSpec.GetInteger() == 3) {
-                cvarSystem.SetCVarInteger("image_anisotropy", 1, CVarSystem.CVAR_ARCHIVE)
+            // DG: add an optional "nores" argument for "don't change the resolution" (r_mode)
+            val nores = args != null && args.Argc() > 1 && idStr.Icmp(args.Argv(1), "nores") == 0
+            if (com_machineSpec.GetInteger() == 3) { // ultra
                 cvarSystem.SetCVarInteger("image_lodbias", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_forceDownSize", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_roundDown", 1, CVarSystem.CVAR_ARCHIVE)
@@ -2395,12 +2385,12 @@ class Common {
                 cvarSystem.SetCVarInteger("image_useCompression", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_ignoreHighQuality", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("s_maxSoundsPerShader", 0, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("r_mode", 5, CVarSystem.CVAR_ARCHIVE)
+                if (!nores)
+                    cvarSystem.SetCVarInteger("r_mode", 5, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_useNormalCompression", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("r_multiSamples", 0, CVarSystem.CVAR_ARCHIVE)
-            } else if (com_machineSpec.GetInteger() == 2) {
+            } else if (com_machineSpec.GetInteger() == 2) { // high
                 cvarSystem.SetCVarString("image_filter", "GL_LINEAR_MIPMAP_LINEAR", CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("image_anisotropy", 1, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_lodbias", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_forceDownSize", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_roundDown", 1, CVarSystem.CVAR_ARCHIVE)
@@ -2417,9 +2407,10 @@ class Common {
                 cvarSystem.SetCVarInteger("image_ignoreHighQuality", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("s_maxSoundsPerShader", 0, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_useNormalCompression", 0, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("r_mode", 4, CVarSystem.CVAR_ARCHIVE)
+                if (!nores)
+                    cvarSystem.SetCVarInteger("r_mode", 4, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("r_multiSamples", 0, CVarSystem.CVAR_ARCHIVE)
-            } else if (com_machineSpec.GetInteger() == 1) {
+            } else if (com_machineSpec.GetInteger() == 1) { // medium
                 cvarSystem.SetCVarString("image_filter", "GL_LINEAR_MIPMAP_LINEAR", CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_anisotropy", 1, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_lodbias", 0, CVarSystem.CVAR_ARCHIVE)
@@ -2435,9 +2426,10 @@ class Common {
                 cvarSystem.SetCVarInteger("image_downSizeSpecularLimit", 64, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_downSizeBumpLimit", 256, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_useNormalCompression", 2, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("r_mode", 3, CVarSystem.CVAR_ARCHIVE)
+                if (!nores)
+                    cvarSystem.SetCVarInteger("r_mode", 3, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("r_multiSamples", 0, CVarSystem.CVAR_ARCHIVE)
-            } else {
+            } else { // low
                 cvarSystem.SetCVarString("image_filter", "GL_LINEAR_MIPMAP_LINEAR", CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_anisotropy", 1, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_lodbias", 0, CVarSystem.CVAR_ARCHIVE)
@@ -2454,48 +2446,20 @@ class Common {
                 cvarSystem.SetCVarInteger("image_downSizeBump", 1, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_downSizeSpecularLimit", 64, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_downSizeBumpLimit", 256, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("r_mode", 3, CVarSystem.CVAR_ARCHIVE)
+                if (!nores)
+                    cvarSystem.SetCVarInteger("r_mode", 3, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("image_useNormalCompression", 2, CVarSystem.CVAR_ARCHIVE)
                 cvarSystem.SetCVarInteger("r_multiSamples", 0, CVarSystem.CVAR_ARCHIVE)
             }
-            if (win_shared.Sys_GetVideoRam() < 128) {
-                cvarSystem.SetCVarBool("image_ignoreHighQuality", true, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("image_downSize", 1, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("image_downSizeLimit", 256, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("image_downSizeSpecular", 1, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("image_downSizeSpecularLimit", 64, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("image_downSizeBump", 1, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("image_downSizeBumpLimit", 256, CVarSystem.CVAR_ARCHIVE)
-            }
-            if (win_shared.Sys_GetSystemRam() < 512) {
-                cvarSystem.SetCVarBool("image_ignoreHighQuality", true, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("s_maxSoundsPerShader", 1, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("image_downSize", 1, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("image_downSizeLimit", 256, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("image_downSizeSpecular", 1, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarInteger("image_downSizeSpecularLimit", 64, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarBool("com_purgeAll", true, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarBool("r_forceLoadImages", true, CVarSystem.CVAR_ARCHIVE)
-            } else {
-                cvarSystem.SetCVarBool("com_purgeAll", false, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarBool("r_forceLoadImages", false, CVarSystem.CVAR_ARCHIVE)
-            }
-            val oldCard = booleanArrayOf(false)
-            val nv10or20 = booleanArrayOf(false)
-            if (oldCard[0]) {
-                cvarSystem.SetCVarBool("g_decals", false, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarBool("g_projectileLights", false, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarBool("g_doubleVision", false, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarBool("g_muzzleFlash", false, CVarSystem.CVAR_ARCHIVE)
-            } else {
-                cvarSystem.SetCVarBool("g_decals", true, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarBool("g_projectileLights", true, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarBool("g_doubleVision", true, CVarSystem.CVAR_ARCHIVE)
-                cvarSystem.SetCVarBool("g_muzzleFlash", true, CVarSystem.CVAR_ARCHIVE)
-            }
-            if (nv10or20[0]) {
-                cvarSystem.SetCVarInteger("image_useNormalCompression", 1, CVarSystem.CVAR_ARCHIVE)
-            }
+
+            // DG: dhewm3 removed old video/system RAM detection and old GPU card checks
+            cvarSystem.SetCVarBool("com_purgeAll", false, CVarSystem.CVAR_ARCHIVE)
+            cvarSystem.SetCVarBool("r_forceLoadImages", false, CVarSystem.CVAR_ARCHIVE)
+
+            cvarSystem.SetCVarBool("g_decals", true, CVarSystem.CVAR_ARCHIVE)
+            cvarSystem.SetCVarBool("g_projectileLights", true, CVarSystem.CVAR_ARCHIVE)
+            cvarSystem.SetCVarBool("g_doubleVision", true, CVarSystem.CVAR_ARCHIVE)
+            cvarSystem.SetCVarBool("g_muzzleFlash", true, CVarSystem.CVAR_ARCHIVE)
         }
 
         companion object {
@@ -2888,7 +2852,7 @@ class Common {
 
     companion object {
         const val ASYNCSOUND_INFO: String =
-            "0: mix sound inline, 1: memory mapped async mix, 2: callback mixing, 3: write async mix"
+            "0: mix sound inline, 1 or 3: async update every 16ms 2: async update about every 100ms (original behavior)"
         const val DMAP_DONE: String = "DMAPDone"
         const val EDITOR_NONE = 0
         val DMAP_MSGID: String = "DMAPOutput"
@@ -2915,23 +2879,15 @@ class Common {
         val com_asyncInput: idCVar = idCVar(
             "com_asyncInput", "0", CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM, "sample input from the async thread"
         )
-        val com_asyncSound: idCVar = if (MACOS_X) idCVar(
-            "com_asyncSound",
-            "2",
-            CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ROM,
-            ASYNCSOUND_INFO
-        ) else if (__linux__) idCVar(
-            "com_asyncSound",
-            "3",
-            CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ROM,
-            ASYNCSOUND_INFO
-        ) else idCVar(
+
+        // DG: dhewm3 unified com_asyncSound across platforms
+        val com_asyncSound: idCVar = idCVar(
             "com_asyncSound",
             "1",
             CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM,
             ASYNCSOUND_INFO,
             0.0f,
-            3.0f // FIX: was 1.0f — dhewm3 allows values 0-3
+            3.0f
         )
         val com_developer: idCVar = idCVar(
             "developer",
@@ -3003,7 +2959,7 @@ class Common {
         val com_showFPS: idCVar = idCVar(
             "com_showFPS",
             "1",
-            CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_NOCHEAT,
+            CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_NOCHEAT,
             "show frames rendered per second"
         )
         val com_showMemoryUsage: idCVar = idCVar(

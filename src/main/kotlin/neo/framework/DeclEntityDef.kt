@@ -139,10 +139,10 @@ class DeclEntityDef {
 
             // precache all referenced media
             // do this as long as we arent in modview
-            // NOTE: Kotlin infix `and` has higher precedence than `==`, so this parses as:
-            //   0 == (com_editors and (EDITOR_RADIANT or EDITOR_AAS))
-            // which correctly matches C++: !(com_editors & (EDITOR_RADIANT|EDITOR_AAS))
-            if (0 == Common.com_editors and (Common.EDITOR_RADIANT or Common.EDITOR_AAS)) {
+            // DG: ... and only if we currently have a loaded/loading map
+            if (0 == Common.com_editors and (Common.EDITOR_RADIANT or Common.EDITOR_AAS)
+                && Session.session.GetCurrentMapName().isNotEmpty()
+            ) {
                 Game_local.game.CacheDictionaryMedia(dict)
             }
             return true

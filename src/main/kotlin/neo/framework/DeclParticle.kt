@@ -581,6 +581,11 @@ object DeclParticle {
                         dir.Normalize()
                         dir.plusAssign(2, directionParms[0])
                     }
+
+                    else -> {
+                        Common.common.Error("idParticleStage::ParticleOrigin: bad direction")
+                        return
+                    }
                 }
 
                 // add speed
@@ -1360,6 +1365,14 @@ object DeclParticle {
                         src.UnreadToken(token)
                     }
                     stage.gravity = src.ParseFloat()
+                    continue
+                }
+                if (0 == token.Icmp("softeningRadius")) { // #3878 soft particles
+                    Common.common.Warning(
+                        "Particle %s from %s has stage with \"softeningRadius\" attribute, which is currently ignored (we soften all suitable particles)\n",
+                        this.GetName(), src.GetFileName()
+                    )
+                    src.ParseFloat() // consume the value
                     continue
                 }
                 src.Error("unknown token %s\n", token.toString())

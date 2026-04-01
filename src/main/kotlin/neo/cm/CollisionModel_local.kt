@@ -430,7 +430,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             Common.common.Printf("idCollisionModelManagerLocal::GetModelContents: invalid model handle\n")
             return false
         }
-        contents.integerValue = (models!![model]!!.contents)
+        contents._val = (models!![model]!!.contents)
         return true
     }
 
@@ -543,20 +543,6 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             ContentsTrm(results, start, trm, trmAxis, contentMask, model, modelOrigin, modelAxis)
             return
         }
-        if (_DEBUG) {
-            //var startsolid = false
-            // test whether or not stuck to begin with
-            if (cm_debugCollision.GetBool()) {
-                if (0 == entered && !getContacts) {
-                    entered = 1
-                    // if already messed up to begin with
-                    if (Contents(start, trm!!, trmAxis, -1, model, modelOrigin, modelAxis) and contentMask != 0) {
-                        //startsolid = true
-                    }
-                    entered = 0
-                }
-            }
-        }
         checkCount++
         tw.trace.fraction = 1.0f
         tw.trace.c.contents = 0
@@ -647,7 +633,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 Session.session.rw.DebugArrow(colorRed, start, end, 1)
             } catch (_: UninitializedPropertyAccessException) {
             }
-            Common.common.Printf("idCollisionModelManagerLocal::Translation: huge translation\n")
+            Common.common.Printf(
+                "idCollisionModelManagerLocal::Translation: huge translation from (%.2f %.2f %.2f) to (%.2f %.2f %.2f)\n",
+                start.x, start.y, start.z, end.x, end.y, end.z
+            )
             return
         }
         tw.pointTrace = false
@@ -879,10 +868,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             }
         }
         if (_DEBUG) {
-            // test for missed collisions
+            // test for collisions
             if (cm_debugCollision.GetBool()) {
-                if (0 == entered && !getContacts) {
-                    entered = 1
+                if (!getContacts) {
                     // if the trm is stuck in the model
                     if (Contents(
                             results.endpos, trm, trmAxis, -1, model, modelOrigin, modelAxis
@@ -895,7 +883,6 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                         // re-run collision detection to find out where it failed
                         Translation(tr, start, end, trm, trmAxis, contentMask, model, modelOrigin, modelAxis)
                     }
-                    entered = 0
                 }
             }
         }
@@ -930,21 +917,6 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         if (rotation.GetAngle() == 0.0f) {
             ContentsTrm(results, start, trm, trmAxis, contentMask, model, modelOrigin, modelAxis)
             return
-        }
-        if (_DEBUG) {
-            //var startsolid = false
-            // test whether or not stuck to begin with
-            if (cm_debugCollision.GetBool()) {
-                if (0 == entered) {
-                    entered = 1
-                    // if already messed up to begin with
-                    Contents(start, trm, trmAxis, -1, model, modelOrigin, modelAxis)
-//                        if (Contents(start, trm, trmAxis, -1, model, modelOrigin, modelAxis) and contentMask != 0) {
-//                            startsolid = true
-//                        }
-                    entered = 0
-                }
-            }
         }
         if (rotation.GetAngle() >= 180.0f || rotation.GetAngle() <= -180.0f) {
             if (rotation.GetAngle() >= 360.0f) {
@@ -1003,23 +975,19 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             modelAxis
         )
         if (_DEBUG) {
-            // test for missed collisions
+            // test for collisions
             if (cm_debugCollision.GetBool()) {
-                if (0 == entered) {
-                    entered = 1
-                    // if the trm is stuck in the model
-                    if (Contents(
-                            results.endpos, trm, results.endAxis, -1, model, modelOrigin, modelAxis
-                        ) and contentMask != 0
-                    ) {
-                        val tr = trace_s()
+                // if the trm is stuck in the model
+                if (Contents(
+                        results.endpos, trm, results.endAxis, -1, model, modelOrigin, modelAxis
+                    ) and contentMask != 0
+                ) {
+                    val tr = trace_s()
 
-                        // test where the trm is stuck in the model
-                        Contents(results.endpos, trm, results.endAxis, -1, model, modelOrigin, modelAxis)
-                        // re-run collision detection to find out where it failed
-                        Rotation(tr, start, rotation, trm, trmAxis, contentMask, model, modelOrigin, modelAxis)
-                    }
-                    entered = 0
+                    // test where the trm is stuck in the model
+                    Contents(results.endpos, trm, results.endAxis, -1, model, modelOrigin, modelAxis)
+                    // re-run collision detection to find out where it failed
+                    Rotation(tr, start, rotation, trm, trmAxis, contentMask, model, modelOrigin, modelAxis)
                 }
             }
         }
@@ -1128,7 +1096,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             total_translation = total_rotation
             min_rotation = 999999
             min_translation = min_rotation
-            max_rotation = -999999
+            max_rotation = 0
             max_translation = max_rotation
             num_rotation = 0
             num_translation = num_rotation
@@ -1674,7 +1642,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                 dist = normal.times(trmEdge.start)
                 d1 = normal.times(start) - dist
                 d2 = normal.times(end) - dist
-                f1._val = (d1 / (d1 - d2))
+                // DG: d1 - d2 was 0 in some weird case, which caused f1 to be INF,
+                //     which caused NaN mayhem all over the place
+                val d1d2diff = d1 - d2
+                f1._val = if (abs(d1d2diff) > idMath.FLT_EPSILON) d1 / d1d2diff else 0.0f
                 //assert( f1 >= 0.0f && f1 <= 1.0f );
                 tw.trace.c.point.set(start + (end - start) * f1._val)
                 // if retrieving contacts
@@ -6176,12 +6147,12 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         model.numNodes += 2
         // set front node bounds
         frontBounds = idBounds(bounds)
-        frontBounds[0][planeType.integerValue] = planeDist._val
+        frontBounds[0][planeType._val] = planeDist._val
         // set back node bounds
         backBounds = idBounds(bounds)
-        backBounds[1][planeType.integerValue] = planeDist._val
+        backBounds[1][planeType._val] = planeDist._val
         //
-        node.planeType = planeType.integerValue
+        node.planeType = planeType._val
         node.planeDist = planeDist._val
         node.children[0] = frontNode
         node.children[1] = backNode
@@ -6337,22 +6308,55 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     /*
     ================
     idCollisionModelManagerLocal::HashVec
+
+     DG: added "hash" and "althash" arguments - the function used to return "hash",
+         now it returns the number of potential hashes for vertices close to "vec":
+    If 1 is returned, "hash" is the proper hash for "vec" (and vectors close to it).
+    If 2 is returned, "hash" and "althash" are both proper hashes for vectors close to "vec".
+    If 3 is returned, there would be at least 4 different potential hashes for vectors close to it.
+                      "hash" contains the hash for exactly "vec".
     ================
     */
-    private fun HashVec(vec: idVec3): Int {/*
-             int x, y;
-
-             x = (((int)(vec[0] - cm_modelBounds[0].x + 0.5f )) >> cm_vertexShift) & (VERTEX_HASH_BOXSIZE-1);
-             y = (((int)(vec[1] - cm_modelBounds[0].y + 0.5f )) >> cm_vertexShift) & (VERTEX_HASH_BOXSIZE-1);
-
-             assert (x >= 0 && x < VERTEX_HASH_BOXSIZE && y >= 0 && y < VERTEX_HASH_BOXSIZE);
-
-             return y * VERTEX_HASH_BOXSIZE + x;
-             */
-        val x: Int = (vec[0] - cm_modelBounds[0].x + 0.5f).toInt() + 2 shr 2
-        val y: Int = (vec[1] - cm_modelBounds[0].y + 0.5f).toInt() + 2 shr 2
-        val z: Int = (vec[2] - cm_modelBounds[0].z + 0.5f).toInt() + 2 shr 2
-        return x + y * VERTEX_HASH_BOXSIZE + z and VERTEX_HASH_SIZE - 1
+    private fun HashVec(vec: idVec3, hash: CInt, althash: CInt): Int {
+        val offs = idVec3(vec.x - cm_modelBounds[0].x, vec.y - cm_modelBounds[0].y, vec.z - cm_modelBounds[0].z)
+        // in the original calculation for the "real" hash, 0.38 is added before casting to int etc
+        // do two checks here: 0.38 +/- 0.1 (VERTEX_EPSILON)
+        val checkOffs = arrayOf(idVec3(0.28f, 0.28f, 0.28f), idVec3(0.48f, 0.48f, 0.48f))
+        val xs = IntArray(2)
+        val ys = IntArray(2)
+        val zs = IntArray(2)
+        val hashes = IntArray(2)
+        for (i in 0..1) {
+            val hc = offs + checkOffs[i]
+            xs[i] = (hc.x.toInt() + 2) shr 2
+            ys[i] = (hc.y.toInt() + 2) shr 2
+            zs[i] = (hc.z.toInt() + 2) shr 2
+            hashes[i] = (xs[i] + ys[i] * VERTEX_HASH_BOXSIZE + zs[i]) and (VERTEX_HASH_SIZE - 1)
+        }
+        if (hashes[0] == hashes[1]) {
+            hash._val = hashes[0]
+            return 1
+        } else {
+            // this should be rare
+            var numDiff = 0
+            if (xs[0] != xs[1]) numDiff++
+            if (ys[0] != ys[1]) numDiff++
+            if (zs[0] != zs[1]) numDiff++
+            val hc = offs + idVec3(0.38f, 0.38f, 0.38f)
+            val x = (hc.x.toInt() + 2) shr 2
+            val y = (hc.y.toInt() + 2) shr 2
+            val z = (hc.z.toInt() + 2) shr 2
+            val realHash = (x + y * VERTEX_HASH_BOXSIZE + z) and (VERTEX_HASH_SIZE - 1)
+            if (numDiff == 1) {
+                hash._val = realHash
+                althash._val = if (realHash == hashes[0]) hashes[1] else hashes[0]
+                return 2
+            }
+            // if the hash-part is different for more than one coordinate
+            // (this should be even rarer), return 3 so if needed all model vertices are checked
+            hash._val = realHash
+            return 3
+        }
     }
 
     /*
@@ -6362,7 +6366,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
     */
     private fun GetVertex(model: cm_model_s, v: idVec3, vertexNum: CInt): Boolean {
         var i: Int
-        val hashKey: Int
+        val hashKey = CInt()
+        val altHashKey = CInt()
         var vn: Int
         val vert = idVec3()
         val p = idVec3()
@@ -6375,8 +6380,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             }
             i++
         }
-        hashKey = HashVec(vert)
-        vn = cm_vertexHash!!.First(hashKey)
+        val numHashCandidates = HashVec(vert, hashKey, altHashKey)
+        vn = cm_vertexHash!!.First(hashKey._val)
         while (vn >= 0) {
             p.set(model.vertices!![vn].p)
             // first compare z-axis because hash is based on x-y plane
@@ -6384,10 +6389,39 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     vert[0] - p[0]
                 ) < VERTEX_EPSILON && abs(vert[1] - p[1]) < VERTEX_EPSILON
             ) {
-                vertexNum.integerValue = (vn)
+                vertexNum._val = (vn)
                 return true
             }
             vn = cm_vertexHash!!.Next(vn)
+        }
+        // DG: points that are really close to each other can still have different hashes
+        if (numHashCandidates == 2) {
+            vn = cm_vertexHash!!.First(altHashKey._val)
+            while (vn >= 0) {
+                p.set(model.vertices!![vn].p)
+                // first compare z-axis because hash is based on x-y plane
+                if (abs(vert[2] - p[2]) < VERTEX_EPSILON && abs(
+                        vert[0] - p[0]
+                    ) < VERTEX_EPSILON && abs(vert[1] - p[1]) < VERTEX_EPSILON
+                ) {
+                    vertexNum._val = (vn)
+                    return true
+                }
+                vn = cm_vertexHash!!.Next(vn)
+            }
+        } else if (numHashCandidates > 2) {
+            // more than two potential hashes for vert? just check all of model's vertices
+            for (j in 0 until model.numVertices) {
+                p.set(model.vertices!![j].p)
+                // first compare z-axis because hash is based on x-y plane
+                if (abs(vert[2] - p[2]) < VERTEX_EPSILON && abs(
+                        vert[0] - p[0]
+                    ) < VERTEX_EPSILON && abs(vert[1] - p[1]) < VERTEX_EPSILON
+                ) {
+                    vertexNum._val = (j)
+                    return true
+                }
+            }
         }
         if (model.numVertices >= model.maxVertices) {
 
@@ -6401,9 +6435,9 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         }
         model.vertices!![model.numVertices].p.set(vert)
         model.vertices!![model.numVertices].checkcount = 0
-        vertexNum.integerValue = (model.numVertices)
+        vertexNum._val = (model.numVertices)
         // add vertice to hash
-        cm_vertexHash!!.Add(hashKey, model.numVertices)
+        cm_vertexHash!!.Add(hashKey._val, model.numVertices)
         //
         model.numVertices++
         return false
@@ -6431,18 +6465,18 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         if (model.numEdges == 0) {
             model.numEdges = 1
         }
-        found = if (v1num.integerValue != -1) {
+        found = if (v1num._val != -1) {
             true
         } else {
             GetVertex(model, v1, v1num)
         }
         found = found and GetVertex(model, v2, v2num)
         // if both vertices are the same or snapped onto each other
-        if (v1num.integerValue == v2num.integerValue) {
+        if (v1num._val == v2num._val) {
             edgeNum[edgeOffset] = 0
             return true
         }
-        hashKey = cm_edgeHash!!.GenerateKey(v1num.integerValue, v2num.integerValue)
+        hashKey = cm_edgeHash!!.GenerateKey(v1num._val, v2num._val)
         // if both vertices where already stored
         if (found) {
             e = cm_edgeHash!!.First(hashKey)
@@ -6454,8 +6488,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
                     continue
                 }
                 vertexNum = model.edges!![e].vertexNum
-                if (vertexNum[0] == v2num.integerValue) {
-                    if (vertexNum[1] == v1num.integerValue) {
+                if (vertexNum[0] == v2num._val) {
+                    if (vertexNum[1] == v1num._val) {
                         // negative for a reversed edge
                         edgeNum[edgeOffset] = -e
                         break
@@ -6480,8 +6514,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             cm_edgeHash!!.ResizeIndex(model.maxEdges)
         }
         // setup edge
-        model.edges!![model.numEdges].vertexNum[0] = v1num.integerValue
-        model.edges!![model.numEdges].vertexNum[1] = v2num.integerValue
+        model.edges!![model.numEdges].vertexNum[0] = v1num._val
+        model.edges!![model.numEdges].vertexNum[1] = v2num._val
         model.edges!![model.numEdges].internal = false
         model.edges!![model.numEdges].checkcount = 0
         model.edges!![model.numEdges].numUsers = 1 // used by one polygon atm
@@ -6516,7 +6550,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
 
         // turn the winding into a sequence of edges
         numPolyEdges = 0
-        v1num.integerValue = (-1) // first vertex unknown
+        v1num._val = (-1) // first vertex unknown
         i = 0
         j = 1
         while (i < w.GetNumPoints()) {
@@ -6526,7 +6560,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             GetEdge(model, w[i].ToVec3(), w[j].ToVec3(), polyEdges, numPolyEdges, v1num)
             if (polyEdges[numPolyEdges] != 0) {
                 // last vertex of this edge is the first vertex of the next edge
-                v1num.integerValue = (model.edges!![abs(polyEdges[numPolyEdges])].vertexNum[INTSIGNBITNOTSET(
+                v1num._val = (model.edges!![abs(polyEdges[numPolyEdges])].vertexNum[INTSIGNBITNOTSET(
                     polyEdges[numPolyEdges]
                 )])
                 // this edge is valid so keep it
@@ -7220,8 +7254,8 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         val maxVertices = CInt()
         val maxEdges = CInt()
         CM_EstimateVertsAndEdges(mapEnt, maxVertices, maxEdges)
-        model.maxVertices = maxVertices.integerValue
-        model.maxEdges = maxEdges.integerValue
+        model.maxVertices = maxVertices._val
+        model.maxEdges = maxEdges._val
         model.numVertices = 0
         model.numEdges = 0
         model.vertices = cm_vertex_s.generateArray(model.maxVertices)
@@ -8365,6 +8399,5 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         const val SHARP_EDGE_DOT = -0.7f
         private val tw: cm_traceWork_s = cm_traceWork_s()
         var contentsString: CharArray = CharArray(MAX_STRING_CHARS)
-        private var entered = 0
     }
 }

@@ -1066,7 +1066,7 @@ object FileSystem_h {
                         // false when null, preventing any mod from being added to the list.
                         if (null == list.mods.Find(dirs[i])) {
                             // DG: ignore d3xp, it's added explicitly later, if available
-                            if (dirs[i].Icmp("d3xp") == 0) {
+                            if (dirs[i].Icmp("d3xp") != 0) {
                                 list.mods.add(dirs[i])
                             }
                         }
@@ -1125,9 +1125,6 @@ object FileSystem_h {
                 list.descriptions.insert(idStr("Resurrection Of Evil (d3xp)"), 1)
             }
 
-            assert(list.mods.size() == list.descriptions.size())
-            list.mods.insert(idStr(""))
-            list.descriptions.insert(idStr("Doom 3"))
             assert(list.mods.size() == list.descriptions.size())
             return list
         }
@@ -1225,34 +1222,21 @@ object FileSystem_h {
             // Ase files from max may have the form of:
             // "//Purgatory/purgatory/doom/base/models/mapobjects/bitch/hologirl.tga"
             // which won't match any of our drive letter based search paths
-            var ignoreWarning = false
-            if (ID_DEMO_BUILD) {
-                base = OSPath.indexOf(Licensee.BASE_GAMEDIR)
-                var tempStr = OSPath
-                tempStr = tempStr.lowercase(Locale.getDefault())
-                if ((tempStr.contains("//") || tempStr.contains("w:"))
-                    && tempStr.contains("/doom/base/")
-                ) {
-                    // will cause a warning but will load the file. ase models have
-                    // hard coded doom/base/ in the material names
-                    base = OSPath.indexOf("base")
-                    ignoreWarning = true
+
+            // DG: dhewm3 removed ID_DEMO_BUILD branch and ignoreWarning
+            // look for the first complete directory name
+            base = OSPath.indexOf(Licensee.BASE_GAMEDIR)
+            while (base != -1) {
+                var c1: Char = '\u0000'
+                var c2: Char
+                if (base > 0) {
+                    c1 = OSPath[base - 1]
                 }
-            } else {
-                // look for the first complete directory name
-                base = OSPath.indexOf(Licensee.BASE_GAMEDIR)
-                while (base != -1) {
-                    var c1: Char = '\u0000'
-                    var c2: Char
-                    if (base > 0) {
-                        c1 = OSPath[base - 1]
-                    }
-                    c2 = OSPath[base + Licensee.BASE_GAMEDIR.length]
-                    if ((c1 == '/' || c1 == '\\') && (c2 == '/' || c2 == '\\')) {
-                        break
-                    }
-                    base = OSPath.indexOf(Licensee.BASE_GAMEDIR, base + 1)
+                c2 = OSPath[base + Licensee.BASE_GAMEDIR.length]
+                if ((c1 == '/' || c1 == '\\') && (c2 == '/' || c2 == '\\')) {
+                    break
                 }
+                base = OSPath.indexOf(Licensee.BASE_GAMEDIR, base + 1)
             }
             // fs_game and fs_game_base support - look for first complete name with a mod path
             // ( fs_game searched before fs_game_base )
@@ -1283,9 +1267,15 @@ object FileSystem_h {
                 iGame++
             }
             if (base > 0) {
-                s = OSPath.indexOf('/', base)
-                if (s < 0) {
-                    s = OSPath.indexOf('\\', base)
+                // DG: dhewm3 added .pk4/ path handling for paths inside pk4 files
+                s = OSPath.indexOf(".pk4/", base)
+                if (s != -1) {
+                    s += 4 // skip ".pk4", but not the following '/', that'll be skipped below
+                } else {
+                    s = OSPath.indexOf('/', base)
+                    if (s < 0) {
+                        s = OSPath.indexOf('\\', base)
+                    }
                 }
                 if (s != -1) {
 //                    strcpy(relativePath, s + 1);
@@ -1296,9 +1286,8 @@ object FileSystem_h {
                     return relativePath
                 }
             }
-            if (!ignoreWarning) {
-                idLib.common.Warning("idFileSystem::OSPathToRelativePath failed on %s", OSPath)
-            }
+            // DG: dhewm3 removed ignoreWarning
+            idLib.common.Warning("idFileSystem::OSPathToRelativePath failed on %s", OSPath)
             //            strcpy(relativePath, "");
             return ""
         }
@@ -1329,7 +1318,7 @@ object FileSystem_h {
                 testPath = idStr(String.format("%s/%s", game, relativePath))
                 testPath.StripFilename()
                 if (testPath.HasUpper()) {
-                    idLib.common.Warning("Non-portable: path contains uppercase characters: %s", testPath)
+                    idLib.common.DPrintf("Non-portable: path contains uppercase characters: %s\n", testPath)
 
                     // attempt a fixup on the fly
                     if (fs_caseSensitiveOS.GetBool()) {
@@ -1771,9 +1760,9 @@ object FileSystem_h {
             checksums[i] = 0
             if (_gamePakChecksum != null) {
                 if (OS >= 0) {
-                    _gamePakChecksum.integerValue = gamePakForOS[OS]
+                    _gamePakChecksum._val = gamePakForOS[OS]
                 } else {
-                    _gamePakChecksum.integerValue = gamePakChecksum
+                    _gamePakChecksum._val = gamePakChecksum
                 }
             }
         }
@@ -1862,23 +1851,23 @@ object FileSystem_h {
                     loadCount++
                     loadStack++
                     idLib.common.DPrintf("Loading %s from journal file.\n", relativePath)
-                    len.integerValue = 0
+                    len._val = 0
                     r = EventLoop.eventLoop.com_journalDataFile!!.ReadInt(len)
                     val r_bits = r * 8
                     if (r_bits != Integer.SIZE) {
                         buffer!![0] = null
                         return -1
                     }
-                    buf = ByteBuffer.allocate(len.integerValue + 1) // Heap.Mem_ClearedAlloc(len + 1);
+                    buf = ByteBuffer.allocate(len._val + 1) // Heap.Mem_ClearedAlloc(len + 1);
                     buffer!![0] = buf
-                    r = EventLoop.eventLoop.com_journalDataFile!!.Read(buf, len.integerValue)
-                    if (r != len.integerValue) {
+                    r = EventLoop.eventLoop.com_journalDataFile!!.Read(buf, len._val)
+                    if (r != len._val) {
                         idLib.common.FatalError("Read from journalDataFile failed")
                     }
 
                     // guarantee that it will have a trailing 0 for string operations
-                    buf.put(len.integerValue, 0.toByte())
-                    return len.integerValue
+                    buf.put(len._val, 0.toByte())
+                    return len._val
                 }
             } else {
                 isConfig = false
@@ -1892,19 +1881,19 @@ object FileSystem_h {
                 }
                 return -1
             }
-            len.integerValue = f.Length()
+            len._val = f.Length()
             if (timestamp != null) {
                 timestamp[0] = f.Timestamp()
             }
             if (null == buffer) {
                 CloseFile(f)
-                return len.integerValue
+                return len._val
             }
             loadCount++
             loadStack++
-            buf = ByteBuffer.allocate(len.integerValue + 1) // Heap.Mem_ClearedAlloc(len + 1);
+            buf = ByteBuffer.allocate(len._val + 1) // Heap.Mem_ClearedAlloc(len + 1);
             buffer[0] = buf
-            f.Read(buf, len.integerValue)
+            f.Read(buf, len._val)
 
             // guarantee that it will have a trailing 0 for string operations
 //            buf.put(len[0], (byte) 0);
@@ -1913,11 +1902,11 @@ object FileSystem_h {
             // if we are journalling and it is a config file, write it to the journal file
             if (isConfig && EventLoop.eventLoop.JournalLevel() == 1) {
                 idLib.common.DPrintf("Writing %s to journal file.\n", relativePath)
-                EventLoop.eventLoop.com_journalDataFile!!.WriteInt(len.integerValue)
-                EventLoop.eventLoop.com_journalDataFile!!.Write(buf, len.integerValue)
+                EventLoop.eventLoop.com_journalDataFile!!.WriteInt(len._val)
+                EventLoop.eventLoop.com_journalDataFile!!.Write(buf, len._val)
                 EventLoop.eventLoop.com_journalDataFile!!.Flush()
             }
-            return len.integerValue
+            return len._val
         }
 
         override fun ReadFile(relativePath: String, buffer: Array<ByteBuffer?>?): Int {
@@ -3003,7 +2992,7 @@ object FileSystem_h {
 
             // push a new entry
             dir_cache[dir_cache_index].Init(directory, extension, list)
-            dir_cache_index = ++dir_cache_index % MAX_CACHED_DIRS
+            dir_cache_index = (dir_cache_index + 1) % MAX_CACHED_DIRS
             if (dir_cache_count < MAX_CACHED_DIRS) {
                 dir_cache_count++
             }
@@ -3488,7 +3477,7 @@ object FileSystem_h {
             var i: Int
             var pak: pack_t
             var addon_index: Int
-            idLib.common.Printf("------ Initializing File System ------\n")
+            idLib.common.Printf("----- Initializing File System -----\n")
             if (restartChecksums.Num() != 0) {
                 idLib.common.Printf("restarting in pure mode with %d pak files\n", restartChecksums.Num())
             }
@@ -4319,7 +4308,7 @@ object FileSystem_h {
                             } else {
                                 ")\n"
                             }
-                            idLib.common.Printf(status)
+                            idLib.common.Printf("%s", status)
                         } else {
                             idLib.common.Printf("%s (%d files)\n", sp.pack!!.pakFilename, sp.pack!!.numfiles)
                         }

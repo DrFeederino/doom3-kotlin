@@ -1402,7 +1402,7 @@ class DeclManager {
                 CmdSystem.CMD_FL_SYSTEM,
                 "lists decl text character frequencies"
             )
-            Common.common.Printf("------------------------------\n")
+            // DG: dhewm3 removed banner print here
         }
 
         override fun Shutdown() {
