@@ -592,6 +592,7 @@ object Player {
                     INVISIBILITY -> def = gameLocal.FindEntityDef("powerup_invisibility", false)
                     MEGAHEALTH -> def = gameLocal.FindEntityDef("powerup_megahealth", false)
                     ADRENALINE -> def = gameLocal.FindEntityDef("powerup_adrenaline", false)
+                    INVULNERABILITY -> if (isD3XP) def = gameLocal.FindEntityDef("powerup_invulnerability", false)
                 }
                 assert(def != null)
                 msec = def!!.dict.GetInt("time") * 1000
@@ -868,8 +869,19 @@ object Player {
                     // set, don't add. not going over the clip size limit.
                     clip[i] = value.toInt()
                 }
+            } else if (isD3XP && 0 == idStr.Icmp(statname, "invulnerability")) {
+                owner.GivePowerUp(INVULNERABILITY, SEC2MS(value.toFloat()))
+            } else if (isD3XP && 0 == idStr.Icmp(statname, "helltime")) {
+                owner.GivePowerUp(HELLTIME, SEC2MS(value.toFloat()))
+            } else if (isD3XP && 0 == idStr.Icmp(statname, "envirosuit")) {
+                owner.GivePowerUp(ENVIROSUIT, SEC2MS(value.toFloat()))
+                owner.GivePowerUp(ENVIROTIME, SEC2MS(value.toFloat()))
             } else if (0 == idStr.Icmp(statname, "berserk")) {
-                GivePowerUp(owner, BERSERK, SEC2MS(value.toFloat()))
+                if (isD3XP) {
+                    owner.GivePowerUp(BERSERK, SEC2MS(value.toFloat()))
+                } else {
+                    GivePowerUp(owner, BERSERK, SEC2MS(value.toFloat()))
+                }
             } else if (0 == idStr.Icmp(statname, "mega")) {
                 GivePowerUp(owner, MEGAHEALTH, SEC2MS(value.toFloat()))
             } else if (0 == idStr.Icmp(statname, "weapon")) {
@@ -3180,6 +3192,9 @@ object Player {
         }
 
         fun EnterCinematic() {
+            if (isD3XP && PowerUpActive(HELLTIME)) {
+                StopHelltime()
+            }
             Hide()
             StopAudioLog()
             StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_PDA), false)
@@ -4478,23 +4493,37 @@ object Player {
                 val def: idDeclEntityDef?
                 when (powerup) {
                     BERSERK -> {
-                        if (spawnArgs.GetString("snd_berserk_third", "", sound)) {
-                            StartSoundShader(
-                                DeclManager.declManager.FindSound(sound[0]!!),
-                                gameSoundChannel_t.SND_CHANNEL_DEMONIC.ordinal,
-                                0,
-                                false
-                            )
+                        if (gameLocal.isMultiplayer && !gameLocal.isClient) {
+                            inventory.AddPickupName("#str_00100627", "")
+                        }
+                        if (gameLocal.isMultiplayer) {
+                            if (spawnArgs.GetString("snd_berserk_third", "", sound)) {
+                                StartSoundShader(
+                                    DeclManager.declManager.FindSound(sound[0]!!),
+                                    gameSoundChannel_t.SND_CHANNEL_DEMONIC.ordinal,
+                                    0,
+                                    false
+                                )
+                            }
                         }
                         if (baseSkinName.Length() != 0) {
                             powerUpSkin = DeclManager.declManager.FindSkin(baseSkinName.toString() + "_berserk")
                         }
                         if (!gameLocal.isClient) {
-                            idealWeapon = 0
+                            if (isD3XP) {
+                                if (gameLocal.isMultiplayer) {
+                                    idealWeapon = 1 // fists in MP
+                                }
+                            } else {
+                                idealWeapon = 0
+                            }
                         }
                     }
 
                     INVISIBILITY -> {
+                        if (gameLocal.isMultiplayer && !gameLocal.isClient) {
+                            inventory.AddPickupName("#str_00100628", "")
+                        }
                         spawnArgs.GetString("skin_invisibility", "", skin)
                         powerUpSkin = DeclManager.declManager.FindSkin(skin[0]!!)
                         // remove any decals from the model
@@ -4504,21 +4533,19 @@ object Player {
                         if (weapon.GetEntity() != null) {
                             weapon.GetEntity()!!.UpdateSkin()
                         }
-                        if (spawnArgs.GetString("snd_invisibility", "", sound)) {
-                            StartSoundShader(
-                                DeclManager.declManager.FindSound(sound[0]!!),
-                                gameSoundChannel_t.SND_CHANNEL_ANY.ordinal,
-                                0,
-                                false
-                            )
-                        }
                     }
 
                     ADRENALINE -> {
+                        if (isD3XP) {
+                            inventory.AddPickupName("#str_00100799", "")
+                        }
                         stamina = 100.0f
                     }
 
                     MEGAHEALTH -> {
+                        if (gameLocal.isMultiplayer && !gameLocal.isClient) {
+                            inventory.AddPickupName("#str_00100629", "")
+                        }
                         if (spawnArgs.GetString("snd_megahealth", "", sound)) {
                             StartSoundShader(
                                 DeclManager.declManager.FindSound(sound[0]!!),
@@ -4530,6 +4557,64 @@ object Player {
                         def = gameLocal.FindEntityDef("powerup_megahealth", false)
                         if (def != null) {
                             health = def.dict.GetInt("inv_health")
+                        }
+                    }
+                }
+
+                // D3XP powerup cases
+                if (isD3XP) {
+                    when (powerup) {
+                        HELLTIME -> {
+                            if (spawnArgs.GetString("snd_helltime_start", "", sound)) {
+                                PostEventMS(
+                                    EV_StartSoundShader,
+                                    0,
+                                    sound[0],
+                                    gameSoundChannel_t.SND_CHANNEL_ANY.ordinal
+                                )
+                            }
+                            if (spawnArgs.GetString("snd_helltime_loop", "", sound)) {
+                                PostEventMS(
+                                    EV_StartSoundShader,
+                                    0,
+                                    sound[0],
+                                    gameSoundChannel_t.SND_CHANNEL_DEMONIC.ordinal
+                                )
+                            }
+                        }
+
+                        ENVIROSUIT -> {
+                            // Turn on the envirosuit sound
+                            Game_local.gameSoundWorld?.SetEnviroSuit(true)
+                            // Put the helmet and lights on the player
+                            val lightDef = gameLocal.FindEntityDefDict("envirosuit_light", false)
+                            if (lightDef != null) {
+                                val temp = arrayOfNulls<idEntity>(1)
+                                gameLocal.SpawnEntityDef(lightDef, temp, false)
+                                val eLight = temp[0] as? Light.idLight
+                                if (eLight != null) {
+                                    eLight.GetPhysics().SetOrigin(firstPersonViewOrigin)
+                                    eLight.UpdateVisuals()
+                                    eLight.Present()
+                                    enviroSuitLight.oSet(eLight)
+                                }
+                            }
+                        }
+
+                        ENVIROTIME -> {
+                            hudPowerup = ENVIROTIME
+                            hudPowerupDuration = 60000
+                        }
+
+                        INVULNERABILITY -> {
+                            if (gameLocal.isMultiplayer && !gameLocal.isClient) {
+                                inventory.AddPickupName("#str_00100630", "")
+                            }
+                            if (gameLocal.isMultiplayer) {
+                                if (baseSkinName.Length() != 0) {
+                                    powerUpSkin = DeclManager.declManager.FindSkin(baseSkinName.toString() + "_invuln")
+                                }
+                            }
                         }
                     }
                 }
@@ -7527,12 +7612,42 @@ object Player {
             inventory.powerupEndTime[i] = 0
             when (i) {
                 BERSERK -> {
-                    StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_DEMONIC), false)
+                    if (gameLocal.isMultiplayer) {
+                        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_DEMONIC), false)
+                    }
+                    if (isD3XP && !gameLocal.isMultiplayer) {
+                        StopHealthRecharge()
+                    }
                 }
 
                 INVISIBILITY -> {
                     if (weapon.GetEntity() != null) {
                         weapon.GetEntity()!!.UpdateSkin()
+                    }
+                }
+            }
+            // D3XP powerup clear cases
+            if (isD3XP) {
+                when (i) {
+                    HELLTIME -> {
+                        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_DEMONIC), false)
+                    }
+
+                    ENVIROSUIT -> {
+                        hudPowerup = -1
+                        // Turn off the envirosuit sound
+                        Game_local.gameSoundWorld?.SetEnviroSuit(false)
+                        // Take off the helmet and lights
+                        if (enviroSuitLight.IsValid()) {
+                            enviroSuitLight.GetEntity()!!.PostEventMS(EV_Remove, 0)
+                        }
+                        enviroSuitLight.oSet(null)
+                    }
+
+                    INVULNERABILITY -> {
+                        if (gameLocal.isMultiplayer) {
+                            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_DEMONIC), false)
+                        }
                     }
                 }
             }

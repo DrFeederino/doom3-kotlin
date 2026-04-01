@@ -250,11 +250,82 @@ object PlayerView {
         }
 
         override fun HighQuality() {
-            // TODO T6.4: port GL rendering for helltime effect
+            var level = DetermineLevel()
+            if (level < 0 || level > 2) level = 0
+
+            val shiftScale = fxman!!.GetShiftScale()
+            renderSystem.SetColor4(1f, 1f, 1f, 1f)
+
+            renderSystem.DrawStretchPic(
+                0f,
+                0f,
+                SCREEN_WIDTH.toFloat(),
+                SCREEN_HEIGHT.toFloat(),
+                0f,
+                1f,
+                1f,
+                0f,
+                acDrawMaterials[level]
+            )
+            renderSystem.DrawStretchPic(
+                0f,
+                0f,
+                SCREEN_WIDTH.toFloat(),
+                SCREEN_HEIGHT.toFloat(),
+                0f,
+                shiftScale.y,
+                shiftScale.x,
+                0f,
+                crDrawMaterials[level]
+            )
         }
 
         override fun AccumPass(view: renderView_s) {
-            // TODO T6.4: port GL accumulation pass for helltime
+            var level = DetermineLevel()
+            if (level < 0 || level > 2) level = 0
+
+            val shiftScale = fxman!!.GetShiftScale()
+            renderSystem.SetColor4(1f, 1f, 1f, 1f)
+
+            if (clearAccumBuffer) {
+                clearAccumBuffer = false
+                renderSystem.DrawStretchPic(
+                    0f,
+                    0f,
+                    SCREEN_WIDTH.toFloat(),
+                    SCREEN_HEIGHT.toFloat(),
+                    0f,
+                    1f,
+                    1f,
+                    0f,
+                    acInitMaterials[level]
+                )
+            } else {
+                renderSystem.DrawStretchPic(
+                    0f,
+                    0f,
+                    SCREEN_WIDTH.toFloat(),
+                    SCREEN_HEIGHT.toFloat(),
+                    0f,
+                    1f,
+                    1f,
+                    0f,
+                    acCaptureMaterials[level]
+                )
+                renderSystem.DrawStretchPic(
+                    0f,
+                    0f,
+                    SCREEN_WIDTH.toFloat(),
+                    SCREEN_HEIGHT.toFloat(),
+                    0f,
+                    shiftScale.y,
+                    shiftScale.x,
+                    0f,
+                    crCaptureMaterials[level]
+                )
+            }
+
+            renderSystem.CaptureRenderToImage("_accum")
         }
 
         override fun HasAccum(): Boolean = true
@@ -296,10 +367,83 @@ object PlayerView {
             return false
         }
 
-        override fun HighQuality() { /* TODO T6.4: GL rendering for multiplayer effect */
+        override fun HighQuality() {
+            var level = DetermineLevel()
+            if (level < 0 || level > 2) level = 0
+
+            val shiftScale = fxman!!.GetShiftScale()
+            renderSystem.SetColor4(1f, 1f, 1f, 1f)
+
+            renderSystem.DrawStretchPic(
+                0f,
+                0f,
+                SCREEN_WIDTH.toFloat(),
+                SCREEN_HEIGHT.toFloat(),
+                0f,
+                1f,
+                1f,
+                0f,
+                acDrawMaterials
+            )
+            renderSystem.DrawStretchPic(
+                0f,
+                0f,
+                SCREEN_WIDTH.toFloat(),
+                SCREEN_HEIGHT.toFloat(),
+                0f,
+                shiftScale.y,
+                shiftScale.x,
+                0f,
+                crDrawMaterials
+            )
         }
 
-        override fun AccumPass(view: renderView_s) { /* TODO T6.4: GL accumulation pass */
+        override fun AccumPass(view: renderView_s) {
+            var level = DetermineLevel()
+            if (level < 0 || level > 2) level = 0
+
+            val shiftScale = fxman!!.GetShiftScale()
+            renderSystem.SetColor4(1f, 1f, 1f, 1f)
+
+            if (clearAccumBuffer) {
+                clearAccumBuffer = false
+                renderSystem.DrawStretchPic(
+                    0f,
+                    0f,
+                    SCREEN_WIDTH.toFloat(),
+                    SCREEN_HEIGHT.toFloat(),
+                    0f,
+                    1f,
+                    1f,
+                    0f,
+                    acInitMaterials
+                )
+            } else {
+                renderSystem.DrawStretchPic(
+                    0f,
+                    0f,
+                    SCREEN_WIDTH.toFloat(),
+                    SCREEN_HEIGHT.toFloat(),
+                    0f,
+                    1f,
+                    1f,
+                    0f,
+                    acCaptureMaterials
+                )
+                renderSystem.DrawStretchPic(
+                    0f,
+                    0f,
+                    SCREEN_WIDTH.toFloat(),
+                    SCREEN_HEIGHT.toFloat(),
+                    0f,
+                    shiftScale.y,
+                    shiftScale.x,
+                    0f,
+                    crCaptureMaterials
+                )
+            }
+
+            renderSystem.CaptureRenderToImage("_accum")
         }
 
         override fun HasAccum(): Boolean = true
@@ -316,7 +460,80 @@ object PlayerView {
         private var grabberEnabled: Boolean = false
         private var startWarpTime: Int = 0
 
-        private fun DrawWarp(wp: WarpPolygon_t, interp: Float) { /* TODO T6.4: GL warp polygon */
+        private fun DrawWarp(wp: WarpPolygon_t, interp: Float) {
+            val shiftScale = fxman!!.GetShiftScale()
+            val trans = wp
+
+            // compute mid points
+            val mid1 = trans.outer1.times(interp).plus(trans.center.times(1f - interp))
+            val mid2 = trans.outer2.times(interp).plus(trans.center.times(1f - interp))
+            val mid1_uv = trans.outer1.times(0.5f).plus(trans.center.times(0.5f))
+            val mid2_uv = trans.outer2.times(0.5f).plus(trans.center.times(0.5f))
+
+            val drawPts = Array(6) { idVec2() }
+
+            // draw [outer1, mid2, mid1]
+            drawPts[0].set(trans.outer1.x, trans.outer1.y)
+            drawPts[1].set(mid2.x, mid2.y)
+            drawPts[2].set(mid1.x, mid1.y)
+            drawPts[3].set(trans.outer1.z, trans.outer1.w)
+            drawPts[4].set(mid2_uv.z, mid2_uv.w)
+            drawPts[5].set(mid1_uv.z, mid1_uv.w)
+            for (j in 0 until 3) {
+                drawPts[j + 3].x *= shiftScale.x
+                drawPts[j + 3].y *= shiftScale.y
+            }
+            renderSystem.DrawStretchTri(
+                drawPts[0],
+                drawPts[1],
+                drawPts[2],
+                drawPts[3],
+                drawPts[4],
+                drawPts[5],
+                material
+            )
+
+            // draw [outer1, outer2, mid2]
+            drawPts[0].set(trans.outer1.x, trans.outer1.y)
+            drawPts[1].set(trans.outer2.x, trans.outer2.y)
+            drawPts[2].set(mid2.x, mid2.y)
+            drawPts[3].set(trans.outer1.z, trans.outer1.w)
+            drawPts[4].set(trans.outer2.z, trans.outer2.w)
+            drawPts[5].set(mid2_uv.z, mid2_uv.w)
+            for (j in 0 until 3) {
+                drawPts[j + 3].x *= shiftScale.x
+                drawPts[j + 3].y *= shiftScale.y
+            }
+            renderSystem.DrawStretchTri(
+                drawPts[0],
+                drawPts[1],
+                drawPts[2],
+                drawPts[3],
+                drawPts[4],
+                drawPts[5],
+                material
+            )
+
+            // draw [mid1, mid2, center]
+            drawPts[0].set(mid1.x, mid1.y)
+            drawPts[1].set(mid2.x, mid2.y)
+            drawPts[2].set(trans.center.x, trans.center.y)
+            drawPts[3].set(mid1_uv.z, mid1_uv.w)
+            drawPts[4].set(mid2_uv.z, mid2_uv.w)
+            drawPts[5].set(trans.center.z, trans.center.w)
+            for (j in 0 until 3) {
+                drawPts[j + 3].x *= shiftScale.x
+                drawPts[j + 3].y *= shiftScale.y
+            }
+            renderSystem.DrawStretchTri(
+                drawPts[0],
+                drawPts[1],
+                drawPts[2],
+                drawPts[3],
+                drawPts[4],
+                drawPts[5],
+                material
+            )
         }
 
         override fun Initialize() {
@@ -326,7 +543,41 @@ object PlayerView {
         }
 
         override fun Active(): Boolean = grabberEnabled
-        override fun HighQuality() { /* TODO T6.4: GL warp rendering */
+        override fun HighQuality() {
+            val STEP = 9
+            var interp = (sin((Game_local.gameLocal.slow.time - startWarpTime).toFloat() / 1000f) + 1f) / 2f
+            interp = 0.7f * (1f - interp) + 0.3f * interp
+
+            val center = idVec2(320f, 240f)
+            val radius = 200f
+
+            var i = 0f
+            while (i < 360f) {
+                val x1 = idMath.Sin(DEG2RAD(i))
+                val y1 = idMath.Cos(DEG2RAD(i))
+                val x2 = idMath.Sin(DEG2RAD(i + STEP))
+                val y2 = idMath.Cos(DEG2RAD(i + STEP))
+
+                val p = WarpPolygon_t()
+
+                p.outer1.x = center.x + x1 * radius
+                p.outer1.y = center.y + y1 * radius
+                p.outer1.z = p.outer1.x / 640f
+                p.outer1.w = 1f - (p.outer1.y / 480f)
+
+                p.outer2.x = center.x + x2 * radius
+                p.outer2.y = center.y + y2 * radius
+                p.outer2.z = p.outer2.x / 640f
+                p.outer2.w = 1f - (p.outer2.y / 480f)
+
+                p.center.x = center.x
+                p.center.y = center.y
+                p.center.z = p.center.x / 640f
+                p.center.w = 1f - (p.center.y / 480f)
+
+                DrawWarp(p, interp)
+                i += STEP
+            }
         }
 
         fun EnableGrabber(active: Boolean) {
@@ -360,7 +611,9 @@ object PlayerView {
             return player.PowerUpActive(Player.ENVIROSUIT)
         }
 
-        override fun HighQuality() { /* TODO T6.4: envirosuit screen distortion */
+        override fun HighQuality() {
+            renderSystem.SetColor4(1f, 1f, 1f, 1f)
+            renderSystem.DrawStretchPic(0f, 0f, 640f, 480f, 0f, 0f, 1f, 1f, material)
         }
     }
 
@@ -377,7 +630,56 @@ object PlayerView {
             return Game_local.gameLocal.fast.time < pv.dvFinishTime
         }
 
-        override fun HighQuality() { /* TODO T6.4: double vision rendering */
+        override fun HighQuality() {
+            var offset = fxman!!.GetPlayerView()!!.dvFinishTime - Game_local.gameLocal.fast.time
+            var scale = offset * SysCvar.g_dvAmplitude.GetFloat()
+            val player = fxman!!.GetPlayer()!!
+            val shiftScale = fxman!!.GetShiftScale()
+
+            offset *= 2 // crutch up for higher res
+
+            if (scale > 0.5f) {
+                scale = 0.5f
+            }
+            val shift = abs(scale * sin(sqrt(offset.toFloat()) * SysCvar.g_dvFrequency.GetFloat()))
+
+            // carry red tint if in berserk mode
+            val color = idVec4(1f, 1f, 1f, 1f)
+            if (Game_local.gameLocal.fast.time < player.inventory.powerupEndTime[Player.BERSERK]) {
+                color.y = 0f
+                color.z = 0f
+            }
+            if (!Game_local.gameLocal.isMultiplayer && (Game_local.gameLocal.fast.time < player.inventory.powerupEndTime[Player.HELLTIME]
+                        || Game_local.gameLocal.fast.time < player.inventory.powerupEndTime[Player.INVULNERABILITY])
+            ) {
+                color.y = 0f
+                color.z = 0f
+            }
+
+            renderSystem.SetColor4(color.x, color.y, color.z, 1.0f)
+            renderSystem.DrawStretchPic(
+                0f,
+                0f,
+                SCREEN_WIDTH.toFloat(),
+                SCREEN_HEIGHT.toFloat(),
+                shift,
+                shiftScale.y,
+                shiftScale.x,
+                0f,
+                material
+            )
+            renderSystem.SetColor4(color.x, color.y, color.z, 0.5f)
+            renderSystem.DrawStretchPic(
+                0f,
+                0f,
+                SCREEN_WIDTH.toFloat(),
+                SCREEN_HEIGHT.toFloat(),
+                0f,
+                shiftScale.y,
+                (1f - shift) * shiftScale.x,
+                0f,
+                material
+            )
         }
     }
 
@@ -390,7 +692,27 @@ object PlayerView {
             return player.GetInfluenceMaterial() != null || player.GetInfluenceEntity() != null
         }
 
-        override fun HighQuality() { /* TODO T6.4: influence vision rendering */
+        override fun HighQuality() {
+            var distance = 0f
+            var pct = 1f
+            val shiftScale = fxman!!.GetShiftScale()
+            val player = fxman!!.GetPlayer() ?: return
+
+            if (player.GetInfluenceEntity() != null) {
+                distance = (player.GetInfluenceEntity()!!.GetPhysics().GetOrigin()
+                    .minus(player.GetPhysics().GetOrigin())).Length()
+                if (player.GetInfluenceRadius() != 0f && distance < player.GetInfluenceRadius()) {
+                    pct = distance / player.GetInfluenceRadius()
+                    pct = 1f - idMath.ClampFloat(0f, 1f, pct)
+                }
+            }
+
+            if (player.GetInfluenceMaterial() != null) {
+                renderSystem.SetColor4(1f, 1f, 1f, pct)
+                renderSystem.DrawStretchPic(0f, 0f, 640f, 480f, 0f, 0f, 1f, 1f, player.GetInfluenceMaterial())
+            } else if (player.GetInfluenceEntity() == null) {
+                return
+            }
         }
     }
 
@@ -415,7 +737,61 @@ object PlayerView {
             return player.bloomEnabled
         }
 
-        override fun HighQuality() { /* TODO T6.4: bloom rendering */
+        override fun HighQuality() {
+            var shift = 1f
+            val player = fxman!!.GetPlayer()
+            val shiftScale = fxman!!.GetShiftScale()
+            renderSystem.SetColor4(1f, 1f, 1f, 1f)
+
+            // if intensity value is different, start the blend
+            targetIntensity = SysCvar.g_testBloomIntensity.GetFloat()
+
+            if (player != null && player.bloomEnabled) {
+                targetIntensity = player.bloomIntensity
+            }
+
+            val delta = targetIntensity - currentIntensity
+            var step = 0.001f
+
+            if (step < abs(delta)) {
+                if (delta < 0) {
+                    step = -step
+                }
+                currentIntensity += step
+            }
+
+            // draw the blends
+            val num = SysCvar.g_testBloomNumPasses.GetInteger()
+
+            for (i in 0 until num) {
+                var s1 = 0f;
+                var t1 = 0f;
+                var s2 = 1f;
+                var t2 = 1f
+
+                // do the center scale
+                s1 -= 0.5f; s1 *= shift; s1 += 0.5f; s1 *= shiftScale.x
+                t1 -= 0.5f; t1 *= shift; t1 += 0.5f; t1 *= shiftScale.y
+                s2 -= 0.5f; s2 *= shift; s2 += 0.5f; s2 *= shiftScale.x
+                t2 -= 0.5f; t2 *= shift; t2 += 0.5f; t2 *= shiftScale.y
+
+                val alpha = if (num == 1) 1f else 1f - i.toFloat() / (num - 1)
+
+                renderSystem.SetColor4(alpha, alpha, alpha, 1f)
+                renderSystem.DrawStretchPic(
+                    0f,
+                    0f,
+                    SCREEN_WIDTH.toFloat(),
+                    SCREEN_HEIGHT.toFloat(),
+                    s1,
+                    t2,
+                    s2,
+                    t1,
+                    drawMaterial
+                )
+
+                shift += currentIntensity
+            }
         }
 
         override fun Save(savefile: idSaveGame) {
@@ -718,6 +1094,11 @@ object PlayerView {
             savefile.WriteAngles(shakeAng)
             savefile.WriteObject(player)
             savefile.WriteRenderView(view)
+
+            // D3XP: save FX manager state
+            if (isD3XP) {
+                fxManager?.Save(savefile)
+            }
         }
 
         fun Restore(savefile: idRestoreGame) {
@@ -756,6 +1137,11 @@ object PlayerView {
             savefile.ReadAngles(shakeAng)
             player = savefile.ReadObject() as idPlayer?
             savefile.ReadRenderView(view)
+
+            // D3XP: restore FX manager state
+            if (isD3XP) {
+                fxManager?.Restore(savefile)
+            }
         }
 
         fun SetPlayerEntity(playerEnt: idPlayer) {
@@ -925,7 +1311,10 @@ object PlayerView {
         // that with a warp model or in double vision mode
         fun RenderPlayerView(hud: idUserInterface) {
             val view = player!!.GetRenderView()
-            if (SysCvar.g_skipViewEffects.GetBool()) {
+            if (isD3XP) {
+                // D3XP: all effects handled by fxManager inside SingleView
+                SingleView(hud, view)
+            } else if (SysCvar.g_skipViewEffects.GetBool()) {
                 SingleView(hud, view)
             } else {
                 if (player!!.GetInfluenceMaterial() != null || player!!.GetInfluenceEntity() != null) {
@@ -937,8 +1326,8 @@ object PlayerView {
                 } else {
                     SingleView(hud, view)
                 }
-                ScreenFade()
             }
+            ScreenFade()
             if (Game_network.net_clientLagOMeter.GetBool() && lagoMaterial != null && Game_local.gameLocal.isClient) {
                 //#modified-fva; BEGIN
                 var x = 10.0f
@@ -1099,13 +1488,18 @@ object PlayerView {
                 hackedView.forceUpdate = true // FIX: for smoke particles not drawing when portalSky present
             }
 
-            // D3XP: process fullscreen effects
+            // D3XP: process fullscreen effects (includes RenderScene internally)
             if (isD3XP) {
                 fxManager?.Process(hackedView)
+            } else {
+                Game_local.gameRenderWorld!!.RenderScene(hackedView)
             }
 
-            Game_local.gameRenderWorld!!.RenderScene(hackedView)
             if (player!!.spectating) {
+                return
+            }
+
+            if (isD3XP && hud == null) {
                 return
             }
 
@@ -1417,6 +1811,12 @@ object PlayerView {
             fadeColor = idVec4()
             shakeAng = idAngles()
             ClearEffects()
+
+            // D3XP: create fullscreen FX manager
+            if (isD3XP) {
+                fxManager = FullscreenFXManager()
+                fxManager!!.Initialize(this)
+            }
         }
     }
 }
