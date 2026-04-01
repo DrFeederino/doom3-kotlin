@@ -4127,7 +4127,7 @@ object Session_local {
             )
             var baseMod = ""
             for (i in 0 until d3xpMods.size) {
-                if (modName.Icmp(d3xpMods[i]) != 0) {
+                if (modName.Icmp(d3xpMods[i]) == 0) {
                     baseMod = "d3xp"
                     break
                 }
