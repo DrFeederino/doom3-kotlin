@@ -18,7 +18,6 @@ const val DEFAULT_HASH_GRANULARITY = 1024
 const val DEFAULT_HASH_SIZE = 1024
 
 class idHashIndex {
-    private val DBG_count: Int
     private var granularity = 0
     private var hash: IntArray
     private var hashMask = 0
@@ -28,7 +27,6 @@ class idHashIndex {
     private var lookupMask = 0
 
     constructor() {
-        DBG_count = DBG_counter++
         assert(idMath.IsPowerOfTwo(DEFAULT_HASH_SIZE))
         hashSize = DEFAULT_HASH_SIZE
         hash = INVALID_INDEX
@@ -40,7 +38,6 @@ class idHashIndex {
     }
 
     constructor(initialHashSize: Int, initialIndexSize: Int) {
-        DBG_count = DBG_counter++
         assert(idMath.IsPowerOfTwo(initialHashSize))
         hashSize = initialHashSize
         hash = INVALID_INDEX
@@ -69,14 +66,14 @@ class idHashIndex {
             indexSize = other.indexSize
             Free()
         } else {
-            if (other.hashSize != hashSize || hash.contentEquals(INVALID_INDEX)) {
-                if (!hash.contentEquals(INVALID_INDEX)) {
+            if (other.hashSize != hashSize || hash === INVALID_INDEX) {
+                if (hash !== INVALID_INDEX) {
                 }
                 hashSize = other.hashSize
                 hash = IntArray(hashSize)
             }
-            if (other.indexSize != indexSize || indexChain.contentEquals(INVALID_INDEX)) {
-                if (!indexChain.contentEquals(INVALID_INDEX)) {
+            if (other.indexSize != indexSize || indexChain === INVALID_INDEX) {
+                if (indexChain !== INVALID_INDEX) {
                 }
                 indexSize = other.indexSize
                 indexChain = IntArray(indexSize)
@@ -91,7 +88,7 @@ class idHashIndex {
     fun Add(key: Int, index: Int) {
         val h: Int
         assert(index >= 0)
-        if (hash.contentEquals(INVALID_INDEX)) {
+        if (hash === INVALID_INDEX) {
             Allocate(hashSize, if (index >= indexSize) index + 1 else indexSize)
         } else if (index >= indexSize) {
             ResizeIndex(index + 1)
@@ -104,7 +101,7 @@ class idHashIndex {
     // remove an index from the hash
     fun Remove(key: Int, index: Int) {
         val k = key and hashMask
-        if (hash.contentEquals(INVALID_INDEX)) {
+        if (hash === INVALID_INDEX) {
             return
         }
         if (hash[k] == index) {
@@ -137,7 +134,7 @@ class idHashIndex {
     fun InsertIndex(key: Int, index: Int) {
         var i: Int
         var max: Int
-        if (!hash.contentEquals(INVALID_INDEX)) {
+        if (hash !== INVALID_INDEX) {
             max = index
             i = 0
             while (i < hashSize) {
@@ -177,7 +174,7 @@ class idHashIndex {
         var i: Int
         var max: Int
         Remove(key, index)
-        if (!hash.contentEquals(INVALID_INDEX)) {
+        if (hash !== INVALID_INDEX) {
             max = index
             i = 0
             while (i < hashSize) {
@@ -211,7 +208,7 @@ class idHashIndex {
     // clear the hash
     fun Clear() {
         // only clear the hash table because clearing the indexChain is not really needed
-        if (!hash.contentEquals(INVALID_INDEX)) {
+        if (hash !== INVALID_INDEX) {
             hash.fill(-1) //0xff in the original code
         }
     }
@@ -260,7 +257,7 @@ class idHashIndex {
         } else {
             newIndexSize + granularity - mod
         }
-        if (indexChain.contentEquals(INVALID_INDEX)) {
+        if (indexChain === INVALID_INDEX) {
             indexSize = newSize
             return
         }
@@ -280,7 +277,7 @@ class idHashIndex {
         var error: Int
         var e: Int
         val numHashItems: IntArray
-        if (hash.contentEquals(INVALID_INDEX)) {
+        if (hash === INVALID_INDEX) {
             return 100
         }
         totalItems = 0
@@ -354,6 +351,5 @@ class idHashIndex {
 
     companion object {
         private val INVALID_INDEX: IntArray = intArrayOf(-1)
-        private var DBG_counter = 0
     }
 }

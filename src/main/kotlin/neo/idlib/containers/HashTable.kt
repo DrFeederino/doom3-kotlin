@@ -43,10 +43,6 @@ class HashTable {
         }
 
         constructor(map: idHashTable<Type>) {
-            var i: Int
-            var node: hashnode_s<*>?
-            var prev: Int = 0
-
             assert(map.tablesize > 0)
 
             tablesize = map.tablesize
@@ -55,18 +51,25 @@ class HashTable {
             tablesizemask = map.tablesizemask
 
             for (i in 0 until tablesize) {
-                if (null != map.heads[i]) {
+                if (map.heads[i] == null) {
                     heads[i] = null
                     continue
                 }
 
-                node = map.heads[i + prev]
+                // C++ uses pointer-to-pointer: prev = &heads[i], *prev = new node, prev = &(*prev)->next
+                // Kotlin: track previous node, link via prev.next (or heads[i] for first node)
+                var prev: hashnode_s<*>? = null
+                var node = map.heads[i]
                 while (node != null) {
-                    map.heads[i + prev] = hashnode_s(node.key, node.value, null)
-                    prev++
+                    val newNode = hashnode_s(node.key, node.value, null)
+                    if (prev == null) {
+                        heads[i] = newNode
+                    } else {
+                        prev.next = newNode
+                    }
+                    prev = newNode
                     node = node.next
                 }
-
             }
         }
 

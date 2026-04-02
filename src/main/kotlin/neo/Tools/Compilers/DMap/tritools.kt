@@ -110,10 +110,17 @@ object tritools {
      ===============
      */
     fun CopyMapTri(tri: mapTri_s): mapTri_s {
-        val t: mapTri_s
-
-//        t = (mapTri_s) Mem_Alloc(sizeof(t));
-        t = tri
+        // C++ does: t = Mem_Alloc(sizeof(*t)); *t = *tri;  (struct deep copy)
+        val t = mapTri_s()
+        for (i in 0 until 3) {
+            t.v[i] = idDrawVert(tri.v[i])
+            t.hashVert[i] = tri.hashVert[i]
+            t.optVert[i] = tri.optVert[i]
+        }
+        t.material = tri.material
+        t.mergeGroup = tri.mergeGroup
+        t.planeNum = tri.planeNum
+        t.next = tri.next
         return t
     }
 

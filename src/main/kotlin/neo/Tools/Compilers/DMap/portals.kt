@@ -119,40 +119,51 @@ object portals {
      =============
      */
     fun RemovePortalFromNode(portal: uPortal_s, l: node_s) {
-        var pp: uPortal_s?
-        var t: uPortal_s?
+        // C++ uses uPortal_t **pp = &l->portals; ... pp = &t->next[side]; ... *pp = portal->next[side];
+        // Kotlin: track the previous portal and which side it links through, so we can update the correct next[] field.
+        var prev: uPortal_s? = null
+        var prevSide = -1
+        var t: uPortal_s? = l.portals
 
-// remove reference to the current portal
-        pp = l.portals
+        // find the portal in the list
         while (true) {
-            t = pp
-            if (null == t) {
+            if (t == null) {
                 Common.common.Error("RemovePortalFromNode: portal not in leaf")
                 return
             }
             if (t == portal) {
                 break
             }
+            prev = t
             if (t.nodes[0] == l) {
-                pp = t.next[0]
-                l.portals = pp //TODO:check this pointer to a pointer assignment.
-            } else if (t.nodes[1] === l) {
-                pp = t.next[1]
-                l.portals = pp
+                prevSide = 0
+                t = t.next[0]
+            } else if (t.nodes[1] == l) {
+                prevSide = 1
+                t = t.next[1]
             } else {
                 Common.common.Error("RemovePortalFromNode: portal not bounding leaf")
+                return
             }
         }
+
+        // unlink the portal: *pp = portal->next[side]
+        val replacement: uPortal_s?
         if (portal.nodes[0] === l) {
-            pp = portal.next[0]
-            l.portals = pp
+            replacement = portal.next[0]
             portal.nodes[0] = null
         } else if (portal.nodes[1] === l) {
-            pp = portal.next[1]
-            l.portals = pp
+            replacement = portal.next[1]
             portal.nodes[1] = null
         } else {
             Common.common.Error("RemovePortalFromNode: mislinked")
+            return
+        }
+
+        if (prev == null) {
+            l.portals = replacement
+        } else {
+            prev.next[prevSide] = replacement
         }
     }
 

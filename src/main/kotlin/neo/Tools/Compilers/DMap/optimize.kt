@@ -102,33 +102,50 @@ object optimize {
      ====================
      */
     fun RemoveEdgeFromVert(e1: optEdge_s, vert: optVertex_s?) {
-        var prev: optEdge_s? //TODO:double check these references
-        var e: optEdge_s?
+        // C++ uses optEdge_t **prev = &vert->edges; ... *prev = e1->v1link; ... prev = &e->v1link;
+        // Kotlin: track previous edge and which link field (v1link or v2link) it used, to update the correct field.
         if (null == vert) {
             return
         }
-        prev = vert.edges
-        while (prev != null) {
-            e = prev
+        var prevEdge: optEdge_s? = null
+        var prevIsV1 = false // which link field of prevEdge leads to current edge
+        var e: optEdge_s? = vert.edges
+        while (e != null) {
             if (e == e1) {
-                if (e1.v1 == vert) {
-                    prev = e1.v1link
+                // determine what e1's next in this vert's chain is
+                val next: optEdge_s? = if (e1.v1 == vert) {
+                    e1.v1link
                 } else if (e1.v2 == vert) {
-                    prev = e1.v2link
+                    e1.v2link
                 } else {
                     Common.common.Error("RemoveEdgeFromVert: vert not found")
+                    return
+                }
+                // unlink: *prev = next
+                if (prevEdge == null) {
+                    vert.edges = next
+                } else {
+                    if (prevIsV1) {
+                        prevEdge.v1link = next
+                    } else {
+                        prevEdge.v2link = next
+                    }
                 }
                 return
             }
+            // advance: prev = &e->v1link or &e->v2link
+            prevEdge = e
             if (e.v1 == vert) {
-                prev = e.v1link
+                prevIsV1 = true
+                e = e.v1link
             } else if (e.v2 == vert) {
-                prev = e.v2link
+                prevIsV1 = false
+                e = e.v2link
             } else {
                 Common.common.Error("RemoveEdgeFromVert: vert not found")
+                return
             }
         }
-        vert.edges = null
     }
 
     /*
@@ -137,17 +154,22 @@ object optimize {
      ====================
      */
     fun UnlinkEdge(e: optEdge_s, island: optIsland_t) {
-        var prev: optEdge_s?
         RemoveEdgeFromVert(e, e.v1)
         RemoveEdgeFromVert(e, e.v2)
-        prev = island.edges
-        while (prev != null) {
-            if (prev == e) {
-                island.edges = e.islandLink
-                prev = island.edges
+        // C++ uses optEdge_t **prev = &island->edges; for (prev; *prev; prev = &(*prev)->islandLink)
+        var prevEdge: optEdge_s? = null
+        var cur: optEdge_s? = island.edges
+        while (cur != null) {
+            if (cur == e) {
+                if (prevEdge == null) {
+                    island.edges = e.islandLink
+                } else {
+                    prevEdge.islandLink = e.islandLink
+                }
                 return
             }
-            prev = prev.islandLink
+            prevEdge = cur
+            cur = cur.islandLink
         }
         Common.common.Error("RemoveEdgeFromIsland: couldn't free edge")
     }
