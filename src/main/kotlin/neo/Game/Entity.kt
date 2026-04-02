@@ -147,6 +147,10 @@ val EV_PrecacheGui: idEventDef = idEventDef("precacheGui", "s")
 val EV_GetGuiParm: idEventDef = idEventDef("getGuiParm", "ds", 's')
 val EV_GetGuiParmFloat: idEventDef = idEventDef("getGuiParmFloat", "ds", 'f')
 val EV_GuiNamedEvent: idEventDef = idEventDef("guiNamedEvent", "ds")
+
+// D3XP motion blur events (no handler needed - used by animation frame commands only)
+val EV_MotionBlurOn: idEventDef = idEventDef("motionBlurOn", null)
+val EV_MotionBlurOff: idEventDef = idEventDef("motionBlurOff", null)
 val EV_SetJointAngle: idEventDef = idEventDef("setJointAngle", "ddv")
 val EV_SetJointPos: idEventDef = idEventDef("setJointPos", "ddv")
 val EV_SetKey: idEventDef = idEventDef("setKey", "ss")
@@ -534,7 +538,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                 e.renderEntity!!.gui[num - 1] = UserInterface.uiManager.FindGui(guiName.value, true, false)
                 UpdateGuiParms(e.renderEntity!!.gui[num - 1], e.spawnArgs)
                 e.UpdateChangeableSpawnArgs(null)
-                Game_local.gameRenderWorld!!.UpdateEntityDef(e.modelDefHandle, e.renderEntity!!)
+                gameRenderWorld!!.UpdateEntityDef(e.modelDefHandle, e.renderEntity!!)
             } else {
                 idGameLocal.Error("Entity '%s' doesn't have a GUI %d", e.name, num)
             }
@@ -587,6 +591,9 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
 
         private fun Event_SetKey(e: idEntity, key: idEventArg<String>, value: idEventArg<String>) {
             e.spawnArgs.Set(key.value, value.value)
+            if (isD3XP) {
+                e.UpdateChangeableSpawnArgs(null)
+            }
         }
 
         private fun Event_GetKey(e: idEntity, key: idEventArg<String>) {
@@ -1894,7 +1901,12 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             return false
         }
         val animator = GetAnimator()
-        return animator?.CreateFrame(Game_local.gameLocal.time, false) ?: false
+        val ts = if (isD3XP) SetTimeState(timeGroup) else null
+        try {
+            return animator?.CreateFrame(Game_local.gameLocal.time, false) ?: false
+        } finally {
+            ts?.close()
+        }
     }
 
     /*
@@ -2924,6 +2936,8 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
     ) {
         var inflictor = inflictor
         var attacker = attacker
+        val ts = if (isD3XP) SetTimeState(timeGroup) else null
+        try {
         if (!fl.takedamage) {
             return
         }
@@ -2953,6 +2967,9 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             } else {
                 Pain(inflictor, attacker, damage._val, dir, location)
             }
+        }
+        } finally {
+            ts?.close()
         }
     }
 
@@ -3293,7 +3310,6 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                 if (token.Icmp("runScript") == 0) {
                     if (src.ReadToken(token2)) {
                         while (src.CheckTokenString("::")) {
-//						idToken token3;
                             token3 = idToken()
                             if (!src.ReadToken(token3)) {
                                 idGameLocal.Error(
@@ -3356,6 +3372,11 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                             Game_local.gameLocal.GetLocalPlayer()!!.inventory.turkeyScore = true
                         }
                     }
+                    continue
+                }
+
+                if (isD3XP && 0 == token.Icmp("martianbuddycomplete")) {
+                    Game_local.gameLocal.GetLocalPlayer()?.GiveEmail("MartianBuddyGameComplete")
                     continue
                 }
 
@@ -3539,11 +3560,16 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             trace.c.contents = cm.GetContents()
             trace.c.entityNum = cm.GetEntity()!!.entityNumber
             trace.c.id = cm.GetId()
+            val ts = if (isD3XP) SetTimeState(ent.timeGroup) else null
+            try {
             ent.Signal(signalNum_t.SIG_TOUCH)
             ent.ProcessEvent(EV_Touch, this, trace)
             if (Game_local.gameLocal.entities[entityNumber] == null) {
                 Game_local.gameLocal.Printf("entity was removed while touching triggers\n")
                 return true
+            }
+            } finally {
+                ts?.close()
             }
             i++
         }
@@ -4643,8 +4669,13 @@ open class idAnimatedEntity : idEntity() {
         private fun Event_GetJointPos(e: idAnimatedEntity,    /*jointHandle_t*/jointnum: idEventArg<Int>) {
             val offset = idVec3()
             val axis = idMat3()
+            val ts = if (isD3XP) SetTimeState(e.timeGroup) else null
+            try {
             if (!e.GetJointWorldTransform(jointnum.value, Game_local.gameLocal.time, offset, axis)) {
                 Game_local.gameLocal.Warning("Joint # %d out of range on entity '%s'", jointnum, e.name)
+            }
+            } finally {
+                ts?.close()
             }
             idThread.ReturnVector(offset)
         }
@@ -4659,8 +4690,13 @@ open class idAnimatedEntity : idEntity() {
         private fun Event_GetJointAngle(e: idAnimatedEntity,    /*jointHandle_t*/jointnum: idEventArg<Int>) {
             val offset = idVec3()
             val axis = idMat3()
+            val ts = if (isD3XP) SetTimeState(e.timeGroup) else null
+            try {
             if (!e.GetJointWorldTransform(jointnum.value, Game_local.gameLocal.time, offset, axis)) {
                 Game_local.gameLocal.Warning("Joint # %d out of range on entity '%s'", jointnum, e.name)
+            }
+            } finally {
+                ts?.close()
             }
             val ang = axis.ToAngles()
             val vec = idVec3(ang[0], ang[1], ang[2])
@@ -4772,6 +4808,8 @@ open class idAnimatedEntity : idEntity() {
     }
 
     fun UpdateAnimation() {
+        val ts = if (isD3XP) SetTimeState(timeGroup) else null
+        try {
         // don't do animations if they're not enabled
         if (0 == (thinkFlags and TH_ANIMATE)) {
             return
@@ -4805,6 +4843,9 @@ open class idAnimatedEntity : idEntity() {
 
         // the animation is updated
         animator.ClearForceUpdate()
+        } finally {
+            ts?.close()
+        }
     }
 
     override fun GetAnimator(): idAnimator {
@@ -4952,6 +4993,8 @@ open class idAnimatedEntity : idEntity() {
         val origin = idVec3()
         val dir = idVec3()
         val axis: idMat3
+        val ts = if (isD3XP) SetTimeState(timeGroup) else null
+        try {
         axis = renderEntity!!.joints!![jointNum]!!.ToMat3().times(renderEntity!!.axis)
         origin.set(
             renderEntity!!.origin.plus(
@@ -5019,6 +5062,9 @@ open class idAnimatedEntity : idEntity() {
             de.localNormal.set(localNormal)
             de.type = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, bleed) as idDeclParticle
             de.time = Game_local.gameLocal.time
+        }
+        } finally {
+            ts?.close()
         }
     }
 

@@ -612,6 +612,9 @@ class Game_local {
             // Detect D3XP before any system that depends on it
             isD3XP = FileSystem_h.fileSystem!!.RunningD3XP()
 
+            // Correct dependant classes on build time variables based on isD3XP flag
+            program = idProgram()
+
             Printf("--------- Initializing Game ----------\n")
             Printf("gamename: %s\n", GAME_VERSION)
             Printf("gamedate: %s\n", SysCvar.__DATE__)
@@ -648,6 +651,13 @@ class Game_local {
             registerAllTypes()
             idClass.INIT()
             InitConsoleCommands()
+
+            // D3XP: Re-execute default.cfg once to bind D3XP-specific keys (grabber, etc.)
+            if (isD3XP && !SysCvar.g_xp_bind_run_once.GetBool()) {
+                CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "exec default.cfg\n")
+                CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "seta g_xp_bind_run_once 1\n")
+                CmdSystem.cmdSystem.ExecuteCommandBuffer()
+            }
 
             // load default scripts
             program.Startup(Game.SCRIPT_DEFAULT)
@@ -2950,6 +2960,10 @@ class Game_local {
 
             // clear the sound system
             gameSoundWorld!!.ClearAllSoundEmitters()
+            if (isD3XP) {
+                gameSoundWorld!!.SetEnviroSuit(false)
+                gameSoundWorld!!.SetSlowmo(false)
+            }
             InitAsyncNetwork()
             if (!sameMap || mapFile != null && mapFile!!.NeedsReload()) {
                 // load the .map file
@@ -3066,6 +3080,10 @@ class Game_local {
             // clear the sound system
             if (gameSoundWorld != null) {
                 gameSoundWorld!!.ClearAllSoundEmitters()
+                if (isD3XP) {
+                    gameSoundWorld!!.SetEnviroSuit(false)
+                    gameSoundWorld!!.SetSlowmo(false)
+                }
             }
 
             // the spawnCount is reset to zero temporarily to spawn the map entities with the same spawnId
@@ -3585,9 +3603,14 @@ class Game_local {
         }
 
         fun GetAlertEntity(): idActor? {
-            return if (lastAIAlertTime >= time) {
-                lastAIAlertEntity.GetEntity()
-            } else null
+            if (isD3XP) {
+                val timeGroup = if (lastAIAlertTime != 0 && lastAIAlertEntity.GetEntity() != null)
+                    lastAIAlertEntity.GetEntity()!!.timeGroup else 0
+                SetTimeState(timeGroup).use {
+                    return if (lastAIAlertTime >= time) lastAIAlertEntity.GetEntity() else null
+                }
+            }
+            return if (lastAIAlertTime >= time) lastAIAlertEntity.GetEntity() else null
         }
 
         /*
@@ -4992,14 +5015,19 @@ class Game_local {
                 spawnArgs.GetBool("not_medium", "0", result)
             } else {
                 spawnArgs.GetBool("not_hard", "0", result)
+                if (isD3XP && !result._val && SysCvar.g_skill.GetInteger() == 3) {
+                    spawnArgs.GetBool("not_nightmare", "0", result)
+                }
             }
             var name: String?
             // DG: dhewm3 removed ID_DEMO_BUILD guard — always inhibit medkits on nightmare
             if (SysCvar.g_skill.GetInteger() == 3) {
                 name = spawnArgs.GetString("classname")
-                if (idStr.Icmp(name, "item_medkit") == 0 || idStr.Icmp(
-                        name, "item_medkit_small"
-                    ) == 0
+                if (idStr.Icmp(name, "item_medkit") == 0 || idStr.Icmp(name, "item_medkit_small") == 0
+                    || (isD3XP && (idStr.Icmp(name, "moveable_item_medkit") == 0 || idStr.Icmp(
+                        name,
+                        "moveable_item_medkit_small"
+                    ) == 0))
                 ) {
                     result._val = true
                 }
@@ -6597,6 +6625,19 @@ class Game_local {
                         soundName = idStr(soundShader.GetSound(j))
                         soundName.BackSlashesToSlashes()
 
+                        // D3XP: skip sounds already in base pak files
+                        if (isD3XP) {
+                            if (FileSystem_h.fileSystem!!.FileIsInPAK(soundName.toString())) {
+                                j++
+                                continue
+                            }
+                            val testOgg = idStr(soundName)
+                            testOgg.SetFileExtension(".ogg")
+                            if (FileSystem_h.fileSystem!!.FileIsInPAK(testOgg.toString())) {
+                                j++
+                                continue
+                            }
+                        }
                         // don't OGG sounds that cause a shake because that would
                         // cause continuous seeking on the OGG file which is expensive
                         if (parms.shakes != 0.0f) {

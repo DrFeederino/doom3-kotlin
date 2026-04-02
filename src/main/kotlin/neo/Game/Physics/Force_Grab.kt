@@ -26,8 +26,6 @@ import neo.Game.GameSys.SysCvar.Companion.g_grabberRandomMotion
 import neo.Game.Game_local.Companion.gameLocal
 import neo.Game.Physics.Force.idForce
 import neo.Game.Physics.Physics.idPhysics
-import neo.idlib.containers.CFloat
-import neo.idlib.containers.CInt
 import neo.idlib.math.Square
 import neo.idlib.math.idMath
 import neo.idlib.math.idVec3
@@ -78,16 +76,10 @@ class Force_Grab {
         override fun Restore(savefile: idRestoreGame) {
             super.Restore(savefile)
             // Note: Owner needs to call SetPhysics
-            val _damping = CFloat()
-            val _distanceToGoal = CFloat()
-            val _id = CInt()
-            savefile.ReadFloat(_damping)
-            damping = _damping._val
+            damping = savefile.ReadFloat()
             savefile.ReadVec3(goalPosition)
-            savefile.ReadFloat(_distanceToGoal)
-            distanceToGoal = _distanceToGoal._val
-            savefile.ReadInt(_id)
-            id = _id._val
+            distanceToGoal = savefile.ReadFloat()
+            id = savefile.ReadInt()
         }
 
         /*
@@ -141,13 +133,13 @@ class Force_Grab {
         override fun Evaluate(time: Int) {
             val phys = physics ?: return
 
-            val forceDir: idVec3
-            var v: idVec3
-            var objectCenter: idVec3
+            val forceDir: idVec3 = idVec3()
+            val v: idVec3 = idVec3()
+            val objectCenter: idVec3 = idVec3()
             val forceAmt: Float
             val mass: Float = phys.GetMass(id)
 
-            objectCenter = phys.GetAbsBounds(id).GetCenter()
+            objectCenter.set(phys.GetAbsBounds(id).GetCenter())
 
             if (g_grabberRandomMotion.GetBool() && !gameLocal.isMultiplayer) {
                 // Jitter the objectCenter around so it doesn't remain stationary
@@ -159,7 +151,7 @@ class Force_Grab {
                 objectCenter.z += (sinOffset * 2.4f * randScale1) + (randScale2 * 1.6f)
             }
 
-            forceDir = goalPosition.minus(objectCenter)
+            forceDir.set(goalPosition - objectCenter)
             distanceToGoal = forceDir.Normalize()
 
             var temp = distanceToGoal
@@ -176,11 +168,11 @@ class Force_Grab {
             phys.AddForce(id, objectCenter, forceDir.times(clampedForceAmt))
 
             if (distanceToGoal < 196f) {
-                v = phys.GetLinearVelocity(id)
+                v.set(phys.GetLinearVelocity(id))
                 phys.SetLinearVelocity(v.times(damping), id)
             }
             if (distanceToGoal < 16f) {
-                v = phys.GetAngularVelocity(id)
+                v.set(phys.GetAngularVelocity(id))
                 if (v.LengthSqr() > Square(8f)) {
                     phys.SetAngularVelocity(v.times(0.99999f), id)
                 }

@@ -215,11 +215,9 @@ object PlayerView {
 
         private fun DetermineLevel(): Int {
             val player = fxman?.GetPlayer() ?: return -1
-            if (player.PowerUpActive(Player.HELLTIME)) {
-                if (player.PowerUpActive(Player.INVULNERABILITY)) return 2
-                if (player.PowerUpActive(Player.BERSERK)) return 1
-                return 0
-            }
+            if (player.PowerUpActive(Player.INVULNERABILITY)) return 2
+            if (player.PowerUpActive(Player.BERSERK)) return 1
+            if (player.PowerUpActive(Player.HELLTIME)) return 0
             return -1
         }
 
@@ -347,7 +345,8 @@ object PlayerView {
 
         private fun DetermineLevel(): Int {
             val player = fxman?.GetPlayer() ?: return -1
-            if (player.PowerUpActive(Player.HELLTIME)) return 0
+            if (player.PowerUpActive(Player.INVULNERABILITY)) return 2
+            if (player.PowerUpActive(Player.BERSERK)) return 0
             return -1
         }
 
@@ -764,9 +763,9 @@ object PlayerView {
             val num = SysCvar.g_testBloomNumPasses.GetInteger()
 
             for (i in 0 until num) {
-                var s1 = 0f;
-                var t1 = 0f;
-                var s2 = 1f;
+                var s1 = 0f
+                var t1 = 0f
+                var s2 = 1f
                 var t2 = 1f
 
                 // do the center scale
@@ -852,15 +851,15 @@ object PlayerView {
             CreateFX(idStr("bloom"), idStr("bloom"), 0)
 
             // pre-cache texture grabs
-            RenderSystem.renderSystem.CropRenderSize(512, 512, true)
-            RenderSystem.renderSystem.CaptureRenderToImage("_accum")
-            RenderSystem.renderSystem.UnCrop()
+            renderSystem.CropRenderSize(512, 512, true)
+            renderSystem.CaptureRenderToImage("_accum")
+            renderSystem.UnCrop()
 
-            RenderSystem.renderSystem.CropRenderSize(512, 256, true)
-            RenderSystem.renderSystem.CaptureRenderToImage("_scratch")
-            RenderSystem.renderSystem.UnCrop()
+            renderSystem.CropRenderSize(512, 256, true)
+            renderSystem.CaptureRenderToImage("_scratch")
+            renderSystem.UnCrop()
 
-            RenderSystem.renderSystem.CaptureRenderToImage("_currentRender")
+            renderSystem.CaptureRenderToImage("_currentRender")
         }
 
         fun Process(view: renderView_s) {
@@ -876,7 +875,7 @@ object PlayerView {
             if (highQualityMode) {
                 val vidWidth = CInt()
                 val vidHeight = CInt()
-                RenderSystem.renderSystem.GetGLSettings(vidWidth, vidHeight)
+                renderSystem.GetGLSettings(vidWidth, vidHeight)
 
                 var pot = 1
                 while (pot < vidWidth._val) pot = pot shl 1
@@ -888,7 +887,7 @@ object PlayerView {
             } else {
                 shiftScale.x = 1f
                 shiftScale.y = 1f
-                RenderSystem.renderSystem.CropRenderSize(512, 512, true)
+                renderSystem.CropRenderSize(512, 512, true)
             }
 
             // do the first render
@@ -910,9 +909,9 @@ object PlayerView {
 
                     if (pfx.HasAccum()) {
                         if (highQualityMode) {
-                            RenderSystem.renderSystem.CropRenderSize(512, 512, true)
+                            renderSystem.CropRenderSize(512, 512, true)
                             pfx.AccumPass(view)
-                            RenderSystem.renderSystem.UnCrop()
+                            renderSystem.UnCrop()
                         } else {
                             pfx.AccumPass(view)
                         }
@@ -925,20 +924,20 @@ object PlayerView {
 
             if (!highQualityMode) {
                 CaptureCurrentRender()
-                RenderSystem.renderSystem.UnCrop()
-                RenderSystem.renderSystem.SetColor4(1f, 1f, 1f, 1f)
-                RenderSystem.renderSystem.DrawStretchPic(0f, 0f, 640f, 480f, 0f, 1f, 1f, 0f, blendBackMaterial)
+                renderSystem.UnCrop()
+                renderSystem.SetColor4(1f, 1f, 1f, 1f)
+                renderSystem.DrawStretchPic(0f, 0f, 640f, 480f, 0f, 1f, 1f, 0f, blendBackMaterial)
             }
         }
 
         fun CaptureCurrentRender() {
-            RenderSystem.renderSystem.CaptureRenderToImage("_currentRender")
+            renderSystem.CaptureRenderToImage("_currentRender")
         }
 
         fun Blendback(alpha: Float) {
             if (alpha < 1f) {
-                RenderSystem.renderSystem.SetColor4(1f, 1f, 1f, 1f - alpha)
-                RenderSystem.renderSystem.DrawStretchPic(
+                renderSystem.SetColor4(1f, 1f, 1f, 1f - alpha)
+                renderSystem.DrawStretchPic(
                     0f,
                     0f,
                     640f,
@@ -954,7 +953,7 @@ object PlayerView {
 
         fun GetShiftScale(): idVec2 = shiftScale
         fun GetPlayerView(): idPlayerView? = playerView
-        fun GetPlayer(): idPlayer? = Game_local.Companion.gameLocal.GetLocalPlayer()
+        fun GetPlayer(): idPlayer? = Game_local.gameLocal.GetLocalPlayer()
 
         fun GetNum(): Int = fx.size
         fun GetFX(index: Int): FullscreenFX = fx[index]
@@ -1381,6 +1380,7 @@ object PlayerView {
          */
         fun Fade(color: idVec4, time: Int) {
             var time = time
+            val ts = if (isD3XP) SetTimeState(player!!.timeGroup) else null
             if (0 == fadeTime) {
                 fadeFromColor.set(0.0f, 0.0f, 0.0f, 1.0f - color[3])
             } else {
@@ -1469,7 +1469,7 @@ object PlayerView {
                 // setup global fixup projection vars
                 val vidWidth = CInt()
                 val vidHeight = CInt()
-                RenderSystem.renderSystem.GetGLSettings(vidWidth, vidHeight)
+                renderSystem.GetGLSettings(vidWidth, vidHeight)
 
                 var pot = 1
                 while (pot < vidWidth._val) pot = pot shl 1
@@ -1483,7 +1483,7 @@ object PlayerView {
                 hackedView.shaderParms[5] = shiftY
 
                 Game_local.gameRenderWorld!!.RenderScene(portalView)
-                RenderSystem.renderSystem.CaptureRenderToImage("_currentRender")
+                renderSystem.CaptureRenderToImage("_currentRender")
 
                 hackedView.forceUpdate = true // FIX: for smoke particles not drawing when portalSky present
             }
@@ -1743,6 +1743,7 @@ object PlayerView {
             if (0 == fadeTime) {
                 return
             }
+            val ts = if (isD3XP) SetTimeState(player!!.timeGroup) else null
             msec = fadeTime - Game_local.gameLocal.realClientTime
             if (msec <= 0) {
                 fadeColor.set(fadeToColor)

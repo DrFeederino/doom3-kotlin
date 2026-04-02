@@ -42,7 +42,9 @@ import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Physics.Physics_Parametric.idPhysics_Parametric
 import neo.Game.Player.idPlayer
 import neo.Game.Projectile.idProjectile
+import neo.Game.Script.Script_Program
 import neo.Game.Script.Script_Thread.idThread
+import neo.Game.Sound.SSF_GLOBAL
 import neo.Renderer.Material
 import neo.Renderer.Model
 import neo.Renderer.ModelManager
@@ -55,8 +57,10 @@ import neo.Tools.Compilers.AAS.AASFile
 import neo.cm.trace_s
 import neo.framework.Common
 import neo.framework.DeclManager
+import neo.framework.DeclManager.Companion.declManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
+import neo.framework.UsercmdGen.BUTTON_ATTACK
 import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.BitMsg.idBitMsgDelta
@@ -72,6 +76,7 @@ import neo.idlib.containers.CInt
 import neo.idlib.containers.List
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
+import neo.idlib.math.idMath.AngleNormalize180
 import java.nio.ByteBuffer
 
 val EV_AnimDone: idEventDef = idEventDef("<AnimDone>", "d")
@@ -192,14 +197,14 @@ object Misc {
                 player = if (activator.value is idPlayer) {
                     activator.value as idPlayer?
                 } else {
-                    Game_local.gameLocal.GetLocalPlayer()
+                    gameLocal.GetLocalPlayer()
                 }
                 if (player != null) {
                     if (p.spawnArgs.GetBool("visualFx")) {
                         p.teleportStage = 0
                         p.Event_TeleportStage(player)
                     } else {
-                        if (Game_local.gameLocal.isServer) {
+                        if (gameLocal.isServer) {
                             val msg = idBitMsg()
                             val msgBuf = ByteBuffer.allocate(Game_local.MAX_EVENT_PARAM_SIZE)
                             msg.Init(msgBuf, Game_local.MAX_EVENT_PARAM_SIZE)
@@ -297,7 +302,7 @@ object Misc {
             return when (event) {
                 EVENT_TELEPORTPLAYER -> {
                     entityNumber = msg.ReadBits(Game_local.GENTITYNUM_BITS)
-                    val player = Game_local.gameLocal.entities[entityNumber] as idPlayer
+                    val player = gameLocal.entities[entityNumber] as idPlayer
                     if (player != null && player is idPlayer) {
                         Event_TeleportPlayer(player)
                     }
@@ -324,7 +329,8 @@ object Misc {
             val f = spawnArgs.GetFloat("visualEffect", "0")
             val viewName = spawnArgs.GetString("visualView", "")
             val ent =
-                if (!viewName.isNullOrEmpty()) Game_local.gameLocal.FindEntity(viewName) else null //TODO:the standard C++ boolean checks if the bytes are switched on, which in the case of String means NOT NULL AND NOT EMPTY.
+                if (!viewName.isNullOrEmpty()) gameLocal.FindEntity(viewName) else null //TODO:the standard C++ boolean checks if the bytes are switched on, which in the case of String means NOT NULL AND NOT EMPTY.
+            val ts = if (isD3XP) SetTimeState(player.timeGroup) else null
             if (f != 0.0f && ent != null) {
                 // place in private camera view for some time
                 // the entity needs to teleport to where the camera view is to have the PVS right
@@ -332,7 +338,7 @@ object Misc {
                 player.StartSound("snd_teleport_enter", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
                 player.SetPrivateCameraView(ent as idCamera?)
                 // the player entity knows where to spawn from the previous Teleport call
-                if (!Game_local.gameLocal.isClient) {
+                if (!gameLocal.isClient) {
                     player.PostEventSec(EV_Player_ExitTeleporter, f)
                 }
             } else {
@@ -340,10 +346,11 @@ object Misc {
                 player.Teleport(GetPhysics().GetOrigin(), GetPhysics().GetAxis().ToAngles(), null)
 
                 // multiplayer hijacked this entity, so only push the player in multiplayer
-                if (Game_local.gameLocal.isMultiplayer) {
+                if (gameLocal.isMultiplayer) {
                     player.GetPhysics().SetLinearVelocity(GetPhysics().GetAxis()[0].times(pushVel))
                 }
             }
+            ts?.close()
         }
 
         override fun CreateInstance(): idClass = idPlayerStart()
@@ -464,14 +471,14 @@ object Misc {
             fun DrawDebugInfo() {
                 var ent: idEntity?
                 val bnds = idBounds(idVec3(-4.0f, -4.0f, -8.0f), idVec3(4.0f, 4.0f, 64.0f))
-                ent = Game_local.gameLocal.spawnedEntities.Next()
+                ent = gameLocal.spawnedEntities.Next()
                 while (ent != null) {
                     if (ent !is idPathCorner) {
                         ent = ent.spawnNode.Next()
                         continue
                     }
                     val org = idVec3(ent.GetPhysics().GetOrigin())
-                    Game_local.gameRenderWorld!!.DebugBounds(colorRed, bnds, org, 0)
+                    gameRenderWorld!!.DebugBounds(colorRed, bnds, org, 0)
                     ent = ent.spawnNode.Next()
                 }
             }
@@ -481,14 +488,14 @@ object Misc {
                 var num: Int
                 val which: Int
                 var ent: idEntity?
-                val path = arrayOfNulls<idPathCorner?>(Game_local.MAX_GENTITIES)
+                val path = arrayOfNulls<idPathCorner?>(MAX_GENTITIES)
                 num = 0
                 i = 0
                 while (i < source.targets.Num()) {
                     ent = source.targets[i].GetEntity()
                     if (ent != null && ent !== ignore && ent is idPathCorner) {
                         path[num++] = ent as idPathCorner?
-                        if (num >= Game_local.MAX_GENTITIES) {
+                        if (num >= MAX_GENTITIES) {
                             break
                         }
                     }
@@ -497,7 +504,7 @@ object Misc {
                 if (0 == num) {
                     return null
                 }
-                which = Game_local.gameLocal.random.RandomInt(num)
+                which = gameLocal.random.RandomInt(num)
                 return path[which]
             }
 
@@ -588,7 +595,7 @@ object Misc {
         }
 
         override fun Killed(inflictor: idEntity?, attacker: idEntity?, damage: Int, dir: idVec3, location: Int) {
-            if (Game_local.gameLocal.time < nextTriggerTime._val) {
+            if (gameLocal.time < nextTriggerTime._val) {
                 health += damage
                 return
             }
@@ -600,11 +607,11 @@ object Misc {
             val numStates = CInt()
             val cycle = CInt()
             val wait = CFloat()
-            if (Game_local.gameLocal.time < nextTriggerTime._val) {
+            if (gameLocal.time < nextTriggerTime._val) {
                 return
             }
             spawnArgs.GetFloat("wait", "0.1f", wait)
-            nextTriggerTime._val = ((Game_local.gameLocal.time + SEC2MS(wait._val)))
+            nextTriggerTime._val = ((gameLocal.time + SEC2MS(wait._val)))
             if (count._val > 0) {
                 count.decrement()
                 if (0 == count._val) {
@@ -620,7 +627,7 @@ object Misc {
             }
 
             // offset the start time of the shader to sync it to the gameLocal time
-            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
+            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(gameLocal.time.toFloat())
             spawnArgs.GetInt("numstates", "1", numStates)
             spawnArgs.GetInt("cycle", "0", cycle)
             spawnArgs.GetFloat("forcestate", "0", forceState)
@@ -635,13 +642,13 @@ object Misc {
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] = forceState._val
             } else {
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_MODE] =
-                    (Game_local.gameLocal.random.RandomInt(numStates._val) + 1).toFloat()
+                    (gameLocal.random.RandomInt(numStates._val) + 1).toFloat()
             }
-            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
+            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(gameLocal.time.toFloat())
             ActivateTargets(activator)
             if (spawnArgs.GetBool("hideWhenBroken")) {
                 Hide()
-                PostEventMS(EV_RestoreDamagable, nextTriggerTime._val - Game_local.gameLocal.time)
+                PostEventMS(EV_RestoreDamagable, nextTriggerTime._val - gameLocal.time)
                 BecomeActive(TH_THINK)
             }
         }
@@ -704,7 +711,7 @@ object Misc {
             private fun Event_Explode(e: idExplodable, activator: idEventArg<idEntity>) {
                 val temp = arrayOfNulls<String>(1)
                 if (e.spawnArgs.GetString("def_damage", "damage_explosion", temp)) {
-                    Game_local.gameLocal.RadiusDamage(
+                    gameLocal.RadiusDamage(
                         e.GetPhysics().GetOrigin(), activator.value, activator.value, e, e, temp[0]!!
                     )
                 }
@@ -715,8 +722,7 @@ object Misc {
                 e.renderEntity!!.shaderParms[RenderWorld.SHADERPARM_GREEN] = 1.0f
                 e.renderEntity!!.shaderParms[RenderWorld.SHADERPARM_BLUE] = 1.0f
                 e.renderEntity!!.shaderParms[RenderWorld.SHADERPARM_ALPHA] = 1.0f
-                e.renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                    -MS2SEC(Game_local.gameLocal.time.toFloat())
+                e.renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(gameLocal.time.toFloat())
                 e.renderEntity!!.shaderParms[RenderWorld.SHADERPARM_DIVERSITY] = 0.0f
                 e.Show()
                 e.PostEventMS(EV_Remove, 2000)
@@ -827,7 +833,7 @@ object Misc {
             if ((thinkFlags and TH_THINK) != 0) {
                 if (enabled && ent1.GetEntity() != null && ent2.GetEntity() != null) {
                     // evaluate force
-                    spring.Evaluate(Game_local.gameLocal.time)
+                    spring.Evaluate(gameLocal.time)
 
                     if (SysCvar.g_debugMover.GetBool()) {
                         val start = idVec3()
@@ -847,7 +853,7 @@ object Misc {
                             origin.set(ent2.GetEntity()!!.GetPhysics().GetOrigin())
                             end.set(origin.plus(p2.times(axis)))
                         }
-                        Game_local.gameRenderWorld!!.DebugLine(idVec4(1.0f, 1.0f, 0.0f, 1.0f), start, end, 0, true)
+                        gameRenderWorld!!.DebugLine(idVec4(1.0f, 1.0f, 0.0f, 1.0f), start, end, 0, true)
                     }
                 } else {
                     BecomeInactive(TH_THINK)
@@ -862,10 +868,10 @@ object Misc {
             spawnArgs.GetString("ent1", "", name1)
             spawnArgs.GetString("ent2", "", name2)
             if (name1.Length() != 0) {
-                ent1.oSet(Game_local.gameLocal.FindEntity(name1.toString()))
+                ent1.oSet(gameLocal.FindEntity(name1.toString()))
                 if (ent1.GetEntity() == null) {
                     // DG: changed from Error to Warning (dhewm3)
-                    Game_local.gameLocal.Warning(
+                    gameLocal.Warning(
                         "idSpring '%s' at (%s): cannot find first entity '%s'",
                         name,
                         GetPhysics().GetOrigin().ToString(0),
@@ -873,12 +879,12 @@ object Misc {
                     )
                 }
             } else {
-                ent1.oSet(Game_local.gameLocal.entities[Game_local.ENTITYNUM_WORLD])
+                ent1.oSet(gameLocal.entities[Game_local.ENTITYNUM_WORLD])
             }
             if (name2.Length() != 0) {
-                ent2.oSet(Game_local.gameLocal.FindEntity(name2.toString()))
+                ent2.oSet(gameLocal.FindEntity(name2.toString()))
                 if (ent2.GetEntity() == null) {
-                    Game_local.gameLocal.Warning(
+                    gameLocal.Warning(
                         "idSpring '%s' at (%s): cannot find second entity '%s'",
                         name,
                         GetPhysics().GetOrigin().ToString(0),
@@ -886,7 +892,7 @@ object Misc {
                     )
                 }
             } else {
-                ent2.oSet(Game_local.gameLocal.entities[Game_local.ENTITYNUM_WORLD])
+                ent2.oSet(gameLocal.entities[Game_local.ENTITYNUM_WORLD])
             }
             if (ent1.GetEntity() != null && ent2.GetEntity() != null) {
                 spring.SetPosition(
@@ -1016,7 +1022,7 @@ object Misc {
         override fun Think() {
             if ((thinkFlags and TH_THINK) != 0) {
                 // evaluate force
-                forceField.Evaluate(Game_local.gameLocal.time)
+                forceField.Evaluate(gameLocal.time)
             }
             Present()
         }
@@ -1172,7 +1178,7 @@ object Misc {
             joint = spawnArgs.GetString("sound_bone", "origin")!!
             soundJoint = animator.GetJointHandle(joint)
             if (soundJoint == Model.INVALID_JOINT) {
-                Game_local.gameLocal.Warning(
+                gameLocal.Warning(
                     "idAnimated '%s' at (%s): cannot find joint '%s' for sound playback",
                     name,
                     GetPhysics().GetOrigin().ToString(0),
@@ -1224,10 +1230,10 @@ object Misc {
                         animname[0]
                     )
                 }
-                animator.CycleAnim(Anim.ANIMCHANNEL_ALL, anim2, Game_local.gameLocal.time, 0)
+                animator.CycleAnim(Anim.ANIMCHANNEL_ALL, anim2, gameLocal.time, 0)
             } else if (anim != 0) {
                 // init joints to the first frame of the animation
-                animator.SetFrame(Anim.ANIMCHANNEL_ALL, anim, 1, Game_local.gameLocal.time, 0)
+                animator.SetFrame(Anim.ANIMCHANNEL_ALL, anim, 1, gameLocal.time, 0)
                 if (0 == num_anims) {
                     blendFrames = 0
                 }
@@ -1267,7 +1273,7 @@ object Misc {
         }
 
         override fun GetPhysicsToSoundTransform(origin: idVec3, axis: idMat3): Boolean {
-            animator.GetJointTransform(soundJoint, Game_local.gameLocal.time, origin, axis)
+            animator.GetJointTransform(soundJoint, gameLocal.time, origin, axis)
             axis.set(renderEntity!!.axis)
             return true
         }
@@ -1290,24 +1296,24 @@ object Misc {
             spawnArgs.GetString(Str.va("anim%d", current_anim_index), "", animName)
             if (animName[0].isNullOrEmpty()) {
                 anim = 0
-                animator.Clear(Anim.ANIMCHANNEL_ALL, Game_local.gameLocal.time, Anim.FRAME2MS(blendFrames))
+                animator.Clear(Anim.ANIMCHANNEL_ALL, gameLocal.time, Anim.FRAME2MS(blendFrames))
                 return
             }
             anim = animator.GetAnim(animName[0]!!)
             if (0 == anim) {
-                Game_local.gameLocal.Warning("missing anim '%s' on %s", animName[0], name)
+                gameLocal.Warning("missing anim '%s' on %s", animName[0], name)
                 return
             }
             if (SysCvar.g_debugCinematic.GetBool()) {
-                Game_local.gameLocal.Printf(
-                    "%d: '%s' start anim '%s'\n", Game_local.gameLocal.framenum, GetName(), animName[0]
+                gameLocal.Printf(
+                    "%d: '%s' start anim '%s'\n", gameLocal.framenum, GetName(), animName[0]
                 )
             }
             spawnArgs.GetInt("cycle", "1", cycle)
             if (current_anim_index == num_anims && spawnArgs.GetBool("loop_last_anim")) {
                 cycle._val = (-1)
             }
-            animator.CycleAnim(Anim.ANIMCHANNEL_ALL, anim, Game_local.gameLocal.time, Anim.FRAME2MS(blendFrames))
+            animator.CycleAnim(Anim.ANIMCHANNEL_ALL, anim, gameLocal.time, Anim.FRAME2MS(blendFrames))
             animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(cycle._val)
             len = animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).PlayLength()
             if (len >= 0) {
@@ -1315,7 +1321,7 @@ object Misc {
             }
 
             // offset the start time of the shader to sync it to the game time
-            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
+            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(gameLocal.time.toFloat())
             animator.ForceUpdate()
             UpdateAnimation()
             UpdateVisuals()
@@ -1348,15 +1354,15 @@ object Misc {
             if (anim != 0) {
                 if (SysCvar.g_debugCinematic.GetBool()) {
                     val animPtr = animator.GetAnim(anim)
-                    Game_local.gameLocal.Printf(
+                    gameLocal.Printf(
                         "%d: '%s' start anim '%s'\n",
-                        Game_local.gameLocal.framenum,
+                        gameLocal.framenum,
                         GetName(),
                         if (animPtr != null) animPtr.Name() else ""
                     )
                 }
                 spawnArgs.GetInt("cycle", "1", cycle)
-                animator.CycleAnim(Anim.ANIMCHANNEL_ALL, anim, Game_local.gameLocal.time, Anim.FRAME2MS(blendFrames))
+                animator.CycleAnim(Anim.ANIMCHANNEL_ALL, anim, gameLocal.time, Anim.FRAME2MS(blendFrames))
                 animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).SetCycleCount(cycle._val)
                 len = animator.CurrentAnim(Anim.ANIMCHANNEL_ALL).PlayLength()
                 if (len >= 0) {
@@ -1365,7 +1371,7 @@ object Misc {
             }
 
             // offset the start time of the shader to sync it to the game time
-            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(Game_local.gameLocal.time.toFloat())
+            renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(gameLocal.time.toFloat())
             animator.ForceUpdate()
             UpdateAnimation()
             UpdateVisuals()
@@ -1379,9 +1385,9 @@ object Misc {
         private fun Event_AnimDone(animIndex: idEventArg<Int>) {
             if (SysCvar.g_debugCinematic.GetBool()) {
                 val animPtr = animator.GetAnim(anim)
-                Game_local.gameLocal.Printf(
+                gameLocal.Printf(
                     "%d: '%s' end anim '%s'\n",
-                    Game_local.gameLocal.framenum,
+                    gameLocal.framenum,
                     GetName(),
                     if (animPtr != null) animPtr.Name() else ""
                 )
@@ -1412,9 +1418,9 @@ object Misc {
             val projectileDef: idDict?
             val   /*jointHandle_t*/launch: Int
             val   /*jointHandle_t*/target: Int
-            projectileDef = Game_local.gameLocal.FindEntityDefDict(projectilename.value, false)
+            projectileDef = gameLocal.FindEntityDefDict(projectilename.value, false)
             if (null == projectileDef) {
-                Game_local.gameLocal.Warning(
+                gameLocal.Warning(
                     "idAnimated '%s' at (%s): unknown projectile '%s'",
                     name,
                     GetPhysics().GetOrigin().ToString(0),
@@ -1424,7 +1430,7 @@ object Misc {
             }
             launch = animator.GetJointHandle(launchjoint.value)
             if (launch == Model.INVALID_JOINT) {
-                Game_local.gameLocal.Warning(
+                gameLocal.Warning(
                     "idAnimated '%s' at (%s): unknown launch joint '%s'",
                     name,
                     GetPhysics().GetOrigin().ToString(0),
@@ -1434,7 +1440,7 @@ object Misc {
             }
             target = animator.GetJointHandle(targetjoint.value)
             if (target == Model.INVALID_JOINT) {
-                Game_local.gameLocal.Warning(
+                gameLocal.Warning(
                     "idAnimated '%s' at (%s): unknown target joint '%s'",
                     name,
                     GetPhysics().GetOrigin().ToString(0),
@@ -1462,9 +1468,9 @@ object Misc {
             val projectileDef: idDict?
             val projectilename: String?
             projectilename = spawnArgs.GetString("projectilename")
-            projectileDef = Game_local.gameLocal.FindEntityDefDict(projectilename, false)
+            projectileDef = gameLocal.FindEntityDefDict(projectilename, false)
             if (null == projectileDef) {
-                Game_local.gameLocal.Warning(
+                gameLocal.Warning(
                     "idAnimated '%s' at (%s): 'launchMissiles' called with unknown projectile '%s'",
                     name,
                     GetPhysics().GetOrigin().ToString(0),
@@ -1473,13 +1479,13 @@ object Misc {
                 return
             }
             StartSound("snd_missile", gameSoundChannel_t.SND_CHANNEL_WEAPON, 0, false)
-            animator.GetJointTransform(launchjoint.value, Game_local.gameLocal.time, launchPos, axis)
+            animator.GetJointTransform(launchjoint.value, gameLocal.time, launchPos, axis)
             launchPos.set(renderEntity!!.origin.plus(launchPos.times(renderEntity!!.axis)))
-            animator.GetJointTransform(targetjoint.value, Game_local.gameLocal.time, targetPos, axis)
+            animator.GetJointTransform(targetjoint.value, gameLocal.time, targetPos, axis)
             targetPos.set(renderEntity!!.origin.plus(targetPos.times(renderEntity!!.axis)))
             dir.set(targetPos.minus(launchPos))
             dir.Normalize()
-            Game_local.gameLocal.SpawnEntityDef(projectileDef, ent, false)
+            gameLocal.SpawnEntityDef(projectileDef, ent, false)
             if (ent[0] == null || ent[0] !is idProjectile) {
                 idGameLocal.Error(
                     "idAnimated '%s' at (%s): in 'launchMissiles' call '%s' is not an idProjectile",
@@ -1618,7 +1624,7 @@ object Misc {
             val hidden: Boolean
 
             // an inline static model will not do anything at all
-            if (spawnArgs.GetBool("inline") || Game_local.gameLocal.world!!.spawnArgs.GetBool("inlineAllStatics")) {
+            if (spawnArgs.GetBool("inline") || gameLocal.world!!.spawnArgs.GetBool("inlineAllStatics")) {
                 Hide()
                 return
             }
@@ -1629,13 +1635,13 @@ object Misc {
             } else {
                 GetPhysics().SetContents(0)
             }
-            spawnTime = Game_local.gameLocal.time
+            spawnTime = gameLocal.time
             active = false
             val model = idStr(spawnArgs.GetString("model"))
             if (model.Find(".prt") >= 0) {
                 // we want the parametric particles out of sync with each other
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                    Game_local.gameLocal.random.RandomInt(32767).toFloat()
+                    gameLocal.random.RandomInt(32767).toFloat()
             }
             fadeFrom.set(1.0f, 1.0f, 1.0f, 1.0f)
             fadeTo.set(1.0f, 1.0f, 1.0f, 1.0f)
@@ -1668,8 +1674,8 @@ object Misc {
         fun Fade(to: idVec4, fadeTime: Float) {
             GetColor(fadeFrom)
             fadeTo.set(to)
-            fadeStart = Game_local.gameLocal.time
-            fadeEnd = (Game_local.gameLocal.time + SEC2MS(fadeTime))
+            fadeStart = gameLocal.time
+            fadeEnd = (gameLocal.time + SEC2MS(fadeTime))
             BecomeActive(TH_THINK)
         }
 
@@ -1677,26 +1683,24 @@ object Misc {
             super.Think()
             if ((thinkFlags and TH_THINK) != 0) {
                 if (runGui && renderEntity!!.gui[0] != null) {
-                    val player = Game_local.gameLocal.GetLocalPlayer()
+                    val player = gameLocal.GetLocalPlayer()
                     if (player != null) {
                         if (!player.objectiveSystemOpen) {
-                            renderEntity!!.gui[0]!!.StateChanged(Game_local.gameLocal.time, true)
+                            renderEntity!!.gui[0]!!.StateChanged(gameLocal.time, true)
                             if (renderEntity!!.gui[1] != null) {
-                                renderEntity!!.gui[1]!!.StateChanged(Game_local.gameLocal.time, true)
+                                renderEntity!!.gui[1]!!.StateChanged(gameLocal.time, true)
                             }
                             if (renderEntity!!.gui[2] != null) {
-                                renderEntity!!.gui[2]!!.StateChanged(Game_local.gameLocal.time, true)
+                                renderEntity!!.gui[2]!!.StateChanged(gameLocal.time, true)
                             }
                         }
                     }
                 }
                 if (fadeEnd > 0) {
                     val color: idVec4 = idVec4()
-                    if (Game_local.gameLocal.time < fadeEnd) {
+                    if (gameLocal.time < fadeEnd) {
                         color.Lerp(
-                            fadeFrom,
-                            fadeTo,
-                            (Game_local.gameLocal.time - fadeStart).toFloat() / (fadeEnd - fadeStart).toFloat()
+                            fadeFrom, fadeTo, (gameLocal.time - fadeStart).toFloat() / (fadeEnd - fadeStart).toFloat()
                         )
                     } else {
                         color.set(fadeTo)
@@ -1736,7 +1740,7 @@ object Misc {
         }
 
         private fun Event_Activate(activator: idEventArg<idEntity>) {
-            spawnTime = Game_local.gameLocal.time
+            spawnTime = gameLocal.time
             active = !active
             val kv = spawnArgs.FindKey("hide")
             if (kv != null) {
@@ -1826,12 +1830,10 @@ object Misc {
         open fun Event_Activate(activator: idEventArg<idEntity>) {
             if (hidden._val || spawnArgs.GetBool("cycleTrigger")) {
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] = 0.0f
-                renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] =
-                    -MS2SEC(Game_local.gameLocal.time.toFloat())
+                renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIMEOFFSET] = -MS2SEC(gameLocal.time.toFloat())
                 hidden._val = (false)
             } else {
-                renderEntity!!.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] =
-                    MS2SEC(Game_local.gameLocal.time.toFloat())
+                renderEntity!!.shaderParms[RenderWorld.SHADERPARM_PARTICLE_STOPTIME] = MS2SEC(gameLocal.time.toFloat())
                 hidden._val = (true)
             }
             UpdateVisuals()
@@ -1902,7 +1904,7 @@ object Misc {
             super.Spawn()
             val smokeName = spawnArgs.GetString("smoke")
             smoke = if (!smokeName.isEmpty()) { // != '\0' ) {
-                DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, smokeName) as idDeclParticle
+                declManager.FindType(declType_t.DECL_PARTICLE, smokeName) as idDeclParticle
             } else {
                 null
             }
@@ -1910,7 +1912,7 @@ object Misc {
                 smokeTime = 0
                 restart = false
             } else if (smoke != null) {
-                smokeTime = Game_local.gameLocal.time
+                smokeTime = gameLocal.time
                 BecomeActive(TH_UPDATEPARTICLES)
                 restart = true
             }
@@ -1942,16 +1944,16 @@ object Misc {
                 return
             }
             if ((thinkFlags and TH_UPDATEPARTICLES) != 0 && !IsHidden()) {
-                if (!Game_local.gameLocal.smokeParticles!!.EmitSmoke(
+                if (!gameLocal.smokeParticles!!.EmitSmoke(
                         smoke,
                         smokeTime,
-                        Game_local.gameLocal.random.CRandomFloat(),
+                        gameLocal.random.CRandomFloat(),
                         GetPhysics().GetOrigin(),
                         GetPhysics().GetAxis()
                     )
                 ) {
                     if (restart) {
-                        smokeTime = Game_local.gameLocal.time
+                        smokeTime = gameLocal.time
                     } else {
                         smokeTime = 0
                         BecomeInactive(TH_UPDATEPARTICLES)
@@ -1967,7 +1969,7 @@ object Misc {
             } else {
                 BecomeActive(TH_UPDATEPARTICLES)
                 restart = true
-                smokeTime = Game_local.gameLocal.time
+                smokeTime = gameLocal.time
             }
         }
 
@@ -2010,12 +2012,12 @@ object Misc {
             var splat: String?
             val count = spawnArgs.GetInt("splatCount", "1")
             for (i in 0 until count) {
-                splat = spawnArgs.RandomPrefix("mtr_splat", Game_local.gameLocal.random)
+                splat = spawnArgs.RandomPrefix("mtr_splat", gameLocal.random)
                 if (splat != null && !splat.isEmpty()) {
                     val size = spawnArgs.GetFloat("splatSize", "128")
                     val dist = spawnArgs.GetFloat("splatDistance", "128")
                     val angle = spawnArgs.GetFloat("splatAngle", "0")
-                    Game_local.gameLocal.ProjectDecal(
+                    gameLocal.ProjectDecal(
                         GetPhysics().GetOrigin(), GetPhysics().GetAxis()[2], dist, true, size, splat, angle
                     )
                 }
@@ -2077,18 +2079,18 @@ object Misc {
 
         override fun Think() {
             if ((thinkFlags and TH_THINK) != 0) {
-                Game_local.gameRenderWorld!!.DrawText(
+                gameRenderWorld!!.DrawText(
                     text.toString(),
                     GetPhysics().GetOrigin(),
                     0.25f,
                     colorWhite,
-                    if (playerOriented) Game_local.gameLocal.GetLocalPlayer()!!.viewAngles.ToMat3() else GetPhysics().GetAxis()
+                    if (playerOriented) gameLocal.GetLocalPlayer()!!.viewAngles.ToMat3() else GetPhysics().GetAxis()
                         .Transpose(),
                     1
                 )
                 for (i in 0 until targets.Num()) {
                     if (targets[i].GetEntity() != null) {
-                        Game_local.gameRenderWorld!!.DebugArrow(
+                        gameRenderWorld!!.DebugArrow(
                             colorBlue, GetPhysics().GetOrigin(), targets[i].GetEntity()!!.GetPhysics().GetOrigin(), 1
                         )
                     }
@@ -2153,13 +2155,13 @@ object Misc {
             super.Spawn()
             val b: idBounds
             b = idBounds(spawnArgs.GetVector("origin")).Expand(16.0f)
-            val   /*qhandle_t*/portal = Game_local.gameRenderWorld!!.FindPortal(b)
+            val   /*qhandle_t*/portal = gameRenderWorld!!.FindPortal(b)
             if (0 == portal) {
-                Game_local.gameLocal.Warning(
+                gameLocal.Warning(
                     "LocationSeparator '%s' didn't contact a portal", spawnArgs.GetString("name")
                 )
             }
-            Game_local.gameLocal.SetPortalState(portal, TempDump.etoi(portalConnection_t.PS_BLOCK_LOCATION))
+            gameLocal.SetPortalState(portal, TempDump.etoi(portalConnection_t.PS_BLOCK_LOCATION))
         }
 
         override fun CreateInstance(): idClass = idLocationSeparatorEntity()
@@ -2202,14 +2204,14 @@ object Misc {
             super.Spawn()
             val b: idBounds
             b = idBounds(spawnArgs.GetVector("origin")).Expand(16.0f)
-            portal = Game_local.gameRenderWorld!!.FindPortal(b)
+            portal = gameRenderWorld!!.FindPortal(b)
             if (0 == portal) {
-                Game_local.gameLocal.Warning(
+                gameLocal.Warning(
                     "VacuumSeparator '%s' didn't contact a portal", spawnArgs.GetString("name")
                 )
                 return
             }
-            Game_local.gameLocal.SetPortalState(
+            gameLocal.SetPortalState(
                 portal,
                 TempDump.etoi(portalConnection_t.PS_BLOCK_AIR) or TempDump.etoi(portalConnection_t.PS_BLOCK_LOCATION)
             )
@@ -2218,7 +2220,7 @@ object Misc {
         override fun Save(savefile: idSaveGame) {
             super.Save(savefile)
             savefile.WriteInt(portal)
-            savefile.WriteInt(Game_local.gameRenderWorld!!.GetPortalState(portal))
+            savefile.WriteInt(gameRenderWorld!!.GetPortalState(portal))
         }
 
         override fun Restore(savefile: idRestoreGame) {
@@ -2228,14 +2230,14 @@ object Misc {
             savefile.ReadInt(portal)
             savefile.ReadInt(state)
             this.portal = portal._val
-            Game_local.gameLocal.SetPortalState(portal._val, state._val)
+            gameLocal.SetPortalState(portal._val, state._val)
         }
 
         fun Event_Activate(activator: idEventArg<idEntity>) {
             if (0 == portal) {
                 return
             }
-            Game_local.gameLocal.SetPortalState(portal, TempDump.etoi(portalConnection_t.PS_BLOCK_NONE))
+            gameLocal.SetPortalState(portal, TempDump.etoi(portalConnection_t.PS_BLOCK_NONE))
         }
 
         override fun CreateInstance(): idClass = idVacuumSeparatorEntity()
@@ -2265,12 +2267,12 @@ object Misc {
         // CLASS_PROTOTYPE( idVacuumEntity );
         override fun Spawn() {
             super.Spawn()
-            if (Game_local.gameLocal.vacuumAreaNum != -1) {
-                Game_local.gameLocal.Warning("idVacuumEntity::Spawn: multiple idVacuumEntity in level")
+            if (gameLocal.vacuumAreaNum != -1) {
+                gameLocal.Warning("idVacuumEntity::Spawn: multiple idVacuumEntity in level")
                 return
             }
             val org = idVec3(spawnArgs.GetVector("origin"))
-            Game_local.gameLocal.vacuumAreaNum = Game_local.gameRenderWorld!!.PointInArea(org)
+            gameLocal.vacuumAreaNum = gameRenderWorld!!.PointInArea(org)
         }
 
         override fun CreateInstance(): idClass = idVacuumEntity()
@@ -2560,7 +2562,7 @@ object Misc {
             val shake: idAngles?
             val period: Int
             active = true
-            phase = Game_local.gameLocal.random.RandomInt(1000)
+            phase = gameLocal.random.RandomInt(1000)
             shake = spawnArgs.GetAngles("shake", "0.5f 0.5f 0.5f")
             period = (spawnArgs.GetFloat("period", "0.05") * 1000).toInt()
             physicsObj.SetAngularExtrapolation(
@@ -2690,14 +2692,14 @@ object Misc {
             this.playerOriented = playerOriented._val
             this.disabled = disabled._val
             this.shakeTime = shakeTime._val
-            if (shakeStopTime._val > Game_local.gameLocal.time) {
+            if (shakeStopTime._val > gameLocal.time) {
                 BecomeActive(TH_THINK)
             }
         }
 
         override fun Think() {
             if ((thinkFlags and TH_THINK) != 0) {
-                if (Game_local.gameLocal.time > shakeStopTime) {
+                if (gameLocal.time > shakeStopTime) {
                     BecomeInactive(TH_THINK)
                     if (wait <= 0.0f) {
                         PostEventMS(EV_Remove, 0)
@@ -2705,9 +2707,9 @@ object Misc {
                     return
                 }
                 val shakeVolume = Game_local.gameSoundWorld!!.CurrentShakeAmplitudeForPosition(
-                    Game_local.gameLocal.time, Game_local.gameLocal.GetLocalPlayer()!!.firstPersonViewOrigin
+                    gameLocal.time, gameLocal.GetLocalPlayer()!!.firstPersonViewOrigin
                 )
-                Game_local.gameLocal.RadiusPush(
+                gameLocal.RadiusPush(
                     GetPhysics().GetOrigin(), 256.0f, 1500 * shakeVolume, this, this, 1.0f, true
                 )
             }
@@ -2716,13 +2718,13 @@ object Misc {
 
         private fun Event_Activate(_activator: idEventArg<idEntity>) {
             val activator = _activator.value
-            if (nextTriggerTime > Game_local.gameLocal.time) {
+            if (nextTriggerTime > gameLocal.time) {
                 return
             }
             if (disabled && activator === this) {
                 return
             }
-            val player = Game_local.gameLocal.GetLocalPlayer() ?: return
+            val player = gameLocal.GetLocalPlayer() ?: return
             nextTriggerTime = 0
             if (!triggered && activator !== this) {
                 // if we are not triggered ( i.e. random ), disable or enable
@@ -2730,26 +2732,25 @@ object Misc {
                 if (disabled) {
                     return
                 } else {
-                    PostEventSec(EV_Activate, wait + random * Game_local.gameLocal.random.CRandomFloat(), this)
+                    PostEventSec(EV_Activate, wait + random * gameLocal.random.CRandomFloat(), this)
                 }
             }
             ActivateTargets(activator)
-            val shader = DeclManager.declManager.FindSound(spawnArgs.GetString("snd_quake"))
+            val shader = declManager.FindSound(spawnArgs.GetString("snd_quake"))
             if (playerOriented) {
-                player.StartSoundShader(shader, gameSoundChannel_t.SND_CHANNEL_ANY.ordinal, Sound.SSF_GLOBAL, false)
+                player.StartSoundShader(shader, gameSoundChannel_t.SND_CHANNEL_ANY.ordinal, SSF_GLOBAL, false)
             } else {
-                StartSoundShader(shader, gameSoundChannel_t.SND_CHANNEL_ANY.ordinal, Sound.SSF_GLOBAL, false)
+                StartSoundShader(shader, gameSoundChannel_t.SND_CHANNEL_ANY.ordinal, SSF_GLOBAL, false)
             }
             if (shakeTime > 0.0f) {
-                shakeStopTime = (Game_local.gameLocal.time + SEC2MS(shakeTime))
+                shakeStopTime = (gameLocal.time + SEC2MS(shakeTime))
                 BecomeActive(TH_THINK)
             }
             if (wait > 0.0f) {
                 if (!triggered) {
-                    PostEventSec(EV_Activate, wait + random * Game_local.gameLocal.random.CRandomFloat(), this)
+                    PostEventSec(EV_Activate, wait + random * gameLocal.random.CRandomFloat(), this)
                 } else {
-                    nextTriggerTime =
-                        (Game_local.gameLocal.time + SEC2MS(wait + random * Game_local.gameLocal.random.CRandomFloat()))
+                    nextTriggerTime = (gameLocal.time + SEC2MS(wait + random * gameLocal.random.CRandomFloat()))
                 }
             } else if (shakeTime == 0.0f) {
                 PostEventMS(EV_Remove, 0)
@@ -2795,10 +2796,10 @@ object Misc {
         private val state: CBool = CBool()
         override fun Spawn() {
             super.Spawn()
-            portal._val = (Game_local.gameRenderWorld!!.FindPortal(GetPhysics().GetAbsBounds().Expand(32.0f)))
+            portal._val = (gameRenderWorld!!.FindPortal(GetPhysics().GetAbsBounds().Expand(32.0f)))
             if (portal._val > 0) {
                 state._val = (spawnArgs.GetBool("start_on"))
-                Game_local.gameLocal.SetPortalState(
+                gameLocal.SetPortalState(
                     portal._val,
                     (if (state._val) portalConnection_t.PS_BLOCK_ALL else portalConnection_t.PS_BLOCK_NONE).ordinal
                 )
@@ -2815,7 +2816,7 @@ object Misc {
             super.Restore(savefile)
             savefile.ReadInt(portal)
             savefile.ReadBool(state)
-            Game_local.gameLocal.SetPortalState(
+            gameLocal.SetPortalState(
                 portal._val,
                 (if (state._val) portalConnection_t.PS_BLOCK_ALL else portalConnection_t.PS_BLOCK_NONE).ordinal
             )
@@ -2824,7 +2825,7 @@ object Misc {
         private fun Event_Activate(activator: idEventArg<idEntity>) {
             if (portal._val > 0) {
                 state._val = (!state._val)
-                Game_local.gameLocal.SetPortalState(
+                gameLocal.SetPortalState(
                     portal._val,
                     (if (state._val) portalConnection_t.PS_BLOCK_ALL else portalConnection_t.PS_BLOCK_NONE).ordinal
                 )
@@ -2879,7 +2880,7 @@ object Misc {
         override fun Spawn() {
             super.Spawn()
             state = spawnArgs.GetBool("start_on")
-            Game_local.gameLocal.SetAASAreaState(GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_CLUSTERPORTAL, state)
+            gameLocal.SetAASAreaState(GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_CLUSTERPORTAL, state)
         }
 
         override fun Save(savefile: idSaveGame) {
@@ -2891,13 +2892,13 @@ object Misc {
             super.Restore(savefile)
             val state = CBool()
             savefile.ReadBool(state)
-            Game_local.gameLocal.SetAASAreaState(
+            gameLocal.SetAASAreaState(
                 GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_CLUSTERPORTAL, state._val.also { this.state = it })
         }
 
         private fun Event_Activate(activator: idEventArg<idEntity>) {
             state = state xor true //1;
-            Game_local.gameLocal.SetAASAreaState(GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_CLUSTERPORTAL, state)
+            gameLocal.SetAASAreaState(GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_CLUSTERPORTAL, state)
         }
 
         override fun CreateInstance(): idClass = idFuncAASPortal()
@@ -2939,7 +2940,7 @@ object Misc {
         override fun Spawn() {
             super.Spawn()
             state._val = (spawnArgs.GetBool("start_on"))
-            Game_local.gameLocal.SetAASAreaState(
+            gameLocal.SetAASAreaState(
                 GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_OBSTACLE, state._val
             )
         }
@@ -2952,14 +2953,14 @@ object Misc {
         override fun Restore(savefile: idRestoreGame) {
             super.Restore(savefile)
             savefile.ReadBool(state)
-            Game_local.gameLocal.SetAASAreaState(
+            gameLocal.SetAASAreaState(
                 GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_OBSTACLE, state._val
             )
         }
 
         private fun Event_Activate(activator: idEventArg<idEntity>) {
             state._val = (state._val xor true)
-            Game_local.gameLocal.SetAASAreaState(
+            gameLocal.SetAASAreaState(
                 GetPhysics().GetAbsBounds(), AASFile.AREACONTENTS_OBSTACLE, state._val
             )
         }
@@ -3030,13 +3031,13 @@ object Misc {
             player = if (activator.value is idPlayer) {
                 activator.value as idPlayer
             } else {
-                Game_local.gameLocal.GetLocalPlayer()!!
+                gameLocal.GetLocalPlayer()!!
             }
             player.hud!!.HandleNamedEvent("radioChatterUp")
             sound = spawnArgs.GetString("snd_radiochatter", "")
             if (sound != null && !sound.isEmpty()) {
-                shader = DeclManager.declManager.FindSound(sound)
-                player.StartSoundShader(shader, gameSoundChannel_t.SND_CHANNEL_RADIO, Sound.SSF_GLOBAL, false, length)
+                shader = declManager.FindSound(sound)
+                player.StartSoundShader(shader, gameSoundChannel_t.SND_CHANNEL_RADIO, SSF_GLOBAL, false, length)
                 time = MS2SEC((length._val + 150).toFloat())
             }
             // we still put the hud up because this is used with no sound on
@@ -3046,7 +3047,7 @@ object Misc {
 
         private fun Event_ResetRadioHud(_activator: idEventArg<idEntity>) {
             val activator = _activator.value
-            val player = if (activator is idPlayer) activator else Game_local.gameLocal.GetLocalPlayer()!!
+            val player = if (activator is idPlayer) activator else gameLocal.GetLocalPlayer()!!
             player.hud!!.HandleNamedEvent("radioChatterDown")
             ActivateTargets(activator)
         }
@@ -3195,7 +3196,7 @@ object Misc {
                 return
             }
             targetEnt = target.GetEntity()
-            if (null == targetEnt || targetEnt.health <= 0 || end_time != 0 && Game_local.gameLocal.time > end_time || Game_local.gameLocal.inCinematic) {
+            if (null == targetEnt || targetEnt.health <= 0 || end_time != 0 && gameLocal.time > end_time || gameLocal.inCinematic) {
                 BecomeInactive(TH_THINK)
             }
             val toPos = targetEnt!!.GetEyePosition()
@@ -3218,15 +3219,15 @@ object Misc {
                     continue
                 }
                 num++
-                time = MS2SEC((targetTime[i] - Game_local.gameLocal.time).toFloat())
+                time = MS2SEC((targetTime[i] - gameLocal.time).toFloat())
                 if (time > shake_time) {
                     i++
                     continue
                 }
                 entPhys = ent.GetPhysics()
                 val entOrg = entPhys.GetOrigin()
-                Game_local.gameLocal.clip.TracePoint(tr, entOrg, toPos, Game_local.MASK_OPAQUE, ent)
-                if (tr.fraction >= 1.0f || Game_local.gameLocal.GetTraceEntity(tr) == targetEnt) {
+                gameLocal.clip.TracePoint(tr, entOrg, toPos, Game_local.MASK_OPAQUE, ent)
+                if (tr.fraction >= 1.0f || gameLocal.GetTraceEntity(tr) == targetEnt) {
                     lastTargetPos[i] = toPos
                 }
                 if (time < 0.0f) {
@@ -3248,8 +3249,7 @@ object Misc {
                     if (0 == end_time) {
                         targetTime[i] = 0
                     } else {
-                        targetTime[i] =
-                            Game_local.gameLocal.time + Game_local.gameLocal.random.RandomInt(max_wait - min_wait) + min_wait
+                        targetTime[i] = gameLocal.time + gameLocal.random.RandomInt(max_wait - min_wait) + min_wait
                     }
                     if (ent is idMoveable) {
                         val ment = ent as idMoveable
@@ -3258,9 +3258,9 @@ object Misc {
                 } else {
                     // this is not the right way to set the angular velocity, but the effect is nice, so I'm keeping it. :)
                     ang.set(
-                        Game_local.gameLocal.random.CRandomFloat() * shake_ang.x,
-                        Game_local.gameLocal.random.CRandomFloat() * shake_ang.y,
-                        Game_local.gameLocal.random.CRandomFloat() * shake_ang.z
+                        gameLocal.random.CRandomFloat() * shake_ang.x,
+                        gameLocal.random.CRandomFloat() * shake_ang.y,
+                        gameLocal.random.CRandomFloat() * shake_ang.z
                     )
                     ang.timesAssign(1.0f - time / shake_time)
                     entPhys.SetAngularVelocity(ang)
@@ -3287,11 +3287,11 @@ object Misc {
                 return
             }
             if (null == activator || activator !is idActor) {
-                target.oSet(Game_local.gameLocal.GetLocalPlayer())
+                target.oSet(gameLocal.GetLocalPlayer())
             } else {
                 target.oSet(activator as idActor?)
             }
-            end_time = (Game_local.gameLocal.time + SEC2MS(spawnArgs.GetFloat("end_time", "0")))
+            end_time = (gameLocal.time + SEC2MS(spawnArgs.GetFloat("end_time", "0")))
             targetTime.SetNum(targets.Num())
             lastTargetPos.SetNum(targets.Num())
             val toPos = target.GetEntity()!!.GetEyePosition()
@@ -3303,7 +3303,7 @@ object Misc {
                 targetTime[i] = SEC2MS(time)
                 lastTargetPos[i] = toPos
                 frac = 1.0f - i.toFloat() / targetTime.Num().toFloat()
-                time += (Game_local.gameLocal.random.RandomFloat() + 1.0f) * 0.5f * frac + 0.1f
+                time += (gameLocal.random.RandomFloat() + 1.0f) * 0.5f * frac + 0.1f
                 i++
             }
 
@@ -3311,7 +3311,7 @@ object Misc {
             scale = throw_time / time
             i = 0
             while (i < targetTime.Num()) {
-                targetTime[i] = (Game_local.gameLocal.time + SEC2MS(shake_time) + targetTime[i] * scale).toInt()
+                targetTime[i] = (gameLocal.time + SEC2MS(shake_time) + targetTime[i] * scale).toInt()
                 i++
             }
             BecomeActive(TH_THINK)
@@ -3488,6 +3488,227 @@ object Misc {
         override fun CreateInstance(): idClass = idShockwave()
         override fun GetType(): idTypeInfo = Type
         override fun getEventCallBack(event: idEventDef): eventCallback_t<*>? = eventCallbacks[event]
+    }
+
+    open class idFuncMountedObject : idEntity() {
+        private var harc: Int = 0
+        private var varc: Int = 0
+
+        var isMounted: Boolean = false
+        var scriptFunction: Script_Program.function_t? = null
+        var mountedPlayer: idPlayer? = null
+
+
+        companion object {
+            val Type: idTypeInfo = idTypeInfo(
+                "idFuncMountedObject", "idEntity"
+            ) { idFuncMountedObject() }
+            private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+            fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> = eventCallbacks
+
+            init {
+                eventCallbacks.putAll(idEntity.getEventCallBacks())
+                eventCallbacks[EV_Touch] =
+                    eventCallback_t2<idFuncMountedObject> { obj: idFuncMountedObject, other: idEventArg<*>?, trace: idEventArg<*>? ->
+                        obj.Event_Touch(
+                            other as idEventArg<idEntity>, trace as idEventArg<trace_s>
+                        )
+                    }
+                eventCallbacks[EV_Activate] =
+                    eventCallback_t1<idFuncMountedObject> { obj: idFuncMountedObject, activator: idEventArg<*>? ->
+                        obj.Event_Activate(activator as idEventArg<idEntity>)
+                    }
+            }
+        }
+
+        override fun Spawn() {
+            // Get viewOffset
+            harc = spawnArgs.GetInt("harc", "45")
+            varc = spawnArgs.GetInt("varc", "30")
+
+            // Get script function
+            val funcName: idStr = idStr(spawnArgs.GetString("call", "")!!)
+            if (funcName.Length() != 0) {
+                scriptFunction = gameLocal.program.FindFunction(funcName)
+                if (scriptFunction == null) {
+                    gameLocal.Warning(
+                        "idFuncMountedObject '%s' at (%s) calls unknown function '%s'\n",
+                        name.c_str(),
+                        GetPhysics().GetOrigin().ToString(0),
+                        funcName.c_str()
+                    )
+                }
+            }
+
+            BecomeActive(TH_THINK)
+        }
+
+        fun GetAngleRestrictions(yaw_min: CInt, yaw_max: CInt, pitch: CInt) {
+            val axis: idMat3 = idMat3()
+            val angs: idAngles = idAngles()
+
+            axis.set(GetPhysics().GetAxis())
+            angs.set(axis.ToAngles())
+
+            yaw_min._val = (angs.yaw - harc).toInt()
+            yaw_min._val = AngleNormalize180(yaw_min._val.toFloat()).toInt()
+
+            yaw_max._val = (angs.yaw + harc).toInt()
+            yaw_max._val = AngleNormalize180(yaw_max._val.toFloat()).toInt()
+
+            pitch._val = varc
+        }
+
+        /*
+        ================
+        idFuncMountedObject::Event_Touch
+        ================
+        */
+        fun Event_Touch(other: idEventArg<idEntity>, trace: idEventArg<trace_s>) {
+            ProcessEvent(EV_Activate, other)
+        }
+
+        /*
+        ================
+        idFuncMountedObject::Event_Activate
+        ================
+        */
+        fun Event_Activate(activator: idEventArg<idEntity>) {
+            if (!isMounted && activator.value.IsType(idPlayer.Type)) {
+                var client: idPlayer = activator.value as idPlayer
+
+                mountedPlayer = client
+
+                mountedPlayer!!.Bind(this, true)
+                mountedPlayer!!.mountedObject = this
+
+                // Call a script function
+                var mountthread: idThread
+                if (scriptFunction != null) {
+                    mountthread = idThread(scriptFunction!!)
+                    mountthread.DelayedStart(0)
+                }
+
+                isMounted = true
+            }
+        }
+    }
+
+    class idFuncMountedWeapon : idFuncMountedObject() {
+        companion object {
+            val Type: idTypeInfo = idTypeInfo(
+                "idFuncMountedWeapon", "idFuncMountedObject"
+            ) { idFuncMountedWeapon() }
+            private val eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
+            fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> = eventCallbacks
+
+            init {
+                eventCallbacks.putAll(idFuncMountedObject.getEventCallBacks())
+                eventCallbacks[EV_PostSpawn] =
+                    eventCallback_t1<idFuncMountedWeapon> { obj: idFuncMountedWeapon, activator: idEventArg<*>? ->
+                        obj.Event_PostSpawn(activator as idEventArg<idEntity>)
+                    }
+            }
+        }
+
+        override fun Spawn() {
+
+            // Get projectile info
+            projectile = gameLocal.FindEntityDefDict(spawnArgs.GetString("def_projectile"), false)
+            if (projectile == null) {
+                gameLocal.Warning("Invalid projectile on func_mountedweapon.")
+            }
+
+            var firerate: Float = spawnArgs.GetFloat("firerate", "3")
+            weaponFireDelay = 1000f / firerate
+
+            // Get the firing sound
+            val fireSound: idStr = idStr()
+            spawnArgs.GetString("snd_fire", "", fireSound)
+            soundFireWeapon = declManager.FindSound(fireSound)
+
+            PostEventMS(EV_PostSpawn, 0)
+        }
+
+        override fun Think() {
+
+            if (isMounted && turret != null) {
+                val vec: idVec3 = mountedPlayer!!.viewAngles.ToForward()
+                val ang: idAngles = mountedPlayer!!.GetLocalVector(vec).ToAngles()
+
+                turret!!.GetPhysics().SetAxis(ang.ToMat3())
+                turret!!.UpdateVisuals()
+
+                // Check for firing
+                if (mountedPlayer!!.usercmd.buttons.toInt() and BUTTON_ATTACK != 0 && (gameLocal.time > weaponLastFireTime + weaponFireDelay)) {
+                    // FIRE!
+                    val arrOfProj = arrayOfNulls<idEntity>(1)
+                    gameLocal.SpawnEntityDef(projectile!!, arrOfProj)
+                    var ent: idEntity? = arrOfProj[0]
+                    val projBounds = idBounds()
+                    val dir = idVec3()
+
+
+                    if (ent == null || !ent.IsType(idProjectile.Type)) {
+                        val projectileName = spawnArgs.GetString("def_projectile")
+                        idGameLocal.Error("'%s' is not an idProjectile", projectileName)
+                    }
+
+                    mountedPlayer!!.GetViewPos(muzzleOrigin, muzzleAxis)
+
+                    muzzleOrigin.plusAssign(muzzleAxis[0] * 128)
+                    muzzleOrigin.minusAssign(muzzleAxis[2] * 20)
+
+                    dir.set(muzzleAxis[0])
+
+                    val proj = ent as idProjectile
+                    proj.Create(this, muzzleOrigin, dir)
+
+                    projBounds.set(proj.GetPhysics().GetBounds().Rotate(proj.GetPhysics().GetAxis()))
+
+                    proj.Launch(muzzleOrigin, dir, vec3_origin)
+                    StartSoundShader(
+                        soundFireWeapon,
+                        gameSoundChannel_t.SND_CHANNEL_WEAPON.ordinal,
+                        SSF_GLOBAL,
+                        false,
+                        null
+                    )
+
+                    weaponLastFireTime = gameLocal.time.toFloat()
+                }
+            }
+
+            super.Think()
+        }
+
+
+        // The actual turret that moves with the player's view
+        private var turret: idEntity? = null
+
+        // the muzzle bone's position, used for launching projectiles and trailing smoke
+        private val muzzleOrigin = idVec3()
+        private val muzzleAxis = idMat3()
+
+        private var weaponLastFireTime: Float = 0f
+        private var weaponFireDelay: Float = 0f
+
+        var projectile: idDict? = null
+        var soundFireWeapon: idSoundShader? = null
+
+        fun Event_PostSpawn(activator: idEventArg<idEntity>) {
+
+            if (targets.Num() >= 1) {
+                for (i in 0 until targets.Num()) {
+                    if (targets[i].GetEntity()!!.IsType(idStaticEntity.Type)) {
+                        turret = targets[i].GetEntity()
+                        break
+                    }
+                }
+            } else {
+                gameLocal.Warning("idFuncMountedWeapon::Spawn:  Please target one model for a turret\n")
+            }
+        }
     }
 
     // D3XP: portal sky entity

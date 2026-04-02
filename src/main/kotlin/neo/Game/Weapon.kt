@@ -45,7 +45,6 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
-import neo.framework.CVarSystem
 import neo.Game.Game_local.*
 import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.MultiplayerGame.gameType_t
@@ -66,6 +65,7 @@ import neo.Sound.snd_shader.idSoundShader
 import neo.TempDump
 import neo.cm.collisionModelManager
 import neo.cm.trace_s
+import neo.framework.CVarSystem
 import neo.framework.DeclEntityDef.idDeclEntityDef
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
@@ -1080,7 +1080,7 @@ object Weapon {
                 // weapon particles
                 val particleCount = savefile.ReadInt()
                 for (i in 0 until particleCount) {
-                    val newParticle = Weapon.WeaponParticle_t()
+                    val newParticle = WeaponParticle_t()
                     val name = idStr()
                     val particlename = idStr()
                     savefile.ReadString(name)
@@ -1104,7 +1104,7 @@ object Weapon {
                 // weapon lights
                 val lightCount = savefile.ReadInt()
                 for (i in 0 until lightCount) {
-                    val newLight = Weapon.WeaponLight_t()
+                    val newLight = WeaponLight_t()
                     val name = idStr()
                     savefile.ReadString(name)
                     newLight.name = name.toString()
@@ -1572,7 +1572,7 @@ object Weapon {
                 if (!Game_local.gameLocal.isMultiplayer) {
                     var pkv = weaponDef!!.dict.MatchPrefix("weapon_particle")
                     while (pkv != null) {
-                        val newParticle = Weapon.WeaponParticle_t()
+                        val newParticle = WeaponParticle_t()
                         val name = pkv.GetValue().toString()
                         newParticle.name = name
 
@@ -1591,16 +1591,14 @@ object Weapon {
                             ) as? idDeclParticle
                         } else {
                             val args = idDict()
-                            val emitterDef = Game_local.gameLocal.FindEntityDef("func_emitter", false)
-                            if (emitterDef != null) {
-                                args.Copy(emitterDef.dict)
-                                args.Set("model", particle)
-                                args.SetBool("start_off", true)
-                                val spawnedEnt = arrayOfNulls<idEntity>(1)
-                                Game_local.gameLocal.SpawnEntityDef(args, spawnedEnt, false)
-                                newParticle.emitter = spawnedEnt[0] as? Misc.idFuncEmitter
-                                newParticle.emitter?.BecomeActive(TH_THINK)
-                            }
+                            val emitterDef = Game_local.gameLocal.FindEntityDef("func_emitter", false)!!
+                            args.set(emitterDef.dict)
+                            args.Set("model", particle)
+                            args.SetBool("start_off", true)
+                            val spawnedEnt = arrayOfNulls<idEntity>(1)
+                            Game_local.gameLocal.SpawnEntityDef(args, spawnedEnt, false)
+                            newParticle.emitter = spawnedEnt[0] as? Misc.idFuncEmitter
+                            newParticle.emitter?.BecomeActive(TH_THINK)
                         }
 
                         weaponParticles.Set(name, newParticle)
@@ -1609,7 +1607,7 @@ object Weapon {
 
                     var lkv = weaponDef!!.dict.MatchPrefix("weapon_light")
                     while (lkv != null) {
-                        val newLight = Weapon.WeaponLight_t()
+                        val newLight = WeaponLight_t()
                         newLight.lightHandle = -1
                         newLight.active = false
                         newLight.startTime = 0
@@ -4134,7 +4132,7 @@ object Weapon {
         private fun Event_StartWeaponParticle(name: idEventArg<*>) {
             if (!isD3XP) return
             val n = name.value as String
-            val result = arrayOfNulls<Weapon.WeaponParticle_t>(1)
+            val result = arrayOfNulls<WeaponParticle_t>(1)
             if (weaponParticles.Get(n, result)) {
                 val part = result[0]!!
                 part.active = true
@@ -4149,7 +4147,7 @@ object Weapon {
         private fun Event_StopWeaponParticle(name: idEventArg<*>) {
             if (!isD3XP) return
             val n = name.value as String
-            val result = arrayOfNulls<Weapon.WeaponParticle_t>(1)
+            val result = arrayOfNulls<WeaponParticle_t>(1)
             if (weaponParticles.Get(n, result)) {
                 val part = result[0]!!
                 part.active = false
@@ -4164,7 +4162,7 @@ object Weapon {
         private fun Event_StartWeaponLight(name: idEventArg<*>) {
             if (!isD3XP) return
             val n = name.value as String
-            val result = arrayOfNulls<Weapon.WeaponLight_t>(1)
+            val result = arrayOfNulls<WeaponLight_t>(1)
             if (weaponLights.Get(n, result)) {
                 val lt = result[0]!!
                 lt.active = true
@@ -4175,10 +4173,11 @@ object Weapon {
         private fun Event_StopWeaponLight(name: idEventArg<*>) {
             if (!isD3XP) return
             val n = name.value as String
-            val result = arrayOfNulls<Weapon.WeaponLight_t>(1)
+            val result = arrayOfNulls<WeaponLight_t>(1)
             if (weaponLights.Get(n, result)) {
                 val lt = result[0]!!
                 lt.active = false
+                lt.startTime = 0
                 if (lt.lightHandle != -1) {
                     Game_local.gameRenderWorld!!.FreeLightDef(lt.lightHandle)
                     lt.lightHandle = -1

@@ -402,107 +402,107 @@ class idCameraAnim : idCamera() {
         }
         val ts = if (isD3XP) SetTimeState(timeGroup) else null
         try {
-        if (frameRate == UsercmdGen.USERCMD_HZ) {
-            frameTime = Game_local.gameLocal.time - starttime
-            frame = (frameTime / idGameLocal.msecPrecise).toInt()
-            lerp = 0.0f
-        } else {
-            frameTime = (Game_local.gameLocal.time - starttime) * frameRate
-            frame = frameTime / 1000
-            lerp = (frameTime % 1000) * 0.001f
-        }
-
-        // skip any frames where camera cuts occur
-        realFrame = frame
-        cut = 0
-        i = 0
-        while (i < cameraCuts.Num()) {
-            if (frame < cameraCuts[i]) {
-                break
+            if (frameRate == UsercmdGen.USERCMD_HZ) {
+                frameTime = Game_local.gameLocal.time - starttime
+                frame = (frameTime / idGameLocal.msecPrecise).toInt()
+                lerp = 0.0f
+            } else {
+                frameTime = (Game_local.gameLocal.time - starttime) * frameRate
+                frame = frameTime / 1000
+                lerp = (frameTime % 1000) * 0.001f
             }
-            frame++
-            cut++
-            i++
-        }
-        if (SysCvar.g_debugCinematic.GetBool()) {
-            val prevFrameTime: Int =
-                (Game_local.gameLocal.time - starttime - Game_local.gameLocal.msec) * frameRate
-            var prevFrame = prevFrameTime / 1000
-            var prevCut: Int
-            prevCut = 0
+
+            // skip any frames where camera cuts occur
+            realFrame = frame
+            cut = 0
             i = 0
             while (i < cameraCuts.Num()) {
-                if (prevFrame < cameraCuts[i]) {
+                if (frame < cameraCuts[i]) {
                     break
                 }
-                prevFrame++
-                prevCut++
+                frame++
+                cut++
                 i++
             }
-            if (prevCut != cut) {
-                Game_local.gameLocal.Printf("%d: '%s' cut %d\n", Game_local.gameLocal.framenum, GetName(), cut)
+            if (SysCvar.g_debugCinematic.GetBool()) {
+                val prevFrameTime: Int =
+                    (Game_local.gameLocal.time - starttime - Game_local.gameLocal.msec) * frameRate
+                var prevFrame = prevFrameTime / 1000
+                var prevCut: Int
+                prevCut = 0
+                i = 0
+                while (i < cameraCuts.Num()) {
+                    if (prevFrame < cameraCuts[i]) {
+                        break
+                    }
+                    prevFrame++
+                    prevCut++
+                    i++
+                }
+                if (prevCut != cut) {
+                    Game_local.gameLocal.Printf("%d: '%s' cut %d\n", Game_local.gameLocal.framenum, GetName(), cut)
+                }
             }
-        }
 
-        // clamp to the first frame.  also check if this is a one frame anim.  one frame anims would end immediately,
-        // but since they're mainly used for static cams anyway, just stay on it infinitely.
-        if (frame < 0 || camera.Num() < 2) {
-            view.viewaxis.set(camera[0].q.ToQuat().ToMat3())
-            view.vieworg.set(camera[0].t.plus(offset))
-            view.fov_x = camera[0].fov
-        } else if (frame > camera.Num() - 2) {
-            if (cycle > 0) {
-                cycle--
-            }
-            if (cycle != 0) {
-                // advance start time so that we loop
-                starttime += (camera.Num() - cameraCuts.Num()) * 1000 / frameRate
-                GetViewParms(view)
-                return
-            }
-            Stop()
-            if (Game_local.gameLocal.GetCamera() != null) {
-                // we activated another camera when we stopped, so get it's viewparms instead
-                Game_local.gameLocal.GetCamera()!!.GetViewParms(view)
-                return
-            } else {
-                // just use our last frame
-                camFrame = camera[camera.Num() - 1]
-                view.viewaxis.set(camFrame.q.ToQuat().ToMat3())
-                view.vieworg.set(camFrame.t.plus(offset))
+            // clamp to the first frame.  also check if this is a one frame anim.  one frame anims would end immediately,
+            // but since they're mainly used for static cams anyway, just stay on it infinitely.
+            if (frame < 0 || camera.Num() < 2) {
+                view.viewaxis.set(camera[0].q.ToQuat().ToMat3())
+                view.vieworg.set(camera[0].t.plus(offset))
+                view.fov_x = camera[0].fov
+            } else if (frame > camera.Num() - 2) {
+                if (cycle > 0) {
+                    cycle--
+                }
+                if (cycle != 0) {
+                    // advance start time so that we loop
+                    starttime += (camera.Num() - cameraCuts.Num()) * 1000 / frameRate
+                    GetViewParms(view)
+                    return
+                }
+                Stop()
+                if (Game_local.gameLocal.GetCamera() != null) {
+                    // we activated another camera when we stopped, so get it's viewparms instead
+                    Game_local.gameLocal.GetCamera()!!.GetViewParms(view)
+                    return
+                } else {
+                    // just use our last frame
+                    camFrame = camera[camera.Num() - 1]
+                    view.viewaxis.set(camFrame.q.ToQuat().ToMat3())
+                    view.vieworg.set(camFrame.t.plus(offset))
+                    view.fov_x = camFrame.fov
+                }
+            } else if (lerp == 0.0f) {
+                camFrame = camera[frame]
+                view.viewaxis.set(camFrame.q.ToMat3())
+                view.vieworg.set(camFrame.t + offset)
                 view.fov_x = camFrame.fov
+            } else {
+                camFrame = camera[frame]
+                val nextFrame = camera[frame + 1]
+                invlerp = 1.0f - lerp
+                q1.set(camFrame.q.ToQuat())
+                q2.set(nextFrame.q.ToQuat())
+                q3.Slerp(q1, q2, lerp)
+                view.viewaxis.set(q3.ToMat3())
+                view.vieworg.set(
+                    camFrame.t * invlerp + nextFrame.t * lerp + offset
+                )
+                view.fov_x = camFrame.fov * invlerp + nextFrame.fov * lerp
             }
-        } else if (lerp == 0.0f) {
-            camFrame = camera[frame]
-            view.viewaxis.set(camFrame.q.ToMat3())
-            view.vieworg.set(camFrame.t + offset)
-            view.fov_x = camFrame.fov
-        } else {
-            camFrame = camera[frame]
-            val nextFrame = camera[frame + 1]
-            invlerp = 1.0f - lerp
-            q1.set(camFrame.q.ToQuat())
-            q2.set(nextFrame.q.ToQuat())
-            q3.Slerp(q1, q2, lerp)
-            view.viewaxis.set(q3.ToMat3())
-            view.vieworg.set(
-                camFrame.t * invlerp + nextFrame.t * lerp + offset
-            )
-            view.fov_x = camFrame.fov * invlerp + nextFrame.fov * lerp
-        }
 
-        val fov_x = CFloat(view.fov_x)
-        val fov_y = CFloat(view.fov_y)
-        Game_local.gameLocal.CalcFov(view.fov_x, fov_x, fov_y)
-        view.fov_x = fov_x._val
-        view.fov_y = fov_y._val
+            val fov_x = CFloat(view.fov_x)
+            val fov_y = CFloat(view.fov_y)
+            Game_local.gameLocal.CalcFov(view.fov_x, fov_x, fov_y)
+            view.fov_x = fov_x._val
+            view.fov_y = fov_y._val
 
-        // setup the pvs for this frame
-        UpdatePVSAreas(view.vieworg)
+            // setup the pvs for this frame
+            UpdatePVSAreas(view.vieworg)
 
-        if (SysCvar.g_showcamerainfo.GetBool()) {
-            Game_local.gameLocal.Printf("^5Frame: ^7%d/%d\n\n\n", realFrame + 1, camera.Num() - cameraCuts.Num())
-        }
+            if (SysCvar.g_showcamerainfo.GetBool()) {
+                Game_local.gameLocal.Printf("^5Frame: ^7%d/%d\n\n\n", realFrame + 1, camera.Num() - cameraCuts.Num())
+            }
         } finally {
             ts?.close()
         }

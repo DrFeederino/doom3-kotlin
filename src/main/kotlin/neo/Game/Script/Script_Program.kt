@@ -4,6 +4,7 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.idGameLocal.Companion.gameError
 import neo.TempDump.CPP_class
 import neo.TempDump.SERiAL
@@ -24,14 +25,17 @@ import java.nio.ByteOrder
 
 object Script_Program {
     const val MAX_STRING_LEN = 128
-    const val MAX_FUNCS = 3584    // D3XP: 3072 → 3584 (larger d3xp script library)
-    const val MAX_GLOBALS =
-        296608 // in bytes -- DG: increased for 64-bit compatibility (dhewm3 value); D3XP: 196608 → 296608
-    const val MAX_STATEMENTS = 131072 // D3XP: 81920 → 131072
+    fun MAX_FUNCS(): Int {
+        return if (isD3XP) 3584 else 3072    // D3XP: 3072 → 3584 (larger d3xp script library)
+    }
+
+    const val MAX_GLOBALS = 296608 // in bytes -- DG: increased for 64-bit compatibility (dhewm3 value);
+    fun MAX_STATEMENTS(): Int {
+        return if (isD3XP) 131072 else 81920// D3XP: 81920 → 131072
+    }
+
     const val MAX_STRINGS = 1024
-
     const val SIZEOF_INTPTR = 8
-
     const val E_EVENT_SIZEOF_VEC = (idVec3.BYTES + (SIZEOF_INTPTR - 1)) and (SIZEOF_INTPTR - 1).inv()
     const val ev_argsize = 13
     const val ev_boolean = 14

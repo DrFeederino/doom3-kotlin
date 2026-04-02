@@ -90,6 +90,7 @@ import neo.idlib.idLib
 import neo.idlib.math.*
 import neo.idlib.math.Interpolate.idInterpolate
 import neo.idlib.math.Matrix.idMat3
+import neo.idlib.math.idMath.ClampFloat
 import neo.sys.sysEvent_s
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
@@ -279,6 +280,7 @@ object Player {
 
         // D3XP: ammo types that recharge automatically over time
         val rechargeAmmo: Array<RechargeAmmo_t> = Array(AMMO_NUMTYPES) { RechargeAmmo_t() }
+
         // mp
         var ammoPredictTime = 0
         var ammoPulse = false
@@ -410,6 +412,15 @@ object Player {
             savefile.WriteBool(weaponPulse)
             savefile.WriteBool(armorPulse)
             savefile.WriteInt(lastGiveTime)
+            if (isD3XP) {
+                var i = 0
+                while (i < AMMO_NUMTYPES) {
+                    savefile.WriteInt(rechargeAmmo[i].ammo)
+                    savefile.WriteInt(rechargeAmmo[i].rechargeTime)
+                    savefile.WriteString(rechargeAmmo[i].ammoName)
+                    i++
+                }
+            }
         }
 
         // unarchives object from save game file
@@ -533,6 +544,17 @@ object Player {
             weaponPulse = savefile.ReadBool()
             armorPulse = savefile.ReadBool()
             lastGiveTime = savefile.ReadInt()
+            if (isD3XP) {
+                var i = 0
+                while (i < AMMO_NUMTYPES) {
+                    rechargeAmmo[i].ammo = savefile.ReadInt()
+                    rechargeAmmo[i].rechargeTime = savefile.ReadInt()
+                    val nameStr = idStr()
+                    savefile.ReadString(nameStr)
+                    rechargeAmmo[i].ammoName = nameStr.toString()
+                    i++
+                }
+            }
         }
 
         fun Clear() {
@@ -864,10 +886,19 @@ object Player {
                     armorPulse = true
                 }
             } else if (FindText(statname, "inclip_") == 0) {
-                i = WeaponIndexForAmmoClass(spawnArgs, statname + 7)
+                if (isD3XP) {
+                    // D3XP: weapon index is embedded in the key name (e.g., "inclip_04")
+                    val temp = idStr(statname)
+                    i = TempDump.atoi(temp.Mid(7, 2))
+                } else {
+                    i = WeaponIndexForAmmoClass(spawnArgs, statname.substring(7))
+                }
                 if (i != -1) {
                     // set, don't add. not going over the clip size limit.
-                    clip[i] = value.toInt()
+                    // D3XP: don't set clip from pickup; clip is managed by GetWeaponDef/UseAmmo
+                    if (!isD3XP) {
+                        clip[i] = value.toInt()
+                    }
                 }
             } else if (isD3XP && 0 == idStr.Icmp(statname, "invulnerability")) {
                 owner.GivePowerUp(INVULNERABILITY, SEC2MS(value.toFloat()))
@@ -965,8 +996,7 @@ object Player {
             if (weapon_index == -1) {
                 weapon_index = 0
                 while (weapon_index < MAX_WEAPONS) {
-                    if (
-                        idStr.Icmp(
+                    if (idStr.Icmp(
                             weapon_classname[0], spawnArgs.GetString(Str.va("def_weapon%d", weapon_index))
                         ) == 0
                     ) {
@@ -1011,8 +1041,7 @@ object Player {
                     return true
                 }
             } else if (idStr.Icmp(statname, "item") == 0 || idStr.Icmp(statname, "icon") == 0 || idStr.Icmp(
-                    statname,
-                    "name"
+                    statname, "name"
                 ) == 0
             ) {
                 return false
@@ -1111,6 +1140,34 @@ object Player {
             val ammoRequired = IntArray(1)
             val ammo_i = AmmoIndexForWeaponClass(weapon_classname, ammoRequired)
             return HasAmmo(ammo_i, ammoRequired[0])
+        }
+
+        // D3XP: includes clip ammo in the count if includeClip is true
+        fun HasAmmo(weapon_classname: String, includeClip: Boolean, owner: idPlayer?): Int {
+            val ammoRequired = IntArray(1)
+            val ammo_i = AmmoIndexForWeaponClass(weapon_classname, ammoRequired)
+            var ammoCount = HasAmmo(ammo_i, ammoRequired[0])
+            if (includeClip && owner != null) {
+                ammoCount += clip[owner.SlotForWeapon(weapon_classname)]
+            }
+            return ammoCount
+        }
+
+        // D3XP: returns true if the clip is empty and there is not enough ammo to refill it
+        fun HasEmptyClipCannotRefill(weapon_classname: String, owner: idPlayer): Boolean {
+            val clipSize = clip[owner.SlotForWeapon(weapon_classname)]
+            if (clipSize != 0) {
+                return false
+            }
+            val decl = gameLocal.FindEntityDef(weapon_classname, false) ?: return false
+            val minclip = decl.dict.GetInt("minclipsize")
+            if (minclip == 0) {
+                return false
+            }
+            val ammo_i = AmmoIndexForAmmoClass(decl.dict.GetString("ammoType", "")!!)
+            val ammoRequired = decl.dict.GetInt("ammoRequired")
+            val ammoCount = HasAmmo(ammo_i, ammoRequired)
+            return ammoCount < minclip
         }
 
         fun UpdateArmor() {
@@ -1280,10 +1337,9 @@ object Player {
                     (eventCallback_t0 { obj: idPlayer -> obj.Event_GetIdealWeapon() })
 
                 // D3XP events
-                eventCallbacks[EV_Player_GiveInventoryItem] =
-                    eventCallback_t1 { obj: idPlayer, name: idEventArg<*>? ->
-                        obj.Event_GiveInventoryItem(name as idEventArg<String>)
-                    }
+                eventCallbacks[EV_Player_GiveInventoryItem] = eventCallback_t1 { obj: idPlayer, name: idEventArg<*>? ->
+                    obj.Event_GiveInventoryItem(name as idEventArg<String>)
+                }
                 eventCallbacks[EV_Player_RemoveInventoryItem] =
                     eventCallback_t1 { obj: idPlayer, name: idEventArg<*>? ->
                         obj.Event_RemoveInventoryItem(name as idEventArg<String>)
@@ -1292,24 +1348,19 @@ object Player {
                     eventCallback_t2 { obj: idPlayer, powerup: idEventArg<*>, time: idEventArg<*> ->
                         obj.Event_SetPowerupTime(powerup as idEventArg<Int>, time as idEventArg<Int>)
                     }
-                eventCallbacks[EV_Player_IsPowerupActive] =
-                    eventCallback_t1 { obj: idPlayer, powerup: idEventArg<*>? ->
-                        obj.Event_IsPowerupActive(powerup as idEventArg<Int>)
-                    }
-                eventCallbacks[EV_Player_WeaponAvailable] =
-                    eventCallback_t1 { obj: idPlayer, name: idEventArg<*>? ->
-                        obj.Event_WeaponAvailable(name as idEventArg<String>)
-                    }
-                eventCallbacks[EV_Player_StartWarp] =
-                    eventCallback_t0 { obj: idPlayer -> obj.Event_StartWarp() }
-                eventCallbacks[EV_Player_StopHelltime] =
-                    eventCallback_t1 { obj: idPlayer, mode: idEventArg<*>? ->
-                        obj.Event_StopHelltime(mode as idEventArg<Int>)
-                    }
-                eventCallbacks[EV_Player_ToggleBloom] =
-                    eventCallback_t1 { obj: idPlayer, on: idEventArg<*>? ->
-                        obj.Event_ToggleBloom(on as idEventArg<Int>)
-                    }
+                eventCallbacks[EV_Player_IsPowerupActive] = eventCallback_t1 { obj: idPlayer, powerup: idEventArg<*>? ->
+                    obj.Event_IsPowerupActive(powerup as idEventArg<Int>)
+                }
+                eventCallbacks[EV_Player_WeaponAvailable] = eventCallback_t1 { obj: idPlayer, name: idEventArg<*>? ->
+                    obj.Event_WeaponAvailable(name as idEventArg<String>)
+                }
+                eventCallbacks[EV_Player_StartWarp] = eventCallback_t0 { obj: idPlayer -> obj.Event_StartWarp() }
+                eventCallbacks[EV_Player_StopHelltime] = eventCallback_t1 { obj: idPlayer, mode: idEventArg<*>? ->
+                    obj.Event_StopHelltime(mode as idEventArg<Int>)
+                }
+                eventCallbacks[EV_Player_ToggleBloom] = eventCallback_t1 { obj: idPlayer, on: idEventArg<*>? ->
+                    obj.Event_ToggleBloom(on as idEventArg<Int>)
+                }
                 eventCallbacks[EV_Player_SetBloomParms] =
                     eventCallback_t2 { obj: idPlayer, speed: idEventArg<*>, intensity: idEventArg<*> ->
                         obj.Event_SetBloomParms(speed as idEventArg<Float>, intensity as idEventArg<Float>)
@@ -1519,7 +1570,7 @@ object Player {
         var harvest_lock: Boolean = false
 
         // D3XP: mounted object (turret)
-        var mountedObject: idEntity? = null
+        var mountedObject: Misc.idFuncMountedObject? = null
 
         // D3XP: envirosuit light
         var enviroSuitLight: idEntityPtr<Light.idLight> = idEntityPtr()
@@ -1922,6 +1973,11 @@ object Player {
                 SetViewAngles(spawnAngles)
                 oldFlags = usercmd.flags.toInt()
             }
+            if (isD3XP && mountedObject != null) {
+                usercmd.forwardmove = 0
+                usercmd.rightmove = 0
+                usercmd.upmove = 0
+            }
             if (objectiveSystemOpen || gameLocal.inCinematic || influenceActive != 0) {
                 if (objectiveSystemOpen && AI_PAIN.underscore()!!) {
                     TogglePDA()
@@ -1957,10 +2013,7 @@ object Player {
             if (((usercmd.buttons.toInt() xor oldCmd.buttons.toInt()) and UsercmdGen.BUTTON_ZOOM) != 0) {
                 if ((usercmd.buttons.toInt() and UsercmdGen.BUTTON_ZOOM) != 0 && weapon.GetEntity() != null) {
                     zoomFov.Init(
-                        gameLocal.time.toFloat(),
-                        200.0f,
-                        CalcFov(false),
-                        weapon.GetEntity()!!.GetZoomFov().toFloat()
+                        gameLocal.time.toFloat(), 200.0f, CalcFov(false), weapon.GetEntity()!!.GetZoomFov().toFloat()
                     )
                 } else {
                     zoomFov.Init(
@@ -1997,15 +2050,28 @@ object Player {
                 // not done on clients for various reasons. don't do it on server and save the sound channel for other things
                 if (!gameLocal.isMultiplayer) {
                     SetCurrentHeartRate()
-                    var scale = SysCvar.g_damageScale.GetFloat()
-                    if (SysCvar.g_useDynamicProtection.GetBool() && scale < 1.0f && gameLocal.time - lastDmgTime > 500) {
-                        if (scale < 1.0f) {
-                            scale += 0.05f
+                    if (isD3XP) {
+                        var scale = new_g_damageScale
+                        if (SysCvar.g_useDynamicProtection.GetBool() && scale < 1.0f && gameLocal.time - lastDmgTime > 500) {
+                            if (scale < 1.0f) {
+                                scale += 0.05f
+                            }
+                            if (scale > 1.0f) {
+                                scale = 1.0f
+                            }
+                            new_g_damageScale = scale
                         }
-                        if (scale > 1.0f) {
-                            scale = 1.0f
+                    } else {
+                        var scale = SysCvar.g_damageScale.GetFloat()
+                        if (SysCvar.g_useDynamicProtection.GetBool() && scale < 1.0f && gameLocal.time - lastDmgTime > 500) {
+                            if (scale < 1.0f) {
+                                scale += 0.05f
+                            }
+                            if (scale > 1.0f) {
+                                scale = 1.0f
+                            }
+                            SysCvar.g_damageScale.SetFloat(scale)
                         }
-                        SysCvar.g_damageScale.SetFloat(scale)
                     }
                 }
 
@@ -2040,11 +2106,33 @@ object Player {
                 UpdateWeapon()
             }
             UpdateAir()
+            if (isD3XP) {
+                UpdatePowerupHud()
+            }
             UpdateHud()
             UpdatePowerUps()
             UpdateDeathSkin(false)
             if (gameLocal.isMultiplayer) {
                 DrawPlayerIcons()
+                if (isD3XP && enviroSuitLight.IsValid()) {
+                    val lightAng = firstPersonViewAxis.ToAngles()
+                    val lightOrg = idVec3(firstPersonViewOrigin)
+                    val lightDef = gameLocal.FindEntityDefDict("envirosuit_light", false)
+                    if (lightDef != null) {
+                        val enviroOffset = lightDef.GetVector("enviro_offset")
+                        val enviroAngleOffset = lightDef.GetVector("enviro_angle_offset")
+                        lightOrg.plusAssign(firstPersonViewAxis[0].times(enviroOffset.x))
+                        lightOrg.plusAssign(firstPersonViewAxis[1].times(enviroOffset.y))
+                        lightOrg.plusAssign(firstPersonViewAxis[2].times(enviroOffset.z))
+                        lightAng.pitch += enviroAngleOffset.x
+                        lightAng.yaw += enviroAngleOffset.y
+                        lightAng.roll += enviroAngleOffset.z
+                    }
+                    enviroSuitLight.GetEntity()!!.GetPhysics().SetOrigin(lightOrg)
+                    enviroSuitLight.GetEntity()!!.GetPhysics().SetAxis(lightAng.ToMat3())
+                    enviroSuitLight.GetEntity()!!.UpdateVisuals()
+                    enviroSuitLight.GetEntity()!!.Present()
+                }
             }
             headRenderEnt = if (head?.GetEntity() != null) {
                 head.GetEntity()!!.GetRenderEntity()
@@ -2299,6 +2387,19 @@ object Player {
             savefile.WriteInt(lastTeleFX)
             savefile.WriteFloat(SysCvar.pm_stamina.GetFloat())
             if (isD3XP) {
+                savefile.WriteInt(weaponToggles.Num())
+                var i = 0
+                while (i < weaponToggles.Num()) {
+                    val weaponToggle = weaponToggles.GetIndex(i)!!
+                    savefile.WriteString(weaponToggle.name)
+                    savefile.WriteInt(weaponToggle.toggleList.Num())
+                    var j = 0
+                    while (j < weaponToggle.toggleList.Num()) {
+                        savefile.WriteInt(weaponToggle.toggleList[j])
+                        j++
+                    }
+                    i++
+                }
                 savefile.WriteObject(mountedObject)
                 enviroSuitLight.Save(savefile)
                 savefile.WriteBool(healthRecharge)
@@ -2537,7 +2638,24 @@ object Player {
             SysCvar.pm_stamina.SetFloat(set._val)
 
             if (isD3XP) {
-                mountedObject = savefile.ReadObject() as? idEntity
+                val weaponToggleCount = savefile.ReadInt()
+                weaponToggles.Clear()
+                var i = 0
+                while (i < weaponToggleCount) {
+                    val newToggle = WeaponToggle_t()
+                    val nameStr = idStr()
+                    savefile.ReadString(nameStr)
+                    newToggle.name = nameStr.toString()
+                    val indexCount = savefile.ReadInt()
+                    var j = 0
+                    while (j < indexCount) {
+                        newToggle.toggleList.Append(savefile.ReadInt())
+                        j++
+                    }
+                    weaponToggles.Set(newToggle.name, newToggle)
+                    i++
+                }
+                mountedObject = savefile.ReadObject() as? Misc.idFuncMountedObject
                 enviroSuitLight.Restore(savefile)
                 healthRecharge = savefile.ReadBool()
                 lastHealthRechargeTime = savefile.ReadInt()
@@ -3287,9 +3405,7 @@ object Player {
                 AI_STRAFE_RIGHT.underscore(false)
             }
             AI_RUN.underscore(
-                (usercmd.buttons.toInt() and UsercmdGen.BUTTON_RUN) != 0 && (
-                        SysCvar.pm_stamina.GetFloat() == 0.0f || stamina > SysCvar.pm_staminathreshold.GetFloat()
-                        )
+                (usercmd.buttons.toInt() and UsercmdGen.BUTTON_RUN) != 0 && (SysCvar.pm_stamina.GetFloat() == 0.0f || stamina > SysCvar.pm_staminathreshold.GetFloat())
             )
             AI_DEAD.underscore(health <= 0)
         }
@@ -3425,8 +3541,7 @@ object Player {
             if (attacker == this) {
                 if (gameLocal.isMultiplayer) {
                     // only do this in mp so single player plasma and rocket splash is very dangerous in close quarters
-                    damage._val =
-                        ((damage._val * damageDef.GetFloat("selfDamageScale", "0.5f")).toInt())
+                    damage._val = ((damage._val * damageDef.GetFloat("selfDamageScale", "0.5f")).toInt())
                 } else {
                     damage._val = ((damage._val * damageDef.GetFloat("selfDamageScale", "1")).toInt())
                 }
@@ -3436,6 +3551,9 @@ object Player {
             if (!damageDef.GetBool("noGod")) {
                 // check for godmode
                 if (godmode) {
+                    damage._val = (0)
+                }
+                if (isD3XP && PowerUpActive(INVULNERABILITY)) {
                     damage._val = (0)
                 }
             }
@@ -3525,7 +3643,7 @@ object Player {
                 attacker = gameLocal.world
             }
             if (attacker is idAI) {
-                if (PowerUpActive(BERSERK)) {
+                if (!isD3XP && PowerUpActive(BERSERK)) {
                     return
                 }
                 // don't take damage from monsters during influences
@@ -3577,11 +3695,7 @@ object Player {
             }
             if (SysCvar.g_debugDamage.GetInteger() != 0) {
                 gameLocal.Printf(
-                    "client:%d health:%d damage:%d armor:%d\n",
-                    entityNumber,
-                    health,
-                    damage._val,
-                    armorSave._val
+                    "client:%d health:%d damage:%d armor:%d\n", entityNumber, health, damage._val, armorSave._val
                 )
             }
 
@@ -3600,15 +3714,28 @@ object Player {
             // do the damage
             if (damage._val > 0) {
                 if (!gameLocal.isMultiplayer) {
-                    var scale = SysCvar.g_damageScale.GetFloat()
-                    if (SysCvar.g_useDynamicProtection.GetBool() && SysCvar.g_skill.GetInteger() < 2) {
-                        if (gameLocal.time > lastDmgTime + 500 && scale > 0.25f) {
-                            scale -= 0.05f
-                            SysCvar.g_damageScale.SetFloat(scale)
+                    if (isD3XP) {
+                        var scale = new_g_damageScale
+                        if (SysCvar.g_useDynamicProtection.GetBool() && SysCvar.g_skill.GetInteger() < 2) {
+                            if (gameLocal.time > lastDmgTime + 500 && scale > 0.25f) {
+                                scale -= 0.05f
+                                new_g_damageScale = scale
+                            }
                         }
-                    }
-                    if (scale > 0) {
-                        damage._val = ((damage._val * scale).toInt())
+                        if (scale > 0) {
+                            damage._val = ((damage._val * scale).toInt())
+                        }
+                    } else {
+                        var scale = SysCvar.g_damageScale.GetFloat()
+                        if (SysCvar.g_useDynamicProtection.GetBool() && SysCvar.g_skill.GetInteger() < 2) {
+                            if (gameLocal.time > lastDmgTime + 500 && scale > 0.25f) {
+                                scale -= 0.05f
+                                SysCvar.g_damageScale.SetFloat(scale)
+                            }
+                        }
+                        if (scale > 0) {
+                            damage._val = ((damage._val * scale).toInt())
+                        }
                     }
                 }
                 if (damage._val < 1) {
@@ -3679,6 +3806,9 @@ object Player {
                     // kill anything at the new position
                     gameLocal.KillBox(this, true)
                 }
+            }
+            if (isD3XP && PowerUpActive(HELLTIME)) {
+                StopHelltime()
             }
         }
 
@@ -3818,7 +3948,7 @@ object Player {
                 i++
             }
             renderView.globalMaterial = gameLocal.GetGlobalMaterial()
-            renderView.time = gameLocal.time
+            renderView.time = if (isD3XP) gameLocal.slow.time else gameLocal.time
 
             // calculate size of 3D view
             renderView.x = 0
@@ -3914,9 +4044,7 @@ object Player {
         }
 
         fun DrawHUD(_hud: idUserInterface) {
-            if (weapon.GetEntity() == null || influenceActive != INFLUENCE_NONE || privateCameraView != null || gameLocal.GetCamera() != null ||
-                _hud == null || !SysCvar.g_showHud.GetBool()
-            ) {
+            if (weapon.GetEntity() == null || influenceActive != INFLUENCE_NONE || privateCameraView != null || gameLocal.GetCamera() != null || _hud == null || !SysCvar.g_showHud.GetBool()) {
                 return
             }
             UpdateHudStats(_hud)
@@ -4220,10 +4348,26 @@ object Player {
                 if (airTics > SysCvar.pm_airTics.GetInteger()) {
                     airTics = SysCvar.pm_airTics.GetInteger()
                 }
+            } else if (isD3XP && 0 == idStr.Icmp(statname, "enviroTime")) {
+                if (PowerUpActive(ENVIROTIME)) {
+                    inventory.powerupEndTime[ENVIROTIME] += (value.toFloat() * 1000).toInt()
+                } else {
+                    GivePowerUp(ENVIROTIME, (value.toFloat() * 1000).toInt())
+                }
             } else {
                 val idealWeapon = CInt(idealWeapon)
                 val result = inventory.Give(this, spawnArgs, statname, value, idealWeapon, true)
                 this.idealWeapon = idealWeapon._val
+                if (isD3XP && 0 == idStr.Icmp(statname, "ammo_bloodstone")) {
+                    if (hud != null) {
+                        val ammoRequired = IntArray(1)
+                        val ammo_i = inventory.AmmoIndexForWeaponClass("weapon_bloodstone_passive", ammoRequired)
+                        val bloodstoneAmmo = inventory.HasAmmo(ammo_i, ammoRequired[0])
+                        hud!!.SetStateString("player_bloodstone_ammo", Str.va("%d", bloodstoneAmmo))
+                        hud!!.HandleNamedEvent("bloodstoneReady")
+                        harvest_lock = false
+                    }
+                }
                 return result
             }
             return true
@@ -4324,11 +4468,38 @@ object Player {
                 hud!!.SetStateString("itemicon", info.icon.toString())
                 hud!!.HandleNamedEvent("invPickup")
             }
+
+            // D3XP: Added to support powercells
+            if (isD3XP && item.GetInt("inv_powercell") != 0 && focusUI != null) {
+                // Reset the powercell count
+                var powerCellCount = 0
+                for (j in 0 until inventory.items.Num()) {
+                    val invItem = inventory.items[j]
+                    if (invItem.GetInt("inv_powercell") != 0) {
+                        powerCellCount++
+                    }
+                }
+                focusUI!!.SetStateInt("powercell_count", powerCellCount)
+            }
+
             return true
         }
 
         fun RemoveInventoryItem(item: idDict) {
             inventory.items.Remove(item)
+
+            // D3XP: Added to support powercells
+            if (isD3XP && item.GetInt("inv_powercell") != 0 && focusUI != null) {
+                // Reset the powercell count
+                var powerCellCount = 0
+                for (j in 0 until inventory.items.Num()) {
+                    val invItem = inventory.items[j]
+                    if (invItem.GetInt("inv_powercell") != 0) {
+                        powerCellCount++
+                    }
+                }
+                focusUI!!.SetStateInt("powercell_count", powerCellCount)
+            }
             //	delete item;
         }
 
@@ -4567,18 +4738,12 @@ object Player {
                         HELLTIME -> {
                             if (spawnArgs.GetString("snd_helltime_start", "", sound)) {
                                 PostEventMS(
-                                    EV_StartSoundShader,
-                                    0,
-                                    sound[0],
-                                    gameSoundChannel_t.SND_CHANNEL_ANY.ordinal
+                                    EV_StartSoundShader, 0, sound[0], gameSoundChannel_t.SND_CHANNEL_ANY.ordinal
                                 )
                             }
                             if (spawnArgs.GetString("snd_helltime_loop", "", sound)) {
                                 PostEventMS(
-                                    EV_StartSoundShader,
-                                    0,
-                                    sound[0],
-                                    gameSoundChannel_t.SND_CHANNEL_DEMONIC.ordinal
+                                    EV_StartSoundShader, 0, sound[0], gameSoundChannel_t.SND_CHANNEL_DEMONIC.ordinal
                                 )
                             }
                         }
@@ -4638,6 +4803,11 @@ object Player {
                 i++
             }
             inventory.ClearPowerUps()
+            if (isD3XP && gameLocal.isMultiplayer) {
+                if (enviroSuitLight.IsValid()) {
+                    enviroSuitLight.GetEntity()!!.PostEventMS(EV_Remove, 0)
+                }
+            }
         }
 
         fun PowerUpActive(powerup: Int): Boolean {
@@ -4744,7 +4914,12 @@ object Player {
                 if ((inventory.weapons and (1 shl w)) == 0) {
                     continue
                 }
-                if (inventory.HasAmmo(weap) != 0) {
+                if (if (isD3XP) {
+                        inventory.HasAmmo(weap, true, this) != 0 || w == weapon_bloodstone
+                    } else {
+                        inventory.HasAmmo(weap) != 0
+                    }
+                ) {
                     break
                 }
             }
@@ -4764,10 +4939,18 @@ object Player {
             while (w > 0) {
                 w--
                 weap = spawnArgs.GetString(Str.va("def_weapon%d", w))
-                if (weap.isEmpty() || inventory.weapons and (1 shl w) == 0 || 0 == inventory.HasAmmo(weap)) {
+                if (weap.isEmpty() || inventory.weapons and (1 shl w) == 0 || if (isD3XP) {
+                        inventory.HasAmmo(weap, true, this) == 0
+                    } else {
+                        inventory.HasAmmo(weap) == 0
+                    }
+                ) {
                     continue
                 }
                 if (!spawnArgs.GetBool(Str.va("weapon%d_best", w))) {
+                    continue
+                }
+                if (isD3XP && inventory.HasEmptyClipCannotRefill(weap, this)) {
                     continue
                 }
                 break
@@ -4810,7 +4993,12 @@ object Player {
                 if ((inventory.weapons and (1 shl w)) == 0) {
                     continue
                 }
-                if (inventory.HasAmmo(weap) != 0) {
+                if (if (isD3XP) {
+                        inventory.HasAmmo(weap, true, this) != 0 || w == weapon_bloodstone
+                    } else {
+                        inventory.HasAmmo(weap) != 0
+                    }
+                ) {
                     break
                 }
             }
@@ -4847,17 +5035,57 @@ object Player {
                 gameLocal.Printf("Invalid weapon\n")
                 return
             }
+            if (isD3XP) {
+                // D3XP weapon toggle cycling: cycle through a toggle group on repeated impulse
+                val weaponToggleGetter = arrayOfNulls<WeaponToggle_t>(1)
+                weaponToggles.Get(Str.va("weapontoggle%d", num), weaponToggleGetter)
+                val weaponToggle = weaponToggleGetter[0]
+                if (weaponToggle != null) {
+                    var weaponToggleIndex = 0
+                    var currentIndex = -1
+                    var i = 0
+                    while (i < weaponToggle.toggleList.Num()) {
+                        if (weaponToggle.toggleList[i] == idealWeapon) {
+                            currentIndex = i
+                            break
+                        }
+                        i++
+                    }
+                    weaponToggleIndex = if (currentIndex == -1) 0 else {
+                        var next = currentIndex + 1
+                        if (next >= weaponToggle.toggleList.Num()) next = 0
+                        next
+                    }
+                    i = 0
+                    while (i < weaponToggle.toggleList.Num()) {
+                        if (inventory.weapons and (1 shl weaponToggle.toggleList[weaponToggleIndex]) != 0) {
+                            break
+                        }
+                        weaponToggleIndex++
+                        if (weaponToggleIndex >= weaponToggle.toggleList.Num()) {
+                            weaponToggleIndex = 0
+                        }
+                        i++
+                    }
+                    num = weaponToggle.toggleList[weaponToggleIndex]
+                }
+            }
             if (force || (inventory.weapons and (1 shl num)) != 0) {
-                if (0 == inventory.HasAmmo(weap) && !spawnArgs.GetBool(Str.va("weapon%d_allowempty", num))) {
+                if (if (isD3XP) {
+                        inventory.HasAmmo(weap, true, this) == 0
+                    } else {
+                        inventory.HasAmmo(weap) == 0
+                    } && !spawnArgs.GetBool(Str.va("weapon%d_allowempty", num))
+                ) {
                     return
                 }
                 if (previousWeapon >= 0 && idealWeapon == num && spawnArgs.GetBool(Str.va("weapon%d_toggle", num))) {
                     weap = spawnArgs.GetString(Str.va("def_weapon%d", previousWeapon))
-                    if (0 == inventory.HasAmmo(weap) && !spawnArgs.GetBool(
-                            Str.va(
-                                "weapon%d_allowempty", previousWeapon
-                            )
-                        )
+                    if (if (isD3XP) {
+                            inventory.HasAmmo(weap, true, this) == 0
+                        } else {
+                            inventory.HasAmmo(weap) == 0
+                        } && !spawnArgs.GetBool(Str.va("weapon%d_allowempty", previousWeapon))
                     ) {
                         return
                     }
@@ -4876,7 +5104,7 @@ object Player {
             val forward = idVec3()
             val up = idVec3()
             val inclip: Int
-            val ammoavailable: Int
+            var ammoavailable: Int
             assert(!gameLocal.isClient)
             if (spectating || weaponGone || weapon.GetEntity() == null) {
                 return
@@ -4890,8 +5118,7 @@ object Player {
             inclip = weapon.GetEntity()!!.AmmoInClip()
 
             // don't drop a grenade if we have none left
-            if (
-                idStr.Icmp(
+            if (idStr.Icmp(
                     idWeapon.GetAmmoNameForNum(
                         weapon.GetEntity()!!.GetAmmoType()
                     )!!, "ammo_grenades"
@@ -4900,13 +5127,25 @@ object Player {
                 return
             }
 
+            // D3XP: AmmoAvailable() already excludes clip ammo, so add it back for the total
+            if (isD3XP) {
+                ammoavailable += inclip
+            }
+
             // expect an ammo setup that makes sense before doing any dropping
             // ammoavailable is -1 for infinite ammo, and weapons like chainsaw
             // a bad ammo config usually indicates a bad weapon state, so we should not drop
             // used to be an assertion check, but it still happens in edge cases
-            if (ammoavailable != -1 && ammoavailable - inclip < 0) {
-                Common.common.DPrintf("idPlayer::DropWeapon: bad ammo setup\n")
-                return
+            if (isD3XP) {
+                if (ammoavailable != -1 && ammoavailable < 0) {
+                    Common.common.DPrintf("idPlayer::DropWeapon: bad ammo setup\n")
+                    return
+                }
+            } else {
+                if (ammoavailable != -1 && ammoavailable - inclip < 0) {
+                    Common.common.DPrintf("idPlayer::DropWeapon: bad ammo setup\n")
+                    return
+                }
             }
             val item: idEntity?
             item = if (died) {
@@ -4925,6 +5164,10 @@ object Player {
                 item.spawnArgs.SetInt(keyval.GetKey().toString(), ammoavailable)
                 val inclipKey = keyval.GetKey()
                 inclipKey.Insert("inclip_", 4)
+                // D3XP: include weapon index in the inclip key
+                if (isD3XP) {
+                    inclipKey.Insert(Str.va("%.2d", currentWeapon), 11)
+                }
                 item.spawnArgs.SetInt(inclipKey.toString(), inclip)
             }
             if (!died) {
@@ -4967,14 +5210,32 @@ object Player {
             val weapon_classname = spawnArgs.GetString(Str.va("def_weapon%d", newweap))
             var ammoavailable = player.weapon.GetEntity()!!.AmmoAvailable()
             var inclip = player.weapon.GetEntity()!!.AmmoInClip()
-            if (ammoavailable != -1 && ammoavailable - inclip < 0) {
-                // see DropWeapon
-                Common.common.DPrintf("idPlayer::StealWeapon: bad ammo setup\n")
-                // we still steal the weapon, so let's use the default ammo levels
-                inclip = -1
-                val decl = gameLocal.FindEntityDef(weapon_classname)!!
-                val keypair = decl.dict.MatchPrefix("inv_ammo_")!!
-                ammoavailable = TempDump.atoi(keypair.GetValue())
+
+            // D3XP: AmmoAvailable() already excludes clip ammo, so add it back for the total
+            if (isD3XP) {
+                ammoavailable += inclip
+            }
+
+            if (isD3XP) {
+                if (ammoavailable != -1 && ammoavailable < 0) {
+                    // see DropWeapon
+                    Common.common.DPrintf("idPlayer::StealWeapon: bad ammo setup\n")
+                    // we still steal the weapon, so let's use the default ammo levels
+                    inclip = -1
+                    val decl = gameLocal.FindEntityDef(weapon_classname)!!
+                    val keypair = decl.dict.MatchPrefix("inv_ammo_")!!
+                    ammoavailable = TempDump.atoi(keypair.GetValue())
+                }
+            } else {
+                if (ammoavailable != -1 && ammoavailable - inclip < 0) {
+                    // see DropWeapon
+                    Common.common.DPrintf("idPlayer::StealWeapon: bad ammo setup\n")
+                    // we still steal the weapon, so let's use the default ammo levels
+                    inclip = -1
+                    val decl = gameLocal.FindEntityDef(weapon_classname)!!
+                    val keypair = decl.dict.MatchPrefix("inv_ammo_")!!
+                    ammoavailable = TempDump.atoi(keypair.GetValue())
+                }
             }
             player.weapon.GetEntity()!!.WeaponStolen()
             player.inventory.Drop(player.spawnArgs, arrayOf(), newweap)
@@ -4988,7 +5249,10 @@ object Player {
             val ammo_i = player.inventory.AmmoIndexForWeaponClass(weapon_classname, null)
             idealWeapon = newweap
             inventory.ammo[ammo_i] += ammoavailable
-            inventory.clip[newweap] = inclip
+            // D3XP: don't set clip directly; it's managed by GetWeaponDef/UseAmmo
+            if (!isD3XP) {
+                inventory.clip[newweap] = inclip
+            }
         }
 
         fun AddProjectilesFired(count: Int) {
@@ -5083,6 +5347,9 @@ object Player {
         }
 
         fun AddAIKill() {
+            if (isD3XP) {
+                return
+            }
             val max_souls: Int
             val ammo_souls: Int
             if (weapon_soulcube < 0 || (inventory.weapons and (1 shl weapon_soulcube)) == 0) {
@@ -5227,6 +5494,9 @@ object Player {
                         gameLocal.vacuumAreaNum, areaNum, portalConnection_t.PS_BLOCK_AIR
                     )
                 }
+            }
+            if (isD3XP && PowerUpActive(ENVIROTIME)) {
+                newAirless = false
             }
             if (newAirless) {
                 if (!airless) {
@@ -5421,6 +5691,13 @@ object Player {
                     }
                 }
 
+                UsercmdGen.IMPULSE_27 -> {
+                    if (isD3XP) {
+                        // Hack so the chainsaw will work in MP
+                        SelectWeapon(18, false)
+                    }
+                }
+
                 UsercmdGen.IMPULSE_28 -> {
                     if (gameLocal.isClient || entityNumber == gameLocal.localClientNum) {
                         gameLocal.mpGame.CastVote(gameLocal.localClientNum, true)
@@ -5574,9 +5851,13 @@ object Player {
                     if (inventory.nextItemPickup != 0 && gameLocal.time - inventory.nextItemPickup > 2000) {
                         inventory.nextItemNum = 1
                     }
+                    var count = 5
+                    if (isD3XP && gameLocal.isMultiplayer) {
+                        count = 3
+                    }
                     var i: Int
                     i = 0
-                    while (i < 5 && i < c) {
+                    while (i < count && i < c) {
                         hud!!.SetStateString(
                             Str.va("itemtext%d", inventory.nextItemNum), inventory.pickupItemNames[0].name.toString()
                         )
@@ -5587,7 +5868,7 @@ object Player {
                         inventory.pickupItemNames.RemoveIndex(0)
                         if (inventory.nextItemNum == 1) {
                             inventory.onePickupTime = gameLocal.time
-                        } else if (inventory.nextItemNum > 5) {
+                        } else if (inventory.nextItemNum > count) {
                             inventory.nextItemNum = 1
                             inventory.nextItemPickup = inventory.onePickupTime + 2000
                         } else {
@@ -5810,13 +6091,24 @@ object Player {
             assert(_hud != null)
             inclip = weapon.GetEntity()!!.AmmoInClip()
             ammoamount = weapon.GetEntity()!!.AmmoAvailable()
-            if (ammoamount < 0 || !weapon.GetEntity()!!.IsReady()) {
+
+            // D3XP: bloodstone hack - hide ammo display when bloodstone is being activated
+            if (isD3XP && (ammoamount < 0 || !weapon.GetEntity()!!.IsReady() || currentWeapon == weapon_bloodstone)) {
+                // show infinite ammo
+                _hud.SetStateString("player_ammo", "")
+                _hud.SetStateString("player_totalammo", "")
+            } else if (!isD3XP && (ammoamount < 0 || !weapon.GetEntity()!!.IsReady())) {
                 // show infinite ammo
                 _hud.SetStateString("player_ammo", "")
                 _hud.SetStateString("player_totalammo", "")
             } else {
                 // show remaining ammo
-                _hud.SetStateString("player_totalammo", Str.va("%d", ammoamount - inclip))
+                // D3XP: ammo in clip is already deducted from inventory, so don't subtract again
+                if (isD3XP) {
+                    _hud.SetStateString("player_totalammo", Str.va("%d", ammoamount))
+                } else {
+                    _hud.SetStateString("player_totalammo", Str.va("%d", ammoamount - inclip))
+                }
                 _hud.SetStateString(
                     "player_ammo", if (weapon.GetEntity()!!.ClipSize() != 0) Str.va("%d", inclip) else "--"
                 ) // how much in the current clip
@@ -5825,13 +6117,39 @@ object Player {
                         "%d", ammoamount / weapon.GetEntity()!!.ClipSize()
                     ) else "--"
                 )
-                _hud.SetStateString("player_allammo", Str.va("%d/%d", inclip, ammoamount - inclip))
+                if (isD3XP) {
+                    _hud.SetStateString("player_allammo", Str.va("%d/%d", inclip, ammoamount))
+                } else {
+                    _hud.SetStateString("player_allammo", Str.va("%d/%d", inclip, ammoamount - inclip))
+                }
             }
             _hud.SetStateBool("player_ammo_empty", ammoamount == 0)
             _hud.SetStateBool("player_clip_empty", weapon.GetEntity()!!.ClipSize() != 0 && inclip == 0)
             _hud.SetStateBool(
                 "player_clip_low", weapon.GetEntity()!!.ClipSize() != 0 && inclip <= weapon.GetEntity()!!.LowAmmo()
             )
+
+            // D3XP: bloodstone hack - reset ammo display flags when bloodstone is active
+            if (isD3XP && currentWeapon == weapon_bloodstone) {
+                _hud.SetStateBool("player_ammo_empty", false)
+                _hud.SetStateBool("player_clip_empty", false)
+                _hud.SetStateBool("player_clip_low", false)
+            }
+
+            // D3XP: let the HUD know the total amount of ammo regardless of ammoRequired value
+            if (isD3XP) {
+                _hud.SetStateString("player_ammo_count", Str.va("%d", weapon.GetEntity()!!.AmmoCount()))
+            }
+
+            // D3XP: make sure the HUD always knows how many bloodstone charges there are
+            if (isD3XP) {
+                val ammoRequired = IntArray(1)
+                val ammo_i = inventory.AmmoIndexForWeaponClass("weapon_bloodstone_passive", ammoRequired)
+                val bloodstoneAmmo = inventory.HasAmmo(ammo_i, ammoRequired[0])
+                _hud.SetStateString("player_bloodstone_ammo", Str.va("%d", bloodstoneAmmo))
+                _hud.HandleNamedEvent("bloodstoneAmmoUpdate")
+            }
+
             _hud.HandleNamedEvent("updateAmmo")
         }
 
@@ -5894,6 +6212,11 @@ object Player {
             }
             buttonMask = buttonMask and usercmd.buttons.toInt()
             usercmd.buttons = usercmd.buttons and buttonMask.inv().toByte()
+            if (isD3XP && mountedObject != null) {
+                usercmd.forwardmove = 0
+                usercmd.rightmove = 0
+                usercmd.upmove = 0
+            }
             if (objectiveSystemOpen) {
                 usercmd.forwardmove = 0
                 usercmd.rightmove = 0
@@ -5989,6 +6312,25 @@ object Player {
             if (!gameLocal.inCinematic) {
                 UpdateAnimation()
             }
+            if (isD3XP && enviroSuitLight.IsValid()) {
+                val lightAng = firstPersonViewAxis.ToAngles()
+                val lightOrg = idVec3(firstPersonViewOrigin)
+                val lightDef = gameLocal.FindEntityDefDict("envirosuit_light", false)
+                if (lightDef != null) {
+                    val enviroOffset = lightDef.GetVector("enviro_offset")
+                    val enviroAngleOffset = lightDef.GetVector("enviro_angle_offset")
+                    lightOrg.plusAssign(firstPersonViewAxis[0].times(enviroOffset.x))
+                    lightOrg.plusAssign(firstPersonViewAxis[1].times(enviroOffset.y))
+                    lightOrg.plusAssign(firstPersonViewAxis[2].times(enviroOffset.z))
+                    lightAng.pitch += enviroAngleOffset.x
+                    lightAng.yaw += enviroAngleOffset.y
+                    lightAng.roll += enviroAngleOffset.z
+                }
+                enviroSuitLight.GetEntity()!!.GetPhysics().SetOrigin(lightOrg)
+                enviroSuitLight.GetEntity()!!.GetPhysics().SetAxis(lightAng.ToMat3())
+                enviroSuitLight.GetEntity()!!.UpdateVisuals()
+                enviroSuitLight.GetEntity()!!.Present()
+            }
             if (gameLocal.isMultiplayer) {
                 DrawPlayerIcons()
             }
@@ -6017,8 +6359,7 @@ object Player {
             msg.WriteDeltaFloat(0.0f, deltaViewAngles[2])
             msg.WriteShort(health)
             msg.WriteBits(
-                gameLocal.ServerRemapDecl(-1, declType_t.DECL_ENTITYDEF, lastDamageDef),
-                gameLocal.entityDefBits
+                gameLocal.ServerRemapDecl(-1, declType_t.DECL_ENTITYDEF, lastDamageDef), gameLocal.entityDefBits
             )
             msg.WriteDir(lastDamageDir, 9)
             msg.WriteShort(lastDamageLocation)
@@ -6030,6 +6371,9 @@ object Player {
             msg.WriteBits(TempDump.btoi(weaponGone), 1)
             msg.WriteBits(TempDump.btoi(isLagged), 1)
             msg.WriteBits(TempDump.btoi(isChatting), 1)
+            if (isD3XP) {
+                msg.WriteBits(enviroSuitLight.GetSpawnId(), 32)
+            }
         }
 
         override fun ReadFromSnapshot(msg: idBitMsgDelta) {
@@ -6061,6 +6405,9 @@ object Player {
             weaponGone = msg.ReadBits(1) != 0
             isLagged = msg.ReadBits(1) != 0
             isChatting = msg.ReadBits(1) != 0
+            if (isD3XP) {
+                enviroSuitLight.SetSpawnId(msg.ReadBits(32))
+            }
 
             // no msg reading below this
             if (weapon.SetSpawnId(weaponSpawnId)) {
@@ -6156,7 +6503,11 @@ object Player {
             msg.WriteByte(bobCycle)
             msg.WriteLong(stepUpTime)
             msg.WriteFloat(stepUpDelta)
-            msg.WriteShort(inventory.weapons)
+            if (isD3XP) {
+                msg.WriteLong(inventory.weapons)
+            } else {
+                msg.WriteShort(inventory.weapons)
+            }
             msg.WriteByte(inventory.armor)
             i = 0
             while (i < AMMO_NUMTYPES) {
@@ -6176,7 +6527,7 @@ object Player {
             bobCycle = msg.ReadByte()
             stepUpTime = msg.ReadLong()
             stepUpDelta = msg.ReadFloat()
-            inventory.weapons = msg.ReadShort()
+            inventory.weapons = if (isD3XP) msg.ReadLong() else msg.ReadShort()
             inventory.armor = msg.ReadByte()
             i = 0
             while (i < AMMO_NUMTYPES) {
@@ -6303,6 +6654,17 @@ object Player {
                         // happens if the event and the spectate change are written on the server during the same frame (fraglimit)
                         true
                     } else super.ClientReceiveEvent(event, time, msg)
+                }
+
+                EVENT_PICKUPNAME -> {
+                    if (isD3XP) {
+                        val buf = CharArray(Game_local.MAX_EVENT_PARAM_SIZE)
+                        msg.ReadString(buf, Game_local.MAX_EVENT_PARAM_SIZE)
+                        inventory.AddPickupName(String(buf).trimEnd('\u0000'), "")
+                        true
+                    } else {
+                        super.ClientReceiveEvent(event, time, msg)
+                    }
                 }
 
                 else -> {
@@ -6629,11 +6991,9 @@ object Player {
                 val updateVisuals = CBool(false)
                 val ui = ActiveGui()
                 if (ui != null) {
-                    ev =
-                        idLib.sys.GenerateMouseButtonEvent(
-                            1,
-                            (usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) != 0
-                        )
+                    ev = idLib.sys.GenerateMouseButtonEvent(
+                        1, (usercmd.buttons.toInt() and UsercmdGen.BUTTON_ATTACK) != 0
+                    )
                     command = ui.HandleEvent(ev, gameLocal.time, updateVisuals)
                     if (updateVisuals._val && focusGUIent != null && ui == focusUI) {
                         focusGUIent!!.UpdateVisuals()
@@ -7134,7 +7494,7 @@ object Player {
                 cmdAngles[i] = SHORT2ANGLE(usercmd.angles[i])
                 if (influenceActive == INFLUENCE_LEVEL3) {
                     viewAngles.plusAssign(
-                        i, idMath.ClampFloat(
+                        i, ClampFloat(
                             -1.0f, 1.0f, idMath.AngleDelta(
                                 idMath.AngleNormalize180(
                                     SHORT2ANGLE(usercmd.angles[i]) + deltaViewAngles[i]
@@ -7160,6 +7520,23 @@ object Player {
                     // don't let the player look up more than 89 degrees while noclipping
                     viewAngles.pitch = -89.0f
                 }
+            } else if (isD3XP && mountedObject != null) {
+                var yaw_min = CInt(0)
+                var yaw_max = CInt(0)
+                var varc = CInt(0)
+
+                mountedObject!!.GetAngleRestrictions(yaw_min, yaw_max, varc)
+
+                if (yaw_min._val < yaw_max._val) {
+                    viewAngles.yaw = ClampFloat(yaw_min.toFloat(), yaw_max.toFloat(), viewAngles.yaw)
+                } else {
+                    if (viewAngles.yaw < 0) {
+                        viewAngles.yaw = ClampFloat(-180f, yaw_max.toFloat(), viewAngles.yaw)
+                    } else {
+                        viewAngles.yaw = ClampFloat(yaw_min.toFloat(), 180f, viewAngles.yaw)
+                    }
+                }
+                viewAngles.pitch = ClampFloat(-varc.toFloat(), varc.toFloat(), viewAngles.pitch)
             } else {
                 if (viewAngles.pitch > SysCvar.pm_maxviewpitch.GetFloat()) {
                     // don't let the player look down enough to see the shadow of his (non-existant) feet
@@ -7220,15 +7597,14 @@ object Player {
                 if (stamina < 0) {
                     stamina = 0.0f
                 }
-                bobFrac = if (
-                    SysCvar.pm_stamina.GetFloat() == 0.0f || stamina > SysCvar.pm_staminathreshold.GetFloat()
-                ) {
-                    1.0f
-                } else if (SysCvar.pm_staminathreshold.GetFloat() <= 0.0001) {
-                    0.0f
-                } else {
-                    stamina / SysCvar.pm_staminathreshold.GetFloat()
-                }
+                bobFrac =
+                    if (SysCvar.pm_stamina.GetFloat() == 0.0f || stamina > SysCvar.pm_staminathreshold.GetFloat()) {
+                        1.0f
+                    } else if (SysCvar.pm_staminathreshold.GetFloat() <= 0.0001) {
+                        0.0f
+                    } else {
+                        stamina / SysCvar.pm_staminathreshold.GetFloat()
+                    }
                 speed = SysCvar.pm_walkspeed.GetFloat() * (1.0f - bobFrac) + SysCvar.pm_runspeed.GetFloat() * bobFrac
             } else {
                 rate = SysCvar.pm_staminarate.GetFloat()
@@ -7431,6 +7807,9 @@ object Player {
             } else if (gameLocal.inCinematic || gameLocal.GetCamera() != null || privateCameraView != null || influenceActive == INFLUENCE_LEVEL2) {
                 physicsObj.SetContents(Material.CONTENTS_BODY)
                 physicsObj.SetMovementType(pmtype_t.PM_FREEZE)
+            } else if (isD3XP && mountedObject != null) {
+                physicsObj.SetContents(0)
+                physicsObj.SetMovementType(pmtype_t.PM_FREEZE)
             } else {
                 physicsObj.SetContents(Material.CONTENTS_BODY)
                 physicsObj.SetMovementType(pmtype_t.PM_NORMAL)
@@ -7523,6 +7902,31 @@ object Player {
             if (!gameLocal.isClient) {
                 i = 0
                 while (i < MAX_POWERUPS) {
+                    if (isD3XP && (inventory.powerups and (1 shl i)) != 0 && inventory.powerupEndTime[i] > gameLocal.time) {
+                        when (i) {
+                            ENVIROSUIT -> {
+                                if (enviroSuitLight.IsValid()) {
+                                    val lightAng = firstPersonViewAxis.ToAngles()
+                                    val lightOrg = idVec3(firstPersonViewOrigin)
+                                    val lightDef = gameLocal.FindEntityDefDict("envirosuit_light", false)
+                                    if (lightDef != null) {
+                                        val enviroOffset = lightDef.GetVector("enviro_offset")
+                                        val enviroAngleOffset = lightDef.GetVector("enviro_angle_offset")
+                                        lightOrg.plusAssign(firstPersonViewAxis[0].times(enviroOffset.x))
+                                        lightOrg.plusAssign(firstPersonViewAxis[1].times(enviroOffset.y))
+                                        lightOrg.plusAssign(firstPersonViewAxis[2].times(enviroOffset.z))
+                                        lightAng.pitch += enviroAngleOffset.x
+                                        lightAng.yaw += enviroAngleOffset.y
+                                        lightAng.roll += enviroAngleOffset.z
+                                    }
+                                    enviroSuitLight.GetEntity()!!.GetPhysics().SetOrigin(lightOrg)
+                                    enviroSuitLight.GetEntity()!!.GetPhysics().SetAxis(lightAng.ToMat3())
+                                    enviroSuitLight.GetEntity()!!.UpdateVisuals()
+                                    enviroSuitLight.GetEntity()!!.Present()
+                                }
+                            }
+                        }
+                    }
                     if (PowerUpActive(i) && inventory.powerupEndTime[i] <= gameLocal.time) {
                         ClearPowerup(i)
                     }
@@ -7556,9 +7960,11 @@ object Player {
                     assert(
                         !gameLocal.isClient // healthPool never be set on client
                     )
-                    health -= SysCvar.g_healthTakeAmt.GetInteger()
-                    if (health < SysCvar.g_healthTakeLimit.GetInteger()) {
-                        health = SysCvar.g_healthTakeLimit.GetInteger()
+                    if (!isD3XP || !PowerUpActive(INVULNERABILITY)) {
+                        health -= SysCvar.g_healthTakeAmt.GetInteger()
+                        if (health < SysCvar.g_healthTakeLimit.GetInteger()) {
+                            health = SysCvar.g_healthTakeLimit.GetInteger()
+                        }
                     }
                     nextHealthTake = gameLocal.time + SysCvar.g_healthTakeTime.GetInteger() * 1000
                     healthTake = true
@@ -7579,8 +7985,7 @@ object Player {
                         renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIME_OF_DEATH] =
                             gameLocal.time * 0.001f - 2.0f
                     } else {
-                        renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIME_OF_DEATH] =
-                            gameLocal.time * 0.001f
+                        renderEntity!!.shaderParms[RenderWorld.SHADERPARM_TIME_OF_DEATH] = gameLocal.time * 0.001f
                     }
                     UpdateVisuals()
                 }
@@ -7867,6 +8272,21 @@ object Player {
                             }
                             j++
                         }
+
+                        // D3XP: BSM: Added for powercells
+                        if (isD3XP) {
+                            var powerCellCount = 0
+                            j = 0
+                            while (j < inventory.items.Num()) {
+                                val invItem = inventory.items[j]
+                                if (invItem.GetInt("inv_powercell") != 0) {
+                                    powerCellCount++
+                                }
+                                j++
+                            }
+                            focusUI!!.SetStateInt("powercell_count", powerCellCount)
+                        }
+
                         val staminapercentage = (100.0f * stamina / SysCvar.pm_stamina.GetFloat()).toInt()
                         focusUI!!.SetStateString("player_health", Str.va("%d", health))
                         focusUI!!.SetStateString("player_stamina", Str.va("%d%%", staminapercentage))
@@ -8411,7 +8831,8 @@ object Player {
                 idVec3(0f, 0f, 0f),
                 (RenderSystem.SCREEN_WIDTH / 2).toFloat(),
                 (RenderSystem.SCREEN_HEIGHT / 2).toFloat(),
-                100f, 1000f
+                100f,
+                1000f
             )
         }
 

@@ -42,6 +42,7 @@ import neo.Game.Physics.Physics_AF.idAFConstraint_Suspension
 import neo.Game.Physics.Physics_AF.idAFConstraint_UniversalJoint
 import neo.Game.Physics.Physics_AF.idPhysics_AF
 import neo.Game.Player.idPlayer
+import neo.Game.Script.Script_Thread
 import neo.Renderer.Material
 import neo.Renderer.Model
 import neo.Renderer.Model.idMD5Joint
@@ -53,7 +54,7 @@ import neo.TempDump
 import neo.cm.trace_s
 import neo.framework.Common
 import neo.framework.DeclAF.getJointTransform_t
-import neo.framework.DeclManager
+import neo.framework.DeclManager.Companion.declManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
 import neo.framework.DeclSkin.idDeclSkin
@@ -560,7 +561,7 @@ open class idAFEntity_Base : idAnimatedEntity() {
             // change the skin to hide all the dropped articulated figures
             skinName = ent.spawnArgs.GetString(Str.va("skin_drop%s", type))
             if (skinName.isNotEmpty()) {
-                skin = DeclManager.declManager.FindSkin(skinName)
+                skin = declManager.FindSkin(skinName)
                 ent.SetSkin(skin)
             }
         }
@@ -880,14 +881,19 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
         super.Spawn()
         InitSkeletonModel()
         gibbed = false
+
+        if (isD3XP) {
+            wasThrown = false
+        }
     }
 
     override fun Save(savefile: idSaveGame) {
         super.Save(savefile)
         savefile.WriteBool(gibbed)
         savefile.WriteBool(combatModel != null)
-        // D3XP
-        savefile.WriteBool(wasThrown)
+        if (isD3XP) {
+            savefile.WriteBool(wasThrown)
+        }
     }
 
     override fun Restore(savefile: idRestoreGame) {
@@ -902,10 +908,11 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
             SetCombatModel()
             LinkCombat()
         }
-        // D3XP
-        val _wasThrown = CBool(false)
-        savefile.ReadBool(_wasThrown)
-        wasThrown = _wasThrown._val
+        if (isD3XP) {
+            val _wasThrown = CBool(false)
+            savefile.ReadBool(_wasThrown)
+            wasThrown = _wasThrown._val
+        }
     }
 
     override fun Present() {
@@ -986,6 +993,10 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
                 velocity.plusAssign(if ((i and 1) == 1) dir else dir.unaryMinus())
                 list[i].GetPhysics().SetLinearVelocity(velocity.times(75.0f))
             }
+            if (isD3XP) {
+                // Don't allow grabber to pick up temporary gibs
+                list[i].noGrab = true
+            }
             list[i].GetRenderEntity()!!.noShadow = true
             list[i].GetRenderEntity()!!.shaderParms[RenderWorld.SHADERPARM_TIME_OF_DEATH] =
                 Game_local.gameLocal.time * 0.001f
@@ -999,6 +1010,12 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
         if (gibbed) {
             return
         }
+
+        if (isD3XP) {
+            // Don't grab this ent after it's been gibbed (and now invisible!)
+            noGrab = true
+        }
+
         val damageDef = Game_local.gameLocal.FindEntityDefDict(damageDefName)
         if (null == damageDef) {
             idGameLocal.Error("Unknown damageDef '%s'", damageDefName)
@@ -1077,7 +1094,7 @@ open class idAFEntity_Gibbable : idAFEntity_Base() {
         skeletonModelDefHandle = -1
         modelName = spawnArgs.GetString("model_gib")
         if (!modelName.isEmpty()) { //[0] != '\0' ) {
-            modelDef = DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, modelName, false) as idDeclModelDef?
+            modelDef = declManager.FindType(declType_t.DECL_MODELDEF, modelName, false) as idDeclModelDef?
             skeletonModel = if (modelDef != null) {
                 modelDef.ModelHandle()
             } else {
@@ -1334,6 +1351,15 @@ open class idAFEntity_WithAttachedHead : idAFEntity_Gibbable() {
             headEnt.SetBody(this, headModel, joint)
             headEnt.SetCombatModel()
             head.oSet(headEnt)
+
+            if (isD3XP) {
+                val xSkin = idStr()
+                if (spawnArgs.GetString("skin_head_xray", "", xSkin)) {
+                    headEnt.xraySkin = declManager.FindSkin(xSkin)
+                    headEnt.UpdateModel()
+                }
+            }
+
             animator.GetJointTransform(joint, Game_local.gameLocal.time, origin, axis)
             origin.set(renderEntity!!.origin + origin * renderEntity!!.axis)
             headEnt.SetOrigin(origin)
@@ -1497,7 +1523,7 @@ open class idAFEntity_Vehicle : idAFEntity_Base() {
         steerAngle = 0.0f
         val smokeName = spawnArgs.GetString("smoke_vehicle_dust", "muzzlesmoke")!!
         if (!smokeName.isEmpty()) { // != '\0' ) {
-            dustSmoke = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, smokeName) as idDeclParticle
+            dustSmoke = declManager.FindType(declType_t.DECL_PARTICLE, smokeName) as idDeclParticle
         }
     }
 
@@ -2112,6 +2138,7 @@ open class idAFEntity_VehicleSixWheels : idAFEntity_Vehicle() {
 
         fun getEventCallBacks(): MutableMap<idEventDef, eventCallback_t<*>> =
             idAFEntity_Vehicle.getEventCallBacks()
+
         private val steeringHingeKeys: Array<String> = arrayOf(
             "steeringHingeFrontLeft", "steeringHingeFrontRight", "steeringHingeRearLeft", "steeringHingeRearRight"
         )
@@ -2239,7 +2266,7 @@ class idAFEntity_SteamPipe : idAFEntity_Base() {
         if (!temp.isEmpty()) { // != '\0' ) {
 //		if ( !strstr( temp, "." ) ) {
             if (!temp.contains(".")) {
-                modelDef = DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, temp, false) as idDeclModelDef?
+                modelDef = declManager.FindType(declType_t.DECL_MODELDEF, temp, false) as idDeclModelDef?
                 if (modelDef != null) {
                     steamRenderEntity.hModel = modelDef.ModelHandle()
                 }
@@ -2465,8 +2492,11 @@ class idAFEntity_VehicleAutomated : idAFEntity_VehicleSixWheels() {
     override fun Spawn() {
         super.Spawn()
 
-        velocity = 0f; force = 0f; steerAngle = 0f
-        currentSteering = 0f; steeringSpeed = 0f
+        velocity = 0f
+        force = 0f
+        steerAngle = 0f
+        currentSteering = 0f
+        steeringSpeed = 0f
         originHeight = 0f
         waypoint = null
 
@@ -2487,7 +2517,7 @@ class idAFEntity_VehicleAutomated : idAFEntity_VehicleSixWheels() {
     }
 
     fun PostSpawn() {
-        if (targets.Num() > 0) {
+        if (targets.Num() != 0) {
             waypoint = targets[0].GetEntity()
         }
     }
@@ -2511,7 +2541,9 @@ class idAFEntity_VehicleAutomated : idAFEntity_VehicleSixWheels() {
     override fun Think() {
         // If we don't have a waypoint, coast to a stop
         if (waypoint == null) {
-            velocity = 0f; force = 0f; steerAngle = 0f
+            velocity = 0f
+            force = 0f
+            steerAngle = 0f
             super.Think()
             return
         }
@@ -2520,8 +2552,8 @@ class idAFEntity_VehicleAutomated : idAFEntity_VehicleSixWheels() {
         val vehicleOrigin = idVec3(GetPhysics().GetOrigin())
         vehicleOrigin.z -= originHeight
 
-        val waypointOrigin = waypoint!!.GetPhysics().GetOrigin()
-        val travelVector = waypointOrigin.minus(vehicleOrigin)
+        val waypointOrigin = idVec3(waypoint!!.GetPhysics().GetOrigin())
+        val travelVector = idVec3(waypointOrigin - vehicleOrigin)
         val distanceFromWaypoint = travelVector.Length()
 
         // Check if we've hit the waypoint (within a certain threshold)
@@ -2531,13 +2563,13 @@ class idAFEntity_VehicleAutomated : idAFEntity_VehicleSixWheels() {
             if (!callfunc.isNullOrEmpty()) {
                 val func = Game_local.gameLocal.program.FindFunction(callfunc)
                 if (func != null) {
-                    val thread = neo.Game.Script.Script_Thread.idThread(func)
+                    val thread = Script_Thread.idThread(func)
                     thread.DelayedStart(0)
                 }
             }
 
             // Get next waypoint
-            if (waypoint!!.targets.Num() > 0) {
+            if (waypoint!!.targets.Num() != 0) {
                 waypoint = waypoint!!.targets[0].GetEntity()
             } else {
                 waypoint = null
@@ -2549,8 +2581,8 @@ class idAFEntity_VehicleAutomated : idAFEntity_VehicleSixWheels() {
         }
 
         // Get the angles we need to steer towards
-        val travelAngles = travelVector.ToAngles().Normalize360()
-        val vehicleAngles = GetPhysics().GetAxis().ToAngles().Normalize360()
+        val travelAngles = idAngles(travelVector.ToAngles().Normalize360())
+        val vehicleAngles = idAngles(GetPhysics().GetAxis().ToAngles().Normalize360())
 
         // Get the shortest steering angle towards the travel angles
         var deltaYaw = vehicleAngles.yaw - travelAngles.yaw
@@ -2645,7 +2677,7 @@ open class idHarvestable : idEntity() {
         // Set the skin of the entity to the harvest skin
         val skin = parent.spawnArgs.GetString("skin_harvest", "")
         if (!skin.isNullOrEmpty()) {
-            parent.SetSkin(DeclManager.declManager.FindSkin(skin))
+            parent.SetSkin(declManager.FindSkin(skin))
         }
 
         var head: idEntity? = null
@@ -2660,7 +2692,7 @@ open class idHarvestable : idEntity() {
         if (head != null) {
             val headskin = parent.spawnArgs.GetString("skin_harvest_head", "")
             if (!headskin.isNullOrEmpty()) {
-                head.SetSkin(DeclManager.declManager.FindSkin(headskin))
+                head.SetSkin(declManager.FindSkin(headskin))
             }
         }
 
@@ -2791,7 +2823,7 @@ open class idHarvestable : idEntity() {
         // Switch Skins if the parent would like us to
         val skin = parent.spawnArgs.GetString("skin_harvest_burn", "")
         if (!skin.isNullOrEmpty()) {
-            parent.SetSkin(DeclManager.declManager.FindSkin(skin))
+            parent.SetSkin(declManager.FindSkin(skin))
         }
         parent.GetRenderEntity()!!.noShadow = true
         parent.SetShaderParm(RenderWorld.SHADERPARM_TIME_OF_DEATH, Game_local.gameLocal.slow.time * 0.001f)
@@ -2808,7 +2840,7 @@ open class idHarvestable : idEntity() {
         if (head != null) {
             val headskin = parent.spawnArgs.GetString("skin_harvest_burn_head", "")
             if (!headskin.isNullOrEmpty()) {
-                head.SetSkin(DeclManager.declManager.FindSkin(headskin))
+                head.SetSkin(declManager.FindSkin(headskin))
             }
             head.GetRenderEntity()!!.noShadow = true
             head.SetShaderParm(RenderWorld.SHADERPARM_TIME_OF_DEATH, Game_local.gameLocal.slow.time * 0.001f)
@@ -2816,7 +2848,7 @@ open class idHarvestable : idEntity() {
     }
 
     protected fun BeginFX() {
-        if (spawnArgs.GetString("fx").isNullOrEmpty()) {
+        if (spawnArgs.GetString("fx").isEmpty()) {
             return
         }
 
@@ -2846,7 +2878,7 @@ open class idHarvestable : idEntity() {
 
         if (idStr.Icmp(fxOrient, "up") == 0) {
             // Orient up
-            val grav = parent.GetPhysics().GetGravityNormal().times(-1f)
+            val grav = parent.GetPhysics().GetGravityNormal() * -1f
             val left = idVec3()
             val up = idVec3()
             grav.OrthogonalBasis(left, up)
@@ -2866,7 +2898,7 @@ open class idHarvestable : idEntity() {
                 joint_origin.set(thePlayer.GetPhysics().GetOrigin())
             }
 
-            val toPlayer = joint_origin.minus(parent.GetPhysics().GetOrigin())
+            val toPlayer = joint_origin - parent.GetPhysics().GetOrigin()
             toPlayer.NormalizeFast()
 
             val left = idVec3()
@@ -2877,7 +2909,7 @@ open class idHarvestable : idEntity() {
         } else if (idStr.Icmp(fxOrient, "player") == 0) {
             // Orient the fx towards the eye of the player
             val eye = thePlayer!!.GetEyePosition()
-            val toPlayer = eye.minus(parent.GetPhysics().GetOrigin())
+            val toPlayer = eye - parent.GetPhysics().GetOrigin()
             toPlayer.Normalize()
 
             val up = idVec3(0f, 1f, 0f)
@@ -2913,7 +2945,9 @@ open class idHarvestable : idEntity() {
 
         if (parent.IsType(idAFEntity_Gibbable.Type)) {
             val gibParent = parent as idAFEntity_Gibbable
-            if (gibParent.IsGibbed()) return
+            if (gibParent.IsGibbed()) {
+                return
+            }
         }
 
         if (startTime == 0 && other.IsType(idPlayer.Type)) {
@@ -3012,10 +3046,6 @@ class idAFEntity_Harvest : idAFEntity_WithAttachedHead() {
     override fun Spawn() {
         super.Spawn()
         PostEventMS(EV_Harvest_SpawnHarvestEntity, 0)
-    }
-
-    override fun Think() {
-        super.Think()
     }
 
     override fun Gib(dir: idVec3, damageDefName: String) {

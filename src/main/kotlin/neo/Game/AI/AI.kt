@@ -2279,6 +2279,10 @@ open class idAI : idActor() {
         if (talk_state != talkState_t.TALK_OK) {
             return
         }
+        // D3XP: Wake up monsters that are pretending to be NPC's
+        if (isD3XP && team == 1 && actor.team != team) {
+            ProcessEvent(EV_Activate, actor)
+        }
         talkTarget.oSet(actor)
         AI_TALK.underscore(actor != null)
     }
@@ -2325,6 +2329,11 @@ open class idAI : idActor() {
             targetPos1.set(aimAtEnt.GetPhysics().GetAbsBounds().GetCenter())
             targetPos2.set(targetPos1)
         }
+        // D3XP: aim lower on vulgar demon to avoid overshooting
+        if (isD3XP && team == 0 && aimAtEnt.GetEntityDefName() == "monster_demon_vulgar") {
+            targetPos1.z -= 28f
+            targetPos2.z -= 12f
+        }
 
         // try aiming for chest
         delta.set(firePos.minus(targetPos1))
@@ -2335,7 +2344,7 @@ open class idAI : idActor() {
             projectileSpeed,
             projectileGravity,
             projectileClipModel!!,
-            Game_local.MASK_SHOT_RENDERMODEL,
+            MASK_SHOT_RENDERMODEL,
             max_height,
             ignore,
             aimAtEnt,
@@ -2355,7 +2364,7 @@ open class idAI : idActor() {
             projectileSpeed,
             projectileGravity,
             projectileClipModel!!,
-            Game_local.MASK_SHOT_RENDERMODEL,
+            MASK_SHOT_RENDERMODEL,
             max_height,
             ignore,
             aimAtEnt,
@@ -2551,6 +2560,17 @@ open class idAI : idActor() {
         Present()
         UpdateDamageEffects()
         LinkCombat()
+        // D3XP: debug — draw AI health above head
+        if (isD3XP && SysCvar.ai_showHealth.GetBool()) {
+            val aboveHead = idVec3(0f, 0f, 20f)
+            Game_local.gameRenderWorld!!.DrawText(
+                "${health.toInt()}",
+                GetEyePosition().plus(aboveHead),
+                0.5f,
+                colorWhite,
+                Game_local.gameLocal.GetLocalPlayer()!!.viewAngles.ToMat3()
+            )
+        }
     }
 
     /*
@@ -3125,6 +3145,10 @@ open class idAI : idActor() {
             if (goalDist < delta.LengthFast()) {
                 delta.set(goalDelta)
             }
+        }
+        // D3XP: disable fly move for walking so the physics don't treat this entity as flying
+        if (isD3XP) {
+            physicsObj.UseFlyMove(false)
         }
         physicsObj.SetDelta(delta)
         physicsObj.ForceDeltaMove(disableGravity)
@@ -5384,6 +5408,8 @@ open class idAI : idActor() {
         attack_cone = spawnArgs.GetFloat("attack_cone", "70")
         projectile_spread = spawnArgs.GetFloat("projectile_spread", "0")
         num_projectiles = spawnArgs.GetInt("num_projectiles", "1")
+        // D3XP: forceMuzzle skips the bounding-box clip adjustment below
+        val forceMuzzle = if (isD3XP) spawnArgs.GetBool("forceMuzzle", "0") else false
         GetMuzzle(jointname, muzzle, axis)
         if (null == projectile.GetEntity()) {
             CreateProjectile(muzzle, axis[0])
@@ -5404,35 +5430,37 @@ open class idAI : idActor() {
         axis[2] = axis[0]
         axis[0] = tmp.unaryMinus()
 
-        // make sure the projectile starts inside the monster bounding box
-        val ownerBounds = physicsObj.GetAbsBounds()
-        projClip = lastProjectile.GetPhysics().GetClipModel()!!
-        projBounds = projClip.GetBounds().Rotate(axis)
+        if (!forceMuzzle) { // D3XP: skip bounding-box adjustment when forceMuzzle=true
+            // make sure the projectile starts inside the monster bounding box
+            val ownerBounds = physicsObj.GetAbsBounds()
+            projClip = lastProjectile.GetPhysics().GetClipModel()!!
+            projBounds = projClip.GetBounds().Rotate(axis)
 
-        // check if the owner bounds is bigger than the projectile bounds
-        if (ownerBounds[1, 0] - ownerBounds[0, 0] > projBounds[1, 0] - projBounds[0, 0]
-            && ownerBounds[1, 1] - ownerBounds[0, 1] > projBounds[1, 1] - projBounds[0, 1]
-            && ownerBounds[1, 2] - ownerBounds[0, 2] > projBounds[1, 2] - projBounds[0, 2]
-        ) {
-            if (ownerBounds.minus(projBounds).RayIntersection(muzzle, viewAxis[0], distance)) {
-                start.set(muzzle.plus(viewAxis[0].times(distance._val)))
+            // check if the owner bounds is bigger than the projectile bounds
+            if (ownerBounds[1, 0] - ownerBounds[0, 0] > projBounds[1, 0] - projBounds[0, 0]
+                && ownerBounds[1, 1] - ownerBounds[0, 1] > projBounds[1, 1] - projBounds[0, 1]
+                && ownerBounds[1, 2] - ownerBounds[0, 2] > projBounds[1, 2] - projBounds[0, 2]
+            ) {
+                if (ownerBounds.minus(projBounds).RayIntersection(muzzle, viewAxis[0], distance)) {
+                    start.set(muzzle.plus(viewAxis[0].times(distance._val)))
+                } else {
+                    start.set(ownerBounds.GetCenter())
+                }
             } else {
+                // projectile bounds bigger than the owner bounds, so just start it from the center
                 start.set(ownerBounds.GetCenter())
             }
-        } else {
-            // projectile bounds bigger than the owner bounds, so just start it from the center
-            start.set(ownerBounds.GetCenter())
+            Game_local.gameLocal.clip.Translation(
+                tr,
+                start,
+                muzzle,
+                projClip,
+                axis,
+                MASK_SHOT_RENDERMODEL,
+                this
+            )
+            muzzle.set(tr.endpos)
         }
-        Game_local.gameLocal.clip.Translation(
-            tr,
-            start,
-            muzzle,
-            projClip,
-            axis,
-            Game_local.MASK_SHOT_RENDERMODEL,
-            this
-        )
-        muzzle.set(tr.endpos)
 
         // set aiming direction
         GetAimDir(muzzle, target, this, dir)
@@ -6064,6 +6092,8 @@ open class idAI : idActor() {
             val realAxis = idMat3()
             var particlesAlive = 0
             for (i in 0 until particles.Num()) {
+                // D3XP: smoke particles on AI always use slow timeline, even when held by grabber
+                val ts = if (isD3XP) SetTimeState(Game_local.TIME_GROUP1) else null
                 if (particles[i].particle != null && particles[i].time != 0) {
                     particlesAlive++
                     if (af.IsActive()) {
@@ -6089,7 +6119,8 @@ open class idAI : idActor() {
                             particles[i].time,
                             Game_local.gameLocal.random.CRandomFloat(),
                             realVector,
-                            realAxis
+                            realAxis,
+                            timeGroup // D3XP: pass entity's timeline group
                         )
                     ) {
                         if (restartParticles) {
@@ -6163,10 +6194,8 @@ open class idAI : idActor() {
         GetJointWorldTransform(jointNum, Game_local.gameLocal.time, offset, axis)
 
         val args = idDict()
-        val emitterDef = Game_local.gameLocal.FindEntityDef("func_emitter", false)
-        if (emitterDef != null) {
-            args.Copy(emitterDef.dict)
-        }
+        val emitterDef = Game_local.gameLocal.FindEntityDef("func_emitter", false)!!
+        args.set(emitterDef.dict)
         args.Set("model", particle)
         args.Set("origin", offset.ToString())
         args.SetBool("start_off", true)
@@ -6622,7 +6651,7 @@ open class idAI : idActor() {
             muzzle,
             projClip,
             projClip.GetAxis(),
-            Game_local.MASK_SHOT_RENDERMODEL,
+            MASK_SHOT_RENDERMODEL,
             this
         )
 
@@ -7559,7 +7588,7 @@ open class idAI : idActor() {
             fromPos,
             projectileClipModel,
             idMat3.getMat3_identity(),
-            Game_local.MASK_SHOT_RENDERMODEL,
+            MASK_SHOT_RENDERMODEL,
             this
         )
         fromPos.set(tr.endpos)
@@ -8813,7 +8842,7 @@ open class idAI : idActor() {
             idGameLocal.Error("Could not spawn entityDef '%s'", entityDefName)
             return
         }
-        if (spawnedEnt !is Projectile.idProjectile) {
+        if (spawnedEnt !is idProjectile) {
             idGameLocal.Error("'%s' is not an idProjectile", spawnedEnt.GetClassname())
             return
         }

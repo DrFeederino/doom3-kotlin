@@ -263,6 +263,10 @@ object Moveable {
             super.Save(savefile)
             savefile.WriteString(brokenModel)
             savefile.WriteString(damage)
+            if (isD3XP) {
+                savefile.WriteString(monsterDamage)
+                savefile.WriteObject(attacker)
+            }
             savefile.WriteString(fxCollide)
             savefile.WriteInt(nextCollideFxTime)
             savefile.WriteFloat(minDamageVelocity)
@@ -276,10 +280,6 @@ object Moveable {
             savefile.WriteInt((if (initialSpline != null) initialSpline!!.GetTime(0) else -1).toInt())
             savefile.WriteVec3(initialSplineDir)
             savefile.WriteStaticObject(physicsObj)
-            if (isD3XP) {
-                savefile.WriteString(monsterDamage)
-                savefile.WriteObject(attacker)
-            }
         }
 
         override fun Restore(savefile: idRestoreGame) {
@@ -287,6 +287,10 @@ object Moveable {
             val initialSplineTime = CInt()
             savefile.ReadString(brokenModel)
             savefile.ReadString(damage)
+            if (isD3XP) {
+                savefile.ReadString(monsterDamage)
+                attacker = savefile.ReadObject() as? idEntity
+            }
             savefile.ReadString(fxCollide)
             nextCollideFxTime = savefile.ReadInt()
             minDamageVelocity = savefile.ReadFloat()
@@ -306,10 +310,6 @@ object Moveable {
             }
             savefile.ReadStaticObject(physicsObj)
             RestorePhysics(physicsObj)
-            if (isD3XP) {
-                savefile.ReadString(monsterDamage)
-                attacker = savefile.ReadObject() as? idEntity
-            }
         }
 
         override fun Think() {
@@ -1082,6 +1082,7 @@ object Moveable {
 
         private fun AddParticles(name: String?, burn: Boolean) {
             if (name != null && !name.isEmpty()) {
+                val ts = if (isD3XP) SetTimeState(timeGroup) else null
                 if (particleModelDefHandle >= 0) {
                     Game_local.gameRenderWorld!!.FreeEntityDef(particleModelDefHandle)
                 }
@@ -1113,6 +1114,7 @@ object Moveable {
                     }
                     particleTime = Game_local.gameLocal.realClientTime
                 }
+                ts?.close()
             }
         }
 

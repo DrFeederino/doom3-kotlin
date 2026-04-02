@@ -1377,30 +1377,6 @@ class Class {
             return typeNum >= type.typeNum && typeNum <= type.lastChild
         }
 
-//        // @Deprecated — prefer IsType(idTypeInfo) after migration
-//        fun IsType(type: Class<*>?): Boolean {
-//            if (type == null) return false
-//            val targetName = type.simpleName
-//            // Direct match
-//            if (classname == targetName) return true
-//            // Walk superclass chain using zuper pointers
-//            var current = zuper
-//            while (current != null) {
-//                if (current.classname == targetName) return true
-//                current = current.zuper
-//            }
-//            // If zuper chain not populated, walk superclass names via typeRegistry
-//            if (zuper == null) {
-//                var superName: String? = this.superclass
-//                while (!superName.isNullOrEmpty()) {
-//                    if (superName == targetName) return true
-//                    val superType = typeRegistry[superName]
-//                    superName = superType?.superclass
-//                }
-//            }
-//            return false
-//        }
-
         /*
          ================
          idTypeInfo::RespondsTo

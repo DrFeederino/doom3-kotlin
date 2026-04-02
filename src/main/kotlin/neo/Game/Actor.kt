@@ -954,8 +954,10 @@ open class idActor : idAFEntity_Gibbable() {
             if (ent.GetBindMaster() == this) {
                 ent.Show()
                 if (ent is idLight) {
-                    if (!isD3XP || !spawnArgs.GetBool("lights_off", "false")) {
-                        (ent as idLight).On()
+                    if (isD3XP) {
+                        if (!spawnArgs.GetBool("lights_off", "0")) {
+                            ent.On()
+                        }
                     }
                 }
             }
@@ -1465,9 +1467,12 @@ open class idActor : idAFEntity_Gibbable() {
         if (damage._val > 0) {
             health -= damage._val
             // D3XP: damageCap prevents kill shots during scripted boss phases
-            if (isD3XP && damageCap >= 0 && health < damageCap) {
-                health = damageCap
+            if (isD3XP) {
+                if (damageCap >= 0 && health < damageCap) {
+                    health = damageCap
+                }
             }
+
             if (health <= 0) {
                 if (health < -999) {
                     health = -999
@@ -2140,6 +2145,7 @@ open class idActor : idAFEntity_Gibbable() {
             headEnt.SetName(Str.va("%s_head", name))
             headEnt.SetBody(this, headModel, damageJoint)
             head.oSet(headEnt)
+
             if (isD3XP) {
                 val xSkin = idStr()
                 if (spawnArgs.GetString("skin_head_xray", "", xSkin)) {
@@ -2147,13 +2153,13 @@ open class idActor : idAFEntity_Gibbable() {
                     headEnt.UpdateModel()
                 }
             }
+
             val origin = idVec3()
             val axis = idMat3()
             val attach = attachments.Alloc()!!
             attach.channel = animator.GetChannelForJoint(joint)
             animator.GetJointTransform(joint, Game_local.gameLocal.time, origin, axis)
             origin.set(renderEntity!!.origin + (origin + modelOffset) * renderEntity!!.axis)
-            //attach.ent.oSet(new idEntityPtr<>());
             attach.ent.oSet(headEnt)
             headEnt.SetOrigin(origin)
             headEnt.SetAxis(renderEntity!!.axis)
@@ -2835,14 +2841,12 @@ open class idActor : idAFEntity_Gibbable() {
 
     // D3XP event handlers
     private fun Event_SetDamageGroupScale(groupName: idEventArg<String>, scale: idEventArg<Float>) {
-        val name = groupName.value as String
-        val s = scale.value as Float
-        var i = 0
-        while (i < damageScale.Num()) {
+        val name = groupName.value
+        val s = scale.value
+        for (i in 0 until damageScale.Num()) {
             if (damageGroups[i].toString() == name) {
                 damageScale[i] = s
             }
-            i++
         }
     }
 
@@ -2869,11 +2873,11 @@ open class idActor : idAFEntity_Gibbable() {
     }
 
     private fun Event_SetDamageCap(cap: idEventArg<Float>) {
-        damageCap = (cap.value as Float).toInt()
+        damageCap = cap.value.toInt()
     }
 
     private fun Event_SetWaitState(state: idEventArg<String>) {
-        SetWaitState(state.value as String)
+        SetWaitState(state.value)
     }
 
     private fun Event_GetWaitState() {

@@ -33,12 +33,12 @@ import neo.idlib.Text.Str.idStr.Companion.Cmpn
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.List.idList
 import neo.idlib.math.*
+import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.idMath.ACos
 import neo.idlib.math.idMath.ASin
 import neo.idlib.math.idMath.Cos
 import neo.idlib.math.idMath.Sin
 import neo.idlib.math.idMath.Sqrt
-import neo.idlib.math.Matrix.idMat3
 
 
 val EV_Thread_SetCallback = idEventDef("<script_setcallback>", null)
@@ -314,7 +314,7 @@ object Script_Thread {
         }
 
         private fun Event_GetFrameTime() {
-            ReturnFloat(MS2SEC(Game_local.gameLocal.msec.toFloat()))
+            ReturnFloat(MS2SEC(gameLocal.msec.toFloat()))
         }
 
         private fun Event_GetTicsPerSecond() {
@@ -533,7 +533,7 @@ object Script_Thread {
                 if (waitingUntil > lastExecuteTime) {
                     PostEventMS(EV_Thread_Execute, waitingUntil - lastExecuteTime)
                 } else if (interpreter.MultiFrameEventInProgress()) {
-                    PostEventMS(EV_Thread_Execute, Game_local.gameLocal.msec)
+                    PostEventMS(EV_Thread_Execute, gameLocal.msec)
                 }
             }
             currentThread = oldThread
@@ -1357,7 +1357,7 @@ object Script_Thread {
                 val up = idVec3()
                 vec.value.OrthogonalBasis(left, up)
                 val axis = idMat3(left, up, vec.value)
-                val ang = axis.ToAngles()
+                val ang = idAngles(axis.ToAngles())
                 ReturnVector(idVec3(ang[0], ang[1], ang[2]))
             }
 
@@ -1544,7 +1544,8 @@ object Script_Thread {
             }
 
             private fun Event_RandomInt(t: idThread, range: idEventArg<Int>) {
-                ReturnInt(gameLocal.random.RandomInt(range.value))
+                val result = gameLocal.random.RandomInt(range.value)
+                ReturnFloat(result.toFloat())
             }
 
             private fun Event_KillThread(t: idThread, name: idEventArg<String>) {

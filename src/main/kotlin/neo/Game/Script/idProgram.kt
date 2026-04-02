@@ -52,11 +52,11 @@ class idProgram {
     private val fileList = idStrList()
     private val filename = idStr()
     private var filenum = 0
-    private val functions: idStaticList<function_t> = idStaticList(Script_Program.MAX_FUNCS, function_t::class.java)
+    private val functions: idStaticList<function_t> = idStaticList(Script_Program.MAX_FUNCS(), function_t::class.java)
 
     //
     private var numVariables = 0
-    private val statements = idStaticList(Script_Program.MAX_STATEMENTS, statement_s::class.java)
+    private val statements = idStaticList(Script_Program.MAX_STATEMENTS(), statement_s::class.java)
 
     //
     private var sysDef: idVarDef? = null
@@ -1019,7 +1019,7 @@ class idProgram {
         }
     }
 
-    fun AllocStatement(): statement_s? {
+    fun AllocStatement(): statement_s {
         if (statements.Num() >= statements.Max()) {
             throw idCompileError(String.format("Exceeded maximum allowed number of statements (%d)", statements.Max()))
         }

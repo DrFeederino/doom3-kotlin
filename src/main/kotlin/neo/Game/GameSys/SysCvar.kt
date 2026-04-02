@@ -672,7 +672,7 @@ class SysCvar {
         //
         val mod_validSkins: idCVar = idCVar(
             "mod_validSkins",
-            "skins/characters/player/marine_mp;skins/characters/player/marine_mp_green;skins/characters/player/marine_mp_blue;skins/characters/player/marine_mp_red;skins/characters/player/marine_mp_yellow",
+            "skins/characters/player/marine_mp;skins/characters/player/marine_mp_green;skins/characters/player/marine_mp_blue;skins/characters/player/marine_mp_red;skins/characters/player/marine_mp_yellow;skins/characters/player/marine_mp_purple;skins/characters/player/marine_mp_grey;skins/characters/player/marine_mp_orange",
             CVarSystem.CVAR_GAME or CVarSystem.CVAR_ARCHIVE,
             "valid skins for the game"
         )
@@ -1119,6 +1119,9 @@ class SysCvar {
             "skins/characters/player/marine_mp_blue",
             "skins/characters/player/marine_mp_green",
             "skins/characters/player/marine_mp_yellow",
+            "skins/characters/player/marine_mp_purple",
+            "skins/characters/player/marine_mp_grey",
+            "skins/characters/player/marine_mp_orange",
             null
         )
         val ui_skin: idCVar = idCVar(

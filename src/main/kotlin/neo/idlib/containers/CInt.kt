@@ -23,4 +23,6 @@ class CInt {
     fun leftShift(power: Int) {
         _val = _val shl power
     }
+
+    fun toFloat(): Float = _val.toFloat()
 }

@@ -333,9 +333,6 @@ object Projectile {
             thrust_end = savefile.ReadInt()
             savefile.ReadRenderLight(renderLight)
             lightDefHandle = savefile.ReadInt()
-            if (lightDefHandle != -1) {
-                lightDefHandle = Game_local.gameRenderWorld!!.AddLightDef(renderLight)
-            }
             savefile.ReadVec3(lightOffset)
             lightStartTime = savefile.ReadInt()
             lightEndTime = savefile.ReadInt()
@@ -363,6 +360,12 @@ object Projectile {
                     GetPhysics().GetAxis(),
                     if (isD3XP) timeGroup else 0
                 )
+            }
+            // D3XP: re-register the light def with the renderer after restore
+            if (isD3XP) {
+                if (lightDefHandle >= 0) {
+                    lightDefHandle = Game_local.gameRenderWorld!!.AddLightDef(renderLight)
+                }
             }
         }
 
@@ -829,6 +832,30 @@ object Projectile {
             }
             GetPhysics().SetOrigin(collision.endpos.plus(collision.c.normal.times(2.0f)))
 
+            // default remove time
+            removeTime = spawnArgs.GetInt("remove_time", "1500")
+
+            // change the model, usually to a PRT
+            fxname = if (SysCvar.g_testParticle.GetInteger() == Game.TEST_PARTICLE_IMPACT) {
+                SysCvar.g_testParticleName.GetString()
+            } else {
+                spawnArgs.GetString("model_detonate")
+            }
+            val surfaceType =
+                (if (collision.c.material != null) collision.c.material!!.GetSurfaceType() else surfTypes_t.SURFTYPE_METAL).ordinal
+            if (!(fxname != null && !fxname.isEmpty())) {
+                fxname = if (surfaceType == TempDump.etoi(surfTypes_t.SURFTYPE_NONE)
+                    || surfaceType == TempDump.etoi(surfTypes_t.SURFTYPE_METAL)
+                    || surfaceType == TempDump.etoi(surfTypes_t.SURFTYPE_STONE)
+                ) {
+                    spawnArgs.GetString("model_smokespark")
+                } else if (surfaceType == TempDump.etoi(surfTypes_t.SURFTYPE_RICOCHET)) {
+                    spawnArgs.GetString("model_ricochet")
+                } else {
+                    spawnArgs.GetString("model_smoke")
+                }
+            }
+
             // D3XP: if explosion is underwater, spawn a splash particle
             if (isD3XP) {
                 val testOrg = idVec3(GetPhysics().GetOrigin())
@@ -856,29 +883,6 @@ object Projectile {
                 }
             }
 
-            // default remove time
-            removeTime = spawnArgs.GetInt("remove_time", "1500")
-
-            // change the model, usually to a PRT
-            fxname = if (SysCvar.g_testParticle.GetInteger() == Game.TEST_PARTICLE_IMPACT) {
-                SysCvar.g_testParticleName.GetString()
-            } else {
-                spawnArgs.GetString("model_detonate")
-            }
-            val surfaceType =
-                (if (collision.c.material != null) collision.c.material!!.GetSurfaceType() else surfTypes_t.SURFTYPE_METAL).ordinal
-            if (!(fxname != null && !fxname.isEmpty())) {
-                fxname = if (surfaceType == TempDump.etoi(surfTypes_t.SURFTYPE_NONE)
-                    || surfaceType == TempDump.etoi(surfTypes_t.SURFTYPE_METAL)
-                    || surfaceType == TempDump.etoi(surfTypes_t.SURFTYPE_STONE)
-                ) {
-                    spawnArgs.GetString("model_smokespark")
-                } else if (surfaceType == TempDump.etoi(surfTypes_t.SURFTYPE_RICOCHET)) {
-                    spawnArgs.GetString("model_ricochet")
-                } else {
-                    spawnArgs.GetString("model_smoke")
-                }
-            }
             if (fxname != null && !fxname.isEmpty()) {
                 SetModel(fxname)
                 renderEntity!!.shaderParms[RenderWorld.SHADERPARM_ALPHA] = 1.0f

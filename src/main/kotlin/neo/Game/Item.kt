@@ -1011,7 +1011,9 @@ open class idMoveableItem : idItem() {
         savefile.WriteClipModel(trigger)
         savefile.WriteParticle(smoke)
         savefile.WriteInt(smokeTime)
-        savefile.WriteInt(nextSoundTime)
+        if (isD3XP) {
+            savefile.WriteInt(nextSoundTime)
+        }
     }
 
     override fun Restore(savefile: idRestoreGame) {
@@ -1021,11 +1023,12 @@ open class idMoveableItem : idItem() {
         trigger = savefile.ReadClipModel()
         smoke = savefile.ReadParticle()
         smokeTime = savefile.ReadInt()
-        nextSoundTime = savefile.ReadInt()
+        nextSoundTime = if (isD3XP) savefile.ReadInt() else 0
     }
 
     override fun Spawn() {
         super.Spawn()
+        val ts = if (isD3XP) SetTimeState(timeGroup) else null
         val trm = idTraceModel()
         val density = CFloat()
         val friction = CFloat()
@@ -1079,15 +1082,17 @@ open class idMoveableItem : idItem() {
         smokeTime = 0
         nextSoundTime = 0
         val smokeName = spawnArgs.GetString("smoke_trail")
-        if (!smokeName.isEmpty()) { // != '\0' ) {
+        if (!smokeName.isEmpty()) {
             smoke = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, smokeName) as idDeclParticle
             smokeTime = gameLocal.time
             BecomeActive(TH_UPDATEPARTICLES)
         }
         repeatSmoke = spawnArgs.GetBool("repeatSmoke", "false")
+        ts?.close()
     }
 
     override fun Collide(collision: trace_s, velocity: idVec3): Boolean {
+        if (!isD3XP) return false
         val v = -(velocity.times(collision.c.normal))
         if (v > 80f && gameLocal.time > nextSoundTime) {
             val f = if (v > 200f) 1.0f else idMath.Sqrt(v - 80f) * 0.091f
@@ -1331,7 +1336,11 @@ class idObjectiveComplete : idItemRemover() {
                 if (player.hud != null) {
                     player.hud!!.SetStateString("objective", "2")
                     player.hud!!.SetStateString("objectivetext", spawnArgs.GetString("objectivetext"))
-                    player.hud!!.SetStateString("objectivetitle", spawnArgs.GetString("objectivetitle"))
+                    if (isD3XP) {
+                        player.hud!!.SetStateString("objectivecompletetitle", spawnArgs.GetString("objectivetitle"))
+                    } else {
+                        player.hud!!.SetStateString("objectivetitle", spawnArgs.GetString("objectivetitle"))
+                    }
                     player.CompleteObjective(spawnArgs.GetString("objectivetitle"))
                     PostEventMS(EV_GetPlayerPos, 2000)
                 }

@@ -41,6 +41,7 @@ import neo.Game.GameSys.Event
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Game_local.idGameLocal
 import neo.Renderer.Model
@@ -581,7 +582,7 @@ class idAnim {
             fc.string.set(token)
             fc.index = jointInfo.num
             // D3XP: new frame command types
-        } else if (token.toString() == "launch_projectile") {
+        } else if (isD3XP && token.toString() == "launch_projectile") {
             if (!src.ReadTokenOnLine(token)) {
                 return "Unexpected end of line"
             }
@@ -595,7 +596,7 @@ class idAnim {
             }
             fc.type = frameCommandType_t.FC_LAUNCH_PROJECTILE
             fc.string.set(token)
-        } else if (token.toString() == "trigger_fx") {
+        } else if (isD3XP && token.toString() == "trigger_fx") {
             if (!src.ReadTokenOnLine(token)) {
                 return "Unexpected end of line"
             }
@@ -612,7 +613,7 @@ class idAnim {
             fc.type = frameCommandType_t.FC_TRIGGER_FX
             fc.string.set(token)
             fc.index = jointInfo.num
-        } else if (token.toString() == "start_emitter") {
+        } else if (isD3XP && token.toString() == "start_emitter") {
             val str = idStr()
             if (!src.ReadTokenOnLine(token)) {
                 return "Unexpected end of line"
@@ -632,7 +633,7 @@ class idAnim {
             fc.type = frameCommandType_t.FC_START_EMITTER
             fc.string.set(str)
             fc.index = jointInfo.num
-        } else if (token.toString() == "stop_emitter") {
+        } else if (isD3XP && token.toString() == "stop_emitter") {
             if (!src.ReadTokenOnLine(token)) {
                 return "Unexpected end of line"
             }
@@ -998,7 +999,13 @@ class idAnim {
                         target = Game_local.gameLocal.FindEntity(command.string.toString())
                         if (target != null) {
                             // D3XP: switch to target's time group
-                            SetTimeState(target.timeGroup).use {
+                            if (isD3XP) {
+                                SetTimeState(target.timeGroup).use {
+                                    target.Signal(signalNum_t.SIG_TRIGGER)
+                                    target.ProcessEvent(EV_Activate, ent)
+                                    target.TriggerGuis()
+                                }
+                            } else {
                                 target.Signal(signalNum_t.SIG_TRIGGER)
                                 target.ProcessEvent(EV_Activate, ent)
                                 target.TriggerGuis()
@@ -1053,8 +1060,8 @@ class idAnim {
                             command.string.toString()
                         )
                     }
-
                     // D3XP: new frame command dispatch
+                    // hidden behind ifdef, this shouldn't be called in base game
                     frameCommandType_t.FC_LAUNCH_PROJECTILE -> {
                         ent.ProcessEvent(AI_LaunchProjectile, command.string.toString())
                     }
@@ -1142,8 +1149,6 @@ class idAnim {
                     }
 
                     frameCommandType_t.FC_RECORDDEMO -> {
-                        // FIX: C++ checks if string pointer is non-NULL (null when no argument given);
-                        // Kotlin string is always non-null idStr, so check IsEmpty() instead
                         if (!command.string.IsEmpty()) {
                             CmdSystem.cmdSystem.BufferCommandText(
                                 cmdExecution_t.CMD_EXEC_NOW, Str.va("recordDemo %s", command.string)
@@ -1154,7 +1159,6 @@ class idAnim {
                     }
 
                     frameCommandType_t.FC_AVIGAME -> {
-                        // FIX: Same as FC_RECORDDEMO — check IsEmpty() instead of null
                         if (!command.string.IsEmpty()) {
                             CmdSystem.cmdSystem.BufferCommandText(
                                 cmdExecution_t.CMD_EXEC_NOW, Str.va("aviGame %s", command.string)
