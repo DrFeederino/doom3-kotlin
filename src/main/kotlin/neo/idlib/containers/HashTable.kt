@@ -78,29 +78,32 @@ class HashTable {
         //public	size_t			Size( void ) const;
         //
         fun Set(key: String?, value: Type?) {
-            var node: hashnode_s<*>?
-            var nextPtr: hashnode_s<*>?
-            val hash: Int
-            var s: Int
-            hash = GetHash(key)
-            nextPtr = heads[hash]
-            node = nextPtr
+            val hash: Int = GetHash(key)
+            // Walk the chain to find insertion point (sorted by key).
+            // Track the previous node so we can splice in the new node.
+            var prev: hashnode_s<*>? = null
+            var node: hashnode_s<*>? = heads[hash]
             while (node != null) {
-                //TODO:what moves us?
-                s = node.key.Cmp(key!!)
+                val s = node.key.Cmp(key!!)
                 if (s == 0) {
+                    // key already exists — update value
                     node.value = value as Nothing?
                     return
                 }
                 if (s > 0) {
+                    // insert before this node (sorted order)
                     break
                 }
-                nextPtr = node.next
-                node = nextPtr
+                prev = node
+                node = node.next
             }
             numentries++
-            nextPtr = hashnode_s(key, value, heads[hash])
-            nextPtr.next = node
+            val newNode = hashnode_s(key, value, node) // newNode.next = node (the rest of the chain)
+            if (prev == null) {
+                heads[hash] = newNode // insert at head
+            } else {
+                prev.next = newNode   // insert after prev
+            }
         }
 
 
