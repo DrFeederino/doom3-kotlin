@@ -401,27 +401,27 @@ class idMat3 {
         inverse.mat[0].x = mat[1].y * mat[2].z - mat[1].z * mat[2].y
         inverse.mat[1].x = mat[1].z * mat[2].x - mat[1].x * mat[2].z
         inverse.mat[2].x = mat[1].x * mat[2].y - mat[1].y * mat[2].x
-        val det: Float =
-            (mat[0].x * inverse.mat[0].x + mat[0].y * inverse.mat[1].x + mat[0].z * inverse.mat[2].x)
+        val det: Double =
+            (mat[0].x * inverse.mat[0].x + mat[0].y * inverse.mat[1].x + mat[0].z * inverse.mat[2].x).toDouble()
         if (abs(det) < MATRIX_INVERSE_EPSILON) {
             return false
         }
-        val invDet: Float = 1.0f / det
+        val invDet: Double = 1.0 / det
         inverse.mat[0].y = mat[0].z * mat[2].y - mat[0].y * mat[2].z
         inverse.mat[0].z = mat[0].y * mat[1].z - mat[0].z * mat[1].y
         inverse.mat[1].y = mat[0].x * mat[2].z - mat[0].z * mat[2].x
         inverse.mat[1].z = mat[0].z * mat[1].x - mat[0].x * mat[1].z
         inverse.mat[2].y = mat[0].y * mat[2].x - mat[0].x * mat[2].y
         inverse.mat[2].z = mat[0].x * mat[1].y - mat[0].y * mat[1].x
-        mat[0].x = (inverse.mat[0].x * invDet)
-        mat[0].y = (inverse.mat[0].y * invDet)
-        mat[0].z = (inverse.mat[0].z * invDet)
-        mat[1].x = (inverse.mat[1].x * invDet)
-        mat[1].y = (inverse.mat[1].y * invDet)
-        mat[1].z = (inverse.mat[1].z * invDet)
-        mat[2].x = (inverse.mat[2].x * invDet)
-        mat[2].y = (inverse.mat[2].y * invDet)
-        mat[2].z = (inverse.mat[2].z * invDet)
+        mat[0].x = (inverse.mat[0].x * invDet).toFloat()
+        mat[0].y = (inverse.mat[0].y * invDet).toFloat()
+        mat[0].z = (inverse.mat[0].z * invDet).toFloat()
+        mat[1].x = (inverse.mat[1].x * invDet).toFloat()
+        mat[1].y = (inverse.mat[1].y * invDet).toFloat()
+        mat[1].z = (inverse.mat[1].z * invDet).toFloat()
+        mat[2].x = (inverse.mat[2].x * invDet).toFloat()
+        mat[2].y = (inverse.mat[2].y * invDet).toFloat()
+        mat[2].z = (inverse.mat[2].z * invDet).toFloat()
         return true
     }
 

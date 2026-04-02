@@ -2905,7 +2905,10 @@ object FileSystem_h {
          ===========
          */
         override fun FilenameCompare(s1: String, s2: String): Boolean {
-            return s1.equals(s2, ignoreCase = true)
+            // normalize '\\' and ':' to '/' before comparing, matching C++ behavior
+            val n1 = s1.replace('\\', '/').replace(':', '/')
+            val n2 = s2.replace('\\', '/').replace(':', '/')
+            return n1.equals(n2, ignoreCase = true)
         }
 
         /*
