@@ -3608,7 +3608,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             v.x = lex.ParseFloat()
             v.y = lex.ParseFloat()
             v.z = lex.ParseFloat()
-            spline.AddValue(t.toFloat(), v)
+            spline.AddValue(t.toFloat(), idVec3(v))
             i++
             t += 100
         }
