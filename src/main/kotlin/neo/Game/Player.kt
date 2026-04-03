@@ -144,9 +144,7 @@ object Player {
     const val ASYNC_PLAYER_INV_CLIP_BITS = -7 // -7 bits to cover the range [-1, 60]
     const val BASE_HEARTRATE = 70 // default
 
-    //
     // powerups - the "type" in item .def must match
-    // enum {
     const val BERSERK = 0
 
     //
@@ -167,20 +165,14 @@ object Player {
     const val FOCUS_GUI_TIME = 500
     const val FOCUS_TIME = 300
 
-    //
     const val HEALTHPULSE_TIME = 333
 
-    //
     // amount of health per dose from the health station
     const val HEALTH_PER_DOSE = 10
     const val INFLUENCE_LEVEL1 = 1 // no gun or hud
     const val INFLUENCE_LEVEL2 = 2 // no gun, hud, movement
     const val INFLUENCE_LEVEL3 = 3 // slow player movement
 
-    // };
-    //
-    // influence levels
-    // enum {
     const val INFLUENCE_NONE = 0 // none
     const val INVISIBILITY = 1
 
@@ -194,7 +186,8 @@ object Player {
     const val MAX_INVENTORY_ITEMS = 20
     const val MAX_PDAS = 64
     const val MAX_PDA_ITEMS = 128
-    const val MAX_POWERUPS = 8  // D3XP: 4 → 8 (BERSERK, INVISIBILITY, MEGAHEALTH, ADRENALINE + 4 D3XP powerups)
+    fun MAX_POWERUPS() =
+        if (isD3XP) 8 else 4  // D3XP: 4 → 8 (BERSERK, INVISIBILITY, MEGAHEALTH, ADRENALINE + 4 D3XP powerups)
 
     //
     //
@@ -202,7 +195,7 @@ object Player {
     const val MAX_RESPAWN_TIME = 10000
 
     //
-    const val MAX_WEAPONS = 32  // D3XP: 16 → 32 (expansion adds new weapons)
+    fun MAX_WEAPONS() = if (isD3XP) 32 else 16  // D3XP: 16 → 32 (expansion adds new weapons)
     const val MEGAHEALTH = 2
     const val MELEE_DAMAGE = 2
 
@@ -274,9 +267,9 @@ object Player {
     // };
     class idInventory {
         val ammo: IntArray = IntArray(AMMO_NUMTYPES)
-        val clip: IntArray = IntArray(MAX_WEAPONS)
+        val clip: IntArray = IntArray(MAX_WEAPONS())
         val pdasViewed: IntArray = IntArray(4) // 128 bit flags for indicating if a pda has been viewed
-        val powerupEndTime: IntArray = IntArray(MAX_POWERUPS)
+        val powerupEndTime: IntArray = IntArray(MAX_POWERUPS())
 
         // D3XP: ammo types that recharge automatically over time
         val rechargeAmmo: Array<RechargeAmmo_t> = Array(AMMO_NUMTYPES) { RechargeAmmo_t() }
@@ -334,12 +327,12 @@ object Player {
                 i++
             }
             i = 0
-            while (i < MAX_WEAPONS) {
+            while (i < MAX_WEAPONS()) {
                 savefile.WriteInt(clip[i])
                 i++
             }
             i = 0
-            while (i < MAX_POWERUPS) {
+            while (i < MAX_POWERUPS()) {
                 savefile.WriteInt(powerupEndTime[i])
                 i++
             }
@@ -443,12 +436,12 @@ object Player {
                 i++
             }
             i = 0
-            while (i < MAX_WEAPONS) {
+            while (i < MAX_WEAPONS()) {
                 clip[i] = savefile.ReadInt()
                 i++
             }
             i = 0
-            while (i < MAX_POWERUPS) {
+            while (i < MAX_POWERUPS()) {
                 powerupEndTime[i] = savefile.ReadInt()
                 i++
             }
@@ -626,7 +619,7 @@ object Player {
         fun ClearPowerUps() {
             var i: Int
             i = 0
-            while (i < MAX_POWERUPS) {
+            while (i < MAX_POWERUPS()) {
                 powerupEndTime[i] = 0
                 i++
             }
@@ -932,13 +925,13 @@ object Player {
 
                     // find the number of the matching weapon name
                     i = 0
-                    while (i < MAX_WEAPONS) {
+                    while (i < MAX_WEAPONS()) {
                         if (weaponName == spawnArgs.GetString(Str.va("def_weapon%d", i))) {
                             break
                         }
                         i++
                     }
-                    if (i >= MAX_WEAPONS) {
+                    if (i >= MAX_WEAPONS()) {
                         idGameLocal.Error("Unknown weapon '%s'", weaponName)
                     }
 
@@ -995,7 +988,7 @@ object Player {
             assert(weapon_index != -1 || weapon_classname[0] != null)
             if (weapon_index == -1) {
                 weapon_index = 0
-                while (weapon_index < MAX_WEAPONS) {
+                while (weapon_index < MAX_WEAPONS()) {
                     if (idStr.Icmp(
                             weapon_classname[0], spawnArgs.GetString(Str.va("def_weapon%d", weapon_index))
                         ) == 0
@@ -1004,7 +997,7 @@ object Player {
                     }
                     weapon_index++
                 }
-                if (weapon_index >= MAX_WEAPONS) {
+                if (weapon_index >= MAX_WEAPONS()) {
                     idGameLocal.Error("Unknown weapon '%s'", weapon_classname[0])
                 }
             } else if (null == weapon_classname[0]) {
@@ -1059,7 +1052,7 @@ object Player {
             var i: Int
             var weapon_classname: String
             i = 0
-            while (i < MAX_WEAPONS) {
+            while (i < MAX_WEAPONS()) {
                 weapon_classname = spawnArgs.GetString(Str.va("def_weapon%d", i))
                 if (null == weapon_classname) {
                     i++
@@ -2969,7 +2962,7 @@ object Player {
                 currentWeapon = -1
             }
             w = 0
-            while (w < MAX_WEAPONS) {
+            while (w < MAX_WEAPONS()) {
                 weap = spawnArgs.GetString(Str.va("def_weapon%d", w))
                 if (weap != null && weap.isNotEmpty()) {
                     idWeapon.CacheWeapon(weap)
@@ -3296,7 +3289,7 @@ object Player {
                 return
             }
             w = 0
-            while (w < MAX_WEAPONS) {
+            while (w < MAX_WEAPONS()) {
                 if ((inventory.weapons and (1 shl w)) != 0) {
                     weap = spawnArgs.GetString(Str.va("def_weapon%d", w))
                     if ("" != weap) {
@@ -4649,7 +4642,7 @@ object Player {
         fun GivePowerUp(powerup: Int, time: Int): Boolean {
             val sound = arrayOfNulls<String>(1)
             val skin = arrayOfNulls<String>(1)
-            if (powerup >= 0 && powerup < MAX_POWERUPS) {
+            if (powerup >= 0 && powerup < MAX_POWERUPS()) {
                 if (gameLocal.isServer) {
                     val msg = idBitMsg()
                     val msgBuf = ByteBuffer.allocate(Game_local.MAX_EVENT_PARAM_SIZE)
@@ -4796,7 +4789,7 @@ object Player {
         fun ClearPowerUps() {
             var i: Int
             i = 0
-            while (i < MAX_POWERUPS) {
+            while (i < MAX_POWERUPS()) {
                 if (PowerUpActive(i)) {
                     ClearPowerup(i)
                 }
@@ -4857,7 +4850,7 @@ object Player {
         fun SlotForWeapon(weaponName: String): Int {
             var i: Int
             i = 0
-            while (i < MAX_WEAPONS) {
+            while (i < MAX_WEAPONS()) {
                 val weap = spawnArgs.GetString(Str.va("def_weapon%d", i))
                 if (0 == idStr.Cmp(weap, weaponName)) {
                     return i
@@ -4901,7 +4894,7 @@ object Player {
             w = idealWeapon
             while (true) {
                 w++
-                if (w >= MAX_WEAPONS) {
+                if (w >= MAX_WEAPONS()) {
                     w = 0
                 }
                 weap = spawnArgs.GetString(Str.va("def_weapon%d", w))
@@ -4932,7 +4925,7 @@ object Player {
 
         fun NextBestWeapon() {
             var weap: String
-            var w = MAX_WEAPONS
+            var w = MAX_WEAPONS()
             if (gameLocal.isClient || !weaponEnabled) {
                 return
             }
@@ -4981,7 +4974,7 @@ object Player {
             while (true) {
                 w--
                 if (w < 0) {
-                    w = MAX_WEAPONS - 1
+                    w = MAX_WEAPONS() - 1
                 }
                 weap = spawnArgs.GetString(Str.va("def_weapon%d", w))
                 if (!spawnArgs.GetBool(Str.va("weapon%d_cycle", w))) {
@@ -5015,7 +5008,7 @@ object Player {
             if (!weaponEnabled || spectating || gameLocal.inCinematic || health < 0) {
                 return
             }
-            if (num < 0 || num >= MAX_WEAPONS) {
+            if (num < 0 || num >= MAX_WEAPONS()) {
                 return
             }
             if (gameLocal.isClient) {
@@ -5790,7 +5783,7 @@ object Player {
                     j++
                 }
                 j = 0
-                while (j < MAX_WEAPONS) {
+                while (j < MAX_WEAPONS()) {
                     val weapnum = Str.va("def_weapon%d", j)
                     val hudWeap = Str.va("weapon%d", j)
                     var weapstate = 0
@@ -6018,7 +6011,7 @@ object Player {
             if (null == hud) {
                 return
             }
-            for (i in 0 until MAX_WEAPONS) {
+            for (i in 0 until MAX_WEAPONS()) {
                 val weapnum = Str.va("def_weapon%d", i)
                 val hudWeap = Str.va("weapon%d", i)
                 var weapstate = 0
@@ -6363,8 +6356,8 @@ object Player {
             )
             msg.WriteDir(lastDamageDir, 9)
             msg.WriteShort(lastDamageLocation)
-            msg.WriteBits(idealWeapon, idMath.BitsForInteger(MAX_WEAPONS))
-            msg.WriteBits(inventory.weapons, MAX_WEAPONS)
+            msg.WriteBits(idealWeapon, idMath.BitsForInteger(MAX_WEAPONS()))
+            msg.WriteBits(inventory.weapons, MAX_WEAPONS())
             msg.WriteBits(weapon.GetSpawnId(), 32)
             msg.WriteBits(spectator, idMath.BitsForInteger(Game_local.MAX_CLIENTS))
             msg.WriteBits(TempDump.btoi(lastHitToggle), 1)
@@ -6397,8 +6390,8 @@ object Player {
             )
             lastDamageDir.set(msg.ReadDir(9))
             lastDamageLocation = msg.ReadShort()
-            newIdealWeapon = msg.ReadBits(idMath.BitsForInteger(MAX_WEAPONS))
-            inventory.weapons = msg.ReadBits(MAX_WEAPONS)
+            newIdealWeapon = msg.ReadBits(idMath.BitsForInteger(MAX_WEAPONS()))
+            inventory.weapons = msg.ReadBits(MAX_WEAPONS())
             weaponSpawnId = msg.ReadBits(32)
             spectator = msg.ReadBits(idMath.BitsForInteger(Game_local.MAX_CLIENTS))
             newHitToggle = msg.ReadBits(1) != 0
@@ -6515,7 +6508,7 @@ object Player {
                 i++
             }
             i = 0
-            while (i < MAX_WEAPONS) {
+            while (i < MAX_WEAPONS()) {
                 msg.WriteBits(inventory.clip[i], ASYNC_PLAYER_INV_CLIP_BITS)
                 i++
             }
@@ -6538,7 +6531,7 @@ object Player {
                 i++
             }
             i = 0
-            while (i < MAX_WEAPONS) {
+            while (i < MAX_WEAPONS()) {
                 inventory.clip[i] = msg.ReadBits(ASYNC_PLAYER_INV_CLIP_BITS)
                 i++
             }
@@ -6907,7 +6900,7 @@ object Player {
                     }
                     if (weapon.GetEntity()!!.IsHolstered()) {
                         assert(idealWeapon >= 0)
-                        assert(idealWeapon < MAX_WEAPONS)
+                        assert(idealWeapon < MAX_WEAPONS())
                         if (currentWeapon != weapon_pda && !spawnArgs.GetBool(
                                 Str.va(
                                     "weapon%d_toggle", currentWeapon
@@ -6952,7 +6945,7 @@ object Player {
             }
 
             // update our ammo clip in our inventory
-            if (currentWeapon >= 0 && currentWeapon < MAX_WEAPONS) {
+            if (currentWeapon >= 0 && currentWeapon < MAX_WEAPONS()) {
                 inventory.clip[currentWeapon] = weapon.GetEntity()!!.AmmoInClip()
                 if (hud != null && currentWeapon == idealWeapon) {
                     UpdateHudAmmo(hud!!)
@@ -7901,7 +7894,7 @@ object Player {
             var i: Int
             if (!gameLocal.isClient) {
                 i = 0
-                while (i < MAX_POWERUPS) {
+                while (i < MAX_POWERUPS()) {
                     if (isD3XP && (inventory.powerups and (1 shl i)) != 0 && inventory.powerupEndTime[i] > gameLocal.time) {
                         when (i) {
                             ENVIROSUIT -> {
@@ -8700,7 +8693,7 @@ object Player {
             }
             weaponNum = -1
             i = 0
-            while (i < MAX_WEAPONS) {
+            while (i < MAX_WEAPONS()) {
                 if ((inventory.weapons and (1 shl i)) != 0) {
                     val weap = spawnArgs.GetString(Str.va("def_weapon%d", i))
                     if (idStr.Cmp(weap, weaponName.value) == 0) {
@@ -8851,7 +8844,7 @@ object Player {
 
         // D3XP methods
         fun WeaponAvailable(name: String): Boolean {
-            for (i in 0 until MAX_WEAPONS) {
+            for (i in 0 until MAX_WEAPONS()) {
                 if (inventory.weapons and (1 shl i) != 0) {
                     val weap = spawnArgs.GetString(Str.va("def_weapon%d", i))
                     if (idStr.Cmp(weap, name) == 0) {

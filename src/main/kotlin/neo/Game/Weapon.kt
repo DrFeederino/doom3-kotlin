@@ -720,7 +720,7 @@ object Weapon {
         var grabberState: Int = -1
 
         // D3XP: grabber entity
-        var grabber: Grabber.idGrabber? = null
+        val grabber: Grabber.idGrabber = Grabber.idGrabber()
 
         // D3XP: smoke particle joint on view model
         var smokeJointView: Int = 0 /*jointHandle_t*/
@@ -750,7 +750,6 @@ object Weapon {
 
             // D3XP: Initialize the grabber
             if (isD3XP) {
-                grabber = Grabber.idGrabber()
                 grabber!!.Initialize()
             }
         }
@@ -1071,9 +1070,7 @@ object Weapon {
 
             // D3XP restore
             if (isD3XP) {
-                if (grabber != null) {
-                    savefile.ReadStaticObject(grabber!!)
-                }
+                savefile.ReadStaticObject(grabber)
                 grabberState = savefile.ReadInt()
                 smokeJointView = savefile.ReadJoint()
 

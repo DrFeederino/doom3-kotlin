@@ -564,7 +564,7 @@ object SysCmds {
                 }
             }
             if (give_all || idStr.Icmp(name, "weapons") == 0) {
-                player.inventory.weapons = -1 ushr (32 - Player.MAX_WEAPONS)
+                player.inventory.weapons = -1 ushr (32 - Player.MAX_WEAPONS())
                 player.CacheWeapons()
                 if (!give_all) {
                     return

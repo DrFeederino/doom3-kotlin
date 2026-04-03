@@ -1128,9 +1128,7 @@ class Game_local {
             // makingBuild
             // shakeSounds
             // Read out pending events
-            Printf("Calling idEvent::Restore\n")
             idEvent.Restore(savegame)
-            Printf("Calling RestoreObjects\n")
             savegame.RestoreObjects()
 
             mpGame.Reset()
