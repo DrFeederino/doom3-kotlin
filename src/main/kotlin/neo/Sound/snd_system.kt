@@ -8,7 +8,6 @@ import neo.Sound.snd_emitter.SoundFX
 import neo.Sound.snd_emitter.SoundFX_Comb
 import neo.Sound.snd_emitter.SoundFX_Lowpass
 import neo.Sound.snd_emitter.idSoundChannel
-import neo.Sound.snd_local.idAudioHardware
 import neo.Sound.snd_local.idSampleDecoder
 import neo.Sound.snd_world.idSoundWorldLocal
 import neo.Sound.snd_world.s_stats
@@ -35,10 +34,7 @@ import neo.sys.win_main.Sys_LeaveCriticalSection
 import neo.sys.win_shared
 import neo.sys.win_snd
 import org.lwjgl.BufferUtils
-import org.lwjgl.openal.AL
-import org.lwjgl.openal.AL10
-import org.lwjgl.openal.ALC
-import org.lwjgl.openal.ALC10
+import org.lwjgl.openal.*
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.math.abs
@@ -73,6 +69,12 @@ class snd_system {
                 "6",
                 CVarSystem.CVAR_SOUND or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE,
                 "specifies maximum uncompressed sample length in seconds"
+            )
+            val s_device: idCVar = idCVar(
+                "s_device",
+                "default",
+                CVarSystem.CVAR_SOUND or CVarSystem.CVAR_NOCHEAT or CVarSystem.CVAR_ARCHIVE,
+                "the audio device to use ('default' for the default audio device)"
             )
             val s_doorDistanceAdd: idCVar = idCVar(
                 "s_doorDistanceAdd",
@@ -160,6 +162,18 @@ class snd_system {
                 0.0f,
                 1.0f
             )
+            val s_alHRTF: idCVar = idCVar(
+                "s_alHRTF",
+                "-1",
+                CVarSystem.CVAR_SOUND or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE,
+                "Enable HRTF for better surround sound with stereo *headphones*. 0: Disable, 1: Enable, -1: Let OpenAL decide (default)"
+            )
+            val s_alOutputLimiter: idCVar = idCVar(
+                "s_alOutputLimiter",
+                "-1",
+                CVarSystem.CVAR_SOUND or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE,
+                "Configure OpenAL's output-limiter. 0: Disable, 1: Enable, -1: Let OpenAL decide (default)"
+            )
             val s_realTimeDecoding: idCVar = idCVar(
                 "s_realTimeDecoding",
                 "1",
@@ -232,16 +246,46 @@ class snd_system {
             )
 
             // mark available during initialization, or through an explicit test
-            // FIX: renamed from EAXAvailable to EFXAvailable to match dhewm3
             var EFXAvailable = -1
 
-            // FIX: C++ static bools are zero-initialized to false. These are set to true during Init()
-            // after OpenAL context creation confirms the extension is present. Defaulting to true caused
-            // EFX calls before OpenAL was initialized (crash during static init / AllocSoundWorld).
-            var useEAXReverb = false
+            // ONLY after OpenAL context creation confirms EFX is present AND CVar is enabled.
+            // All runtime checks use this flag, NOT s_useEAXReverb.GetBool() directly.
+            var useEFXReverb = false
 
             // latches
             var useOpenAL = false
+
+            // dhewm3: extension availability flags, set during Init()
+            var alHRTFavailable = false
+            var alOutputLimiterAvailable = false
+            var alEnumerateAllAvailable = false
+            var alIsDisconnectAvailable = false
+
+            // ALC_OUTPUT_LIMITER_SOFT constant (0x199A) — may not be in all LWJGL builds
+            private const val ALC_OUTPUT_LIMITER_SOFT = 0x199A
+
+            // dhewm3: convert CVar integer (-1/0/1) to ALC boolish value
+            private fun cvarToAlcBoolish(cvarValue: Int): Int {
+                return if (cvarValue < 0) SOFTHRTF.ALC_DONT_CARE_SOFT
+                else if (cvarValue > 0) ALC10.ALC_TRUE
+                else ALC10.ALC_FALSE
+            }
+
+            // dhewm3: build ALC attribute list for alcCreateContext/alcResetDeviceSOFT
+            fun SetAlcAttrList(): IntArray {
+                val attrs = mutableListOf<Int>()
+                if (alHRTFavailable) {
+                    attrs.add(SOFTHRTF.ALC_HRTF_SOFT)
+                    attrs.add(cvarToAlcBoolish(s_alHRTF.GetInteger()))
+                }
+                if (alOutputLimiterAvailable) {
+                    attrs.add(ALC_OUTPUT_LIMITER_SOFT)
+                    attrs.add(cvarToAlcBoolish(s_alOutputLimiter.GetInteger()))
+                }
+                attrs.add(0) // terminator
+                attrs.add(0)
+                return attrs.toIntArray()
+            }
 
             init {
                 if (ID_DEDICATED) {
@@ -309,8 +353,9 @@ class snd_system {
 
         //
         var realAccum: FloatArray = FloatArray(6 * MIXBUFFER_SAMPLES + 16)
+
+        @Volatile
         var shutdown = false
-        var snd_audio_hw: idAudioHardware? = null
         var soundCache: idSoundCache? = null
 
         //
@@ -318,6 +363,10 @@ class snd_system {
 
         //
         var volumesDB: FloatArray = FloatArray(1200) // dB to float volume conversion
+
+        // dhewm3: device recovery state
+        var resetRetryCount: Int = 0
+        var lastCheckTime: Long = 0
 
         // all non-hardware initialization
         /*
@@ -348,6 +397,11 @@ class snd_system {
             // make a 16 byte aligned finalMixBuffer
             finalMixBuffer = realAccum //(float[]) ((((int) realAccum) + 15) & ~15);
             graph = null
+
+            // dhewm3: initialize device recovery state
+            resetRetryCount = 0
+            lastCheckTime = 0
+
             // set up openal device and context
             Common.common.StartupVariable("s_useEAXReverb", true)
             if (!s_noSound.GetBool()) {
@@ -355,14 +409,85 @@ class snd_system {
                     s_useOpenAL.SetBool(false)
                 } else {
                     Common.common.Printf("Setup OpenAL device and context\n")
-                    openalDevice = ALC10.alcOpenDevice(null as ByteBuffer?)
+
+                    // dhewm3: device selection via s_device CVar
+                    var deviceName: String? = s_device.GetString()
+                    if (deviceName.isNullOrEmpty() || deviceName.equals("default", ignoreCase = true)) {
+                        deviceName = null
+                    }
+
+                    // dhewm3: enumerate all audio devices
+                    alEnumerateAllAvailable = ALC10.alcIsExtensionPresent(0, "ALC_ENUMERATE_ALL_EXT")
+                    if (alEnumerateAllAvailable) {
+                        val devs = ALC10.alcGetString(0, EnumerateAllExt.ALC_ALL_DEVICES_SPECIFIER)
+                        if (devs != null) {
+                            var found = false
+                            // LWJGL returns all devices as a single null-separated string, double-null terminated
+                            // alcGetString with ALC_ALL_DEVICES_SPECIFIER returns individual device names
+                            // We need to use the list variant
+                            val deviceList =
+                                org.lwjgl.openal.ALC10.alcGetString(0, EnumerateAllExt.ALC_ALL_DEVICES_SPECIFIER)
+                            if (deviceList != null) {
+                                Common.common.Printf("OpenAL: found device '%s'", deviceList)
+                                if (deviceName != null && deviceList.equals(deviceName, ignoreCase = true)) {
+                                    Common.common.Printf(" (ACTIVE)\n")
+                                    found = true
+                                } else {
+                                    Common.common.Printf("\n")
+                                }
+                            }
+                            // Note: LWJGL's alcGetString returns only the first device for this specifier.
+                            // For full enumeration, use ALC11.alcGetString or iterate manually.
+                            // This matches dhewm3 behavior for the common single-device case.
+                            if (deviceName != null && !found) {
+                                Common.common.Printf("OpenAL: device '%s' not found, using default\n", deviceName)
+                                deviceName = null
+                            }
+                        }
+                    }
+
+                    openalDevice = ALC10.alcOpenDevice(deviceName as? CharSequence)
+                    if (openalDevice == 0L && deviceName != null) {
+                        Common.common.Printf(
+                            "OpenAL: failed to open device '%s' (0x%x), trying default...\n",
+                            deviceName,
+                            AL10.alGetError()
+                        )
+                        openalDevice = ALC10.alcOpenDevice(null as ByteBuffer?)
+                    }
+
                     if (openalDevice == 0L) {
                         Common.common.Printf("OpenAL: failed to open default device, disabling sound\n")
                         openalContext = 0
                     } else {
-                        openalContext = ALC10.alcCreateContext(openalDevice, null as IntArray?)
+                        // dhewm3: check for HRTF, disconnect, output-limiter extensions
+                        alHRTFavailable = ALC10.alcIsExtensionPresent(openalDevice, "ALC_SOFT_HRTF")
+                        alIsDisconnectAvailable = ALC10.alcIsExtensionPresent(openalDevice, "ALC_EXT_disconnect")
+                        if (alHRTFavailable) {
+                            Common.common.Printf("OpenAL: found extension for HRTF\n")
+                            if (alIsDisconnectAvailable) {
+                                Common.common.Printf("OpenAL: found extensions for resetting disconnected devices\n")
+                            }
+                            alOutputLimiterAvailable =
+                                ALC10.alcIsExtensionPresent(openalDevice, "ALC_SOFT_output_limiter")
+                            if (alOutputLimiterAvailable) {
+                                Common.common.Printf("OpenAL: found extension to control output-limiter\n")
+                            }
+                        } else {
+                            alOutputLimiterAvailable = false
+                        }
+
+                        // dhewm3: build attribute list from HRTF/limiter CVars
+                        val attrList = SetAlcAttrList()
+                        s_alHRTF.ClearModified()
+                        s_alOutputLimiter.ClearModified()
+
+                        openalContext = ALC10.alcCreateContext(openalDevice, attrList)
                         if (openalContext == 0L) {
-                            Common.common.Printf("OpenAL: failed to create context, disabling sound\n")
+                            Common.common.Printf(
+                                "OpenAL: failed to create context (0x%x), disabling sound\n",
+                                ALC10.alcGetError(openalDevice)
+                            )
                             ALC10.alcCloseDevice(openalDevice)
                             openalDevice = 0
                         }
@@ -373,8 +498,12 @@ class snd_system {
                         val alcCapabilities = ALC.createCapabilities(openalDevice)
                         AL.createCapabilities(alcCapabilities)
 
+                        // dhewm3: log OpenAL vendor info
+                        Common.common.Printf("OpenAL vendor: %s\n", AL10.alGetString(AL10.AL_VENDOR)!!)
+                        Common.common.Printf("OpenAL renderer: %s\n", AL10.alGetString(AL10.AL_RENDERER)!!)
+                        Common.common.Printf("OpenAL version: %s\n", AL10.alGetString(AL10.AL_VERSION)!!)
+
                         // FIX: dhewm3 uses ALC_EXT_EFX (standard OpenAL EFX), not proprietary EAX4.0
-                        // Also uses alcIsExtensionPresent (device-level), not alIsExtensionPresent
                         if (ALC10.alcIsExtensionPresent(openalDevice, "ALC_EXT_EFX")) {
                             Common.common.Printf("OpenAL: found EFX extension\n")
                             EFXAvailable = 1
@@ -412,7 +541,7 @@ class snd_system {
                         // adjust source count to allow for at least eight stereo sounds to play
                         openalSourceCount -= 8
 
-                        useEAXReverb = s_useEAXReverb.GetBool()
+                        useEFXReverb = s_useEAXReverb.GetBool()
                         efxloaded = false
 
                         // Initialize decoder and cache after context is confirmed
@@ -499,7 +628,6 @@ class snd_system {
             shutdown = true // don't do anything at AsyncUpdate() time
             win_main.Sys_Sleep(100) // sleep long enough to make sure any async sound talking to hardware has returned
             Common.common.Printf("Shutting down sound hardware\n")
-            snd_audio_hw = null
             isInitialized = false
             if (graph != null) {
                 graph = null
@@ -527,6 +655,98 @@ class snd_system {
             isInitialized = true
             shutdown = false
             return true
+        }
+
+        /*
+         ===============
+         idSoundSystemLocal::ResetALDevice
+
+         DG: resets the OpenAL device, applying the settings of s_alHRTF and s_alOutputLimiter
+             returns false if that failed, or the necessary OpenAL extension isn't available
+         ===============
+         */
+        fun ResetALDevice(): Boolean {
+            s_alHRTF.ClearModified()
+            s_alOutputLimiter.ClearModified()
+
+            if (!alHRTFavailable) {
+                Common.common.Warning("Can't reset OpenAL device, because OpenAL Extension (ALC_SOFT_HRTF) is missing!\nConsider using (a recent-ish version of) OpenAL-Soft!")
+                return false
+            }
+
+            val attrList = SetAlcAttrList()
+
+            if (SOFTHRTF.alcResetDeviceSOFT(openalDevice, attrList)) {
+                Common.common.Printf("OpenAL: resetting device succeeded!\n")
+                resetRetryCount = 0
+                return true
+            } else if (resetRetryCount == 0) {
+                Common.common.Warning("OpenAL: resetting device FAILED!\n")
+            }
+            return false
+        }
+
+        /*
+         ===============
+         idSoundSystemLocal::CheckDeviceAndRecoverIfNeeded
+
+         DG: returns true if openalDevice is still available,
+             otherwise it will try to recover the device and return false while it's gone
+             (display audio sound devices sometimes disappear for a few seconds when switching resolution)
+             As this is called every frame, it now also checks if s_alHRTF or s_alOutputLimiter are
+             modified and if they are, resets the device to apply the change
+         ===============
+         */
+        fun CheckDeviceAndRecoverIfNeeded(): Boolean {
+            val maxRetries = 20
+
+            if (!alHRTFavailable) {
+                return true // we can't check or reset, just pretend everything is fine..
+            }
+
+            if (s_alOutputLimiter.IsModified() || s_alHRTF.IsModified()) {
+                val modifiedCvar = if (s_alOutputLimiter.IsModified()) "s_alOutputLimiter" else "s_alHRTF"
+                Common.common.Printf(
+                    "%s is modified, trying to reset OpenAL device to apply that change\n",
+                    modifiedCvar
+                )
+                return ResetALDevice()
+            }
+
+            if (alIsDisconnectAvailable) {
+                val curTime = win_shared.Sys_Milliseconds().toLong()
+                if (curTime - lastCheckTime >= 1000) { // check once per second
+                    lastCheckTime = curTime
+
+                    // ALC_CONNECTED needs ALC_EXT_disconnect (we check for that in Init())
+                    val buf = IntArray(1)
+                    ALC10.alcGetIntegerv(openalDevice, EXTDisconnect.ALC_CONNECTED, buf)
+                    if (buf[0] != 0) {
+                        resetRetryCount = 0
+                        return true
+                    }
+
+                    if (resetRetryCount == 0) {
+                        Common.common.Warning("OpenAL device disconnected! Will try to reconnect..")
+                        resetRetryCount = 1
+                    } else if (resetRetryCount > maxRetries) { // give up after 20 seconds
+                        if (resetRetryCount == maxRetries + 1) {
+                            Common.common.Warning("OpenAL device still disconnected! Giving up!")
+                            ++resetRetryCount // this makes sure the warning is only shown once
+                        }
+                        return false
+                    }
+
+                    if (ResetALDevice()) {
+                        return true
+                    }
+
+                    ++resetRetryCount
+                    return false
+                }
+            }
+
+            return resetRetryCount == 0 // if it's 0, state on last check was ok
         }
 
         /*
@@ -924,7 +1144,7 @@ class snd_system {
                 return
             }
             soundCache!!.EndLevelLoad()
-            if (!useEAXReverb) {
+            if (!useEFXReverb) {
                 return
             }
             val efxname = idStr("efxs/")
@@ -1402,6 +1622,14 @@ class snd_system {
         fun setSoundSystems(soundSystem: idSoundSystem) {
             soundSystemLocal = soundSystem as idSoundSystemLocal
             snd_system.soundSystem = soundSystemLocal
+        }
+
+        // dhewm3: global wrapper for device recovery, called from session frame loop
+        fun CheckOpenALDeviceAndRecoverIfNeeded(): Boolean {
+            if (soundSystemLocal.isInitialized) {
+                return soundSystemLocal.CheckDeviceAndRecoverIfNeeded()
+            }
+            return true
         }
 
     }

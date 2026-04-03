@@ -523,7 +523,9 @@ object snd_cache {
             i = 0
             while (i < listCache.Num()) {
                 val def = listCache[i]
-                def.Reload(force)
+                if (def != null) {
+                    def.Reload(force)
+                }
                 i++
             }
         }
@@ -541,7 +543,7 @@ object snd_cache {
         fun BeginLevelLoad() {
             insideLevelLoad = true
             for (i in 0 until listCache.Num()) {
-                val sample = listCache[i]
+                val sample = listCache[i] ?: continue
                 if (Common.com_purgeAll.GetBool()) {
                     sample.PurgeSoundSample()
                 }
@@ -567,7 +569,7 @@ object snd_cache {
             useCount = 0
             purgeCount = 0
             for (i in 0 until listCache.Num()) {
-                val sample = listCache[i]
+                val sample = listCache[i] ?: continue
                 if (sample.purged) {
                     continue
                 }

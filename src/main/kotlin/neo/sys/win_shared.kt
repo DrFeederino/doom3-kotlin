@@ -34,6 +34,38 @@ import java.time.Instant
 
 object win_shared {
     val sys_timeBase = Instant.now().toEpochMilli()
+    private val preciseTimeBase = System.nanoTime()
+
+    /*
+     ================
+     Sys_MillisecondsPrecise
+     High-precision millisecond timer using System.nanoTime().
+     Matches dhewm3's Sys_MillisecondsPrecise().
+     ================
+     */
+    fun Sys_MillisecondsPrecise(): Double {
+        return (System.nanoTime() - preciseTimeBase) / 1_000_000.0
+    }
+
+    /*
+     ================
+     Sys_SleepUntilPrecise
+     Sleep until Sys_MillisecondsPrecise() returns >= targetTimeMS.
+     Hybrid sleep+spin for sub-ms precision.
+     Matches dhewm3's Sys_SleepUntilPrecise().
+     ================
+     */
+    fun Sys_SleepUntilPrecise(targetTimeMS: Double) {
+        var msec = targetTimeMS - Sys_MillisecondsPrecise()
+        if (msec > 1.5) {
+            Thread.sleep((msec - 1.0).toLong().coerceAtLeast(0))
+            msec = targetTimeMS - Sys_MillisecondsPrecise()
+        }
+        while (msec > 0.0) {
+            Thread.yield()
+            msec = targetTimeMS - Sys_MillisecondsPrecise()
+        }
+    }
 
     /*
      ================

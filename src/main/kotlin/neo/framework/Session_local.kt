@@ -638,6 +638,9 @@ object Session_local {
                 snd_system.soundSystem.AsyncUpdate(win_shared.Sys_Milliseconds())
             }
 
+            // dhewm3: check if OpenAL device disconnected and try to recover
+            snd_system.CheckOpenALDeviceAndRecoverIfNeeded()
+
             // Editors that completely take over the game
             if (Common.com_editorActive && Common.com_editors and (Common.EDITOR_RADIANT or Common.EDITOR_GUI) != 0) {
                 return
@@ -735,8 +738,9 @@ object Session_local {
                     if (latchedTicNumber >= minTic) {
                         break
                     }
-                    // Force Async tick call
-                    Common.common.Async()
+                    // DG: com_ticNumber is now updated on the main thread via wall-clock time.
+                    // Async() no longer increments it (only does sound updates on the async thread).
+                    Common.Com_UpdateTicNumber()
                     win_main.Sys_Sleep(1)
                     //win_main.hTimer.isTerminated
                     //                    if (win_main.DEBUG) {

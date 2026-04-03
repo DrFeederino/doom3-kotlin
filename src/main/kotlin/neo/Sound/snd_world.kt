@@ -11,6 +11,7 @@ import neo.Sound.snd_emitter.idSoundFade
 import neo.Sound.snd_local.*
 import neo.Sound.snd_shader.idSoundShader
 import neo.Sound.snd_system.idSoundSystemLocal
+import neo.Sound.snd_system.idSoundSystemLocal.Companion.useEFXReverb
 import neo.Sound.sound.SCHANNEL_ANY
 import neo.Sound.sound.idSoundEmitter
 import neo.Sound.sound.idSoundWorld
@@ -76,7 +77,6 @@ class snd_world {
 
         //
         val listenerAxis: idMat3
-        var listenerEnvironmentID = 0
         val listenerPos // position in meters
                 : idVec3
         var listenerPrivateId = 0
@@ -936,13 +936,14 @@ class snd_world {
             i = 0
             while (i < emitters.Num()) {
                 if (emitters[i] != null) {
+                    emitters[i]!!.Clear() // C++ delete calls destructor -> Clear() -> ALStop() on all channels
                     emitters[i] = idSoundEmitterLocal()
                 }
                 i++
             }
 
             // FIX: Missing EFX cleanup from C++ Shutdown(). Deletes auxiliary effect slot and filters.
-            if (idSoundSystemLocal.useEAXReverb) {
+            if (useEFXReverb) {
                 if (EXTEfx.alIsAuxiliaryEffectSlot(listenerSlot)) {
                     EXTEfx.alAuxiliaryEffectSloti(listenerSlot, EXTEfx.AL_EFFECTSLOT_EFFECT, EXTEfx.AL_EFFECTSLOT_NULL)
                     EXTEfx.alDeleteAuxiliaryEffectSlots(listenerSlot)
@@ -974,10 +975,10 @@ class snd_world {
             listenerQU.Zero()
             listenerArea = 0
             listenerAreaName.set("Undefined")
-            listenerEnvironmentID = -2
 
             // FIX: Missing EFX initialization from C++ Init(). Creates auxiliary effect slot and lowpass filters.
-            if (idSoundSystemLocal.useEAXReverb) {
+            // Guard: skip if OpenAL context not yet created (happens when AllocSoundWorld is called during static init)
+            if (useEFXReverb && snd_system.soundSystemLocal.openalContext != 0L) {
                 if (!EXTEfx.alIsAuxiliaryEffectSlot(listenerSlot)) {
                     AL10.alGetError()
                     listenerSlot = EXTEfx.alGenAuxiliaryEffectSlots()
@@ -1488,7 +1489,7 @@ class snd_world {
                     )
 
                     // FIX: dhewm3 uses EFX source sends instead of proprietary EAX occlusion
-                    if (idSoundSystemLocal.useEAXReverb) {
+                    if (useEFXReverb) {
                         if (enviroSuitActive) {
                             AL10.alSourcei(chan.openalSource, EXTEfx.AL_DIRECT_FILTER, listenerFilters[0])
                             alSource3i(
@@ -1753,7 +1754,7 @@ class snd_world {
             AL10.alListenerfv(AL10.AL_ORIENTATION, listenerOrientation)
 
             // FIX: dhewm3 EFX reverb lookup replaces old commented-out EAX code
-            if (idSoundSystemLocal.useEAXReverb && snd_system.soundSystemLocal.efxloaded) {
+            if (useEFXReverb && snd_system.soundSystemLocal.efxloaded) {
                 val effectHandle = intArrayOf(0)
 
                 // allow reducing the gain effect globally via s_alReverbGain CVar

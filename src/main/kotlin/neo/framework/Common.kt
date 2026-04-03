@@ -44,10 +44,13 @@ import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.idStrList
 import neo.idlib.idException
 import neo.idlib.idLib
+import neo.idlib.math.idMath
 import neo.idlib.math.idSIMD
 import neo.idlib.math.idVec4
 import neo.sys.*
+import neo.sys.win_main.Sys_EnterCriticalSection
 import neo.sys.win_main.Sys_GenerateEvents
+import neo.sys.win_main.Sys_LeaveCriticalSection
 import neo.sys.win_main.Sys_Shutdown
 import neo.ui.UserInterface
 import java.io.IOException
@@ -209,6 +212,8 @@ class Common {
         private var com_errorEntered = 0 // 0, ERP_DROP, etc
         private var com_fullyInitialized = false
         private var com_refreshOnPrint = false // update the screen every print for dmap
+
+        @Volatile
         private var com_shuttingDown = false
         private val errorList: idStrList
         private val errorMessage: Array<String> = arrayOf("") //new char[MAX_PRINT_MSG_SIZE];
@@ -222,6 +227,12 @@ class Common {
         private var rd_flush /*)( const char *buffer )*/: void_callback<String>? = null
         private val warningCaption: idStr = idStr()
         private val warningList: idStrList = idStrList()
+
+        // AsyncThread state
+        private val asyncThread: xthreadInfo = xthreadInfo()
+
+        @Volatile
+        private var runAsyncThread: Boolean = false
 
         override fun Init(argc: Int, argv: Array<String>?, cmdline: String) {
             var argc = argc
@@ -316,12 +327,22 @@ class Common {
                 console.ClearNotifyLines()
                 ClearCommandLine()
                 com_fullyInitialized = true
+
+                // start the async sound update thread
+                runAsyncThread = true
+                win_main.Sys_CreateThread(::AsyncThreadFn, this, asyncThread, "AsyncThread")
             } catch (e: idException) {
                 win_main.Sys_Error("Error during initialization")
             }
         }
 
         override fun Shutdown() {
+            // stop the async thread before shutting down
+            if (asyncThread.threadHandle != null) {
+                runAsyncThread = false
+                win_main.Sys_DestroyThread(asyncThread)
+            }
+
             com_shuttingDown = true
             idAsyncNetwork.server.Kill()
             idAsyncNetwork.client.Shutdown()
@@ -396,6 +417,10 @@ class Common {
          */
         override fun Frame() {
             try {
+                // DG: update tic number here for ticNumAtStart
+                Com_UpdateTicNumber()
+                val ticNumAtStart = com_ticNumber
+
                 // pump all the events
                 Sys_GenerateEvents()
                 // write config file if anything changed
@@ -406,8 +431,9 @@ class Common {
                     InitSIMD()
                 }
                 EventLoop.eventLoop.RunEventLoop()
-                com_frameTime = com_ticNumber * UsercmdGen.USERCMD_MSEC
-                //                System.out.println(System.nanoTime()+"com_frameTime=>"+com_frameTime);
+
+                Com_UpdateFrameTime()
+
                 idAsyncNetwork.RunFrame()
                 if (idAsyncNetwork.IsActive()) {
                     if (idAsyncNetwork.serverDedicated.GetInteger() != 1) {
@@ -441,6 +467,11 @@ class Common {
 
                 // set idLib frame number for frame based memory dumps
                 idLib.frameNumber = com_frameNumber
+
+                // DG: sleep until next tic if we haven't advanced yet this frame
+                if (com_ticNumber == ticNumAtStart) {
+                    Com_WaitForNextTicStart()
+                }
             } catch (ex: idException) {
                 return  // an ERP_DROP was thrown
             }
@@ -450,7 +481,7 @@ class Common {
         override fun GUIFrame(execCmd: Boolean, network: Boolean) {
             Sys_GenerateEvents()
             EventLoop.eventLoop.RunEventLoop(execCmd) // and execute any commands
-            com_frameTime = com_ticNumber * UsercmdGen.USERCMD_MSEC
+            Com_UpdateFrameTime()
             if (network) {
                 idAsyncNetwork.RunFrame()
             }
@@ -479,37 +510,21 @@ class Common {
             if (com_shuttingDown) {
                 return
             }
+
+            // main thread code can prevent this from happening while modifying
+            // critical data structures
+            Sys_EnterCriticalSection()
+
             val msec = win_shared.Sys_Milliseconds()
-            if (0 == lastTicMsec) {
-                lastTicMsec = msec - UsercmdGen.USERCMD_MSEC
-            }
-            if (!com_preciseTic.GetBool()) {
-                // just run a single tic, even if the exact msec isn't precise
-                SingleAsyncTic()
-                return
-            }
-            var ticMsec = UsercmdGen.USERCMD_MSEC
 
-            // the number of msec per tic can be varies with the timescale cvar
-            val timescale = com_timescale.GetFloat()
-            if (timescale != 1.0f) {
-                ticMsec =
-                    (ticMsec / timescale).toInt() // FIX: C++ does float division then truncates, not toInt() first
-                if (ticMsec < 1) {
-                    ticMsec = 1
-                }
+            // DG: dhewm3 — async thread only handles sound updates.
+            // com_ticNumber is updated on the main thread by Com_UpdateTicNumber().
+            when (com_asyncSound.GetInteger()) {
+                1, 3 -> snd_system.soundSystem.AsyncUpdateWrite(msec)
+                2 -> snd_system.soundSystem.AsyncUpdate(msec)
             }
 
-            // don't skip too many
-            if (timescale == 1.0f) {
-                if (lastTicMsec + 10 * UsercmdGen.USERCMD_MSEC < msec) {
-                    lastTicMsec = msec - 10 * UsercmdGen.USERCMD_MSEC
-                }
-            }
-            while (lastTicMsec + ticMsec <= msec) {
-                SingleAsyncTic()
-                lastTicMsec += ticMsec
-            }
+            Sys_LeaveCriticalSection()
         }
 
         /*
@@ -1833,6 +1848,24 @@ class Common {
             }
         }
 
+        /*
+         =================
+         AsyncThreadFn
+         DG: dhewm3 async thread — calls Async() (sound-only) at 60Hz.
+         =================
+         */
+        private fun AsyncThreadFn(arg: Any?): Int {
+            val self = arg as idCommonLocal
+            var nextTicTargetMsec = win_shared.Sys_MillisecondsPrecise()
+
+            while (self.runAsyncThread) {
+                self.Async()
+                nextTicTargetMsec += com_preciseFrameLengthMS
+                win_shared.Sys_SleepUntilPrecise(nextTicTargetMsec)
+            }
+            return 0
+        }
+
         fun SingleAsyncTic() {
             // main thread code can prevent this from happening while modifying
             // critical data structures
@@ -3010,6 +3043,7 @@ class Common {
         const val ID_WRITE_VERSION = false
         const val MAX_PRINT_MSG_SIZE = 4096
         const val MAX_WARNING_LIST = 256
+        const val com_preciseFrameLengthMS: Double = 1000.0 / 60.0  // ~16.6667ms
         val version: version_s = version_s()
         val com_version: idCVar = idCVar(
             "si_version",
@@ -3029,6 +3063,72 @@ class Common {
 
         @Volatile
         var com_ticNumber = 0// 60 hz tics
+
+        // DG: dhewm3 precise timing state — file-level statics in C++
+        private var nextTicTime: Double = 0.0
+        private var com_preciseFrameTimeMS: Double = 0.0
+        private var lastTicNum_updateFrame: Int = 0
+
+        /*
+         ================
+         Com_UpdateTicNumber
+         DG: updates the tic number based on the (real) time expired since it has last been updated
+         ================
+         */
+        fun Com_UpdateTicNumber() {
+            val now = win_shared.Sys_MillisecondsPrecise()
+            val timeDiff = now - nextTicTime + 0.1 // 0.1 ms tolerance in case we're just a little early
+            if (timeDiff >= 0.0) {
+                if (nextTicTime == 0.0) {
+                    nextTicTime = now + com_preciseFrameLengthMS
+                    com_ticNumber = 1
+                } else {
+                    // usually numTics should be 1, except if timeDiff > 16.6667 (skipped a frame?)
+                    val numTics = (1 + timeDiff * 0.06).toInt()
+                    com_ticNumber += numTics
+
+                    // the number of msec per tic can be varied with the timescale cvar
+                    val timescale = com_timescale.GetFloat()
+                    if (timescale == 1.0f) {
+                        nextTicTime += numTics * com_preciseFrameLengthMS
+                    } else {
+                        nextTicTime += numTics * com_preciseFrameLengthMS / timescale
+                    }
+                }
+            }
+        }
+
+        /*
+         ================
+         Com_UpdateFrameTime
+         DG: updates com_frameTime based on the current tic number and com_preciseFrameLengthMS
+         ================
+         */
+        fun Com_UpdateFrameTime() {
+            Com_UpdateTicNumber()
+
+            val ticNum = com_ticNumber
+            val ticDiff = ticNum - lastTicNum_updateFrame
+
+            com_preciseFrameTimeMS += ticDiff * com_preciseFrameLengthMS
+            com_frameTime = idMath.Rint(com_preciseFrameTimeMS.toFloat()).toInt()
+
+            lastTicNum_updateFrame = ticNum
+        }
+
+        /*
+         ================
+         Com_WaitForNextTicStart
+         DG: waits until com_ticNumber should be increased and then calls Com_UpdateFrameTime()
+         ================
+         */
+        fun Com_WaitForNextTicStart() {
+            if (nextTicTime != 0.0) {
+                win_shared.Sys_SleepUntilPrecise(nextTicTime)
+            }
+            Com_UpdateFrameTime()
+        }
+
         var time_backend = 0 // renderSystem backend time
         var time_frontend = 0 // renderSystem frontend time
         var time_gameDraw = 0 // FIX: C++ uses int, not long

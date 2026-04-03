@@ -358,15 +358,21 @@ object snd_decoder {
             // decode OGG samples
             totalSamples = sampleCount
             readSamples = 0
+
+            val nChannels = sample.objectInfo.nChannels
+            val samples = PointerBuffer.allocateDirect(nChannels)
+            val channelBuffers = Array(nChannels) { BufferUtils.createFloatBuffer(MIXBUFFER_SAMPLES) }
+            for (i in 0 until nChannels) {
+                samples.put(i, channelBuffers[i])
+            }
+            val samplesArray = Array(nChannels) { FloatArray(MIXBUFFER_SAMPLES) }
+
             do {
                 // DG: in contrast to libvorbisfile's ov_read_float(), stb_vorbis_get_samples_float()
                 // expects you to pass a buffer to store the decoded samples in,
                 // so limit it to MIXBUFFER_SAMPLES samples/channel per iteration
-                val nChannels = sample.objectInfo.nChannels
-                // FIX: Use Min(MIXBUFFER_SAMPLES, ...) to bound allocation like C++ does
                 val reqSamples = Min(MIXBUFFER_SAMPLES, totalSamples / nChannels)
 
-                // FIX: Added reqSamples == 0 check from dhewm3 C++ to prevent infinite loop
                 // (can happen with stereo files and odd sample counts)
                 if (reqSamples == 0) {
                     Common.common.DPrintf(
@@ -378,13 +384,14 @@ object snd_decoder {
                     break
                 }
 
-                val samples = PointerBuffer.allocateDirect(nChannels)
+                // Reset buffer positions for this iteration
                 for (i in 0 until nChannels) {
-                    samples.put(i, BufferUtils.createFloatBuffer(reqSamples))
+                    channelBuffers[i].clear().limit(reqSamples)
+                    samples.put(i, channelBuffers[i])
                 }
+
                 var ret = STBVorbis.stb_vorbis_get_samples_float(ogg, samples, reqSamples)
                 if (ret == 0) {
-                    // FIX: Added error recovery logic from dhewm3 C++
                     // Accept up to 5 "dropped" samples if there's no actual error
                     val stbVorbErr = STBVorbis.stb_vorbis_get_error(ogg)
                     if (stbVorbErr == STBVorbis.VORBIS__no_error && reqSamples < 5) {
@@ -407,9 +414,9 @@ object snd_decoder {
                     return 0
                 }
                 ret *= nChannels
-                val samplesArray = Array(nChannels) { FloatArray(reqSamples) }
                 for (i in 0 until nChannels) {
-                    samples.getFloatBuffer(i, reqSamples)[samplesArray[i]]
+                    channelBuffers[i].rewind()
+                    channelBuffers[i].get(samplesArray[i], 0, reqSamples)
                 }
                 SIMDProcessor!!.UpSampleOGGTo44kHz(
                     dest,

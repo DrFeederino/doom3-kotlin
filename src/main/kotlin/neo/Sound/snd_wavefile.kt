@@ -17,6 +17,7 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.stb.STBVorbis
 import org.lwjgl.stb.STBVorbisInfo
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 object snd_wavefile {
     val fourcc_riff = mmioFOURCC('R'.code, 'I'.code, 'F'.code, 'F'.code)
@@ -435,7 +436,7 @@ object snd_wavefile {
             val bytesRead = shortsRead * 2
             if (pBuffer != null) {
                 shortBuf.flip()
-                val bb = ByteBuffer.allocate(bytesRead)
+                val bb = ByteBuffer.allocate(bytesRead).order(ByteOrder.nativeOrder())
                 bb.asShortBuffer().put(shortBuf)
                 bb.rewind()
                 bb.get(pBuffer, 0, bytesRead)

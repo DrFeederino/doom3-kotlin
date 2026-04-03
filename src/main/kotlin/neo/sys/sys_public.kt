@@ -80,11 +80,22 @@ const val CPU_EASYARGS = 1
 const val MAX_CRITICAL_SECTIONS = 5
 
 const val MAX_TRIGGER_EVENTS = 4
+const val MAX_THREADS = 10
 const val TRIGGER_EVENT_THREE = 3
 const val TRIGGER_EVENT_TWO = 2
 
 // enum {
 const val TRIGGER_EVENT_ZERO = 0
+
+// Thread function type — matches C++ xthread_t: int (*)(void*)
+typealias xthread_t = (Any?) -> Int
+
+// Thread info — matches C++ xthreadInfo struct
+class xthreadInfo {
+    var name: String? = null
+    var threadHandle: Thread? = null
+    var threadId: Long = 0
+}
 val udpPorts: Array<idUDPLag?> = arrayOfNulls(65536)
 var sys: idSys = sys_local.sysLocal
 

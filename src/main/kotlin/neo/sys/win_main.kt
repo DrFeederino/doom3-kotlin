@@ -37,7 +37,6 @@ import neo.framework.CmdSystem
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
 import neo.framework.ID_ALLOW_TOOLS
-import neo.framework.UsercmdGen.USERCMD_MSEC
 import neo.idlib.CmdArgs
 import neo.idlib.MAX_STRING_CHARS
 import neo.idlib.Text.Lexer.idLexer
@@ -58,38 +57,87 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.Paths
-import java.time.Instant
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.locks.Condition
+import java.util.concurrent.locks.ReentrantLock
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.system.exitProcess
 
 /*
-     *
-     *
-     *
-     *                    _
-     *                   (_)
-     *  _ __ ___    __ _  _  _ __
-     * | '_ ` _ \  / _` || || '_ \
-     * | | | | | || (_| || || | | |
-     * |_| |_| |_| \__,_||_||_| |_|
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     */
+ *
+ *
+ *
+ *                    _
+ *                   (_)
+ *  _ __ ___    __ _  _  _ __
+ * | '_ ` _ \  / _` || || '_ \
+ * | | | | | || (_| || || | | |
+ * |_| |_| |_| \__,_||_||_| |_|
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
+
+/*
+ ==================
+ SysThreading
+
+ Central threading state, mirrors C++ file-level statics in threads.cpp.
+ All mutex/condition state for the threading primitives.
+ ==================
+ */
+object SysThreading {
+    val mutex: Array<ReentrantLock> = Array(MAX_CRITICAL_SECTIONS) { ReentrantLock(true) }
+
+    // All conditions use mutex[CRITICAL_SECTION_SYS] — matches dhewm3 threads.cpp
+    val cond: Array<Condition> = Array(MAX_TRIGGER_EVENTS) { mutex[CRITICAL_SECTION_SYS].newCondition() }
+    val signaled: BooleanArray = BooleanArray(MAX_TRIGGER_EVENTS)
+    val waiting: BooleanArray = BooleanArray(MAX_TRIGGER_EVENTS)
+
+    val threads: Array<xthreadInfo?> = arrayOfNulls(MAX_THREADS)
+    var threadCount: Int = 0
+
+    @Volatile
+    var mainThreadId: Long = Thread.currentThread().id
+    var mainThreadIdSet: Boolean = false
+
+    fun init() {
+        mainThreadId = Thread.currentThread().id
+        mainThreadIdSet = true
+        for (i in 0 until MAX_TRIGGER_EVENTS) {
+            signaled[i] = false
+            waiting[i] = false
+        }
+        for (i in 0 until MAX_THREADS) threads[i] = null
+        threadCount = 0
+    }
+
+    fun shutdown() {
+        for (i in 0 until MAX_THREADS) {
+            if (threads[i] != null) {
+                Common.common.Printf("WARNING: Thread '%s' still running\n", threads[i]!!.name ?: "unknown")
+                threads[i] = null
+            }
+        }
+        for (i in 0 until MAX_TRIGGER_EVENTS) {
+            signaled[i] = false
+            waiting[i] = false
+        }
+        threadCount = 0
+    }
+}
 
 fun main(args: Array<String>) {
     win_main.main(args)
 }
 
 object win_main {
-    //TODO: rename to plain "main" or something.
     const val MAXPRINTMSG = 4096
     const val MAX_QUED_EVENTS = 256
     const val MASK_QUED_EVENTS = MAX_QUED_EVENTS - 1
@@ -124,10 +172,8 @@ object win_main {
      ==================
      */
     fun Sys_EnterCriticalSection(index: Int = CRITICAL_SECTION_ZERO) {
-        assert(index >= 0 && index < MAX_CRITICAL_SECTIONS)
-        //		Sys_DebugPrintf( "busy lock '%s' in thread '%s'\n", lock->name, Sys_GetThreadName() );
-        return
-        //win_local.win32.criticalSections[index].lock()
+        assert(index in 0 until MAX_CRITICAL_SECTIONS)
+        SysThreading.mutex[index].lock()
     }
 
     /*
@@ -137,10 +183,8 @@ object win_main {
      */
 
     fun Sys_LeaveCriticalSection(index: Int = CRITICAL_SECTION_ZERO) {
-        assert(index >= 0 && index < MAX_CRITICAL_SECTIONS)
-//        if (win_local.win32.criticalSections[index].isLocked) {
-//            win_local.win32.criticalSections[index].unlock()
-//        }
+        assert(index in 0 until MAX_CRITICAL_SECTIONS)
+        SysThreading.mutex[index].unlock()
     }
 
     /*
@@ -150,13 +194,21 @@ object win_main {
      */
 
     fun Sys_WaitForEvent(index: Int = TRIGGER_EVENT_ZERO) {
-        return
-        //	assert( index == 0 );
-//	if ( !win32.backgroundDownloadSemaphore ) {
-//		win32.backgroundDownloadSemaphore = CreateEvent( NULL, TRUE, FALSE, NULL );
-//	}
-//	WaitForSingleObject( win32.backgroundDownloadSemaphore, INFINITE );
-//	ResetEvent( win32.backgroundDownloadSemaphore );
+        assert(index in 0 until MAX_TRIGGER_EVENTS)
+
+        Sys_EnterCriticalSection(CRITICAL_SECTION_SYS)
+
+        assert(!SysThreading.waiting[index]) // WaitForEvent from multiple threads not supported
+        if (SysThreading.signaled[index]) {
+            // Signal already raised — clear and pass through (Win32 auto-reset semantics)
+            SysThreading.signaled[index] = false
+        } else {
+            SysThreading.waiting[index] = true
+            SysThreading.cond[index].await()
+            SysThreading.waiting[index] = false
+        }
+
+        Sys_LeaveCriticalSection(CRITICAL_SECTION_SYS)
     }
 
     /*
@@ -165,6 +217,126 @@ object win_main {
      ==================
      */
     fun Sys_TriggerEvent(index: Int = TRIGGER_EVENT_ZERO) {
+        assert(index in 0 until MAX_TRIGGER_EVENTS)
+
+        Sys_EnterCriticalSection(CRITICAL_SECTION_SYS)
+
+        if (SysThreading.waiting[index]) {
+            SysThreading.cond[index].signal()
+        } else {
+            // Latch the signal for the next wait
+            SysThreading.signaled[index] = true
+        }
+
+        Sys_LeaveCriticalSection(CRITICAL_SECTION_SYS)
+    }
+
+    /*
+     ==================
+     Sys_CreateThread
+     ==================
+     */
+    fun Sys_CreateThread(function: xthread_t, parms: Any?, info: xthreadInfo, name: String) {
+        Sys_EnterCriticalSection()
+
+        val thread = Thread({
+            function(parms)
+        }, name)
+        thread.isDaemon = true
+
+        info.name = name
+        info.threadHandle = thread
+        info.threadId = thread.id
+
+        if (SysThreading.threadCount < MAX_THREADS) {
+            SysThreading.threads[SysThreading.threadCount++] = info
+        } else {
+            Common.common.DPrintf("WARNING: MAX_THREADS reached\n")
+        }
+
+        thread.start()
+
+        Sys_LeaveCriticalSection()
+    }
+
+    /*
+     ==================
+     Sys_DestroyThread
+     ==================
+     */
+    fun Sys_DestroyThread(info: xthreadInfo) {
+        assert(info.threadHandle != null)
+
+        info.threadHandle!!.join()
+
+        info.name = null
+        info.threadHandle = null
+        info.threadId = 0
+
+        Sys_EnterCriticalSection()
+
+        for (i in 0 until SysThreading.threadCount) {
+            if (info === SysThreading.threads[i]) {
+                for (j in i + 1 until SysThreading.threadCount) {
+                    SysThreading.threads[j - 1] = SysThreading.threads[j]
+                }
+                SysThreading.threads[SysThreading.threadCount - 1] = null
+                SysThreading.threadCount--
+                break
+            }
+        }
+
+        Sys_LeaveCriticalSection()
+    }
+
+    /*
+     ==================
+     Sys_InitThreads
+     ==================
+     */
+    fun Sys_InitThreads() {
+        SysThreading.init()
+    }
+
+    /*
+     ==================
+     Sys_ShutdownThreads
+     ==================
+     */
+    fun Sys_ShutdownThreads() {
+        SysThreading.shutdown()
+    }
+
+    /*
+     ==================
+     Sys_IsMainThread
+     ==================
+     */
+    fun Sys_IsMainThread(): Boolean {
+        return if (SysThreading.mainThreadIdSet) {
+            Thread.currentThread().id == SysThreading.mainThreadId
+        } else {
+            true
+        }
+    }
+
+    /*
+     ==================
+     Sys_GetThreadName
+     ==================
+     */
+    fun Sys_GetThreadName(): String {
+        Sys_EnterCriticalSection()
+        val id = Thread.currentThread().id
+        for (i in 0 until SysThreading.threadCount) {
+            if (id == SysThreading.threads[i]?.threadId) {
+                val name = SysThreading.threads[i]?.name ?: "unknown"
+                Sys_LeaveCriticalSection()
+                return name
+            }
+        }
+        Sys_LeaveCriticalSection()
+        return "main"
     }
 
     /*
@@ -193,16 +365,6 @@ object win_main {
         debug_frame_alloc = 0
         debug_frame_alloc_count = 0
     }
-
-    /*
-     ==================
-     Sys_FlushCacheMemory
-
-     On windows, the vertex buffers are write combined, so they
-     don't need to be flushed from the cache
-     ==================
-     */
-    fun Sys_FlushCacheMemory(base: Any?, bytes: Int) {}
 
     /*
      =============
@@ -277,14 +439,7 @@ object win_main {
      ==============
      */
     fun Sys_Sleep(msec: Int) {
-        val start = Instant.now().toEpochMilli()
-        while (true) {
-            if (Instant.now().toEpochMilli() - start >= msec) {
-                return
-            }
-        }
-//        Thread.sleep(msec.toLong())
-        //LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(msec.toLong()))
+        Thread.sleep(msec.toLong())
     }
 
     /*
@@ -446,13 +601,6 @@ object win_main {
     }
 
     /*
-     =============
-     Sys_PumpEvents
-
-     This allows windows to be moved during renderbump
-     =============
-     */
-    /*
      =====================
      Sys_DLL_Load
      =====================
@@ -514,12 +662,6 @@ object win_main {
         }
         entered = true
 
-//        // pump the message loop
-//        Sys_PumpEvents();
-//
-        // make sure mouse and joystick are only called once a frame
-//        IN_Frame();//TODO:do we need this function?
-
         // check for console commands
         s = win_syscon.Sys_ConsoleInput()
         if (s != null) {
@@ -560,22 +702,8 @@ object win_main {
     }
 
     fun Sys_StartAsyncThread() {
-        // create an auto-reset event that happens 60 times a second
-        Common.common.Async()
-    }
-
-    /*
-     ================
-     Sys_AlreadyRunning
-
-     returns true if there is a copy of D3 running already
-     ================
-     */
-    fun Sys_AlreadyRunning(): Boolean {
-        if (true) {
-            return false
-        }
-        throw TODO_Exception()
+        // Async thread is now created by Common.Init() directly.
+        // This function exists for API compatibility.
     }
 
     /*
@@ -600,9 +728,7 @@ object win_main {
         // Windows version
         Win32Vars_t.sys_arch.SetString(System.getProperty("os.name"))
 
-        //
         // CPU type
-        //
         if (idStr.Icmp(Win32Vars_t.sys_cpustring.GetString()!!, "detect") == 0) {
             val string: idStr
             win_local.win32.cpuid = win_cpu.Sys_GetProcessorId()
@@ -670,6 +796,7 @@ object win_main {
      ================
      */
     fun Sys_Shutdown() {
+        Sys_ShutdownThreads()
     }
 
     /*
@@ -706,367 +833,6 @@ object win_main {
         }
     }
 
-    /*
-     ====================
-     TestChkStk
-     ====================
-     */
-    fun TestChkStk() {
-        throw TODO_Exception()
-    }
-
-    /*
-     ====================
-     HackChkStk
-     ====================
-     */
-    fun HackChkStk() {
-        throw TODO_Exception()
-    }
-
-    /*
-     ====================
-     GetExceptionCodeInfo
-     ====================
-     */
-    fun GetExceptionCodeInfo(   /*UINT*/code: Int): String {
-        throw TODO_Exception()
-        //	switch( code ) {
-//		case EXCEPTION_ACCESS_VIOLATION: return "The thread tried to read from or write to a virtual address for which it does not have the appropriate access.";
-//		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED: return "The thread tried to access an array element that is out of bounds and the underlying hardware supports bounds checking.";
-//		case EXCEPTION_BREAKPOINT: return "A breakpoint was encountered.";
-//		case EXCEPTION_DATATYPE_MISALIGNMENT: return "The thread tried to read or write data that is misaligned on hardware that does not provide alignment. For example, 16-bit values must be aligned on 2-byte boundaries; 32-bit values on 4-byte boundaries, and so on.";
-//		case EXCEPTION_FLT_DENORMAL_OPERAND: return "One of the operands in a floating-point operation is denormal. A denormal value is one that is too small to represent as a standard floating-point value.";
-//		case EXCEPTION_FLT_DIVIDE_BY_ZERO: return "The thread tried to divide a floating-point value by a floating-point divisor of zero.";
-//		case EXCEPTION_FLT_INEXACT_RESULT: return "The result of a floating-point operation cannot be represented exactly as a decimal fraction.";
-//		case EXCEPTION_FLT_INVALID_OPERATION: return "This exception represents any floating-point exception not included in this list.";
-//		case EXCEPTION_FLT_OVERFLOW: return "The exponent of a floating-point operation is greater than the magnitude allowed by the corresponding type.";
-//		case EXCEPTION_FLT_STACK_CHECK: return "The stack overflowed or underflowed as the result of a floating-point operation.";
-//		case EXCEPTION_FLT_UNDERFLOW: return "The exponent of a floating-point operation is less than the magnitude allowed by the corresponding type.";
-//		case EXCEPTION_ILLEGAL_INSTRUCTION: return "The thread tried to execute an invalid instruction.";
-//		case EXCEPTION_IN_PAGE_ERROR: return "The thread tried to access a page that was not present, and the system was unable to load the page. For example, this exception might occur if a network connection is lost while running a program over the network.";
-//		case EXCEPTION_INT_DIVIDE_BY_ZERO: return "The thread tried to divide an integer value by an integer divisor of zero.";
-//		case EXCEPTION_INT_OVERFLOW: return "The result of an integer operation caused a carry out of the most significant bit of the result.";
-//		case EXCEPTION_INVALID_DISPOSITION: return "An exception handler returned an invalid disposition to the exception dispatcher. Programmers using a high-level language such as C should never encounter this exception.";
-//		case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "The thread tried to continue execution after a noncontinuable exception occurred.";
-//		case EXCEPTION_PRIV_INSTRUCTION: return "The thread tried to execute an instruction whose operation is not allowed in the current machine mode.";
-//		case EXCEPTION_SINGLE_STEP: return "A trace trap or other single-instruction mechanism signaled that one instruction has been executed.";
-//		case EXCEPTION_STACK_OVERFLOW: return "The thread used up its stack.";
-//		default: return "Unknown exception";
-//	}
-    }
-
-    /*
-     ====================
-     EmailCrashReport
-
-     emailer originally from Raven/Quake 4
-     ====================
-     */
-    //public static void EmailCrashReport( LPSTR messageText ) {throw new TODO_Exception();
-    //	LPMAPISENDMAIL	MAPISendMail;
-    //	MapiMessage		message;
-    //	static int lastEmailTime = 0;
-    //
-    //	if ( Sys_Milliseconds() < lastEmailTime + 10000 ) {
-    //		return;
-    //	}
-    //
-    //	lastEmailTime = Sys_Milliseconds();
-    //
-    //	HINSTANCE mapi = LoadLibrary( "MAPI32.DLL" ); 
-    //	if( mapi ) {
-    //		MAPISendMail = ( LPMAPISENDMAIL )GetProcAddress( mapi, "MAPISendMail" );
-    //		if( MAPISendMail ) {
-    //			MapiRecipDesc toProgrammers =
-    //			{
-    //				0,										// ulReserved
-    //					MAPI_TO,							// ulRecipClass
-    //					"DOOM 3 Crash",						// lpszName
-    //					"SMTP:programmers@idsoftware.com",	// lpszAddress
-    //					0,									// ulEIDSize
-    //					0									// lpEntry
-    //			};
-    //
-    //			memset( &message, 0, sizeof( message ) );
-    //			message.lpszSubject = "DOOM 3 Fatal Error";
-    //			message.lpszNoteText = messageText;
-    //			message.nRecipCount = 1;
-    //			message.lpRecips = &toProgrammers;
-    //
-    //			MAPISendMail(
-    //				0,									// LHANDLE lhSession
-    //				0,									// ULONG ulUIParam
-    //				&message,							// lpMapiMessage lpMessage
-    //				MAPI_DIALOG,						// FLAGS flFlags
-    //				0									// ULONG ulReserved
-    //				);
-    //		}
-    //		FreeLibrary( mapi );
-    //	}
-    //}
-    /*
-     ====================
-     _except_handler
-     ====================
-     */
-    //public static EXCEPTION_DISPOSITION __cdecl _except_handler( struct _EXCEPTION_RECORD *ExceptionRecord, void * EstablisherFrame,
-    //												struct _CONTEXT *ContextRecord, void * DispatcherContext ) {throw new TODO_Exception();
-    //
-    //	static char msg[ 8192 ];
-    //	char FPUFlags[2048];
-    //
-    //	Sys_FPU_PrintStateFlags( FPUFlags, ContextRecord->FloatSave.ControlWord,
-    //										ContextRecord->FloatSave.StatusWord,
-    //										ContextRecord->FloatSave.TagWord,
-    //										ContextRecord->FloatSave.ErrorOffset,
-    //										ContextRecord->FloatSave.ErrorSelector,
-    //										ContextRecord->FloatSave.DataOffset,
-    //										ContextRecord->FloatSave.DataSelector );
-    //
-    //
-    //	sprintf( msg, 
-    //		"Please describe what you were doing when DOOM 3 crashed!\n"
-    //		"If this text did not pop into your email client please copy and email it to programmers@idsoftware.com\n"
-    //			"\n"
-    //			"-= FATAL EXCEPTION =-\n"
-    //			"\n"
-    //			"%s\n"
-    //			"\n"
-    //			"0x%x at address 0x%08x\n"
-    //			"\n"
-    //			"%s\n"
-    //			"\n"
-    //			"EAX = 0x%08x EBX = 0x%08x\n"
-    //			"ECX = 0x%08x EDX = 0x%08x\n"
-    //			"ESI = 0x%08x EDI = 0x%08x\n"
-    //			"EIP = 0x%08x ESP = 0x%08x\n"
-    //			"EBP = 0x%08x EFL = 0x%08x\n"
-    //			"\n"
-    //			"CS = 0x%04x\n"
-    //			"SS = 0x%04x\n"
-    //			"DS = 0x%04x\n"
-    //			"ES = 0x%04x\n"
-    //			"FS = 0x%04x\n"
-    //			"GS = 0x%04x\n"
-    //			"\n"
-    //			"%s\n",
-    //			com_version.GetString(),
-    //			ExceptionRecord->ExceptionCode,
-    //			ExceptionRecord->ExceptionAddress,
-    //			GetExceptionCodeInfo( ExceptionRecord->ExceptionCode ),
-    //			ContextRecord->Eax, ContextRecord->Ebx,
-    //			ContextRecord->Ecx, ContextRecord->Edx,
-    //			ContextRecord->Esi, ContextRecord->Edi,
-    //			ContextRecord->Eip, ContextRecord->Esp,
-    //			ContextRecord->Ebp, ContextRecord->EFlags,
-    //			ContextRecord->SegCs,
-    //			ContextRecord->SegSs,
-    //			ContextRecord->SegDs,
-    //			ContextRecord->SegEs,
-    //			ContextRecord->SegFs,
-    //			ContextRecord->SegGs,
-    //			FPUFlags
-    //		);
-    //
-    //	EmailCrashReport( msg );
-    //	common->FatalError( msg );
-    //
-    //    // Tell the OS to restart the faulting instruction
-    //    return ExceptionContinueExecution;
-    //}
-    /*
-     ==================
-     WinMain
-     ==================
-     */
-    //public static int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
-    //
-    //	const HCURSOR hcurSave = ::SetCursor( LoadCursor( 0, IDC_WAIT ) );
-    //
-    //	Sys_SetPhysicalWorkMemory( 192 << 20, 1024 << 20 );
-    //
-    //	Sys_GetCurrentMemoryStatus( exeLaunchMemoryStats );
-    //
-    //#if 0
-    //    DWORD handler = (DWORD)_except_handler;
-    //    __asm
-    //    {                           // Build EXCEPTION_REGISTRATION record:
-    //        push    handler         // Address of handler function
-    //        push    FS:[0]          // Address of previous handler
-    //        mov     FS:[0],ESP      // Install new EXECEPTION_REGISTRATION
-    //    }
-    //#endif
-    //
-    //	win32.hInstance = hInstance;
-    //	idStr::Copynz( sys_cmdline, lpCmdLine, sizeof( sys_cmdline ) );
-    //
-    //	// done before Com/Sys_Init since we need this for error output
-    //	Sys_CreateConsole();
-    //
-    //	// no abort/retry/fail errors
-    //	SetErrorMode( SEM_FAILCRITICALERRORS );
-    //
-    //	for ( int i = 0; i < MAX_CRITICAL_SECTIONS; i++ ) {
-    //		InitializeCriticalSection( &win32.criticalSections[i] );
-    //	}
-    //
-    //	// get the initial time base
-    //	Sys_Milliseconds();
-    //
-    //#ifdef DEBUG
-    //	// disable the painfully slow MS heap check every 1024 allocs
-    //	_CrtSetDbgFlag( 0 );
-    //#endif
-    //
-    ////	Sys_FPU_EnableExceptions( TEST_FPU_EXCEPTIONS );
-    //	Sys_FPU_SetPrecision( FPU_PRECISION_DOUBLE_EXTENDED );
-    //
-    //	common->Init( 0, NULL, lpCmdLine );
-    //
-    //#if TEST_FPU_EXCEPTIONS != 0
-    //	common->Printf( Sys_FPU_GetState() );
-    //#endif
-    //
-    //#ifndef	ID_DEDICATED
-    //	if ( win32.win_notaskkeys.GetInteger() ) {
-    //		DisableTaskKeys( TRUE, FALSE, /*( win32.win_notaskkeys.GetInteger() == 2 )*/ FALSE );
-    //	}
-    //#endif
-    //
-    //	Sys_StartAsyncThread();
-    //
-    //	// hide or show the early console as necessary
-    //	if ( win32.win_viewlog.GetInteger() || com_skipRenderer.GetBool() || idAsyncNetwork::serverDedicated.GetInteger() ) {
-    //		Sys_ShowConsole( 1, true );
-    //	} else {
-    //		Sys_ShowConsole( 0, false );
-    //	}
-    //
-    //#ifdef SET_THREAD_AFFINITY 
-    //	// give the main thread an affinity for the first cpu
-    //	SetThreadAffinityMask( GetCurrentThread(), 1 );
-    //#endif
-    //
-    //	::SetCursor( hcurSave );
-    //
-    //	// Launch the script debugger
-    //	if ( strstr( lpCmdLine, "+debugger" ) ) {
-    //		// DebuggerClientInit( lpCmdLine );
-    //		return 0;
-    //	}
-    //
-    //	::SetFocus( win32.hWnd );
-    //
-    //    // main game loop
-    //	while( 1 ) {
-    //
-    //		Win_Frame();
-    //
-    //#ifdef DEBUG
-    //		Sys_MemFrame();
-    //#endif
-    //
-    //		// set exceptions, even if some crappy syscall changes them!
-    //		Sys_FPU_EnableExceptions( TEST_FPU_EXCEPTIONS );
-    //
-    //#ifdef ID_ALLOW_TOOLS
-    //		if ( com_editors ) {
-    //			if ( com_editors & EDITOR_GUI ) {
-    //				// GUI editor
-    //				GUIEditorRun();
-    //			} else if ( com_editors & EDITOR_RADIANT ) {
-    //				// Level Editor
-    //				RadiantRun();
-    //			}
-    //			else if (com_editors & EDITOR_MATERIAL ) {
-    //				//BSM Nerve: Add support for the material editor
-    //				MaterialEditorRun();
-    //			}
-    //			else {
-    //				if ( com_editors & EDITOR_LIGHT ) {
-    //					// in-game Light Editor
-    //					LightEditorRun();
-    //				}
-    //				if ( com_editors & EDITOR_SOUND ) {
-    //					// in-game Sound Editor
-    //					SoundEditorRun();
-    //				}
-    //				if ( com_editors & EDITOR_DECL ) {
-    //					// in-game Declaration Browser
-    //					DeclBrowserRun();
-    //				}
-    //				if ( com_editors & EDITOR_AF ) {
-    //					// in-game Articulated Figure Editor
-    //					AFEditorRun();
-    //				}
-    //				if ( com_editors & EDITOR_PARTICLE ) {
-    //					// in-game Particle Editor
-    //					ParticleEditorRun();
-    //				}
-    //				if ( com_editors & EDITOR_SCRIPT ) {
-    //					// in-game Script Editor
-    //					ScriptEditorRun();
-    //				}
-    //				if ( com_editors & EDITOR_PDA ) {
-    //					// in-game PDA Editor
-    //					PDAEditorRun();
-    //				}
-    //			}
-    //		}
-    //#endif
-    //		// run the game
-    //		common->Frame();
-    //	}
-    //
-    //	// never gets here
-    //	return 0;
-    //}
-    fun  /*__declspec( naked )*/clrstk() {
-        throw TODO_Exception()
-        //	// eax = bytes to add to stack
-//	__asm {
-//		mov		[parmBytes],eax
-//        neg     eax                     ; compute new stack pointer in eax
-//        add     eax,esp
-//        add     eax,4
-//        xchg    eax,esp
-//        mov     eax,dword ptr [eax]		; copy the return address
-//        push    eax
-//
-//        ; clear to zero
-//        push	edi
-//        push	ecx
-//        mov		edi,esp
-//        add		edi,12
-//        mov		ecx,[parmBytes]
-//		shr		ecx,2
-//        xor		eax,eax
-//		cld
-//        rep	stosd
-//        pop		ecx
-//        pop		edi
-//
-//        ret
-//	}
-    }
-
-    /*
-     ==================
-     Sys_SetFatalError
-     ==================
-     */
-    fun Sys_SetFatalError(error: String) {}
-    fun Sys_SetFatalError(error: CharArray) {
-        Sys_SetFatalError(TempDump.ctos(error))
-    }
-
-    /*
-     ==================
-     Sys_DoPreferences
-     ==================
-     */
-    fun Sys_DoPreferences() {}
     fun remove(path: String): Boolean {
         return Paths.get(path).toFile().delete()
     }
@@ -1084,60 +850,19 @@ object win_main {
 
 
     fun main(lpCmdLine: Array<String>) { //cmd arguments need to be escaped and surrounded by quotes to preserve spacing.
-        // TODO: check if any of the disabled commands below can be salvaged for java.
-
-//	const HCURSOR hcurSave = ::SetCursor( LoadCursor( 0, IDC_WAIT ) );
-//
-//	Sys_SetPhysicalWorkMemory( 192 << 20, 1024 << 20 );
-//
-//	Sys_GetCurrentMemoryStatus( exeLaunchMemoryStats );
-//
-//#if 0
-//    DWORD handler = (DWORD)_except_handler;
-//    __asm
-//    {                           // Build EXCEPTION_REGISTRATION record:
-//        push    handler         // Address of handler function
-//        push    FS:[0]          // Address of previous handler
-//        mov     FS:[0],ESP      // Install new EXECEPTION_REGISTRATION
-//    }
-//#endif
-//
-//	win32.hInstance = hInstance;
         idStr.Copynz(sys_cmdline, *lpCmdLine)
 
         // done before Com/Sys_Init since we need this for error output
         win_syscon.Sys_CreateConsole()
 
-//        // no abort/retry/fail errors
-//        SetErrorMode(SEM_FAILCRITICALERRORS);
-//
-//        for (i in 0 until MAX_CRITICAL_SECTIONS) {
-////            InitializeCriticalSection( &win32.criticalSections[i] );
-//            win_local.win32.criticalSections[i] =
-//                ReentrantLock() //TODO: see if we can use synchronized blocks instead?
-//        }
         // get the initial time base
         win_shared.Sys_Milliseconds()
-        //
-//        if (DEBUG) {
-//            // disable the painfully slow MS heap check every 1024 allocs
-//            _CrtSetDbgFlag(0);
-//        }
-//
-//	Sys_FPU_EnableExceptions( TEST_FPU_EXCEPTIONS );
-//        Sys_FPU_SetPrecision(etoi(FPU_PRECISION_DOUBLE_EXTENDED));
+
+        // initialize threading primitives
+        Sys_InitThreads()
+
         Common.common.Init(0, null, sys_cmdline.toString())
-        //
-//        if (TEST_FPU_EXCEPTIONS != 0) {
-//            common.Printf(Sys_FPU_GetState());
-//        }
-//
-//        if (ID_DEDICATED) {
-//            if (win32.win_notaskkeys.GetInteger() != 0) {
-//                DisableTaskKeys(true, false, /*( win32.win_notaskkeys.GetInteger() == 2 )*/ false);
-//            }
-//        }
-//
+
         Sys_StartAsyncThread()
 
         // hide or show the early console as necessary
@@ -1148,32 +873,13 @@ object win_main {
         } else {
             win_syscon.Sys_ShowConsole(0, false)
         }
-        //
-//        if (SET_THREAD_AFFINITY) {
-//            // give the main thread an affinity for the first cpu
-//            SetThreadAffinityMask(GetCurrentThread(), 1);
-//        }
-//
-//	::SetCursor( hcurSave );
-//
-        // Launch the script debugger
-//        if ( strstr( lpCmdLine, "+debugger" ) ) {
-        // FIX: Was == 0 (only matches at start of string). C++ strstr() checks anywhere.
-        if (sys_cmdline.indexOf("+debugger") >= 0) {
-            // DebuggerClientInit( lpCmdLine );
-            win_syscon.Sys_ShowConsole(1, true)
-            return  //0;
-        }
-        //
-//	::SetFocus( win32.hWnd );
-//
-        // main game loop
-        var timer = Instant.now().toEpochMilli()
-        while (true) {
-            if (Instant.now().toEpochMilli() - timer >= USERCMD_MSEC) {
-                timer = Instant.now().toEpochMilli()
-            }
 
+        if (sys_cmdline.indexOf("+debugger") >= 0) {
+            win_syscon.Sys_ShowConsole(1, true)
+            return
+        }
+        // main game loop
+        while (true) {
             Win_Frame()
 
             if (ID_ALLOW_TOOLS) {
@@ -1222,9 +928,6 @@ object win_main {
             // run the game
             Common.common.Frame()
         }
-
-        // never gets here
-//	return 0;
     }
 
     /*
@@ -1245,43 +948,4 @@ object win_main {
             val INSTANCE: cmdFunction_t = Sys_In_Restart_f()
         }
     }
-
-    /*
-     ==================
-     Sys_AsyncThread
-     ==================
-     */
-//    internal class Sys_AsyncThread : xthread_t() {
-//        var startTime = 0
-//        var wakeNumber = 0
-//        override fun run() {
-//            println("Blaaaaaaaaaaaaaaaaaa!")
-//            //            startTime = Sys_Milliseconds();
-////            wakeNumber = 0;
-////
-////            while (true) {
-////#ifdef WIN32
-////		// this will trigger 60 times a second
-////		int r = WaitForSingleObject( hTimer, 100 );
-////		if ( r != WAIT_OBJECT_0 ) {
-////			OutputDebugString( "idPacketServer::PacketServerInterrupt: bad wait return" );
-////		}
-////#endif
-////
-////#if 0
-////		wakeNumber++;
-////		int		msec = Sys_Milliseconds();
-////		int		deltaTime = msec - startTime;
-////		startTime = msec;
-////
-////		char	str[1024];
-////		sprintf( str, "%i ", deltaTime );
-////		OutputDebugString( str );
-////#endif
-////
-////
-//            Common.common.Async()
-//            //            }
-//        }
-//    }
 }
