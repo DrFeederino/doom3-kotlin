@@ -622,26 +622,23 @@ object Physics_RigidBody {
             current = next
 
             if (collided) {
-                // DEBUG: Log BEFORE CollisionImpulse (matches C++ diagnostic placement)
-                if (RB_DEBUG_REST) {
-                    val linVel = current.i.linearMomentum.times(inverseMass)
-                    val linSpeed = linVel.Length()
-                    if (linSpeed > STOP_SPEED * 2.0f) {
-                        Game_local.gameLocal.Printf(
-                            "RB_DEBUG [%s] collided=true frac=%.4f linSpeed=%.2f angMom=%.2f pos=(%.1f,%.1f,%.1f)\n",
-                            self!!.name,
-                            collision.fraction,
-                            linSpeed,
-                            current.i.angularMomentum.Length(),
-                            current.i.position.x,
-                            current.i.position.y,
-                            current.i.position.z
-                        )
-                    }
-                }
                 // apply collision impulse
                 if (CollisionImpulse(collision, impulse)) {
                     current.atRest = Game_local.gameLocal.time
+                }
+                // Diagnostic: log when collision response produces significant velocity
+                if (SysCvar.g_debugPhysics.GetBool()) {
+                    val postSpeed = current.i.linearMomentum.times(inverseMass).Length()
+                    if (postSpeed > STOP_SPEED * 3.0f) {
+                        val vel = current.i.linearMomentum.times(inverseMass)
+                        Game_local.gameLocal.Printf(
+                            "RB COLLISION '%s' frac=%.4f vel=(%.1f,%.1f,%.1f) speed=%.1f impulse=(%.1f,%.1f,%.1f) hitEnt=%d\n",
+                            self!!.name, collision.fraction,
+                            vel.x, vel.y, vel.z, postSpeed,
+                            impulse.x, impulse.y, impulse.z,
+                            collision.c.entityNum
+                        )
+                    }
                 }
             }
 
@@ -775,6 +772,16 @@ object Physics_RigidBody {
             if (noImpact) {
                 return
             }
+            if (SysCvar.g_debugPhysics.GetBool() && current.atRest >= 0) {
+                Game_local.gameLocal.Printf(
+                    "RB IMPULSE waking '%s' impulse=(%.1f,%.1f,%.1f) mag=%.1f at pos=(%.1f,%.1f,%.1f)\n",
+                    self?.name ?: "?", impulse.x, impulse.y, impulse.z, impulse.Length(),
+                    current.i.position.x, current.i.position.y, current.i.position.z
+                )
+                Thread.currentThread().stackTrace.take(8).drop(1).forEach {
+                    Game_local.gameLocal.Printf("  at %s.%s(%s:%d)\n", it.className, it.methodName, it.fileName, it.lineNumber)
+                }
+            }
             current.i.linearMomentum.plusAssign(impulse)
             current.i.angularMomentum.plusAssign(
                 point.minus(current.i.position.plus(centerOfMass.times(current.i.orientation))).Cross(impulse)
@@ -790,6 +797,12 @@ object Physics_RigidBody {
         override fun AddForce(id: Int, point: idVec3, force: idVec3) {
             if (noImpact) {
                 return
+            }
+            if (SysCvar.g_debugPhysics.GetBool() && current.atRest >= 0 && force.LengthSqr() > 1.0f) {
+                Game_local.gameLocal.Printf(
+                    "RB FORCE waking '%s' force=(%.1f,%.1f,%.1f) mag=%.1f\n",
+                    self?.name ?: "?", force.x, force.y, force.z, force.Length()
+                )
             }
             current.externalForce.plusAssign(force)
             current.externalTorque.plusAssign(
@@ -1538,25 +1551,13 @@ object Physics_RigidBody {
             // velocity in normal direction
             vel = velocity.times(collision.c.normal)
 
-            // if no movement at all don't blow up — must execute before the
-            // separating-contact guard below, otherwise stuck objects (frac ≈ 0)
-            // with vel >= 0 never get their momentum damped.
-            if (collision.fraction < 0.0001f) {
-                current.i.linearMomentum.timesAssign(0.5f)
-                current.i.angularMomentum.timesAssign(0.5f)
-            }
-
-            // If the contact point is already separating from the surface (vel >= 0),
-            // no collision impulse is needed. In C++, this case is rare because objects
-            // with zero/low angular momentum take Motion()'s pure translation path, which
-            // doesn't report collisions for separating objects. In Kotlin, the combined
-            // translation+rotation path can report rotational collisions even when the
-            // object is translating away. Without this guard, the STOP_SPEED impulse
-            // (applied when vel > -STOP_SPEED) injects energy every frame, creating a
-            // feedback loop that causes objects to fly.
-            if (vel >= 0.0f) {
-                impulse.Zero()
-                return self!!.Collide(collision, velocity)
+            // Diagnostic: detect spurious collisions on separating contacts
+            if (SysCvar.g_debugPhysics.GetBool() && vel >= 0.0f) {
+                Game_local.gameLocal.Printf(
+                    "RB SEPARATING COLLISION '%s' vel=%.2f frac=%.4f normal=(%.2f,%.2f,%.2f)\n",
+                    self?.name ?: "?", vel, collision.fraction,
+                    collision.c.normal.x, collision.c.normal.y, collision.c.normal.z
+                )
             }
 
             impulseNumerator = if (vel > -STOP_SPEED) {
@@ -1576,18 +1577,10 @@ object Physics_RigidBody {
             current.i.linearMomentum.plusAssign(impulse)
             current.i.angularMomentum.plusAssign(r.Cross(impulse))
 
-            // DIAGNOSTIC: Log collision impulse details
-            if (RB_DEBUG_REST) {
-                val postLinSpeed = current.i.linearMomentum.times(inverseMass).Length()
-                if (postLinSpeed > STOP_SPEED * 2.0f) {
-                    Game_local.gameLocal.Printf(
-                        "  IMPULSE [%s]: vel=%.2f frac=%.6f impNum=%.2f impDen=%.4f impMag=%.2f postLinSpd=%.2f postAngMom=%.2f\n",
-                        self!!.name, vel, collision.fraction,
-                        impulseNumerator, impulseDenominator,
-                        impulse.Length(), postLinSpeed,
-                        current.i.angularMomentum.Length()
-                    )
-                }
+            // if no movement at all don't blow up
+            if (collision.fraction < 0.0001f) {
+                current.i.linearMomentum.timesAssign(0.5f)
+                current.i.angularMomentum.timesAssign(0.5f)
             }
 
             // callback to self to let the entity know about the collision

@@ -1231,7 +1231,7 @@ object AsyncServer {
                 return
             }
             index = gameFrame and AsyncNetwork.MAX_USERCMD_BACKUP - 1
-            userCmds[index][localClientNum] = UsercmdGen.usercmdGen.GetDirectUsercmd()
+            userCmds[index][localClientNum].set(UsercmdGen.usercmdGen.GetDirectUsercmd())
             userCmds[index][localClientNum].gameFrame = gameFrame
             userCmds[index][localClientNum].gameTime = gameTime
             if (idAsyncNetwork.UsercmdInputChanged(

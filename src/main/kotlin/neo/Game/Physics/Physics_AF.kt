@@ -3106,7 +3106,7 @@ object Physics_AF {
             assert(b1 != null)
             body1 = b1
             body2 = b2
-            contact = c
+            contact = contactInfo_t(c)
             p.set(c.point.minus(body1!!.GetWorldOrigin()))
             v.SubVec3_oSet(0, c.normal)
             v.SubVec3_oSet(1, p.Cross(c.normal))

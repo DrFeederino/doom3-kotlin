@@ -1574,7 +1574,9 @@ class Game_local {
                 gameRenderWorld!!.DebugClearLines(time + 1)
 
                 // set the user commands for this frame
-                System.arraycopy(clientCmds, 0, usercmds, 0, numClients)
+                for (i in 0 until numClients) {
+                    usercmds[i].set(clientCmds[i])
+                }
                 player?.Think()
             } else {
                 do {
@@ -1615,7 +1617,9 @@ class Game_local {
 
                     // set the user commands for this frame
 //                    memcpy(usercmds, clientCmds, numClients * sizeof(usercmds[ 0]));
-                    System.arraycopy(clientCmds, 0, usercmds, 0, numClients)
+                    for (i in 0 until numClients) {
+                        usercmds[i].set(clientCmds[i])
+                    }
 
                     // free old smoke particles
                     smokeParticles!!.FreeSmokes()
@@ -2833,8 +2837,9 @@ class Game_local {
             }
 
             // set the user commands for this frame
-//            memcpy(usercmds, clientCmds, numClients * sizeof(usercmds[ 0]));
-            System.arraycopy(clientCmds, 0, usercmds, 0, numClients)
+            for (i in 0 until numClients) {
+                usercmds[i].set(clientCmds[i])
+            }
 
             // run prediction on all entities from the last snapshot
             ent = snapshotEntities.Next()

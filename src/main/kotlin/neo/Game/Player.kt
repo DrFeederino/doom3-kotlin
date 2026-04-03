@@ -1529,8 +1529,6 @@ object Player {
         var useInitialSpawns // toggled by a map restart to be active for the first game spawn
                 : Boolean
 
-        // };
-        //
         var usercmd: usercmd_t
         val viewAngles // player view angles
                 : idAngles = idAngles()
@@ -1948,8 +1946,8 @@ object Player {
             oldButtons = usercmd.buttons.toInt()
 
             // grab out usercmd
-            val oldCmd = usercmd
-            usercmd = gameLocal.usercmds[entityNumber]
+            val oldCmd = usercmd_t().also { it.set(usercmd) }
+            usercmd.set(gameLocal.usercmds[entityNumber])
             buttonMask = buttonMask and usercmd.buttons.toInt()
             usercmd.buttons = usercmd.buttons and buttonMask.inv().toByte()
             if (gameLocal.inCinematic && gameLocal.skipCinematic) {
@@ -6198,7 +6196,7 @@ object Player {
             val headRenderEnt: renderEntity_s?
             oldFlags = usercmd.flags.toInt()
             oldButtons = usercmd.buttons.toInt()
-            usercmd = gameLocal.usercmds[entityNumber]
+            usercmd.set(gameLocal.usercmds[entityNumber])
             if (entityNumber != gameLocal.localClientNum) {
                 // ignore attack button of other clients. that's no good for predictions
                 usercmd.buttons = usercmd.buttons and UsercmdGen.BUTTON_ATTACK.inv().toByte()

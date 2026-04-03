@@ -305,7 +305,7 @@ object Push {
             }
 
             // get bounds for the whole movement
-            bounds = clipModel.GetBounds()
+            bounds = idBounds(clipModel.GetBounds())
             if (bounds[0].x >= bounds[1].x) {
                 return totalMass
             }
@@ -363,7 +363,7 @@ object Push {
             clipModel.Enable()
 
             // save pusher old position
-            oldAxis = clipModel.GetAxis()
+            oldAxis = idMat3(clipModel.GetAxis())
 
             // try to push all the entities
             i = 0

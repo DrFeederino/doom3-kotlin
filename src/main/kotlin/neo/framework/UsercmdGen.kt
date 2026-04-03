@@ -355,6 +355,22 @@ object UsercmdGen {
 
         constructor()
 
+        fun set(other: usercmd_t) {
+            gameFrame = other.gameFrame
+            gameTime = other.gameTime
+            duplicateCount = other.duplicateCount
+            buttons = other.buttons
+            forwardmove = other.forwardmove
+            rightmove = other.rightmove
+            upmove = other.upmove
+            System.arraycopy(other.angles, 0, angles, 0, 3)
+            mx = other.mx
+            my = other.my
+            impulse = other.impulse
+            flags = other.flags
+            sequence = other.sequence
+        }
+
         fun ByteSwap() {            // on big endian systems, byte swap the shorts and ints
             angles[0] = LittleShort(angles[0])
             angles[1] = LittleShort(angles[1])
@@ -684,7 +700,7 @@ object UsercmdGen {
 
             // save a number for debugging cmdDemos and networking
             cmd.sequence = Common.com_ticNumber + 1
-            buffered[Common.com_ticNumber + 1 and MAX_BUFFERED_USERCMD - 1] = cmd
+            buffered[Common.com_ticNumber + 1 and MAX_BUFFERED_USERCMD - 1].set(cmd)
         }
 
         /*

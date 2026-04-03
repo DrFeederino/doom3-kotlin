@@ -315,7 +315,7 @@ object Physics_Player {
          ================
          */
         fun SetPlayerInput(cmd: usercmd_t, newViewAngles: idAngles) {
-            command = cmd
+            command.set(cmd)
             viewAngles.set(newViewAngles) // can't use cmd.angles cause of the delta_angles
         }
 
@@ -2105,6 +2105,13 @@ object Physics_Player {
             }
 
             // move the player velocity into the frame of a pusher
+            if (SysCvar.g_debugPhysics.GetBool() && current.pushVelocity.LengthSqr() > 1.0f) {
+                Game_local.gameLocal.Printf(
+                    "PLAYER pushVelocity=(%.1f,%.1f,%.1f) mag=%.1f\n",
+                    current.pushVelocity.x, current.pushVelocity.y, current.pushVelocity.z,
+                    current.pushVelocity.Length()
+                )
+            }
             current.velocity.minusAssign(current.pushVelocity)
 
             // view vectors

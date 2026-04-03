@@ -1978,7 +1978,7 @@ object Session_local {
                 mapSpawnData.syncedCVars.Clear()
                 mapSpawnData.syncedCVars.set(cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_NETWORKSYNC))
 
-                mapSpawnData.mapSpawnUsercmd[0] = UsercmdGen.usercmdGen.TicCmd(latchedTicNumber)
+                mapSpawnData.mapSpawnUsercmd[0].set(UsercmdGen.usercmdGen.TicCmd(latchedTicNumber))
                 // make sure no buttons are pressed
                 mapSpawnData.mapSpawnUsercmd[0].buttons = 0
 
@@ -2314,7 +2314,8 @@ object Session_local {
             )
             RenderSystem.renderSystem.SetColor4(0.9f, 0.9f, 0.9f, 1.0f)
             for (i in 0 until UsercmdGen.MAX_BUFFERED_USERCMD - 4) {
-                val cmd = UsercmdGen.usercmdGen.TicCmd(latchedTicNumber - (UsercmdGen.MAX_BUFFERED_USERCMD - 4) + i)
+                val cmd = usercmd_t()
+                cmd.set(UsercmdGen.usercmdGen.TicCmd(latchedTicNumber - (UsercmdGen.MAX_BUFFERED_USERCMD - 4) + i))
                 var h: Int = cmd.angles[1].toInt()
                 h = h shr 8
                 h = h and ANGLE_GRAPH_HEIGHT - 1
@@ -2963,7 +2964,7 @@ object Session_local {
             if (null == cmdDemoFile) {
                 // get a locally created command
                 // DG: dhewm3 removed com_asyncInput — always use direct usercmd
-                cmd[0] = UsercmdGen.usercmdGen.GetDirectUsercmd()
+                cmd[0].set(UsercmdGen.usercmdGen.GetDirectUsercmd())
                 lastGameTic++
             }
 
@@ -2984,7 +2985,8 @@ object Session_local {
 
             // save the cmd for cmdDemo archiving
             if (logIndex < MAX_LOGGED_USERCMDS) {
-                loggedUsercmds[logIndex].cmd = cmd[0]
+                loggedUsercmds[logIndex].cmd = usercmd_t()
+                loggedUsercmds[logIndex].cmd!!.set(cmd[0])
                 // save the consistencyHash for demo playback verification
                 loggedUsercmds[logIndex].consistencyHash = ret.consistencyHash
                 if (logIndex % 30 == 0 && statIndex < MAX_LOGGED_STATS) {

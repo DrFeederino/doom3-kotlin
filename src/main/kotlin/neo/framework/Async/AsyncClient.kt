@@ -880,7 +880,7 @@ object AsyncClient {
 
             // generate user command for this client
             index = gameFrame and AsyncNetwork.MAX_USERCMD_BACKUP - 1
-            userCmds[index][clientNum] = UsercmdGen.usercmdGen.GetDirectUsercmd()
+            userCmds[index][clientNum].set(UsercmdGen.usercmdGen.GetDirectUsercmd())
             userCmds[index][clientNum].gameFrame = gameFrame
             userCmds[index][clientNum].gameTime = gameTime
 
