@@ -280,10 +280,12 @@ object TempDump {
      * FloatBuffer to Float Array
      */
     fun fbtofa(fb: FloatBuffer): FloatArray {
-//        val fa = FloatArray(fb.capacity())
-//        fb.duplicate()[fa]
-//        return fa
-        return fb.array()
+        // Must respect the FloatBuffer's arrayOffset from slice().
+        // FloatBuffer.array() returns the FULL backing array ignoring offset,
+        // so fb.array()[0] is NOT fb.get(0) for sliced buffers.
+        val offset = fb.arrayOffset()
+        val remaining = fb.remaining()
+        return fb.array().copyOfRange(offset, offset + remaining)
     }
 
 
