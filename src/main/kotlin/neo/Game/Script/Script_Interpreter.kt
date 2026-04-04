@@ -376,7 +376,7 @@ object Script_Interpreter {
                     D_EVENT_ENTITY -> {
                         `var`.setIntPtr(localstack, start + pos)
                         data[i] = toArg(GetEntity(`var`.entityNumberPtr))
-                        if (null == data[i]) {
+                        if ((data[i] as idEventArg<*>).value == null) {
                             Warning("Entity not found for event '%s'. Terminating thread.", evdef.GetName())
                             threadDying = true
                             PopParms(argsize)
@@ -452,7 +452,7 @@ object Script_Interpreter {
                     D_EVENT_ENTITY -> {
                         source.setIntPtr(localstack, start + pos)
                         data[i] = toArg(GetEntity(source.entityNumberPtr))
-                        if (null == data[i]) {
+                        if ((data[i] as idEventArg<*>).value == null) {
                             Warning("Entity not found for event '%s'. Terminating thread.", evdef.GetName())
                             threadDying = true
                             PopParms(argsize)

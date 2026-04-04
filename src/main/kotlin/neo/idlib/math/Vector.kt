@@ -9,6 +9,7 @@ import neo.idlib.math.Matrix.idMatX
 import neo.idlib.math.Random.idRandom
 import org.lwjgl.BufferUtils
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.*
 import kotlin.math.*
 
@@ -398,7 +399,7 @@ class idVec2 : idVec<idVec2>, SERiAL {
     }
 
     override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES)
+        return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
     }
 
     override fun Read(buffer: ByteBuffer) {
@@ -1092,7 +1093,7 @@ open class idVec3 : idVec<idVec3>, SERiAL {
     }
 
     override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES)
+        return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
     }
 
     override fun Read(buffer: ByteBuffer) {
@@ -1102,7 +1103,7 @@ open class idVec3 : idVec<idVec3>, SERiAL {
     }
 
     override fun Write(): ByteBuffer {
-        val buffer = ByteBuffer.allocate(BYTES)
+        val buffer = AllocBuffer()
         buffer.putFloat(x).putFloat(y).putFloat(z).flip()
         return buffer
     }
@@ -1437,7 +1438,7 @@ class idVec4 : idVec<idVec4>, SERiAL {
     }
 
     override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES)
+        return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
     }
 
     override fun Read(buffer: ByteBuffer) {
@@ -1601,7 +1602,7 @@ class idVec5 : idVec<idVec5>, SERiAL {
     }
 
     override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES)
+        return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
     }
 
     override fun Read(buffer: ByteBuffer) {
@@ -1881,7 +1882,7 @@ class idVec6 : idVec<idVec6>, SERiAL {
     //            p[index] = value;
     //        }
     override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES)
+        return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
     }
 
     override fun Read(buffer: ByteBuffer) {

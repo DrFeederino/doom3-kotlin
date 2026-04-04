@@ -687,18 +687,9 @@ object Script_Thread {
 
             const val BYTES = Integer.BYTES * 14 //TODO
             protected var eventCallbacks: MutableMap<idEventDef, eventCallback_t<*>> = HashMap()
-
-            //        // CLASS_PROTOTYPE( idThread );
-            //        public static final idTypeInfo Type = new idTypeInfo(null, null, eventCallbacks, null, null, null, null);
-            //
-            //
             private var currentThread: idThread? = null
-
-            //
             private var threadIndex = 0
             private val threadList = idList<idThread>()
-
-            //
             private var trace = trace_s()
 
             init {
@@ -1294,7 +1285,7 @@ object Script_Thread {
                     ReturnString(string)
                     return
                 }
-                ReturnString(string + (len - num))
+                ReturnString(string.substring(len - num))
             }
 
             private fun Event_StrSkip(t: idThread, stringA: idEventArg<String>, numA: idEventArg<Int>) {
@@ -1310,7 +1301,7 @@ object Script_Thread {
                     ReturnString("")
                     return
                 }
-                ReturnString(string + num)
+                ReturnString(string.substring(num))
             }
 
             private fun Event_GetCosine(t: idThread, angle: idEventArg<Float>) {

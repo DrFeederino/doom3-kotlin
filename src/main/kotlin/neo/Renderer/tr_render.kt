@@ -110,12 +110,22 @@ object tr_render {
         }
         val count: Int = if (r_singleTriangle.GetBool()) 3 else tri.numIndexes
         if (tri.indexCache != null && r_useIndexBuffers!!.GetBool()) {
-            qgl.qglDrawElements(
-                GL_TRIANGLES,
-                count,
-                Model.GL_INDEX_TYPE,
-                VertexCache.vertexCache.Position(tri.indexCache)
-            )
+            val idxPos = VertexCache.vertexCache.Position(tri.indexCache)
+            if (VertexCache.vertexCache.IsVBOOffset(idxPos)) {
+                qgl.qglDrawElements(
+                    GL_TRIANGLES,
+                    count,
+                    Model.GL_INDEX_TYPE,
+                    VertexCache.vertexCache.GetVBOOffset(idxPos)
+                )
+            } else {
+                qgl.qglDrawElements(
+                    GL_TRIANGLES,
+                    count,
+                    Model.GL_INDEX_TYPE,
+                    idxPos
+                )
+            }
             backEnd!!.pc.c_vboIndexes += tri.numIndexes
         } else {
             if (r_useIndexBuffers.GetBool()) {
@@ -137,12 +147,23 @@ object tr_render {
         backEnd!!.pc.c_shadowIndexes += numIndexes
         backEnd!!.pc.c_shadowVertexes += tri.numVerts
         if (tri.indexCache != null && r_useIndexBuffers!!.GetBool()) {
-            qgl.qglDrawElements(
-                GL_TRIANGLES,
-                if (r_singleTriangle!!.GetBool()) 3 else numIndexes,
-                Model.GL_INDEX_TYPE,
-                VertexCache.vertexCache.Position(tri.indexCache)
-            )
+            val idxPos = VertexCache.vertexCache.Position(tri.indexCache)
+            val idxCount = if (r_singleTriangle!!.GetBool()) 3 else numIndexes
+            if (VertexCache.vertexCache.IsVBOOffset(idxPos)) {
+                qgl.qglDrawElements(
+                    GL_TRIANGLES,
+                    idxCount,
+                    Model.GL_INDEX_TYPE,
+                    VertexCache.vertexCache.GetVBOOffset(idxPos)
+                )
+            } else {
+                qgl.qglDrawElements(
+                    GL_TRIANGLES,
+                    idxCount,
+                    Model.GL_INDEX_TYPE,
+                    idxPos
+                )
+            }
             backEnd!!.pc.c_vboIndexes += numIndexes
         } else {
             if (r_useIndexBuffers!!.GetBool()) {
@@ -249,7 +270,7 @@ object tr_render {
 
             // change the scissor if needed
             if (r_useScissor!!.GetBool() && !backEnd!!.currentScissor!!.Equals(drawSurf.scissorRect!!)) {
-                backEnd!!.currentScissor = drawSurf.scissorRect
+                backEnd!!.currentScissor = idScreenRect(drawSurf.scissorRect!!)
                 qglScissor(
                     backEnd!!.viewDef!!.viewport.x1 + backEnd!!.currentScissor!!.x1,
                     backEnd!!.viewDef!!.viewport.y1 + backEnd!!.currentScissor!!.y1,
@@ -389,7 +410,12 @@ object tr_render {
             qgl.qglTexCoordPointer(3, GL_FLOAT, idDrawVert.BYTES, vert.normal.ToFloatPtr())
         }
         if (texture.texgen == texgen_t.TG_SKYBOX_CUBE || texture.texgen == texgen_t.TG_WOBBLESKY_CUBE) {
-            qgl.qglTexCoordPointer(3, GL_FLOAT, 0, VertexCache.vertexCache.Position(surf.dynamicTexCoords))
+            val texPos = VertexCache.vertexCache.Position(surf.dynamicTexCoords)
+            if (VertexCache.vertexCache.IsVBOOffset(texPos)) {
+                qgl.qglTexCoordPointer(3, GL_FLOAT, 0, VertexCache.vertexCache.GetVBOOffset(texPos))
+            } else {
+                qgl.qglTexCoordPointer(3, GL_FLOAT, 0, texPos)
+            }
         }
         if (texture.texgen == texgen_t.TG_REFLECT_CUBE) {
             qglEnable(GL_TEXTURE_GEN_S)

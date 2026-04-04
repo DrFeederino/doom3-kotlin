@@ -24,7 +24,6 @@ import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Player.idPlayer
 import neo.Renderer.Material
-import neo.Renderer.RenderSystem
 import neo.Renderer.RenderSystem.SCREEN_HEIGHT
 import neo.Renderer.RenderSystem.SCREEN_WIDTH
 import neo.Renderer.RenderSystem.renderSystem
@@ -109,7 +108,7 @@ object PlayerView {
         private var time: Int = 0
         private var state: Int = FX_STATE_OFF
         private var alpha: Float = 0f
-        private var msec: Int = 0
+        private var msec: Int = 1000
 
         fun SetTriggerState(active: Boolean): Boolean {
             // handle on/off states
@@ -1442,13 +1441,13 @@ object PlayerView {
                 view.vieworg,
                 view.viewaxis,
                 player!!.entityNumber + 1,
-                Game_local.gameLocal.time,
+                if (isD3XP) Game_local.gameLocal.slow.time else Game_local.gameLocal.time,
                 idStr(if (hud != null) hud.State().GetString("location") else "Undefined")
             )
 
             // if the objective system is up, don't do normal drawing
             if (player!!.objectiveSystemOpen) {
-                player!!.objectiveSystem!!.Redraw(Game_local.gameLocal.time)
+                player!!.objectiveSystem!!.Redraw(if (isD3XP) Game_local.gameLocal.fast.time else Game_local.gameLocal.time)
                 return
             }
 
@@ -1507,12 +1506,12 @@ object PlayerView {
             if (!SysCvar.pm_thirdPerson.GetBool() && !SysCvar.g_skipViewEffects.GetBool()) {
                 for (i in 0 until MAX_SCREEN_BLOBS) {
                     val blob = screenBlobs[i]
-                    if (blob.finishTime <= Game_local.gameLocal.time) {
+                    if (blob.finishTime <= (if (isD3XP) Game_local.gameLocal.slow.time else Game_local.gameLocal.time)) {
                         continue
                     }
                     blob.y += blob.driftAmount
                     var fade: Float =
-                        (blob.finishTime - Game_local.gameLocal.time).toFloat() / (blob.finishTime - blob.startFadeTime)
+                        (blob.finishTime - (if (isD3XP) Game_local.gameLocal.slow.time else Game_local.gameLocal.time)).toFloat() / (blob.finishTime - blob.startFadeTime)
                     if (fade > 1.0f) {
                         fade = 1.0f
                     }
@@ -1534,7 +1533,8 @@ object PlayerView {
                 player!!.DrawHUD(hud)
 
                 // armor impulse feedback
-                val armorPulse = (Game_local.gameLocal.time - player!!.lastArmorPulse) / 250.0f
+                val armorPulse =
+                    ((if (isD3XP) Game_local.gameLocal.fast.time else Game_local.gameLocal.time) - player!!.lastArmorPulse) / 250.0f
                 if (armorPulse > 0.0f && armorPulse < 1.0f) {
                     renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f - armorPulse)
                     renderSystem.DrawStretchPic(
@@ -1566,7 +1566,7 @@ object PlayerView {
                 }
                 if (alpha < 1.0f) {
                     renderSystem.SetColor4(
-                        if (player!!.health <= 0.0f) MS2SEC(Game_local.gameLocal.time.toFloat()) else lastDamageTime,
+                        if (player!!.health <= 0.0f) MS2SEC((if (isD3XP) Game_local.gameLocal.slow.time else Game_local.gameLocal.time).toFloat()) else lastDamageTime,
                         1.0f,
                         1.0f,
                         if (player!!.health <= 0.0f) 0.0f else alpha
@@ -1583,7 +1583,8 @@ object PlayerView {
                         tunnelMaterial
                     )
                 }
-                if (player!!.PowerUpActive(Player.BERSERK)) {
+                // D3XP: berserk overlay is handled by FullscreenFX_Helltime, only draw in base game
+                if (!isD3XP && player!!.PowerUpActive(Player.BERSERK)) {
                     val berserkTime = player!!.inventory.powerupEndTime[Player.BERSERK] - Game_local.gameLocal.time
                     if (berserkTime > 0) {
                         // start fading if within 10 seconds of going away

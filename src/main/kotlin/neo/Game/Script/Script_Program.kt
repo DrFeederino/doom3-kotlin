@@ -1016,6 +1016,7 @@ object Script_Program {
 
         fun setString(string: String?) {
             // C++ uses idStr::Copynz(stringPtr, src, MAX_STRING_LEN) — null-terminates and zero-pads
+            stringPtr = string
             val bytes = (string ?: "").toByteArray()
             val copyLen = Math.min(bytes.size, Math.min(primitive.capacity(), MAX_STRING_LEN) - 1)
             primitive.rewind()

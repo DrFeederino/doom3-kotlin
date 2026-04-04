@@ -413,7 +413,6 @@ object Physics_RigidBody {
             clipModel!!.Link(Game_local.gameLocal.clip, self, 0, current.i.position, current.i.orientation)
             val mass = CFloat()
             clipModel!!.GetMassProperties(density, mass, centerOfMass, inertiaTensor)
-            this.mass = mass._val
 
             // check whether or not the clip model has valid mass properties
             if (mass._val <= 0.0f || FLOAT_IS_NAN(mass._val)) {
@@ -426,6 +425,7 @@ object Physics_RigidBody {
                 centerOfMass.Zero()
                 inertiaTensor.Identity()
             }
+            this.mass = mass._val
 
             // check whether or not the inertia tensor is balanced
             minIndex = Min3Index(inertiaTensor[0, 0], inertiaTensor[1, 1], inertiaTensor[2, 2])
@@ -626,20 +626,6 @@ object Physics_RigidBody {
                 if (CollisionImpulse(collision, impulse)) {
                     current.atRest = Game_local.gameLocal.time
                 }
-                // Diagnostic: log when collision response produces significant velocity
-                if (SysCvar.g_debugPhysics.GetBool()) {
-                    val postSpeed = current.i.linearMomentum.times(inverseMass).Length()
-                    if (postSpeed > STOP_SPEED * 3.0f) {
-                        val vel = current.i.linearMomentum.times(inverseMass)
-                        Game_local.gameLocal.Printf(
-                            "RB COLLISION '%s' frac=%.4f vel=(%.1f,%.1f,%.1f) speed=%.1f impulse=(%.1f,%.1f,%.1f) hitEnt=%d\n",
-                            self!!.name, collision.fraction,
-                            vel.x, vel.y, vel.z, postSpeed,
-                            impulse.x, impulse.y, impulse.z,
-                            collision.c.entityNum
-                        )
-                    }
-                }
             }
 
             // update the position of the clip model
@@ -772,16 +758,6 @@ object Physics_RigidBody {
             if (noImpact) {
                 return
             }
-            if (SysCvar.g_debugPhysics.GetBool() && current.atRest >= 0) {
-                Game_local.gameLocal.Printf(
-                    "RB IMPULSE waking '%s' impulse=(%.1f,%.1f,%.1f) mag=%.1f at pos=(%.1f,%.1f,%.1f)\n",
-                    self?.name ?: "?", impulse.x, impulse.y, impulse.z, impulse.Length(),
-                    current.i.position.x, current.i.position.y, current.i.position.z
-                )
-                Thread.currentThread().stackTrace.take(8).drop(1).forEach {
-                    Game_local.gameLocal.Printf("  at %s.%s(%s:%d)\n", it.className, it.methodName, it.fileName, it.lineNumber)
-                }
-            }
             current.i.linearMomentum.plusAssign(impulse)
             current.i.angularMomentum.plusAssign(
                 point.minus(current.i.position.plus(centerOfMass.times(current.i.orientation))).Cross(impulse)
@@ -797,12 +773,6 @@ object Physics_RigidBody {
         override fun AddForce(id: Int, point: idVec3, force: idVec3) {
             if (noImpact) {
                 return
-            }
-            if (SysCvar.g_debugPhysics.GetBool() && current.atRest >= 0 && force.LengthSqr() > 1.0f) {
-                Game_local.gameLocal.Printf(
-                    "RB FORCE waking '%s' force=(%.1f,%.1f,%.1f) mag=%.1f\n",
-                    self?.name ?: "?", force.x, force.y, force.z, force.Length()
-                )
             }
             current.externalForce.plusAssign(force)
             current.externalTorque.plusAssign(
@@ -1551,14 +1521,6 @@ object Physics_RigidBody {
             // velocity in normal direction
             vel = velocity.times(collision.c.normal)
 
-            // Diagnostic: detect spurious collisions on separating contacts
-            if (SysCvar.g_debugPhysics.GetBool() && vel >= 0.0f) {
-                Game_local.gameLocal.Printf(
-                    "RB SEPARATING COLLISION '%s' vel=%.2f frac=%.4f normal=(%.2f,%.2f,%.2f)\n",
-                    self?.name ?: "?", vel, collision.fraction,
-                    collision.c.normal.x, collision.c.normal.y, collision.c.normal.z
-                )
-            }
 
             impulseNumerator = if (vel > -STOP_SPEED) {
                 STOP_SPEED

@@ -58,6 +58,8 @@ import neo.Game.Misc.idForceField
 import neo.Game.Misc.idFuncAASObstacle
 import neo.Game.Misc.idFuncAASPortal
 import neo.Game.Misc.idFuncEmitter
+import neo.Game.Misc.idFuncMountedObject
+import neo.Game.Misc.idFuncMountedWeapon
 import neo.Game.Misc.idFuncPortal
 import neo.Game.Misc.idFuncRadioChatter
 import neo.Game.Misc.idFuncSmoke
@@ -1554,6 +1556,8 @@ fun registerAllTypes() {
     idFuncRadioChatter.Type
     idPhantomObjects.Type
     idShockwave.Type    // D3XP
+    idFuncMountedObject.Type // D3XP
+    idFuncMountedWeapon.Type // D3XP
     idPortalSky.Type    // D3XP
 
     // Moveable

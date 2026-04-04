@@ -427,7 +427,9 @@ object VertexCache {
             }
 
             // virtual memory is a real pointer
-            return buffer!!.virtMem!!.position(buffer.offset).flip()
+            val vm = buffer!!.virtMem!!.duplicate()
+            vm.position(buffer.offset).limit(buffer.offset + buffer.size)
+            return vm.slice()
         }
 
         // if r_useIndexBuffers is enabled, but you need to draw something without
@@ -435,6 +437,14 @@ object VertexCache {
         fun UnbindIndex() {
             qgl.qglBindBufferARB(ARBVertexBufferObject.GL_ELEMENT_ARRAY_BUFFER_ARB, 0)
         }
+
+        // Returns true if the ByteBuffer from Position() represents a VBO offset
+        // (a 4-byte buffer containing the integer offset) rather than client-side data.
+        fun IsVBOOffset(pos: ByteBuffer): Boolean = pos.capacity() == Integer.BYTES
+
+        // Extracts the VBO offset as a Long from the ByteBuffer returned by Position().
+        // Only valid when IsVBOOffset() returns true.
+        fun GetVBOOffset(pos: ByteBuffer): Long = pos.getInt(0).toLong()
 
         /*
          ===========

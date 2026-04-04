@@ -78,7 +78,8 @@ object qgl {
     //extern PFNGLISBUFFERARBPROC qglIsBufferARB;
     fun qglBufferDataARB(target: Int, size: Int, data: ByteBuffer, usage: Int) {
         DEBUG_printName("glBufferDataARB")
-        ARBVertexBufferObject.glBufferDataARB(target, data, usage)
+        val slice = data.slice().limit(size)
+        ARBVertexBufferObject.glBufferDataARB(target, slice, usage)
     }
 
     fun  /*PFNGLBUFFERSUBDATAARBPROC*/qglBufferSubDataARB(target: Int, offset: Long, size: Long, data: ByteBuffer) {
@@ -656,7 +657,18 @@ object qgl {
 
     fun qglDrawElements(mode: Int, count: Int, type: Int, indices: ByteBuffer) {
         DEBUG_printName("glDrawElements1")
-        GL43.glDrawElements(mode, type, indices)
+        val bytesPerIndex = when (type) {
+            GL11.GL_UNSIGNED_INT -> 4
+            GL11.GL_UNSIGNED_SHORT -> 2
+            else -> 1
+        }
+        val limited = indices.slice().limit(count * bytesPerIndex)
+        GL43.glDrawElements(mode, type, limited)
+    }
+
+    fun qglDrawElements(mode: Int, count: Int, type: Int, indices: Long) {
+        DEBUG_printName("glDrawElements_VBO")
+        GL43.glDrawElements(mode, count, type, indices)
     }
 
     fun qglDrawElements(mode: Int, count: Int, type: Int, indices: IntArray?) {

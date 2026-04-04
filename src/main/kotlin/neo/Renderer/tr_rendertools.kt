@@ -666,12 +666,17 @@ object tr_rendertools {
                 while (surf != null) {
                     RB_SimpleSurfaceSetup(surf)
                     val tri: srfTriangles_s = surf.geo!!
-                    qgl.qglVertexPointer(
-                        3,
-                        GL11.GL_FLOAT,
-                        shadowCache_s.BYTES,
-                        VertexCache.vertexCache.Position(tri.shadowCache)
-                    )
+                    val shadowPos = VertexCache.vertexCache.Position(tri.shadowCache)
+                    if (VertexCache.vertexCache.IsVBOOffset(shadowPos)) {
+                        qgl.qglVertexPointer(
+                            3,
+                            GL11.GL_FLOAT,
+                            shadowCache_s.BYTES,
+                            VertexCache.vertexCache.GetVBOOffset(shadowPos)
+                        )
+                    } else {
+                        qgl.qglVertexPointer(3, GL11.GL_FLOAT, shadowCache_s.BYTES, shadowPos)
+                    }
                     qgl.qglBegin(GL11.GL_LINES)
                     var j = 0
                     while (j < tri.numIndexes) {
@@ -755,7 +760,16 @@ object tr_rendertools {
                     }
                     val cache: ByteBuffer =
                         VertexCache.vertexCache.Position(tri.shadowCache)
-                    qgl.qglVertexPointer(4, GL11.GL_FLOAT, shadowCache_s.BYTES, cache)
+                    if (VertexCache.vertexCache.IsVBOOffset(cache)) {
+                        qgl.qglVertexPointer(
+                            4,
+                            GL11.GL_FLOAT,
+                            shadowCache_s.BYTES,
+                            VertexCache.vertexCache.GetVBOOffset(cache)
+                        )
+                    } else {
+                        qgl.qglVertexPointer(4, GL11.GL_FLOAT, shadowCache_s.BYTES, cache)
+                    }
                     tr_render.RB_DrawElementsWithCounters(tri)
                     surf = surf.nextOnLight
                 }

@@ -528,7 +528,7 @@ val r_skipParticles = idCVar(
 val r_subviewOnly = idCVar(
     "r_subviewOnly", "0", CVAR_RENDERER or CVAR_BOOL, "1 = don't render main view, allowing subviews to be debugged"
 )
-val r_shadows = idCVar("r_shadows", "0", CVAR_RENDERER or CVAR_BOOL or CVAR_ARCHIVE, "enable shadows")
+val r_shadows = idCVar("r_shadows", "1", CVAR_RENDERER or CVAR_BOOL or CVAR_ARCHIVE, "enable shadows")
 val r_testARBProgram =
     idCVar("r_testARBProgram", "0", CVAR_RENDERER or CVAR_BOOL, "experiment with vertex/fragment programs")
 val r_testGamma = idCVar(

@@ -132,7 +132,12 @@ object draw_common {
             qgl.qglTexCoordPointer(3, GL_FLOAT, idDrawVert.BYTES, ac.normalOffset().toLong())
         }
         if (pStage.texture.texgen == texgen_t.TG_SKYBOX_CUBE || pStage.texture.texgen == texgen_t.TG_WOBBLESKY_CUBE) {
-            qgl.qglTexCoordPointer(3, GL_FLOAT, 0, vertexCache.Position(surf.dynamicTexCoords))
+            val texPos = vertexCache.Position(surf.dynamicTexCoords)
+            if (VertexCache.vertexCache.IsVBOOffset(texPos)) {
+                qgl.qglTexCoordPointer(3, GL_FLOAT, 0, VertexCache.vertexCache.GetVBOOffset(texPos))
+            } else {
+                qgl.qglTexCoordPointer(3, GL_FLOAT, 0, texPos)
+            }
         }
         if (pStage.texture.texgen == texgen_t.TG_SCREEN) {
             qglEnable(GL_TEXTURE_GEN_S)
@@ -1678,12 +1683,16 @@ object draw_common {
                 && surf.space != backEnd!!.currentSpace
             ) {
                 val localLight = idVec4()
+                val tempLight = idVec3()
 
                 R_GlobalPointToLocal(
                     surf.space!!.modelMatrix,
                     backEnd!!.vLight!!.globalLightOrigin,
-                    localLight.ToVec3()
+                    tempLight
                 )
+                localLight.x = tempLight.x
+                localLight.y = tempLight.y
+                localLight.z = tempLight.z
                 localLight.w = 0.0f
                 qglProgramEnvParameter4fvARB(
                     GL_VERTEX_PROGRAM_ARB,
@@ -1698,7 +1707,12 @@ object draw_common {
                 return
             }
 
-            qglVertexPointer(4, GL_FLOAT, shadowCache_s.BYTES, vertexCache.Position(tri.shadowCache))
+            val shadowPos = vertexCache.Position(tri.shadowCache)
+            if (VertexCache.vertexCache.IsVBOOffset(shadowPos)) {
+                qglVertexPointer(4, GL_FLOAT, shadowCache_s.BYTES, VertexCache.vertexCache.GetVBOOffset(shadowPos))
+            } else {
+                qglVertexPointer(4, GL_FLOAT, shadowCache_s.BYTES, shadowPos)
+            }
 
             // we always draw the sil planes, but we may not need to draw the front or rear caps
             var numIndexes = 0
@@ -1918,7 +1932,12 @@ object draw_common {
                     idDrawVert(vertexCache.Position(tri.ambientCache))
                 qglVertexPointer(3, GL_FLOAT, idDrawVert.BYTES, ac.xyzOffset().toLong())
             } else if (tri.shadowCache != null) {
-                qglVertexPointer(3, GL_FLOAT, shadowCache_s.BYTES, vertexCache.Position(tri.shadowCache))
+                val shadowPos = vertexCache.Position(tri.shadowCache)
+                if (VertexCache.vertexCache.IsVBOOffset(shadowPos)) {
+                    qglVertexPointer(3, GL_FLOAT, shadowCache_s.BYTES, VertexCache.vertexCache.GetVBOOffset(shadowPos))
+                } else {
+                    qglVertexPointer(3, GL_FLOAT, shadowCache_s.BYTES, shadowPos)
+                }
             }
             tr_render.RB_DrawElementsWithCounters(tri)
         }
