@@ -646,7 +646,7 @@ object Image_process {
         var i: Int
         var j: Int
         val temp: ByteBuffer
-        temp = ByteBuffer.allocate(width * width * 4)
+        temp = BufferUtils.createByteBuffer(width * width * 4)
         i = 0
         while (i < width) {
             j = 0
