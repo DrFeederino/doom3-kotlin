@@ -594,8 +594,6 @@ object Winvar {
             return data == other
         }
 
-        override fun destruct() {}
-
         companion object {
             private val ret: idVec4 = idVec4()
         }
