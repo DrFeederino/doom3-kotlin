@@ -3749,7 +3749,7 @@ object Physics_AF {
             pyramidBasis[0].Normalize()
             pyramidBasis[1] = pyramidBasis[0].Cross(pyramidBasis[2])
             // pyramid top
-            pyramidAnchor.set(pyramidAnchor)
+            this.pyramidAnchor.set(pyramidAnchor)
             // angles
             cosAngle[0] = cos(DEG2RAD(pyramidAngle1 * 0.5f))
             cosAngle[1] = cos(DEG2RAD(pyramidAngle2 * 0.5f))
@@ -3757,7 +3757,7 @@ object Physics_AF {
             sinHalfAngle[1] = sin(DEG2RAD(pyramidAngle2 * 0.25f))
             cosHalfAngle[0] = cos(DEG2RAD(pyramidAngle1 * 0.25f))
             cosHalfAngle[1] = cos(DEG2RAD(pyramidAngle2 * 0.25f))
-            body1Axis.set(body1Axis)
+            this.body1Axis.set(body1Axis)
         }
 
         /*
@@ -3765,8 +3765,8 @@ object Physics_AF {
         idAFConstraint_PyramidLimit::SetAnchor
         ================
         */
-        fun SetAnchor(pyramidAxis: idVec3) {
-            pyramidAnchor.set(pyramidAnchor)
+        fun SetAnchor(pyramidAnchor: idVec3) {
+            this.pyramidAnchor.set(pyramidAnchor)
         }
 
         fun SetBody1Axis(body1Axis: idVec3) {

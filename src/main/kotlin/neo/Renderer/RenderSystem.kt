@@ -306,6 +306,7 @@ object RenderSystem {
         var anisotropicAvailable: Boolean = false
 
         var colorBits: Int = 0
+        var alphabits: Int = 0
         var depthBits: Int = 0
         var stencilBits: Int = 8
         var cubeMapAvailable: Boolean = false

@@ -93,10 +93,8 @@ object List {
         private var size = 0
         private var type: Class<T>? = null
 
-        //
         //public	typedef int		cmp_t( const T *, const T * );
         //public	typedef T	new_t( );
-        //
         constructor() {
             //            this(16);//disabled to prevent inherited constructors from calling the overridden clear function.
         }
@@ -869,13 +867,11 @@ object List {
         }
 
         companion object {
-            //TODO: implement java.util.List
             val SIZE = (Integer.SIZE
                     + Integer.SIZE
                     + Integer.SIZE
                     + TempDump.CPP_class.Pointer.SIZE) //T
 
-            //
             private var DBG_counter = 0
         }
     }

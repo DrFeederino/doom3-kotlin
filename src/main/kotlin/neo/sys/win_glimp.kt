@@ -30,6 +30,7 @@ package neo.sys
 
 import neo.Renderer.glConfig
 import neo.Renderer.r_logFile
+import neo.Renderer.r_multiSamples
 import neo.Renderer.tr
 import neo.TempDump
 import neo.framework.Common.Companion.common
@@ -45,6 +46,7 @@ import org.lwjgl.glfw.GLFWGammaRamp
 import org.lwjgl.glfw.GLFWImage
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
+import org.lwjgl.opengl.GL13.GL_SAMPLES
 import org.lwjgl.system.MemoryUtil
 import java.io.ByteArrayInputStream
 import java.io.IOException
@@ -295,6 +297,35 @@ object win_glimp {
 
         glfwMakeContextCurrent(window)
         GL.createCapabilities()
+
+        // Query actual GL framebuffer attributes
+        val r = glGetInteger(GL_RED_BITS)
+        val g = glGetInteger(GL_GREEN_BITS)
+        val b = glGetInteger(GL_BLUE_BITS)
+        val a = glGetInteger(GL_ALPHA_BITS)
+        val d = glGetInteger(GL_DEPTH_BITS)
+        val s = glGetInteger(GL_STENCIL_BITS)
+        var msaa = glGetInteger(GL_SAMPLES)
+        if (msaa <= 0) msaa = 0
+
+        val msaaStr = if (msaa > 0) "${msaa}x MSAA" else "no MSAA"
+        common.Printf(
+            "Got %d stencil bits, %d depth bits, color bits: r%d g%d b%d a%d and %s\n",
+            s,
+            d,
+            r,
+            g,
+            b,
+            a,
+            msaaStr
+        )
+
+        glConfig.colorBits = r + g + b
+        glConfig.alphabits = a
+        glConfig.depthBits = d
+        glConfig.stencilBits = s
+        r_multiSamples.SetInteger(msaa)
+
         glViewport(0, 0, parms.width, parms.height)
         glfwShowWindow(window)
         glfwFocusWindow(window)
@@ -388,6 +419,13 @@ object win_glimp {
             glfwWindowHint(GLFW_SAMPLES, multisamples)
         }
 
+        // Print what we requested
+        val msaaReqStr = if (parms.multiSamples > 0) "${parms.multiSamples}x MSAA" else "no MSAA"
+        val channelcolorbitsReq = if (colorbits == 24) 8 else 4
+        common.Printf(
+            "Requested %d color bits per chan, %d alpha %d depth, %d stencil and %s\n",
+            channelcolorbitsReq, channelcolorbitsReq, depthbits, stencilbits, msaaReqStr
+        )
 
         if (!GLW_SetFullScreen(parms)) {
             GLimp_Shutdown()
