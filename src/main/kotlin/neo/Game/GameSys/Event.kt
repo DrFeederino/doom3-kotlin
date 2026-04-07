@@ -938,8 +938,6 @@ object Event {
                     i = 0
                     size = 0
                     while (i < event.eventdef!!.GetNumArgs()) {
-                        // FIX: Was a stub — inner loop body was empty, no data was written.
-                        // Implemented to match C++ Save logic, adapted for Kotlin idEventArg data model.
                         val arg = event.data?.get(i)
                         when (format!![i]) {
                             D_EVENT_FLOAT -> {
@@ -953,13 +951,8 @@ object Event {
                             }
 
                             D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> {
-                                // C++ uses idEntityPtr::Save. In Kotlin, arg stores the entity directly
-                                // or as an idEntityPtr. Write the spawn ID.
                                 val entity = arg?.value as? idEntity
-                                val entityPtr = Game_local.idEntityPtr<idEntity>()
-                                if (entity != null) {
-                                    entityPtr.oSet(entity)
-                                }
+                                val entityPtr = Game_local.idEntityPtr(entity)
                                 entityPtr.Save(savefile)
                                 size += SIZEOF_INTPTR
                             }
@@ -1040,10 +1033,7 @@ object Event {
 
                                 D_EVENT_ENTITY, D_EVENT_ENTITY_NULL -> {
                                     val entity = arg?.value as? idEntity
-                                    val entityPtr = Game_local.idEntityPtr<idEntity>()
-                                    if (entity != null) {
-                                        entityPtr.oSet(entity)
-                                    }
+                                    val entityPtr = Game_local.idEntityPtr(entity)
                                     entityPtr.Save(savefile)
                                     size += SIZEOF_INTPTR
                                 }

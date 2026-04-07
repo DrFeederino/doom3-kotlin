@@ -45,6 +45,7 @@ import neo.TempDump
 import neo.cm.CM_CLIP_EPSILON
 import neo.cm.collisionModelManager
 import neo.cm.trace_s
+import neo.framework.CVarSystem
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
@@ -654,13 +655,17 @@ class idObjective : idItem() {
     override fun Restore(savefile: idRestoreGame) {
         super.Restore(savefile)
         savefile.ReadVec3(playerPos)
-        PostEventMS(EV_CamShot, 250)
+        if (!isD3XP) {
+            PostEventMS(EV_CamShot, 250)
+        }
     }
 
     override fun Spawn() {
         super.Spawn()
         Hide()
-        PostEventMS(EV_CamShot, 250)
+        if (!isD3XP || CVarSystem.cvarSystem.GetCVarBool("com_makingBuild")) {
+            PostEventMS(EV_CamShot, 250)
+        }
     }
 
     private fun Event_Trigger(activator: idEventArg<idEntity>) {

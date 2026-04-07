@@ -757,7 +757,7 @@ class Dict_h {
         @Throws(idException::class)
         fun WriteToFileHandle(f: idFile) {
             val c: Int = LittleLong(args.Num())
-            f.WriteInt(c) //, sizeof(c));
+            f.WriteInt(c)
             for (i in 0 until args.Num()) {    // don't loop on the swapped count use the original
                 WriteString(args[i].GetKey(), f)
                 WriteString(args[i].GetValue(), f)
@@ -771,7 +771,6 @@ class Dict_h {
             var `val`: idStr
             Clear()
 
-//            f.Read(c, sizeof(c));
             f.ReadInt(c)
             c._val = (LittleLong(c._val))
             for (i in 0 until c._val) {

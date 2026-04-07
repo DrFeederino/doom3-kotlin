@@ -520,7 +520,6 @@ object Material {
         }
     }
 
-    // } surfaceFlags_t;
     // keep all of these on the stack, when they are static it makes material parsing non-reentrant
     internal class mtrParsingData_s {
         var forceOverlays: Boolean = false
@@ -553,31 +552,16 @@ object Material {
     }
 
     class idMaterial : idDecl, SERiAL {
-        //
-        //
         private val deformRegisters: IntArray = IntArray(4) // numeric parameter for deforms
-
-        //
         private val texGenRegisters: IntArray = IntArray(MAX_TEXGEN_REGISTERS) // for wobbleSky
-
-        //
         var stages: Array<shaderStage_t?>? = null
         private var allowOverlays: Boolean = false
         private var ambientLight: Boolean = false
         private var blendLight: Boolean = false
-
-        //
-        private var constantRegisters // NULL if ops ever reference globalParms or entityParms
-                : FloatArray? = null
-
-        //
+        private var constantRegisters: FloatArray? = null // NULL if ops ever reference globalParms or entityParms
         private var contentFlags: Int = 0 // content flags
-
-        //
         private var coverage: materialCoverage_t = materialCoverage_t.MC_BAD
         private var cullType: cullType_t = cullType_t.CT_FRONT_SIDED // CT_FRONT_SIDED, CT_BACK_SIDED, or CT_TWO_SIDED
-
-        //
         private var decalInfo: decalInfo_t = decalInfo_t()
         private var deform: deform_t? = null
         private var deformDecl: idDecl? = null // for surface emitted particle deforms and tables
@@ -585,68 +569,34 @@ object Material {
         private var editorAlpha: Float = 0.0f
         private var editorImage: idImage? = null // image used for non-shaded preview
 
-        //
         // we defer loading of the editor image until it is asked for, so the game doesn't load up
         // all the invisible and uncompressed images.
         // If editorImage is NULL, it will atempt to load editorImageName, and set editorImage to that or defaultImage
-        private var editorImageName: idStr? = null
-
-        //
+        private val editorImageName: idStr = idStr()
         private var entityGui: Int =
             0 // draw a gui with the idUserInterface from the renderEntity_t non zero will draw gui, gui2, or gui3 from renderEnitty_t
         private var expressionRegisters: FloatArray? = null
-
-        //
         private var fogLight: Boolean = false
-
-        //
         private var gui: idUserInterface? = null // non-custom guis are shared by all users of a material
         private var hasSubview: Boolean = false // mirror, remote render, etc
-
-        //
         private var lightFalloffImage: idImage? = null
         private var materialFlags: Int = 0 // material flags
-
-        //
         private var noFog: Boolean = false // surface does not create fog interactions
         private var numAmbientStages: Int = 0
-
-        //
         private var numOps: Int = 0
-
-        //
         private var numRegisters: Int = 0 //
-
-        //
         private var numStages: Int = 0
-        private var ops // evaluate to make expressionRegisters
-                : Array<expOp_t?>? = null
-
-        //
+        private var ops: Array<expOp_t?>? = null// evaluate to make expressionRegisters
         private var pd: mtrParsingData_s? = null // only used during parsing
-
-        //
         private var polygonOffset: Float = 0.0f
         private var portalSky: Boolean = false
         private var refCount: Int = 0
-
-        //	virtual				~idMaterial();
-        private var renderBump: idStr? = null // renderbump command options, without the "renderbump" at the start
+        private val renderBump: idStr = idStr() // renderbump command options, without the "renderbump" at the start
         private var shouldCreateBackSides: Boolean = false
-
-        //
-        //
         private var sort: Float = 0.0f // lower numbered shaders draw before higher numbered
-
-        //
         private var spectrum: Int = 0 // for invisible writing, used for both lights and surfaces
-
-        //
         private var suppressInSubview: Boolean = false
-
-        //
-        private var surfaceArea // only for listSurfaceAreas
-                : Float
+        private var surfaceArea: Float// only for listSurfaceAreas
         private var surfaceFlags: Int = 0 // surface flags
         private var unsmoothedTangents: Boolean = false
 
@@ -656,49 +606,6 @@ object Material {
             // we put this here instead of in CommonInit, because
             // we don't want it cleared when a material is purged
             surfaceArea = 0.0f
-        }
-
-        constructor(shader: idMaterial?) {
-            desc = idStr(shader!!.desc)
-            renderBump = shader.renderBump
-            lightFalloffImage = shader.lightFalloffImage
-            entityGui = shader.entityGui
-            gui = shader.gui
-            noFog = shader.noFog
-            spectrum = shader.spectrum
-            polygonOffset = shader.polygonOffset
-            contentFlags = shader.contentFlags
-            surfaceFlags = shader.surfaceFlags
-            materialFlags = shader.materialFlags
-            decalInfo = shader.decalInfo
-            sort = shader.sort
-            deform = shader.deform
-            deformDecl = shader.deformDecl
-            coverage = shader.coverage
-            cullType = shader.cullType
-            shouldCreateBackSides = shader.shouldCreateBackSides
-            fogLight = shader.fogLight
-            blendLight = shader.blendLight
-            ambientLight = shader.ambientLight
-            unsmoothedTangents = shader.unsmoothedTangents
-            hasSubview = shader.hasSubview
-            allowOverlays = shader.allowOverlays
-            numOps = shader.numOps
-            ops = shader.ops
-            numRegisters = shader.numRegisters
-            expressionRegisters = shader.expressionRegisters
-            constantRegisters = shader.constantRegisters
-            numStages = shader.numStages
-            numAmbientStages = shader.numAmbientStages
-            stages = shader.stages
-            pd = shader.pd
-            surfaceArea = shader.surfaceArea
-            editorImageName = shader.editorImageName
-            editorImage = shader.editorImage
-            editorAlpha = shader.editorAlpha
-            suppressInSubview = shader.suppressInSubview
-            portalSky = shader.portalSky
-            refCount = shader.refCount
         }
 
         override fun SetDefaultText(): Boolean {
@@ -1578,7 +1485,7 @@ object Material {
         // parse the entire material
         private fun CommonInit() {
             desc = idStr("<none>")
-            renderBump = idStr("")
+            renderBump.set("")
             contentFlags = CONTENTS_SOLID
             surfaceFlags = etoi(surfTypes_t.SURFTYPE_NONE)
             materialFlags = 0
@@ -1664,7 +1571,7 @@ object Material {
                     break
                 } else if (0 == token.Icmp("qer_editorimage")) {
                     src.ReadTokenOnLine(token)
-                    editorImageName = idStr(token.toString())
+                    editorImageName.set(token.toString())
                     src.SkipRestOfLine()
                     continue
                 } // description

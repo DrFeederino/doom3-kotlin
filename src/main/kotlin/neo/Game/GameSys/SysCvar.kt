@@ -33,7 +33,7 @@ class SysCvar {
                 Licensee.ENGINE_VERSION,
                 BUILD_NUMBER,
                 BUILD_DEBUG,
-                BUILD_STRING,
+                BUILD_STRING(),
                 __DATE__
             )
         }

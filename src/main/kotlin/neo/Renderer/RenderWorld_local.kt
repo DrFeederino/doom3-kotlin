@@ -1733,14 +1733,14 @@ object RenderWorld_local {
                 while (j < tri.numVerts) {
                     val vec = FloatArray(8)
                     src.Parse1DMatrix(8, vec)
-                    tri.verts!![j]!!.xyz[0] = vec[0]
-                    tri.verts!![j]!!.xyz[1] = vec[1]
-                    tri.verts!![j]!!.xyz[2] = vec[2]
-                    tri.verts!![j]!!.st[0] = vec[3]
-                    tri.verts!![j]!!.st[1] = vec[4]
-                    tri.verts!![j]!!.normal[0] = vec[5]
-                    tri.verts!![j]!!.normal[1] = vec[6]
-                    tri.verts!![j]!!.normal[2] = vec[7]
+                    tri.verts!![j].xyz[0] = vec[0]
+                    tri.verts!![j].xyz[1] = vec[1]
+                    tri.verts!![j].xyz[2] = vec[2]
+                    tri.verts!![j].st[0] = vec[3]
+                    tri.verts!![j].st[1] = vec[4]
+                    tri.verts!![j].normal[0] = vec[5]
+                    tri.verts!![j].normal[1] = vec[6]
+                    tri.verts!![j].normal[2] = vec[7]
                     j++
                 }
                 R_AllocStaticTriSurfIndexes(tri, tri.numIndexes)

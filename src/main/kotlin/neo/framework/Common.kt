@@ -198,7 +198,7 @@ class Common {
                 Licensee.ENGINE_VERSION,
                 BUILD_NUMBER,
                 BUILD_DEBUG,
-                BUILD_STRING,
+                BUILD_STRING(),
                 SysCvar.__DATE__
             )
         }

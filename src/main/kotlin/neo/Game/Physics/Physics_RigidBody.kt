@@ -66,7 +66,6 @@ object Physics_RigidBody {
 
     //
     private const val RB_TIMINGS = false
-    private const val RB_DEBUG_REST = false // Temporary debug flag for idMoveable rest issue
     private const val TEST_COLLISION_DETECTION = false
 
     //
@@ -450,16 +449,6 @@ object Physics_RigidBody {
             }
             inverseMass = 1.0f / mass._val
             inverseInertiaTensor.set(inertiaTensor.Inverse().times(1.0f / 6.0f))
-
-            // DIAGNOSTIC: Log mass properties when setting up clip model
-            if (RB_DEBUG_REST) {
-                Game_local.gameLocal.Printf(
-                    "RB_SETUP [%s]: mass=%.3f inertia=(%.3f,%.3f,%.3f)\n",
-                    self?.name ?: "?",
-                    mass._val,
-                    inertiaTensor[0, 0], inertiaTensor[1, 1], inertiaTensor[2, 2]
-                )
-            }
 
             current.i.linearMomentum.Zero()
             current.i.angularMomentum.Zero()
@@ -1138,17 +1127,6 @@ object Physics_RigidBody {
             }
             contacts.SetNum(num, false)
 
-            // DIAGNOSTIC: Log contact sweep direction and count (always, even when 0)
-            if (RB_DEBUG_REST) {
-                val sweepDir = dir.SubVec3(0)
-                Game_local.gameLocal.Printf(
-                    "  CONTACTS [%s]: %d contacts, sweepDir=(%.2f,%.2f,%.2f) linMom=(%.2f,%.2f,%.2f)\n",
-                    self!!.name, contacts.Num(),
-                    sweepDir.x, sweepDir.y, sweepDir.z,
-                    current.i.linearMomentum.x, current.i.linearMomentum.y, current.i.linearMomentum.z
-                )
-            }
-
             AddContactEntitiesForContacts()
             return contacts.Num() != 0
         }
@@ -1451,16 +1429,6 @@ object Physics_RigidBody {
                     }
                 }
 
-                // DIAGNOSTIC: Log collision fraction details
-                if (RB_DEBUG_REST) {
-                    val totalDist = desiredEndPos.minus(current.i.position).Length()
-                    val actualDist = collision.endpos.minus(current.i.position).Length()
-                    Game_local.gameLocal.Printf(
-                        "  COLLISION [%s]: motionFrac=%.4f transFrac=%.4f totalDist=%.3f actualDist=%.3f\n",
-                        self!!.name, motionFrac, collision.fraction, totalDist, actualDist
-                    )
-                }
-
                 // set the next state to the state at the moment of impact
                 next.i.position.set(collision.endpos)
                 next.i.orientation.set(collision.endAxis)
@@ -1701,13 +1669,6 @@ object Physics_RigidBody {
 
             // need at least 3 contact points to come to rest
             if (contacts.Num() < 3) {
-                if (RB_DEBUG_REST) {
-                    Game_local.gameLocal.Printf(
-                        "  REST_FAIL [%s]: only %d contacts (need 3)\n",
-                        self!!.name,
-                        contacts.Num()
-                    )
-                }
                 return false
             }
 
@@ -1722,14 +1683,7 @@ object Physics_RigidBody {
             normal.Normalize()
 
             // if on a too steep surface
-            if (normal.times(gravityNormal) > -0.7f) {
-                if (RB_DEBUG_REST) {
-                    Game_local.gameLocal.Printf(
-                        "  REST_FAIL [%s]: too steep (%.3f > -0.7)\n",
-                        self!!.name,
-                        normal.times(gravityNormal)
-                    )
-                }
+            if ((normal * gravityNormal) > -0.7f) {
                 return false
             }
 
@@ -1754,14 +1708,6 @@ object Physics_RigidBody {
 
             // need at least 3 contact points to come to rest
             if (contactWinding.GetNumPoints() < 3) {
-                if (RB_DEBUG_REST) {
-                    Game_local.gameLocal.Printf(
-                        "  REST_FAIL [%s]: convex hull has %d points (need 3), %d contacts\n",
-                        self!!.name,
-                        contactWinding.GetNumPoints(),
-                        contacts.Num()
-                    )
-                }
                 return false
             }
 
@@ -1771,9 +1717,6 @@ object Physics_RigidBody {
 
             // if the point is not inside the winding
             if (!contactWinding.PointInside(gravityNormal, point, 0.0f)) {
-                if (RB_DEBUG_REST) {
-                    Game_local.gameLocal.Printf("  REST_FAIL [%s]: CoM not inside contact winding\n", self!!.name)
-                }
                 return false
             }
 
@@ -1786,27 +1729,10 @@ object Physics_RigidBody {
 
             // if too much velocity orthogonal to gravity direction
             if (v.Length() > STOP_SPEED) {
-                if (RB_DEBUG_REST) {
-                    Game_local.gameLocal.Printf(
-                        "  REST_FAIL [%s]: lateral vel %.3f > %.1f\n",
-                        self!!.name,
-                        v.Length(),
-                        STOP_SPEED
-                    )
-                }
                 return false
             }
             // if too much velocity in gravity direction
             if (gv > 2.0f * STOP_SPEED || gv < -2.0f * STOP_SPEED) {
-                if (RB_DEBUG_REST) {
-                    Game_local.gameLocal.Printf(
-                        "  REST_FAIL [%s]: gravity vel %.3f outside [%.1f, %.1f]\n",
-                        self!!.name,
-                        gv,
-                        -2.0f * STOP_SPEED,
-                        2.0f * STOP_SPEED
-                    )
-                }
                 return false
             }
 
@@ -1817,14 +1743,6 @@ object Physics_RigidBody {
 
             // if too much rotational velocity
             if (av.LengthSqr() > STOP_SPEED) {
-                if (RB_DEBUG_REST) {
-                    Game_local.gameLocal.Printf(
-                        "  REST_FAIL [%s]: angular vel sqr %.3f > %.1f\n",
-                        self!!.name,
-                        av.LengthSqr(),
-                        STOP_SPEED
-                    )
-                }
                 return false
             }
             return true

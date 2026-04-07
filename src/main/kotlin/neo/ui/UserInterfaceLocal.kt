@@ -427,6 +427,7 @@ class UserInterfaceLocal {
                 string = kv.GetValue().toString()
                 savefile.WriteInt(len)
                 savefile.Write(ByteBuffer.wrap(string.toByteArray()), len)
+
             }
             savefile.WriteBool(active)
             savefile.WriteBool(interactive)
@@ -444,6 +445,7 @@ class UserInterfaceLocal {
             savefile.WriteFloat(cursorX)
             savefile.WriteFloat(cursorY)
             desktop!!.WriteToSaveGame(savefile)
+
             return true
         }
 

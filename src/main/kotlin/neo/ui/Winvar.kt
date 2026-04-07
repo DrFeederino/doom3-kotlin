@@ -114,7 +114,6 @@ object Winvar {
             }
         }
 
-        //	int	operator==(	const bool &other ) { return (other == data); }
         override fun hashCode(): Int {
             var hash = 7
             hash = 37 * hash + if (data) 1 else 0
@@ -183,11 +182,8 @@ object Winvar {
     open class idWinStr : idWinVar {
         val data: idStr = idStr()
 
-        //
-        //
         constructor() : super()
 
-        //	// ~idWinStr() {};
         constructor(a: String?) : this() {
             data.set(a!!)
         }
@@ -205,12 +201,6 @@ object Winvar {
             }
         }
 
-        //	int	operator==(	const idStr other ) {
-        //		return (other == data);
-        //	}
-        //	int	operator==(	const char *other ) {
-        //		return (data == other);
-        //	}
         override fun hashCode(): Int {
             var hash = 7
             hash = 11 * hash + Objects.hashCode(data)
@@ -633,9 +623,6 @@ object Winvar {
             }
         }
 
-        //	int	operator==(	const idVec2 other ) {
-        //		return (other == data);
-        //	}
         override fun hashCode(): Int {
             var hash = 3
             hash = 23 * hash + Objects.hashCode(data)
@@ -746,9 +733,6 @@ object Winvar {
             }
         }
 
-        //	int	operator==(	final idVec4 other ) {
-        //		return (other == data);
-        //	}
         override fun hashCode(): Int {
             var hash = 7
             hash = 97 * hash + Objects.hashCode(data)
@@ -869,9 +853,6 @@ object Winvar {
             }
         }
 
-        //	int	operator==(	const idVec3 other ) {
-        //		return (other == data);
-        //	}
         override fun hashCode(): Int {
             var hash = 7
             hash = 23 * hash + Objects.hashCode(data)

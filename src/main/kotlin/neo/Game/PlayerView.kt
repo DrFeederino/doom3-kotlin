@@ -254,15 +254,7 @@ object PlayerView {
             renderSystem.SetColor4(1f, 1f, 1f, 1f)
 
             renderSystem.DrawStretchPic(
-                0f,
-                0f,
-                SCREEN_WIDTH.toFloat(),
-                SCREEN_HEIGHT.toFloat(),
-                0f,
-                1f,
-                1f,
-                0f,
-                acDrawMaterials[level]
+                0f, 0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0f, 1f, 1f, 0f, acDrawMaterials[level]
             )
             renderSystem.DrawStretchPic(
                 0f,
@@ -287,27 +279,11 @@ object PlayerView {
             if (clearAccumBuffer) {
                 clearAccumBuffer = false
                 renderSystem.DrawStretchPic(
-                    0f,
-                    0f,
-                    SCREEN_WIDTH.toFloat(),
-                    SCREEN_HEIGHT.toFloat(),
-                    0f,
-                    1f,
-                    1f,
-                    0f,
-                    acInitMaterials[level]
+                    0f, 0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0f, 1f, 1f, 0f, acInitMaterials[level]
                 )
             } else {
                 renderSystem.DrawStretchPic(
-                    0f,
-                    0f,
-                    SCREEN_WIDTH.toFloat(),
-                    SCREEN_HEIGHT.toFloat(),
-                    0f,
-                    1f,
-                    1f,
-                    0f,
-                    acCaptureMaterials[level]
+                    0f, 0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0f, 1f, 1f, 0f, acCaptureMaterials[level]
                 )
                 renderSystem.DrawStretchPic(
                     0f,
@@ -373,15 +349,7 @@ object PlayerView {
             renderSystem.SetColor4(1f, 1f, 1f, 1f)
 
             renderSystem.DrawStretchPic(
-                0f,
-                0f,
-                SCREEN_WIDTH.toFloat(),
-                SCREEN_HEIGHT.toFloat(),
-                0f,
-                1f,
-                1f,
-                0f,
-                acDrawMaterials
+                0f, 0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0f, 1f, 1f, 0f, acDrawMaterials
             )
             renderSystem.DrawStretchPic(
                 0f,
@@ -406,27 +374,11 @@ object PlayerView {
             if (clearAccumBuffer) {
                 clearAccumBuffer = false
                 renderSystem.DrawStretchPic(
-                    0f,
-                    0f,
-                    SCREEN_WIDTH.toFloat(),
-                    SCREEN_HEIGHT.toFloat(),
-                    0f,
-                    1f,
-                    1f,
-                    0f,
-                    acInitMaterials
+                    0f, 0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0f, 1f, 1f, 0f, acInitMaterials
                 )
             } else {
                 renderSystem.DrawStretchPic(
-                    0f,
-                    0f,
-                    SCREEN_WIDTH.toFloat(),
-                    SCREEN_HEIGHT.toFloat(),
-                    0f,
-                    1f,
-                    1f,
-                    0f,
-                    acCaptureMaterials
+                    0f, 0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0f, 1f, 1f, 0f, acCaptureMaterials
                 )
                 renderSystem.DrawStretchPic(
                     0f,
@@ -482,13 +434,7 @@ object PlayerView {
                 drawPts[j + 3].y *= shiftScale.y
             }
             renderSystem.DrawStretchTri(
-                drawPts[0],
-                drawPts[1],
-                drawPts[2],
-                drawPts[3],
-                drawPts[4],
-                drawPts[5],
-                material
+                drawPts[0], drawPts[1], drawPts[2], drawPts[3], drawPts[4], drawPts[5], material
             )
 
             // draw [outer1, outer2, mid2]
@@ -503,13 +449,7 @@ object PlayerView {
                 drawPts[j + 3].y *= shiftScale.y
             }
             renderSystem.DrawStretchTri(
-                drawPts[0],
-                drawPts[1],
-                drawPts[2],
-                drawPts[3],
-                drawPts[4],
-                drawPts[5],
-                material
+                drawPts[0], drawPts[1], drawPts[2], drawPts[3], drawPts[4], drawPts[5], material
             )
 
             // draw [mid1, mid2, center]
@@ -524,13 +464,7 @@ object PlayerView {
                 drawPts[j + 3].y *= shiftScale.y
             }
             renderSystem.DrawStretchTri(
-                drawPts[0],
-                drawPts[1],
-                drawPts[2],
-                drawPts[3],
-                drawPts[4],
-                drawPts[5],
-                material
+                drawPts[0], drawPts[1], drawPts[2], drawPts[3], drawPts[4], drawPts[5], material
             )
         }
 
@@ -647,24 +581,14 @@ object PlayerView {
                 color.y = 0f
                 color.z = 0f
             }
-            if (!Game_local.gameLocal.isMultiplayer && (Game_local.gameLocal.fast.time < player.inventory.powerupEndTime[Player.HELLTIME]
-                        || Game_local.gameLocal.fast.time < player.inventory.powerupEndTime[Player.INVULNERABILITY])
-            ) {
+            if (!Game_local.gameLocal.isMultiplayer && (Game_local.gameLocal.fast.time < player.inventory.powerupEndTime[Player.HELLTIME] || Game_local.gameLocal.fast.time < player.inventory.powerupEndTime[Player.INVULNERABILITY])) {
                 color.y = 0f
                 color.z = 0f
             }
 
             renderSystem.SetColor4(color.x, color.y, color.z, 1.0f)
             renderSystem.DrawStretchPic(
-                0f,
-                0f,
-                SCREEN_WIDTH.toFloat(),
-                SCREEN_HEIGHT.toFloat(),
-                shift,
-                shiftScale.y,
-                shiftScale.x,
-                0f,
-                material
+                0f, 0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), shift, shiftScale.y, shiftScale.x, 0f, material
             )
             renderSystem.SetColor4(color.x, color.y, color.z, 0.5f)
             renderSystem.DrawStretchPic(
@@ -777,15 +701,7 @@ object PlayerView {
 
                 renderSystem.SetColor4(alpha, alpha, alpha, 1f)
                 renderSystem.DrawStretchPic(
-                    0f,
-                    0f,
-                    SCREEN_WIDTH.toFloat(),
-                    SCREEN_HEIGHT.toFloat(),
-                    s1,
-                    t2,
-                    s2,
-                    t1,
-                    drawMaterial
+                    0f, 0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), s1, t2, s2, t1, drawMaterial
                 )
 
                 shift += currentIntensity
@@ -937,15 +853,7 @@ object PlayerView {
             if (alpha < 1f) {
                 renderSystem.SetColor4(1f, 1f, 1f, 1f - alpha)
                 renderSystem.DrawStretchPic(
-                    0f,
-                    0f,
-                    640f,
-                    480f,
-                    0f,
-                    shiftScale.y,
-                    shiftScale.x,
-                    0f,
-                    blendBackMaterial
+                    0f, 0f, 640f, 480f, 0f, shiftScale.y, shiftScale.x, 0f, blendBackMaterial
                 )
             }
         }
@@ -1040,11 +948,7 @@ object PlayerView {
 
         // D3XP warp effects
         fun AddWarp(
-            worldOrigin: idVec3,
-            centerx: Float,
-            centery: Float,
-            initialRadius: Float,
-            durationMsec: Float
+            worldOrigin: idVec3, centerx: Float, centery: Float, initialRadius: Float, durationMsec: Float
         ): Int {
             val fx = fxManager?.FindFX(idStr("warp")) as? FullscreenFX_Warp
             fx?.EnableGrabber(true)
@@ -1291,8 +1195,7 @@ object PlayerView {
         fun CalculateShake() {
 //            idVec3 origin, matrix;
             val shakeVolume = Game_local.gameSoundWorld!!.CurrentShakeAmplitudeForPosition(
-                Game_local.gameLocal.time,
-                player!!.firstPersonViewOrigin
+                Game_local.gameLocal.time, player!!.firstPersonViewOrigin
             )
             //
             // shakeVolume should somehow be molded into an angle here
@@ -1456,10 +1359,7 @@ object PlayerView {
             hackedView.viewaxis.set(hackedView.viewaxis.times(ShakeAxis()))
 
             // D3XP: portal sky rendering
-            if (isD3XP && Game_local.gameLocal.portalSkyEnt.GetEntity() != null
-                && Game_local.gameLocal.IsPortalSkyActive()
-                && SysCvar.g_enablePortalSky.GetBool()
-            ) {
+            if (isD3XP && Game_local.gameLocal.portalSkyEnt.GetEntity() != null && Game_local.gameLocal.IsPortalSkyActive() && SysCvar.g_enablePortalSky.GetBool()) {
                 val portalView = renderView_s(hackedView)
                 portalView.vieworg.set(
                     Game_local.gameLocal.portalSkyEnt.GetEntity()!!.GetPhysics().GetOrigin()
@@ -1518,15 +1418,7 @@ object PlayerView {
                     if (fade != 0.0f) {
                         renderSystem.SetColor4(1.0f, 1.0f, 1.0f, fade)
                         renderSystem.DrawStretchPic(
-                            blob.x,
-                            blob.y,
-                            blob.w,
-                            blob.h,
-                            blob.s1,
-                            blob.t1,
-                            blob.s2,
-                            blob.t2,
-                            blob.material
+                            blob.x, blob.y, blob.w, blob.h, blob.s1, blob.t1, blob.s2, blob.t2, blob.material
                         )
                     }
                 }
@@ -1538,15 +1430,7 @@ object PlayerView {
                 if (armorPulse > 0.0f && armorPulse < 1.0f) {
                     renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f - armorPulse)
                     renderSystem.DrawStretchPic(
-                        0.0f,
-                        0.0f,
-                        640.0f,
-                        480.0f,
-                        0.0f,
-                        0.0f,
-                        1.0f,
-                        1.0f,
-                        armorMaterial
+                        0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, armorMaterial
                     )
                 }
 
@@ -1572,15 +1456,7 @@ object PlayerView {
                         if (player!!.health <= 0.0f) 0.0f else alpha
                     )
                     renderSystem.DrawStretchPic(
-                        0.0f,
-                        0.0f,
-                        640.0f,
-                        480.0f,
-                        0.0f,
-                        0.0f,
-                        1.0f,
-                        1.0f,
-                        tunnelMaterial
+                        0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, tunnelMaterial
                     )
                 }
                 // D3XP: berserk overlay is handled by FullscreenFX_Helltime, only draw in base game
@@ -1591,30 +1467,14 @@ object PlayerView {
                         alpha = if (berserkTime < 10000) berserkTime.toFloat() / 10000 else 1.0f
                         renderSystem.SetColor4(1.0f, 1.0f, 1.0f, alpha)
                         renderSystem.DrawStretchPic(
-                            0.0f,
-                            0.0f,
-                            640.0f,
-                            480.0f,
-                            0.0f,
-                            0.0f,
-                            1.0f,
-                            1.0f,
-                            berserkMaterial
+                            0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, berserkMaterial
                         )
                     }
                 }
                 if (bfgVision) {
                     renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
                     renderSystem.DrawStretchPic(
-                        0.0f,
-                        0.0f,
-                        640.0f,
-                        480.0f,
-                        0.0f,
-                        0.0f,
-                        1.0f,
-                        1.0f,
-                        bfgMaterial
+                        0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, bfgMaterial
                     )
                 }
             }
@@ -1651,6 +1511,17 @@ object PlayerView {
             renderSystem.CaptureRenderToImage("_scratch")
             renderSystem.UnCrop()
 
+            // Workaround: descending T coordinates render incorrectly in the
+            // Kotlin/LWJGL port. Re-draw with ascending T and re-capture to
+            // physically flip the texture content.
+            renderSystem.CropRenderSize(512, 256, true)
+            renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
+            renderSystem.DrawStretchPic(
+                0.0f, 0.0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0.0f, 0.0f, 1.0f, 1.0f, dvMaterial
+            )
+            renderSystem.CaptureRenderToImage("_scratch")
+            renderSystem.UnCrop()
+
             // carry red tint if in berserk mode
             val color = idVec4(1.0f, 1.0f, 1.0f, 1.0f)
             if (Game_local.gameLocal.time < player!!.inventory.powerupEndTime[Player.BERSERK]) {
@@ -1664,9 +1535,9 @@ object PlayerView {
                 SCREEN_WIDTH.toFloat(),
                 SCREEN_HEIGHT.toFloat(),
                 shift.toFloat(),
-                1.0f,
-                1.0f,
                 0.0f,
+                1.0f,
+                1.0f,
                 dvMaterial
             )
             renderSystem.SetColor4(color.x, color.y, color.z, 0.5f)
@@ -1676,9 +1547,9 @@ object PlayerView {
                 SCREEN_WIDTH.toFloat(),
                 SCREEN_HEIGHT.toFloat(),
                 0.0f,
-                1.0f,
-                (1 - shift).toFloat(),
                 0.0f,
+                (1 - shift).toFloat(),
+                1.0f,
                 dvMaterial
             )
         }
@@ -1688,17 +1559,22 @@ object PlayerView {
             SingleView(hud, view)
             renderSystem.CaptureRenderToImage("_scratch")
             renderSystem.UnCrop()
+
+            // Workaround: descending T coordinates (t: 1→0) render incorrectly
+            // in the Kotlin/LWJGL port. Instead, re-draw _scratch with ascending T
+            // into a crop and re-capture, physically flipping the texture content.
+            // Then draw the final quad with ascending T for correct orientation.
+            renderSystem.CropRenderSize(512, 256, true)
             renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
             renderSystem.DrawStretchPic(
-                0.0f,
-                0.0f,
-                SCREEN_WIDTH.toFloat(),
-                SCREEN_HEIGHT.toFloat(),
-                0.0f,
-                1.0f,
-                1.0f,
-                0.0f,
-                dvMaterial
+                0.0f, 0.0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0.0f, 0.0f, 1.0f, 1.0f, dvMaterial
+            )
+            renderSystem.CaptureRenderToImage("_scratch")
+            renderSystem.UnCrop()
+
+            renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
+            renderSystem.DrawStretchPic(
+                0.0f, 0.0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0.0f, 0.0f, 1.0f, 1.0f, dvMaterial
             )
         }
 
@@ -1719,15 +1595,7 @@ object PlayerView {
                 renderSystem.CaptureRenderToImage("_currentRender")
                 renderSystem.SetColor4(1.0f, 1.0f, 1.0f, pct)
                 renderSystem.DrawStretchPic(
-                    0.0f,
-                    0.0f,
-                    640.0f,
-                    480.0f,
-                    0.0f,
-                    0.0f,
-                    1.0f,
-                    1.0f,
-                    player!!.GetInfluenceMaterial()!!
+                    0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, player!!.GetInfluenceMaterial()!!
                 )
             } else if (player!!.GetInfluenceEntity() == null) {
                 SingleView(hud, view)
@@ -1757,21 +1625,10 @@ object PlayerView {
             }
             if (fadeColor[3] != 0.0f) {
                 renderSystem.SetColor4(
-                    fadeColor[0],
-                    fadeColor[1],
-                    fadeColor[2],
-                    fadeColor[3]
+                    fadeColor[0], fadeColor[1], fadeColor[2], fadeColor[3]
                 )
                 renderSystem.DrawStretchPic(
-                    0.0f,
-                    0.0f,
-                    640.0f,
-                    480.0f,
-                    0.0f,
-                    0.0f,
-                    1.0f,
-                    1.0f,
-                    DeclManager.declManager.FindMaterial("_white")
+                    0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, DeclManager.declManager.FindMaterial("_white")
                 )
             }
         }

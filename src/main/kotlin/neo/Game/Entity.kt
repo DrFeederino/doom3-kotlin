@@ -965,7 +965,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
     var noGrab: Boolean = false
 
     // D3XP: x-ray vision — secondary render entity shown through walls
-    var xrayEntity: renderEntity_s? = null
+    var xrayEntity: renderEntity_s = renderEntity_s()
     var xrayEntityHandle: Int = -1
     var xraySkin: idDeclSkin? = null
     protected var modelDefHandle // handle to static renderer model
@@ -1250,13 +1250,13 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             i++
         }
         val flags = fl
-        LittleBitField(flags /*, sizeof(flags)*/)
-        savefile.Write(flags /*, sizeof(flags)*/)
+        LittleBitField(flags)
+        savefile.Write(flags)
         // D3XP: save time group, grab, and xray state
         if (isD3XP) {
             savefile.WriteInt(timeGroup)
             savefile.WriteBool(noGrab)
-            savefile.WriteRenderEntity(xrayEntity ?: renderEntity_s())
+            savefile.WriteRenderEntity(xrayEntity)
             savefile.WriteInt(xrayEntityHandle)
             savefile.WriteSkin(xraySkin)
         }

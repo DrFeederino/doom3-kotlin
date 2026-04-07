@@ -2429,15 +2429,8 @@ object Projectile {
             // load the trace model
             if (!collisionModelManager.TrmFromModel(clipModelName, trm)) {
                 // default to a box
-                Game_local.gameLocal.Printf(
-                    "DEBRIS_SETUP [%s]: TrmFromModel FAILED for '%s', falling back to SetClipBox bounds=(%.2f,%.2f,%.2f)-(%.2f,%.2f,%.2f)\n",
-                    name, clipModelName,
-                    renderEntity!!.bounds[0].x, renderEntity!!.bounds[0].y, renderEntity!!.bounds[0].z,
-                    renderEntity!!.bounds[1].x, renderEntity!!.bounds[1].y, renderEntity!!.bounds[1].z
-                )
                 physicsObj.SetClipBox(renderEntity!!.bounds, 1.0f)
             } else {
-                Game_local.gameLocal.Printf("DEBRIS_SETUP [%s]: TrmFromModel OK for '%s'\n", name, clipModelName)
                 physicsObj.SetClipModel(idClipModel(trm), 1.0f)
             }
             physicsObj.GetClipModel()!!.SetOwner(owner.GetEntity())

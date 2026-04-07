@@ -101,22 +101,17 @@ object SaveGame {
         */
         fun Close() {
             var i: Int
+
             WriteSoundCommands()
 
             // read trace models
             idClipModel.SaveTraceModels(this)
-            i = 1
-            while (i < objects.Num()) {
-                CallSave_r(objects[i]!!.GetType(), objects[i])
-                i++
-            }
-            objects.Clear()
 
-// #ifdef ID_DEBUG_MEMORY
-            // idStr gameState = file.GetName();
-            // gameState.StripFileExtension();
-            // WriteGameState_f( idCmdArgs( va( "test %s_save", gameState.c_str() ), false ) );
-// #endif
+            for (i in 1 until objects.Num()) {
+                CallSave_r(objects[i]!!.GetType(), objects[i])
+            }
+
+            objects.Clear()
         }
 
         /*
@@ -200,8 +195,7 @@ object SaveGame {
         idSaveGame::WriteSignedChar
         ================
         */
-        fun WriteSignedChar(   /*signed char*/value: Short) {
-            // FIX: C++ writes sizeof(signed char) = 1 byte, not sizeof(short) = 2 bytes
+        fun WriteSignedChar(value: Short) {
             val buffer = ByteBuffer.allocate(1)
             buffer.put(value.toByte())
             buffer.flip()
@@ -524,14 +518,13 @@ object SaveGame {
             }
             i = 0
             while (i < RenderWorld.MAX_RENDERENTITY_GUI) {
-                // FIX: C++ passes gui[i] which may be NULL; WriteUserInterface handles NULL.
-                // Kotlin !! would NPE on null gui slots.
                 WriteUserInterface(
                     renderEntity.gui[i],
                     renderEntity.gui[i]?.IsUniqued() ?: false
                 )
                 i++
             }
+
             WriteFloat(renderEntity.modelDepthHack)
             WriteBool(renderEntity.noSelfShadow)
             WriteBool(renderEntity.noShadow)
@@ -542,6 +535,7 @@ object SaveGame {
                 WriteInt(renderEntity.timeGroup)
                 WriteInt(renderEntity.xrayIndex)
             }
+
         }
 
         /*
@@ -794,7 +788,6 @@ object SaveGame {
     ) {
         private var buildNumber = 0
         private var internalSavegameVersion = 0 // DG added this
-
         private val objects: idList<idClass> = idList()
 
         // DG: added these methods, internalSavegameVersion makes us independent of the global BUILD_NUMBER
@@ -882,8 +875,6 @@ object SaveGame {
         */
         fun Error(fmt: String, vararg objects: Any?) { // id_attribute((format(printf,2,3)));
             this.objects.DeleteContents(true)
-            // FIX: must spread vararg with * — without it, the entire Array is passed as a single
-            // argument, producing "[Ljava.lang.Object;@hash" instead of the actual values
             idGameLocal.Error(fmt, *objects)
         }
 
@@ -958,7 +949,6 @@ object SaveGame {
         ================
         */
         fun ReadSignedChar(value: CharArray) {
-            // FIX: C++ reads sizeof(signed char) = 1 byte
             val buffer = ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN)
             file.Read(buffer, 1)
             value[0] = buffer[0].toInt().toChar()
@@ -1171,7 +1161,6 @@ object SaveGame {
             if (0 == name.Length()) {
                 return null
             } else {
-                // FIX: was discarding the FindSkin result — skin was never assigned
                 return DeclManager.declManager.FindSkin(name)
             }
         }
@@ -1232,7 +1221,6 @@ object SaveGame {
             if (0 == name.Length()) {
                 return null
             } else {
-                // FIX: was completely unimplemented — body was commented out
                 return DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, name, false) as idDeclModelDef?
             }
         }

@@ -648,6 +648,15 @@ object Player {
                 i++
             }
 
+            if (isD3XP) {
+                // Save the clip data
+                i = 0
+                while (i < MAX_WEAPONS()) {
+                    dict.SetInt(Str.va("clip%d", i), clip[i])
+                    i++
+                }
+            }
+
             // items
             num = 0
             i = 0
@@ -748,6 +757,15 @@ object Player {
                     ammo[i] = dict.GetInt(name)
                 }
                 i++
+            }
+
+            if (isD3XP) {
+                // Restore the clip data
+                i = 0
+                while (i < MAX_WEAPONS()) {
+                    clip[i] = dict.GetInt(Str.va("clip%d", i), "-1")
+                    i++
+                }
             }
 
             // items

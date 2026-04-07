@@ -31,6 +31,8 @@ package neo.sys
 import neo.TempDump
 import neo.TempDump.SERiAL
 import neo.framework.Common.Companion.common
+import neo.framework.MACOS_X
+import neo.framework.WIN32
 import neo.idlib.containers.CInt
 import neo.idlib.containers.idStrList
 import neo.sys.sys_local.idSysLocal
@@ -47,7 +49,15 @@ import java.nio.ByteOrder
 import java.util.*
 
 const val BUILD_OS_ID = 0 //BUILD_OS_ID = 1 for linux
-val BUILD_STRING: String = "win-x86" // "linux-x86")
+fun BUILD_STRING(): String {
+    return if (WIN32) {
+        "windows-x86_64"
+    } else if (MACOS_X) {
+        "macosx-arm64"
+    } else {
+        "linux-x86_64"
+    }
+}
 
 // cpuidSimd_t flags
 const val CPUID_NONE = 0x00000

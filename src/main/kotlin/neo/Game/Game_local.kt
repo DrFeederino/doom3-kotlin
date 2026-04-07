@@ -1155,6 +1155,7 @@ class Game_local {
             var i: Int
             var ent: idEntity?
             var link: idEntity?
+
             val savegame = idSaveGame(saveGameFile)
             if (SysCvar.g_flushSave.GetBool() == true) {
                 // force flushing with each write... for tracking down
@@ -1170,7 +1171,7 @@ class Game_local {
             savegame.WriteString(D3_ARCH) // CPU architecture (e.g. "x86" or "x86_64") - from CMake
             savegame.WriteString(ENGINE_VERSION)
             savegame.WriteShort(D3_SHORT_SIZE) // tells us if it's from a 32bit (4) or 64bit system (8)
-            savegame.WriteShort(0) // byteOrder
+            savegame.WriteShort(1234) // byteOrder
             // DG end
             // go through all entities and threads and add them to the object list
             i = 0
@@ -1189,6 +1190,7 @@ class Game_local {
                 }
                 i++
             }
+
             val threads: idList<idThread> = idThread.GetThreads()
             for (thread in threads.getList(Array<idThread>::class.java)!!) {
                 savegame.AddObject(thread)
@@ -1196,61 +1198,56 @@ class Game_local {
 
             // write out complete object list
             savegame.WriteObjectList()
-            println("SAVE_POS after objectList: ${saveGameFile.Tell()}")
             program.Save(savegame)
-            println("SAVE_POS after program: ${saveGameFile.Tell()}")
             savegame.WriteInt(SysCvar.g_skill.GetInteger())
-            println("SAVE_POS before serverInfo dict: ${saveGameFile.Tell()}")
             savegame.WriteDict(serverInfo)
-            println("SAVE_POS after serverInfo dict: ${saveGameFile.Tell()}")
             savegame.WriteInt(numClients)
-            gameLocal.Printf("Finished reading server info and num clients")
             i = 0
             while (i < numClients) {
-                println("SAVE_POS before userInfo[$i]: ${saveGameFile.Tell()}")
                 savegame.WriteDict(userInfo[i])
                 savegame.WriteUsercmd(usercmds[i])
-                println("SAVE_POS before persistentPlayerInfo[$i]: ${saveGameFile.Tell()}")
                 savegame.WriteDict(persistentPlayerInfo[i])
-                println("SAVE_POS after persistentPlayerInfo[$i]: ${saveGameFile.Tell()}")
                 i++
             }
-            println("SAVE_POS before entities: ${saveGameFile.Tell()}")
+
             i = 0
             while (i < MAX_GENTITIES) {
                 savegame.WriteObject(entities[i])
                 savegame.WriteInt(spawnIds[i])
                 i++
             }
-            println("SAVE_POS after entities+spawnIds: ${saveGameFile.Tell()}")
+
             savegame.WriteInt(firstFreeIndex)
             savegame.WriteInt(num_entities)
 
             // enityHash is restored by idEntity::Restore setting the entity name.
             savegame.WriteObject(world)
+
             savegame.WriteInt(spawnedEntities.Num())
             ent = spawnedEntities.Next()
             while (ent != null) {
                 savegame.WriteObject(ent)
                 ent = ent.spawnNode.Next()
             }
+
             savegame.WriteInt(activeEntities.Num())
             ent = activeEntities.Next()
             while (ent != null) {
                 savegame.WriteObject(ent)
                 ent = ent.activeNode.Next()
             }
+
             savegame.WriteInt(numEntitiesToDeactivate)
             savegame.WriteBool(sortPushers)
             savegame.WriteBool(sortTeamMasters)
-            println("SAVE_POS before persistentLevelInfo: ${saveGameFile.Tell()}")
             savegame.WriteDict(persistentLevelInfo)
-            println("SAVE_POS after persistentLevelInfo: ${saveGameFile.Tell()}")
+
             i = 0
             while (i < RenderWorld.MAX_GLOBAL_SHADER_PARMS) {
                 savegame.WriteFloat(globalShaderParms[i])
                 i++
             }
+
             savegame.WriteInt(random.GetSeed())
             savegame.WriteObject(frameCommandThread)
 
@@ -1259,6 +1256,7 @@ class Game_local {
             // pvs
             testmodel = null
             testFx = null
+
             savegame.WriteString(sessionCommand)
 
             // FIXME: save smoke particles
@@ -1295,6 +1293,7 @@ class Game_local {
                 savegame.WriteBool(quickSlowmoReset)
             }
 
+
             savegame.WriteBool(mapCycleLoaded)
             savegame.WriteInt(spawnCount)
             if (locationEntities == null) {
@@ -1307,6 +1306,7 @@ class Game_local {
                     i++
                 }
             }
+
             savegame.WriteObject(camera)
             savegame.WriteMaterial(globalMaterial)
             lastAIAlertEntity.Save(savegame)

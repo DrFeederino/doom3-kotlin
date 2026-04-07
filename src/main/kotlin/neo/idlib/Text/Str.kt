@@ -2191,7 +2191,6 @@ object Str {
 
             fun FloatArrayToString(array: FloatArray, length: Int, precision: Int): String {
                 var i: Int
-                val n: Int
                 var format: String
                 val s: StringBuffer
 
@@ -2200,14 +2199,23 @@ object Str {
                 s = str[index]
                 index = index + 1 and 3
                 format = String.format("%%.%df", precision)
-                n = snPrintf(s, s.capacity(), format, array[0])
-                format = String.format(" %%.%df", precision)
+                s.append(stripTrailingZeros(String.format(format, array[0]), precision))
+                format = String.format("%%.%df", precision)
                 i = 1
                 while (i < length) {
-                    s.append(String.format(format, array[i]))
+                    s.append(' ')
+                    s.append(stripTrailingZeros(String.format(format, array[i]), precision))
                     i++
                 }
                 return s.toString()
+            }
+
+            private fun stripTrailingZeros(s: String, precision: Int): String {
+                if (precision <= 0) return s
+                var end = s.length
+                while (end > 0 && s[end - 1] == '0') end--
+                while (end > 0 && s[end - 1] == '.') end--
+                return s.substring(0, end)
             }
 
             // hash keys
