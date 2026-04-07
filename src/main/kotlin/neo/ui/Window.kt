@@ -219,30 +219,14 @@ object Window {
     }
 
     class idTimeLineEvent {
-        var event: idGuiScriptList?
+        val event: idGuiScriptList = idGuiScriptList()
         var pending = false
         var time = 0
-
-        init {
-            event = idGuiScriptList()
-        } //	~idTimeLineEvent() {
-        //		delete event;
-        //	}
     }
 
     class rvNamedEvent(name: String?) {
-        var mEvent: idGuiScriptList?
-
-        // ~rvNamedEvent(void)
-        // {
-        // delete mEvent;
-        // }
-        var mName: idStr
-
-        init {
-            mEvent = idGuiScriptList()
-            mName = idStr(name!!)
-        }
+        val mEvent: idGuiScriptList = idGuiScriptList()
+        val mName: idStr = idStr(name!!)
     }
 
     class idTransitionData {
@@ -745,41 +729,41 @@ object Window {
         fun GetWinVarOffset(wv: idWinVar?, owner: drawWin_t): Int {
             var ret = -1
 
-            if (wv == rect) {
+            if (wv === rect) {
                 ret = TransiotonalDataOffset.RECT_OFFSET.offset
             }
 
-            if (wv == backColor) {
+            if (wv === backColor) {
                 ret = TransiotonalDataOffset.BACKCOLOR_OFFSET.offset
             }
 
-            if (wv == matColor) {
+            if (wv === matColor) {
                 ret = TransiotonalDataOffset.MATCOLOR_OFFSET.offset
             }
 
-            if (wv == foreColor) {
+            if (wv === foreColor) {
                 ret = TransiotonalDataOffset.FORECOLOR_OFFSET.offset
             }
 
-            if (wv == hoverColor) {
+            if (wv === hoverColor) {
                 // TODO: Figure it out in the vanilla.
                 //ret = TransiotonalDataOffset.HOVERCOLOR_OFFSET.offset
             }
 
-            if (wv == borderColor) {
+            if (wv === borderColor) {
                 ret = TransiotonalDataOffset.BORDERCOLOR_OFFSET.offset
             }
 
-            if (wv == textScale) {
+            if (wv === textScale) {
                 ret = TransiotonalDataOffset.TEXTSCALE_OFFSET.offset
             }
 
-            if (wv == rotate) {
+            if (wv === rotate) {
                 ret = TransiotonalDataOffset.ROTATE_OFFSET.offset
             }
 
             //#modified-fva; BEGIN
-            if (wv == cstAnchorFactor) {
+            if (wv === cstAnchorFactor) {
                 ret = TransiotonalDataOffset.CSTANCHORFACTOR_OFFSET.offset
             }
             //#modified-fva; END
@@ -1535,7 +1519,7 @@ object Window {
                                         child.clientRect,
                                         gui!!.CursorX(),
                                         gui!!.CursorY()
-                                    ) || GetCaptureChild() == child
+                                    ) || GetCaptureChild() === child
                                 ) {
                                     if (gui_edit.GetBool() && child.flags and WIN_SELECTED != 0 || !gui_edit.GetBool() && child.flags and WIN_MOVABLE != 0) {
                                         SetCapture(child)
@@ -1592,7 +1576,7 @@ object Window {
                                 }
                                 while (index < parent!!.GetChildCount() && index >= 0) {
                                     val testWindow = parent.GetChild(index)
-                                    if (testWindow == currentFocus) {
+                                    if (testWindow === currentFocus) {
                                         // we managed to wrap around and get back to our starting window
                                         foundFocus = true
                                         break
@@ -1621,7 +1605,7 @@ object Window {
                                     // We didn't find anything, so go back up to our parent
                                     child = parent
                                     parent = child.GetParent()
-                                    if (parent == gui!!.GetDesktop()) {
+                                    if (parent === gui!!.GetDesktop()) {
                                         // We got back to the desktop, so wrap around but don't actually go to the desktop
                                         parent = null
                                         child = null
@@ -2153,7 +2137,9 @@ object Window {
 
         open fun WriteToSaveGame(savefile: idFile) {
             var i: Int
+
             WriteSaveGameString(cmd, savefile)
+
             savefile.WriteFloat(actualX)
             savefile.WriteFloat(actualY)
             savefile.WriteInt(childID)
@@ -2196,6 +2182,7 @@ object Window {
             backGroundName.WriteToSaveGame(savefile)
             hideCursor.WriteToSaveGame(savefile)
 
+
             //#modified-fva; BEGIN // FIXME: savegame version?
             cstAnchor.WriteToSaveGame(savefile)
             cstAnchorTo.WriteToSaveGame(savefile)
@@ -2209,6 +2196,7 @@ object Window {
                 definedVars[i]!!.WriteToSaveGame(savefile)
                 i++
             }
+
             savefile.Write(textRect)
 
             // Window pointers saved as the child ID of the window
@@ -2586,7 +2574,7 @@ object Window {
 
 
         fun EvalRegs(test: Int = -1 /*= -1*/, force: Boolean = false /*= false*/): Float {
-            if (!force && test >= 0 && test < MAX_EXPRESSION_REGISTERS && lastEval == this) {
+            if (!force && test >= 0 && test < MAX_EXPRESSION_REGISTERS && lastEval === this) {
                 return regs[test]
             }
             lastEval = this
@@ -2880,6 +2868,7 @@ object Window {
                 if (expressionRegisters.Num() != 0 && ops.Num() != 0) {
                     EvalRegs(-1, true)
                 }
+
                 RunScriptList(namedEvents[i]!!.mEvent)
                 break
             }
@@ -2906,7 +2895,7 @@ object Window {
             var find: Int
             find = 0
             while (find < drawWindows.Num()) {
-                if (drawWindows[find]!!.win == window) {
+                if (drawWindows[find]!!.win === window) {
                     return find
                 }
                 find++
@@ -3314,37 +3303,7 @@ object Window {
             opp: Array<wexpOp_t?>? = null /*= NULL*/
         ): Int {
             val op: wexpOp_t
-            /*
-             // optimize away identity operations
-             if ( opType == WOP_TYPE_ADD ) {
-             if ( !registerIsTemporary[a] && shaderRegisters[a] == 0 ) {
-             return b;
-             }
-             if ( !registerIsTemporary[b] && shaderRegisters[b] == 0 ) {
-             return a;
-             }
-             if ( !registerIsTemporary[a] && !registerIsTemporary[b] ) {
-             return ExpressionConstant( shaderRegisters[a] + shaderRegisters[b] );
-             }
-             }
-             if ( opType == WOP_TYPE_MULTIPLY ) {
-             if ( !registerIsTemporary[a] && shaderRegisters[a] == 1 ) {
-             return b;
-             }
-             if ( !registerIsTemporary[a] && shaderRegisters[a] == 0 ) {
-             return a;
-             }
-             if ( !registerIsTemporary[b] && shaderRegisters[b] == 1 ) {
-             return a;
-             }
-             if ( !registerIsTemporary[b] && shaderRegisters[b] == 0 ) {
-             return b;
-             }
-             if ( !registerIsTemporary[a] && !registerIsTemporary[b] ) {
-             return ExpressionConstant( shaderRegisters[a] * shaderRegisters[b] );
-             }
-             }
-             */op = ExpressionOp()
+            op = ExpressionOp()
             op.opType = opType
             op.a = a
             op.b = b

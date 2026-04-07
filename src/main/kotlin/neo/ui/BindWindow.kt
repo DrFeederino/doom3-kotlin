@@ -19,9 +19,6 @@ import neo.ui.Winvar.idWinVar
 class BindWindow {
     internal class idBindWindow : idWindow {
         private val bindName = idWinStr()
-
-        //
-        //
         private var waitingOnKey = false
 
         constructor(gui: idUserInterfaceLocal) : super(gui) {

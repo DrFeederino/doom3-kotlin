@@ -435,18 +435,18 @@ object Str {
             if (obj == null) {
                 return false
             }
-            if (obj.javaClass == String::class.java) { //when comparing pointers it's usually only about what they point to.
+            if (obj.javaClass == String::class.java) {
                 if (!(obj as String).isEmpty()) {
-                    return data.startsWith(obj) //TODO:should we check first character against first character only
+                    return data == obj
                 }
             }
             if (obj.javaClass == idStr::class.java) {
                 if (!(obj as idStr).IsEmpty()) {
-                    return data.startsWith(obj.data)
+                    return data == obj.data
                 }
             }
             return if (obj.javaClass == Char::class.java) {
-                data.startsWith((obj as Char).toString())
+                data.length == 1 && data[0] == (obj as Char)
             } else false
         }
 

@@ -738,7 +738,7 @@ class UserInterfaceLocal {
         }
 
         override fun Reload(all: Boolean) {
-            val  /*ID_TIME_T*/ts = LongArray(1)
+            val ts = LongArray(1)
             val c = guis.Num()
             for (i in 0 until c) {
                 if (!all) {

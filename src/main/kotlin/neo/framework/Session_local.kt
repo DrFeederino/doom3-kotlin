@@ -309,28 +309,16 @@ object Session_local {
                 ArgCompletion_MapName.getInstance()
             )
             cmdSystem.AddCommand(
-                "writeCmdDemo",
-                Session_WriteCmdDemo_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "writes a command demo"
+                "writeCmdDemo", Session_WriteCmdDemo_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "writes a command demo"
             )
             cmdSystem.AddCommand(
-                "playCmdDemo",
-                Session_PlayCmdDemo_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "plays back a command demo"
+                "playCmdDemo", Session_PlayCmdDemo_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "plays back a command demo"
             )
             cmdSystem.AddCommand(
-                "timeCmdDemo",
-                Session_TimeCmdDemo_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "times a command demo"
+                "timeCmdDemo", Session_TimeCmdDemo_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "times a command demo"
             )
             cmdSystem.AddCommand(
-                "exitCmdDemo",
-                Session_ExitCmdDemo_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "exits a command demo"
+                "exitCmdDemo", Session_ExitCmdDemo_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "exits a command demo"
             )
             cmdSystem.AddCommand(
                 "aviCmdDemo",
@@ -339,16 +327,10 @@ object Session_local {
                 "writes AVIs for a command demo"
             )
             cmdSystem.AddCommand(
-                "aviGame",
-                Session_AVIGame_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "writes AVIs for the current game"
+                "aviGame", Session_AVIGame_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "writes AVIs for the current game"
             )
             cmdSystem.AddCommand(
-                "recordDemo",
-                Session_RecordDemo_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "records a demo"
+                "recordDemo", Session_RecordDemo_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "records a demo"
             )
             cmdSystem.AddCommand(
                 "stopRecording",
@@ -393,10 +375,7 @@ object Session_local {
             )
             //            }
             cmdSystem.AddCommand(
-                "disconnect",
-                Session_Disconnect_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "disconnects from a game"
+                "disconnect", Session_Disconnect_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "disconnects from a game"
             )
             if (ID_DEMO_BUILD) {
                 cmdSystem.AddCommand(
@@ -407,22 +386,13 @@ object Session_local {
                 )
             }
             cmdSystem.AddCommand(
-                "demoShot",
-                Session_DemoShot_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "writes a screenshot for a demo"
+                "demoShot", Session_DemoShot_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "writes a screenshot for a demo"
             )
             cmdSystem.AddCommand(
-                "testGUI",
-                Session_TestGUI_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "tests a gui"
+                "testGUI", Session_TestGUI_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "tests a gui"
             )
             cmdSystem.AddCommand(
-                "saveGame",
-                SaveGame_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT,
-                "saves a game"
+                "saveGame", SaveGame_f.getInstance(), CmdSystem.CMD_FL_SYSTEM or CmdSystem.CMD_FL_CHEAT, "saves a game"
             )
             cmdSystem.AddCommand(
                 "loadGame",
@@ -438,10 +408,7 @@ object Session_local {
                 "take notes about the current map from the current view"
             )
             cmdSystem.AddCommand(
-                "takeViewNotes2",
-                TakeViewNotes2_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "extended take view notes"
+                "takeViewNotes2", TakeViewNotes2_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "extended take view notes"
             )
             cmdSystem.AddCommand(
                 "rescanSI",
@@ -450,10 +417,7 @@ object Session_local {
                 "internal - rescan serverinfo cvars and tell game"
             )
             cmdSystem.AddCommand(
-                "promptKey",
-                Session_PromptKey_f.getInstance(),
-                CmdSystem.CMD_FL_SYSTEM,
-                "prompt and sets the CD Key"
+                "promptKey", Session_PromptKey_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "prompt and sets the CD Key"
             )
             cmdSystem.AddCommand(
                 "hitch",
@@ -585,8 +549,7 @@ object Session_local {
                 win_input.Sys_GrabMouseCursor(false)
             }
             RenderSystem.renderSystem.BeginFrame(
-                RenderSystem.renderSystem.GetScreenWidth(),
-                RenderSystem.renderSystem.GetScreenHeight()
+                RenderSystem.renderSystem.GetScreenWidth(), RenderSystem.renderSystem.GetScreenHeight()
             )
 
             // draw everything
@@ -655,10 +618,7 @@ object Session_local {
                 val name: idStr
                 name = idStr(
                     Str.va(
-                        "demos/%s/%s_%05i.tga",
-                        aviDemoShortName.toString(),
-                        aviDemoShortName.toString(),
-                        aviTicStart
+                        "demos/%s/%s_%05i.tga", aviDemoShortName.toString(), aviDemoShortName.toString(), aviTicStart
                     )
                 )
                 val ratio = 30.0f / (1000.0f / UsercmdGen.USERCMD_MSEC / com_aviDemoTics.GetInteger())
@@ -964,6 +924,7 @@ object Session_local {
             // start playing the menu sounds
             snd_system.soundSystem.SetPlayingSoundWorld(menuSoundWorld!!)
             SetGUI(guiMainMenu, null)
+
             guiMainMenu!!.HandleNamedEvent(if (playIntro) "playIntro" else "noIntro")
             if (FileSystem_h.fileSystem.HasD3XP()) {
                 guiMainMenu!!.SetStateString("game_list", Common.common.GetLanguageDict().GetString("#str_07202"))
@@ -1018,8 +979,7 @@ object Session_local {
             // stop generating move and button commands when a local console or menu is active
             // running here so SP, async networking and no game all go through it
             UsercmdGen.usercmdGen.InhibitUsercmd(
-                inhibit_t.INHIBIT_SESSION,
-                Console.console.Active() || guiActive != null
+                inhibit_t.INHIBIT_SESSION, Console.console.Active() || guiActive != null
             )
             gui = if (guiTest != null) {
                 guiTest
@@ -1051,22 +1011,13 @@ object Session_local {
         }
 
         override fun MessageBox(
-            type: msgBoxType_t,
-            message: String,
-            title: String,
-            wait: Boolean,
-            fire_yes: String
+            type: msgBoxType_t, message: String, title: String, wait: Boolean, fire_yes: String
         ): String {
             return MessageBox(type, message, title, wait, fire_yes, null, false) ?: ""
         }
 
         override fun MessageBox(
-            type: msgBoxType_t,
-            message: String,
-            title: String,
-            wait: Boolean,
-            fire_yes: String,
-            fire_no: String
+            type: msgBoxType_t, message: String, title: String, wait: Boolean, fire_yes: String, fire_no: String
         ): String {
             return MessageBox(type, message, title, wait, fire_yes, fire_no, false) ?: ""
         }
@@ -1240,10 +1191,7 @@ object Session_local {
         }
 
         override fun DownloadProgressBox(
-            bgl: backgroundDownload_s,
-            title: String,
-            progress_start: Int,
-            progress_end: Int
+            bgl: backgroundDownload_s, title: String, progress_start: Int, progress_end: Int
         ) {
             var dlnow = 0
             var dltotal = 0
@@ -1293,8 +1241,7 @@ object Session_local {
                                 sMsg = String.format("%s / %s", sNow, sTotal)
                             } else {
                                 sETA = String.format(
-                                    "%.0f.0f sec",
-                                    (dltotal.toFloat() / dlnow.toFloat() - 1.0f) * lapsed / 1000
+                                    "%.0f.0f sec", (dltotal.toFloat() / dlnow.toFloat() - 1.0f) * lapsed / 1000
                                 )
                                 sMsg = String.format("%s / %s ( %s - %s )", sNow, sTotal, sBW, sETA)
                             }
@@ -1357,8 +1304,7 @@ object Session_local {
             filename = "../" + Licensee.BASE_GAMEDIR + "/" + Licensee.CDKEY_FILE
             f = FileSystem_h.fileSystem.OpenExplicitFileRead(
                 FileSystem_h.fileSystem.RelativePathToOSPath(
-                    filename,
-                    "fs_savepath"
+                    filename, "fs_savepath"
                 )
             )
             if (null == f) {
@@ -1374,8 +1320,7 @@ object Session_local {
             filename = "../" + Licensee.BASE_GAMEDIR + "/" + Licensee.XPKEY_FILE
             f = FileSystem_h.fileSystem.OpenExplicitFileRead(
                 FileSystem_h.fileSystem.RelativePathToOSPath(
-                    filename,
-                    "fs_savepath"
+                    filename, "fs_savepath"
                 )
             )
             if (null == f) {
@@ -1398,9 +1343,7 @@ object Session_local {
             // OpenFileWrite advertises creating directories to the path if needed, but that won't work with a '..' in the path
             // occasionally on windows, but mostly on Linux and OSX, the fs_savepath/base may not exist in full
             OSPath = FileSystem_h.fileSystem.BuildOSPath(
-                cvarSystem.GetCVarString("fs_savepath"),
-                Licensee.BASE_GAMEDIR,
-                Licensee.CDKEY_FILE
+                cvarSystem.GetCVarString("fs_savepath"), Licensee.BASE_GAMEDIR, Licensee.CDKEY_FILE
             )
             FileSystem_h.fileSystem.CreateOSPath(OSPath)
             f = FileSystem_h.fileSystem.OpenFileWrite(filename)
@@ -1449,7 +1392,6 @@ object Session_local {
             val s_chk = CharArray(3)
             val imax: Int
             var i_key: Int
-            /*unsigned*/
             var checksum: Int
             var chk8: Int //TODO:bitwise ops on longs!?
             val edited_key = BooleanArray(2)
@@ -2350,15 +2292,7 @@ object Session_local {
                 // NOTE that you can't use this for aviGame recording, it will tick at real com_frameTime between screenshots..
                 RenderSystem.renderSystem.SetColor(colorBlack)
                 RenderSystem.renderSystem.DrawStretchPic(
-                    0.0f,
-                    0.0f,
-                    640.0f,
-                    480.0f,
-                    0.0f,
-                    0.0f,
-                    1.0f,
-                    1.0f,
-                    DeclManager.declManager.FindMaterial("_white")
+                    0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, DeclManager.declManager.FindMaterial("_white")
                 )
                 guiTest!!.Redraw(Common.com_frameTime)
             } else if (guiActive != null && !guiActive!!.State().GetBool("gameDraw")) {
@@ -2709,8 +2643,7 @@ object Session_local {
                 val demoSeconds = (timeDemoStopTime - timeDemoStartTime) * 0.001f
                 val demoFPS = numDemoFrames / demoSeconds
                 val message = Str.va(
-                    "%d frames rendered in %3.1f seconds = %3.1f fps\n",
-                    numDemoFrames, demoSeconds, demoFPS
+                    "%d frames rendered in %3.1f seconds = %3.1f fps\n", numDemoFrames, demoSeconds, demoFPS
                 )
 
                 Common.common.Printf("%s", message)
@@ -2853,9 +2786,7 @@ object Session_local {
             // write a .roqParam file so the demo can be converted to a roq file
             val f = FileSystem_h.fileSystem.OpenFileWrite(
                 Str.va(
-                    "demos/%s/%s.roqParam",
-                    aviDemoShortName,
-                    aviDemoShortName
+                    "demos/%s/%s.roqParam", aviDemoShortName, aviDemoShortName
                 )
             )!!
             f.Printf("INPUT_DIR demos/%s\n", aviDemoShortName)
@@ -2925,11 +2856,7 @@ object Session_local {
             }
             if (com_showDemo.GetBool()) {
                 Common.common.Printf(
-                    "frame:%d DemoTic:%d latched:%d skip:%d\n",
-                    numDemoFrames,
-                    lastDemoTic,
-                    latchedTicNumber,
-                    skipFrames
+                    "frame:%d DemoTic:%d latched:%d skip:%d\n", numDemoFrames, lastDemoTic, latchedTicNumber, skipFrames
                 )
             }
         }
@@ -3034,8 +2961,7 @@ object Session_local {
             // load / program a gui to stay up on the screen while loading
             val stripped = idStr(mapName).StripFileExtension().StripPath()
             val guiMap = Str.va(
-                "guis/map/%." + MAX_STRING_CHARS + "s.gui",
-                stripped.toString()
+                "guis/map/%." + MAX_STRING_CHARS + "s.gui", stripped.toString()
             ) //char guiMap[ MAX_STRING_CHARS ];
             // give the gamecode a chance to override
             Game_local.game.GetMapLoadingGUI(guiMap.toCharArray())
@@ -3436,8 +3362,7 @@ object Session_local {
                 }
             } else if (!doIngame) {
                 Common.common.DPrintf(
-                    "idSessionLocal::DispatchCommand: no dispatch found for command '%s'\n",
-                    menuCommand
+                    "idSessionLocal::DispatchCommand: no dispatch found for command '%s'\n", menuCommand
                 )
             }
             if (doIngame) {
@@ -3571,9 +3496,7 @@ object Session_local {
                     guiActive!!.SetStateString("saveGameDescription", description.toString())
                     val timeStamp = longArrayOf(0)
                     FileSystem_h.fileSystem.ReadFile(
-                        Str.va("savegames/%s.save", loadGameList[choice].toString()),
-                        null,
-                        timeStamp
+                        Str.va("savegames/%s.save", loadGameList[choice].toString()), null, timeStamp
                     )
                     val date = idStr(sys_local.Sys_TimeStampToStr(timeStamp[0]))
                     val tab = date.Find('\t')
@@ -3723,8 +3646,7 @@ object Session_local {
                     cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, Str.va("Connect %d\n", sel))
                     return
                 }
-                if (0 == idStr.Icmp(cmd, "MAPScan")) {
-                    /*final*/
+                if (0 == idStr.Icmp(cmd, "MAPScan")) {/*final*/
                     var gametype = cvarSystem.GetCVarString("si_gameType")
                     if (gametype == null || gametype.isEmpty() || idStr.Icmp(gametype, "singleplayer") == 0) {
                         gametype = "Deathmatch"
@@ -3740,7 +3662,6 @@ object Session_local {
                     while (i < num) {
                         dict = FileSystem_h.fileSystem.GetMapDecl(i)
                         if (dict != null && dict.GetBool(gametype)) {
-                            /*final*/
                             var mapName = dict.GetString("name")
                             if (mapName.isEmpty()) {
                                 mapName = dict.GetString("path")
@@ -3823,16 +3744,11 @@ object Session_local {
                                 }
                             }
                             if (n_clients > maxclients) {
-                                if (
-                                    MessageBox(
-                                        msgBoxType_t.MSG_OKCANCEL,
-                                        Str.va(
+                                if (MessageBox(
+                                        msgBoxType_t.MSG_OKCANCEL, Str.va(
                                             Common.common.GetLanguageDict().GetString("#str_04315"),
                                             if (dedicated != 0) maxclients else Min(8, maxclients + 1)
-                                        ),
-                                        Common.common.GetLanguageDict().GetString("#str_04316"),
-                                        true,
-                                        "OK"
+                                        ), Common.common.GetLanguageDict().GetString("#str_04316"), true, "OK"
                                         // FIX: C++ checks `[0] == '\0'` meaning "result is empty" (user cancelled).
                                         // Kotlin had `isNotEmpty()` which is the opposite.
                                     ).isEmpty()
@@ -3840,8 +3756,7 @@ object Session_local {
                                     continue
                                 }
                                 cvarSystem.SetCVarInteger(
-                                    "si_maxPlayers",
-                                    if (dedicated != 0) maxclients else Min(8, maxclients + 1)
+                                    "si_maxPlayers", if (dedicated != 0) maxclients else Min(8, maxclients + 1)
                                 )
                             }
                         }
@@ -4122,11 +4037,8 @@ object Session_local {
             val d3xpMods = arrayOf(
                 // TODO: if there are more mods that need d3xp as base
                 // (and that are supported by dhewm3), add them here
-                "bloodmod_roe",
-                "d3le", // The Lost Mission
-                "librecoopd3xp",
-                "perfected_roe",
-                "sikkmodd3xp",
+                "bloodmod_roe", "d3le", // The Lost Mission
+                "librecoopd3xp", "perfected_roe", "sikkmodd3xp",
                 // Doom 3: Phobos (they haven't released source yet, so it won't work yet,
                 //                 but ain't I ever the optimist..)
                 "tfphobos"
@@ -4230,9 +4142,7 @@ object Session_local {
                     continue
                 }
                 if (0 == idStr.Icmp(cmd, "restart")) {
-                    if (com_disableAutoSaves.GetBool()
-                        || !LoadGame(GetAutoSaveName(mapSpawnData.serverInfo.GetString("si_map")))
-                    ) {
+                    if (com_disableAutoSaves.GetBool() || !LoadGame(GetAutoSaveName(mapSpawnData.serverInfo.GetString("si_map")))) {
                         // If we can't load the autosave then just restart the map
                         MoveToNewMap(mapSpawnData.serverInfo.GetString("si_map"))
                     }
@@ -4324,9 +4234,7 @@ object Session_local {
                     }
                     fileName.Append(severity)
                     val mapDecl = DeclManager.declManager.FindType(
-                        declType_t.DECL_ENTITYDEF,
-                        mapSpawnData.serverInfo.GetString("si_map"),
-                        false
+                        declType_t.DECL_ENTITYDEF, mapSpawnData.serverInfo.GetString("si_map"), false
                     )
                     val mapInfo = mapDecl as idDeclEntityDef
                     if (mapInfo != null) {
@@ -4482,9 +4390,7 @@ object Session_local {
         fun UpdateMPLevelShot() {
             val screenshot = StringBuffer()
             FileSystem_h.fileSystem.FindMapScreenshot(
-                cvarSystem.GetCVarString("si_map"),
-                screenshot,
-                MAX_STRING_CHARS
+                cvarSystem.GetCVarString("si_map"), screenshot, MAX_STRING_CHARS
             )
             guiMainMenu!!.SetStateString("current_levelshot", screenshot.toString())
         }
@@ -4539,8 +4445,7 @@ object Session_local {
             SetCDKeyGuiVars()
             // DG: dhewm3 removed ID_DEMO_BUILD guard
             guiMainMenu!!.SetStateString(
-                "nightmare",
-                if (cvarSystem.GetCVarBool("g_nightmare")) "1" else "0"
+                "nightmare", if (cvarSystem.GetCVarBool("g_nightmare")) "1" else "0"
             )
             guiMainMenu!!.SetStateString("browser_levelshot", "guis/assets/splash/pdtempa")
             SetMainMenuSkin()
@@ -4658,15 +4563,14 @@ object Session_local {
             val com_aviDemoTics: idCVar =
                 idCVar("com_aviDemoTics", "2", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER, "", 1.0f, 60.0f)
             val com_aviDemoWidth: idCVar = idCVar("com_aviDemoWidth", "256", CVarSystem.CVAR_SYSTEM, "")
-            val com_fixedTic: idCVar =
-                idCVar(
-                    "com_fixedTic",
-                    "0",
-                    CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE,
-                    "",
-                    -1.0f,
-                    10.0f
-                )
+            val com_fixedTic: idCVar = idCVar(
+                "com_fixedTic",
+                "0",
+                CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INTEGER or CVarSystem.CVAR_ARCHIVE,
+                "",
+                -1.0f,
+                10.0f
+            )
             val com_guid: idCVar =
                 idCVar("com_guid", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_ARCHIVE or CVarSystem.CVAR_ROM, "")
             val com_minTics: idCVar = idCVar("com_minTics", "1", CVarSystem.CVAR_SYSTEM, "")
@@ -4721,15 +4625,32 @@ object Session_local {
             //
             private const val CDKEY_BUF_LEN = 17
             private val PEOPLE: Array<String> = arrayOf(
-                "Tim", "Kenneth", "Robert",
-                "Matt", "Mal", "Jerry", "Steve", "Pat",
-                "Xian", "Ed", "Fred", "James", "Eric", "Andy", "Seneca", "Patrick", "Kevin",
-                "MrElusive", "Jim", "Brian", "John", "Adrian", "Nobody"
+                "Tim",
+                "Kenneth",
+                "Robert",
+                "Matt",
+                "Mal",
+                "Jerry",
+                "Steve",
+                "Pat",
+                "Xian",
+                "Ed",
+                "Fred",
+                "James",
+                "Eric",
+                "Andy",
+                "Seneca",
+                "Patrick",
+                "Kevin",
+                "MrElusive",
+                "Jim",
+                "Brian",
+                "John",
+                "Adrian",
+                "Nobody"
             )
             private val NUM_PEOPLE = PEOPLE.size
-            var DBG_Draw = 0 // NOTE: debug artifact, kept to avoid changing companion object layout
             var frameEvents = 0
-            private var DBG_EndFrame = 0 // NOTE: debug artifact, kept to avoid changing companion object layout
             private var cmd //TODO:stringify?
                     : CharArray? = null
         }

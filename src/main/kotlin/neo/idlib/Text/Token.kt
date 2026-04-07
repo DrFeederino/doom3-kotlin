@@ -238,7 +238,7 @@ object Token {
                 return super.equals(obj)
             }
             val other = obj as idToken
-            return data.startsWith(other.data)
+            return data == other.data
         }
     }
 }

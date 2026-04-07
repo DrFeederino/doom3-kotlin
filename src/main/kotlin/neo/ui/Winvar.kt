@@ -22,7 +22,7 @@ object Winvar {
     const val VAR_GUIPREFIX = "gui::"
     const val VAR_GUIPREFIX_LEN = VAR_GUIPREFIX.length
 
-    abstract class idWinVar // public   ~idWinVar();
+    abstract class idWinVar
     {
         protected var eval = true
         protected var guiDict: idDict? = null
@@ -44,7 +44,6 @@ object Winvar {
             name = _name
         }
 
-        // idWinVar &operator=( final idWinVar other );
         fun set(other: idWinVar?): idWinVar {
             guiDict = other!!.guiDict
             SetName(other.name)
@@ -79,7 +78,7 @@ object Winvar {
 
         abstract fun Update()
         abstract fun c_str(): String?
-        open fun  /*size_t*/Size(): Int {
+        open fun Size(): Int {
             return if (name != null) name!!.length else 0
         }
 
@@ -595,6 +594,8 @@ object Winvar {
             return data == other
         }
 
+        override fun destruct() {}
+
         companion object {
             private val ret: idVec4 = idVec4()
         }
@@ -942,8 +943,6 @@ object Winvar {
     class idWinBackground : idWinStr {
         protected var mat: Array<idMaterial?>? = null
 
-        //
-        //
         constructor() : super() {
             mat = null
         }

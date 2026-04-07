@@ -943,8 +943,6 @@ object TraceModel {
         // calculate mass properties assuming an uniform density
         fun GetMassProperties(density: Float, mass: CFloat, centerOfMass: idVec3, inertiaTensor: idMat3) {
             val integrals = volumeIntegrals_t()
-            DBG_GetMassProperties++
-
             // if polygon trace model
             if (type == traceModel_t.TRM_POLYGON) {
                 val trm = idTraceModel()
@@ -1675,7 +1673,6 @@ object TraceModel {
 
         companion object {
             const val SHARP_EDGE_DOT = -0.7f
-            private var DBG_GetMassProperties = 0
         }
     }
 }

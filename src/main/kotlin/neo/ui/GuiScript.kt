@@ -62,15 +62,12 @@ object GuiScript {
         private var handler: Handler? = null
         private val parms: idList<idGSWinVar>
 
-        //
-        //
         init {
             conditionReg = -1
             parms = idList()
             parms.SetGranularity(2)
         }
 
-        // ~idGuiScript();
         fun Parse(src: idParser): Boolean {
             var i: Int
 
@@ -281,7 +278,7 @@ object GuiScript {
             }
         }
 
-        fun  /*size_t*/Size(): Int {
+        fun Size(): Int {
             var sz = 4
             for (i in 0 until parms.Num()) {
                 sz += parms[i].`var`!!.Size()
@@ -323,7 +320,7 @@ object GuiScript {
                 }
                 i++
             }
-        } //protected	void (*handler) (idWindow *window, idList<idGSWinVar> *src);
+        }
     }
 
     class idGuiScriptList {
@@ -334,7 +331,6 @@ object GuiScript {
             list.SetGranularity(4)
         }
 
-        // ~idGuiScriptList() { list.DeleteContents(true); };
         fun Execute(win: idWindow) {
             val c = list.Num()
             for (i in 0 until c) {
@@ -581,11 +577,13 @@ object GuiScript {
             var parm = src[0].`var` as idWinStr?
             var win: drawWin_t? = null
             if (parm != null && src.Num() > 1) {
-                win = window.GetGui().GetDesktop()!!.FindChildByName(parm.data.toString())
+                val targetName = parm.data.toString()
+                win = window.GetGui().GetDesktop()!!.FindChildByName(targetName)
                 parm = src[1].`var` as idWinStr
             }
             if (win != null && win.win != null) {
-                win.win!!.ResetTime(parm!!.data.toString().toInt())
+                val t = parm!!.data.toString().toInt()
+                win.win!!.ResetTime(t)
                 win.win!!.EvalRegs(-1, true)
             } else {
                 window.ResetTime(parm!!.data.toString().toInt())
