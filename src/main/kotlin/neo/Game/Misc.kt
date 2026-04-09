@@ -56,7 +56,6 @@ import neo.TempDump
 import neo.Tools.Compilers.AAS.AASFile
 import neo.cm.trace_s
 import neo.framework.Common
-import neo.framework.DeclManager
 import neo.framework.DeclManager.Companion.declManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
@@ -2013,7 +2012,7 @@ object Misc {
             val count = spawnArgs.GetInt("splatCount", "1")
             for (i in 0 until count) {
                 splat = spawnArgs.RandomPrefix("mtr_splat", gameLocal.random)
-                if (splat != null && !splat.isEmpty()) {
+                if (splat.isNotEmpty()) {
                     val size = spawnArgs.GetFloat("splatSize", "128")
                     val dist = spawnArgs.GetFloat("splatDistance", "128")
                     val angle = spawnArgs.GetFloat("splatAngle", "0")

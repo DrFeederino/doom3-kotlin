@@ -738,20 +738,20 @@ class Dict_h {
         }
 
         // randomly chooses one of the key/value pairs with the given key prefix and returns it's value
-        fun RandomPrefix(prefix: String, random: idRandom): String? {
+        fun RandomPrefix(prefix: String, random: idRandom): String {
             var count: Int
             val MAX_RANDOM_KEYS = 2048
             val list = arrayOfNulls<String>(MAX_RANDOM_KEYS)
             var kv: idKeyValue?
 
-//            list[0] = "";
+            list[0] = ""
             count = 0
             kv = MatchPrefix(prefix)
             while (kv != null && count < MAX_RANDOM_KEYS) {
                 list[count++] = String(kv.GetValue().toString().toCharArray())
                 kv = MatchPrefix(prefix, kv)
             }
-            return list[random.RandomInt(count)]
+            return list[random.RandomInt(count)]!!
         }
 
         @Throws(idException::class)

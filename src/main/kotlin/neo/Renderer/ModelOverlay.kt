@@ -285,8 +285,9 @@ object ModelOverlay {
                 if (staticModel.FindSurfaceWithId(-1 - k, surfaceNum)) {
                     newSurf = staticModel.surfaces[surfaceNum._val]
                 } else {
-                    newSurf = staticModel.surfaces.Alloc()
-                    newSurf!!.geometry = null
+                    newSurf = modelSurface_s()
+                    staticModel.surfaces.Append(newSurf)
+                    newSurf.geometry = null
                     newSurf.shader = materials[k]!!.material
                     newSurf.id = -1 - k
                 }
@@ -295,7 +296,7 @@ object ModelOverlay {
                     newSurf.geometry = R_AllocStaticTriSurf()
                     R_AllocStaticTriSurfVerts(newSurf.geometry!!, numVerts)
                     R_AllocStaticTriSurfIndexes(newSurf.geometry!!, numIndexes)
-                    SIMDProcessor!!.Memset(newSurf.geometry!!.verts as Array<Any>, 0, numVerts)
+                    //SIMDProcessor!!.Memset(newSurf.geometry!!.verts as Array<Any>, 0, numVerts)
                 } else {
                     R_FreeStaticTriSurfVertexCaches(newSurf.geometry!!)
                 }

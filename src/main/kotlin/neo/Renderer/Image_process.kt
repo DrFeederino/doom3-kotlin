@@ -431,13 +431,15 @@ object Image_process {
         return out
     }
 
-    fun addUnsignedBytes(vararg bytes: Byte): Int {
-        var result = 0
-        for (b: Byte in bytes) {
-            result += b.toInt() and 0xFF
-        }
-        return result
-    }
+    fun addUnsignedBytes(a: Byte, b: Byte): Int =
+        (a.toInt() and 0xFF) + (b.toInt() and 0xFF)
+
+    fun addUnsignedBytes(a: Byte, b: Byte, c: Byte, d: Byte): Int =
+        (a.toInt() and 0xFF) + (b.toInt() and 0xFF) + (c.toInt() and 0xFF) + (d.toInt() and 0xFF)
+
+    fun addUnsignedBytes(a: Byte, b: Byte, c: Byte, d: Byte, e: Byte, f: Byte, g: Byte, h: Byte): Int =
+        (a.toInt() and 0xFF) + (b.toInt() and 0xFF) + (c.toInt() and 0xFF) + (d.toInt() and 0xFF) +
+                (e.toInt() and 0xFF) + (f.toInt() and 0xFF) + (g.toInt() and 0xFF) + (h.toInt() and 0xFF)
 
     /*
      ================

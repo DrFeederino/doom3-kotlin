@@ -31,6 +31,7 @@ import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local.*
 import neo.Game.Game_local.Companion.gameRenderWorld
 import neo.Game.Game_local.Companion.isD3XP
+import neo.Game.Physics.Clip.CLIPMODEL_ID_TO_JOINT_HANDLE
 import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.Physics.Physics.impactInfo_s
@@ -1084,14 +1085,13 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         FreeModelDef()
         FreeSoundEmitter(false)
 
-        Game_local.gameLocal.UnregisterEntity(this)
+        // Kotlin-specific: ensure activeNode is removed even if Signal/Unbind/RemoveBinds
+        // re-added this entity to activeEntities via BecomeActive(). In C++, the object is
+        // freed after the destructor so dangling list nodes are (usually) harmless, but in
+        // Kotlin the object survives and pollutes the activeEntities list.
+        activeNode.Remove()
 
-        delete(teamChain)
-        delete(teamMaster)
-        delete(bindMaster)
-        delete(physics)
-        if (physics !== defaultPhysicsObj) delete(defaultPhysicsObj)
-        delete(cameraTarget)
+        Game_local.gameLocal.UnregisterEntity(this)
 
         super._deconstructor()
     }
@@ -2938,36 +2938,36 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         var attacker = attacker
         val ts = if (isD3XP) SetTimeState(timeGroup) else null
         try {
-        if (!fl.takedamage) {
-            return
-        }
-        if (null == inflictor) {
-            inflictor = Game_local.gameLocal.world
-        }
-        if (null == attacker) {
-            attacker = Game_local.gameLocal.world
-        }
-        val damageDef = Game_local.gameLocal.FindEntityDefDict(damageDefName, false)
-        if (null == damageDef) {
-            idGameLocal.Error("Unknown damageDef '%s'\n", damageDefName)
-            return
-        }
-        val damage = CInt(damageDef.GetInt("damage"))
-
-        // inform the attacker that they hit someone
-        attacker!!.DamageFeedback(this, inflictor, damage)
-        if (0 != damage._val) {
-            // do the damage
-            health -= damage._val
-            if (health <= 0) {
-                if (health < -999) {
-                    health = -999
-                }
-                Killed(inflictor, attacker, damage._val, dir, location)
-            } else {
-                Pain(inflictor, attacker, damage._val, dir, location)
+            if (!fl.takedamage) {
+                return
             }
-        }
+            if (null == inflictor) {
+                inflictor = Game_local.gameLocal.world
+            }
+            if (null == attacker) {
+                attacker = Game_local.gameLocal.world
+            }
+            val damageDef = Game_local.gameLocal.FindEntityDefDict(damageDefName, false)
+            if (null == damageDef) {
+                idGameLocal.Error("Unknown damageDef '%s'\n", damageDefName)
+                return
+            }
+            val damage = CInt(damageDef.GetInt("damage"))
+
+            // inform the attacker that they hit someone
+            attacker!!.DamageFeedback(this, inflictor, damage)
+            if (0 != damage._val) {
+                // do the damage
+                health -= damage._val
+                if (health <= 0) {
+                    if (health < -999) {
+                        health = -999
+                    }
+                    Killed(inflictor, attacker, damage._val, dir, location)
+                } else {
+                    Pain(inflictor, attacker, damage._val, dir, location)
+                }
+            }
         } finally {
             ts?.close()
         }
@@ -2998,11 +2998,11 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         if (SysCvar.g_decals.GetBool()) {
             // place a wound overlay on the model
             key = va("mtr_wound_%s", materialType)
-            decal = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)!!
+            decal = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)
             if (decal.isEmpty()) { // == '\0' ) {
                 decal = def.dict.RandomPrefix(key, Game_local.gameLocal.random)
             }
-            if (!decal!!.isEmpty()) { // != '\0' ) {
+            if (decal.isNotEmpty()) { // != '\0' ) {
                 val dir = idVec3(velocity)
                 dir.Normalize()
                 ProjectOverlay(collision.c.point, dir, 20.0f, decal)
@@ -3562,12 +3562,12 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             trace.c.id = cm.GetId()
             val ts = if (isD3XP) SetTimeState(ent.timeGroup) else null
             try {
-            ent.Signal(signalNum_t.SIG_TOUCH)
-            ent.ProcessEvent(EV_Touch, this, trace)
-            if (Game_local.gameLocal.entities[entityNumber] == null) {
-                Game_local.gameLocal.Printf("entity was removed while touching triggers\n")
-                return true
-            }
+                ent.Signal(signalNum_t.SIG_TOUCH)
+                ent.ProcessEvent(EV_Touch, this, trace)
+                if (Game_local.gameLocal.entities[entityNumber] == null) {
+                    Game_local.gameLocal.Printf("entity was removed while touching triggers\n")
+                    return true
+                }
             } finally {
                 ts?.close()
             }
@@ -4671,9 +4671,9 @@ open class idAnimatedEntity : idEntity() {
             val axis = idMat3()
             val ts = if (isD3XP) SetTimeState(e.timeGroup) else null
             try {
-            if (!e.GetJointWorldTransform(jointnum.value, Game_local.gameLocal.time, offset, axis)) {
-                Game_local.gameLocal.Warning("Joint # %d out of range on entity '%s'", jointnum, e.name)
-            }
+                if (!e.GetJointWorldTransform(jointnum.value, Game_local.gameLocal.time, offset, axis)) {
+                    Game_local.gameLocal.Warning("Joint # %d out of range on entity '%s'", jointnum, e.name)
+                }
             } finally {
                 ts?.close()
             }
@@ -4692,9 +4692,9 @@ open class idAnimatedEntity : idEntity() {
             val axis = idMat3()
             val ts = if (isD3XP) SetTimeState(e.timeGroup) else null
             try {
-            if (!e.GetJointWorldTransform(jointnum.value, Game_local.gameLocal.time, offset, axis)) {
-                Game_local.gameLocal.Warning("Joint # %d out of range on entity '%s'", jointnum, e.name)
-            }
+                if (!e.GetJointWorldTransform(jointnum.value, Game_local.gameLocal.time, offset, axis)) {
+                    Game_local.gameLocal.Warning("Joint # %d out of range on entity '%s'", jointnum, e.name)
+                }
             } finally {
                 ts?.close()
             }
@@ -4818,39 +4818,39 @@ open class idAnimatedEntity : idEntity() {
     fun UpdateAnimation() {
         val ts = if (isD3XP) SetTimeState(timeGroup) else null
         try {
-        // don't do animations if they're not enabled
-        if (0 == (thinkFlags and TH_ANIMATE)) {
-            return
-        }
+            // don't do animations if they're not enabled
+            if (0 == (thinkFlags and TH_ANIMATE)) {
+                return
+            }
 
-        // is the model an MD5?
-        if (animator.ModelHandle() == null) {
-            // no, so nothing to do
-            return
-        }
+            // is the model an MD5?
+            if (animator.ModelHandle() == null) {
+                // no, so nothing to do
+                return
+            }
 
-        // call any frame commands that have happened in the past frame
-        if (!fl.hidden) {
-            animator.ServiceAnims(Game_local.gameLocal.previousTime, Game_local.gameLocal.time)
-        }
+            // call any frame commands that have happened in the past frame
+            if (!fl.hidden) {
+                animator.ServiceAnims(Game_local.gameLocal.previousTime, Game_local.gameLocal.time)
+            }
 
-        // if the model is animating then we have to update it
-        if (!animator.FrameHasChanged(Game_local.gameLocal.time)) {
-            // still fine the way it was
-            return
-        }
+            // if the model is animating then we have to update it
+            if (!animator.FrameHasChanged(Game_local.gameLocal.time)) {
+                // still fine the way it was
+                return
+            }
 
-        // get the latest frame bounds
-        animator.GetBounds(Game_local.gameLocal.time, renderEntity!!.bounds)
-        if (renderEntity!!.bounds.IsCleared() && !fl.hidden) {
-            Game_local.gameLocal.DPrintf("%d: inside out bounds\n", Game_local.gameLocal.time)
-        }
+            // get the latest frame bounds
+            animator.GetBounds(Game_local.gameLocal.time, renderEntity!!.bounds)
+            if (renderEntity!!.bounds.IsCleared() && !fl.hidden) {
+                Game_local.gameLocal.DPrintf("%d: inside out bounds\n", Game_local.gameLocal.time)
+            }
 
-        // update the renderEntity
-        UpdateVisuals()
+            // update the renderEntity
+            UpdateVisuals()
 
-        // the animation is updated
-        animator.ClearForceUpdate()
+            // the animation is updated
+            animator.ClearForceUpdate()
         } finally {
             ts?.close()
         }
@@ -4942,7 +4942,7 @@ open class idAnimatedEntity : idEntity() {
 
         val def = Game_local.gameLocal.FindEntityDef(damageDefName, false) ?: return
 
-        val jointNum = neo.Game.Physics.Clip.CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id)
+        val jointNum = CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id)
         if (jointNum == Model.INVALID_JOINT) {
             return
         }
@@ -4985,16 +4985,17 @@ open class idAnimatedEntity : idEntity() {
         }
     }
 
-    fun AddLocalDamageEffect(   /*jointHandle_t*/jointNum: Int,
-                                localOrigin: idVec3,
-                                localNormal: idVec3,
-                                localDir: idVec3,
-                                def: idDeclEntityDef,
-                                collisionMaterial: Material.idMaterial?
+    fun AddLocalDamageEffect(
+        jointNum: Int,
+        localOrigin: idVec3,
+        localNormal: idVec3,
+        localDir: idVec3,
+        def: idDeclEntityDef,
+        collisionMaterial: Material.idMaterial?
     ) {
         var sound: String?
-        var splat: String?
-        var decal: String?
+        var splat: String
+        var decal: String
         var bleed: String?
         var key: String?
         val de: damageEffect_s
@@ -5003,74 +5004,74 @@ open class idAnimatedEntity : idEntity() {
         val axis: idMat3
         val ts = if (isD3XP) SetTimeState(timeGroup) else null
         try {
-        axis = renderEntity!!.joints!![jointNum]!!.ToMat3().times(renderEntity!!.axis)
-        origin.set(
-            renderEntity!!.origin.plus(
-                renderEntity!!.joints!![jointNum]!!.ToVec3().times(renderEntity!!.axis)
+            axis = renderEntity!!.joints!![jointNum]!!.ToMat3().times(renderEntity!!.axis)
+            origin.set(
+                renderEntity!!.origin.plus(
+                    renderEntity!!.joints!![jointNum]!!.ToVec3().times(renderEntity!!.axis)
+                )
             )
-        )
-        origin.set(origin.plus(localOrigin.times(axis)))
-        dir.set(localDir.times(axis))
-        var type: Int = collisionMaterial!!.GetSurfaceType().ordinal
-        if (type == surfTypes_t.SURFTYPE_NONE.ordinal) {
-            type = GetDefaultSurfaceType()
-        }
-        val materialType = Game_local.gameLocal.sufaceTypeNames[type]
-
-        // start impact sound based on material type
-        key = va("snd_%s", materialType)
-        sound = spawnArgs.GetString(key)
-        if (sound == null || sound.isEmpty()) { // == '\0' ) {
-            sound = def.dict.GetString(key)
-        }
-        if (sound != null && !sound.isEmpty()) { // != '\0' ) {
-            StartSoundShader(
-                DeclManager.declManager.FindSound(sound),
-                gameSoundChannel_t.SND_CHANNEL_BODY.ordinal,
-                0,
-                false
-            )
-        }
-
-        // blood splats are thrown onto nearby surfaces
-        key = va("mtr_splat_%s", materialType)
-        splat = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)
-        if (splat == null || splat.isEmpty()) { // == '\0' ) {
-            splat = def.dict.RandomPrefix(key, Game_local.gameLocal.random)
-        }
-        if (splat != null && !splat.isEmpty()) { // 1= '\0' ) {
-            Game_local.gameLocal.BloodSplat(origin, dir, 64.0f, splat)
-        }
-
-        // can't see wounds on the player model in single player mode
-        if (this !is idPlayer && !Game_local.gameLocal.isMultiplayer) {
-            // place a wound overlay on the model
-            key = va("mtr_wound_%s", materialType)
-            decal = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)
-            if (decal == null || decal.isEmpty()) { // == '\0' ) {
-                decal = def.dict.RandomPrefix(key, Game_local.gameLocal.random)
+            origin.set(origin.plus(localOrigin.times(axis)))
+            dir.set(localDir.times(axis))
+            var type: Int = (collisionMaterial?.GetSurfaceType() ?: surfTypes_t.SURFTYPE_NONE).ordinal
+            if (type == surfTypes_t.SURFTYPE_NONE.ordinal) {
+                type = GetDefaultSurfaceType()
             }
-            if (decal != null && !decal.isEmpty()) { // == '\0' ) {
-                ProjectOverlay(origin, dir, 20.0f, decal)
-            }
-        }
+            val materialType = Game_local.gameLocal.sufaceTypeNames[type]
 
-        // a blood spurting wound is added
-        key = va("smoke_wound_%s", materialType)
-        bleed = spawnArgs.GetString(key)
-        if (bleed == null || bleed.isEmpty()) { // == '\0' ) {
-            bleed = def.dict.GetString(key)
-        }
-        if (bleed != null && !bleed.isEmpty()) { // == '\0' ) {
-            de = damageEffect_s()
-            de.next = damageEffects
-            damageEffects = de
-            de.jointNum = jointNum
-            de.localOrigin.set(localOrigin)
-            de.localNormal.set(localNormal)
-            de.type = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, bleed) as idDeclParticle
-            de.time = Game_local.gameLocal.time
-        }
+            // start impact sound based on material type
+            key = va("snd_%s", materialType)
+            sound = spawnArgs.GetString(key)
+            if (sound == null || sound.isEmpty()) { // == '\0' ) {
+                sound = def.dict.GetString(key)
+            }
+            if (sound != null && !sound.isEmpty()) { // != '\0' ) {
+                StartSoundShader(
+                    DeclManager.declManager.FindSound(sound),
+                    gameSoundChannel_t.SND_CHANNEL_BODY.ordinal,
+                    0,
+                    false
+                )
+            }
+
+            // blood splats are thrown onto nearby surfaces
+            key = va("mtr_splat_%s", materialType)
+            splat = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)
+            if (splat.isEmpty()) { // == '\0' ) {
+                splat = def.dict.RandomPrefix(key, Game_local.gameLocal.random)
+            }
+            if (splat.isNotEmpty()) { // 1= '\0' ) {
+                Game_local.gameLocal.BloodSplat(origin, dir, 64.0f, splat)
+            }
+
+            // can't see wounds on the player model in single player mode
+            if (!(this is idPlayer && !Game_local.gameLocal.isMultiplayer)) {
+                // place a wound overlay on the model
+                key = va("mtr_wound_%s", materialType)
+                decal = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)
+                if (decal.isEmpty()) { // == '\0' ) {
+                    decal = def.dict.RandomPrefix(key, Game_local.gameLocal.random)
+                }
+                if (decal.isNotEmpty()) { // == '\0' ) {
+                    ProjectOverlay(origin, dir, 20.0f, decal)
+                }
+            }
+
+            // a blood spurting wound is added
+            key = va("smoke_wound_%s", materialType)
+            bleed = spawnArgs.GetString(key)
+            if (bleed == null || bleed.isEmpty()) { // == '\0' ) {
+                bleed = def.dict.GetString(key)
+            }
+            if (bleed != null && !bleed.isEmpty()) { // == '\0' ) {
+                de = damageEffect_s()
+                de.next = damageEffects
+                damageEffects = de
+                de.jointNum = jointNum
+                de.localOrigin.set(localOrigin)
+                de.localNormal.set(localNormal)
+                de.type = DeclManager.declManager.FindType(declType_t.DECL_PARTICLE, bleed) as idDeclParticle
+                de.time = Game_local.gameLocal.time
+            }
         } finally {
             ts?.close()
         }

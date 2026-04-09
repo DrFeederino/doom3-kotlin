@@ -5934,7 +5934,7 @@ object Player {
             return if (index >= 0 && index < inventory.videos.size()) {
                 DeclManager.declManager.FindType(
                     declType_t.DECL_VIDEO, inventory.videos[index], false
-                ) as idDeclVideo
+                ) as idDeclVideo?
             } else null
         }
 
@@ -8440,7 +8440,7 @@ object Player {
                 if (j != currentPDA && j < 128 && (inventory.pdasViewed[j shr 5] and (1 shl (j and 31))) != 0) {
                     // This pda has been read already, mark in gray
                     objectiveSystem!!.SetStateString(
-                        Str.va("listPDA_item_%d", index), Str.va(Str.S_COLOR_GRAY, "%s", pda.GetPdaName())
+                        Str.va("listPDA_item_%d", index), Str.va(Str.S_COLOR_GRAY + "%s", pda.GetPdaName())
                     )
                 } else {
                     // This pda has not been read yet

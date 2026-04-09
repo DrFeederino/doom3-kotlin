@@ -287,12 +287,22 @@ object win_glimp {
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE)
-            glfwGetWindowContentScale(window, glConfig.scaleX, glConfig.scaleY)
-            // get scale factor and update width and height by scale factor of each axis
-            parms.width = (parms.width * glConfig.scaleX[0]).toInt()
-            parms.height = (parms.height * glConfig.scaleY[0]).toInt()
-            glConfig.vidWidth = (glConfig.vidWidth * glConfig.scaleX[0]).toInt()
-            glConfig.vidHeight = (glConfig.vidHeight * glConfig.scaleX[0]).toInt()
+        }
+
+        // Query content scale for HiDPI (macOS retina, Windows DPI scaling)
+        glfwGetWindowContentScale(window, glConfig.scaleX, glConfig.scaleY)
+        glConfig.winWidth = parms.width.toFloat()
+        glConfig.winHeight = parms.height.toFloat()
+
+        // Query actual framebuffer size — may differ from window size on HiDPI or fullscreen
+        val fbWidth = intArrayOf(0)
+        val fbHeight = intArrayOf(0)
+        glfwGetFramebufferSize(window, fbWidth, fbHeight)
+        if (fbWidth[0] > 0 && fbHeight[0] > 0) {
+            parms.width = fbWidth[0]
+            parms.height = fbHeight[0]
+            glConfig.vidWidth = fbWidth[0]
+            glConfig.vidHeight = fbHeight[0]
         }
 
         glfwMakeContextCurrent(window)

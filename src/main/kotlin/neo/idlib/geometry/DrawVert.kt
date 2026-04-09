@@ -56,6 +56,7 @@ object DrawVert {
             st.set(dv.st)
             normal.set(dv.normal)
             tangents = arrayOf(idVec3(dv.tangents[0]), idVec3(dv.tangents[1]))
+            System.arraycopy(dv.color, 0, color, 0, 4)
         }
 
         fun set(dv: idDrawVert) {
@@ -64,6 +65,7 @@ object DrawVert {
             normal.set(dv.normal)
             tangents[0].set(dv.tangents[0])
             tangents[1].set(dv.tangents[1])
+            System.arraycopy(dv.color, 0, color, 0, 4)
         }
 
         operator fun get(index: Int): Float {

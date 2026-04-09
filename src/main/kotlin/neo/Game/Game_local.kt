@@ -510,9 +510,10 @@ class Game_local {
                 = false
         var spawnIds: IntArray = IntArray(MAX_GENTITIES) // for use in idEntityPtr
         var spawnedEntities: idLinkList<idEntity> = idLinkList() // all spawned entities
-
-        //
-        var sufaceTypeNames: Array<String?> = arrayOfNulls(Material.MAX_SURFACE_TYPES) // text names for surface types
+        var sufaceTypeNames: Array<String> = arrayOf(
+            "none", "metal", "stone", "flesh", "wood", "cardboard", "liquid", "glass", "plastic",
+            "ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15"
+        ) // text names for surface types
         var testFx // for development testing of fx
                 : idEntityFx? = null
 
