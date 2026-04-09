@@ -1052,11 +1052,12 @@ object Surface {
             edges.Clear()
 
             // the first edge is a dummy
-            e[0].tris[1] = 0
-            e[0].tris[0] = e[0].tris[1]
-            e[0].verts[1] = e[0].tris[0]
-            e[0].verts[0] = e[0].verts[1]
-            edges.Append(e[0])
+            val dummy = surfaceEdge_t()
+            dummy.tris[0] = 0
+            dummy.tris[1] = 0
+            dummy.verts[0] = 0
+            dummy.verts[1] = 0
+            edges.Append(dummy)
 
             for (i in 0 until indexes.Num() step 3) {
                 index = indexes //index = indexes.Ptr() + i;
@@ -1067,13 +1068,13 @@ object Surface {
                 // setup edges each with smallest vertex number first
                 s = INTSIGNBITSET(i1 - i0)
                 e[0].verts[0] = index[i + s]
-                e[0].verts[1] = index[i + s xor 1]
+                e[0].verts[1] = index[i + (s xor 1)]
                 s = INTSIGNBITSET(i2 - i1) + 1
                 e[1].verts[0] = index[i + s]
-                e[1].verts[1] = index[i + s xor 3]
+                e[1].verts[1] = index[i + (s xor 3)]
                 s = INTSIGNBITSET(i2 - i0) shl 1
                 e[2].verts[0] = index[i + s]
-                e[2].verts[1] = index[i + s xor 2]
+                e[2].verts[1] = index[i + (s xor 2)]
                 // get edges
                 j = 0
                 while (j < 3) {
@@ -1088,9 +1089,12 @@ object Surface {
                     }
                     // if the edge does not yet exist
                     if (edgeNum < 0) {
-                        e[j].tris[1] = -1
-                        e[j].tris[0] = e[j].tris[1]
-                        edgeNum = edges.Append(e[j])
+                        val newEdge = surfaceEdge_t()
+                        newEdge.verts[0] = e[j].verts[0]
+                        newEdge.verts[1] = e[j].verts[1]
+                        newEdge.tris[0] = -1
+                        newEdge.tris[1] = -1
+                        edgeNum = edges.Append(newEdge)
                         edgeChain[edgeNum] = vertexEdges[v0]
                         vertexEdges[v0] = edgeNum
                     }

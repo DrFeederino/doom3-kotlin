@@ -59,7 +59,7 @@ object File_h {
                     format += fmt[fmt_ptr]
                     when (fmt[fmt_ptr]) {
                         'f', 'e', 'E', 'g', 'G' -> {
-                            f = argPtr[va_ptr++] as Float
+                            f = (argPtr[va_ptr++] as Number).toFloat()
                             if (format.length <= 2) {
                                 // high precision floating point number without trailing zeros
 //                                sprintf(tmp, "%1.10f", f);
@@ -88,8 +88,7 @@ object File_h {
 
                         'u' -> {
                             u = (argPtr[va_ptr++] as Number).toLong()
-                            //                            index += sprintf(buf + index, format, u);
-                            temp = String.format(format, u)
+                            temp = String.format(format.replace("u", "d"), u)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)
                             index += temp.length
                         }
@@ -127,7 +126,7 @@ object File_h {
                         }
 
                         's' -> {
-                            str = argPtr[va_ptr++] as String?
+                            str = argPtr[va_ptr++]?.toString()
                             //                            index += sprintf(buf + index, format, str);
                             temp = String.format(format, str)
                             System.arraycopy(temp.toCharArray(), 0, buf, index, temp.length)

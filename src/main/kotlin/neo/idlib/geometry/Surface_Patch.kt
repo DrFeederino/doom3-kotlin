@@ -1,6 +1,7 @@
 package neo.idlib.geometry
 
 import neo.idlib.Dict_h.idDict
+import neo.idlib.MapFile.idMapPatch
 import neo.idlib.MapFile.idMapPrimitive
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.Surface.idSurface
@@ -69,6 +70,18 @@ class Surface_Patch {
 
         constructor(patch: idMapPrimitive) {
             this.set(patch)
+        }
+
+        constructor(patch: idMapPatch) {
+            maxWidth = patch.GetWidth()
+            maxHeight = patch.GetHeight()
+            width = maxWidth
+            height = maxHeight
+            expanded = false
+            verts.SetNum(width * height)
+            for (i in 0 until width * height) {
+                verts[i] = idDrawVert(patch.GetVert(i))
+            }
         }
 
         @Throws(Exception::class)
@@ -170,12 +183,12 @@ class Surface_Patch {
                     LerpVert(prev, next, mid)
                     k = width - 1
                     while (k > j + 3) {
-                        verts[i * maxWidth + k] = verts[i * maxWidth + k - 2]
+                        verts[i * maxWidth + k] = idDrawVert(verts[i * maxWidth + k - 2])
                         k--
                     }
-                    verts[i * maxWidth + j + 1] = prev
-                    verts[i * maxWidth + j + 2] = mid
-                    verts[i * maxWidth + j + 3] = next
+                    verts[i * maxWidth + j + 1] = idDrawVert(prev)
+                    verts[i * maxWidth + j + 2] = idDrawVert(mid)
+                    verts[i * maxWidth + j + 3] = idDrawVert(next)
                     i++
                 }
 
@@ -229,12 +242,12 @@ class Surface_Patch {
                     LerpVert(prev, next, mid)
                     k = height - 1
                     while (k > j + 3) {
-                        verts[k * maxWidth + i] = verts[(k - 2) * maxWidth + i]
+                        verts[k * maxWidth + i] = idDrawVert(verts[(k - 2) * maxWidth + i])
                         k--
                     }
-                    verts[(j + 1) * maxWidth + i] = prev
-                    verts[(j + 2) * maxWidth + i] = mid
-                    verts[(j + 3) * maxWidth + i] = next
+                    verts[(j + 1) * maxWidth + i] = idDrawVert(prev)
+                    verts[(j + 2) * maxWidth + i] = idDrawVert(mid)
+                    verts[(j + 3) * maxWidth + i] = idDrawVert(next)
                     i++
                 }
 
@@ -409,7 +422,7 @@ class Surface_Patch {
                     while (i < height) {
                         k = j
                         while (k < width) {
-                            verts[i * maxWidth + k] = verts[i * maxWidth + k + 1]
+                            verts[i * maxWidth + k] = idDrawVert(verts[i * maxWidth + k + 1])
                             k++
                         }
                         i++
@@ -440,7 +453,7 @@ class Surface_Patch {
                     while (i < width) {
                         k = j
                         while (k < height) {
-                            verts[k * maxWidth + i] = verts[(k + 1) * maxWidth + i]
+                            verts[k * maxWidth + i] = idDrawVert(verts[(k + 1) * maxWidth + i])
                             k++
                         }
                         i++
@@ -467,7 +480,10 @@ class Surface_Patch {
             while (j >= 0) {
                 i = maxWidth - 1
                 while (i >= 0) {
-                    verts[j * newWidth + i] = verts[j * maxWidth + i]
+                    if (verts[j * maxWidth + i] == null) {
+                        verts[j * maxWidth + i] = idDrawVert()
+                    }
+                    verts[j * newWidth + i] = idDrawVert(verts[j * maxWidth + i])
                     i--
                 }
                 j--

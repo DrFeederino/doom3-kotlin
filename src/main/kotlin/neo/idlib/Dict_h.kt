@@ -539,7 +539,7 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Zero()
-            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
+            val sscanf: Array<String> = s[0]!!.trim().split("\\s+".toRegex()).toTypedArray()
 
             for (i in sscanf.indices) {
                 out[i] = TempDump.atof(sscanf[i])
@@ -558,7 +558,7 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Zero()
-            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
+            val sscanf: Array<String> = s[0]!!.trim().split("\\s+".toRegex()).toTypedArray()
 
             for (i in sscanf.indices) {
                 out[i] = TempDump.atof(sscanf[i])
@@ -577,7 +577,7 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Zero()
-            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
+            val sscanf: Array<String> = s[0]!!.trim().split("\\s+".toRegex()).toTypedArray()
 
             for (i in sscanf.indices) {
                 out[i] = TempDump.atof(sscanf[i])
@@ -596,7 +596,7 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Zero()
-            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
+            val sscanf: Array<String> = s[0]!!.trim().split("\\s+".toRegex()).toTypedArray()
             for (i in sscanf.indices) {
                 out[i] = TempDump.atof(sscanf[i])
             }
@@ -613,7 +613,7 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Identity()
-            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
+            val sscanf: Array<String> = s[0]!!.trim().split("\\s+".toRegex()).toTypedArray()
             val halfSize = sqrt(sscanf.size.toFloat()).toInt()
             var i = 0
             var index = 0

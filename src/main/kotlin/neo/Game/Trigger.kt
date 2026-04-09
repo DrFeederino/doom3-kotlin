@@ -1174,7 +1174,7 @@ object Trigger {
             player = Game_local.gameLocal.GetLocalPlayer()
             if (player != null) {
                 fadeColor = spawnArgs.GetVec4("fadeColor", "0, 0, 0, 1")
-                fadeTime = SEC2MS(spawnArgs.GetFloat("fadeTime", "0.5")) // FIX: Was "0.5f" — C++ uses "0.5"
+                fadeTime = SEC2MS(spawnArgs.GetFloat("fadeTime", "0.5"))
                 player.playerView.Fade(fadeColor, fadeTime)
                 PostEventMS(EV_ActivateTargets, fadeTime, activator.value)
             }

@@ -576,6 +576,18 @@ object MapFile {
             return crc
         }
 
+        fun GetMaxWidth(): Int {
+            return maxWidth
+        }
+
+        fun GetMaxHeight(): Int {
+            return maxHeight
+        }
+
+        fun GetVert(index: Int): idDrawVert {
+            return verts[index]
+        }
+
         fun GetWidth(): Int {
             return width
         }
