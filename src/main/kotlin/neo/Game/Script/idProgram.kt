@@ -293,13 +293,13 @@ class idProgram {
         // have been allocated after the initial startup
         //
 //        for (i in top_types until types.Num()) {
-//            types[i].deconstructor()
+//            // idTypeDef has no special cleanup, just truncate
 //        }
-//        types.SetNum(top_types, false)
-//
-//        for (i in top_defs until varDefs.Num()) {
-//            varDefs[i].deconstructor()
-//        }
+        types.SetNum(top_types, false)
+
+        for (i in top_defs until varDefs.Num()) {
+            varDefs[i].close()  // Kotlin equivalent of ~idVarDef() — calls name?.RemoveDef(this)
+        }
         varDefs.SetNum(top_defs, false)
         i = top_functions
         while (i < functions.Num()) {

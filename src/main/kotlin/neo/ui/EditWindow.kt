@@ -185,7 +185,7 @@ object EditWindow {
                             System.arraycopy(buffer, cursorPos, buffer, cursorPos - 1, len + 1 - cursorPos)
                             cursorPos--
                         }
-                        text.data!!.set(buffer)
+                        text.Set(String(buffer).substringBefore('\u0000'))
                         UpdateCvar(false)
                         RunScript(etoi(ON.ON_ACTION))
                     }
@@ -216,7 +216,7 @@ object EditWindow {
                     System.arraycopy(buffer, cursorPos, buffer, cursorPos + 1, len + 1 - cursorPos)
                 }
                 buffer[cursorPos] = key.toChar()
-                text.data!!.set(buffer)
+                text.Set(String(buffer).substringBefore('\u0000'))
                 UpdateCvar(false)
                 RunScript(etoi(ON.ON_ACTION))
                 if (cursorPos < len + 1) {
@@ -234,7 +234,7 @@ object EditWindow {
                     if (cursorPos < len) {
 //				memmove( &buffer[cursorPos], &buffer[cursorPos + 1], len - cursorPos);
                         System.arraycopy(buffer, cursorPos + 1, buffer, cursorPos, len - cursorPos)
-                        text.data!!.set(buffer)
+                        text.Set(String(buffer).substringBefore('\u0000'))
                         UpdateCvar(false)
                         RunScript(etoi(ON.ON_ACTION))
                     }

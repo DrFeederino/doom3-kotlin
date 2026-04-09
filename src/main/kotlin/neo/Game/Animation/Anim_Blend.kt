@@ -172,6 +172,14 @@ class idAnim {
     }
 
     // ~idAnim();
+    fun close() {
+        for (i in 0 until numAnims) {
+            anims[i]?.DecreaseRefs()
+            anims[i] = null
+        }
+        numAnims = 0
+    }
+
     fun SetAnim(
         modelDef: idDeclModelDef?,
         sourceName: String,
@@ -1484,6 +1492,9 @@ class idDeclModelDef : idDecl {
     }
 
     override fun FreeData() {
+        for (i in 0 until anims.Num()) {
+            anims[i].close()
+        }
         anims.DeleteContents(true)
         joints.Clear()
         jointParents.Clear()
@@ -1812,11 +1823,14 @@ class idDeclModelDef : idDecl {
         joints.SetNum(decl.joints.Num())
         jointParents.SetNum(decl.jointParents.Num())
 
-//            memcpy(joints.Ptr(), decl.joints.Ptr(), decl.joints.Num() * sizeof(joints[0]));
-//            memcpy(jointParents.Ptr(), decl.jointParents.Ptr(), decl.jointParents.Num() * sizeof(jointParents[0]));
         System.arraycopy(decl.joints.Ptr(), 0, joints.Ptr(), 0, decl.joints.Num())
         System.arraycopy(decl.jointParents.Ptr(), 0, jointParents.Ptr(), 0, decl.jointParents.Num())
-        System.arraycopy(decl.channelJoints, 0, channelJoints, 0, ANIM_NumAnimChannels)
+        for (ch in 0 until ANIM_NumAnimChannels) {
+            channelJoints[ch].SetNum(decl.channelJoints[ch].Num())
+            for (j in 0 until decl.channelJoints[ch].Num()) {
+                channelJoints[ch][j] = decl.channelJoints[ch][j]
+            }
+        }
     }
 
     private fun ParseAnim(src: idLexer, numDefaultAnims: Int): Boolean {
@@ -4193,7 +4207,7 @@ class idAnimator {
         }
     }
 
-    private fun FreeData() {
+    fun FreeData() {
         var i: Int
         var j: Int
         if (entity != null) {

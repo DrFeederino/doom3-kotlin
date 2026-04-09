@@ -9,7 +9,6 @@ import java.util.*
 import kotlin.math.abs
 
 object Surface {
-    //    @Deprecated
     private fun UpdateVertexIndex(
         vertexIndexNum: IntArray,
         vertexRemap: IntArray,

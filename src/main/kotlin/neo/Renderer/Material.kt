@@ -3024,11 +3024,11 @@ object Material {
             var old: Array<IntArray> = Array(2, { IntArray(3) })
             if (!ts.hasMatrix) {
                 ts.hasMatrix = true
-                ts.matrix = registers.copyOf()
+                ts.matrix = Array(registers.size) { registers[it].copyOf() }
                 return
             }
 
-            old = ts.matrix.copyOf()
+            old = Array(ts.matrix.size) { ts.matrix[it].copyOf() }
 
             // multiply the two maticies
             ts.matrix[0][0] = EmitOp(

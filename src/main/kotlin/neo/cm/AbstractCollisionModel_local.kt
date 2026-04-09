@@ -104,7 +104,6 @@ abstract class AbstractCollisionModel_local {
         val normal: idVec3 = idVec3() // edge normal
 
         companion object {
-            // FIX: Original calculation was missing one Integer.SIZE for vertexNum[2] (needs 2 ints, not 1)
             val SIZE: Int =
                 Integer.SIZE +                  // checkcount
                         java.lang.Short.SIZE +          // internal (stored as short in C++)

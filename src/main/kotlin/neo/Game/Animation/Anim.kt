@@ -496,8 +496,6 @@ object Anim {
             index: IntArray,
             numIndexes: Int
         ) {
-            //	 Float				[]frame1;
-//	 Float				[]frame2;
             val jointframe1: Array<Float>
             var jf1_ptr: Int
             var jf2_ptr: Int
@@ -507,22 +505,17 @@ object Anim {
             var blendPtr: idJointQuat
 
             // copy the baseframe
-            SIMDProcessor!!.Memcpy(
-                joints,
-                baseFrame.getList(Array<idJointQuat>::class.java)!!,
-                baseFrame.Num() /* sizeof( baseFrame[ 0 ] )*/
-            )
+            for (i in 0 until baseFrame.Num()) {
+                joints[i] = idJointQuat(baseFrame[i])
+            }
 
             if (0 == numAnimatedComponents) {
-                // just use the base frame
                 return
             }
             val blendJoints: Array<idJointQuat> = Array(baseFrame.Num()) { idJointQuat() }
             val lerpIndex = IntArray(baseFrame.Num())
             var numLerpJoints = 0
 
-//	frame1 = componentFrames.Ptr()   ;
-//	frame2 = componentFrames.Ptr();
             val f1_ptr: Int = frame.frame1 * numAnimatedComponents
             val f2_ptr: Int = frame.frame2 * numAnimatedComponents
             val jointframe2: Array<Float> = componentFrames.getList(Array<Float>::class.java)!!
@@ -699,17 +692,14 @@ object Anim {
             var infoPtr: jointAnimInfo_t
 
             // copy the baseframe
-            SIMDProcessor!!.Memcpy(
-                joints,
-                baseFrame.getList(Array<idJointQuat>::class.java)!!,
-                baseFrame.Num() /* sizeof( baseFrame[ 0 ] )*/
-            )
+            for (_i in 0 until baseFrame.Num()) {
+                joints[_i] = idJointQuat(baseFrame[_i])
+            }
             if (framenum == 0 || 0 == numAnimatedComponents) {
                 // just use the base frame
                 return
             }
 
-//	frame = &componentFrames[ framenum * numAnimatedComponents ];
             val f_ptr: Int = framenum * numAnimatedComponents
             var i = 0
             while (i < numIndexes) {

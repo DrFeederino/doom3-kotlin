@@ -499,8 +499,6 @@ class Console {
                 buffer[x + 1] = '\r'
                 buffer[x + 2] = '\n'
                 buffer[x + 3] = Char(0)
-                // FIX: C++ uses f->Write(buffer, strlen(buffer)) for raw output;
-                // WriteString adds a 4-byte length prefix which corrupts the dump file
                 f.Write(ByteBuffer.wrap(String(buffer, 0, x + 3).toByteArray()))
                 l++
             }
@@ -588,7 +586,6 @@ class Console {
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "\n")
 
                 // copy line to history buffer, if it isn't the same as the last command
-                // FIX: Use SetBuffer to copy content, not reference assignment (C++ operator= copies values)
                 val lastHistoryBuffer =
                     TempDump.ctos(historyEditLines[(nextHistoryLine + COMMAND_HISTORY - 1) % COMMAND_HISTORY].GetBuffer())
                 if (idStr.Cmp(buffer, lastHistoryBuffer) != 0) {
@@ -612,14 +609,12 @@ class Console {
             }
 
             // command history (ctrl-p ctrl-n for unix style)
-            // FIX: C++ uses tolower(key) — must match both 'p'/'P' and 'n'/'N'
             if (key == KeyInput.K_UPARROW
                 || (key == 'p'.code || key == 'P'.code) && idKeyInput.IsDown(KeyInput.K_CTRL)
             ) {
                 if (nextHistoryLine - historyLine < COMMAND_HISTORY && historyLine > 0) {
                     historyLine--
                 }
-                // FIX: Copy content instead of aliasing reference (C++ operator= copies values)
                 consoleField.SetBuffer(TempDump.ctos(historyEditLines[historyLine % COMMAND_HISTORY].GetBuffer()))
                 return
             }
@@ -630,7 +625,6 @@ class Console {
                     return
                 }
                 historyLine++
-                // FIX: Copy content instead of aliasing reference (C++ operator= copies values)
                 consoleField.SetBuffer(TempDump.ctos(historyEditLines[historyLine % COMMAND_HISTORY].GetBuffer()))
                 return
             }
@@ -827,9 +821,6 @@ class Console {
          */
         private fun DrawSolidConsole(frac: Float) {
             var i: Int
-            // FIX: Must initialize x — C++ leaves it uninitialized (UB) but Kotlin requires
-            // definite assignment. Initialized to 0 so the `if (x == 0) row--` check works
-            // correctly when the arrow-drawing loop doesn't execute (display == current).
             var x: Int = 0
             var y: Float
             var rows: Int

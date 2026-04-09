@@ -4755,6 +4755,14 @@ open class idAnimatedEntity : idEntity() {
     protected var animator: idAnimator
     protected var damageEffects: damageEffect_s?
 
+    override fun _deconstructor() {
+        while (damageEffects != null) {
+            damageEffects = damageEffects!!.next
+        }
+        animator.FreeData()
+        super._deconstructor()
+    }
+
     /*
          ================
          Save
