@@ -517,17 +517,12 @@ object Mover {
             }
             savefile.ReadBool(hasSpline)
             if (hasSpline._val) {
-                val starttime = CInt()
-                val totaltime = CInt()
-                val accel = CInt()
-                val decel = CInt()
-                val useAngles = CInt()
                 splineEnt.Restore(savefile)
-                savefile.ReadInt(starttime)
-                savefile.ReadInt(totaltime)
-                savefile.ReadInt(accel)
-                savefile.ReadInt(decel)
-                savefile.ReadInt(useAngles)
+                val starttime = savefile.ReadInt()
+                val totaltime = savefile.ReadInt()
+                val accel = savefile.ReadInt()
+                val decel = savefile.ReadInt()
+                val useAngles = savefile.ReadInt()
                 PostEventMS(EV_PostRestore, 0, starttime, totaltime, accel, decel, useAngles)
             }
         }
