@@ -3369,6 +3369,8 @@ object Misc {
         private var playerDamageSize: Float = 0f
 
         override fun Spawn() {
+            super.Spawn()
+
             duration = spawnArgs.GetInt("duration", "1000")
             startSize = spawnArgs.GetFloat("startsize", "8")
             endSize = spawnArgs.GetFloat("endsize", "512")
@@ -3521,6 +3523,8 @@ object Misc {
         }
 
         override fun Spawn() {
+            super.Spawn()
+
             // Get viewOffset
             harc = spawnArgs.GetInt("harc", "45")
             varc = spawnArgs.GetInt("varc", "30")
@@ -3611,6 +3615,7 @@ object Misc {
         }
 
         override fun Spawn() {
+            super.Spawn()
 
             // Get projectile info
             projectile = gameLocal.FindEntityDefDict(spawnArgs.GetString("def_projectile"), false)
