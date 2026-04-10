@@ -159,7 +159,7 @@ object Winding {
             if (!EnsureAlloced(numPoints + 1, true)) {
                 return
             }
-            p[numPoints] = v
+            p[numPoints].set(v)
             numPoints++
         }
 
@@ -602,17 +602,18 @@ object Winding {
             w.numPoints = numPoints
             i = 0
             while (i < numPoints) {
-                w.p[numPoints - i - 1] = p[i]
+                w.p[numPoints - i - 1].set(p[i])
                 i++
             }
             return w
         }
 
         fun ReverseSelf() {
+            val v = idVec5()
             for (i in 0 until (numPoints shr 1)) {
-                val v = idVec5(p[i])
-                p[i] = p[numPoints - i - 1]
-                p[numPoints - i - 1] = v
+                v.set(p[i])
+                p[i].set(p[numPoints - i - 1])
+                p[numPoints - i - 1].set(v)
             }
         }
 
@@ -660,7 +661,7 @@ object Winding {
                 numPoints--
                 j = i
                 while (j < numPoints) {
-                    p[j] = p[j + 1]
+                    p[j].set(p[j + 1])
                     j++
                 }
                 i--
@@ -672,8 +673,10 @@ object Winding {
             if (point < 0 || point >= numPoints) {
                 idLib.common.FatalError("idWinding::removePoint: point out of range")
             }
-            if (point < numPoints - 1) {
-                p[point] = p[point + 1]
+            var i = point
+            while (i < numPoints - 1) {
+                p[i].set(p[i + 1])
+                i++
             }
             numPoints--
         }
@@ -689,7 +692,7 @@ object Winding {
             EnsureAlloced(numPoints + 1, true)
             i = numPoints
             while (i > spot) {
-                p[i] = p[i - 1]
+                p[i].set(p[i - 1])
                 i--
             }
             p[spot].set(point)
@@ -965,7 +968,9 @@ object Winding {
             }
             numPoints = numHullPoints
             //	memcpy( p, hullPoints, numHullPoints * sizeof(idVec5) );
-            System.arraycopy(hullPoints, 0, p, 0, numHullPoints)
+            for (i in 0 until numHullPoints) {
+                p[i].set(hullPoints[i])
+            }
         }
 
         // tries to merge 'this' with the given winding, returns NULL if merge fails, both 'this' and 'w' stay intact
@@ -1057,7 +1062,7 @@ object Winding {
                     k = (k + 1) % f1.numPoints
                     continue
                 }
-                newf.p[newf.numPoints] = f1.p[k]
+                newf.p[newf.numPoints].set(f1.p[k])
                 newf.numPoints++
                 k = (k + 1) % f1.numPoints
             }
@@ -1069,7 +1074,7 @@ object Winding {
                     l = (l + 1) % f2.numPoints
                     continue
                 }
-                newf.p[newf.numPoints] = f2.p[l]
+                newf.p[newf.numPoints].set(f2.p[l])
                 newf.numPoints++
                 l = (l + 1) % f2.numPoints
             }
@@ -1112,7 +1117,7 @@ object Winding {
                             idLib.common.Printf(
                                 "idWinding::Check: point %d outside world %c-axis: %f",
                                 i,
-                                'X'.code + j,
+                                'X' + j,
                                 p1[j]
                             )
                         }
@@ -1214,7 +1219,6 @@ object Winding {
                 }
                 i++
             }
-            println("Radius is $radius")
             return idMath.Sqrt(radius)
         }
 
@@ -1520,7 +1524,9 @@ object Winding {
             n = n + 3 and 3.inv() // align up to multiple of four
             p = idVec5.generateArray(n)
             if (oldP.isNotEmpty() && keep) {
-                System.arraycopy(oldP, 0, p, 0, numPoints)
+                for (i in 0 until numPoints) {
+                    p[i].set(oldP[i])
+                }
             }
             allocedSize = n
             return true
@@ -1605,7 +1611,7 @@ object Winding {
             }
             i = 0
             while (i < winding.GetNumPoints()) {
-                p[i] = idVec5(winding[i])
+                p[i].set(winding[i])
                 i++
             }
             numPoints = winding.GetNumPoints()
@@ -1621,7 +1627,7 @@ object Winding {
             }
             i = 0
             while (i < winding.GetNumPoints()) {
-                p[i] = idVec5(winding[i])
+                p[i].set(winding[i])
                 i++
             }
             numPoints = winding.GetNumPoints()
@@ -1635,7 +1641,7 @@ object Winding {
             }
             i = 0
             while (i < winding.GetNumPoints()) {
-                p[i] = idVec5(winding[i])
+                p[i].set(winding[i])
                 i++
             }
             numPoints = winding.GetNumPoints()

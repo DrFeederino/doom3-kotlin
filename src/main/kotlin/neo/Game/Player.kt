@@ -5175,7 +5175,7 @@ object Player {
                 inclipKey.Insert("inclip_", 4)
                 // D3XP: include weapon index in the inclip key
                 if (isD3XP) {
-                    inclipKey.Insert(Str.va("%.2d", currentWeapon), 11)
+                    inclipKey.Insert(Str.va("%.2f", currentWeapon), 11)
                 }
                 item.spawnArgs.SetInt(inclipKey.toString(), inclip)
             }

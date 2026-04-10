@@ -203,7 +203,7 @@ object Winding2D {
             sides[i] = sides[0]
             dists[i] = dists[0]
             back[0] = Array(1) { idWinding2D() }
-            front[0] = back[0] //TODO:check double pointers
+            front[0] = Array(1) { idWinding2D() }
 
             // if nothing at the front of the clipping plane
             if (0 == counts[SIDE_FRONT]) {
@@ -224,19 +224,19 @@ object Winding2D {
             while (i < numPoints) {
                 p1.set(p[i])
                 if (sides[i] == SIDE_ON) {
-                    f.p[f.numPoints] = p1
+                    f.p[f.numPoints].set(p1)
                     f.numPoints++
-                    b.p[b.numPoints] = p1
+                    b.p[b.numPoints].set(p1)
                     b.numPoints++
                     i++
                     continue
                 }
                 if (sides[i] == SIDE_FRONT) {
-                    f.p[f.numPoints] = p1
+                    f.p[f.numPoints].set(p1)
                     f.numPoints++
                 }
                 if (sides[i] == SIDE_BACK) {
-                    b.p[b.numPoints] = p1
+                    b.p[b.numPoints].set(p1)
                     b.numPoints++
                 }
                 if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) {
@@ -280,9 +280,9 @@ object Winding2D {
                         j++
                     }
                 }
-                f.p[f.numPoints] = mid
+                f.p[f.numPoints].set(mid)
                 f.numPoints++
-                b.p[b.numPoints] = mid
+                b.p[b.numPoints].set(mid)
                 b.numPoints++
                 i++
             }
@@ -392,7 +392,9 @@ object Winding2D {
             }
             numPoints = newNumPoints
             //	memcpy( p, newPoints, newNumPoints * sizeof(idVec2) );
-            System.arraycopy(newPoints, 0, p, 0, newNumPoints)
+            for (i in 0 until newNumPoints) {
+                p[i].set(newPoints[i])
+            }
 
             return true
         }
