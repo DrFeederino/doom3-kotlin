@@ -401,8 +401,9 @@ object Winding2D {
             val w: idWinding2D
             w = idWinding2D()
             w.numPoints = numPoints
-            //	memcpy( w->p, p, numPoints * sizeof( p[0] ) );
-            System.arraycopy(p, 0, w.p, 0, numPoints)
+            for (i in 0 until numPoints) {
+                w.p[i].set(p[i])
+            }
             return w
         }
 
@@ -413,7 +414,7 @@ object Winding2D {
             w.numPoints = numPoints
             i = 0
             while (i < numPoints) {
-                w.p[numPoints - i - 1] = p[i]
+                w.p[numPoints - i - 1].set(p[i])
                 i++
             }
             return w
@@ -475,8 +476,8 @@ object Winding2D {
                 bounds[1].x = bounds[1].y
                 return
             }
-            bounds[1] = p[0]
-            bounds[0] = bounds[1]
+            bounds[0].set(p[0])
+            bounds[1].set(p[0])
             i = 1
             while (i < numPoints) {
                 if (p[i].x < bounds[0].x) {
