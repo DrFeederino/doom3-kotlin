@@ -582,7 +582,7 @@ object ModelDecal {
                         i++
                         continue
                     }
-                    decals.tri.verts!![newNumVerts] = decals.tri.verts!![i]
+                    decals.tri.verts!![newNumVerts]!!.set(decals.tri.verts!![i]!!)
                     decals.vertDepthFade[newNumVerts] = decals.vertDepthFade[i]
                     inUse[i] = newNumVerts
                     newNumVerts++

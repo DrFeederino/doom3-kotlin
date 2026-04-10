@@ -868,7 +868,9 @@ object renderbump {
             val tri = surf!!.geometry!!
 
 //            memcpy(verts + numVerts, tri.verts, tri.numVerts * sizeof(tri.verts[0]));
-            System.arraycopy(tri.verts, 0, verts, 0, tri.numVerts)
+            for (k in 0 until tri.numVerts) {
+                verts!![numVerts + k]!!.set(tri.verts!![k]!!)
+            }
             j = 0
             while (j < tri.numIndexes) {
                 indexes!![numIndexes + j] = numVerts + tri.indexes!![j]

@@ -2068,7 +2068,8 @@ object Session_local {
 
             // persistent player info
             for (i in 0 until AsyncNetwork.MAX_ASYNC_CLIENTS) {
-                mapSpawnData.persistentPlayerInfo[i] = Game_local.game.GetPersistentPlayerInfo(i)
+                // C++ operator= copies by value; Kotlin = copies reference — use .set() for value copy
+                mapSpawnData.persistentPlayerInfo[i].set(Game_local.game.GetPersistentPlayerInfo(i))
                 mapSpawnData.persistentPlayerInfo[i].WriteToFileHandle(fileOut)
             }
 
@@ -3160,6 +3161,12 @@ object Session_local {
             i = 0
             while (i < numClients) {
                 Game_local.game.SetUserInfo(i, mapSpawnData.userInfo[i], idAsyncNetwork.client.IsActive(), false)
+                Common.common.Printf(
+                    "DBG ExecuteMapChange: before SetPersistentPlayerInfo[%d] weapon_bits=%d dict_id=%d\n",
+                    i,
+                    mapSpawnData.persistentPlayerInfo[i].GetInt("weapon_bits"),
+                    System.identityHashCode(mapSpawnData.persistentPlayerInfo[i])
+                )
                 Game_local.game.SetPersistentPlayerInfo(i, mapSpawnData.persistentPlayerInfo[i])
                 i++
             }

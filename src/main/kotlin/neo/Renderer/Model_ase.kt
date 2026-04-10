@@ -50,7 +50,7 @@ object Model_ase {
         val timeStamp = LongArray(1)
         val ase: aseModel_s?
         fileSystem.ReadFile(fileName!!, buf, timeStamp)
-        if (null == buf) {
+        if (null == buf[0]) {
             return null
         }
         ase = ASE_Parse(buf[0], false)

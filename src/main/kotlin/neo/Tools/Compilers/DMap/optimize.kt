@@ -1179,9 +1179,9 @@ object optimize {
             tri = tritools.AllocTri()
             tri.material = island.group!!.material
             tri.mergeGroup = island.group!!.mergeGroup
-            tri.v[0] = optTri.v[0].v
-            tri.v[1] = optTri.v[1].v
-            tri.v[2] = optTri.v[2].v
+            tri.v[0].set(optTri.v[0].v)
+            tri.v[1].set(optTri.v[1].v)
+            tri.v[2].set(optTri.v[2].v)
             val plane = idPlane()
             tritools.PlaneForTri(tri, plane)
             if (plane.Normal().times(dmap.dmapGlobals.mapPlanes[island.group!!.planeNum].Normal()) <= 0) {

@@ -1823,7 +1823,15 @@ class idDeclModelDef : idDecl {
         joints.SetNum(decl.joints.Num())
         jointParents.SetNum(decl.jointParents.Num())
 
-        System.arraycopy(decl.joints.Ptr(), 0, joints.Ptr(), 0, decl.joints.Num())
+        // deep-copy joints (jointInfo_t has mutable fields: channel, num, parentNum)
+        for (i in 0 until decl.joints.Num()) {
+            val src = decl.joints[i]
+            val dst = jointInfo_t()
+            dst.channel = src.channel
+            dst.num = src.num
+            dst.parentNum = src.parentNum
+            joints[i] = dst
+        }
         System.arraycopy(decl.jointParents.Ptr(), 0, jointParents.Ptr(), 0, decl.jointParents.Num())
         for (ch in 0 until ANIM_NumAnimChannels) {
             channelJoints[ch].SetNum(decl.channelJoints[ch].Num())

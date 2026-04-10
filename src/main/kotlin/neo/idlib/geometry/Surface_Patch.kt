@@ -507,7 +507,7 @@ class Surface_Patch {
                 while (j >= 0) {
                     i = width - 1
                     while (i >= 0) {
-                        verts[j * maxWidth + i] = verts[j * width + i]
+                        verts[j * maxWidth + i].set(verts[j * width + i])
                         i--
                     }
                     j--
@@ -529,7 +529,7 @@ class Surface_Patch {
                 while (j < height) {
                     i = 0
                     while (i < width) {
-                        verts[j * width + i] = verts[j * maxWidth + i]
+                        verts[j * width + i].set(verts[j * maxWidth + i])
                         i++
                     }
                     j++
