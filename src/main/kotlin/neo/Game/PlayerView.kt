@@ -1511,17 +1511,6 @@ object PlayerView {
             renderSystem.CaptureRenderToImage("_scratch")
             renderSystem.UnCrop()
 
-            // Workaround: descending T coordinates render incorrectly in the
-            // Kotlin/LWJGL port. Re-draw with ascending T and re-capture to
-            // physically flip the texture content.
-            renderSystem.CropRenderSize(512, 256, true)
-            renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
-            renderSystem.DrawStretchPic(
-                0.0f, 0.0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0.0f, 0.0f, 1.0f, 1.0f, dvMaterial
-            )
-            renderSystem.CaptureRenderToImage("_scratch")
-            renderSystem.UnCrop()
-
             // carry red tint if in berserk mode
             val color = idVec4(1.0f, 1.0f, 1.0f, 1.0f)
             if (Game_local.gameLocal.time < player!!.inventory.powerupEndTime[Player.BERSERK]) {
@@ -1535,9 +1524,9 @@ object PlayerView {
                 SCREEN_WIDTH.toFloat(),
                 SCREEN_HEIGHT.toFloat(),
                 shift.toFloat(),
+                1.0f,
+                1.0f,
                 0.0f,
-                1.0f,
-                1.0f,
                 dvMaterial
             )
             renderSystem.SetColor4(color.x, color.y, color.z, 0.5f)
@@ -1547,9 +1536,9 @@ object PlayerView {
                 SCREEN_WIDTH.toFloat(),
                 SCREEN_HEIGHT.toFloat(),
                 0.0f,
-                0.0f,
-                (1 - shift).toFloat(),
                 1.0f,
+                (1 - shift).toFloat(),
+                0.0f,
                 dvMaterial
             )
         }
@@ -1560,21 +1549,9 @@ object PlayerView {
             renderSystem.CaptureRenderToImage("_scratch")
             renderSystem.UnCrop()
 
-            // Workaround: descending T coordinates (t: 1→0) render incorrectly
-            // in the Kotlin/LWJGL port. Instead, re-draw _scratch with ascending T
-            // into a crop and re-capture, physically flipping the texture content.
-            // Then draw the final quad with ascending T for correct orientation.
-            renderSystem.CropRenderSize(512, 256, true)
             renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
             renderSystem.DrawStretchPic(
-                0.0f, 0.0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0.0f, 0.0f, 1.0f, 1.0f, dvMaterial
-            )
-            renderSystem.CaptureRenderToImage("_scratch")
-            renderSystem.UnCrop()
-
-            renderSystem.SetColor4(1.0f, 1.0f, 1.0f, 1.0f)
-            renderSystem.DrawStretchPic(
-                0.0f, 0.0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0.0f, 0.0f, 1.0f, 1.0f, dvMaterial
+                0.0f, 0.0f, SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat(), 0.0f, 1.0f, 1.0f, 0.0f, dvMaterial
             )
         }
 

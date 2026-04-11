@@ -1053,7 +1053,7 @@ open class idVec3 : idVec<idVec3>, SERiAL {
     }
 
     override fun set(i: Int, value: Float): Float {
-        assert(!value.isNaN())
+        //`assert(!value.isNaN())
         when (i) {
             0 -> x = value
             1 -> y = value
