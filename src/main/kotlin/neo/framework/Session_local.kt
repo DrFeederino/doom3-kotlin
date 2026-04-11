@@ -772,7 +772,7 @@ object Session_local {
 
             // check for user info changes
             if (cvarSystem.GetModifiedFlags() and CVarSystem.CVAR_USERINFO != 0) {
-                mapSpawnData.userInfo[0] = cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_USERINFO)
+                mapSpawnData.userInfo[0].set(cvarSystem.MoveCVarsToDict(CVarSystem.CVAR_USERINFO))
                 Game_local.game.SetUserInfo(0, mapSpawnData.userInfo[0], false, false)
                 cvarSystem.ClearModifiedFlags(CVarSystem.CVAR_USERINFO)
             }
@@ -3161,12 +3161,6 @@ object Session_local {
             i = 0
             while (i < numClients) {
                 Game_local.game.SetUserInfo(i, mapSpawnData.userInfo[i], idAsyncNetwork.client.IsActive(), false)
-                Common.common.Printf(
-                    "DBG ExecuteMapChange: before SetPersistentPlayerInfo[%d] weapon_bits=%d dict_id=%d\n",
-                    i,
-                    mapSpawnData.persistentPlayerInfo[i].GetInt("weapon_bits"),
-                    System.identityHashCode(mapSpawnData.persistentPlayerInfo[i])
-                )
                 Game_local.game.SetPersistentPlayerInfo(i, mapSpawnData.persistentPlayerInfo[i])
                 i++
             }

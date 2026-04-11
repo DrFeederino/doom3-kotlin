@@ -814,7 +814,7 @@ object AsyncClient {
             if (!channel.SendReliableMessage(msg)) {
                 Common.common.Error("client.server reliable messages overflow\n")
             }
-            Session.sessLocal.mapSpawnData.userInfo[clientNum] = info
+            Session.sessLocal.mapSpawnData.userInfo[clientNum].set(info)
         }
 
         private fun SendEmptyToServer(force: Boolean = false /* = false*/, mapLoad: Boolean = false /*= false*/) {

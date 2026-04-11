@@ -1352,7 +1352,7 @@ object AsyncServer {
                     SendReliableMessage(i, msg)
                 }
             }
-            Session.sessLocal.mapSpawnData.userInfo[userInfoNum] = gameInfo
+            Session.sessLocal.mapSpawnData.userInfo[userInfoNum].set(gameInfo)
         }
 
         private fun SendUserInfoToClient(clientNum: Int, userInfoNum: Int, info: idDict) {
