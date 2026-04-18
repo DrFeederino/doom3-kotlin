@@ -910,7 +910,7 @@ object CVarSystem {
                 internal.Update(cvar)
             } else {
                 internal = idInternalCVar(cvar)
-                hash = cvarHash.GenerateKey(internal.nameString.c_str(), false)
+                hash = cvarHash.GenerateKey(internal.nameString.toString(), false)
                 cvarHash.Add(hash, cvars.Append(internal))
             }
             cvar.SetInternalVar(internal)
@@ -1122,7 +1122,7 @@ object CVarSystem {
                 internal.UpdateCheat()
             } else {
                 internal = idInternalCVar(name, value, flags)
-                hash = cvarHash.GenerateKey(internal.nameString.c_str(), false)
+                hash = cvarHash.GenerateKey(internal.nameString.toString(), false)
                 cvarHash.Add(hash, cvars.Append(internal))
             }
         }

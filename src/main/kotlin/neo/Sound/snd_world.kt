@@ -569,17 +569,17 @@ class snd_world {
                 name = idStr(aviDemoPath.toString() + aviDemoName + ".wav")
                 wO = FileSystem_h.fileSystem.OpenFileWrite(name.toString())
                 if (null == wO) {
-                    Common.common.Error("Couldn't write %s", arrayOf(name.c_str()))
+                    Common.common.Error("Couldn't write %s", name.toString())
                 }
                 name.set(aviDemoPath.toString() + "channel_right.raw")
                 rL = FileSystem_h.fileSystem.OpenFileRead(name.toString())
                 if (null == rL) {
-                    Common.common.Error("Couldn't open %s", arrayOf(name.c_str()))
+                    Common.common.Error("Couldn't open %s", name.toString())
                 }
                 name.set(aviDemoPath.toString() + "channel_left.raw")
                 lL = FileSystem_h.fileSystem.OpenFileRead(name.toString())
                 if (null == lL) {
-                    Common.common.Error("Couldn't open %s", arrayOf(name.c_str()))
+                    Common.common.Error("Couldn't open %s", name.toString())
                 }
                 val numSamples = rL!!.Length() / 2
                 val info = mminfo_s()

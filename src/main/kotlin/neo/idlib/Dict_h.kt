@@ -181,6 +181,7 @@ class Dict_h {
             var i: Int
             val n: Int
             val found: IntArray?
+            val kv = idKeyValue()
 
             // check for assignment to self
             if (this === other) {
@@ -205,8 +206,6 @@ class Dict_h {
                     args[found[i]].value = globalValues.CopyString(other.args[i].value)
                     globalValues.FreeString(oldValue)
                 } else {
-                    // C++ copies kv by value into the list; Kotlin must create a new object each iteration
-                    val kv = idKeyValue()
                     kv.key = globalKeys.CopyString(other.args[i].key)
                     kv.value = globalValues.CopyString(other.args[i].value)
                     argHash.Add(argHash.GenerateKey(kv.GetKey().toString() + "", false), args.Append(kv))
@@ -540,7 +539,7 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Zero()
-            val sscanf: Array<String> = s[0]!!.trim().split("\\s+".toRegex()).toTypedArray()
+            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
 
             for (i in sscanf.indices) {
                 out[i] = TempDump.atof(sscanf[i])
@@ -559,7 +558,7 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Zero()
-            val sscanf: Array<String> = s[0]!!.trim().split("\\s+".toRegex()).toTypedArray()
+            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
 
             for (i in sscanf.indices) {
                 out[i] = TempDump.atof(sscanf[i])
@@ -578,7 +577,7 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Zero()
-            val sscanf: Array<String> = s[0]!!.trim().split("\\s+".toRegex()).toTypedArray()
+            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
 
             for (i in sscanf.indices) {
                 out[i] = TempDump.atof(sscanf[i])
@@ -597,7 +596,7 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Zero()
-            val sscanf: Array<String> = s[0]!!.trim().split("\\s+".toRegex()).toTypedArray()
+            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
             for (i in sscanf.indices) {
                 out[i] = TempDump.atof(sscanf[i])
             }
@@ -614,7 +613,7 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Identity()
-            val sscanf: Array<String> = s[0]!!.trim().split("\\s+".toRegex()).toTypedArray()
+            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
             val halfSize = sqrt(sscanf.size.toFloat()).toInt()
             var i = 0
             var index = 0
@@ -739,20 +738,20 @@ class Dict_h {
         }
 
         // randomly chooses one of the key/value pairs with the given key prefix and returns it's value
-        fun RandomPrefix(prefix: String, random: idRandom): String {
+        fun RandomPrefix(prefix: String, random: idRandom): String? {
             var count: Int
             val MAX_RANDOM_KEYS = 2048
             val list = arrayOfNulls<String>(MAX_RANDOM_KEYS)
             var kv: idKeyValue?
 
-            list[0] = ""
+            //            list[0] = "";
             count = 0
             kv = MatchPrefix(prefix)
             while (kv != null && count < MAX_RANDOM_KEYS) {
                 list[count++] = String(kv.GetValue().toString().toCharArray())
                 kv = MatchPrefix(prefix, kv)
             }
-            return list[random.RandomInt(count)]!!
+            return list[random.RandomInt(count)]
         }
 
         @Throws(idException::class)
@@ -792,10 +791,9 @@ class Dict_h {
             CRC32_InitChecksum(ret)
             i = 0
             while (i < n) {
-                CRC32.CRC32_UpdateChecksum(ret, sorted[i].GetKey().c_str(), sorted[i].GetKey().Length())
+                CRC32.CRC32_UpdateChecksum(ret, sorted[i].GetKey().data.toCharArray(), sorted[i].GetKey().Length())
                 CRC32.CRC32_UpdateChecksum(
-                    ret,
-                    sorted[i].GetValue().c_str(),
+                    ret, sorted[i].GetValue().data.toCharArray(),
                     sorted[i].GetValue().Length()
                 )
                 i++

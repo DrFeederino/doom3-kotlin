@@ -1044,7 +1044,12 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         throw UnsupportedOperationException("Not supported yet.")
     }
 
-    public override fun _deconstructor() {
+    public override fun _deconstructor() { // C++ guarantees single destructor invocation; guard against re-entry from delete() chains
+        if (fl.deconstructed) {
+            return
+        }
+        fl.deconstructed = true
+
         if (Game_local.gameLocal.GameState() != gameState_t.GAMESTATE_SHUTDOWN && !Game_local.gameLocal.isClient && fl.networkSync && entityNumber >= Game_local.MAX_CLIENTS) {
             val msg = idBitMsg()
             val msgBuf = ByteArray(Game_local.MAX_GAME_MESSAGE_SIZE)
@@ -3006,11 +3011,11 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         if (SysCvar.g_decals.GetBool()) {
             // place a wound overlay on the model
             key = va("mtr_wound_%s", materialType)
-            decal = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)
+            decal = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)!!
             if (decal.isEmpty()) { // == '\0' ) {
                 decal = def.dict.RandomPrefix(key, Game_local.gameLocal.random)
             }
-            if (decal.isNotEmpty()) { // != '\0' ) {
+            if (decal!!.isNotEmpty()) { // != '\0' ) {
                 val dir = idVec3(velocity)
                 dir.Normalize()
                 ProjectOverlay(collision.c.point, dir, 20.0f, decal)
@@ -4439,6 +4444,8 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                 = false
         var takedamage // if true this entity can be damaged
                 = false
+        var deconstructed // Kotlin guard: C++ guarantees single destructor invocation; prevents re-entry from delete() chains
+                = false
 
         override fun AllocBuffer(): ByteBuffer {
             return ByteBuffer.allocate(BYTES)
@@ -5002,7 +5009,7 @@ open class idAnimatedEntity : idEntity() {
         collisionMaterial: Material.idMaterial?
     ) {
         var sound: String?
-        var splat: String
+        var splat: String?
         var decal: String
         var bleed: String?
         var key: String?
@@ -5044,10 +5051,10 @@ open class idAnimatedEntity : idEntity() {
             // blood splats are thrown onto nearby surfaces
             key = va("mtr_splat_%s", materialType)
             splat = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)
-            if (splat.isEmpty()) { // == '\0' ) {
+            if (splat.isNullOrEmpty()) {
                 splat = def.dict.RandomPrefix(key, Game_local.gameLocal.random)
             }
-            if (splat.isNotEmpty()) { // 1= '\0' ) {
+            if (!splat.isNullOrEmpty()) {
                 Game_local.gameLocal.BloodSplat(origin, dir, 64.0f, splat)
             }
 
@@ -5056,10 +5063,10 @@ open class idAnimatedEntity : idEntity() {
                 // place a wound overlay on the model
                 key = va("mtr_wound_%s", materialType)
                 decal = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)
-                if (decal.isEmpty()) { // == '\0' ) {
-                    decal = def.dict.RandomPrefix(key, Game_local.gameLocal.random)
+                if (decal.isNullOrEmpty()) {
+                    decal = def.dict.RandomPrefix(key, Game_local.gameLocal.random) ?: ""
                 }
-                if (decal.isNotEmpty()) { // == '\0' ) {
+                if (!decal.isNullOrEmpty()) {
                     ProjectOverlay(origin, dir, 20.0f, decal)
                 }
             }

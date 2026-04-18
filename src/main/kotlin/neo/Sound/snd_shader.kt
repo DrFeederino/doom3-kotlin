@@ -436,19 +436,17 @@ object snd_shader {
                     // add to the wav list
                     if (snd_system.soundSystemLocal.soundCache != null && numEntries < maxSamples) {
                         token.BackSlashesToSlashes()
-                        val lang = idStr(CVarSystem.cvarSystem.GetCVarString("sys_lang"))
-                        if (lang.Icmp("english") != 0 && token.Find("sound/vo/", false) >= 0) {
-                            val work = idStr(token)
-                            work.ToLower()
-                            work.StripLeading("sound/vo/")
-                            work.set(Str.va("sound/vo/%s/%s", lang.toString(), work.toString()))
-                            if (FileSystem_h.fileSystem.ReadFile(work.toString(), null, null) > 0) {
-                                token.set(work)
+                        val lang = CVarSystem.cvarSystem.GetCVarString("sys_lang")
+                        if (!lang.equals("english", ignoreCase = true) && token.Find("sound/vo/", false) >= 0) {
+                            val stripped = token.toString().lowercase().removePrefix("sound/vo/")
+                            val localizedPath = "sound/vo/$lang/$stripped"
+                            if (FileSystem_h.fileSystem.ReadFile(localizedPath, null, null) > 0) {
+                                token.set(localizedPath)
                             } else {
                                 // also try to find it with the .ogg extension
-                                work.SetFileExtension(".ogg")
-                                if (FileSystem_h.fileSystem.ReadFile(work, null, null) > 0) {
-                                    token.set(work)
+                                val oggPath = localizedPath.substringBeforeLast('.') + ".ogg"
+                                if (FileSystem_h.fileSystem.ReadFile(oggPath, null, null) > 0) {
+                                    token.set(oggPath)
                                 }
                             }
                         }

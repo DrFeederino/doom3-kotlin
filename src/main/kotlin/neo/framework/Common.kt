@@ -612,7 +612,7 @@ class Common {
                 config_compressor!!.WriteString(runtag) //
                 config_compressor!!.FinishCompress()
                 out.Encode( /*(const byte *)*/compressed.GetDataPtr(), compressed.Length())
-                f.Printf("// %s\n", out.c_str())
+                f.Printf("// %s\n", out.toString())
             }
             idKeyInput.WriteBindings(f)
             cvarSystem.WriteFlaggedVariables(CVarSystem.CVAR_ARCHIVE, "seta", f)

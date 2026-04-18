@@ -196,7 +196,7 @@ object Lexer {
         var next // next script in a chain
                 : idLexer?
         var buffer // buffer containing the script
-                : CharBuffer = CharBuffer.allocate(0)
+                : CharArray = CharArray(0)
         var script_p // current pointer in the script
                 = 0
         private var allocated // true if buffer memory was allocated
@@ -235,6 +235,7 @@ object Lexer {
                 = 0
         private var whiteSpaceStart_p // start of last white space
                 = 0
+        private val _tempToken = idToken()
 
         //
         //
@@ -315,7 +316,17 @@ object Lexer {
             this.LoadMemory(ptr, length, name)
         }
 
-        constructor(ptr: String, length: Int, name: String) : this(TempDump.atocb(ptr)!!, length, name)
+        constructor(ptr: String, length: Int, name: String) {
+            loaded = false
+            flags = 0
+            SetPunctuations(null)
+            allocated = false
+            token = idToken()
+            next = null
+            hadError = false
+            this.LoadMemory(ptr, length, name)
+        }
+
         constructor(ptr: String, length: Int, name: String, flags: Int) {
             loaded = false
             this.flags = flags
@@ -366,7 +377,11 @@ object Lexer {
             fileTime = fp.Timestamp()
             this.filename = idStr(fp.GetFullPath())
             idLib.fileSystem.CloseFile(fp)
-            buffer = TempDump.bbtocb(buf)
+            buffer = TempDump.bbtocb(buf).let { cb ->
+                val arr = CharArray(cb.remaining())
+                cb.get(arr)
+                arr
+            }
             this.length = length
             // pointer in script buffer
 //            this.script_p = this.buffer;
@@ -374,7 +389,7 @@ object Lexer {
             // pointer in script buffer before reading token
             lastScript_p = 0 //this.buffer;
             // pointer to end of script buffer
-            end_p = buffer.length //(this.buffer[length]);
+            end_p = buffer.size //(this.buffer[length]);
             tokenAvailable = false //0;
             line = 1
             lastline = 1
@@ -388,12 +403,12 @@ object Lexer {
         // NOTE: the ptr is expected to point at a valid C string: ptr[length] == '\0'
         @Throws(idException::class)
         fun LoadMemory(ptr: idStr, length: Int, name: idStr /*= 1*/): Boolean {
-            return LoadMemory(CharBuffer.wrap(ptr.toString()), length, name.toString())
+            return LoadMemory(ptr.toString(), length, name.toString())
         }
 
         @Throws(idException::class)
         fun LoadMemory(ptr: String, length: Int, name: String /*= 1*/): Boolean {
-            return LoadMemory(TempDump.atocb(ptr)!!, length, name, 1)
+            return LoadMemory(ptr, length, name, 1)
         }
 
 
@@ -403,8 +418,13 @@ object Lexer {
                 idLib.common.Error("this.LoadMemory: another script already loaded")
                 return false
             }
-            filename = idStr(name)
-            buffer = CharBuffer.wrap(ptr.toString() + Char(0)) ///TODO:should ptr and name be the same
+            filename = idStr(name) // Allocate CharArray with null terminator directly from CharBuffer
+            val arr = CharArray(length + 1)
+            for (i in 0 until length) {
+                arr[i] = ptr.get(i)
+            }
+            arr[length] = '\u0000'
+            buffer = arr
             fileTime = 0
             this.length = length
             // pointer in script buffer
@@ -412,7 +432,7 @@ object Lexer {
             // pointer in script buffer before reading token
             lastScript_p = 0 //this.buffer;
             // pointer to end of script buffer
-            end_p = buffer.length //(this.buffer[length]);
+            end_p = buffer.size //(this.buffer[length]);
             tokenAvailable = false //0;
             line = startLine
             lastline = startLine
@@ -423,7 +443,25 @@ object Lexer {
 
         @Throws(idException::class)
         fun LoadMemory(ptr: String, length: Int, name: String, startLine: Int): Boolean {
-            return LoadMemory(CharBuffer.wrap(ptr), length, name, startLine) //the \0 is needed for the parsing loops.
+            if (loaded) {
+                idLib.common.Error("this.LoadMemory: another script already loaded")
+                return false
+            }
+            filename = idStr(name) // Convert String to CharArray with null terminator
+            buffer = (ptr + Char(0)).toCharArray()
+            fileTime = 0
+            this.length = length // pointer in script buffer
+            script_p = 0 //this.buffer;
+            // pointer in script buffer before reading token
+            lastScript_p = 0 //this.buffer;
+            // pointer to end of script buffer
+            end_p = buffer.size //(this.buffer[length]);
+            tokenAvailable = false //0;
+            line = startLine
+            lastline = startLine
+            allocated = false
+            loaded = true
+            return true
         }
 
         @Throws(idException::class)
@@ -445,7 +483,7 @@ object Lexer {
             //#endif //PUNCTABLE
             if (allocated) {
 //                Mem_Free((void *) this.buffer);
-                buffer = CharBuffer.allocate(0)
+                buffer = CharArray(0)
                 allocated = false
             }
             tokenAvailable = false //0;
@@ -496,7 +534,7 @@ object Lexer {
             token.linesCrossed = line - lastline
             // clear token flags
             token.flags = 0
-            c = buffer.get(script_p)
+            c = buffer[script_p]
 
             // if we're keeping everything as whitespace deliminated strings
             if (flags and LEXFL_ONLYSTRINGS != 0) {
@@ -506,15 +544,14 @@ object Lexer {
                 } else ReadName(token)
             } // if there is a number
             else if (
-                (c in '0'..'9') ||
-                (c == '.' && ((buffer.get(script_p + 1)) in '0'..'9'))
+                (c in '0'..'9') || (c == '.' && ((buffer[script_p + 1]) in '0'..'9'))
             ) {
                 if (!ReadNumber(token)) {
                     return false
                 }
                 // if names are allowed to start with a number
                 if (flags and LEXFL_ALLOWNUMBERNAMES != 0) {
-                    c = buffer.get(script_p)
+                    c = buffer[script_p]
                     if (Character.isLetter(c) || c == '_') {
                         return ReadName(token)
                     }
@@ -540,7 +577,7 @@ object Lexer {
         // expect a certain token, reads the token when available
         @Throws(idException::class)
         fun ExpectTokenString(string: String): Boolean {
-            val token = idToken()
+            val token = _tempToken
             if (!ReadToken(token)) {
                 Error("couldn't find expected '%s'", string)
                 return false
@@ -630,7 +667,7 @@ object Lexer {
         // returns true when the token is available
         @Throws(idException::class)
         fun CheckTokenString(string: String): Boolean {
-            val tok = idToken()
+            val tok = _tempToken
             if (!ReadToken(tok)) {
                 return false
             }
@@ -647,7 +684,7 @@ object Lexer {
         // returns true an reads the token when a token with the given type is available
         @Throws(idException::class)
         fun CheckTokenType(type: Int, subtype: Int, token: idToken): Int {
-            val tok = idToken()
+            val tok = _tempToken
             if (!ReadToken(tok)) {
                 return 0
             }
@@ -699,7 +736,7 @@ object Lexer {
         // skip tokens until the given token string is read
         @Throws(idException::class)
         fun SkipUntilString(string: String): Boolean {
-            val token = idToken()
+            val token = _tempToken
             while (ReadToken(token)) {
                 if (token.toString() == string) {
                     return true
@@ -788,17 +825,17 @@ object Lexer {
         //Returns the rest of the current line
         fun ReadRestOfLine(out: idStr): String {
             while (true) {
-                if (buffer.get(script_p) == '\n') {
+                if (buffer[script_p] == '\n') {
                     line++
                     break
                 }
-                if (0 == buffer.get(script_p).code) {
+                if (0 == buffer[script_p].code) {
                     break
                 }
-                if (buffer.get(script_p) <= ' ') {
+                if (buffer[script_p] <= ' ') {
                     out.Append(" ")
                 } else {
-                    out.Append(buffer.get(script_p))
+                    out.Append(buffer[script_p])
                 }
                 script_p++
             }
@@ -809,7 +846,7 @@ object Lexer {
         // read a signed integer
         @Throws(idException::class)
         fun ParseInt(): Int {
-            val token = idToken()
+            val token = _tempToken
             if (!ReadToken(token)) {
                 Error("couldn't read expected integer")
                 return 0
@@ -826,7 +863,7 @@ object Lexer {
         // read a Boolean
         @Throws(idException::class)
         fun ParseBool(): Boolean {
-            val token = idToken()
+            val token = _tempToken
             if (!ExpectTokenType(Token.TT_NUMBER, 0, token)) {
                 Error("couldn't read expected boolean")
                 return false
@@ -839,7 +876,7 @@ object Lexer {
 
         @Throws(idException::class)
         fun ParseFloat(errorFlag: BooleanArray? = null /*= NULL*/): Float {
-            val token = idToken()
+            val token = _tempToken
             if (errorFlag != null) {
                 errorFlag[0] = false
             }
@@ -1050,12 +1087,12 @@ object Lexer {
             if (!ExpectTokenString("{")) {
                 return out.toString()
             }
-            out.set("{")
+            val sb = StringBuilder("{")
             depth = 1
             skipWhite = false
             doTabs = tabs >= 0
-            while (depth != 0 && buffer.get(script_p).code != 0) {
-                val c: Char = buffer.get(script_p++)
+            while (depth != 0 && buffer[script_p].code != 0) {
+                val c: Char = buffer[script_p++]
                 when (c) {
                     '\t', ' ' -> {
                         if (skipWhite) {
@@ -1066,7 +1103,7 @@ object Lexer {
                     '\n' -> {
                         if (doTabs) {
                             skipWhite = true
-                            out.plusAssign(c)
+                            sb.append(c)
                             continue
                         }
                     }
@@ -1088,12 +1125,13 @@ object Lexer {
                     }
                     skipWhite = false
                     while (i > 0) {
-                        out.plusAssign('\t')
+                        sb.append('\t')
                         i--
                     }
                 }
-                out.plusAssign(c)
+                sb.append(c)
             }
+            out.set(sb.toString())
             return out.toString()
         }
 
@@ -1120,12 +1158,12 @@ object Lexer {
             if (!ExpectTokenString("{")) {
                 return out.toString()
             }
-            out.set("{")
+            val sb = StringBuilder("{")
             depth = 1
             skipWhite = false
             doTabs = tabs >= 0
-            while (depth != 0 && buffer.get(script_p).code != 0) {
-                val c: Char = buffer.get(script_p++)
+            while (depth != 0 && buffer[script_p].code != 0) {
+                val c: Char = buffer[script_p++]
                 when (c) {
                     '\t', ' ' -> {
                         if (skipWhite) {
@@ -1136,7 +1174,7 @@ object Lexer {
                     '\n' -> {
                         if (doTabs) {
                             skipWhite = true
-                            out.plusAssign(c)
+                            sb.append(c)
                             continue
                         }
                     }
@@ -1158,12 +1196,13 @@ object Lexer {
                     }
                     skipWhite = false
                     while (i > 0) {
-                        out.plusAssign('\t')
+                        sb.append('\t')
                         i--
                     }
                 }
-                out.plusAssign(c)
+                sb.append(c)
             }
+            out.set(sb.toString())
             return out.toString()
         }
 
@@ -1190,7 +1229,7 @@ object Lexer {
         fun GetLastWhiteSpace(whiteSpace: idStr): Int {
             whiteSpace.Clear()
             for (p in whiteSpaceStart_p until whiteSpaceEnd_p) {
-                whiteSpace.Append(buffer.get(p))
+                whiteSpace.Append(buffer[p])
             }
             return whiteSpace.Length()
         }
@@ -1423,58 +1462,58 @@ object Lexer {
 //            }
             while (true) {
                 // skip white space
-                while (buffer.get(script_p) <= ' ') {
-                    if (buffer.get(script_p) == Char(0)) {
+                while (buffer[script_p] <= ' ') {
+                    if (buffer[script_p] == Char(0)) {
                         return false
                     }
-                    if (buffer.get(script_p) == '\n') {
+                    if (buffer[script_p] == '\n') {
                         line++
                     }
                     script_p++
                 }
                 // skip comments
-                if (buffer.get(script_p) == '/') {
+                if (buffer[script_p] == '/') {
                     // comments //
-                    if (buffer.get(script_p + 1) == '/') {
+                    if (buffer[script_p + 1] == '/') {
                         script_p++
                         do {
                             script_p++
-                            if (buffer.get(script_p) == Char(0)) {
+                            if (buffer[script_p] == Char(0)) {
                                 return false
                             }
-                        } while (buffer.get(script_p) != '\n')
+                        } while (buffer[script_p] != '\n')
                         line++
                         script_p++
-                        if (buffer.get(script_p) == Char(0)) {
+                        if (buffer[script_p] == Char(0)) {
                             return false
                         }
                         continue
                     }
                     // comments /* */
-                    else if (buffer.get(script_p + 1) == '*') {
+                    else if (buffer[script_p + 1] == '*') {
                         script_p++
                         while (true) {
                             script_p++
-                            if (buffer.get(script_p) == Char(0)) {
+                            if (buffer[script_p] == Char(0)) {
                                 return false
                             }
-                            if (buffer.get(script_p) == '\n') {
+                            if (buffer[script_p] == '\n') {
                                 line++
-                            } else if (buffer.get(script_p) == '/') {
-                                if (buffer.get(script_p - 1) == '*') {
+                            } else if (buffer[script_p] == '/') {
+                                if (buffer[script_p - 1] == '*') {
                                     break
                                 }
-                                if (buffer.get(script_p + 1) == '*') {
+                                if (buffer[script_p + 1] == '*') {
                                     Warning("nested comment")
                                 }
                             }
                         }
                         script_p++
-                        if (buffer.get(script_p) == Char(0)) {
+                        if (buffer[script_p] == Char(0)) {
                             return false
                         }
                         script_p++
-                        if (buffer.get(script_p) == Char(0)) {
+                        if (buffer[script_p] == Char(0)) {
                             return false
                         }
                         continue
@@ -1493,7 +1532,7 @@ object Lexer {
 
             // step over the leading '\\'
             script_p++
-            when (buffer.get(script_p)) {
+            when (buffer[script_p]) {
                 '\\' -> c = '\\'.code
                 'n' -> c = '\n'.code
                 'r' -> c = '\r'.code
@@ -1510,7 +1549,7 @@ object Lexer {
                     i = 0
                     `val` = 0
                     while (true) {
-                        c = buffer.get(script_p).code
+                        c = buffer[script_p].code
                         c = if (Character.isDigit(c)) {
                             c - '0'.code
                         } else if (Character.isUpperCase(c)) {
@@ -1533,13 +1572,13 @@ object Lexer {
                 }
 
                 else -> {
-                    if (buffer.get(script_p) < '0' || buffer.get(script_p) > '9') {
+                    if (buffer[script_p] < '0' || buffer[script_p] > '9') {
                         Error("unknown escape char")
                     }
                     i = 0
                     `val` = 0
                     while (true) {
-                        c = buffer.get(script_p).code
+                        c = buffer[script_p].code
                         c = if (Character.isDigit(c)) {
                             c - '0'.code
                         } else {
@@ -1588,13 +1627,13 @@ object Lexer {
             script_p++
             while (true) {
                 // if there is an escape character and escape characters are allowed
-                if (buffer.get(script_p) == '\\' && 0 == (flags and LEXFL_NOSTRINGESCAPECHARS)) {
+                if (buffer[script_p] == '\\' && 0 == (flags and LEXFL_NOSTRINGESCAPECHARS)) {
                     if (!ReadEscapeCharacter(ch)) {
                         return false
                     }
                     token.AppendDirty(ch[0])
                 } // if a trailing quote
-                else if (buffer.get(script_p).code == quote) {
+                else if (buffer[script_p].code == quote) {
                     // step over the quote
                     script_p++
                     // if consecutive strings should not be concatenated
@@ -1612,21 +1651,21 @@ object Lexer {
                         break
                     }
                     if (flags and LEXFL_NOSTRINGCONCAT != 0) {
-                        if (buffer.get(script_p) != '\\') {
+                        if (buffer[script_p] != '\\') {
                             script_p = tmpscript_p
                             line = tmpline
                             break
                         }
                         // step over the '\\'
                         script_p++
-                        if (!ReadWhiteSpace() || buffer.get(script_p).code != quote) {
+                        if (!ReadWhiteSpace() || buffer[script_p].code != quote) {
                             Error("expecting string after '' terminated line")
                             return false
                         }
                     }
 
                     // if there's no leading qoute
-                    if (buffer.get(script_p).code != quote) {
+                    if (buffer[script_p].code != quote) {
                         script_p = tmpscript_p
                         line = tmpline
                         break
@@ -1634,15 +1673,15 @@ object Lexer {
                     // step over the new leading quote
                     script_p++
                 } else {
-                    if (buffer.get(script_p) == '\u0000') {
+                    if (buffer[script_p] == '\u0000') {
                         Error("missing trailing quote")
                         return false
                     }
-                    if (buffer.get(script_p) == '\n') {
+                    if (buffer[script_p] == '\n') {
                         Error("newline inside string")
                         return false
                     }
-                    token.AppendDirty(buffer.get(script_p++))
+                    token.AppendDirty(buffer[script_p++])
                 }
             }
             //            token.set(token.len, '\0');
@@ -1664,9 +1703,8 @@ object Lexer {
             var c: Char
             token.type = Token.TT_NAME
             do {
-                token.AppendDirty(buffer.get(script_p))
-            } while (script_p++ + 1 < buffer.capacity()
-                && (Character.isLowerCase(buffer.get(script_p).also { c = it })
+                token.AppendDirty(buffer[script_p])
+            } while (script_p++ + 1 < buffer.size && (Character.isLowerCase(buffer[script_p].also { c = it })
                         || Character.isUpperCase(c)
                         || Character.isDigit(c)
                         || c == '_' ||  // if treating all tokens as strings, don't parse '-' as a seperate token
@@ -1690,39 +1728,39 @@ object Lexer {
             token.subtype = 0
             token.intValue = 0
             token.floatValue = 0.0f
-            c = buffer.get(script_p)
-            c2 = buffer.get(script_p + 1)
+            c = buffer[script_p]
+            c2 = buffer[script_p + 1]
             if (c == '0' && c2 != '.') {
                 // check for a hexadecimal number
                 if (c2 == 'x' || c2 == 'X') {
-                    token.AppendDirty(buffer.get(script_p++))
-                    token.AppendDirty(buffer.get(script_p++))
-                    c = buffer.get(script_p)
+                    token.AppendDirty(buffer[script_p++])
+                    token.AppendDirty(buffer[script_p++])
+                    c = buffer[script_p]
                     while (Character.isDigit(c)
                         || c in 'a'..'f'
                         || c in 'A'..'F'
                     ) {
                         token.AppendDirty(c)
-                        c = buffer.get(++script_p)
+                        c = buffer[++script_p]
                     }
                     token.subtype = Token.TT_HEX or Token.TT_INTEGER
                 } // check for a binary number
                 else if (c2 == 'b' || c2 == 'B') {
-                    token.AppendDirty(buffer.get(script_p++))
-                    token.AppendDirty(buffer.get(script_p++))
-                    c = buffer.get(script_p)
+                    token.AppendDirty(buffer[script_p++])
+                    token.AppendDirty(buffer[script_p++])
+                    c = buffer[script_p]
                     while (c == '0' || c == '1') {
                         token.AppendDirty(c)
-                        c = buffer.get(++script_p)
+                        c = buffer[++script_p]
                     }
                     token.subtype = Token.TT_BINARY or Token.TT_INTEGER
                 } // its an octal number
                 else {
-                    token.AppendDirty(buffer.get(script_p++))
-                    c = buffer.get(script_p)
+                    token.AppendDirty(buffer[script_p++])
+                    c = buffer[script_p]
                     while (c in '0'..'7') {
                         token.AppendDirty(c)
-                        c = buffer.get(++script_p)
+                        c = buffer[++script_p]
                     }
                     token.subtype = Token.TT_OCTAL or Token.TT_INTEGER
                 }
@@ -1738,10 +1776,10 @@ object Lexer {
                         break
                     }
                     token.AppendDirty(c)
-                    if (buffer.length <= script_p + 1) {
+                    if (buffer.size <= script_p + 1) {
                         return false
                     }
-                    c = buffer.get(++script_p)
+                    c = buffer[++script_p]
                 }
                 if (c == 'e' && dot == 0) {
                     //We have scientific notation without a decimal point
@@ -1754,17 +1792,17 @@ object Lexer {
                     if (c == 'e') {
                         //Append the e so that GetFloatValue code works
                         token.AppendDirty(c)
-                        c = buffer.get(++script_p)
+                        c = buffer[++script_p]
                         if (c == '-') {
                             token.AppendDirty(c)
-                            c = buffer.get(++script_p)
+                            c = buffer[++script_p]
                         } else if (c == '+') {
                             token.AppendDirty(c)
-                            c = buffer.get(++script_p)
+                            c = buffer[++script_p]
                         }
                         while (Character.isDigit(c)) { //c >= '0' && c <= '9') {
                             token.AppendDirty(c)
-                            c = buffer.get(++script_p)
+                            c = buffer[++script_p]
                         }
                     } // check for floating point exception infinite 1.#INF or indefinite 1.#IND or NaN
                     else if (c == '#') {
@@ -1785,12 +1823,12 @@ object Lexer {
                         i = 0
                         while (i < c2.code) {
                             token.AppendDirty(c)
-                            c = buffer.get(++script_p)
+                            c = buffer[++script_p]
                             i++
                         }
                         while (Character.isDigit(c)) {
                             token.AppendDirty(c)
-                            c = buffer.get(++script_p)
+                            c = buffer[++script_p]
                         }
                         if (0 == (flags and LEXFL_ALLOWFLOATEXCEPTIONS)) {
 //                            token.AppendDirty('\0');	// zero terminate for c_str
@@ -1843,17 +1881,17 @@ object Lexer {
                         } else {
                             break
                         }
-                        c = buffer.get(++script_p)
+                        c = buffer[++script_p]
                         i++
                     }
                 }
             } else if (token.subtype and Token.TT_IPADDRESS != 0) {
                 if (c == ':') {
                     token.AppendDirty(c)
-                    c = buffer.get(++script_p)
+                    c = buffer[++script_p]
                     while (Character.isDigit(c)) {
                         token.AppendDirty(c)
-                        c = buffer.get(++script_p)
+                        c = buffer[++script_p]
                     }
                     token.subtype = token.subtype or Token.TT_IPPORT
                 }
@@ -1870,7 +1908,7 @@ object Lexer {
             var punc: punctuation_t
 
 // #ifdef PUNCTABLE
-            val readCode = buffer.get(script_p)
+            val readCode = buffer[script_p]
             n = punctuationTable[readCode.code]
             while (n >= 0) {
                 punc = punctuations[n]
@@ -1883,8 +1921,8 @@ object Lexer {
                 p = punc.p!!.toCharArray()
                 // check for this punctuation in the script
                 l = 0
-                while (l < p.size && buffer.get(script_p + l).code != 0) {
-                    if (buffer.get(script_p + l) != p[l]) {
+                while (l < p.size && buffer[script_p + l].code != 0) {
+                    if (buffer[script_p + l] != p[l]) {
                         break
                     }
                     l++
@@ -1917,7 +1955,7 @@ object Lexer {
             var i: Int
             i = 0
             while (str[i].code != 0) {
-                if (buffer.get(i + script_p) != str[i]) {
+                if (buffer[i + script_p] != str[i]) {
                     return false
                 }
                 i++

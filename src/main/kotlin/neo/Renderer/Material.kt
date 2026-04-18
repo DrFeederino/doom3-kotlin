@@ -600,6 +600,11 @@ object Material {
         private var surfaceFlags: Int = 0 // surface flags
         private var unsmoothedTangents: Boolean = false
 
+        // Reusable tokens for parsing — avoids allocating new idToken per sub-parser call
+        private val _exprToken = idToken()
+        private val _termToken = idToken()
+        private val _parseToken = idToken()
+
         constructor() {
             CommonInit()
 
@@ -1569,221 +1574,233 @@ object Material {
                 // end of material definition
                 if (token.equals("}")) {
                     break
-                } else if (0 == token.Icmp("qer_editorimage")) {
-                    src.ReadTokenOnLine(token)
-                    editorImageName.set(token.toString())
-                    src.SkipRestOfLine()
-                    continue
-                } // description
-                else if (0 == token.Icmp("description")) {
-                    src.ReadTokenOnLine(token)
-                    desc = idStr(token.toString())
-                    continue
-                } // check for the surface / content bit flags
-                else if (CheckSurfaceParm(token)) {
-                    continue
-                } // polygonOffset
-                else if (0 == token.Icmp("polygonOffset")) {
-                    SetMaterialFlag(MF_POLYGONOFFSET)
-                    if (!src.ReadTokenOnLine(token)) {
-                        polygonOffset = 1.0f
-                        continue
+                }
+
+                // HashMap-based keyword dispatch — O(1) lookup
+                val matKw = materialKeywords[token.toString().lowercase()]
+                if (matKw != null) {
+                    when (matKw) {
+                        1 -> { // qer_editorimage
+                            src.ReadTokenOnLine(token)
+                            editorImageName.set(token.toString())
+                            src.SkipRestOfLine()
+                        }
+
+                        2 -> { // description
+                            src.ReadTokenOnLine(token)
+                            desc = idStr(token.toString())
+                        }
+
+                        3 -> { // polygonOffset
+                            SetMaterialFlag(MF_POLYGONOFFSET)
+                            if (!src.ReadTokenOnLine(token)) {
+                                polygonOffset = 1.0f
+                                continue
+                            } // explict larger (or negative) offset
+                            polygonOffset = token.GetFloatValue()
+                        }
+
+                        4 -> { // noShadows
+                            SetMaterialFlag(MF_NOSHADOWS)
+                        }
+
+                        5 -> { // suppressInSubview
+                            suppressInSubview = true
+                        }
+
+                        6 -> { // portalSky
+                            portalSky = true
+                        }
+
+                        7 -> { // noSelfShadow
+                            SetMaterialFlag(MF_NOSELFSHADOW)
+                        }
+
+                        8 -> { // noPortalFog
+                            SetMaterialFlag(MF_NOPORTALFOG)
+                        }
+
+                        9 -> { // forceShadows
+                            SetMaterialFlag(MF_FORCESHADOWS)
+                        }
+
+                        10 -> { // noOverlays
+                            allowOverlays = false
+                        }
+
+                        11 -> { // forceOverlays
+                            pd!!.forceOverlays = true
+                        }
+
+                        12 -> { // translucent
+                            coverage = materialCoverage_t.MC_TRANSLUCENT
+                        }
+
+                        13 -> { // zeroclamp
+                            trpDefault = textureRepeat_t.TR_CLAMP_TO_ZERO
+                        }
+
+                        14 -> { // clamp
+                            trpDefault = textureRepeat_t.TR_CLAMP
+                        }
+
+                        15 -> { // alphazeroclamp
+                            trpDefault = textureRepeat_t.TR_CLAMP_TO_ZERO
+                        }
+
+                        16 -> { // forceOpaque
+                            coverage = materialCoverage_t.MC_OPAQUE
+                        }
+
+                        17 -> { // twoSided
+                            cullType = cullType_t.CT_TWO_SIDED // twoSided implies no-shadows, because the shadow
+                            // volume would be coplanar with the surface, giving depth fighting
+                            // we could make this no-self-shadows, but it may be more important
+                            // to receive shadows from no-self-shadow monsters
+                            SetMaterialFlag(MF_NOSHADOWS)
+                        }
+
+                        18 -> { // backSided
+                            cullType =
+                                cullType_t.CT_BACK_SIDED // the shadow code doesn't handle this, so just disable shadows.
+                            // We could fix this in the future if there was a need.
+                            SetMaterialFlag(MF_NOSHADOWS)
+                        }
+
+                        19 -> { // fogLight
+                            fogLight = true
+                        }
+
+                        20 -> { // blendLight
+                            blendLight = true
+                        }
+
+                        21 -> { // ambientLight
+                            ambientLight = true
+                        }
+
+                        22 -> { // mirror
+                            sort = SS_SUBVIEW.toFloat()
+                            coverage = materialCoverage_t.MC_OPAQUE
+                        }
+
+                        23 -> { // noFog
+                            noFog = true
+                        }
+
+                        24 -> { // unsmoothedTangents
+                            unsmoothedTangents = true
+                        }
+
+                        25 -> { // lightFalloffImage
+                            str = Image_program.R_ParsePastImageProgram(src)
+                            var copy: String?
+                            copy = str // so other things don't step on it
+                            lightFalloffImage = Image.globalImages.ImageFromFile(
+                                copy,
+                                textureFilter_t.TF_DEFAULT,
+                                false,
+                                textureRepeat_t.TR_CLAMP,
+                                textureDepth_t.TD_DEFAULT
+                            )
+                        }
+
+                        26 -> { // guisurf
+                            src.ReadTokenOnLine(token)
+                            if (0 == token.Icmp("entity")) {
+                                entityGui = 1
+                            } else if (0 == token.Icmp("entity2")) {
+                                entityGui = 2
+                            } else if (0 == token.Icmp("entity3")) {
+                                entityGui = 3
+                            } else {
+                                gui = uiManager.FindGui(token.toString(), true)
+                            }
+                        }
+
+                        27 -> { // sort
+                            ParseSort(src)
+                        }
+
+                        28 -> { // spectrum
+                            src.ReadTokenOnLine(token)
+                            spectrum = atoi(token.toString())
+                        }
+
+                        29 -> { // deform
+                            ParseDeform(src)
+                        }
+
+                        30 -> { // decalInfo
+                            ParseDecalInfo(src)
+                        }
+
+                        31 -> { // renderbump
+                            src.ParseRestOfLine((renderBump)!!)
+                        }
+
+                        32 -> { // diffusemap
+                            str = Image_program.R_ParsePastImageProgram(src)
+                            snPrintf(buffer, buffer.size, "blend diffusemap\nmap %s\n}\n", str)
+                            newSrc.LoadMemory(ctos(buffer), strLen(buffer), "diffusemap")
+                            newSrc.SetFlags(LEXFL_NOFATALERRORS or LEXFL_NOSTRINGCONCAT or LEXFL_NOSTRINGESCAPECHARS or LEXFL_ALLOWPATHNAMES)
+                            ParseStage(newSrc, trpDefault)
+                            newSrc.FreeSource()
+                        }
+
+                        33 -> { // specularmap
+                            str = Image_program.R_ParsePastImageProgram(src)
+                            snPrintf(buffer, buffer.size, "blend specularmap\nmap %s\n}\n", str)
+                            newSrc.LoadMemory(ctos(buffer), strLen(buffer), "specularmap")
+                            newSrc.SetFlags(LEXFL_NOFATALERRORS or LEXFL_NOSTRINGCONCAT or LEXFL_NOSTRINGESCAPECHARS or LEXFL_ALLOWPATHNAMES)
+                            ParseStage(newSrc, trpDefault)
+                            newSrc.FreeSource()
+                        }
+
+                        34 -> { // bumpmap
+                            str = Image_program.R_ParsePastImageProgram(src)
+                            snPrintf(buffer, buffer.size, "blend bumpmap\nmap %s\n}\n", str)
+                            newSrc.LoadMemory(ctos(buffer), strLen(buffer), "bumpmap")
+                            newSrc.SetFlags(LEXFL_NOFATALERRORS or LEXFL_NOSTRINGCONCAT or LEXFL_NOSTRINGESCAPECHARS or LEXFL_ALLOWPATHNAMES)
+                            ParseStage(newSrc, trpDefault)
+                            newSrc.FreeSource()
+                        }
+
+                        35 -> { // DECAL_MACRO
+                            // polygonOffset
+                            SetMaterialFlag(MF_POLYGONOFFSET)
+                            polygonOffset = 1.0f
+
+                            // discrete
+                            surfaceFlags = surfaceFlags or SURF_DISCRETE
+                            contentFlags = contentFlags and CONTENTS_SOLID.inv()
+
+                            // sort decal
+                            sort = SS_DECAL.toFloat()
+
+                            // noShadows
+                            SetMaterialFlag(MF_NOSHADOWS)
+                        }
                     }
-                    // explict larger (or negative) offset
-                    polygonOffset = token.GetFloatValue()
                     continue
-                } // noshadow
-                else if (0 == token.Icmp("noShadows")) {
-                    SetMaterialFlag(MF_NOSHADOWS)
-                    continue
-                } else if (0 == token.Icmp("suppressInSubview")) {
-                    suppressInSubview = true
-                    continue
-                } else if (0 == token.Icmp("portalSky")) {
-                    portalSky = true
-                    continue
-                } // noSelfShadow
-                else if (0 == token.Icmp("noSelfShadow")) {
-                    SetMaterialFlag(MF_NOSELFSHADOW)
-                    continue
-                } // noPortalFog
-                else if (0 == token.Icmp("noPortalFog")) {
-                    SetMaterialFlag(MF_NOPORTALFOG)
-                    continue
-                } // forceShadows allows nodraw surfaces to cast shadows
-                else if (0 == token.Icmp("forceShadows")) {
-                    SetMaterialFlag(MF_FORCESHADOWS)
-                    continue
-                } // overlay / decal suppression
-                else if (0 == token.Icmp("noOverlays")) {
-                    allowOverlays = false
-                    continue
-                } // moster blood overlay forcing for alpha tested or translucent surfaces
-                else if (0 == token.Icmp("forceOverlays")) {
-                    pd!!.forceOverlays = true
-                    continue
-                } // translucent
-                else if (0 == token.Icmp("translucent")) {
-                    coverage = materialCoverage_t.MC_TRANSLUCENT
-                    continue
-                } // global zero clamp
-                else if (0 == token.Icmp("zeroclamp")) {
-                    trpDefault = textureRepeat_t.TR_CLAMP_TO_ZERO
-                    continue
-                } // global clamp
-                else if (0 == token.Icmp("clamp")) {
-                    trpDefault = textureRepeat_t.TR_CLAMP
-                    continue
-                } // global clamp
-                else if (0 == token.Icmp("alphazeroclamp")) {
-                    trpDefault = textureRepeat_t.TR_CLAMP_TO_ZERO
-                    continue
-                } // forceOpaque is used for skies-behind-windows
-                else if (0 == token.Icmp("forceOpaque")) {
-                    coverage = materialCoverage_t.MC_OPAQUE
-                    continue
-                } // twoSided
-                else if (0 == token.Icmp("twoSided")) {
-                    cullType = cullType_t.CT_TWO_SIDED
-                    // twoSided implies no-shadows, because the shadow
-                    // volume would be coplanar with the surface, giving depth fighting
-                    // we could make this no-self-shadows, but it may be more important
-                    // to receive shadows from no-self-shadow monsters
-                    SetMaterialFlag(MF_NOSHADOWS)
-                } // backSided
-                else if (0 == token.Icmp("backSided")) {
-                    cullType = cullType_t.CT_BACK_SIDED
-                    // the shadow code doesn't handle this, so just disable shadows.
-                    // We could fix this in the future if there was a need.
-                    SetMaterialFlag(MF_NOSHADOWS)
-                } // foglight
-                else if (0 == token.Icmp("fogLight")) {
-                    fogLight = true
-                    continue
-                } // blendlight
-                else if (0 == token.Icmp("blendLight")) {
-                    blendLight = true
-                    continue
-                } // ambientLight
-                else if (0 == token.Icmp("ambientLight")) {
-                    ambientLight = true
-                    continue
-                } // mirror
-                else if (0 == token.Icmp("mirror")) {
-                    sort = SS_SUBVIEW.toFloat()
-                    coverage = materialCoverage_t.MC_OPAQUE
-                    continue
-                } // noFog
-                else if (0 == token.Icmp("noFog")) {
-                    noFog = true
-                    continue
-                } // unsmoothedTangents
-                else if (0 == token.Icmp("unsmoothedTangents")) {
-                    unsmoothedTangents = true
-                    continue
-                } // lightFallofImage <imageprogram>
-                else if (0 == token.Icmp("lightFalloffImage")) {
-                    str = Image_program.R_ParsePastImageProgram(src)
-                    var copy: String?
-                    copy = str // so other things don't step on it
-                    lightFalloffImage = Image.globalImages.ImageFromFile(
-                        copy,
-                        textureFilter_t.TF_DEFAULT,
-                        false,
-                        textureRepeat_t.TR_CLAMP,
-                        textureDepth_t.TD_DEFAULT
-                    )
-                    continue
-                } // guisurf <guifile> | guisurf entity
-                else if (0 == token.Icmp("guisurf")) {
-                    src.ReadTokenOnLine(token)
-                    if (0 == token.Icmp("entity")) {
-                        entityGui = 1
-                    } else if (0 == token.Icmp("entity2")) {
-                        entityGui = 2
-                    } else if (0 == token.Icmp("entity3")) {
-                        entityGui = 3
-                    } else {
-                        gui = uiManager.FindGui(token.toString(), true)
-                    }
-                    continue
-                } // sort
-                else if (0 == token.Icmp("sort")) {
-                    ParseSort(src)
-                    continue
-                } // spectrum <integer>
-                else if (0 == token.Icmp("spectrum")) {
-                    src.ReadTokenOnLine(token)
-                    spectrum = atoi(token.toString())
-                    continue
-                } // deform < sprite | tube | flare >
-                else if (0 == token.Icmp("deform")) {
-                    ParseDeform(src)
-                    continue
-                } // decalInfo <staySeconds> <fadeSeconds> ( <start rgb> ) ( <end rgb> )
-                else if (0 == token.Icmp("decalInfo")) {
-                    ParseDecalInfo(src)
-                    continue
-                } // renderbump <args...>
-                else if (0 == token.Icmp("renderbump")) {
-                    src.ParseRestOfLine((renderBump)!!)
-                    continue
-                } // diffusemap for stage shortcut
-                else if (0 == token.Icmp("diffusemap")) {
-                    str = Image_program.R_ParsePastImageProgram(src)
-                    snPrintf(buffer, buffer.size, "blend diffusemap\nmap %s\n}\n", str)
-                    newSrc.LoadMemory(ctos(buffer), strLen(buffer), "diffusemap")
-                    newSrc.SetFlags(LEXFL_NOFATALERRORS or LEXFL_NOSTRINGCONCAT or LEXFL_NOSTRINGESCAPECHARS or LEXFL_ALLOWPATHNAMES)
-                    ParseStage(newSrc, trpDefault)
-                    newSrc.FreeSource()
-                    continue
-                } // specularmap for stage shortcut
-                else if (0 == token.Icmp("specularmap")) {
-                    str = Image_program.R_ParsePastImageProgram(src)
-                    snPrintf(buffer, buffer.size, "blend specularmap\nmap %s\n}\n", str)
-                    newSrc.LoadMemory(ctos(buffer), strLen(buffer), "specularmap")
-                    newSrc.SetFlags(LEXFL_NOFATALERRORS or LEXFL_NOSTRINGCONCAT or LEXFL_NOSTRINGESCAPECHARS or LEXFL_ALLOWPATHNAMES)
-                    ParseStage(newSrc, trpDefault)
-                    newSrc.FreeSource()
-                    continue
-                } // normalmap for stage shortcut
-                else if (0 == token.Icmp("bumpmap")) {
-                    str = Image_program.R_ParsePastImageProgram(src)
-                    snPrintf(buffer, buffer.size, "blend bumpmap\nmap %s\n}\n", str)
-                    newSrc.LoadMemory(ctos(buffer), strLen(buffer), "bumpmap")
-                    newSrc.SetFlags(LEXFL_NOFATALERRORS or LEXFL_NOSTRINGCONCAT or LEXFL_NOSTRINGESCAPECHARS or LEXFL_ALLOWPATHNAMES)
-                    ParseStage(newSrc, trpDefault)
-                    newSrc.FreeSource()
-                    continue
-                } // DECAL_MACRO for backwards compatibility with the preprocessor macros
-                else if (0 == token.Icmp("DECAL_MACRO")) {
-                    // polygonOffset
-                    SetMaterialFlag(MF_POLYGONOFFSET)
-                    polygonOffset = 1.0f
+                }
 
-                    // discrete
-                    surfaceFlags = surfaceFlags or SURF_DISCRETE
-                    contentFlags = contentFlags and CONTENTS_SOLID.inv()
-
-                    // sort decal
-                    sort = SS_DECAL.toFloat()
-
-                    // noShadows
-                    SetMaterialFlag(MF_NOSHADOWS)
+                // check for the surface / content bit flags
+                if (CheckSurfaceParm(token)) {
                     continue
-                } else if (token.equals("{")) {
+                }
+
+                if (token.equals("{")) {
                     // create the new stage
                     ParseStage(src, trpDefault)
                     continue
-                } else {
-                    Common.common.Warning(
-                        "unknown general material parameter '%s' in '%s'",
-                        token.toString(),
-                        GetName()
-                    )
-                    SetMaterialFlag(MF_DEFAULTED)
-                    return
                 }
+
+                Common.common.Warning(
+                    "unknown general material parameter '%s' in '%s'", token.toString(), GetName()
+                )
+                SetMaterialFlag(MF_DEFAULTED)
+                return
             }
 
             // add _flat or _white stages if needed
@@ -1842,7 +1859,7 @@ object Material {
         }
 
         private fun ParseSort(src: idLexer) {
-            val token = idToken()
+            val token = _parseToken
             if (!src.ReadTokenOnLine(token)) {
                 src.Warning("missing sort parameter")
                 SetMaterialFlag(MF_DEFAULTED)
@@ -1874,7 +1891,7 @@ object Material {
         }
 
         private fun ParseBlend(src: idLexer, stage: shaderStage_t?) {
-            val token = idToken()
+            val token = _parseToken
             val srcBlend: Int
             val dstBlend: Int
 
@@ -1931,7 +1948,7 @@ object Material {
          ================
          */
         private fun ParseVertexParm(src: idLexer, newStage: newShaderStage_t) {
-            val token = idToken()
+            val token = _parseToken
             src.ReadTokenOnLine(token)
             val parm: Int = token.GetIntValue()
             if (!token.IsNumeric() || (parm < 0) || (parm >= MAX_VERTEX_PARMS)) {
@@ -1973,7 +1990,7 @@ object Material {
             var td: textureDepth_t
             var cubeMap: cubeFiles_t
             var allowPicmip: Boolean
-            val token = idToken()
+            val token = _parseToken
             tf = textureFilter_t.TF_DEFAULT
             trp = textureRepeat_t.TR_REPEAT
             td = textureDepth_t.TD_DEFAULT
@@ -2098,423 +2115,436 @@ object Material {
                     break
                 }
 
-                //BSM Nerve: Added for stage naming in the material editor
-                if (0 == token.Icmp("name")) {
-                    src.SkipRestOfLine()
-                    continue
-                }
+                // HashMap-based keyword dispatch — O(1) lookup
+                val stgKw = stageKeywords[token.toString().lowercase()]
+                if (stgKw != null) {
+                    when (stgKw) {
+                        1 -> { // name (BSM Nerve: Added for stage naming in the material editor)
+                            src.SkipRestOfLine()
+                        }
 
-                // image options
-                if (0 == token.Icmp("blend")) {
-                    ParseBlend(src, ss)
-                    continue
-                }
-                if (0 == token.Icmp("map")) {
-                    str = Image_program.R_ParsePastImageProgram(src)
-                    Copynz(imageName, str, imageName.size)
-                    continue
-                }
-                if (0 == token.Icmp("remoteRenderMap")) {
-                    ts.dynamic = dynamicidImage_t.DI_REMOTE_RENDER
-                    ts.width = src.ParseInt()
-                    ts.height = src.ParseInt()
-                    continue
-                }
-                if (0 == token.Icmp("mirrorRenderMap")) {
-                    ts.dynamic = dynamicidImage_t.DI_MIRROR_RENDER
-                    ts.width = src.ParseInt()
-                    ts.height = src.ParseInt()
-                    ts.texgen = texgen_t.TG_SCREEN
-                    continue
-                }
-                if (0 == token.Icmp("xrayRenderMap")) {
-                    ts.dynamic = dynamicidImage_t.DI_XRAY_RENDER
-                    ts.width = src.ParseInt()
-                    ts.height = src.ParseInt()
-                    ts.texgen = texgen_t.TG_SCREEN
-                    continue
-                }
-                if (0 == token.Icmp("screen")) {
-                    ts.texgen = texgen_t.TG_SCREEN
-                    continue
-                }
-                if (0 == token.Icmp("screen2")) {
-                    ts.texgen = texgen_t.TG_SCREEN2
-                    continue
-                }
-                if (0 == token.Icmp("glassWarp")) {
-                    ts.texgen = texgen_t.TG_GLASSWARP
-                    continue
-                }
-                if (0 == token.Icmp("videomap")) {
-                    // note that videomaps will always be in clamp mode, so texture
-                    // coordinates had better be in the 0 to 1 range
-                    if (!src.ReadToken(token)) {
-                        Common.common.Warning("missing parameter for 'videoMap' keyword in material '%s'", GetName())
-                        continue
-                    }
-                    var loop = false
-                    if (0 == token.Icmp("loop")) {
-                        loop = true
-                        if (!src.ReadToken(token)) {
-                            Common.common.Warning(
-                                "missing parameter for 'videoMap' keyword in material '%s'",
-                                GetName()
+                        2 -> { // blend
+                            ParseBlend(src, ss)
+                        }
+
+                        3 -> { // map
+                            str = Image_program.R_ParsePastImageProgram(src)
+                            Copynz(imageName, str, imageName.size)
+                        }
+
+                        4 -> { // remoteRenderMap
+                            ts.dynamic = dynamicidImage_t.DI_REMOTE_RENDER
+                            ts.width = src.ParseInt()
+                            ts.height = src.ParseInt()
+                        }
+
+                        5 -> { // mirrorRenderMap
+                            ts.dynamic = dynamicidImage_t.DI_MIRROR_RENDER
+                            ts.width = src.ParseInt()
+                            ts.height = src.ParseInt()
+                            ts.texgen = texgen_t.TG_SCREEN
+                        }
+
+                        6 -> { // xrayRenderMap
+                            ts.dynamic = dynamicidImage_t.DI_XRAY_RENDER
+                            ts.width = src.ParseInt()
+                            ts.height = src.ParseInt()
+                            ts.texgen = texgen_t.TG_SCREEN
+                        }
+
+                        7 -> { // screen
+                            ts.texgen = texgen_t.TG_SCREEN
+                        }
+
+                        8 -> { // screen2
+                            ts.texgen = texgen_t.TG_SCREEN2
+                        }
+
+                        9 -> { // glassWarp
+                            ts.texgen = texgen_t.TG_GLASSWARP
+                        }
+
+                        10 -> { // videomap
+                            // note that videomaps will always be in clamp mode, so texture
+                            // coordinates had better be in the 0 to 1 range
+                            if (!src.ReadToken(token)) {
+                                Common.common.Warning(
+                                    "missing parameter for 'videoMap' keyword in material '%s'",
+                                    GetName()
+                                )
+                                continue
+                            }
+                            var loop = false
+                            if (0 == token.Icmp("loop")) {
+                                loop = true
+                                if (!src.ReadToken(token)) {
+                                    Common.common.Warning(
+                                        "missing parameter for 'videoMap' keyword in material '%s'", GetName()
+                                    )
+                                    continue
+                                }
+                            }
+                            ts.cinematic[0] = idCinematic.Alloc()
+                            ts.cinematic[0]!!.InitFromFile(token.toString(), loop)
+                        }
+
+                        11 -> { // soundmap
+                            if (!src.ReadToken(token)) {
+                                Common.common.Warning(
+                                    "missing parameter for 'soundmap' keyword in material '%s'",
+                                    GetName()
+                                )
+                                continue
+                            }
+                            ts.cinematic[0] = idSndWindow()
+                            ts.cinematic[0]!!.InitFromFile(token.toString(), true)
+                        }
+
+                        12 -> { // cubeMap
+                            str = Image_program.R_ParsePastImageProgram(src)
+                            Copynz(imageName, str, imageName.size)
+                            cubeMap = cubeFiles_t.CF_NATIVE
+                        }
+
+                        13 -> { // cameraCubeMap
+                            str = Image_program.R_ParsePastImageProgram(src)
+                            Copynz(imageName, str, imageName.size)
+                            cubeMap = cubeFiles_t.CF_CAMERA
+                        }
+
+                        14 -> { // ignoreAlphaTest
+                            ss.ignoreAlphaTest = true
+                        }
+
+                        15 -> { // nearest
+                            tf = textureFilter_t.TF_NEAREST
+                        }
+
+                        16 -> { // linear
+                            tf = textureFilter_t.TF_LINEAR
+                        }
+
+                        17 -> { // clamp
+                            trp = textureRepeat_t.TR_CLAMP
+                        }
+
+                        18 -> { // noclamp
+                            trp = textureRepeat_t.TR_REPEAT
+                        }
+
+                        19 -> { // zeroclamp
+                            trp = textureRepeat_t.TR_CLAMP_TO_ZERO
+                        }
+
+                        20 -> { // alphazeroclamp
+                            trp = textureRepeat_t.TR_CLAMP_TO_ZERO_ALPHA
+                        }
+
+                        21 -> { // uncompressed / highquality
+                            if (0 == idImageManager.image_ignoreHighQuality.GetInteger()) {
+                                td = textureDepth_t.TD_HIGH_QUALITY
+                            }
+                        }
+
+                        22 -> { // forceHighQuality
+                            td = textureDepth_t.TD_HIGH_QUALITY
+                        }
+
+                        23 -> { // nopicmip
+                            allowPicmip = false
+                        }
+
+                        24 -> { // vertexColor
+                            ss.vertexColor = stageVertexColor_t.SVC_MODULATE
+                        }
+
+                        25 -> { // inverseVertexColor
+                            ss.vertexColor = stageVertexColor_t.SVC_INVERSE_MODULATE
+                        }
+
+                        26 -> { // privatePolygonOffset
+                            if (!src.ReadTokenOnLine(token)) {
+                                ss.privatePolygonOffset = 1.0f
+                                continue
+                            } // explict larger (or negative) offset
+                            src.UnreadToken(token)
+                            ss.privatePolygonOffset = src.ParseFloat()
+                        }
+
+                        27 -> { // texGen
+                            src.ExpectAnyToken(token)
+                            if (0 == token.Icmp("normal")) {
+                                ts.texgen = texgen_t.TG_DIFFUSE_CUBE
+                            } else if (0 == token.Icmp("reflect")) {
+                                ts.texgen = texgen_t.TG_REFLECT_CUBE
+                            } else if (0 == token.Icmp("skybox")) {
+                                ts.texgen = texgen_t.TG_SKYBOX_CUBE
+                            } else if (0 == token.Icmp("wobbleSky")) {
+                                ts.texgen = texgen_t.TG_WOBBLESKY_CUBE
+                                texGenRegisters[0] = ParseExpression(src)
+                                texGenRegisters[1] = ParseExpression(src)
+                                texGenRegisters[2] = ParseExpression(src)
+                            } else {
+                                Common.common.Warning("bad texGen '%s' in material %s", token.toString(), GetName())
+                                SetMaterialFlag(MF_DEFAULTED)
+                            }
+                        }
+
+                        28 -> { // scroll / translate
+                            a = ParseExpression(src)
+                            MatchToken(src, ",")
+                            b = ParseExpression(src)
+                            matrix[0][0] = GetExpressionConstant(1.0f)
+                            matrix[0][1] = GetExpressionConstant(0.0f)
+                            matrix[0][2] = a
+                            matrix[1][0] = GetExpressionConstant(0.0f)
+                            matrix[1][1] = GetExpressionConstant(1.0f)
+                            matrix[1][2] = b
+                            MultiplyTextureMatrix(ts, matrix)
+                        }
+
+                        29 -> { // scale
+                            a = ParseExpression(src)
+                            MatchToken(src, ",")
+                            b = ParseExpression(src) // this just scales without a centering
+                            matrix[0][0] = a
+                            matrix[0][1] = GetExpressionConstant(0.0f)
+                            matrix[0][2] = GetExpressionConstant(0.0f)
+                            matrix[1][0] = GetExpressionConstant(0.0f)
+                            matrix[1][1] = b
+                            matrix[1][2] = GetExpressionConstant(0.0f)
+                            MultiplyTextureMatrix(ts, matrix)
+                        }
+
+                        30 -> { // centerScale
+                            a = ParseExpression(src)
+                            MatchToken(src, ",")
+                            b = ParseExpression(src) // this subtracts 0.5f, then scales, then adds 0.5f
+                            matrix[0][0] = a
+                            matrix[0][1] = GetExpressionConstant(0.0f)
+                            matrix[0][2] = EmitOp(
+                                GetExpressionConstant(0.5f),
+                                EmitOp(GetExpressionConstant(0.5f), a, expOpType_t.OP_TYPE_MULTIPLY),
+                                expOpType_t.OP_TYPE_SUBTRACT
                             )
-                            continue
+                            matrix[1][0] = GetExpressionConstant(0.0f)
+                            matrix[1][1] = b
+                            matrix[1][2] = EmitOp(
+                                GetExpressionConstant(0.5f),
+                                EmitOp(GetExpressionConstant(0.5f), b, expOpType_t.OP_TYPE_MULTIPLY),
+                                expOpType_t.OP_TYPE_SUBTRACT
+                            )
+                            MultiplyTextureMatrix(ts, matrix)
+                        }
+
+                        31 -> { // shear
+                            a = ParseExpression(src)
+                            MatchToken(src, ",")
+                            b = ParseExpression(src) // this subtracts 0.5f, then shears, then adds 0.5f
+                            matrix[0][0] = GetExpressionConstant(1.0f)
+                            matrix[0][1] = a
+                            matrix[0][2] = EmitOp(GetExpressionConstant(-0.5f), a, expOpType_t.OP_TYPE_MULTIPLY)
+                            matrix[1][0] = b
+                            matrix[1][1] = GetExpressionConstant(1.0f)
+                            matrix[1][2] = EmitOp(GetExpressionConstant(-0.5f), b, expOpType_t.OP_TYPE_MULTIPLY)
+                            MultiplyTextureMatrix(ts, matrix)
+                        }
+
+                        32 -> { // rotate
+                            var table: idDeclTable?
+                            var sinReg: Int
+                            var cosReg: Int
+
+                            // in cycles
+                            a = ParseExpression(src)
+                            table = DeclManager.declManager.FindType(
+                                declType_t.DECL_TABLE,
+                                "sinTable",
+                                false
+                            ) as idDeclTable?
+                            if (null == table) {
+                                Common.common.Warning("no sinTable for rotate defined")
+                                SetMaterialFlag(MF_DEFAULTED)
+                                return
+                            }
+                            sinReg = EmitOp(table.Index(), a, expOpType_t.OP_TYPE_TABLE)
+                            table = DeclManager.declManager.FindType(
+                                declType_t.DECL_TABLE,
+                                "cosTable",
+                                false
+                            ) as idDeclTable?
+                            if (null == table) {
+                                Common.common.Warning("no cosTable for rotate defined")
+                                SetMaterialFlag(MF_DEFAULTED)
+                                return
+                            }
+                            cosReg = EmitOp(table.Index(), a, expOpType_t.OP_TYPE_TABLE)
+
+                            // this subtracts 0.5f, then rotates, then adds 0.5f
+                            matrix[0][0] = cosReg
+                            matrix[0][1] = EmitOp(GetExpressionConstant(0.0f), sinReg, expOpType_t.OP_TYPE_SUBTRACT)
+                            matrix[0][2] = EmitOp(
+                                EmitOp(
+                                    EmitOp(GetExpressionConstant(-0.5f), cosReg, expOpType_t.OP_TYPE_MULTIPLY),
+                                    EmitOp(GetExpressionConstant(0.5f), sinReg, expOpType_t.OP_TYPE_MULTIPLY),
+                                    expOpType_t.OP_TYPE_ADD
+                                ), GetExpressionConstant(0.5f), expOpType_t.OP_TYPE_ADD
+                            )
+
+                            matrix[1][0] = sinReg
+                            matrix[1][1] = cosReg
+                            matrix[1][2] = EmitOp(
+                                EmitOp(
+                                    EmitOp(GetExpressionConstant(-0.5f), sinReg, expOpType_t.OP_TYPE_MULTIPLY),
+                                    EmitOp(GetExpressionConstant(-0.5f), cosReg, expOpType_t.OP_TYPE_MULTIPLY),
+                                    expOpType_t.OP_TYPE_ADD
+                                ), GetExpressionConstant(0.5f), expOpType_t.OP_TYPE_ADD
+                            )
+                            MultiplyTextureMatrix(ts, matrix)
+                        }
+
+                        33 -> { // maskRed
+                            ss.drawStateBits = ss.drawStateBits or GLS_REDMASK
+                        }
+
+                        34 -> { // maskGreen
+                            ss.drawStateBits = ss.drawStateBits or GLS_GREENMASK
+                        }
+
+                        35 -> { // maskBlue
+                            ss.drawStateBits = ss.drawStateBits or GLS_BLUEMASK
+                        }
+
+                        36 -> { // maskAlpha
+                            ss.drawStateBits = ss.drawStateBits or GLS_ALPHAMASK
+                        }
+
+                        37 -> { // maskColor
+                            ss.drawStateBits = ss.drawStateBits or GLS_COLORMASK
+                        }
+
+                        38 -> { // maskDepth
+                            ss.drawStateBits = ss.drawStateBits or GLS_DEPTHMASK
+                        }
+
+                        39 -> { // ignoreDepth
+                            ss.drawStateBits = ss.drawStateBits or GLS_DEPTHFUNC_ALWAYS
+                        }
+
+                        40 -> { // alphaTest
+                            ss.hasAlphaTest = true
+                            ss.alphaTestRegister = ParseExpression(src)
+                            coverage = materialCoverage_t.MC_PERFORATED
+                        }
+
+                        41 -> { // colored
+                            ss.color.registers[0] = etoi(expRegister_t.EXP_REG_PARM0)
+                            ss.color.registers[1] = etoi(expRegister_t.EXP_REG_PARM1)
+                            ss.color.registers[2] = etoi(expRegister_t.EXP_REG_PARM2)
+                            ss.color.registers[3] = etoi(expRegister_t.EXP_REG_PARM3)
+                            pd!!.registersAreConstant = false
+                        }
+
+                        42 -> { // color
+                            ss.color.registers[0] = ParseExpression(src)
+                            MatchToken(src, ",")
+                            ss.color.registers[1] = ParseExpression(src)
+                            MatchToken(src, ",")
+                            ss.color.registers[2] = ParseExpression(src)
+                            MatchToken(src, ",")
+                            ss.color.registers[3] = ParseExpression(src)
+                        }
+
+                        43 -> { // red
+                            ss.color.registers[0] = ParseExpression(src)
+                        }
+
+                        44 -> { // green
+                            ss.color.registers[1] = ParseExpression(src)
+                        }
+
+                        45 -> { // blue
+                            ss.color.registers[2] = ParseExpression(src)
+                        }
+
+                        46 -> { // alpha
+                            ss.color.registers[3] = ParseExpression(src)
+                        }
+
+                        47 -> { // rgb
+                            ss.color.registers[2] = ParseExpression(src)
+                            ss.color.registers[1] = ss.color.registers[2]
+                            ss.color.registers[0] = ss.color.registers[1]
+                        }
+
+                        48 -> { // rgba
+                            ss.color.registers[3] = ParseExpression(src)
+                            ss.color.registers[2] = ss.color.registers[3]
+                            ss.color.registers[1] = ss.color.registers[2]
+                            ss.color.registers[0] = ss.color.registers[1]
+                        }
+
+                        49 -> { // if
+                            ss.conditionRegister = ParseExpression(src)
+                        }
+
+                        50 -> { // program
+                            if (src.ReadTokenOnLine(token)) {
+                                newStage.vertexProgram =
+                                    draw_arb2.R_FindARBProgram(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, token.toString())
+                                newStage.fragmentProgram = draw_arb2.R_FindARBProgram(
+                                    ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB,
+                                    token.toString()
+                                )
+                            }
+                        }
+
+                        51 -> { // fragmentProgram
+                            if (src.ReadTokenOnLine(token)) {
+                                newStage.fragmentProgram = draw_arb2.R_FindARBProgram(
+                                    ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB,
+                                    token.toString()
+                                )
+                            }
+                        }
+
+                        52 -> { // vertexProgram
+                            if (src.ReadTokenOnLine(token)) {
+                                newStage.vertexProgram =
+                                    draw_arb2.R_FindARBProgram(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, token.toString())
+                            }
+                        }
+
+                        53 -> { // megaTexture
+                            if (src.ReadTokenOnLine(token)) {
+                                newStage.megaTexture = idMegaTexture()
+                                if (!newStage.megaTexture!!.InitFromMegaFile(token.toString())) {
+                                    newStage.megaTexture = null
+                                    SetMaterialFlag(MF_DEFAULTED)
+                                    continue
+                                }
+                                newStage.vertexProgram = draw_arb2.R_FindARBProgram(
+                                    ARBVertexProgram.GL_VERTEX_PROGRAM_ARB,
+                                    "megaTexture.vfp"
+                                )
+                                newStage.fragmentProgram = draw_arb2.R_FindARBProgram(
+                                    ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB,
+                                    "megaTexture.vfp"
+                                )
+                            }
+                        }
+
+                        54 -> { // vertexParm
+                            ParseVertexParm(src, newStage)
+                        }
+
+                        55 -> { // fragmentMap
+                            ParseFragmentMap(src, newStage)
                         }
                     }
-                    ts.cinematic[0] = idCinematic.Alloc()
-                    ts.cinematic[0]!!.InitFromFile(token.toString(), loop)
-                    continue
-                }
-                if (0 == token.Icmp("soundmap")) {
-                    if (!src.ReadToken(token)) {
-                        Common.common.Warning("missing parameter for 'soundmap' keyword in material '%s'", GetName())
-                        continue
-                    }
-                    ts.cinematic[0] = idSndWindow()
-                    ts.cinematic[0]!!.InitFromFile(token.toString(), true)
-                    continue
-                }
-                if (0 == token.Icmp("cubeMap")) {
-                    str = Image_program.R_ParsePastImageProgram(src)
-                    Copynz(imageName, str, imageName.size)
-                    cubeMap = cubeFiles_t.CF_NATIVE
-                    continue
-                }
-                if (0 == token.Icmp("cameraCubeMap")) {
-                    str = Image_program.R_ParsePastImageProgram(src)
-                    Copynz(imageName, str, imageName.size)
-                    cubeMap = cubeFiles_t.CF_CAMERA
-                    continue
-                }
-                if (0 == token.Icmp("ignoreAlphaTest")) {
-                    ss.ignoreAlphaTest = true
-                    continue
-                }
-                if (0 == token.Icmp("nearest")) {
-                    tf = textureFilter_t.TF_NEAREST
-                    continue
-                }
-                if (0 == token.Icmp("linear")) {
-                    tf = textureFilter_t.TF_LINEAR
-                    continue
-                }
-                if (0 == token.Icmp("clamp")) {
-                    trp = textureRepeat_t.TR_CLAMP
-                    continue
-                }
-                if (0 == token.Icmp("noclamp")) {
-                    trp = textureRepeat_t.TR_REPEAT
-                    continue
-                }
-                if (0 == token.Icmp("zeroclamp")) {
-                    trp = textureRepeat_t.TR_CLAMP_TO_ZERO
-                    continue
-                }
-                if (0 == token.Icmp("alphazeroclamp")) {
-                    trp = textureRepeat_t.TR_CLAMP_TO_ZERO_ALPHA
-                    continue
-                }
-                if (0 == token.Icmp("uncompressed") || 0 == token.Icmp("highquality")) {
-                    if (0 == idImageManager.image_ignoreHighQuality.GetInteger()) {
-                        td = textureDepth_t.TD_HIGH_QUALITY
-                    }
-                    continue
-                }
-                if (0 == token.Icmp("forceHighQuality")) {
-                    td = textureDepth_t.TD_HIGH_QUALITY
-                    continue
-                }
-                if (0 == token.Icmp("nopicmip")) {
-                    allowPicmip = false
-                    continue
-                }
-                if (0 == token.Icmp("vertexColor")) {
-                    ss.vertexColor = stageVertexColor_t.SVC_MODULATE
-                    continue
-                }
-                if (0 == token.Icmp("inverseVertexColor")) {
-                    ss.vertexColor = stageVertexColor_t.SVC_INVERSE_MODULATE
-                    continue
-                } // privatePolygonOffset
-                else if (0 == token.Icmp("privatePolygonOffset")) {
-                    if (!src.ReadTokenOnLine(token)) {
-                        ss.privatePolygonOffset = 1.0f
-                        continue
-                    }
-                    // explict larger (or negative) offset
-                    src.UnreadToken(token)
-                    ss.privatePolygonOffset = src.ParseFloat()
                     continue
                 }
 
-                // texture coordinate generation
-                if (0 == token.Icmp("texGen")) {
-                    src.ExpectAnyToken(token)
-                    if (0 == token.Icmp("normal")) {
-                        ts.texgen = texgen_t.TG_DIFFUSE_CUBE
-                    } else if (0 == token.Icmp("reflect")) {
-                        ts.texgen = texgen_t.TG_REFLECT_CUBE
-                    } else if (0 == token.Icmp("skybox")) {
-                        ts.texgen = texgen_t.TG_SKYBOX_CUBE
-                    } else if (0 == token.Icmp("wobbleSky")) {
-                        ts.texgen = texgen_t.TG_WOBBLESKY_CUBE
-                        texGenRegisters[0] = ParseExpression(src)
-                        texGenRegisters[1] = ParseExpression(src)
-                        texGenRegisters[2] = ParseExpression(src)
-                    } else {
-                        Common.common.Warning("bad texGen '%s' in material %s", token.toString(), GetName())
-                        SetMaterialFlag(MF_DEFAULTED)
-                    }
-                    continue
-                }
-                if (0 == token.Icmp("scroll") || 0 == token.Icmp("translate")) {
-                    a = ParseExpression(src)
-                    MatchToken(src, ",")
-                    b = ParseExpression(src)
-                    matrix[0][0] = GetExpressionConstant(1.0f)
-                    matrix[0][1] = GetExpressionConstant(0.0f)
-                    matrix[0][2] = a
-                    matrix[1][0] = GetExpressionConstant(0.0f)
-                    matrix[1][1] = GetExpressionConstant(1.0f)
-                    matrix[1][2] = b
-                    MultiplyTextureMatrix(ts, matrix)
-                    continue
-                }
-                if (0 == token.Icmp("scale")) {
-                    a = ParseExpression(src)
-                    MatchToken(src, ",")
-                    b = ParseExpression(src)
-                    // this just scales without a centering
-                    matrix[0][0] = a
-                    matrix[0][1] = GetExpressionConstant(0.0f)
-                    matrix[0][2] = GetExpressionConstant(0.0f)
-                    matrix[1][0] = GetExpressionConstant(0.0f)
-                    matrix[1][1] = b
-                    matrix[1][2] = GetExpressionConstant(0.0f)
-                    MultiplyTextureMatrix(ts, matrix)
-                    continue
-                }
-                if (0 == token.Icmp("centerScale")) {
-                    a = ParseExpression(src)
-                    MatchToken(src, ",")
-                    b = ParseExpression(src)
-                    // this subtracts 0.5f, then scales, then adds 0.5f
-                    matrix[0][0] = a
-                    matrix[0][1] = GetExpressionConstant(0.0f)
-                    matrix[0][2] = EmitOp(
-                        GetExpressionConstant(0.5f),
-                        EmitOp(GetExpressionConstant(0.5f), a, expOpType_t.OP_TYPE_MULTIPLY),
-                        expOpType_t.OP_TYPE_SUBTRACT
-                    )
-                    matrix[1][0] = GetExpressionConstant(0.0f)
-                    matrix[1][1] = b
-                    matrix[1][2] = EmitOp(
-                        GetExpressionConstant(0.5f),
-                        EmitOp(GetExpressionConstant(0.5f), b, expOpType_t.OP_TYPE_MULTIPLY),
-                        expOpType_t.OP_TYPE_SUBTRACT
-                    )
-                    MultiplyTextureMatrix(ts, matrix)
-                    continue
-                }
-                if (0 == token.Icmp("shear")) {
-                    a = ParseExpression(src)
-                    MatchToken(src, ",")
-                    b = ParseExpression(src)
-                    // this subtracts 0.5f, then shears, then adds 0.5f
-                    matrix[0][0] = GetExpressionConstant(1.0f)
-                    matrix[0][1] = a
-                    matrix[0][2] = EmitOp(GetExpressionConstant(-0.5f), a, expOpType_t.OP_TYPE_MULTIPLY)
-                    matrix[1][0] = b
-                    matrix[1][1] = GetExpressionConstant(1.0f)
-                    matrix[1][2] = EmitOp(GetExpressionConstant(-0.5f), b, expOpType_t.OP_TYPE_MULTIPLY)
-                    MultiplyTextureMatrix(ts, matrix)
-                    continue
-                }
-                if (0 == token.Icmp("rotate")) {
-                    var table: idDeclTable?
-                    var sinReg: Int
-                    var cosReg: Int
-
-                    // in cycles
-                    a = ParseExpression(src)
-                    table = DeclManager.declManager.FindType(declType_t.DECL_TABLE, "sinTable", false) as idDeclTable?
-                    if (null == table) {
-                        Common.common.Warning("no sinTable for rotate defined")
-                        SetMaterialFlag(MF_DEFAULTED)
-                        return
-                    }
-                    sinReg = EmitOp(table.Index(), a, expOpType_t.OP_TYPE_TABLE)
-                    table = DeclManager.declManager.FindType(declType_t.DECL_TABLE, "cosTable", false) as idDeclTable?
-                    if (null == table) {
-                        Common.common.Warning("no cosTable for rotate defined")
-                        SetMaterialFlag(MF_DEFAULTED)
-                        return
-                    }
-                    cosReg = EmitOp(table.Index(), a, expOpType_t.OP_TYPE_TABLE)
-
-                    // this subtracts 0.5f, then rotates, then adds 0.5f
-                    matrix[0][0] = cosReg
-                    matrix[0][1] = EmitOp(GetExpressionConstant(0.0f), sinReg, expOpType_t.OP_TYPE_SUBTRACT)
-                    matrix[0][2] = EmitOp(
-                        EmitOp(
-                            EmitOp(GetExpressionConstant(-0.5f), cosReg, expOpType_t.OP_TYPE_MULTIPLY),
-                            EmitOp(GetExpressionConstant(0.5f), sinReg, expOpType_t.OP_TYPE_MULTIPLY),
-                            expOpType_t.OP_TYPE_ADD
-                        ),
-                        GetExpressionConstant(0.5f), expOpType_t.OP_TYPE_ADD
-                    )
-
-                    matrix[1][0] = sinReg
-                    matrix[1][1] = cosReg
-                    matrix[1][2] = EmitOp(
-                        EmitOp(
-                            EmitOp(GetExpressionConstant(-0.5f), sinReg, expOpType_t.OP_TYPE_MULTIPLY),
-                            EmitOp(GetExpressionConstant(-0.5f), cosReg, expOpType_t.OP_TYPE_MULTIPLY),
-                            expOpType_t.OP_TYPE_ADD
-                        ),
-                        GetExpressionConstant(0.5f), expOpType_t.OP_TYPE_ADD
-                    )
-                    MultiplyTextureMatrix(ts, matrix)
-                    continue
-                }
-
-                // color mask options
-                if (0 == token.Icmp("maskRed")) {
-                    ss.drawStateBits = ss.drawStateBits or GLS_REDMASK
-                    continue
-                }
-                if (0 == token.Icmp("maskGreen")) {
-                    ss.drawStateBits = ss.drawStateBits or GLS_GREENMASK
-                    continue
-                }
-                if (0 == token.Icmp("maskBlue")) {
-                    ss.drawStateBits = ss.drawStateBits or GLS_BLUEMASK
-                    continue
-                }
-                if (0 == token.Icmp("maskAlpha")) {
-                    ss.drawStateBits = ss.drawStateBits or GLS_ALPHAMASK
-                    continue
-                }
-                if (0 == token.Icmp("maskColor")) {
-                    ss.drawStateBits = ss.drawStateBits or GLS_COLORMASK
-                    continue
-                }
-                if (0 == token.Icmp("maskDepth")) {
-                    ss.drawStateBits = ss.drawStateBits or GLS_DEPTHMASK
-                    continue
-                }
-                if (0 == token.Icmp("ignoreDepth")) {
-                    ss.drawStateBits = ss.drawStateBits or GLS_DEPTHFUNC_ALWAYS
-                    continue
-                }
-                if (0 == token.Icmp("alphaTest")) {
-                    ss.hasAlphaTest = true
-                    ss.alphaTestRegister = ParseExpression(src)
-                    coverage = materialCoverage_t.MC_PERFORATED
-                    continue
-                }
-
-                // shorthand for 2D modulated
-                if (0 == token.Icmp("colored")) {
-                    ss.color.registers[0] = etoi(expRegister_t.EXP_REG_PARM0)
-                    ss.color.registers[1] = etoi(expRegister_t.EXP_REG_PARM1)
-                    ss.color.registers[2] = etoi(expRegister_t.EXP_REG_PARM2)
-                    ss.color.registers[3] = etoi(expRegister_t.EXP_REG_PARM3)
-                    pd!!.registersAreConstant = false
-                    continue
-                }
-                if (0 == token.Icmp("color")) {
-                    ss.color.registers[0] = ParseExpression(src)
-                    MatchToken(src, ",")
-                    ss.color.registers[1] = ParseExpression(src)
-                    MatchToken(src, ",")
-                    ss.color.registers[2] = ParseExpression(src)
-                    MatchToken(src, ",")
-                    ss.color.registers[3] = ParseExpression(src)
-                    continue
-                }
-                if (0 == token.Icmp("red")) {
-                    ss.color.registers[0] = ParseExpression(src)
-                    continue
-                }
-                if (0 == token.Icmp("green")) {
-                    ss.color.registers[1] = ParseExpression(src)
-                    continue
-                }
-                if (0 == token.Icmp("blue")) {
-                    ss.color.registers[2] = ParseExpression(src)
-                    continue
-                }
-                if (0 == token.Icmp("alpha")) {
-                    ss.color.registers[3] = ParseExpression(src)
-                    continue
-                }
-                if (0 == token.Icmp("rgb")) {
-                    ss.color.registers[2] = ParseExpression(src)
-                    ss.color.registers[1] = ss.color.registers[2]
-                    ss.color.registers[0] = ss.color.registers[1]
-                    continue
-                }
-                if (0 == token.Icmp("rgba")) {
-                    ss.color.registers[3] = ParseExpression(src)
-                    ss.color.registers[2] = ss.color.registers[3]
-                    ss.color.registers[1] = ss.color.registers[2]
-                    ss.color.registers[0] = ss.color.registers[1]
-                    continue
-                }
-                if (0 == token.Icmp("if")) {
-                    ss.conditionRegister = ParseExpression(src)
-                    continue
-                }
-                if (0 == token.Icmp("program")) {
-                    if (src.ReadTokenOnLine(token)) {
-                        newStage.vertexProgram =
-                            draw_arb2.R_FindARBProgram(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, token.toString())
-                        newStage.fragmentProgram =
-                            draw_arb2.R_FindARBProgram(ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB, token.toString())
-                    }
-                    continue
-                }
-                if (0 == token.Icmp("fragmentProgram")) {
-                    if (src.ReadTokenOnLine(token)) {
-                        newStage.fragmentProgram =
-                            draw_arb2.R_FindARBProgram(ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB, token.toString())
-                    }
-                    continue
-                }
-                if (0 == token.Icmp("vertexProgram")) {
-                    if (src.ReadTokenOnLine(token)) {
-                        newStage.vertexProgram =
-                            draw_arb2.R_FindARBProgram(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, token.toString())
-                    }
-                    continue
-                }
-                if (0 == token.Icmp("megaTexture")) {
-                    if (src.ReadTokenOnLine(token)) {
-                        newStage.megaTexture = idMegaTexture()
-                        if (!newStage.megaTexture!!.InitFromMegaFile(token.toString())) {
-                            newStage.megaTexture = null
-                            SetMaterialFlag(MF_DEFAULTED)
-                            continue
-                        }
-                        newStage.vertexProgram =
-                            draw_arb2.R_FindARBProgram(ARBVertexProgram.GL_VERTEX_PROGRAM_ARB, "megaTexture.vfp")
-                        newStage.fragmentProgram =
-                            draw_arb2.R_FindARBProgram(ARBFragmentProgram.GL_FRAGMENT_PROGRAM_ARB, "megaTexture.vfp")
-                        continue
-                    }
-                }
-                if (0 == token.Icmp("vertexParm")) {
-                    ParseVertexParm(src, newStage)
-                    continue
-                }
-                if (0 == token.Icmp("fragmentMap")) {
-                    ParseFragmentMap(src, newStage)
-                    continue
-                }
                 Common.common.Warning("unknown token '%s' in material '%s'", token.toString(), GetName())
                 SetMaterialFlag(MF_DEFAULTED)
                 return
@@ -2552,7 +2582,7 @@ object Material {
         }
 
         private fun ParseDeform(src: idLexer) {
-            val token = idToken()
+            val token = _parseToken
             if (!src.ExpectAnyToken(token)) {
                 return
             }
@@ -2763,7 +2793,7 @@ object Material {
          =================
          */
         private fun ParseTerm(src: idLexer): Int {
-            val token = idToken()
+            val token = _termToken
             val a: Int
             val b: Int
             src.ReadToken(token)
@@ -2895,7 +2925,7 @@ object Material {
         }
 
         private fun ParseExpressionPriority(src: idLexer, priority: Int): Int {
-            val token = idToken()
+            val token = _exprToken
             val a: Int
             if (priority == 0) {
                 return ParseTerm(src)
@@ -3268,6 +3298,106 @@ object Material {
                     + java.lang.Float.SIZE
                     + 2 //2 booleans
                     + Integer.SIZE)
+
+            // HashMap-based keyword dispatch for ParseMaterial() — O(1) lookup instead of O(N) Icmp chain
+            private val materialKeywords: HashMap<String, Int> = hashMapOf(
+                "qer_editorimage" to 1,
+                "description" to 2,
+                "polygonoffset" to 3,
+                "noshadows" to 4,
+                "suppressinsubview" to 5,
+                "portalsky" to 6,
+                "noselfshadow" to 7,
+                "noportalfog" to 8,
+                "forceshadows" to 9,
+                "nooverlays" to 10,
+                "forceoverlays" to 11,
+                "translucent" to 12,
+                "zeroclamp" to 13,
+                "clamp" to 14,
+                "alphazeroclamp" to 15,
+                "forceopaque" to 16,
+                "twosided" to 17,
+                "backsided" to 18,
+                "foglight" to 19,
+                "blendlight" to 20,
+                "ambientlight" to 21,
+                "mirror" to 22,
+                "nofog" to 23,
+                "unsmoothedtangents" to 24,
+                "lightfalloffimage" to 25,
+                "guisurf" to 26,
+                "sort" to 27,
+                "spectrum" to 28,
+                "deform" to 29,
+                "decalinfo" to 30,
+                "renderbump" to 31,
+                "diffusemap" to 32,
+                "specularmap" to 33,
+                "bumpmap" to 34,
+                "decal_macro" to 35
+            )
+
+            // HashMap-based keyword dispatch for ParseStage() — O(1) lookup instead of O(N) Icmp chain
+            private val stageKeywords: HashMap<String, Int> = hashMapOf(
+                "name" to 1,
+                "blend" to 2,
+                "map" to 3,
+                "remoterendermap" to 4,
+                "mirrorrendermap" to 5,
+                "xrayrendermap" to 6,
+                "screen" to 7,
+                "screen2" to 8,
+                "glasswarp" to 9,
+                "videomap" to 10,
+                "soundmap" to 11,
+                "cubemap" to 12,
+                "cameracubemap" to 13,
+                "ignorealphatest" to 14,
+                "nearest" to 15,
+                "linear" to 16,
+                "clamp" to 17,
+                "noclamp" to 18,
+                "zeroclamp" to 19,
+                "alphazeroclamp" to 20,
+                "uncompressed" to 21,
+                "highquality" to 21,    // alias for uncompressed
+                "forcehighquality" to 22,
+                "nopicmip" to 23,
+                "vertexcolor" to 24,
+                "inversevertexcolor" to 25,
+                "privatepolygonoffset" to 26,
+                "texgen" to 27,
+                "scroll" to 28,
+                "translate" to 28,      // alias for scroll
+                "scale" to 29,
+                "centerscale" to 30,
+                "shear" to 31,
+                "rotate" to 32,
+                "maskred" to 33,
+                "maskgreen" to 34,
+                "maskblue" to 35,
+                "maskalpha" to 36,
+                "maskcolor" to 37,
+                "maskdepth" to 38,
+                "ignoredepth" to 39,
+                "alphatest" to 40,
+                "colored" to 41,
+                "color" to 42,
+                "red" to 43,
+                "green" to 44,
+                "blue" to 45,
+                "alpha" to 46,
+                "rgb" to 47,
+                "rgba" to 48,
+                "if" to 49,
+                "program" to 50,
+                "fragmentprogram" to 51,
+                "vertexprogram" to 52,
+                "megatexture" to 53,
+                "vertexparm" to 54,
+                "fragmentmap" to 55
+            )
 
             /*
          =================

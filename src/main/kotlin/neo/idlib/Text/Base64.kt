@@ -167,8 +167,8 @@ class Base64 {
         }
 
         //
-        fun c_str(): CharArray {
-            return String(data).toCharArray()
+        override fun toString(): String {
+            return String(data)
         }
 
         fun oSet(s: idStr) {

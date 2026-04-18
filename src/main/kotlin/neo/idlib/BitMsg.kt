@@ -272,8 +272,7 @@ object BitMsg {
                 // write the bits
                 while (numBits != 0) {
                     if (writeBit == 0) {
-//                        writeData.putInt(curSize, 0);
-                        writeData!!.put(0.toByte())
+                        writeData!!.put(curSize, 0.toByte())
                         curSize++
                     }
                     put = 8 - writeBit
@@ -338,7 +337,7 @@ object BitMsg {
         @Throws(idException::class)
         fun WriteString(s: String?, maxLength: Int = -1, make7Bit: Boolean = true) {
             if (null == s) {
-                WriteData(ByteBuffer.wrap("".toByteArray()), 1) //TODO:huh?
+                WriteData(ByteBuffer.wrap(ByteArray(1)), 1)
             } else {
                 var i: Int
                 var l: Int
@@ -349,45 +348,51 @@ object BitMsg {
                     l = maxLength - 1
                 }
                 dataPtr = GetByteSpace(l + 1)
+                val off = returnedOffset
                 bytePtr = s.toByteArray()
                 if (make7Bit) {
                     i = 0
                     while (i < l) {
                         if (bytePtr[i] > 127) {
-                            dataPtr[i] = '.'.code.toByte()
+                            dataPtr[off + i] = '.'.code.toByte()
                         } else {
-                            dataPtr[i] = bytePtr[i]
+                            dataPtr[off + i] = bytePtr[i]
                         }
                         i++
                     }
                 } else {
                     i = 0
                     while (i < l) {
-                        dataPtr[i] = bytePtr[i]
+                        dataPtr[off + i] = bytePtr[i]
                         i++
                     }
                 }
-                dataPtr[i] = '\u0000'.code.toByte()
+                dataPtr[off + i] = '\u0000'.code.toByte()
             }
         }
 
         @Throws(idException::class)
         fun WriteData(data: ByteBuffer, length: Int) {
-//            memcpy(GetByteSpace(length), data, length);
             WriteData(data, 0, length)
         }
 
         @Throws(idException::class)
         fun WriteData(data: ByteBuffer, offset: Int, length: Int) {
-//            System.arraycopy(data, offset, GetByteSpace(length), 0, length);
-            data.get(GetByteSpace(length), offset, length)
+            GetByteSpace(length) // reserves space, sets returnedOffset
+            val off = returnedOffset // Copy bytes directly into the writeData buffer at the reserved position
+            for (i in 0 until length) {
+                writeData!!.put(off + i, data.get(offset + i))
+            }
         }
 
         @Throws(idException::class)
         fun WriteNetadr(adr: netadr_t) {
-            val dataPtr: ByteArray
-            dataPtr = GetByteSpace(4)
-            System.arraycopy(adr.ip, 0, dataPtr, 0, 4)
+            GetByteSpace(4) // reserves 4 bytes, sets returnedOffset
+            val off = returnedOffset
+            val backing = writeData!!.array()
+            for (i in 0..3) {
+                backing[off + i] = adr.ip[i].code.toByte()
+            }
             WriteUShort(adr.port)
         }
 
@@ -682,10 +687,10 @@ object BitMsg {
             ReadByteAlign()
             cnt = readCount
             if (readCount + length > curSize) {
-                data!!.put(readData!!.array(), readCount, GetRemaingData())
+                data?.put(readData!!.array(), readCount, GetRemaingData())
                 readCount = curSize
             } else {
-                data!!.put(readData!!.array(), readCount, length)
+                data?.put(readData!!.array(), readCount, length)
                 readCount += length
             }
             return readCount - cnt
@@ -815,9 +820,11 @@ object BitMsg {
             return false
         }
 
+        // Tracks the offset into the backing array returned by the last GetByteSpace call
+        private var returnedOffset = 0
+
         @Throws(idException::class)
         private fun GetByteSpace(length: Int): ByteArray {
-            val ptr: ByteArray
             if (writeData == null) {
                 idLib.common.FatalError("idBitMsg::GetByteSpace: cannot write to message")
             }
@@ -827,10 +834,14 @@ object BitMsg {
 
             // check for overflow
             CheckOverflow(length shl 3)
-            ptr = ByteArray(writeData!!.capacity() - curSize)
-            writeData!!.mark().position(curSize)[ptr].rewind()
+
+            // C++ returns a pointer directly into the write buffer.
+            // Java has no pointer concept, so we return the backing array
+            // and track the offset for callers to use.
+            val offset = curSize
             curSize += length
-            return ptr
+            returnedOffset = offset
+            return writeData!!.array()
         }
 
         private fun WriteDelta(oldValue: Int, newValue: Int, numBits: Int) {

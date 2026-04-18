@@ -980,8 +980,6 @@ class DeclManager {
 
         @Throws(idException::class)
         fun LoadAndParse(): BigInteger {
-            var i: Int
-            var numTypes: Int
             val src = idLexer()
             val token = idToken()
             var startMarker: Int
@@ -1027,19 +1025,13 @@ class DeclManager {
                 }
                 var identifiedType: declType_t = declType_t.DECL_MAX_TYPES
 
-                // get the decl type from the type name
-                numTypes = declManagerLocal.GetNumDeclTypes()
-                i = 0
-                while (i < numTypes) {
-                    val typeInfo: idDeclType? = declManagerLocal.GetDeclType(i)
-                    if (typeInfo != null && typeInfo.typeName.Icmp(token.toString()) == 0) {
-                        identifiedType = typeInfo.type
-                        break
-                    }
-                    i++
-                }
-                if (i >= numTypes) {
-                    identifiedType = if (token.toString() == "{") {
+                // get the decl type from the type name (HashMap lookup)
+                val tokenStr = token.toString()
+                val matchedType = declManagerLocal.declTypeNameMap[tokenStr.lowercase()]
+                if (matchedType != null) {
+                    identifiedType = matchedType.type
+                } else {
+                    identifiedType = if (tokenStr == "{") {
                         // if we ever see an open brace, we somehow missed the [type] <name> prefix
                         src.Warning("Missing decl name")
                         src.SkipBracedSection(false)
@@ -1118,7 +1110,7 @@ class DeclManager {
 //                    Mem_Free(newDecl.textSource);
                     newDecl.textSource = null
                 }
-                newDecl.SetTextLocal(String(buffer[0]!!.array()).substring(startMarker), size)
+                newDecl.SetTextLocal(String(buffer[0]!!.array(), startMarker, size), size)
                 newDecl.sourceFile = this
                 newDecl.sourceTextOffset = startMarker
                 newDecl.sourceTextLength = size
@@ -1158,19 +1150,15 @@ class DeclManager {
                 : BigInteger = BigInteger.ZERO
         private val declFolders: List.idList<idDeclFolder>
         val declTypes: List.idList<idDeclType?> = List.idList()
-
-        // FIX: C++ implicitDecls is a value member (not a pointer), always initialized by its default
-        //      constructor. Was incorrectly null, causing sourceFile assignments and IsImplicit() to be wrong on reload.
         val implicitDecls: idDeclFile =
             idDeclFile() // holds decls that were created because explicit text definitions were not found
         var indent // for MediaPrint
                 = 0
         private var insideLevelLoad = false
-
-        //
-        //
-        //
         private val loadedFiles: List.idList<idDeclFile>
+
+        // Fast lookup of decl types by name (lowercase key -> idDeclType)
+        val declTypeNameMap = HashMap<String, idDeclType>()
 
         @Throws(idException::class)
         override fun Init() {
@@ -1205,6 +1193,16 @@ class DeclManager {
             RegisterDeclType("email", declType_t.DECL_EMAIL, idDeclAllocator(idDeclEmail::class.java)!!)
             RegisterDeclType("video", declType_t.DECL_VIDEO, idDeclAllocator(idDeclVideo::class.java)!!)
             RegisterDeclType("audio", declType_t.DECL_AUDIO, idDeclAllocator(idDeclAudio::class.java)!!)
+
+            // Build HashMap for fast decl type lookup by name
+            declTypeNameMap.clear()
+            for (i in 0 until declTypes.Num()) {
+                val dt = declTypes[i]
+                if (dt != null) {
+                    declTypeNameMap[dt.typeName.toString().lowercase()] = dt
+                }
+            }
+
             RegisterDeclFolder("materials", ".mtr", declType_t.DECL_MATERIAL)
             RegisterDeclFolder("skins", ".skin", declType_t.DECL_SKIN)
             RegisterDeclFolder("sound", ".sndshd", declType_t.DECL_SOUND)
@@ -1489,7 +1487,8 @@ class DeclManager {
             if (type.ordinal + 1 > declTypes.Num()) {
                 declTypes.AssureSize(type.ordinal + 1, null)
             }
-            declTypes[type.ordinal] = declType
+            declTypes[type.ordinal] = declType // Keep the HashMap in sync for fast lookup
+            declTypeNameMap[typeName.lowercase()] = declType
         }
 
         @Throws(idException::class)
@@ -1816,8 +1815,7 @@ class DeclManager {
             if (typeIndex < 0 || typeIndex >= declTypes.Num() || declTypes[typeIndex] == null) {
                 Common.common.FatalError("idDeclManager::CreateNewDecl: bad type: %d", typeIndex)
             }
-            val canonicalName = CharArray(MAX_STRING_CHARS)
-            MakeNameCanonical(name, canonicalName, MAX_STRING_CHARS)
+            val canonicalName = MakeNameCanonical(name)
             val fileName = idStr(_fileName)
             fileName.BackSlashesToSlashes()
 
@@ -1825,7 +1823,7 @@ class DeclManager {
             hash = hashTables[typeIndex].GenerateKey(canonicalName, false)
             i = hashTables[typeIndex].First(hash)
             while (i >= 0) {
-                if (linearLists[typeIndex][i].name.toString() == TempDump.ctos(canonicalName)) {
+                if (linearLists[typeIndex][i].name.toString() == canonicalName) {
                     linearLists[typeIndex][i].AllocateSelf()
                     return linearLists[typeIndex][i].self
                 }
@@ -1848,27 +1846,27 @@ class DeclManager {
                 loadedFiles.Append(sourceFile)
             }
             val decl = idDeclLocal()
-            decl.name = idStr(TempDump.ctos(canonicalName))
+            decl.name = idStr(canonicalName)
             decl.type = type
             decl.declState = declState_t.DS_UNPARSED
             decl.AllocateSelf()
             val header = declTypes[typeIndex]!!.typeName
             val defaultText = idStr(decl.self!!.DefaultDefinition())
-            val size: Int = header.Length() + 1 + idStr.Length(canonicalName) + 1 + defaultText.Length()
+            val canonicalNameChars = canonicalName.toCharArray()
+            val size: Int = header.Length() + 1 + canonicalName.length + 1 + defaultText.Length()
             val declText = CharArray(size + 1)
 
 //	memcpy( declText, header, header.Length() );
-            System.arraycopy(header.c_str(), 0, declText, 0, header.Length())
+            System.arraycopy(header.data.toCharArray(), 0, declText, 0, header.Length())
             declText[header.Length()] = ' '
             //	memcpy( declText + header.Length() + 1, canonicalName, idStr::Length( canonicalName ) );
-            System.arraycopy(canonicalName, 0, declText, header.Length() + 1, idStr.Length(canonicalName))
-            declText[header.Length() + 1 + idStr.Length(canonicalName)] = ' '
+            System.arraycopy(canonicalNameChars, 0, declText, header.Length() + 1, canonicalName.length)
+            declText[header.Length() + 1 + canonicalName.length] = ' '
             //	memcpy( declText + header.Length() + 1 + idStr::Length( canonicalName ) + 1, defaultText, defaultText.Length() + 1 );
             System.arraycopy(
-                defaultText.c_str(),
+                defaultText.data.toCharArray(),
                 0,
-                declText,
-                header.Length() + 1 + idStr.Length(canonicalName) + 1,
+                declText, header.Length() + 1 + canonicalName.length + 1,
                 defaultText.Length() + 1
             )
             val declString = TempDump.ctos(declText)
@@ -1892,10 +1890,8 @@ class DeclManager {
 
         //BSM Added for the material editors rename capabilities
         override fun RenameDecl(type: declType_t, oldName: String, newName: String): Boolean {
-            val canonicalOldName = CharArray(MAX_STRING_CHARS)
-            MakeNameCanonical(oldName, canonicalOldName, MAX_STRING_CHARS)
-            val canonicalNewName = CharArray(MAX_STRING_CHARS)
-            MakeNameCanonical(newName, canonicalNewName, MAX_STRING_CHARS)
+            val canonicalOldName = MakeNameCanonical(oldName)
+            val canonicalNewName = MakeNameCanonical(newName)
             var decl: idDeclLocal? = null
 
             // make sure it already exists
@@ -1905,7 +1901,7 @@ class DeclManager {
             hash = hashTables[typeIndex].GenerateKey(canonicalOldName, false)
             i = hashTables[typeIndex].First(hash)
             while (i >= 0) {
-                if (linearLists[typeIndex][i].name.toString() == TempDump.ctos(canonicalOldName)) {
+                if (linearLists[typeIndex][i].name.toString() == canonicalOldName) {
                     decl = linearLists[typeIndex][i]
                     break
                 }
@@ -1919,11 +1915,11 @@ class DeclManager {
             //	return false;
             //decl = *declPtr;
             //Change the name
-            decl.name = idStr(TempDump.ctos(canonicalNewName))
+            decl.name = idStr(canonicalNewName)
 
             // add it to the hash table
             //hashTables[(int)decl.type].Set( decl.name, decl );
-            val newhash = hashTables[typeIndex].GenerateKey(TempDump.ctos(canonicalNewName), false)
+            val newhash = hashTables[typeIndex].GenerateKey(canonicalNewName, false)
             hashTables[typeIndex].Add(newhash, decl.index)
 
             //Remove the old hash item
@@ -2039,14 +2035,13 @@ class DeclManager {
             if (typeIndex < 0 || typeIndex >= declTypes.Num() || declTypes[typeIndex] == null) {
                 Common.common.FatalError("idDeclManager.FindTypeWithoutParsing: bad type: %d", typeIndex)
             }
-            val canonicalName = CharArray(MAX_STRING_CHARS)
-            MakeNameCanonical(name, canonicalName, MAX_STRING_CHARS)
+            val canonicalName = MakeNameCanonical(name)
 
             // see if it already exists
             hash = hashTables[typeIndex].GenerateKey(canonicalName, false)
             i = hashTables[typeIndex].First(hash)
             while (i >= 0) {
-                if (linearLists[typeIndex][i].name.toString() == TempDump.ctos(canonicalName)) {
+                if (linearLists[typeIndex][i].name.toString() == canonicalName) {
                     // only print these when decl_show is set to 2, because it can be a lot of clutter
                     if (decl_show.GetInteger() > 1) {
                         MediaPrint("referencing %s %s\n", declTypes[type.ordinal]!!.typeName.toString(), name)
@@ -2060,7 +2055,7 @@ class DeclManager {
             }
             val decl = idDeclLocal()
             decl.self = null
-            decl.name = idStr(TempDump.ctos(canonicalName))
+            decl.name = idStr(canonicalName)
             decl.type = type
             decl.declState = declState_t.DS_UNPARSED
             decl.textSource = null
@@ -2256,28 +2251,10 @@ class DeclManager {
                 ArgCompletion_Integer(0, 2)
             )
 
-            fun MakeNameCanonical(name: String, result: CharArray, maxLength: Int) { //TODO:maxlength???
-                var i: Int
-                var lastDot: Int
-                lastDot = -1
-                i = 0
-                while (i < maxLength && i < name.length) {
-                    val c = name[i].code
-                    if (c == '\\'.code) {
-                        result[i] = '/'
-                    } else if (c == '.'.code) {
-                        lastDot = i
-                        result[i] = c.toChar()
-                    } else {
-                        result[i] = idStr.ToLower(c.toChar())
-                    }
-                    i++
-                }
-                if (lastDot != -1) {
-                    result[lastDot] = '\u0000'
-                } else {
-                    result[i] = '\u0000'
-                }
+            fun MakeNameCanonical(name: String): String {
+                val result = name.lowercase().replace('\\', '/')
+                val lastDot = result.lastIndexOf('.')
+                return (if (lastDot != -1) result.substring(0, lastDot) else result).intern()
             }
         }
 
@@ -2611,6 +2588,7 @@ class DeclManager {
             msg.Init(compressed, compressedSize)
             msg.SetSize(compressedSize)
             msg.BeginReading()
+            val sb = StringBuilder(textLength)
             for (i in 0 until textLength) {
                 node = huffmanTree!!
                 do {
@@ -2618,8 +2596,9 @@ class DeclManager {
                     node = node.children[bit]!!
                     //                System.out.println(bit + ":" + node.symbol);
                 } while (node.symbol == -1)
-                text[0] = text[0] + node.symbol.toChar()
+                sb.append(node.symbol.toChar())
             }
+            text[0] = sb.toString()
 
             return msg.GetReadCount()
         }

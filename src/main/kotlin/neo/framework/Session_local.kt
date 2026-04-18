@@ -1103,7 +1103,7 @@ object Session_local {
                     // the current cdkey / xpkey values may have bad/random data in them
                     // it's best to avoid printing them completely, unless the key is good
                     if (cdkey_state == cdKeyState_t.CDKEY_OK) {
-                        guiMsg!!.SetStateString("str_cdkey", String(cdkey))
+                        guiMsg!!.SetStateString("str_cdkey", String(cdkey, 0, CDKEY_BUF_LEN - 1))
                         guiMsg!!.SetStateString("visible_cdchk", "0")
                     } else {
                         guiMsg!!.SetStateString("str_cdkey", "")
@@ -1111,7 +1111,7 @@ object Session_local {
                     }
                     guiMsg!!.SetStateString("str_cdchk", "")
                     if (xpkey_state == cdKeyState_t.CDKEY_OK) {
-                        guiMsg!!.SetStateString("str_xpkey", String(xpkey))
+                        guiMsg!!.SetStateString("str_xpkey", String(xpkey, 0, CDKEY_BUF_LEN - 1))
                         guiMsg!!.SetStateString("visible_xpchk", "0")
                     } else {
                         guiMsg!!.SetStateString("str_xpkey", "")
@@ -1351,7 +1351,7 @@ object Session_local {
                 Common.common.Printf("Couldn't write %s.\n", filename)
                 return
             }
-            f.Printf("%s%s", cdkey, Licensee.CDKEY_TEXT)
+            f.Printf("%s%s", String(cdkey, 0, CDKEY_BUF_LEN - 1), Licensee.CDKEY_TEXT)
             FileSystem_h.fileSystem.CloseFile(f)
             filename = "../" + Licensee.BASE_GAMEDIR + "/" + Licensee.XPKEY_FILE
             f = FileSystem_h.fileSystem.OpenFileWrite(filename)
@@ -1359,7 +1359,7 @@ object Session_local {
                 Common.common.Printf("Couldn't write %s.\n", filename)
                 return
             }
-            f.Printf("%s%s", xpkey, Licensee.CDKEY_TEXT)
+            f.Printf("%s%s", String(xpkey, 0, CDKEY_BUF_LEN - 1), Licensee.CDKEY_TEXT)
             FileSystem_h.fileSystem.CloseFile(f)
         }
 
@@ -1395,7 +1395,12 @@ object Session_local {
             var checksum: Int
             var chk8: Int //TODO:bitwise ops on longs!?
             val edited_key = BooleanArray(2)
-            assert(key.length == (CDKEY_BUF_LEN - 1) * 2 + 4 + 3 + 4)
+            if (key.length < (CDKEY_BUF_LEN - 1) * 2 + 4 + 3 + 4) {
+                Common.common.Printf(
+                    "CheckKey: key length %d too short (expected %d)\n", key.length, (CDKEY_BUF_LEN - 1) * 2 + 4 + 3 + 4
+                )
+                return false
+            }
             edited_key[0] = key[0] == '1'
             idStr.Copynz(lkey[0], key + 2, CDKEY_BUF_LEN)
             idStr.ToUpper(lkey[0])

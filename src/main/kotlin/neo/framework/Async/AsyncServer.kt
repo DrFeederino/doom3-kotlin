@@ -457,21 +457,6 @@ object AsyncServer {
                 i++
             }
 
-            // setup the game pak checksums
-            // since this is not dependant on si_pure we catch anything bad before loading map
-            if (Session.sessLocal.mapSpawnData.serverInfo.GetInt("si_pure") != 0) {
-                if (!FileSystem_h.fileSystem.UpdateGamePakChecksums()) {
-                    Session.session.MessageBox(
-                        msgBoxType_t.MSG_OK,
-                        Common.common.GetLanguageDict().GetString("#str_04337"),
-                        Common.common.GetLanguageDict().GetString("#str_04338"),
-                        true
-                    )
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "disconnect\n")
-                    return
-                }
-            }
-
             // load map
             Session.sessLocal.ExecuteMapChange()
             if (localClientNum >= 0) {
@@ -1819,7 +1804,15 @@ object AsyncServer {
             outMsg.WriteString(CVarSystem.cvarSystem.GetCVarString("fs_game_base"))
             outMsg.WriteString(CVarSystem.cvarSystem.GetCVarString("fs_game"))
             serverPort.SendPacket(from, outMsg.GetData()!!, outMsg.GetSize())
-            if (win_net.Sys_IsLANAddress(from)) {
+            if (!ID_ENFORCE_KEY_CLIENT) { // dhewm3: CD key enforcement disabled, accept all clients
+                if (!win_net.Sys_IsLANAddress(from)) {
+                    Common.common.DPrintf(
+                        "Build does not have CD Key Enforcement enabled. Client %s is not a LAN address, but will be accepted\n",
+                        win_net.Sys_NetAdrToString(from)
+                    )
+                }
+                challenges[i].authState = authState_t.CDK_OK
+            } else if (win_net.Sys_IsLANAddress(from)) {
                 // no CD Key check for LAN clients
                 challenges[i].authState = authState_t.CDK_OK
             } else {
@@ -1862,8 +1855,8 @@ object AsyncServer {
             var islot: Int
             val OS: Int
             var numClients: Int
-            protocol = msg.ReadLong()
-            OS = msg.ReadShort().toInt()
+            protocol = msg.ReadLong() // C++ protocol does not include OS in the connect message
+            OS = BUILD_OS_ID
 
             // check the protocol version
             if (protocol != AsyncNetwork.ASYNC_PROTOCOL_VERSION) {
@@ -2384,9 +2377,8 @@ object AsyncServer {
             val outMsg = idBitMsg()
             val msgBuf = ByteBuffer.allocate(MsgChannel.MAX_MESSAGE_SIZE)
             val serverChecksums = IntArray(FileSystem_h.MAX_PURE_PAKS)
-            val gamePakChecksum = CInt()
             var i: Int
-            FileSystem_h.fileSystem.GetPureServerChecksums(serverChecksums, OS, gamePakChecksum)
+            FileSystem_h.fileSystem.GetPureServerChecksums(serverChecksums, OS, null)
             if (0 == serverChecksums[0]) {
                 // happens if you run fully expanded assets with si_pure 1
                 Common.common.Warning("pure server has no pak files referenced")
@@ -2404,8 +2396,6 @@ object AsyncServer {
             }
             outMsg.WriteLong(0)
 
-            // write the pak checksum for game code
-            outMsg.WriteLong(gamePakChecksum._val)
             serverPort.SendPacket(to, outMsg.GetData()!!, outMsg.GetSize())
             return true
         }
@@ -2485,8 +2475,7 @@ object AsyncServer {
             val msgBuf = ByteBuffer.allocate(MsgChannel.MAX_MESSAGE_SIZE)
             val serverChecksums = IntArray(FileSystem_h.MAX_PURE_PAKS)
             var i: Int
-            val gamePakChecksum = CInt()
-            FileSystem_h.fileSystem.GetPureServerChecksums(serverChecksums, clients[clientNum].OS, gamePakChecksum)
+            FileSystem_h.fileSystem.GetPureServerChecksums(serverChecksums, clients[clientNum].OS, null)
             if (0 == serverChecksums[0]) {
                 // happens if you run fully expanded assets with si_pure 1
                 Common.common.Warning("pure server has no pak files referenced")
@@ -2505,7 +2494,6 @@ object AsyncServer {
                 msg.WriteLong(serverChecksums[i++])
             }
             msg.WriteLong(0)
-            msg.WriteLong(gamePakChecksum._val)
             SendReliableMessage(clientNum, msg)
             return true
         }
@@ -2553,9 +2541,7 @@ object AsyncServer {
             var i: Int
             var numChecksums: Int
             val checksums = IntArray(FileSystem_h.MAX_PURE_PAKS)
-            val gamePakChecksum: Int
             val serverChecksums = IntArray(FileSystem_h.MAX_PURE_PAKS)
-            val serverGamePakChecksum = CInt()
 
             // pak checksums, in a 0-terminated list
             numChecksums = 0
@@ -2574,21 +2560,10 @@ object AsyncServer {
             } while (i != 0)
             numChecksums--
 
-            // code pak checksum
-            gamePakChecksum = msg.ReadLong()
-            FileSystem_h.fileSystem.GetPureServerChecksums(serverChecksums, OS, serverGamePakChecksum)
+            FileSystem_h.fileSystem.GetPureServerChecksums(serverChecksums, OS, null)
             assert(serverChecksums[0] != 0)
 
             // compare the lists
-            if (serverGamePakChecksum._val != gamePakChecksum) {
-                Common.common.Printf(
-                    "client %s: invalid game code pak ( 0x%x )\n",
-                    if (from != null) win_net.Sys_NetAdrToString(from) else Str.va("%d", clientNum),
-                    gamePakChecksum
-                )
-                reply.set("#str_07145")
-                return false
-            }
             i = 0
             while (serverChecksums[i] != 0) {
                 if (checksums[i] != serverChecksums[i]) {

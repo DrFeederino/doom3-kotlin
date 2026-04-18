@@ -110,7 +110,7 @@ class StrPool {
             assert(poolStr.pool === this)
             poolStr.numUsers--
             if (poolStr.numUsers <= 0) {
-                hash = poolHash.GenerateKey(poolStr.c_str(), caseSensitive)
+                hash = poolHash.GenerateKey(poolStr.toString(), caseSensitive)
                 if (caseSensitive) {
                     i = poolHash.First(hash)
                     while (i != -1) {

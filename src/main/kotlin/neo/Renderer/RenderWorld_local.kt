@@ -3456,7 +3456,7 @@ object RenderWorld_local {
             Session.session.writeDemo!!.WriteInt(demoCommand_t.DC_LOADMAP)
             val header = demoHeader_t()
             // safely copy mapName into 256-char buffer, padding with nulls
-            val nameChars = mapName.c_str()
+            val nameChars = mapName.data.toCharArray()
             val len = minOf(nameChars.size, 255)
             System.arraycopy(nameChars, 0, header.mapname, 0, len)
             header.mapname[len] = 0.toChar() // null-terminate

@@ -42,6 +42,7 @@ import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 import java.util.zip.ZipEntry
+import neo.idlib.hashing.MD4_BlockChecksum
 import java.util.zip.ZipFile
 
 object FileSystem_h {
@@ -550,7 +551,7 @@ object FileSystem_h {
 
         // fills a 0-terminated list of pak checksums for a client
         // if OS is -1, give the current game pak checksum. if >= 0, lookup the game pak table (server only)
-        abstract fun GetPureServerChecksums(checksums: IntArray, OS: Int, gamePakChecksum: CInt)
+        abstract fun GetPureServerChecksums(checksums: IntArray, OS: Int, gamePakChecksum: CInt?)
 
         // before doing a restart, force the pure list and the search order
         // if the given checksum list can't be completely processed and set, will error out
@@ -1585,7 +1586,6 @@ object FileSystem_h {
             dllHash = HashFileName(dllName[0]).toInt()
             imissing = 0
             missingChecksums[0] = 0
-            assert(missingGamePakChecksum[0] != 0)
             missingGamePakChecksum[0] = 0
             if (pureChecksums[0] == 0) {
                 ClearPureChecksums()
@@ -1689,57 +1689,52 @@ object FileSystem_h {
             }
 
             // DLL checksuming
-            if (0 == _gamePakChecksum) {
-                // server doesn't have knowledge of code we can use ( OS issue )
-                return fsPureReply_t.PURE_NODLL
-            }
-            assert(gameDLLChecksum != 0)
-            if (ID_FAKE_PURE) {
-                gamePakChecksum = _gamePakChecksum
-            }
-            if (_gamePakChecksum != gamePakChecksum) {
-                // current DLL is wrong, search for a pak with the approriate checksum
-                // ( search all paks, the pure list is not relevant here )
-                pack = GetPackForChecksum(_gamePakChecksum)
-                if (null == pack) {
+            if (0 == _gamePakChecksum) { // dhewm3/original DOOM 3 protocol does not send game code pak checksum.
+                // Skip DLL validation in this case (match dhewm3 behavior).
+            } else {
+                assert(gameDLLChecksum != 0)
+                if (ID_FAKE_PURE) {
+                    gamePakChecksum = _gamePakChecksum
+                }
+                if (_gamePakChecksum != gamePakChecksum) { // current DLL is wrong, search for a pak with the approriate checksum
+                    // ( search all paks, the pure list is not relevant here )
+                    pack = GetPackForChecksum(_gamePakChecksum)
+                    if (null == pack) {
+                        if (fs_debug.GetBool()) {
+                            idLib.common.Printf("missing the game code pak ( 0x%x )\n", _gamePakChecksum)
+                        } // if there are other paks missing they have also been marked above
+                        missingGamePakChecksum[0] = _gamePakChecksum
+                        return fsPureReply_t.PURE_MISSING
+                    } // if assets paks are missing, don't try any of the DLL restart / NODLL
+                    if (imissing != 0) {
+                        return fsPureReply_t.PURE_MISSING
+                    } // we have a matching pak
                     if (fs_debug.GetBool()) {
-                        idLib.common.Printf("missing the game code pak ( 0x%x )\n", _gamePakChecksum)
-                    }
-                    // if there are other paks missing they have also been marked above
-                    missingGamePakChecksum[0] = _gamePakChecksum
-                    return fsPureReply_t.PURE_MISSING
-                }
-                // if assets paks are missing, don't try any of the DLL restart / NODLL
-                if (imissing != 0) {
-                    return fsPureReply_t.PURE_MISSING
-                }
-                // we have a matching pak
-                if (fs_debug.GetBool()) {
-                    idLib.common.Printf(
-                        "server's game code pak candidate is '%s' ( 0x%x )\n",
-                        pack.pakFilename.toString(),
-                        pack.checksum
-                    )
-                }
-                // make sure there is a valid DLL for us
-                if (pack.hashTable[dllHash] != null) {
-                    pakFile = pack.hashTable[dllHash]
-                    while (pakFile != null) {
-                        if (FilenameCompare(pakFile.name.toString(), dllName[0])) {
-                            gamePakChecksum =
-                                _gamePakChecksum // this will be used to extract the DLL in pure mode FindDLL
-                            return fsPureReply_t.PURE_RESTART
+                        idLib.common.Printf(
+                            "server's game code pak candidate is '%s' ( 0x%x )\n",
+                            pack.pakFilename.toString(),
+                            pack.checksum
+                        )
+                    } // make sure there is a valid DLL for us
+                    if (pack.hashTable[dllHash] != null) {
+                        pakFile = pack.hashTable[dllHash]
+                        while (pakFile != null) {
+                            if (FilenameCompare(pakFile.name.toString(), dllName[0])) {
+                                gamePakChecksum =
+                                    _gamePakChecksum // this will be used to extract the DLL in pure mode FindDLL
+                                return fsPureReply_t.PURE_RESTART
+                            }
+                            pakFile = pakFile.next
                         }
-                        pakFile = pakFile.next
                     }
+                    idLib.common.Warning(
+                        "media is misconfigured. server claims pak '%s' ( 0x%x ) has media for us, but '%s' is not found\n",
+                        pack.pakFilename.toString(),
+                        pack.checksum,
+                        dllName[0]
+                    )
+                    return fsPureReply_t.PURE_NODLL
                 }
-                idLib.common.Warning(
-                    "media is misconfigured. server claims pak '%s' ( 0x%x ) has media for us, but '%s' is not found\n",
-                    pack.pakFilename.toString(),
-                    pack.checksum,
-                    dllName[0]
-                )
-                return fsPureReply_t.PURE_NODLL
             }
 
             // we reply to missing after DLL check so it can be part of the list
@@ -1757,7 +1752,7 @@ object FileSystem_h {
             return if (success) fsPureReply_t.PURE_OK else fsPureReply_t.PURE_RESTART
         }
 
-        override fun GetPureServerChecksums(checksums: IntArray, OS: Int, _gamePakChecksum: CInt) {
+        override fun GetPureServerChecksums(checksums: IntArray, OS: Int, _gamePakChecksum: CInt?) {
             var i: Int
             i = 0
             while (i < serverPaks.Num()) {
@@ -2714,7 +2709,7 @@ object FileSystem_h {
                 )
                 return 0
             }
-            idStr.Copynz(path, relativePath.c_str(), MAX_STRING_CHARS)
+            idStr.Copynz(path, relativePath.data, MAX_STRING_CHARS)
             return pak.length
         }
 
@@ -3961,7 +3956,7 @@ object FileSystem_h {
                     }
                     pakFile = pakFile.next
                 }
-                pack.checksum = 0 //new BigInteger(MD4_BlockChecksum(fs_headerLongs, fs_numHeaderLongs)).intValue();
+                pack.checksum = MD4_BlockChecksum(fs_headerLongs, fs_numHeaderLongs * 4).toInt()
                 pack.checksum = LittleLong(pack.checksum)
 
 //            Mem_Free(fs_headerLongs);

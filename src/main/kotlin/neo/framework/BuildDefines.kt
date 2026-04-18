@@ -77,7 +77,8 @@ val ID_DEMO_BUILD = System.getProperty("ID_DEMO_BUILD") == "true"
 const val ID_ENABLE_CURL = true
 
 // fake a pure client. useful to connect an all-debug client to a server
-const val ID_FAKE_PURE = false
+// dhewm3 removed all DLL pure checksum logic for monolithic builds - same effect
+const val ID_FAKE_PURE = true // monolithic build has no game DLL, skip game pak checksum
 
 const val ID_OPENAL = true
 

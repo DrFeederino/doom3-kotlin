@@ -160,9 +160,18 @@ object Compressor {
         }
 
         override fun Write(inData: ByteBuffer): Int {
-            return if (compress == false) {
-                0
-            } else file.Write(inData)
+            return Write(inData, inData.capacity())
+        }
+
+        override fun Write(inData: ByteBuffer, inLength: Int): Int {
+            if (!compress || inLength <= 0) {
+                return 0
+            }
+            val savedLimit = inData.limit()
+            inData.limit(inData.position() + inLength)
+            file.Write(inData)
+            inData.limit(savedLimit)
+            return inLength
         }
 
         override fun Length(): Int {
@@ -322,6 +331,7 @@ object Compressor {
 
         protected fun InitDecompress(outData: ByteBuffer, outLength: Int) {
             if (0 == readLength) {
+                buffer.rewind() // Reset position — ByteBuffer position was advanced by previous ReadData
                 readLength = file.Read(buffer)
                 readByte = 0
                 readBit = 0
@@ -404,6 +414,7 @@ object Compressor {
                 if (readBit == 0) {
                     if (readByte >= readLength) {
                         if (readData == buffer) {
+                            buffer.rewind()
                             readLength = file.Read(buffer)
                             readByte = 0
                         } else {

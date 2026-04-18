@@ -384,8 +384,15 @@ class win_net {
                             continue  //TODO:skip ipv6, for now.
                         }
                         ip_a = TempDump.ntohl(pIPAddr.address)
-                        if (pAdapter.interfaceAddresses != null && pAdapter.interfaceAddresses.size > 0) {
-                            ip_m = pAdapter.interfaceAddresses[0].networkPrefixLength.toLong()
+                        if (pAdapter.interfaceAddresses != null && pAdapter.interfaceAddresses.size > 0) { // Find the InterfaceAddress that matches this InetAddress
+                            val ifAddr = pAdapter.interfaceAddresses.firstOrNull { it.address == pIPAddr }
+                            val prefixLen = ifAddr?.networkPrefixLength?.toInt()
+                                ?: 0 // Convert prefix length to subnet mask (e.g. 24 -> 0xFFFFFF00)
+                            ip_m = if (prefixLen > 0) {
+                                (-1L shl (32 - prefixLen)) and 0xFFFFFFFFL
+                            } else {
+                                0L
+                            }
                         }
 
                         //skip null netmasks

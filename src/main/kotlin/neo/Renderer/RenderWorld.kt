@@ -118,7 +118,7 @@ object RenderWorld {
      */
     @Throws(idException::class)
     fun R_GlobalShaderOverride(shader: Array<idMaterial?>): Boolean {
-        if (!shader[0]!!.IsDrawn()) {
+        if (shader[0] == null || !shader[0]!!.IsDrawn()) {
             return false
         }
         if (tr.primaryRenderView!!.globalMaterial != null) {

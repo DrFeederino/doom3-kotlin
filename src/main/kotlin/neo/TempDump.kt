@@ -435,12 +435,8 @@ object TempDump {
         return intArray
     }
 
-    fun ntohl(ip: ByteArray): Long {
-        val buffer = ByteBuffer.allocate(8)
-        buffer.put(ip)
-        buffer.flip()
-        buffer.limit(8)
-        return buffer.getLong(0)
+    fun ntohl(ip: ByteArray): Long { // Convert 4-byte big-endian IP to unsigned 32-bit value in a Long
+        return ((ip[0].toLong() and 0xFF) shl 24) or ((ip[1].toLong() and 0xFF) shl 16) or ((ip[2].toLong() and 0xFF) shl 8) or (ip[3].toLong() and 0xFF)
     }
 
     fun fopenOptions(mode: String?): MutableSet<StandardOpenOption>? {

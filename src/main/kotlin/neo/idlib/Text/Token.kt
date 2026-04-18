@@ -121,10 +121,9 @@ object Token {
         //
         fun NumberValue() {                // calculate values for a TT_NUMBER
             var c: Int
-            val p: CharArray
+            val p: String = data
             var pIndex = 0
             assert(type == TT_NUMBER)
-            p = c_str()
             floatValue = 0.0f
             intValue = 0
             // floating point number
@@ -145,7 +144,7 @@ object Token {
                 }
                 intValue = idMath.Ftol(floatValue)
             } else if (subtype and TT_DECIMAL != 0) {
-                while (pIndex < p.size) {
+                while (pIndex < p.length) {
                     intValue = intValue * 10 + (p[pIndex] - '0')
                     pIndex++
                 }
@@ -173,7 +172,7 @@ object Token {
             } else if (subtype and TT_OCTAL != 0) {
                 // step over the first zero
                 pIndex += 1
-                while (pIndex < p.size) {
+                while (pIndex < p.length) {
                     intValue = (intValue shl 3) + (p[pIndex] - '0')
                     pIndex++
                 }
@@ -181,7 +180,7 @@ object Token {
             } else if (subtype and TT_HEX != 0) {
                 // step over the leading 0x or 0X
                 pIndex += 2
-                while (pIndex < p.size) {
+                while (pIndex < p.length) {
                     intValue = intValue shl 4
                     intValue += if (p[pIndex] in 'a'..'f') {
                         (p[pIndex] - 'a' + 10)
@@ -196,7 +195,7 @@ object Token {
             } else if (subtype and TT_BINARY != 0) {
                 // step over the leading 0b or 0B
                 pIndex += 2
-                while (pIndex < p.size) {
+                while (pIndex < p.length) {
                     intValue = (intValue shl 1) + (p[pIndex] - '0')
                     pIndex++
                 }
@@ -208,8 +207,14 @@ object Token {
         // append character without adding trailing zero
         fun AppendDirty(a: Char) {
             EnsureAlloced(len + 2, true)
-            //	data[len++] = a;
-            data += a
+            if (_sb == null) {
+                _sb = StringBuilder(data)
+            } else if (!_dirty) {
+                _sb!!.clear()
+                _sb!!.append(data)
+            }
+            _sb!!.append(a)
+            _dirty = true
             len++
         }
 

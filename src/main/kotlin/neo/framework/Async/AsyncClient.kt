@@ -94,82 +94,41 @@ object AsyncClient {
 
     class idAsyncClient {
         var serverList: idServerScan = idServerScan()
-
-        //
-        //
-        private var active // true if client is active
-                = false
-
-        //
+        private var active = false // true if client is active
         private val backgroundDownload: backgroundDownload_s = backgroundDownload_s()
-
-        //
-        private val channel // message channel to server
-                : idMsgChannel = idMsgChannel()
-        private var clientDataChecksum // checksum of the data used by the client
-                : BigInteger = BigInteger.ZERO
-        private var clientId // client identification
-                = 0
-        private var clientNum // client number on server
-                = 0
-        private val clientPort // UDP port
-                : idPort = idPort()
-        private var clientPredictTime // prediction time used to send user commands
-                = 0
-        private var clientPrediction // how far the client predicts ahead
-                = 0
-        private var clientState // client state
-                : clientState_t = clientState_t.CS_DISCONNECTED
-
-        //
-        private var clientTime // client local time
-                = 0
+        private val channel: idMsgChannel = idMsgChannel() // message channel to server
+        private var clientDataChecksum: BigInteger = BigInteger.ZERO // checksum of the data used by the client
+        private var clientId = 0 // client identification
+        private var clientNum = 0 // client number on server
+        private val clientPort: idPort = idPort() // UDP port
+        private var clientPredictTime = 0 // prediction time used to send user commands
+        private var clientPrediction = 0 // how far the client predicts ahead
+        private var clientState: clientState_t = clientState_t.CS_DISCONNECTED // client state
+        private var clientTime = 0 // client local time
         private var currentDlSize = 0
         private val dlChecksums: IntArray =
             IntArray(FileSystem_h.MAX_PURE_PAKS) // 0-terminated, first element is the game pak checksum or 0
-        private var dlCount // total number of paks we request download for ( including the game pak )
-                = 0
+        private var dlCount = 0 // total number of paks we request download for ( including the game pak )
         private val dlList: idList<pakDlEntry_t> = idList() // list of paks to download, with url and name
-
-        //
-        private var dlRequest // randomized number to keep track of the requests
-                = 0
+        private var dlRequest = 0 // randomized number to keep track of the requests
         private var dlnow = 0
         private var dltotal = 0
-        private var gameFrame // local game frame
-                = 0
-
-        //
-        private var gameInitId // game initialization identification
-                = 0
-        private var gameTime // local game time
-                = 0
-        private var gameTimeResidual // left over time from previous frame
-                = 0
-
-        //
+        private var gameFrame = 0 // local game frame
+        private var gameInitId = 0 // game initialization identification
+        private var gameTime = 0 // local game time
+        private var gameTimeResidual = 0 // left over time from previous frame
         private var guiNetMenu: idUserInterface? = null
-        private var lastConnectTime // last time a connect message was sent
-                = 0
-        private var lastEmptyTime // last time an empty message was sent
-                = 0
-
-        //
+        private var lastConnectTime = 0 // last time a connect message was sent
+        private var lastEmptyTime = 0 // last time an empty message was sent
         private var lastFrameDelta = 0
-        private var lastPacketTime // last time a packet was received from the server
-                = 0
-
-        //
-        private var lastRconAddress // last rcon address we emitted to
-                : netadr_t = netadr_t()
+        private var lastPacketTime = 0 // last time a packet was received from the server
+        private var lastRconAddress: netadr_t = netadr_t() // last rcon address we emitted to
         private var lastRconTime // when last rcon emitted
                 = 0
         private var lastSnapshotTime // last time a snapshot was received
                 = 0
         private var realTime // absolute time
                 = 0
-
-        //
         private var serverAddress // IP address of server
                 : netadr_t = netadr_t()
         private var serverChallenge // challenge from server
@@ -183,8 +142,6 @@ object AsyncClient {
                 = 0
         private var snapshotGameTime // game time of the last received snapshot
                 = 0
-
-        //
         private var snapshotSequence // sequence number of the last received snapshot
                 = 0
         private var totalDlSize // for partial progress stuff
@@ -195,12 +152,8 @@ object AsyncClient {
         private val updateMSG: idStr = idStr()
         private var updateMime: dlMime_t = dlMime_t.FILE_EXEC
         private var updateSentTime = 0
-
-        //
         private var updateState: clientUpdateState_t = clientUpdateState_t.UPDATE_NONE
         private var updateURL: idStr = idStr()
-
-        //
         private val userCmds: Array<Array<usercmd_t>> =
             Array(AsyncNetwork.MAX_USERCMD_BACKUP) { Array(AsyncNetwork.MAX_ASYNC_CLIENTS) { usercmd_t() } }
 
@@ -214,15 +167,13 @@ object AsyncClient {
             dlList.Clear()
         }
 
-        fun InitPort(): Boolean {
-            // if this is the first time we connect to a server, open the UDP port
+        fun InitPort(): Boolean { // if this is the first time we connect to a server, open the UDP port
             if (0 == clientPort.GetPort()) {
                 if (!clientPort.InitForPort(PORT_ANY)) {
                     Common.common.Printf("Couldn't open client network port.\n")
                     return false
                 }
-            }
-            // maintain it valid between connects and ui manager reloads
+            } // maintain it valid between connects and ui manager reloads
             guiNetMenu = UserInterface.uiManager.FindGui("guis/netmenu.gui", true, false, true)!!
             return true
         }
@@ -231,8 +182,7 @@ object AsyncClient {
             clientPort.Close()
         }
 
-        fun ConnectToServer(adr: netadr_t) {
-            // shutdown any current game. that includes network disconnect
+        fun ConnectToServer(adr: netadr_t) { // shutdown any current game. that includes network disconnect
             Session.session.Stop()
             if (!InitPort()) {
                 return
@@ -307,8 +257,7 @@ object AsyncClient {
         fun DisconnectFromServer() {
             val msg = idBitMsg()
             val msgBuf = ByteBuffer.allocate(MsgChannel.MAX_MESSAGE_SIZE)
-            if (clientState.ordinal >= clientState_t.CS_CONNECTED.ordinal) {
-                // if we were actually connected, clear the pure list
+            if (clientState.ordinal >= clientState_t.CS_CONNECTED.ordinal) { // if we were actually connected, clear the pure list
                 FileSystem_h.fileSystem.ClearPureChecksums()
 
                 // send reliable disconnect to server
@@ -351,8 +300,7 @@ object AsyncClient {
                 }
             } else if (active) {
                 adr = serverAddress
-            } else if (idAsyncNetwork.server.IsActive()) {
-                // used to be a Sys_StringToNetAdr( "localhost", &adr, true ); and send a packet over loopback
+            } else if (idAsyncNetwork.server.IsActive()) { // used to be a Sys_StringToNetAdr( "localhost", &adr, true ); and send a packet over loopback
                 // but this breaks with net_ip ( typically, for multi-homed servers )
                 idAsyncNetwork.server.PrintLocalServerInfo()
                 return
@@ -409,7 +357,10 @@ object AsyncClient {
             val adr = netadr_t()
             if (idAsyncNetwork.GetMasterAddress(0, adr)) {
                 clientPort.SendPacket(adr, msg.GetData()!!, msg.GetSize())
+            } else {
+                return
             }
+
         }
 
         fun ListServers() {
@@ -547,9 +498,7 @@ object AsyncClient {
 
             // spin in place processing incoming packets until enough time lapsed to run a new game frame
             do {
-                do {
-
-                    // blocking read with game time residual timeout
+                do { // blocking read with game time residual timeout
                     newPacket = clientPort.GetPacketBlocking(
                         from,
                         msgBuf,
@@ -585,8 +534,7 @@ object AsyncClient {
             }
 
             // if not connected setup a connection
-            if (clientState.ordinal < clientState_t.CS_CONNECTED.ordinal) {
-                // also need to read mouse for the connecting guis
+            if (clientState.ordinal < clientState_t.CS_CONNECTED.ordinal) { // also need to read mouse for the connecting guis
                 UsercmdGen.usercmdGen.GetDirectUsercmd()
                 SetupConnection()
                 gameTimeResidual = UsercmdGen.USERCMD_MSEC - 1
@@ -609,10 +557,7 @@ object AsyncClient {
                 Game_local.game.ThrottleUserInfo()
                 SendUserInfoToServer()
                 Game_local.game.SetUserInfo(
-                    clientNum,
-                    Session.sessLocal.mapSpawnData.userInfo[clientNum],
-                    true,
-                    false
+                    clientNum, Session.sessLocal.mapSpawnData.userInfo[clientNum], true, false
                 )
                 CVarSystem.cvarSystem.ClearModifiedFlags(CVarSystem.CVAR_USERINFO)
             }
@@ -644,9 +589,7 @@ object AsyncClient {
 
                     // run client prediction
                     val ret = Game_local.game.ClientPrediction(
-                        clientNum,
-                        userCmds[snapshotGameFrame and AsyncNetwork.MAX_USERCMD_BACKUP - 1],
-                        lastPredictFrame
+                        clientNum, userCmds[snapshotGameFrame and AsyncNetwork.MAX_USERCMD_BACKUP - 1], lastPredictFrame
                     )
                     idAsyncNetwork.ExecuteSessionCommand(ret.sessionCommand)
                     snapshotGameFrame++
@@ -748,8 +691,7 @@ object AsyncClient {
             gameInitId = AsyncNetwork.GAME_INIT_ID_INVALID
             gameFrame = 0
             gameTimeResidual = 0
-            gameTime = 0
-            //	memset( userCmds, 0, sizeof( userCmds ) );
+            gameTime = 0 //	memset( userCmds, 0, sizeof( userCmds ) );
             i = 0
             while (i < AsyncNetwork.MAX_USERCMD_BACKUP) {
                 j = 0
@@ -764,8 +706,7 @@ object AsyncClient {
             showUpdateMessage = false
             lastFrameDelta = 0
             dlRequest = -1
-            dlCount = -1
-            //	memset( dlChecksums, 0, sizeof( int ) * MAX_PURE_PAKS );
+            dlCount = -1 //	memset( dlChecksums, 0, sizeof( int ) * MAX_PURE_PAKS );
             Arrays.fill(dlChecksums, 0)
             currentDlSize = 0
             totalDlSize = 0
@@ -789,10 +730,7 @@ object AsyncClient {
             i = 0
             while (i < AsyncNetwork.MAX_ASYNC_CLIENTS) {
                 idAsyncNetwork.DuplicateUsercmd(
-                    userCmds[previousIndex][i],
-                    userCmds[currentIndex][i],
-                    frame,
-                    time
+                    userCmds[previousIndex][i], userCmds[currentIndex][i], frame, time
                 )
                 i++
             }
@@ -917,7 +855,6 @@ object AsyncClient {
             snapshotGameTime = serverGameTime
             gameTime = snapshotGameTime
             gameTimeResidual = 0
-            // FIX: Arrays.fill(userCmds, 0) was a type error - Array<Array<usercmd_t>> cannot be filled with Int
             for (i in 0 until AsyncNetwork.MAX_USERCMD_BACKUP) {
                 for (j in 0 until AsyncNetwork.MAX_ASYNC_CLIENTS) {
                     userCmds[i][j] = usercmd_t()
@@ -937,18 +874,18 @@ object AsyncClient {
             val numDuplicatedUsercmds: Int
             val aheadOfServer: Int
             var numUsercmds: Int
-            val delta: Int
+            var delta: Int
             val serverGameInitId: Int
             val serverGameFrame: Int
             val serverGameTime: Int
             val serverSI = idDict()
             var last: usercmd_t?
             val pureWait: Boolean
-            serverGameInitId = msg.ReadLong()
-            // FIX: was reading msg.ReadByte() twice - once in condition, once for value
-            val idByte = msg.ReadByte().toInt()
-            if (idByte < SERVER_UNRELIABLE.values().size) {
-                val id = SERVER_UNRELIABLE.values()[idByte]
+            serverGameInitId =
+                msg.ReadLong() // FIX: was reading msg.ReadByte() twice - once in condition, once for value
+            val idByte = msg.ReadByte().toInt() and 0xFF
+            if (idByte < SERVER_UNRELIABLE.entries.size) {
+                val id = SERVER_UNRELIABLE.entries[idByte]
                 when (id) {
                     SERVER_UNRELIABLE.SERVER_UNRELIABLE_MESSAGE_EMPTY -> {
                         if (idAsyncNetwork.verbose.GetInteger() != 0) {
@@ -994,8 +931,7 @@ object AsyncClient {
                                 false,
                                 "pure_abort"
                             )
-                        } else {
-                            // load map
+                        } else { // load map
                             Session.session.SetGUI(null, null)
                             Session.sessLocal.ExecuteMapChange()
                         }
@@ -1013,10 +949,11 @@ object AsyncClient {
                         snapshotSequence = msg.ReadLong()
                         snapshotGameFrame = msg.ReadLong()
                         snapshotGameTime = msg.ReadLong()
-                        numDuplicatedUsercmds = msg.ReadByte().toInt()
+                        numDuplicatedUsercmds = msg.ReadByte().toInt() and 0xFF
                         aheadOfServer = msg.ReadShort().toInt()
 
                         // read the game snapshot
+
                         Game_local.game.ClientReadSnapshot(
                             clientNum,
                             snapshotSequence,
@@ -1029,14 +966,15 @@ object AsyncClient {
 
                         // read user commands of other clients from the snapshot
                         last = null
-                        i = msg.ReadByte().toInt()
+                        val firstClientVal = msg.ReadByte().toInt() and 0xFF
+                        i = firstClientVal
+
                         while (i < AsyncNetwork.MAX_ASYNC_CLIENTS) {
-                            numUsercmds = msg.ReadByte().toInt()
+                            numUsercmds = msg.ReadByte().toInt() and 0xFF
                             if (numUsercmds > AsyncNetwork.MAX_USERCMD_RELAY) {
-                                Common.common.Error(
-                                    "snapshot %d contains too many user commands for client %d",
-                                    snapshotSequence,
-                                    i
+                                Common.common.Warning(
+                                    "snapshot %d contains too many user commands for client %d (numUsercmds=%d > %d), firstClient was %d. Possible message misalignment.",
+                                    snapshotSequence, i, numUsercmds, AsyncNetwork.MAX_USERCMD_RELAY, firstClientVal
                                 )
                                 break
                             }
@@ -1048,8 +986,7 @@ object AsyncClient {
                                 userCmds[index][i].duplicateCount = 0
                                 last = userCmds[index][i]
                                 j++
-                            }
-                            // clear all user commands after the ones just read from the snapshot
+                            } // clear all user commands after the ones just read from the snapshot
                             j = numUsercmds
                             while (j < AsyncNetwork.MAX_USERCMD_BACKUP) {
                                 index = snapshotGameFrame + j and AsyncNetwork.MAX_USERCMD_BACKUP - 1
@@ -1057,7 +994,7 @@ object AsyncClient {
                                 userCmds[index][i].gameTime = 0
                                 j++
                             }
-                            i = msg.ReadByte().toInt()
+                            i = msg.ReadByte().toInt() and 0xFF
                         }
 
                         // if this is the first snapshot after a game init was received
@@ -1120,11 +1057,6 @@ object AsyncClient {
                         }
                     }
                 }
-            } else {
-//		default: {
-                // FIX: was calling msg.ReadByte() again instead of using already-read value
-                Common.common.Printf("unknown unreliable server message %d\n", idByte)
-                //			break;
             }
         }
 
@@ -1134,15 +1066,14 @@ object AsyncClient {
             val msgBuf = ByteBuffer.allocate(MsgChannel.MAX_MESSAGE_SIZE)
             var id: SERVER_RELIABLE
             msg.Init(msgBuf, msgBuf.capacity())
-            while (channel.GetReliableMessage(msg)) {
-                // FIX: was reading msg.ReadByte() twice - once in condition, once for value
-                val idByte = msg.ReadByte().toInt()
-                if (idByte < SERVER_RELIABLE.values().size) {
-                    id = SERVER_RELIABLE.values()[idByte]
+            while (channel.GetReliableMessage(msg)) { // FIX: was reading msg.ReadByte() twice - once in condition, once for value
+                val idByte = msg.ReadByte().toInt() and 0xFF
+                if (idByte < SERVER_RELIABLE.entries.size) {
+                    id = SERVER_RELIABLE.entries.toTypedArray()[idByte]
                     when (id) {
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_CLIENTINFO -> {
                             var clientNum: Int
-                            clientNum = msg.ReadByte().toInt()
+                            clientNum = msg.ReadByte().toInt() and 0xFF
                             val info = idDict(Session.sessLocal.mapSpawnData.userInfo[clientNum])
                             val haveBase = msg.ReadBits(1) != 0
                             if (ID_CLIENTINFO_TAGS) {
@@ -1193,7 +1124,7 @@ object AsyncClient {
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_PRINT -> {
                             val string = CharArray(MAX_STRING_CHARS)
                             msg.ReadString(string, MAX_STRING_CHARS)
-                            Common.common.Printf("%s\n", string)
+                            Common.common.Printf("%s\n", TempDump.ctos(string))
                         }
 
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_DISCONNECT -> {
@@ -1211,13 +1142,11 @@ object AsyncClient {
                                 )
                                 Session.session.StartMenu()
                             } else {
-                                Common.common.Printf("client %d %s\n", clientNum, string)
+                                Common.common.Printf("client %d %s\n", clientNum, TempDump.ctos(string))
                                 CmdSystem.cmdSystem.BufferCommandText(
-                                    cmdExecution_t.CMD_EXEC_NOW,
-                                    Str.va(
+                                    cmdExecution_t.CMD_EXEC_NOW, Str.va(
                                         "addChatLine \"%s^0 %s\"",
-                                        Session.sessLocal.mapSpawnData.userInfo[clientNum]
-                                            .GetString("ui_name"),
+                                        Session.sessLocal.mapSpawnData.userInfo[clientNum].GetString("ui_name"),
                                         string
                                     )
                                 )
@@ -1241,30 +1170,26 @@ object AsyncClient {
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_RELOAD -> {
                             if (idAsyncNetwork.verbose.GetBool()) {
                                 Common.common.Printf("got MESSAGE_RELOAD from server\n")
-                            }
-                            // simply reconnect, so that if the server restarts in pure mode we can get the right list and avoid spurious reloads
+                            } // simply reconnect, so that if the server restarts in pure mode we can get the right list and avoid spurious reloads
                             CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "reconnect\n")
                         }
 
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_ENTERGAME -> {
                             SendUserInfoToServer()
                             Game_local.game.SetUserInfo(
-                                clientNum,
-                                Session.sessLocal.mapSpawnData.userInfo[clientNum],
-                                true,
-                                false
+                                clientNum, Session.sessLocal.mapSpawnData.userInfo[clientNum], true, false
                             )
                             CVarSystem.cvarSystem.ClearModifiedFlags(CVarSystem.CVAR_USERINFO)
                         }
 
-                        else -> {}
+                        // C++ default: case — unhandled SERVER_RELIABLE values (including SERVER_RELIABLE_MESSAGE_GAME)
+                        // are passed to the game code for processing
+                        else -> {
+                            Game_local.game.ClientProcessReliableMessage(clientNum, msg)
+                        }
                     }
-                } else {
-//			default: {
-                    // pass reliable message on to game code
+                } else { // invalid byte value — also pass to game code (matches C++ default: case)
                     Game_local.game.ClientProcessReliableMessage(clientNum, msg)
-                    //				break;
-//			}
                 }
             }
         }
@@ -1290,13 +1215,12 @@ object AsyncClient {
             // even pure pak checks would fail if we didn't, as there are files we may not even see atm
             // NOTE: we could read the pure list from the server at the same time and set it up for the restart
             // ( if the client can restart directly with the right pak order, then we avoid an extra reloadEngine later.. )
-            if (idStr.Icmp(CVarSystem.cvarSystem.GetCVarString("fs_game_base"), serverGameBaseStr) != 0
-                || idStr.Icmp(CVarSystem.cvarSystem.GetCVarString("fs_game"), serverGameStr) != 0
-            ) {
-                // bug #189 - if the server is running ROE and ROE is not locally installed, refuse to connect or we might crash
+            if (idStr.Icmp(CVarSystem.cvarSystem.GetCVarString("fs_game_base"), serverGameBaseStr) != 0 || idStr.Icmp(
+                    CVarSystem.cvarSystem.GetCVarString("fs_game"), serverGameStr
+                ) != 0
+            ) { // bug #189 - if the server is running ROE and ROE is not locally installed, refuse to connect or we might crash
                 if (!FileSystem_h.fileSystem.HasD3XP() && (0 == idStr.Icmp(
-                        serverGameBaseStr,
-                        "d3xp"
+                        serverGameBaseStr, "d3xp"
                     ) || 0 == idStr.Icmp(serverGameStr, "d3xp"))
                 ) {
                     Common.common.Printf("The server is running Doom3: Resurrection of Evil expansion pack. RoE is not installed on this client. Aborting the connection..\n")
@@ -1304,9 +1228,7 @@ object AsyncClient {
                     return
                 }
                 Common.common.Printf(
-                    "The server is running a different mod (%s-%s). Restarting..\n",
-                    serverGameBaseStr,
-                    serverGameStr
+                    "The server is running a different mod (%s-%s). Restarting..\n", serverGameBaseStr, serverGameStr
                 )
                 CVarSystem.cvarSystem.SetCVarString("fs_game_base", serverGameBaseStr)
                 CVarSystem.cvarSystem.SetCVarString("fs_game", serverGameStr)
@@ -1315,9 +1237,7 @@ object AsyncClient {
                 return
             }
             Common.common.Printf(
-                "received challenge response 0x%x from %s\n",
-                serverChallenge,
-                win_net.Sys_NetAdrToString(from)
+                "received challenge response 0x%x from %s\n", serverChallenge, win_net.Sys_NetAdrToString(from)
             )
 
             // start sending connect packets instead of challenge request packets
@@ -1381,10 +1301,7 @@ object AsyncClient {
             }
             Session.session.Stop()
             Session.session.MessageBox(
-                msgBoxType_t.MSG_OK,
-                Common.common.GetLanguageDict().GetString("#str_04320"),
-                null,
-                true
+                msgBoxType_t.MSG_OK, Common.common.GetLanguageDict().GetString("#str_04320"), null, true
             )
             Session.session.StartMenu()
         }
@@ -1433,8 +1350,8 @@ object AsyncClient {
                 serverInfo.clients++
                 i = msg.ReadByte().toInt()
             }
-            serverInfo.OSMask = msg.ReadLong()
-            // FIX: was converting InfoResponse return to boolean (0 or 1) - should preserve raw index value
+            serverInfo.OSMask =
+                msg.ReadLong() // FIX: was converting InfoResponse return to boolean (0 or 1) - should preserve raw index value
             index = serverList.InfoResponse(serverInfo)
             Common.common.Printf(
                 "%d: server %s - protocol %d.%d - %s\n",
@@ -1472,8 +1389,7 @@ object AsyncClient {
                     )
                     ClearPendingPackets()
                     guiNetMenu!!.SetStateString("status", Common.common.GetLanguageDict().GetString("#str_04322"))
-                    if (retpass != null) {
-                        // #790
+                    if (retpass != null) { // #790
                         CVarSystem.cvarSystem.SetCVarString("password", "")
                         CVarSystem.cvarSystem.SetCVarString("password", retpass)
                     } else {
@@ -1481,15 +1397,11 @@ object AsyncClient {
                     }
                 } else if (game_opcode == allowReply_t.ALLOW_NO.ordinal) {
                     Session.session.MessageBox(
-                        msgBoxType_t.MSG_OK,
-                        string,
-                        Common.common.GetLanguageDict().GetString("#str_04323"),
-                        true
+                        msgBoxType_t.MSG_OK, string, Common.common.GetLanguageDict().GetString("#str_04323"), true
                     )
                     ClearPendingPackets()
                     CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "disconnect")
-                }
-                // ALLOW_NOTYET just keeps running as usual. The GUI has an abort button
+                } // ALLOW_NOTYET just keeps running as usual. The GUI has an abort button
             } else if (opcode == SERVER_PRINT.SERVER_PRINT_BADCHALLENGE.ordinal && clientState.ordinal >= clientState_t.CS_CONNECTING.ordinal) {
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "reconnect")
             }
@@ -1498,8 +1410,7 @@ object AsyncClient {
         private fun ProcessServersListMessage(from: netadr_t, msg: idBitMsg) {
             if (!win_net.Sys_CompareNetAdrBase(idAsyncNetwork.GetMasterAddress(), from)) {
                 Common.common.DPrintf(
-                    "received a server list from %s - not a valid master\n",
-                    win_net.Sys_NetAdrToString(from)
+                    "received a server list from %s - not a valid master\n", win_net.Sys_NetAdrToString(from)
                 )
                 return
             }
@@ -1508,11 +1419,12 @@ object AsyncClient {
                 var b: Int
                 var c: Int
                 var d: Int
-                a = msg.ReadByte().toInt()
-                b = msg.ReadByte().toInt()
-                c = msg.ReadByte().toInt()
-                d = msg.ReadByte().toInt()
-                serverList.AddServer(serverList.Num(), Str.va("%d.%d.%d.%d:%d", a, b, c, d, msg.ReadShort()))
+                a = msg.ReadByte().toInt() and 0xFF
+                b = msg.ReadByte().toInt() and 0xFF
+                c = msg.ReadByte().toInt() and 0xFF
+                d = msg.ReadByte().toInt() and 0xFF
+                val port = msg.ReadShort().toInt() and 0xFFFF
+                serverList.AddServer(serverList.Num(), Str.va("%d.%d.%d.%d:%d", a, b, c, d, port))
             }
         }
 
@@ -1530,12 +1442,11 @@ object AsyncClient {
                 Common.common.Printf("clientState != CS_CONNECTING, not waiting for game auth, authKey ignored\n")
                 return
             }
-            authMsg = authKeyMsg_t.values()[msg.ReadByte().toInt()] //TODO:out of bounds check.
+            authMsg = authKeyMsg_t.entries.toTypedArray()[msg.ReadByte().toInt()] //TODO:out of bounds check.
             if (authMsg == authKeyMsg_t.AUTHKEY_BADKEY) {
                 valid[1] = true
-                valid[0] = valid[1]
-                //                key_index = 0;
-                authBadStatus = authBadKeyStatus_t.values()[msg.ReadByte().toInt()]
+                valid[0] = valid[1] //                key_index = 0;
+                authBadStatus = authBadKeyStatus_t.entries.toTypedArray()[msg.ReadByte().toInt()]
                 when (authBadStatus) {
                     authBadKeyStatus_t.AUTHKEY_BAD_INVALID -> {
                         valid[0] = msg.ReadByte().toInt() == 1
@@ -1560,8 +1471,7 @@ object AsyncClient {
                         valid[key_index] = false
                     }
 
-                    authBadKeyStatus_t.AUTHKEY_BAD_MSG -> {
-                        // a general message explaining why this key is denied
+                    authBadKeyStatus_t.AUTHKEY_BAD_MSG -> { // a general message explaining why this key is denied
                         // no specific use for this atm. let's not clear the keys either
                         msg.ReadString(read_string, MAX_STRING_CHARS)
                         auth_msg = TempDump.ctos(read_string)
@@ -1574,8 +1484,7 @@ object AsyncClient {
 
                 // get rid of the bad key - at least that's gonna annoy people who stole a fake key
                 if (clientState == clientState_t.CS_CONNECTING) {
-                    while (true) {
-                        // here we use the auth status message
+                    while (true) { // here we use the auth status message
                         retkey = Session.session.MessageBox(
                             msgBoxType_t.MSG_CDKEY,
                             auth_msg,
@@ -1585,8 +1494,7 @@ object AsyncClient {
                         if (retkey.isNotEmpty()) {
                             if (Session.session.CheckKey(retkey, true, valid)) {
                                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "reconnect")
-                            } else {
-                                // build a more precise message about the offline check failure
+                            } else { // build a more precise message about the offline check failure
                                 idAsyncNetwork.BuildInvalidKeyMsg(auth_msg2, valid)
                                 auth_msg = auth_msg2.toString()
                                 Session.session.MessageBox(
@@ -1602,8 +1510,7 @@ object AsyncClient {
                         }
                         break
                     }
-                } else {
-                    // forward the auth status information to the session code
+                } else { // forward the auth status information to the session code
                     Session.session.CDKeysAuthReply(false, auth_msg)
                 }
             } else {
@@ -1626,7 +1533,7 @@ object AsyncClient {
             updateDirectDownload = msg.ReadByte().toInt() != 0
             msg.ReadString(string, MAX_STRING_CHARS)
             updateURL = idStr(string)
-            updateMime = dlMime_t.values()[msg.ReadByte().toInt()]
+            updateMime = dlMime_t.entries.toTypedArray()[msg.ReadByte().toInt()]
             msg.ReadString(string, MAX_STRING_CHARS)
             updateFallback.set(string)
             updateState = clientUpdateState_t.UPDATE_READY
@@ -1634,8 +1541,7 @@ object AsyncClient {
 
         @Throws(idException::class)
         private fun ConnectionlessMessage(from: netadr_t, msg: idBitMsg) {
-            val str =
-                CharArray(MAX_STRING_CHARS * 2) // M. Quinn - Even Balance - PB packets can go beyond 1024
+            val str = CharArray(MAX_STRING_CHARS * 2) // M. Quinn - Even Balance - PB packets can go beyond 1024
             val string: String
             msg.ReadString(str, str.size)
             string = TempDump.ctos(str)
@@ -1647,8 +1553,7 @@ object AsyncClient {
             }
 
             // from master server:
-            if (win_net.Sys_CompareNetAdrBase(from, idAsyncNetwork.GetMasterAddress())) {
-                // server list
+            if (win_net.Sys_CompareNetAdrBase(from, idAsyncNetwork.GetMasterAddress())) { // server list
                 if (idStr.Icmp(string, "servers") == 0) {
                     ProcessServersListMessage(from, msg)
                     return
@@ -1665,14 +1570,11 @@ object AsyncClient {
 
             // ignore if not from the current/last server
             if (!win_net.Sys_CompareNetAdrBase(
-                    from,
-                    serverAddress
+                    from, serverAddress
                 ) && (lastRconTime + 10000 < realTime || !win_net.Sys_CompareNetAdrBase(from, lastRconAddress))
             ) {
                 Common.common.DPrintf(
-                    "got message '%s' from bad source: %s\n",
-                    string,
-                    win_net.Sys_NetAdrToString(from)
+                    "got message '%s' from bad source: %s\n", string, win_net.Sys_NetAdrToString(from)
                 )
                 return
             }
@@ -1710,8 +1612,10 @@ object AsyncClient {
             if (idStr.Icmp(string, "downloadInfo") == 0) {
                 ProcessDownloadInfoMessage(from, msg)
             }
-            if (idStr.Icmp(string, "authrequired") == 0) {
-                // server telling us that he's expecting an auth mode connect, just in case we're trying to connect in LAN mode
+            if (idStr.Icmp(
+                    string, "authrequired"
+                ) == 0
+            ) { // server telling us that he's expecting an auth mode connect, just in case we're trying to connect in LAN mode
                 if (idAsyncNetwork.LANServer.GetBool()) {
                     Common.common.Warning(
                         "server %s requests master authorization for this client. Turning off LAN mode\n",
@@ -1743,8 +1647,7 @@ object AsyncClient {
             // is this a packet from the server
             if (!win_net.Sys_CompareNetAdrBase(from, channel.GetRemoteAddress()) || id != serverId) {
                 Common.common.DPrintf(
-                    "%s: sequenced server packet without connection\n",
-                    win_net.Sys_NetAdrToString(from)
+                    "%s: sequenced server packet without connection\n", win_net.Sys_NetAdrToString(from)
                 )
                 return
             }
@@ -1783,34 +1686,36 @@ object AsyncClient {
                 msg.WriteShort(MsgChannel.CONNECTIONLESS_MESSAGE_ID.toShort())
                 msg.WriteString("connect")
                 msg.WriteLong(AsyncNetwork.ASYNC_PROTOCOL_VERSION)
-                if (ID_FAKE_PURE) {
-                    // fake win32 OS - might need to adapt depending on the case
-                    msg.WriteShort(0)
-                } else {
-                    msg.WriteShort(BUILD_OS_ID.toShort())
-                }
                 msg.WriteLong(clientDataChecksum.toInt())
                 msg.WriteLong(serverChallenge)
                 msg.WriteShort(clientId.toShort())
                 msg.WriteLong(CVarSystem.cvarSystem.GetCVarInteger("net_clientMaxRate"))
                 msg.WriteString(CVarSystem.cvarSystem.GetCVarString("com_guid"))
-                msg.WriteString(CVarSystem.cvarSystem.GetCVarString("password"), -1, false)
-                // do not make the protocol depend on PB
+                msg.WriteString(
+                    CVarSystem.cvarSystem.GetCVarString("password"), -1, false
+                ) // do not make the protocol depend on PB
                 msg.WriteShort(0)
                 clientPort.SendPacket(serverAddress, msg.GetData()!!, msg.GetSize())
-                if (idAsyncNetwork.LANServer.GetBool()) {
+                if (!ID_ENFORCE_KEY_CLIENT) { // dhewm3: CD key enforcement disabled
+                    if (!win_net.Sys_IsLANAddress(serverAddress)) {
+                        Common.common.DPrintf(
+                            "Build does not have CD Key Enforcement enabled. Server %s is not a LAN address, attempting to connect.\n",
+                            win_net.Sys_NetAdrToString(serverAddress)
+                        )
+                    }
+                    Common.common.DPrintf("Not testing key.\n")
+                } else if (idAsyncNetwork.LANServer.GetBool()) {
                     Common.common.Printf("net_LANServer is set, connecting in LAN mode\n")
-                } else {
-                    // emit a cd key authorization request
+                } else { // emit a cd key authorization request
                     // modified at protocol 1.37 for XP key addition
                     msg.BeginWriting()
                     msg.WriteShort(MsgChannel.CONNECTIONLESS_MESSAGE_ID.toShort())
                     msg.WriteString("clAuth")
                     msg.WriteLong(AsyncNetwork.ASYNC_PROTOCOL_VERSION)
-                    msg.WriteNetadr(serverAddress)
-                    // if we don't have a com_guid, this will request a direct reply from auth with it
-                    msg.WriteByte(if (!CVarSystem.cvarSystem.GetCVarString("com_guid").isEmpty()) 1 else 0)
-                    // send the main key, and flag an extra byte to add XP key
+                    msg.WriteNetadr(serverAddress) // if we don't have a com_guid, this will request a direct reply from auth with it
+                    msg.WriteByte(
+                        if (!CVarSystem.cvarSystem.GetCVarString("com_guid").isEmpty()) 1 else 0
+                    ) // send the main key, and flag an extra byte to add XP key
                     msg.WriteString(Session.session.GetCDKey(false))
                     val xpkey: String? = Session.session.GetCDKey(true)
                     msg.WriteByte(if (xpkey != null) 1 else 0)
@@ -1830,7 +1735,6 @@ object AsyncClient {
             val msgBuf = ByteBuffer.allocate(MsgChannel.MAX_MESSAGE_SIZE)
             var i: Int
             val inChecksums = IntArray(FileSystem_h.MAX_PURE_PAKS)
-            val gamePakChecksum = CInt()
             if (clientState != clientState_t.CS_CONNECTING) {
                 Common.common.Printf("clientState != CS_CONNECTING, pure msg ignored\n")
                 return
@@ -1838,7 +1742,7 @@ object AsyncClient {
             if (!ValidatePureServerChecksums(from, msg)) {
                 return
             }
-            FileSystem_h.fileSystem.GetPureServerChecksums(inChecksums, -1, gamePakChecksum)
+            FileSystem_h.fileSystem.GetPureServerChecksums(inChecksums, -1, null)
             outMsg.Init(msgBuf, MsgChannel.MAX_MESSAGE_SIZE)
             outMsg.WriteShort(MsgChannel.CONNECTIONLESS_MESSAGE_ID.toShort())
             outMsg.WriteString("pureClient")
@@ -1849,7 +1753,6 @@ object AsyncClient {
                 outMsg.WriteLong(inChecksums[i++])
             }
             outMsg.WriteLong(0)
-            outMsg.WriteLong(gamePakChecksum._val)
             clientPort.SendPacket(from, outMsg.GetData()!!, outMsg.GetSize())
         }
 
@@ -1859,7 +1762,6 @@ object AsyncClient {
             var numChecksums: Int
             val numMissingChecksums: Int
             val inChecksums = IntArray(FileSystem_h.MAX_PURE_PAKS)
-            val inGamePakChecksum: Int
             val missingChecksums = IntArray(FileSystem_h.MAX_PURE_PAKS)
             val missingGamePakChecksum = IntArray(1)
             val dlmsg = idBitMsg()
@@ -1870,8 +1772,7 @@ object AsyncClient {
             numChecksums = 0
             do {
                 i = msg.ReadLong()
-                inChecksums[numChecksums++] = i
-                // just to make sure a broken message doesn't crash us
+                inChecksums[numChecksums++] = i // just to make sure a broken message doesn't crash us
                 if (numChecksums >= FileSystem_h.MAX_PURE_PAKS) {
                     Common.common.Warning(
                         "MAX_PURE_PAKS ( %d ) exceeded in idAsyncClient.ProcessPureMessage\n",
@@ -1880,21 +1781,19 @@ object AsyncClient {
                     return false
                 }
             } while (i != 0)
-            inChecksums[numChecksums] = 0
-            inGamePakChecksum = msg.ReadLong()
+            inChecksums[numChecksums] =
+                0 // NOTE: gamePakChecksum is NOT part of the connectionless/reliable pure protocol
+            // in original DOOM 3 / dhewm3. Pass 0 to skip DLL validation.
             val reply = FileSystem_h.fileSystem.SetPureServerChecksums(
-                inChecksums,
-                inGamePakChecksum,
-                missingChecksums,
-                missingGamePakChecksum
+                inChecksums, 0, missingChecksums, missingGamePakChecksum
             )
             when (reply) {
-                fsPureReply_t.PURE_RESTART -> {
-                    // need to restart the filesystem with a different pure configuration
-                    CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "disconnect")
-                    // restart with the right FS configuration and get back to the server
+                fsPureReply_t.PURE_RESTART -> { // need to restart the filesystem with a different pure configuration
+                    CmdSystem.cmdSystem.BufferCommandText(
+                        cmdExecution_t.CMD_EXEC_NOW, "disconnect"
+                    ) // restart with the right FS configuration and get back to the server
                     clientState = clientState_t.CS_PURERESTART
-                    FileSystem_h.fileSystem.SetRestartChecksums(inChecksums, inGamePakChecksum)
+                    FileSystem_h.fileSystem.SetRestartChecksums(inChecksums, 0)
                     CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "reloadEngine")
                     return false
                 }
@@ -1906,40 +1805,30 @@ object AsyncClient {
                         checkSums += Str.va("0x%x ", missingChecksums[i++])
                     }
                     numMissingChecksums = i
-                    if (idAsyncNetwork.clientDownload.GetInteger() == 0) {
-                        // never any downloads
+                    if (idAsyncNetwork.clientDownload.GetInteger() == 0) { // never any downloads
                         var message = Str.va(
-                            Common.common.GetLanguageDict().GetString("#str_07210"),
-                            win_net.Sys_NetAdrToString(from)
+                            Common.common.GetLanguageDict().GetString("#str_07210"), win_net.Sys_NetAdrToString(from)
                         )
                         if (numMissingChecksums > 0) {
                             message += Str.va(
-                                Common.common.GetLanguageDict().GetString("#str_06751"),
-                                numMissingChecksums,
-                                checkSums
+                                Common.common.GetLanguageDict().GetString("#str_06751"), numMissingChecksums, checkSums
                             )
                         }
                         if (missingGamePakChecksum[0] != 0) {
                             message += Str.va(
-                                Common.common.GetLanguageDict().GetString("#str_06750"),
-                                missingGamePakChecksum[0]
+                                Common.common.GetLanguageDict().GetString("#str_06750"), missingGamePakChecksum[0]
                             )
                         }
                         Common.common.Printf("%s", message)
                         CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "disconnect")
                         Session.session.MessageBox(
-                            msgBoxType_t.MSG_OK,
-                            message,
-                            Common.common.GetLanguageDict().GetString("#str_06735"),
-                            true
+                            msgBoxType_t.MSG_OK, message, Common.common.GetLanguageDict().GetString("#str_06735"), true
                         )
                     } else {
-                        if (clientState.compareTo(clientState_t.CS_CONNECTED) != -1) {
-                            // we are already connected, reconnect to negociate the paks in connectionless mode
+                        if (clientState.compareTo(clientState_t.CS_CONNECTED) != -1) { // we are already connected, reconnect to negociate the paks in connectionless mode
                             CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "reconnect")
                             return false
-                        }
-                        // ask the server to send back download info
+                        } // ask the server to send back download info
                         Common.common.DPrintf(
                             "missing %d paks: %s\n",
                             numMissingChecksums + if (missingGamePakChecksum[0] != 0) 1 else 0,
@@ -1947,21 +1836,18 @@ object AsyncClient {
                         )
                         if (missingGamePakChecksum[0] != 0) {
                             Common.common.DPrintf("game code pak: 0x%x\n", missingGamePakChecksum[0])
-                        }
-                        // store the requested downloads
-                        GetDownloadRequest(missingChecksums, numMissingChecksums, missingGamePakChecksum[0])
-                        // build the download request message
+                        } // store the requested downloads
+                        GetDownloadRequest(
+                            missingChecksums, numMissingChecksums, missingGamePakChecksum[0]
+                        ) // build the download request message
                         // NOTE: in a specific function?
                         dlmsg.Init(msgBuf, msgBuf.capacity())
                         dlmsg.WriteShort(MsgChannel.CONNECTIONLESS_MESSAGE_ID.toShort())
                         dlmsg.WriteString("downloadRequest")
                         dlmsg.WriteLong(serverChallenge)
-                        dlmsg.WriteShort(clientId.toShort())
-                        // used to make sure the server replies to the same download request
-                        dlmsg.WriteLong(dlRequest)
-                        // special case the code pak - if we have a 0 checksum then we don't need to download it
-                        dlmsg.WriteLong(missingGamePakChecksum[0])
-                        // 0-terminated list of missing paks
+                        dlmsg.WriteShort(clientId.toShort()) // used to make sure the server replies to the same download request
+                        dlmsg.WriteLong(dlRequest) // special case the code pak - if we have a 0 checksum then we don't need to download it
+                        dlmsg.WriteLong(missingGamePakChecksum[0]) // 0-terminated list of missing paks
                         i = 0
                         while (missingChecksums[i] != 0) {
                             dlmsg.WriteLong(missingChecksums[i++])
@@ -1974,8 +1860,7 @@ object AsyncClient {
 
                 fsPureReply_t.PURE_NODLL -> {
                     Common.common.Printf(
-                        Common.common.GetLanguageDict().GetString("#str_07211"),
-                        win_net.Sys_NetAdrToString(from)
+                        Common.common.GetLanguageDict().GetString("#str_07211"), win_net.Sys_NetAdrToString(from)
                     )
                     CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "disconnect")
                     return false
@@ -1991,14 +1876,12 @@ object AsyncClient {
             val msgBuf = ByteBuffer.allocate(MsgChannel.MAX_MESSAGE_SIZE)
             val inChecksums = IntArray(FileSystem_h.MAX_PURE_PAKS)
             var i: Int
-            val gamePakChecksum = CInt()
             val serverGameInitId: Int
             Session.session.SetGUI(null, null)
             serverGameInitId = msg.ReadLong()
             if (serverGameInitId != gameInitId) {
                 Common.common.DPrintf(
-                    "ignoring pure server checksum from an outdated gameInitId (%d)\n",
-                    serverGameInitId
+                    "ignoring pure server checksum from an outdated gameInitId (%d)\n", serverGameInitId
                 )
                 return
             }
@@ -2013,7 +1896,7 @@ object AsyncClient {
             Session.sessLocal.ExecuteMapChange(true)
 
             // upon receiving our pure list, the server will send us SCS_INGAME and we'll start getting snapshots
-            FileSystem_h.fileSystem.GetPureServerChecksums(inChecksums, -1, gamePakChecksum)
+            FileSystem_h.fileSystem.GetPureServerChecksums(inChecksums, -1, null)
             outMsg.Init(msgBuf, msgBuf.capacity())
             outMsg.WriteByte(CLIENT_RELIABLE.CLIENT_RELIABLE_MESSAGE_PURE.ordinal.toByte())
             outMsg.WriteLong(gameInitId)
@@ -2022,7 +1905,6 @@ object AsyncClient {
                 outMsg.WriteLong(inChecksums[i++])
             }
             outMsg.WriteLong(0)
-            outMsg.WriteLong(gamePakChecksum._val)
             if (!channel.SendReliableMessage(outMsg)) {
                 Common.common.Error("client.server reliable messages overflow\n")
             }
@@ -2061,8 +1943,7 @@ object AsyncClient {
 
         @Throws(idException::class)
         private fun HandleDownloads() {
-            if (updateState == clientUpdateState_t.UPDATE_SENT && clientTime > updateSentTime + 2000) {
-                // timing out on no reply
+            if (updateState == clientUpdateState_t.UPDATE_SENT && clientTime > updateSentTime + 2000) { // timing out on no reply
                 updateState = clientUpdateState_t.UPDATE_DONE
                 if (showUpdateMessage) {
                     Session.session.MessageBox(
@@ -2074,10 +1955,8 @@ object AsyncClient {
                     showUpdateMessage = false
                 }
                 Common.common.DPrintf("No update available\n")
-            } else if (backgroundDownload.completed) {
-                // only enter these if the download slot is free
-                if (updateState == clientUpdateState_t.UPDATE_READY) {
-                    //
+            } else if (backgroundDownload.completed) { // only enter these if the download slot is free
+                if (updateState == clientUpdateState_t.UPDATE_READY) { //
                     if (Session.session.MessageBox(
                             msgBoxType_t.MSG_YESNO,
                             updateMSG.toString(),
@@ -2107,8 +1986,7 @@ object AsyncClient {
                             updateState = clientUpdateState_t.UPDATE_DLING
                             SendVersionDLUpdate(0)
                             Session.session.DownloadProgressBox(
-                                backgroundDownload,
-                                Str.va("Downloading %s\n", updateFile)
+                                backgroundDownload, Str.va("Downloading %s\n", updateFile)
                             )
                             updateState = clientUpdateState_t.UPDATE_DONE
                             if (backgroundDownload.url.status == dlStatus_t.DL_DONE) {
@@ -2139,8 +2017,7 @@ object AsyncClient {
                             } else {
                                 if (!backgroundDownload.url.dlerror.isEmpty()) {
                                     Common.common.Warning(
-                                        "update download failed. curl error: %s",
-                                        backgroundDownload.url.dlerror
+                                        "update download failed. curl error: %s", backgroundDownload.url.dlerror
                                     )
                                 }
                                 SendVersionDLUpdate(2)
@@ -2170,8 +2047,7 @@ object AsyncClient {
                     var progress_end: Int
                     currentDlSize = 0
                     do {
-                        if (dlList[0].url[0] == '\u0000') {
-                            // ignore empty files
+                        if (dlList[0].url[0] == '\u0000') { // ignore empty files
                             dlList.RemoveIndex(0)
                             continue
                         }
@@ -2190,11 +2066,9 @@ object AsyncClient {
                         backgroundDownload.url.dltotal = dlList[0].size
                         backgroundDownload.url.url = dlList[0].url
                         FileSystem_h.fileSystem.BackgroundDownload(backgroundDownload)
-                        var dltitle: String
-                        // "Downloading %s"
+                        var dltitle: String // "Downloading %s"
                         dltitle = String.format(
-                            Common.common.GetLanguageDict().GetString("#str_07213"),
-                            dlList[0].filename.toString()
+                            Common.common.GetLanguageDict().GetString("#str_07213"), dlList[0].filename.toString()
                         )
                         if (numPaks > 1) {
                             dltitle += Str.va(" (%d/%d)", pakCount, numPaks)
@@ -2208,10 +2082,7 @@ object AsyncClient {
                             progress_end = 100
                         }
                         Session.session.DownloadProgressBox(
-                            backgroundDownload,
-                            dltitle,
-                            progress_start,
-                            progress_end
+                            backgroundDownload, dltitle, progress_start, progress_end
                         )
                         if (backgroundDownload.url.status == dlStatus_t.DL_DONE) {
                             var saveas: idFile
@@ -2224,8 +2095,7 @@ object AsyncClient {
                             Common.common.Printf("file downloaded\n")
                             val finalPath = idStr(CVarSystem.cvarSystem.GetCVarString("fs_savepath"))
                             finalPath.AppendPath(dlList[0].filename.toString())
-                            FileSystem_h.fileSystem.CreateOSPath(finalPath.toString())
-                            // do the final copy ourselves so we do by small chunks in case the file is big
+                            FileSystem_h.fileSystem.CreateOSPath(finalPath.toString()) // do the final copy ourselves so we do by small chunks in case the file is big
                             saveas = FileSystem_h.fileSystem.OpenExplicitFileWrite(finalPath.toString())!!
                             buf = ByteBuffer.allocate(CHUNK_SIZE) // Mem_Alloc(CHUNK_SIZE);
                             f.Seek(0, fsOrigin_t.FS_SEEK_END)
@@ -2236,17 +2106,13 @@ object AsyncClient {
                                 retlen = f.Read(buf, readlen)
                                 if (retlen != readlen) {
                                     Common.common.FatalError(
-                                        "short read %d of %d in idFileSystem.HandleDownload",
-                                        retlen,
-                                        readlen
+                                        "short read %d of %d in idFileSystem.HandleDownload", retlen, readlen
                                     )
                                 }
                                 retlen = saveas.Write(buf, readlen)
                                 if (retlen != readlen) {
                                     Common.common.FatalError(
-                                        "short write %d of %d in idFileSystem.HandleDownload",
-                                        retlen,
-                                        readlen
+                                        "short write %d of %d in idFileSystem.HandleDownload", retlen, readlen
                                     )
                                 }
                                 remainlen -= readlen
@@ -2259,17 +2125,13 @@ object AsyncClient {
                             checksum = FileSystem_h.fileSystem.AddZipFile(dlList[0].filename.toString())
 
                             // verify the checksum to be what the server says
-                            if (0 == checksum || checksum != dlList[0].checksum) {
-                                // "pak is corrupted ( checksum 0x%x, expected 0x%x )"
+                            if (0 == checksum || checksum != dlList[0].checksum) { // "pak is corrupted ( checksum 0x%x, expected 0x%x )"
                                 Session.session.MessageBox(
-                                    msgBoxType_t.MSG_OK,
-                                    Str.va(
+                                    msgBoxType_t.MSG_OK, Str.va(
                                         Common.common.GetLanguageDict().GetString("#str_07214"),
                                         checksum,
                                         dlList[0].checksum
-                                    ),
-                                    "Download failed",
-                                    true
+                                    ), "Download failed", true
                                 )
                                 FileSystem_h.fileSystem.RemoveFile(dlList[0].filename.toString())
                                 dlList.Clear()
@@ -2280,8 +2142,7 @@ object AsyncClient {
                             Common.common.Warning("download failed: %s", dlList[0].url)
                             if (!backgroundDownload.url.dlerror.isEmpty()) {
                                 Common.common.Warning("curl error: %s", backgroundDownload.url.dlerror)
-                            }
-                            // "The download failed or was cancelled"
+                            } // "The download failed or was cancelled"
                             // "Download failed"
                             Session.session.MessageBox(
                                 msgBoxType_t.MSG_OK,
@@ -2302,8 +2163,7 @@ object AsyncClient {
             }
         }
 
-        private fun Idle() {
-            // also need to read mouse for the connecting guis
+        private fun Idle() { // also need to read mouse for the connecting guis
             UsercmdGen.usercmdGen.GetDirectUsercmd()
             SendEmptyToServer()
         }
@@ -2319,13 +2179,11 @@ object AsyncClient {
         }
 
         private fun ReadLocalizedServerString(msg: idBitMsg, out: CharArray, maxLen: Int) {
-            msg.ReadString(out, maxLen)
-            // look up localized string. if the message is not an #str_ format, we'll just get it back unchanged
+            msg.ReadString(
+                out, maxLen
+            ) // look up localized string. if the message is not an #str_ format, we'll just get it back unchanged
             idStr.snPrintf(
-                out,
-                maxLen - 1,
-                "%s",
-                Common.common.GetLanguageDict().GetString(TempDump.ctos(out))
+                out, maxLen - 1, "%s", Common.common.GetLanguageDict().GetString(TempDump.ctos(out))
             )
         }
 
@@ -2358,16 +2216,15 @@ object AsyncClient {
             if (dlRequest == -1 || srvDlRequest != dlRequest) {
                 Common.common.Warning("bad download id from server, ignored")
                 return
-            }
-            // mark the dlRequest as dead now whatever how we process it
+            } // mark the dlRequest as dead now whatever how we process it
             dlRequest = -1
             if (infoType == SERVER_DL.SERVER_DL_REDIRECT.ordinal.toByte()) {
                 msg.ReadString(buf, MAX_STRING_CHARS)
-                CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "disconnect")
-                // "You are missing required pak files to connect to this server.\nThe server gave a web page though:\n%s\nDo you want to go there now?"
+                CmdSystem.cmdSystem.BufferCommandText(
+                    cmdExecution_t.CMD_EXEC_NOW, "disconnect"
+                ) // "You are missing required pak files to connect to this server.\nThe server gave a web page though:\n%s\nDo you want to go there now?"
                 // "Missing required files"
-                if (
-                    Session.session.MessageBox(
+                if (Session.session.MessageBox(
                         msgBoxType_t.MSG_YESNO,
                         Str.va(Common.common.GetLanguageDict().GetString("#str_07217"), buf),
                         Common.common.GetLanguageDict().GetString("#str_07218"),
@@ -2382,8 +2239,7 @@ object AsyncClient {
                 if (dlList.Num() != 0) {
                     Common.common.Warning("tried to process a download list while already busy downloading things")
                     return
-                }
-                // read the URLs, check against what we requested, prompt for download
+                } // read the URLs, check against what we requested, prompt for download
                 pakIndex = -1
                 totalDlSize = 0
                 do {
@@ -2397,16 +2253,13 @@ object AsyncClient {
                         entry.filename.set(buf)
                         msg.ReadString(buf, MAX_STRING_CHARS)
                         entry.url.set(buf)
-                        entry.size = msg.ReadLong()
-                        // checksums are not transmitted, we read them from the dl request we sent
+                        entry.size =
+                            msg.ReadLong() // checksums are not transmitted, we read them from the dl request we sent
                         entry.checksum = dlChecksums[pakIndex]
                         totalDlSize += entry.size
                         dlList.Append(entry)
                         Common.common.Printf(
-                            "download %s from %s ( 0x%x )\n",
-                            entry.filename,
-                            entry.url,
-                            entry.checksum
+                            "download %s from %s ( 0x%x )\n", entry.filename, entry.url, entry.checksum
                         )
                     } else if (pakDl == SERVER_PAK.SERVER_PAK_NO.ordinal) {
                         msg.ReadString(buf, MAX_STRING_CHARS)
@@ -2414,13 +2267,10 @@ object AsyncClient {
                         entry.url.set("")
                         entry.size = 0
                         entry.checksum = 0
-                        dlList.Append(entry)
-                        // first pak is game pak, only fail it if we actually requested it
+                        dlList.Append(entry) // first pak is game pak, only fail it if we actually requested it
                         if (pakIndex != 0 || dlChecksums[0] != 0) {
                             Common.common.Printf(
-                                "no download offered for %s ( 0x%x )\n",
-                                entry.filename,
-                                dlChecksums[pakIndex]
+                                "no download offered for %s ( 0x%x )\n", entry.filename, dlChecksums[pakIndex]
                             )
                             gotAllFiles = false
                         }
@@ -2434,8 +2284,7 @@ object AsyncClient {
                 }
                 sizeStr.BestUnit("%.2f", totalDlSize.toFloat(), Measure_t.MEASURE_SIZE)
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "disconnect")
-                if (totalDlSize == 0) {
-                    // was no downloadable stuff for us
+                if (totalDlSize == 0) { // was no downloadable stuff for us
                     // "Can't connect to the pure server: no downloads offered"
                     // "Missing required files"
                     dlList.Clear()
@@ -2449,8 +2298,8 @@ object AsyncClient {
                 }
                 var asked = false
                 if (gotGame) {
-                    asked = true
-                    // "You need to download game code to connect to this server. Are you sure? You should only answer yes if you trust the server administrators."
+                    asked =
+                        true // "You need to download game code to connect to this server. Are you sure? You should only answer yes if you trust the server administrators."
                     // "Missing game binaries"
                     if (Session.session.MessageBox(
                             msgBoxType_t.MSG_YESNO,
@@ -2465,12 +2314,11 @@ object AsyncClient {
                     }
                 }
                 if (!gotAllFiles) {
-                    asked = true
-                    // "The server only offers to download some of the files required to connect ( %s ). Download anyway?"
+                    asked =
+                        true // "The server only offers to download some of the files required to connect ( %s ). Download anyway?"
                     // "Missing required files"
                     // FIX: was .isNotEmpty() (inverted) - C++ checks !...[0] meaning "if user said No"
-                    if (
-                        Session.session.MessageBox(
+                    if (Session.session.MessageBox(
                             msgBoxType_t.MSG_YESNO,
                             Str.va(Common.common.GetLanguageDict().GetString("#str_07222"), sizeStr.toString()),
                             Common.common.GetLanguageDict().GetString("#str_07218"),
@@ -2483,12 +2331,10 @@ object AsyncClient {
                         return
                     }
                 }
-                if (!asked && idAsyncNetwork.clientDownload.GetInteger() == 1) {
-                    // "You need to download some files to connect to this server ( %s ), proceed?"
+                if (!asked && idAsyncNetwork.clientDownload.GetInteger() == 1) { // "You need to download some files to connect to this server ( %s ), proceed?"
                     // "Missing required files"
                     // FIX: was .isNotEmpty() (inverted) - C++ checks !...[0] meaning "if user said No"
-                    if (
-                        Session.session.MessageBox(
+                    if (Session.session.MessageBox(
                             msgBoxType_t.MSG_YESNO,
                             Str.va(Common.common.GetLanguageDict().GetString("#str_07224"), sizeStr.toString()),
                             Common.common.GetLanguageDict().GetString("#str_07218"),
@@ -2502,8 +2348,9 @@ object AsyncClient {
                     }
                 }
             } else {
-                CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "disconnect")
-                // "You are missing some files to connect to this server, and the server doesn't provide downloads."
+                CmdSystem.cmdSystem.BufferCommandText(
+                    cmdExecution_t.CMD_EXEC_NOW, "disconnect"
+                ) // "You are missing some files to connect to this server, and the server doesn't provide downloads."
                 // "Missing required files"
                 Session.session.MessageBox(
                     msgBoxType_t.MSG_OK,
@@ -2515,25 +2362,20 @@ object AsyncClient {
         }
 
         private fun GetDownloadRequest(
-            checksums: IntArray /*[MAX_PURE_PAKS]*/,
-            count: Int,
-            gamePakChecksum: Int
+            checksums: IntArray /*[MAX_PURE_PAKS]*/, count: Int, gamePakChecksum: Int
         ): Int {
             assert(
                 0 == checksums[count] // 0-terminated
-            )
-            //            if (memcmp(dlChecksums + 1, checksums, sizeof(int) * count) || gamePakChecksum != dlChecksums[ 0]) {
+            ) //            if (memcmp(dlChecksums + 1, checksums, sizeof(int) * count) || gamePakChecksum != dlChecksums[ 0]) {
             if (TempDump.memcmp(dlChecksums, 1, checksums, 0, count) || gamePakChecksum != dlChecksums[0]) {
                 val newreq = idRandom()
-                dlChecksums[0] = gamePakChecksum
-                // FIX: was calling memcmp (comparison) instead of arraycopy (memcpy)
+                dlChecksums[0] = gamePakChecksum // FIX: was calling memcmp (comparison) instead of arraycopy (memcpy)
                 System.arraycopy(checksums, 0, dlChecksums, 1, count)
                 newreq.SetSeed(win_shared.Sys_Milliseconds())
                 dlRequest = newreq.RandomInt()
                 dlCount = count + if (gamePakChecksum != 0) 1 else 0
                 return dlRequest
-            }
-            // this is the same dlRequest, we haven't heard from the server. keep the same id
+            } // this is the same dlRequest, we haven't heard from the server. keep the same id
             return dlRequest
         }
 

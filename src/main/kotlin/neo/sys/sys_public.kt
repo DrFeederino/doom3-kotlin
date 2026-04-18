@@ -297,7 +297,7 @@ class idPort {
     var packetsWritten = 0
     private var bound_to // interface and port
             : netadr_t = netadr_t()
-    private var netSocket: DatagramSocket? = null // OS specific socket
+    var netSocket: DatagramSocket? = null // OS specific socket
 
     // virtual		~idPort();
     // if the InitForPort fails, the idPort.port field will remain 0
@@ -339,8 +339,9 @@ class idPort {
     fun GetPacket(from: netadr_t, data: ByteBuffer, size: CInt, maxSize: Int): Boolean {
         var ret: Boolean
 
+        val sock = netSocket ?: return false
         while (true) {
-            ret = Net_GetUDPPacket(netSocket!!, from, data.array(), size, maxSize)
+            ret = Net_GetUDPPacket(sock, from, data.array(), size, maxSize)
             if (!ret) {
                 break
             }

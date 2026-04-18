@@ -2685,17 +2685,15 @@ object Player {
         }
 
         override fun Hide() {
-            val weap: idWeapon
             super.Hide()
-            weap = weapon.GetEntity()!!
-            weap.HideWorldModel()
+            val weap = weapon.GetEntity()
+            weap?.HideWorldModel()
         }
 
         override fun Show() {
-            val weap: idWeapon
             super.Show()
-            weap = weapon.GetEntity()!!
-            weap.ShowWorldModel()
+            val weap = weapon.GetEntity()
+            weap?.ShowWorldModel()
         }
 
         override fun Init() {
@@ -6380,7 +6378,8 @@ object Player {
             msg.WriteBits(TempDump.btoi(weaponGone), 1)
             msg.WriteBits(TempDump.btoi(isLagged), 1)
             msg.WriteBits(TempDump.btoi(isChatting), 1)
-            if (isD3XP) {
+            if (isD3XP) { // CTF: needed for scoreboard
+                msg.WriteBits(TempDump.btoi(carryingFlag), 1)
                 msg.WriteBits(enviroSuitLight.GetSpawnId(), 32)
             }
         }
@@ -6414,7 +6413,8 @@ object Player {
             weaponGone = msg.ReadBits(1) != 0
             isLagged = msg.ReadBits(1) != 0
             isChatting = msg.ReadBits(1) != 0
-            if (isD3XP) {
+            if (isD3XP) { // CTF: needed for scoreboard
+                carryingFlag = msg.ReadBits(1) != 0
                 enviroSuitLight.SetSpawnId(msg.ReadBits(32))
             }
 

@@ -19,6 +19,7 @@
 package neo.Game
 
 import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Player.idPlayer
 import neo.Sound.snd_shader.idSoundShader
@@ -1128,10 +1129,12 @@ object MultiplayerGame {
                 i++
             }
             // D3XP CTF: write team points and flag carriers
-            msg.WriteShort(teamPoints[0])
-            msg.WriteShort(teamPoints[1])
-            msg.WriteShort(player_red_flag)
-            msg.WriteShort(player_blue_flag)
+            if (isD3XP) {
+                msg.WriteShort(teamPoints[0])
+                msg.WriteShort(teamPoints[1])
+                msg.WriteShort(player_red_flag)
+                msg.WriteShort(player_blue_flag)
+            }
         }
 
         fun ReadFromSnapshot(msg: idBitMsgDelta) {
@@ -1165,10 +1168,12 @@ object MultiplayerGame {
                 i++
             }
             // D3XP CTF: read team points and flag carriers
-            teamPoints[0] = msg.ReadShort()
-            teamPoints[1] = msg.ReadShort()
-            player_red_flag = msg.ReadShort()
-            player_blue_flag = msg.ReadShort()
+            if (isD3XP) {
+                teamPoints[0] = msg.ReadShort()
+                teamPoints[1] = msg.ReadShort()
+                player_red_flag = msg.ReadShort()
+                player_blue_flag = msg.ReadShort()
+            }
         }
 
         fun GetGameState(): gameState_t {

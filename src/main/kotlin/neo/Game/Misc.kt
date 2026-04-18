@@ -2011,7 +2011,7 @@ object Misc {
             var splat: String?
             val count = spawnArgs.GetInt("splatCount", "1")
             for (i in 0 until count) {
-                splat = spawnArgs.RandomPrefix("mtr_splat", gameLocal.random)
+                splat = spawnArgs.RandomPrefix("mtr_splat", gameLocal.random)!!
                 if (splat.isNotEmpty()) {
                     val size = spawnArgs.GetFloat("splatSize", "128")
                     val dist = spawnArgs.GetFloat("splatDistance", "128")
@@ -3535,10 +3535,8 @@ object Misc {
                 scriptFunction = gameLocal.program.FindFunction(funcName)
                 if (scriptFunction == null) {
                     gameLocal.Warning(
-                        "idFuncMountedObject '%s' at (%s) calls unknown function '%s'\n",
-                        name.c_str(),
-                        GetPhysics().GetOrigin().ToString(0),
-                        funcName.c_str()
+                        "idFuncMountedObject '%s' at (%s) calls unknown function '%s'\n", name.toString(),
+                        GetPhysics().GetOrigin().ToString(0), funcName.toString()
                     )
                 }
             }

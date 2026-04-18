@@ -147,11 +147,12 @@ class sys_local {
          ================
          */
         override fun DLL_GetFileName(baseName: String, dllName: Array<String>, maxLength: Int) {
-            // Kotlin uses runtime platform detection instead.
             if (WIN32) {
-                idStr.snPrintf(dllName, maxLength, "%s" + CPUSTRING + ".dll", baseName)
+                dllName[0] = baseName + CPUSTRING + ".dll"
+            } else if (MACOS_X) {
+                dllName[0] = "lib" + baseName + CPUSTRING + ".dylib"
             } else if (__linux__) {
-                idStr.snPrintf(dllName, maxLength, "%s" + CPUSTRING + ".so", baseName)
+                dllName[0] = baseName + CPUSTRING + ".so"
             } else {
                 throw idException("OS define is required")
             }

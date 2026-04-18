@@ -375,8 +375,11 @@ class Class {
                 }
 
                 // init the event callback tables for all the classes
-                for (type in typeRegistry.values) {
-                    type.Init()
+                // must iterate typelist (alphabetically sorted) to produce deterministic typeNum ordering
+                c = typelist
+                while (c != null) {
+                    c.Init()
+                    c = c.next
                 }
 
                 // number the types according to the class hierarchy so we can quickly determine if a class
@@ -1481,8 +1484,10 @@ fun registerAllTypes() {
     idAFEntity_Gibbable.Type
     idAFEntity_Generic.Type
     idAFEntity_WithAttachedHead.Type
-    idHarvestable.Type       // D3XP
-    idAFEntity_Harvest.Type   // D3XP
+    if (isD3XP) {
+        idHarvestable.Type
+        idAFEntity_Harvest.Type
+    }
     idAFEntity_Vehicle.Type
     idAFEntity_VehicleSimple.Type
     idAFEntity_VehicleFourWheels.Type
@@ -1555,10 +1560,12 @@ fun registerAllTypes() {
     idFuncAASObstacle.Type
     idFuncRadioChatter.Type
     idPhantomObjects.Type
-    idShockwave.Type    // D3XP
-    idFuncMountedObject.Type // D3XP
-    idFuncMountedWeapon.Type // D3XP
-    idPortalSky.Type    // D3XP
+    if (isD3XP) {
+        idShockwave.Type
+        idFuncMountedObject.Type
+        idFuncMountedWeapon.Type
+        idPortalSky.Type
+    }
 
     // Moveable
     idMoveable.Type
@@ -1634,7 +1641,9 @@ fun registerAllTypes() {
     idTrigger_Hurt.Type
     idTrigger_Fade.Type
     idTrigger_Touch.Type
-    idTrigger_Flag.Type
+    if (isD3XP) {
+        idTrigger_Flag.Type
+    }
 
     // Weapon
     idWeapon.Type
@@ -1651,7 +1660,9 @@ fun registerAllTypes() {
     idForce_Constant.Type
     idForce_Drag.Type
     idForce_Field.Type
-    idForce_Grab.Type
+    if (isD3XP) {
+        idForce_Grab.Type
+    }
     idForce_Spring.Type
     idPhysics_Base.Type
     idPhysics_Static.Type
@@ -1664,6 +1675,8 @@ fun registerAllTypes() {
     idPhysics_AF.Type
 
     // D3XP entity types
-    Grabber.idGrabber.Type
-    idItemTeam.Type
+    if (isD3XP) {
+        Grabber.idGrabber.Type
+        idItemTeam.Type
+    }
 }

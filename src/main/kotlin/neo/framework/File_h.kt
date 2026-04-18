@@ -196,6 +196,10 @@ object File_h {
      =================================================================================
      */
     abstract class idFile {
+        // Reusable read buffer for primitive reads — avoids ByteBuffer allocation per call
+        // Sized to fit the largest fixed-size read (idMat3 = 36 bytes)
+        private val _readBuf: ByteBuffer = ByteBuffer.allocate(36).order(ByteOrder.LITTLE_ENDIAN)
+
         //TODO:implement closable?
         //	abstract					~idFile( ) {};
         // Get the name of the file.
@@ -290,13 +294,13 @@ object File_h {
         // Like fprintf.
         fun Printf(fmt: String, vararg args: Any): Int /* id_attribute((format(printf,2,3)))*/ {
             val buf = arrayOf("") // new char[MAX_PRINT_MSG];
-            val length: Int
-            length = idStr.vsnPrintf(buf, MAX_PRINT_MSG - 1, fmt, *args /*, argptr*/)
+            idStr.vsnPrintf(buf, MAX_PRINT_MSG - 1, fmt, *args /*, argptr*/)
 
             // so notepad formats the lines correctly
             val work = idStr(buf[0])
             work.Replace("\n", "\r\n")
-            return Write(TempDump.atobb(work)!!, length)
+            val bb = TempDump.atobb(work)!!
+            return Write(bb, bb.remaining())
         }
 
         // Like fprintf but with argument pointer
@@ -318,17 +322,19 @@ object File_h {
 
         // Endian portable alternatives to Read(...)
         fun ReadInt(value: CInt): Int {
-            val intBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(intBytes)
-            value._val = (LittleLong(intBytes.getInt()))
+            _readBuf.clear()
+            val result = Read(_readBuf, 4)
+            _readBuf.rewind()
+            value._val = (LittleLong(_readBuf.getInt()))
             return result
         }
 
         // Endian portable alternatives to Read(...)
         fun ReadInt(value: CLong): Int {
-            val intBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(intBytes)
-            value._val = (LittleLong(intBytes.getInt()).toLong())
+            _readBuf.clear()
+            val result = Read(_readBuf, 4)
+            _readBuf.rewind()
+            value._val = (LittleLong(_readBuf.getInt()).toLong())
             return result
         }
 
@@ -359,9 +365,10 @@ object File_h {
         }
 
         fun ReadShort(value: ShortArray): Int {
-            val shortBytes = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(shortBytes)
-            value[0] = LittleShort(shortBytes.short)
+            _readBuf.clear()
+            val result = Read(_readBuf, 2)
+            _readBuf.rewind()
+            value[0] = LittleShort(_readBuf.short)
             return result
         }
 
@@ -380,9 +387,10 @@ object File_h {
         }
 
         fun ReadUnsignedShort(value: IntArray): Int {
-            val ushortBytes = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(ushortBytes)
-            value[0] = LittleShort(ushortBytes.short).toInt() and 0xFFFF
+            _readBuf.clear()
+            val result = Read(_readBuf, 2)
+            _readBuf.rewind()
+            value[0] = LittleShort(_readBuf.short).toInt() and 0xFFFF
             return result
         }
 
@@ -401,9 +409,9 @@ object File_h {
         }
 
         fun ReadChar(value: ShortArray): Int {
-            val charBytes = ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(charBytes)
-            value[0] = charBytes[0].toShort()
+            _readBuf.clear()
+            val result = Read(_readBuf, 1)
+            value[0] = _readBuf[0].toShort()
             return result
         }
 
@@ -425,9 +433,9 @@ object File_h {
         }
 
         fun ReadUnsignedChar(value: CharArray): Int {
-            val ucharBytes = ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(ucharBytes)
-            value[0] = (ucharBytes[0].toInt() and 0xFF).toChar()
+            _readBuf.clear()
+            val result = Read(_readBuf, 1)
+            value[0] = (_readBuf[0].toInt() and 0xFF).toChar()
             return result
         }
 
@@ -439,9 +447,10 @@ object File_h {
         }
 
         fun ReadFloat(value: CFloat): Int {
-            val floatBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(floatBytes)
-            value._val = (LittleFloat(floatBytes.getFloat()))
+            _readBuf.clear()
+            val result = Read(_readBuf, 4)
+            _readBuf.rewind()
+            value._val = (LittleFloat(_readBuf.getFloat()))
             return result
         }
 
@@ -513,9 +522,10 @@ object File_h {
         }
 
         fun ReadVec2(vec: idVec2): Int {
-            val buffer = ByteBuffer.allocate(idVec2.BYTES).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(buffer)
-            vec.set(idVec2(buffer.float, buffer.float))
+            _readBuf.clear()
+            val result = Read(_readBuf, idVec2.BYTES)
+            _readBuf.rewind()
+            vec.set(idVec2(_readBuf.float, _readBuf.float))
             return result
         }
 
@@ -526,9 +536,10 @@ object File_h {
         }
 
         fun ReadVec3(vec: idVec3): Int {
-            val buffer = ByteBuffer.allocate(idVec3.BYTES).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(buffer)
-            vec.set(idVec3(buffer.float, buffer.float, buffer.float))
+            _readBuf.clear()
+            val result = Read(_readBuf, idVec3.BYTES)
+            _readBuf.rewind()
+            vec.set(idVec3(_readBuf.float, _readBuf.float, _readBuf.float))
             return result
         }
 
@@ -539,9 +550,10 @@ object File_h {
         }
 
         fun ReadVec4(vec: idVec4): Int {
-            val buffer = ByteBuffer.allocate(idVec4.BYTES).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(buffer)
-            vec.set(idVec4(buffer.float, buffer.float, buffer.float, buffer.float))
+            _readBuf.clear()
+            val result = Read(_readBuf, idVec4.BYTES)
+            _readBuf.rewind()
+            vec.set(idVec4(_readBuf.float, _readBuf.float, _readBuf.float, _readBuf.float))
             return result
         }
 
@@ -552,16 +564,16 @@ object File_h {
         }
 
         fun ReadVec6(vec: idVec6): Int {
-            val buffer = ByteBuffer.allocate(idVec6.BYTES).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(buffer)
+            _readBuf.clear()
+            val result = Read(_readBuf, idVec6.BYTES)
             vec.set(
                 idVec6(
-                    buffer.getFloat(0),
-                    buffer.getFloat(4),
-                    buffer.getFloat(8),
-                    buffer.getFloat(12),
-                    buffer.getFloat(16),
-                    buffer.getFloat(20)
+                    _readBuf.getFloat(0),
+                    _readBuf.getFloat(4),
+                    _readBuf.getFloat(8),
+                    _readBuf.getFloat(12),
+                    _readBuf.getFloat(16),
+                    _readBuf.getFloat(20)
                 )
             )
             return result
@@ -574,19 +586,19 @@ object File_h {
         }
 
         fun ReadMat3(mat: idMat3): Int {
-            val buffer = ByteBuffer.allocate(idMat3.BYTES).order(ByteOrder.LITTLE_ENDIAN)
-            val result = Read(buffer)
+            _readBuf.clear()
+            val result = Read(_readBuf, idMat3.BYTES)
             mat.set(
                 idMat3(
-                    buffer.getFloat(0),
-                    buffer.getFloat(4),
-                    buffer.getFloat(8),
-                    buffer.getFloat(12),
-                    buffer.getFloat(16),
-                    buffer.getFloat(20),
-                    buffer.getFloat(24),
-                    buffer.getFloat(28),
-                    buffer.getFloat(32)
+                    _readBuf.getFloat(0),
+                    _readBuf.getFloat(4),
+                    _readBuf.getFloat(8),
+                    _readBuf.getFloat(12),
+                    _readBuf.getFloat(16),
+                    _readBuf.getFloat(20),
+                    _readBuf.getFloat(24),
+                    _readBuf.getFloat(28),
+                    _readBuf.getFloat(32)
                 )
             )
             return result
@@ -690,8 +702,11 @@ object File_h {
             return len
         }
 
-        override fun Write(buffer: ByteBuffer /*, int len*/): Int {
-            val len = buffer.capacity()
+        override fun Write(buffer: ByteBuffer): Int {
+            return Write(buffer, buffer.capacity())
+        }
+
+        override fun Write(buffer: ByteBuffer, len: Int): Int {
             if (0 == mode and (1 shl TempDump.etoi(fsMode_t.FS_WRITE))) {
                 idLib.common.FatalError("idFile_Memory::Write: %s not opened in write mode", name)
                 return 0
@@ -719,8 +734,11 @@ object File_h {
                 filePtr = newPtr
             }
             //            memcpy(curPtr, buffer, len);
+            val savedLimit = buffer.limit()
+            buffer.limit(buffer.position() + len)
             filePtr!!.position(curPtr)
             filePtr!!.put(buffer)
+            buffer.limit(savedLimit)
             curPtr += len
             fileSize += len
             filePtr!!.put(fileSize, 0.toByte()) // len + 1
@@ -877,10 +895,13 @@ object File_h {
             return msg.ReadData(buffer, len) //TODO:cast self to self???????
         }
 
-        override fun Write(buffer: ByteBuffer /*, int len*/): Int {
-            val len = buffer.capacity()
+        override fun Write(buffer: ByteBuffer): Int {
+            return Write(buffer, buffer.capacity())
+        }
+
+        override fun Write(buffer: ByteBuffer, len: Int): Int {
             if (0 == mode and (1 shl fsMode_t.FS_WRITE.ordinal)) {
-                idLib.common.FatalError("idFile_Memory::Write: %s not opened in write mode", name)
+                idLib.common.FatalError("idFile_BitMsg::Write: %s not opened in write mode", name)
                 return 0
             }
             msg.WriteData(buffer, len)

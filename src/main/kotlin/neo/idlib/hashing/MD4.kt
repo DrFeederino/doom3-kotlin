@@ -22,6 +22,7 @@ fun MD4_BlockChecksum(data: ByteBuffer, length: Int): Long {
 
 fun MD4_BlockChecksum(data: IntArray, length: Int): Long {
     val buffer = ByteBuffer.allocate(data.size * 4)
+    buffer.order(ByteOrder.LITTLE_ENDIAN)
     buffer.asIntBuffer().put(data)
     return BlockChecksum(buffer, length, MD4)
 }

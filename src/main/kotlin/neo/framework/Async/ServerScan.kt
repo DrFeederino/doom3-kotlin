@@ -66,7 +66,7 @@ class ServerScan {
         var clients = 0
         var id // idnet mode sends an id for each server in list
                 = 0
-        var nickname: Array<CharArray> = Array(AsyncNetwork.MAX_NICKLEN) { CharArray(AsyncNetwork.MAX_ASYNC_CLIENTS) }
+        var nickname: Array<CharArray> = Array(AsyncNetwork.MAX_ASYNC_CLIENTS) { CharArray(AsyncNetwork.MAX_NICKLEN) }
         var ping = 0
         var pings: ShortArray = ShortArray(AsyncNetwork.MAX_ASYNC_CLIENTS)
         var rate: IntArray = IntArray(AsyncNetwork.MAX_ASYNC_CLIENTS)
@@ -171,7 +171,7 @@ class ServerScan {
             }
             val si_map = server.serverInfo.GetString("si_map")
             val mapDecl = DeclManager.declManager.FindType(declType_t.DECL_MAPDEF, si_map, false)
-            val mapDef = mapDecl as idDeclEntityDef
+            val mapDef = mapDecl as idDeclEntityDef?
             if (mapDef != null) {
                 val mapName = Common.common.GetLanguageDict().GetString(mapDef.dict.GetString("name", si_map))
                 server.serverInfo.Set("si_mapName", mapName)
@@ -502,11 +502,11 @@ class ServerScan {
             ) {
                 d3xp = true
             }
-            if (server.serverInfo.GetString("fs_game")[0] != '\u0000') {
+            if (!server.serverInfo.GetString("fs_game").isNullOrEmpty()) {
                 mod = true
             }
             name += "\t"
-            if (server.serverInfo.GetString("sv_punkbuster")[0] == '1') {
+            if (server.serverInfo.GetString("sv_punkbuster") == "1") {
                 name += "mtr_PB"
             }
             name += "\t"
@@ -600,7 +600,8 @@ class ServerScan {
         }
 
         private class Cmp : cmp_t<Int> {
-            override fun compare(a: Int, b: Int): Int {
+            override fun compare(a: Int?, b: Int?): Int {
+                if (a == null || b == null) return 0
                 val serv1: networkServer_t
                 val serv2: networkServer_t
                 val s1 = idStr()

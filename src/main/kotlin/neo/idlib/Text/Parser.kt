@@ -128,6 +128,7 @@ object Parser {
                 = 0
         private var tokens // tokens to read first
                 : idToken?
+        private val _tempToken = idToken()
 
         // constructor
         constructor() {
@@ -299,7 +300,7 @@ object Parser {
 
         @Throws(idException::class)
         fun LoadMemory(ptr: String, length: Int, name: String): Boolean {
-            return LoadMemory(TempDump.atocb(ptr)!!, length, name)
+            return LoadMemory(CharBuffer.wrap(ptr), length, name)
         }
 
         // free the current source
@@ -382,7 +383,7 @@ object Parser {
                     val newtoken = idToken()
                     if (ReadToken(newtoken)) {
                         if (newtoken.type == Token.TT_STRING) {
-                            token.Append(newtoken.c_str())
+                            token.Append(newtoken.data)
                         } else {
                             UnreadSourceToken(newtoken)
                         }
@@ -421,7 +422,7 @@ object Parser {
         // expect a certain token, reads the token when available
         @Throws(idException::class)
         fun ExpectTokenString(string: String): Boolean {
-            val token = idToken()
+            val token = _tempToken
             if (!ReadToken(token)) {
                 this.Error("couldn't find expected '%s'", string)
                 return false
@@ -516,7 +517,7 @@ object Parser {
         // returns true if the next token equals the given string and removes the token from the source
         @Throws(idException::class)
         fun CheckTokenString(string: String): Boolean {
-            val tok = idToken()
+            val tok = _tempToken
             if (!ReadToken(tok)) {
                 return false
             }
@@ -531,7 +532,7 @@ object Parser {
         // returns true if the next token equals the given type and removes the token from the source
         @Throws(idException::class)
         fun CheckTokenType(type: Int, subtype: Int, token: idToken): Boolean {
-            val tok = idToken()
+            val tok = _tempToken
             if (!ReadToken(tok)) {
                 return false
             }
@@ -577,7 +578,7 @@ object Parser {
         // skip tokens until the given token string is read
         @Throws(idException::class)
         fun SkipUntilString(string: String): Boolean {
-            val token = idToken()
+            val token = _tempToken
             while (ReadToken(token)) {
                 if (token.toString() == string) {
                     return true
@@ -756,7 +757,7 @@ object Parser {
         // read a signed integer
         @Throws(idException::class)
         fun ParseInt(): Int {
-            val token = idToken()
+            val token = _tempToken
             if (!ReadToken(token)) {
                 this.Error("couldn't read expected integer")
                 return 0
@@ -773,7 +774,7 @@ object Parser {
         // read a boolean
         @Throws(idException::class)
         fun ParseBool(): Boolean {
-            val token = idToken()
+            val token = _tempToken
             if (!ExpectTokenType(Token.TT_NUMBER, 0, token)) {
                 this.Error("couldn't read expected boolean")
                 return false
@@ -784,7 +785,7 @@ object Parser {
         // read a floating point number
         @Throws(idException::class)
         fun ParseFloat(): Float {
-            val token = idToken()
+            val token = _tempToken
             if (!ReadToken(token)) {
                 this.Error("couldn't read expected floating point number")
                 return 0.0f
@@ -881,7 +882,7 @@ object Parser {
             val p: Int //marker
             //            int save;
             if (marker_p == null) {
-                marker_p = scriptstack!!.buffer.toString()
+                marker_p = String(scriptstack!!.buffer)
             }
             p = if (tokens != null) {
                 tokens!!.whiteSpaceStart_p
@@ -1333,36 +1334,36 @@ object Parser {
         }
 
         private fun StringizeTokens(tokens: Array<idToken?>, token: idToken): Boolean {
-            var t: idToken?
             token.type = Token.TT_STRING
             token.whiteSpaceStart_p = 0
             token.whiteSpaceEnd_p = 0
-            //	(*token) = "";
-            t = tokens[0]
+            val sb = StringBuilder()
+            var t: idToken? = tokens[0]
             while (t != null) {
-                //TODO:check if tokens[0] should be used.
-                token.Append(t.toString())
+                sb.append(t.data)
                 t = t.next
             }
+            token.data = sb.toString()
+            token.len = token.data.length
             return true
         }
 
         private fun MergeTokens(t1: idToken, t2: idToken): Boolean {
             // merging of a name with a name or number
             if (t1.type == Token.TT_NAME && (t2.type == Token.TT_NAME || t2.type == Token.TT_NUMBER && t2.subtype and Token.TT_FLOAT == 0)) {
-                t1.Append(t2.c_str())
+                t1.Append(t2.data)
                 return true
             }
             // merging of two strings
             if (t1.type == Token.TT_STRING && t2.type == Token.TT_STRING) {
-                t1.Append(t2.c_str())
+                t1.Append(t2.data)
                 return true
             }
             // merging of two numbers
             if (t1.type == Token.TT_NUMBER && t2.type == Token.TT_NUMBER && t1.subtype and (Token.TT_HEX or Token.TT_BINARY) == 0 && t2.subtype and (Token.TT_HEX or Token.TT_BINARY) == 0 && (t1.subtype and Token.TT_FLOAT == 0
                         || t2.subtype and Token.TT_FLOAT == 0)
             ) {
-                t1.Append(t2.c_str())
+                t1.Append(t2.data)
                 return true
             }
             return false
@@ -1837,7 +1838,7 @@ object Parser {
                 this.Error("expected name but found '%s'", token)
                 return false
             }
-            hash = PC_NameHash(token.c_str())
+            hash = PC_NameHash(token.data)
             lastdefine = null
             define = definehash[hash]
             while (define != null) {
@@ -2634,7 +2635,7 @@ object Parser {
 //	define = (define_t *) Mem_ClearedAlloc(sizeof(define_t) + token.Length() + 1);
             define = define_s()
             //	define.name = (char *) define + sizeof(define_t);
-            define.name = String(token.c_str())
+            define.name = token.data
             // add the define to the source
             AddDefineToHash(define, definehash)
             // if nothing is defined, just return

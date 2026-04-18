@@ -587,10 +587,11 @@ object MsgChannel {
             val reliableMessageSize = CInt()
 
             // read message size
-            out.SetSize(msg.ReadShort().toInt())
+            val decompressedSize = msg.ReadShort().toInt()
+            out.SetSize(decompressedSize)
 
             // decompress message
-            val file = idFile_BitMsg(msg)
+            val file = idFile_BitMsg(msg, true)
             compressor.Init(file, false, 3)
             compressor.Read(out.GetData()!!, out.GetSize())
             incomingCompression = compressor.GetCompressionRatio()
@@ -618,8 +619,7 @@ object MsgChannel {
                     reliableReceive.Add(
                         Arrays.copyOfRange(
                             out.GetData()!!.array(),
-                            out.GetReadCount(),
-                            out.GetData()!!.capacity()
+                            out.GetReadCount(), out.GetReadCount() + reliableMessageSize._val
                         ), reliableMessageSize._val
                     )
                 }

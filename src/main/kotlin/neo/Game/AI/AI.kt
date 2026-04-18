@@ -2554,8 +2554,7 @@ open class idAI : idActor() {
              if ( !aas && developer.GetBool() && !fl.hidden && !num_cinematics ) {
              gameRenderWorld->DrawText( "No AAS", physicsObj.GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
              }
-             */
-        UpdateMuzzleFlash()
+             */UpdateMuzzleFlash()
         UpdateAnimation()
         UpdateParticles()
         Present()
@@ -2590,7 +2589,6 @@ open class idAI : idActor() {
 
         // make sure he's not dormant
         dormantStart = 0
-
         if (num_cinematics != 0) {
             PlayCinematic()
         } else {
@@ -8932,7 +8930,6 @@ open class idAI : idActor() {
                 harvest.PostEventMS(EV_Remove, 0)
             }
         }
-        physicsObj.UnlinkClip()
         super._deconstructor()
     }
 

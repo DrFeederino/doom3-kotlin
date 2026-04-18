@@ -385,7 +385,7 @@ object Model_liquid {
             base = deformInfo!!.numOutputVerts - deformInfo!!.numMirroredVerts
             i = 0
             while (i < deformInfo!!.numMirroredVerts) {
-                tri.verts!![base + i]!!.set(tri.verts!![deformInfo!!.mirroredVerts!![i]]!!)
+                tri.verts!![base + i].set(tri.verts!![deformInfo!!.mirroredVerts!![i]])
                 i++
             }
             R_BoundTriSurf(tri)

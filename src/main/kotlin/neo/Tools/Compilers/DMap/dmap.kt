@@ -306,7 +306,7 @@ object dmap {
         }
         val stripped = passedName
         stripped.StripFileExtension()
-        idStr.Copynz(dmapGlobals.mapFileBase, stripped.c_str(), dmapGlobals.mapFileBase.size)
+        idStr.Copynz(dmapGlobals.mapFileBase, stripped.data, dmapGlobals.mapFileBase.size)
         var region = false
         // if this isn't a regioned map, delete the last saved region map
         if (passedName.Right(4).toString() != ".reg") {

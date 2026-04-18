@@ -213,7 +213,7 @@ class Game_local {
     class entityState_s {
         var entityNumber = 0
         var next: entityState_s? = null
-        var state: idBitMsg? = null
+        var state = idBitMsg()
         var stateBuf = ByteBuffer.allocate(MAX_ENTITY_STATE_SIZE)
     }
 
@@ -611,7 +611,7 @@ class Game_local {
                 idSIMD.InitProcessor("game", com_forceGenericSIMD.GetBool())
             }
             // Detect D3XP before any system that depends on it
-            isD3XP = FileSystem_h.fileSystem!!.RunningD3XP()
+            isD3XP = FileSystem_h.fileSystem.RunningD3XP()
 
             // Correct dependant classes on build time variables based on isD3XP flag
             program = idProgram()
@@ -925,9 +925,9 @@ class Game_local {
                     )
                     return false
                 }
-                var osType = idStr()
-                var cpuArch = idStr()
-                var engineVersion = idStr()
+                val osType = idStr()
+                val cpuArch = idStr()
+                val engineVersion = idStr()
                 savegame.ReadString(osType) // operating system the savegame was crated on (written from D3_OSTYPE)
                 savegame.ReadString(cpuArch) // written from D3_ARCH (which is set in CMake), like "x86" or "x86_64"
                 savegame.ReadString(engineVersion) // written from ENGINE_VERSION
@@ -1079,7 +1079,7 @@ class Game_local {
                 portalSkyActive = savegame.ReadBool()
                 fast.Restore(savegame)
                 slow.Restore(savegame)
-                slowmoState = slowmoState_t.values()[savegame.ReadInt()]
+                slowmoState = slowmoState_t.entries.toTypedArray()[savegame.ReadInt()]
                 slowmoMsec = savegame.ReadFloat()
                 quickSlowmoReset = savegame.ReadBool()
                 if (slowmoState == slowmoState_t.SLOWMO_STATE_OFF) {
@@ -2113,11 +2113,11 @@ class Game_local {
                 base?.state?.BeginReading()
                 newBase = entityState_s() //entityStateAllocator.Alloc();
                 newBase.entityNumber = ent.entityNumber
-                newBase.state!!.Init(newBase.stateBuf)
-                newBase.state!!.BeginWriting()
-                deltaMsg.Init(base?.state, newBase.state!!, msg)
+                newBase.state.Init(newBase.stateBuf)
+                newBase.state.BeginWriting()
+                deltaMsg.Init(base?.state, newBase.state, msg)
                 deltaMsg.WriteBits(spawnIds[ent.entityNumber], 32 - GENTITYNUM_BITS)
-                deltaMsg.WriteBits(ent.GetType()!!.typeNum, idClass.GetTypeNumBits())
+                deltaMsg.WriteBits(ent.GetType().typeNum, idClass.GetTypeNumBits())
                 deltaMsg.WriteBits(ServerRemapDecl(-1, declType_t.DECL_ENTITYDEF, ent.entityDefNumber), entityDefBits)
 
                 // write the class specific data to the snapshot
@@ -2165,9 +2165,9 @@ class Game_local {
             newBase.entityNumber = ENTITYNUM_NONE
             newBase.next = snapshot.firstEntityState
             snapshot.firstEntityState = newBase
-            newBase.state!!.Init(newBase.stateBuf)
-            newBase.state!!.BeginWriting()
-            deltaMsg.Init(base?.state, newBase.state!!, msg)
+            newBase.state.Init(newBase.stateBuf)
+            newBase.state.BeginWriting()
+            deltaMsg.Init(base?.state, newBase.state, msg)
             if (player.spectating && player.spectator != player.entityNumber && gameLocal.entities[player.spectator] != null && gameLocal.entities[player.spectator] is idPlayer) {
                 (gameLocal.entities[player.spectator] as idPlayer).WritePlayerStateToSnapshot(deltaMsg)
             } else {
@@ -2338,18 +2338,18 @@ class Game_local {
             while (i != ENTITYNUM_NONE) {
                 base = clientEntityStates[clientNum][i]
                 if (base != null) {
-                    base.state!!.BeginReading()
+                    base.state.BeginReading()
                 }
                 newBase = entityState_s()
                 newBase.entityNumber = i
                 newBase.next = snapshot.firstEntityState
                 snapshot.firstEntityState = newBase
-                newBase.state!!.Init(newBase.stateBuf)
-                newBase.state!!.BeginWriting()
+                newBase.state.Init(newBase.stateBuf)
+                newBase.state.BeginWriting()
 
                 numBitsRead = msg.GetNumBitsRead()
 
-                deltaMsg.Init(base?.state, newBase.state!!, msg)
+                deltaMsg.Init(base?.state, newBase.state, msg)
 
                 spawnId = deltaMsg.ReadBits(32 - GENTITYNUM_BITS)
                 typeNum = deltaMsg.ReadBits(idClass.GetTypeNumBits())
@@ -2363,7 +2363,7 @@ class Game_local {
                 ent = entities[i]
 
                 // if there is no entity or an entity of the wrong type
-                if (ent == null || ent.GetType()!!.typeNum != typeNum || ent.entityDefNumber != entityDefNumber || spawnId != spawnIds[i]) {
+                if (ent == null || ent.GetType().typeNum != typeNum || ent.entityDefNumber != entityDefNumber || spawnId != spawnIds[i]) {
 
                     if (i < MAX_CLIENTS && ent != null) {
                         // SPAWN_PLAYER should be taking care of spawning the entity with the right spawnId
@@ -2392,7 +2392,7 @@ class Game_local {
                         val entOut = arrayOfNulls<idEntity>(1)
                         if (!SpawnEntityDef(
                                 args, entOut
-                            ) || entities[i] == null || entities[i]!!.GetType()!!.typeNum != typeNum
+                            ) || entities[i] == null || entities[i]!!.GetType().typeNum != typeNum
                         ) {
                             Error(
                                 "Failed to spawn entity with classname '%s' of type '%s'",
@@ -2403,7 +2403,7 @@ class Game_local {
                         ent = entOut[0]
                     } else {
                         ent = SpawnEntityType(typeInfo!!, args, true)
-                        if (entities[i] == null || entities[i]!!.GetType()!!.typeNum != typeNum) {
+                        if (entities[i] == null || entities[i]!!.GetType().typeNum != typeNum) {
                             Error("Failed to spawn entity of type '%s'", typeInfo.classname)
                         }
                     }
@@ -2553,7 +2553,7 @@ class Game_local {
                     continue
                 }
 
-                base.state!!.BeginReading()
+                base.state.BeginReading()
 
                 deltaMsg.Init(base.state, null, null)
 
@@ -2564,12 +2564,11 @@ class Game_local {
                 typeInfo = idClass.GetType(typeNum)
 
                 // if the entity is not the right type
-                if (typeInfo == null || ent.GetType()!!.typeNum != typeNum || ent.entityDefNumber != entityDefNumber) {
+                if (typeInfo == null || ent.GetType().typeNum != typeNum || ent.entityDefNumber != entityDefNumber) {
                     // should never happen - it does though. with != entityDefNumber only?
                     Common.common.DWarning(
                         "entity '%s' is not the right type 0x%d 0x%x 0x%x 0x%x",
-                        ent.GetName(),
-                        ent.GetType()!!.typeNum,
+                        ent.GetName(), ent.GetType().typeNum,
                         typeNum,
                         ent.entityDefNumber,
                         entityDefNumber
@@ -2590,21 +2589,21 @@ class Game_local {
             // read the game and player state from the snapshot
             base = clientEntityStates[clientNum][ENTITYNUM_NONE] // ENTITYNUM_NONE is used for the game and player state
             if (base != null) {
-                base.state!!.BeginReading()
+                base.state.BeginReading()
             }
             newBase = entityState_s()
             newBase.entityNumber = ENTITYNUM_NONE
             newBase.next = snapshot.firstEntityState
             snapshot.firstEntityState = newBase
-            newBase.state!!.Init(newBase.stateBuf)
-            newBase.state!!.BeginWriting()
-            deltaMsg.Init(base?.state, newBase.state!!, msg)
+            newBase.state.Init(newBase.stateBuf)
+            newBase.state.BeginWriting()
+            deltaMsg.Init(base?.state, newBase.state, msg)
             if (player.spectating && player.spectator != player.entityNumber && gameLocal.entities[player.spectator] != null && gameLocal.entities[player.spectator] is idPlayer) {
                 (gameLocal.entities[player.spectator] as idPlayer).ReadPlayerStateFromSnapshot(deltaMsg)
                 weap = (gameLocal.entities[player.spectator] as idPlayer).weapon.GetEntity()
                 if (weap != null && weap.GetRenderEntity()!!.bounds[0] == weap.GetRenderEntity()!!.bounds[1]) {
                     // update the weapon's viewmodel bounds so that the model doesn't flicker in the spectator's view
-                    weap.GetAnimator()!!.GetBounds(gameLocal.time, weap.GetRenderEntity()!!.bounds)
+                    weap.GetAnimator().GetBounds(gameLocal.time, weap.GetRenderEntity()!!.bounds)
                     weap.UpdateVisuals()
                 }
             } else {
@@ -3487,7 +3486,7 @@ class Game_local {
             if (!spawn[0].isNullOrEmpty()) {
                 val cls = idClass.GetClass(spawn[0])
                 if (cls == null) {
-                    Warning("Could not spawn '%s'. Class '%s' not found%s.", classname[0], spawn[0], error.toString())
+                    Warning("Could not spawn '%s'. Class '%s' not found%s.", classname[0], spawn[0], error)
                     return false
                 }
                 val obj = cls.createInstance()
@@ -3752,7 +3751,7 @@ class Game_local {
             snd_system.soundSystem.SetMute(true)
             if (!skipCinematic) {
                 skipCinematic = true
-                cinematicMaxSkipTime = (gameLocal.time + SEC2MS(SysCvar.g_cinematicMaxSkipTime.GetFloat())).toInt()
+                cinematicMaxSkipTime = (gameLocal.time + SEC2MS(SysCvar.g_cinematicMaxSkipTime.GetFloat()))
             }
             return true
         }
@@ -4099,13 +4098,13 @@ class Game_local {
             // get all entities touching the bounds
             numListedEntities = clip.EntitiesTouchingBounds(bounds, -1, entityList, MAX_GENTITIES)
             if (inflictor != null && inflictor is idAFAttachment) {
-                inflictor = (inflictor as idAFAttachment).GetBody()
+                inflictor = inflictor.GetBody()
             }
             if (attacker != null && attacker is idAFAttachment) {
-                attacker = (attacker as idAFAttachment).GetBody()
+                attacker = attacker.GetBody()
             }
             if (ignoreDamage != null && ignoreDamage is idAFAttachment) {
-                ignoreDamage = (ignoreDamage as idAFAttachment).GetBody()
+                ignoreDamage = ignoreDamage.GetBody()
             }
 
             // apply damage to the entities
@@ -4236,7 +4235,7 @@ class Game_local {
                 }
 
                 // don't push the ignore entity
-                if (ent === ignore || ent is idAFAttachment && (ent as idAFAttachment).GetBody() === ignore) {
+                if (ent === ignore || ent is idAFAttachment && ent.GetBody() === ignore) {
                     i++
                     continue
                 }
@@ -4246,8 +4245,7 @@ class Game_local {
                 }
 
                 // scale the push for the inflictor
-                scale =
-                    if (ent === inflictor || ent is idAFAttachment && (ent as idAFAttachment).GetBody() === inflictor) {
+                scale = if (ent === inflictor || ent is idAFAttachment && ent.GetBody() === inflictor) {
                         inflictorScale
                     } else {
                         1.0f
@@ -5132,6 +5130,7 @@ class Game_local {
             while (i < MAX_GENTITIES) {
                 if (entities[i] != null) {
                     idEvent.CancelEvents(entities[i]!!)
+                    entities[i]!!._deconstructor()
                     entities[i] = null
                 }
                 assert(entities[i] == null)
@@ -5147,7 +5146,7 @@ class Game_local {
                         i++
                         continue
                     }
-                    entityHash.Add(entityHash.GenerateKey(entities[i]!!.name.c_str(), true), i)
+                    entityHash.Add(entityHash.GenerateKey(entities[i]!!.name.toString(), true), i)
                     i++
                 }
             }
@@ -6468,7 +6467,7 @@ class Game_local {
          ============
          */
         private fun RandomizeInitialSpawns() {
-            var spot = spawnSpot_t()  // create fresh copies for each append (value semantics)
+            val spot = spawnSpot_t()  // create fresh copies for each append (value semantics)
             var i: Int
             var j: Int
             var k: Int
@@ -6631,13 +6630,13 @@ class Game_local {
 
                         // D3XP: skip sounds already in base pak files
                         if (isD3XP) {
-                            if (FileSystem_h.fileSystem!!.FileIsInPAK(soundName.toString())) {
+                            if (FileSystem_h.fileSystem.FileIsInPAK(soundName.toString())) {
                                 j++
                                 continue
                             }
                             val testOgg = idStr(soundName)
                             testOgg.SetFileExtension(".ogg")
-                            if (FileSystem_h.fileSystem!!.FileIsInPAK(testOgg.toString())) {
+                            if (FileSystem_h.fileSystem.FileIsInPAK(testOgg.toString())) {
                                 j++
                                 continue
                             }

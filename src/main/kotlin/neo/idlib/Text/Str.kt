@@ -107,8 +107,34 @@ object Str {
         //
         protected val baseBuffer: CharArray = CharArray(STR_ALLOC_BASE)
         var alloced = 0
-        var data: String =
-            "" //i·ro·ny: when your program breaks because of two measly double quotes. stu·pid·i·ty: when it takes you 2 days to find said "bug".
+
+        // StringBuilder used for efficient character-by-character mutation.
+        // When _sb is non-null and _dirty is true, _sb holds the authoritative content.
+        // _data is lazily synced from _sb when read.
+        @JvmField
+        internal var _sb: StringBuilder? = null
+
+        @JvmField
+        internal var _dirty: Boolean = false
+        private var _data: String = ""
+
+        var data: String
+            get() {
+                if (_dirty) {
+                    _data = _sb!!.toString()
+                    _dirty = false
+                }
+                return _data
+            }
+            set(value) {
+                _data = value
+                if (_sb != null) {
+                    _sb!!.clear()
+                    _sb!!.append(value)
+                    _dirty = false
+                }
+            }
+
         var len //TODO:data is a pointer in the original class.
                 = 0
 
@@ -129,9 +155,11 @@ object Str {
         fun StripTrailing(c: Char) { // strip char from end as many times as the char occurs
             var i = Length()
             while (i > 0 && data[i - 1] == c) {
-                len--
-                data = data.substring(0, len)
                 i--
+            }
+            if (i < len) {
+                len = i
+                data = data.substring(0, len)
             }
         }
 
@@ -288,14 +316,18 @@ object Str {
         }
 
         operator fun set(index: Int, value: Char): Char {
-            //assert ((index >= 0) && (index <= len));
-            if (index == len
-                || 0 == len
-            ) { //just append if length == 0;
-                data += value
-            } else {
-                data = data.substring(0, index) + value + data.substring(index + 1)
+            if (_sb == null) {
+                _sb = StringBuilder(data)
+            } else if (!_dirty) {
+                _sb!!.clear()
+                _sb!!.append(_data)
             }
+            if (index == _sb!!.length || _sb!!.isEmpty()) {
+                _sb!!.append(value)
+            } else {
+                _sb!!.setCharAt(index, value)
+            }
+            _dirty = true
             return value
         }
 
@@ -551,18 +583,32 @@ object Str {
 
         fun Append(a: Char) {
             EnsureAlloced(len + 2)
-            data += a
-            len++ //TODO:remove \0
-            //	data+= '\0';
+            if (_sb == null) {
+                _sb = StringBuilder(data)
+            } else if (!_dirty) {
+                _sb!!.clear()
+                _sb!!.append(_data)
+            }
+            _sb!!.append(a)
+            _dirty = true
+            len++
         }
 
         fun Append(text: String) {
             val newLen: Int
             newLen = len + text.length
             EnsureAlloced(newLen + 1)
-            data += text
+            if (_sb != null) {
+                if (!_dirty) {
+                    _sb!!.clear()
+                    _sb!!.append(_data)
+                }
+                _sb!!.append(text)
+                _dirty = true
+            } else {
+                _data += text
+            }
             len = newLen
-            //	data[ len ] = '\0';
         }
 
         fun Append(text: CharArray) {
@@ -759,17 +805,13 @@ object Str {
         }
 
         fun StripLeading(c: Char) { // strip char from front as many times as the char occurs
-//	while( data[ 0 ] == c ) {
-//		memmove( &data[ 0 ], &data[ 1 ], len );
-//		len--;
-//	}
-            while (c == data[0]) {
-                len--
-                if (data.length == 1) {
-                    data = ""
-                    break
-                }
-                data = data.substring(1)
+            var i = 0
+            while (i < data.length && data[i] == c) {
+                i++
+            }
+            if (i > 0) {
+                data = data.substring(i)
+                len = data.length
             }
         }
 
@@ -1403,10 +1445,11 @@ object Str {
 
         override fun Read(buffer: ByteBuffer) {
             len = buffer.limit()
-            data = ""
+            val sb = StringBuilder(len)
             for (i in 0 until buffer.limit()) {
-                data += Char(buffer.array()[i].toUShort())
+                sb.append(Char(buffer.array()[i].toUShort()))
             }
+            data = sb.toString()
             alloced = len
         }
 
@@ -1422,12 +1465,9 @@ object Str {
         protected fun Init() {
             len = 0
             alloced = STR_ALLOC_BASE
-            //	data = baseBuffer;
-//	data[ 0 ] = '\0';
-            data = ""
-            //#ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-//	memset( baseBuffer, 0, sizeof( baseBuffer ) );
-//#endif
+            _data = ""
+            _sb = null
+            _dirty = false
         } // initialize string using base buffer
 
         protected fun EnsureAlloced(amount: Int) {
@@ -1627,18 +1667,17 @@ object Str {
             }
 
             fun RemoveColors(s: String): String {
-                var string = ""
+                val sb = StringBuilder(s.length)
                 var a = 0
                 while (a < s.length) {
                     if (IsColor(s.substring(a))) {
                         a++
                     } else {
-                        string += s[a]
+                        sb.append(s[a])
                     }
                     a++
                 }
-                //	*d = '\0';
-                return string
+                return sb.toString()
             }
 
             fun Cmp(s1: CharArray, s2: CharArray): Int {
@@ -1650,7 +1689,7 @@ object Str {
             }
 
             fun Cmp(s1: String, s2: String): Int {
-                return ("" + s1).compareTo("" + s2)
+                return s1.compareTo(s2)
             }
 
             //public	idStr &				operator+=( const int a );
@@ -1691,7 +1730,7 @@ object Str {
             }
 
             fun Icmp(s1: String?, s2: String?): Int {
-                return ("" + s1).compareTo("" + s2, ignoreCase = true)
+                return (s1 ?: "").compareTo(s2 ?: "", ignoreCase = true)
             }
 
             fun Icmpn(s1: String, s2: String, n: Int): Int {
@@ -1818,19 +1857,21 @@ object Str {
 
             fun IcmpnPath(s1: String, s2: String, n: Int): Int { // compares paths and makes sure folders come first
                 var n = n
-                val s1Array = s1.toCharArray()
-                val s2Array = s2.toCharArray()
-                var c1 = 0
-                var c2 = 0
+                var i1 = 0
+                var i2 = 0
+                var c1: Int
+                var c2: Int
                 var d: Int
                 assert(n >= 0)
                 do {
-                    c1++
-                    c2++
+                    c1 = if (i1 < s1.length) s1[i1].code else 0
+                    i1++
+                    c2 = if (i2 < s2.length) s2[i2].code else 0
+                    i2++
                     if (0 == n--) {
                         return 0 // strings are equal until end point
                     }
-                    d = s1Array[c1] - s2Array[c2]
+                    d = c1 - c2
                     while (d != 0) {
                         if (c1 <= 'Z'.code && c1 >= 'A'.code) {
                             d += 'a' - 'A'
@@ -1861,13 +1902,15 @@ object Str {
                             if (c1 == '/'.code || c1 == '\\'.code) {
                                 break
                             }
-                            c1++
+                            c1 = if (i1 < s1.length) s1[i1].code else 0
+                            i1++
                         }
                         while (c2 != 0) {
                             if (c2 == '/'.code || c2 == '\\'.code) {
                                 break
                             }
-                            c2++
+                            c2 = if (i2 < s2.length) s2[i2].code else 0
+                            i2++
                         }
                         if (c1 != 0 && c2 == 0) {
                             return -1
