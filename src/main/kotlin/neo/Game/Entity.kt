@@ -5010,7 +5010,7 @@ open class idAnimatedEntity : idEntity() {
     ) {
         var sound: String?
         var splat: String?
-        var decal: String
+        var decal: String?
         var bleed: String?
         var key: String?
         val de: damageEffect_s
@@ -5064,7 +5064,7 @@ open class idAnimatedEntity : idEntity() {
                 key = va("mtr_wound_%s", materialType)
                 decal = spawnArgs.RandomPrefix(key, Game_local.gameLocal.random)
                 if (decal.isNullOrEmpty()) {
-                    decal = def.dict.RandomPrefix(key, Game_local.gameLocal.random) ?: ""
+                    decal = def.dict.RandomPrefix(key, Game_local.gameLocal.random)
                 }
                 if (!decal.isNullOrEmpty()) {
                     ProjectOverlay(origin, dir, 20.0f, decal)
