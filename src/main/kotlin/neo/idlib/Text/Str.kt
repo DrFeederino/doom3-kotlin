@@ -206,15 +206,10 @@ object Str {
         }
 
         constructor(text: CharArray) {
-            val l: Int
             Init()
             if (text != null) {
-//		l = strlen( text );
-                l = text.size
-                EnsureAlloced(l + 1)
-                //		strcpy( data, text );
                 data = TempDump.ctos(text)
-                len = l
+                len = data.length
             }
         }
 

@@ -9,7 +9,6 @@ import neo.framework.Async.AsyncNetwork.*
 import neo.framework.Async.MsgChannel.idMsgChannel
 import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.FileSystem_h.findFile_t
-import neo.framework.Session.msgBoxType_t
 import neo.framework.UsercmdGen.usercmd_t
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.Dict_h.idDict
@@ -2093,7 +2092,7 @@ object AsyncServer {
                 return
             }
             msg.ReadString(string, string.size)
-            Common.common.Printf("rcon from %s: %s\n", win_net.Sys_NetAdrToString(from), string)
+            Common.common.Printf("rcon from %s: %s\n", win_net.Sys_NetAdrToString(from), TempDump.ctos(string))
             rconAddress = from
             noRconOutput = true
             Common.common.BeginRedirect(msgBuf, msgBuf.capacity(), RConRedirect.getInstance())
@@ -2309,16 +2308,15 @@ object AsyncServer {
                         Common.common.DPrintf(
                             "auth: client %s %s not matched, auth server says guid %s\n",
                             win_net.Sys_NetAdrToString(challenges[i].address),
-                            challenges[i].guid,
-                            client_guid
+                            TempDump.ctos(challenges[i].guid),
+                            TempDump.ctos(client_guid)
                         )
                         return
                     }
                     if (!win_net.Sys_CompareNetAdrBase(client_from, challenges[i].address)) {
                         // let auth work when server and master don't see the same IP
                         Common.common.DPrintf(
-                            "auth: matched guid '%s' for != IPs %s and %s\n",
-                            client_guid,
+                            "auth: matched guid '%s' for != IPs %s and %s\n", TempDump.ctos(client_guid),
                             win_net.Sys_NetAdrToString(client_from),
                             win_net.Sys_NetAdrToString(challenges[i].address)
                         )
@@ -2330,8 +2328,7 @@ object AsyncServer {
             if (i >= MAX_CHALLENGES) {
                 Common.common.DPrintf(
                     "auth: failed client lookup %s %s\n",
-                    win_net.Sys_NetAdrToString(client_from),
-                    client_guid
+                    win_net.Sys_NetAdrToString(client_from), TempDump.ctos(client_guid)
                 )
                 return
             }
@@ -2347,7 +2344,11 @@ object AsyncServer {
             idStr.snPrintf(challenges[i].guid, 12, "%s", TempDump.ctos(client_guid))
             if (reply == authReply_t.AUTH_OK) {
                 challenges[i].authState = authState_t.CDK_OK
-                Common.common.Printf("client %s %s is authed\n", win_net.Sys_NetAdrToString(client_from), client_guid)
+                Common.common.Printf(
+                    "client %s %s is authed\n",
+                    win_net.Sys_NetAdrToString(client_from),
+                    TempDump.ctos(client_guid)
+                )
             } else {
                 val msg1: String
                 msg1 = if (replyMsg != authReplyMsg_t.AUTH_REPLY_PRINT) {
@@ -2359,8 +2360,7 @@ object AsyncServer {
                 val l_msg = Common.common.GetLanguageDict().GetString(msg1)
                 Common.common.DPrintf(
                     "auth: client %s %s - %s %s\n",
-                    win_net.Sys_NetAdrToString(client_from),
-                    client_guid,
+                    win_net.Sys_NetAdrToString(client_from), TempDump.ctos(client_guid),
                     authReplyStr[reply.ordinal],
                     l_msg
                 )

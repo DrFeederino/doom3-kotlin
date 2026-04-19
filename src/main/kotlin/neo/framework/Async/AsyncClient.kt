@@ -1341,8 +1341,7 @@ object AsyncClient {
                 if (verbose) {
                     Common.common.Printf(
                         "client %2d: %s, ping = %d, rate = %d\n",
-                        i,
-                        serverInfo.nickname[serverInfo.clients],
+                        i, TempDump.ctos(serverInfo.nickname[serverInfo.clients]),
                         serverInfo.pings[serverInfo.clients],
                         serverInfo.rate[serverInfo.clients]
                     )
@@ -1516,7 +1515,7 @@ object AsyncClient {
             } else {
                 msg.ReadString(read_string, MAX_STRING_CHARS)
                 CVarSystem.cvarSystem.SetCVarString("com_guid", TempDump.ctos(read_string))
-                Common.common.Printf("guid set to %s\n", read_string)
+                Common.common.Printf("guid set to %s\n", TempDump.ctos(read_string))
                 Session.session.CDKeysAuthReply(true, null)
             }
         }
@@ -2226,7 +2225,7 @@ object AsyncClient {
                 // "Missing required files"
                 if (Session.session.MessageBox(
                         msgBoxType_t.MSG_YESNO,
-                        Str.va(Common.common.GetLanguageDict().GetString("#str_07217"), buf),
+                        Str.va(Common.common.GetLanguageDict().GetString("#str_07217"), TempDump.ctos(buf)),
                         Common.common.GetLanguageDict().GetString("#str_07218"),
                         true,
                         "yes"
