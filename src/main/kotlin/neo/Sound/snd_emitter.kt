@@ -251,21 +251,32 @@ object snd_emitter {
         var newSampleOffset = 0
         var playbackState = 0
         var triggerOffset = 0
+        private val slowIn = FloatArray(MIXBUFFER_SAMPLES + 3)
+        private val slowOut = FloatArray(MIXBUFFER_SAMPLES + 3)
+        private val slowSrc = FloatArray(MIXBUFFER_SAMPLES + 3 - 2)
+        private val slowSrcBuffer = FloatBuffer.wrap(slowSrc)
+        private val slowSpline = FloatArray(MIXBUFFER_SAMPLES + 3 - 2)
+        private val continuityIn1 = FloatArray(1)
+        private val continuityIn2 = FloatArray(1)
+        private val continuityOut1 = FloatArray(1)
+        private val continuityOut2 = FloatArray(1)
 
         // functions
         fun GenerateSlowChannel(playPos: FracTime, sampleCount44k: Int, finalBuffer: FloatArray) {
             // FIX: Added null check from C++ — GetPlayingSoundWorld() can return null during level transitions
             val sw = snd_system.soundSystemLocal.GetPlayingSoundWorld() as? idSoundWorldLocal
-            val `in` = FloatArray(MIXBUFFER_SAMPLES + 3)
-            val out = FloatArray(MIXBUFFER_SAMPLES + 3)
-            val src = FloatArray(MIXBUFFER_SAMPLES + 3 - 2)
-            val spline = FloatArray(MIXBUFFER_SAMPLES + 3 - 2)
+            val `in` = slowIn
+            val out = slowOut
+            val src = slowSrc
+            val spline = slowSpline
             //            int src, spline;
             val slowmoSpeed: Float
             var i: Int
             val neededSamples: Int
             val zeroedPos: Int
             var count = 0
+            src.fill(0.0f)
+            spline.fill(0.0f)
 
 //            src = in + 2;
 //            spline = out + 2;
@@ -274,7 +285,8 @@ object snd_emitter {
             neededSamples = (sampleCount44k * slowmoSpeed + 4).toInt()
 
             // get the channel's samples
-            chan!!.GatherChannelSamples(playPos.time * 2, neededSamples, FloatBuffer.wrap(src))
+            slowSrcBuffer.clear()
+            chan!!.GatherChannelSamples(playPos.time * 2, neededSamples, slowSrcBuffer)
             i = 0
             while (i < neededSamples shr 1) {
                 spline[i] = src[i * 2]
@@ -296,10 +308,10 @@ object snd_emitter {
 
             // lowpass filter
 //            float *in_p = in + 2, *out_p = out + 2;
-            val in_p1 = floatArrayOf(0.0f)
-            val in_p2 = floatArrayOf(0.0f)
-            val out_p1 = floatArrayOf(0.0f)
-            val out_p2 = floatArrayOf(0.0f)
+            val in_p1 = continuityIn1
+            val in_p2 = continuityIn2
+            val out_p1 = continuityOut1
+            val out_p2 = continuityOut2
             val numSamples = sampleCount44k shr 1
             lowpass.GetContinuitySamples(in_p1, in_p2, out_p1, out_p2)
             lowpass.SetParms(slowmoSpeed * 15000, 1.2f, 9.0f)

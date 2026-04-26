@@ -115,9 +115,13 @@ class snd_world {
         private val mixInputSamples = FloatArray(MIXBUFFER_SAMPLES * 2 + 16)
         private val mixInputSamplesBuffer: FloatBuffer = FloatBuffer.wrap(mixInputSamples)
         private val mixEars = FloatArray(6)
+        private val channelSpatializedOriginInMeters = idVec3()
         private val listenerPositionScratch = FloatArray(3)
         private val listenerOrientationScratch: FloatBuffer = BufferUtils.createFloatBuffer(6)
         private val effectHandleScratch = IntArray(1)
+        private val listenerAreaEffectName = idStr()
+        private val defaultEffectName = idStr("default")
+        private var listenerAreaEffectNameArea = Int.MIN_VALUE
         private val streamingBufferScratch = IntArray(3)
         private val streamingSampleBytes: ByteBuffer =
             BufferUtils.createByteBuffer(MIXBUFFER_SAMPLES * 2 * java.lang.Short.BYTES)
@@ -1256,20 +1260,27 @@ class snd_world {
             ears: FloatArray /*[6]*/,
             spatialize: Float
         ) {
-            val svec = idVec3(spatializedOrigin - listenerPos)
-            val ovec = idVec3(
-                svec * listenerAxis[0],
-                svec * listenerAxis[1],
-                svec * listenerAxis[2]
-            )
-            ovec.Normalize()
+            val sx = spatializedOrigin.x - listenerPos.x
+            val sy = spatializedOrigin.y - listenerPos.y
+            val sz = spatializedOrigin.z - listenerPos.z
+            var ox = sx * listenerAxis[0].x + sy * listenerAxis[0].y + sz * listenerAxis[0].z
+            var oy = sx * listenerAxis[1].x + sy * listenerAxis[1].y + sz * listenerAxis[1].z
+            var oz = sx * listenerAxis[2].x + sy * listenerAxis[2].y + sz * listenerAxis[2].z
+            val lenSqr = ox * ox + oy * oy + oz * oz
+            if (lenSqr != 0.0f) {
+                val invLen = idMath.RSqrt(lenSqr)
+                ox *= invLen
+                oy *= invLen
+                oz *= invLen
+            }
             if (numSpeakers == 6) {
                 for (i in 0..5) {
                     if (i == 3) {
                         ears[i] = idSoundSystemLocal.s_subFraction.GetFloat() // subwoofer
                         continue
                     }
-                    val dot = ovec.times(speakerVector[i])
+                    val speaker = speakerVector[i]
+                    val dot = ox * speaker.x + oy * speaker.y + oz * speaker.z
                     ears[i] =
                         (idSoundSystemLocal.s_dotbias6.GetFloat() + dot) / (1.0f + idSoundSystemLocal.s_dotbias6.GetFloat())
                     if (ears[i] < idSoundSystemLocal.s_minVolume6.GetFloat()) {
@@ -1277,7 +1288,7 @@ class snd_world {
                     }
                 }
             } else {
-                val dot = ovec.y
+                val dot = oy
                 var dotBias: Float = idSoundSystemLocal.s_dotbias2.GetFloat()
 
                 // when we are inside the minDistance, start reducing the amount of spatialization
@@ -1379,16 +1390,24 @@ class snd_world {
             // it's not affected by distance or occlusion
             //
             var spatialize = 1.0f
-            val spatializedOriginInMeters = idVec3()
+            val spatializedOriginInMeters = channelSpatializedOriginInMeters
             if (!global) {
                 val dlen: Float
                 dlen = if (noOcclusion) {
                     // use the real origin and distance
-                    spatializedOriginInMeters.set(sound.origin.times(snd_shader.DOOM_TO_METERS))
+                    spatializedOriginInMeters.set(
+                        sound.origin.x * snd_shader.DOOM_TO_METERS,
+                        sound.origin.y * snd_shader.DOOM_TO_METERS,
+                        sound.origin.z * snd_shader.DOOM_TO_METERS
+                    )
                     sound.realDistance
                 } else {
                     // use the possibly portal-occluded origin and distance
-                    spatializedOriginInMeters.set(sound.spatializedOrigin.times(snd_shader.DOOM_TO_METERS))
+                    spatializedOriginInMeters.set(
+                        sound.spatializedOrigin.x * snd_shader.DOOM_TO_METERS,
+                        sound.spatializedOrigin.y * snd_shader.DOOM_TO_METERS,
+                        sound.spatializedOrigin.z * snd_shader.DOOM_TO_METERS
+                    )
                     sound.distance
                 }
 
@@ -1776,14 +1795,16 @@ class snd_world {
                     EXTEfx.alAuxiliaryEffectSlotf(listenerSlot, EXTEfx.AL_EFFECTSLOT_GAIN, gain)
                 }
 
-                var found =
-                    snd_system.soundSystemLocal.EFXDatabase.FindEffect(idStr(listenerArea.toString()), effectHandle)
+                if (listenerAreaEffectNameArea != listenerArea) {
+                    listenerAreaEffectNameArea = listenerArea
+                    listenerAreaEffectName.set(listenerArea.toString())
+                }
+                var found = snd_system.soundSystemLocal.EFXDatabase.FindEffect(listenerAreaEffectName, effectHandle)
                 if (!found) {
-                    found =
-                        snd_system.soundSystemLocal.EFXDatabase.FindEffect(idStr(listenerAreaName), effectHandle)
+                    found = snd_system.soundSystemLocal.EFXDatabase.FindEffect(listenerAreaName, effectHandle)
                 }
                 if (!found) {
-                    found = snd_system.soundSystemLocal.EFXDatabase.FindEffect(idStr("default"), effectHandle)
+                    found = snd_system.soundSystemLocal.EFXDatabase.FindEffect(defaultEffectName, effectHandle)
                 }
 
                 // only update if change in settings
