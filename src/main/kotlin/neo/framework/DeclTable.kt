@@ -40,7 +40,7 @@ class DeclTable {
     class idDeclTable : idDecl() {
         private var clamp = false
         private var snap = false
-        private val values: List.idList<Float> = List.idList()
+        private val values: List.idFloatList = List.idFloatList()
 
         /*
          =================

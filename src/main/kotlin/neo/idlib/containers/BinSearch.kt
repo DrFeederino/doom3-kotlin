@@ -52,6 +52,20 @@ fun <T> idBinSearch_LessEqual(array: Array<T>, arraySize: Int, value: T): Int {
     return offset
 }
 
+fun idBinSearch_LessEqual(array: FloatArray, arraySize: Int, value: Float): Int {
+    var len = arraySize
+    var mid = len
+    var offset = 0
+    while (mid > 0) {
+        mid = len shr 1
+        if (array[offset + mid] <= value) {
+            offset += mid
+        }
+        len -= mid
+    }
+    return offset
+}
+
 /*
  ====================
  idBinSearch_Greater

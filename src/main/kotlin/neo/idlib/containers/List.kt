@@ -10,8 +10,6 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.StrPool.idPoolStr
 import neo.idlib.math.idVec3
 import java.util.*
-import java.util.logging.Level
-import java.util.logging.Logger
 
 object List {
 
@@ -91,7 +89,7 @@ object List {
         protected var num = 0
         private var list: Array<T>? = null
         private var size = 0
-        private var type: Class<T>? = null
+        private var factory: (() -> T)? = null
 
         //public	typedef int		cmp_t( const T *, const T * );
         //public	typedef T	new_t( );
@@ -99,8 +97,8 @@ object List {
             //            this(16);//disabled to prevent inherited constructors from calling the overridden clear function.
         }
 
-        constructor(type: Class<T>) : this() {
-            this.type = type
+        constructor(factory: () -> T) : this() {
+            this.factory = factory
         }
 
         constructor(newgranularity: Int) {
@@ -110,8 +108,8 @@ object List {
             Clear()
         }
 
-        constructor(newgranularity: Int, type: Class<T>) : this(newgranularity) {
-            this.type = type
+        constructor(newgranularity: Int, factory: () -> T) : this(newgranularity) {
+            this.factory = factory
         }
 
         constructor(other: idList<T>) {
@@ -225,7 +223,7 @@ object List {
             num = other.num
             size = other.size
             granularity = other.granularity
-            type = other.type
+            factory = other.factory
             if (size != 0) {
                 list = arrayOfNulls<Any>(size) as Array<T>
                 i = 0
@@ -446,7 +444,7 @@ object List {
          */
         fun AssureSizeAlloc(
             newSize: Int,  /*new_t*/
-            allocator: Class<T>
+            allocator: () -> T
         ) {    // assure the pointer list has the given number of elements and allocate any new elements
             var newSize = newSize
             val newNum = newSize
@@ -459,14 +457,7 @@ object List {
                 num = size
                 Resize(newSize)
                 for (i in num until newSize) {
-                    try {
-                        list!![i] =  /*( * allocator) ()*/
-                            allocator.newInstance() as T //TODO: check if any of this is necessary?
-                    } catch (ex: InstantiationException) {
-                        Logger.getLogger(List::class.java.name).log(Level.SEVERE, null, ex)
-                    } catch (ex: IllegalAccessException) {
-                        Logger.getLogger(List::class.java.name).log(Level.SEVERE, null, ex)
-                    }
+                    list!![i] =  /*( * allocator) ()*/ allocator()
                 }
             }
             num = newNum
@@ -511,19 +502,14 @@ object List {
          ================
          */
         fun Alloc(): T? {                                    // returns reference to a new data element at the end of the list
+            val allocator = factory ?: throw IllegalStateException("idList.Alloc requires an allocator")
             if (list == null) {
                 Resize(granularity)
             }
             if (num == size) {
                 Resize(size + granularity)
             }
-            try {
-                return type!!.newInstance().also { list!![num++] = it }
-            } catch (ex: InstantiationException) {
-//                Logger.getLogger(List.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (ex: IllegalAccessException) {
-            }
-            return null
+            return allocator().also { list!![num++] = it }
         }
 
         /*
@@ -873,6 +859,161 @@ object List {
                     + TempDump.CPP_class.Pointer.SIZE) //T
 
             private var DBG_counter = 0
+        }
+    }
+
+    open class idFloatList {
+        protected var granularity = 16
+        protected var num = 0
+        private var list: FloatArray = FloatArray(0)
+        private var size = 0
+
+        constructor()
+
+        constructor(newgranularity: Int) {
+            assert(newgranularity > 0)
+            granularity = newgranularity
+        }
+
+        open fun Clear() {
+            list = FloatArray(0)
+            num = 0
+            size = 0
+        }
+
+        open fun Num(): Int {
+            return num
+        }
+
+        fun NumAllocated(): Int {
+            return size
+        }
+
+        fun SetGranularity(newgranularity: Int) {
+            assert(newgranularity > 0)
+            granularity = newgranularity
+            if (size != 0) {
+                var newsize = num + granularity - 1
+                newsize -= newsize % granularity
+                if (newsize != size) {
+                    Resize(newsize)
+                }
+            }
+        }
+
+        fun Allocated(): Int {
+            return size * java.lang.Float.BYTES
+        }
+
+        fun MemoryUsed(): Int {
+            return num * java.lang.Float.BYTES
+        }
+
+        operator fun get(index: Int): Float {
+            assert(index >= 0)
+            assert(index < num)
+            return list[index]
+        }
+
+        operator fun set(index: Int, value: Float): Float {
+            assert(index >= 0)
+            assert(index < num)
+            list[index] = value
+            return value
+        }
+
+        fun Ptr(): FloatArray {
+            return list
+        }
+
+        fun Resize(newsize: Int) {
+            assert(newsize >= 0)
+            if (newsize <= 0) {
+                Clear()
+                return
+            }
+            if (newsize == size) {
+                return
+            }
+            list = list.copyOf(newsize)
+            size = newsize
+            if (size < num) {
+                num = size
+            }
+        }
+
+        fun SetNum(newnum: Int, resize: Boolean = true) {
+            assert(newnum >= 0)
+            if (resize || newnum > size) {
+                Resize(newnum)
+            }
+            num = newnum
+        }
+
+        fun AssureSize(newSize: Int) {
+            var newSize = newSize
+            val newNum = newSize
+            if (newSize > size) {
+                if (granularity == 0) {
+                    granularity = 16
+                }
+                newSize += granularity - 1
+                newSize -= newSize % granularity
+                Resize(newSize)
+            }
+            num = newNum
+        }
+
+        fun Append(value: Float): Int {
+            if (size == 0) {
+                Resize(granularity)
+            }
+            if (num == size) {
+                if (granularity == 0) {
+                    granularity = 16
+                }
+                Resize(size + granularity)
+            }
+            list[num] = value
+            num++
+            return num - 1
+        }
+
+        fun Insert(value: Float, index: Int = 0): Int {
+            var index = index
+            if (size == 0) {
+                Resize(granularity)
+            }
+            if (num == size) {
+                if (granularity == 0) {
+                    granularity = 16
+                }
+                Resize(size + granularity)
+            }
+            if (index < 0) {
+                index = 0
+            } else if (index > num) {
+                index = num
+            }
+            if (index < num) {
+                System.arraycopy(list, index, list, index + 1, num - index)
+            }
+            list[index] = value
+            num++
+            return index
+        }
+
+        fun RemoveIndex(index: Int): Boolean {
+            assert(index >= 0)
+            assert(index < num)
+            if (index < 0 || index >= num) {
+                return false
+            }
+            if (index < num - 1) {
+                System.arraycopy(list, index + 1, list, index, num - index - 1)
+            }
+            num--
+            return true
         }
     }
 

@@ -900,10 +900,10 @@ object tr_deform {
         //
         val numSourceTris: Int = surf.geo!!.numIndexes / 3
         var totalArea = 0.0f
-        var sourceTriAreas: Array<Float?>? = null
+        var sourceTriAreas: FloatArray? = null
         val srcTri: srfTriangles_s = surf.geo!!
         if (useArea) {
-            sourceTriAreas = arrayOfNulls(numSourceTris)
+            sourceTriAreas = FloatArray(numSourceTris)
             var triNum = 0
             var i = 0
             while (i < srcTri.numIndexes) {
@@ -1022,8 +1022,8 @@ object tr_deform {
                     var pointTri: Int = currentTri
                     if (useArea) {
                         // select a triangle based on an even area distribution
-                        pointTri = idBinSearch_LessEqual<Float>(
-                            sourceTriAreas as Array<Float>,
+                        pointTri = idBinSearch_LessEqual(
+                            sourceTriAreas!!,
                             numSourceTris,
                             g.random.RandomFloat() * totalArea
                         )

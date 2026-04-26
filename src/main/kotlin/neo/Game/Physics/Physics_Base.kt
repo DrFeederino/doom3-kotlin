@@ -51,9 +51,9 @@ class Physics_Base {
         protected var clipMask // contents the physics object collides with
                 = 0
         protected val contactEntities // entities touching this physics object
-                : idList<contactEntity_t> = idList(contactEntity_t::class.java)
+                : idList<contactEntity_t> = idList { contactEntity_t() }
         protected val contacts // contacts with other physics objects
-                : idList<contactInfo_t> = idList(contactInfo_t::class.java)
+                : idList<contactInfo_t> = idList { contactInfo_t() }
         protected val gravityNormal // normalized direction of gravity
                 : idVec3 = idVec3(gameLocal.GetGravity())
         protected val gravityVector // direction and magnitude of gravity

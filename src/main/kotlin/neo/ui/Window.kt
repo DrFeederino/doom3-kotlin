@@ -46,6 +46,7 @@ import neo.idlib.Text.Token.TT_NUMBER
 import neo.idlib.Text.Token.idToken
 import neo.idlib.colorBlack
 import neo.idlib.containers.CBool
+import neo.idlib.containers.List.idFloatList
 import neo.idlib.containers.List.idList
 import neo.idlib.math.*
 import neo.idlib.math.Interpolate.idInterpolateAccelDecelLinear
@@ -259,7 +260,7 @@ object Window {
         protected val definedVars = idList<idWinVar?>()
         val drawRect = idRectangle() // overall rect
         protected val drawWindows = idList<drawWin_t?>()
-        protected val expressionRegisters = idList<Float>()
+        protected val expressionRegisters = idFloatList()
         /*unsigned*/ var flags = 0 // visible, focus, mouseover, cursor, border, etc..
 
         //
@@ -293,7 +294,7 @@ object Window {
         var rotate = idWinFloat()
         protected var saveOps // evaluate to make expressionRegisters
                 : Array<idList<wexpOp_t>>? = null
-        protected var saveRegs: Array<idList<Float>>? = null
+        protected var saveRegs: Array<idFloatList>? = null
         protected var saveTemps: BooleanArray? = null
         protected var scripts = arrayOfNulls<idGuiScriptList>(etoi(ON.SCRIPT_COUNT))
         val shear = idVec2()

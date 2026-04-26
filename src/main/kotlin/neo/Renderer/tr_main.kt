@@ -470,9 +470,6 @@ object tr_main {
         planes: Array<idPlane>
     ): Boolean {
         var j: Int
-        val transformed: Array<idVec3> = idVec3.generateArray(8)
-        val dists = FloatArray(8)
-        val v = idVec3()
         var frust: idPlane
         DBG_R_CornerCullLocalBox++
 
@@ -481,13 +478,19 @@ object tr_main {
             return false
         }
 
+        val matrix = modelMatrix!!
+        val transformed = FloatArray(8 * 3)
+
         // transform into world space
         var i = 0
         while (i < 8) {
-            v[0] = bounds[(i shr 0) and 1, 0]
-            v[1] = bounds[(i shr 1) and 1, 1]
-            v[2] = bounds[(i shr 2) and 1, 2]
-            transformed[i].set(R_LocalPointToGlobal(modelMatrix!!, v))
+            val x = bounds[(i shr 0) and 1, 0]
+            val y = bounds[(i shr 1) and 1, 1]
+            val z = bounds[(i shr 2) and 1, 2]
+            val out = i * 3
+            transformed[out + 0] = x * matrix[0] + y * matrix[4] + z * matrix[8] + matrix[12]
+            transformed[out + 1] = x * matrix[1] + y * matrix[5] + z * matrix[9] + matrix[13]
+            transformed[out + 2] = x * matrix[2] + y * matrix[6] + z * matrix[10] + matrix[14]
             i++
         }
 
@@ -497,8 +500,12 @@ object tr_main {
             frust = planes[i]
             j = 0
             while (j < 8) {
-                dists[j] = frust.Distance(transformed[j])
-                if (dists[j] < 0) {
+                val point = j * 3
+                val dist = frust[0] * transformed[point + 0] +
+                        frust[1] * transformed[point + 1] +
+                        frust[2] * transformed[point + 2] +
+                        frust[3]
+                if (dist < 0) {
                     break
                 }
                 j++

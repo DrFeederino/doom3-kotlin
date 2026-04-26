@@ -505,8 +505,10 @@ class drawSurf_s {
 
     companion object {
         private var DBG_counter: Int = 0
+
+        @Suppress("UNCHECKED_CAST")
         fun generateArray(length: Int): Array<drawSurf_s> {
-            return Array(length) { drawSurf_s() }
+            return arrayOfNulls<drawSurf_s>(length) as Array<drawSurf_s>
         }
     }
 }

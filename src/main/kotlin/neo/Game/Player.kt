@@ -296,7 +296,7 @@ object Player {
         var pdaOpened = false
         var pdaSecurity: idStrList
         var pdas: idStrList
-        val pickupItemNames = idList(idItemInfo::class.java)
+        val pickupItemNames = idList { idItemInfo() }
         var powerups = 0
         var selAudio = 0
         var selEMail = 0

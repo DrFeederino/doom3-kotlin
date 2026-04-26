@@ -1,6 +1,6 @@
 package neo.idlib.math
 
-import neo.TempDump.TypeErasure_Expection
+import neo.idlib.containers.List.idFloatList
 import neo.idlib.containers.List.idList
 import neo.idlib.math.Matrix.idMatX
 
@@ -11,10 +11,10 @@ import neo.idlib.math.Matrix.idMatX
 
  ===============================================================================
  */
-open class idCurve<T : idVec<T>>(protected val clazz: Class<T>) {
+open class idCurve<T : idVec<T>>(private val factory: () -> T) {
     protected var changed: Boolean
     protected var currentIndex: Int // cached index for fast lookup
-    protected val times: idList<Float> = idList() // knots
+    protected val times: idFloatList = idFloatList() // knots
     protected val values: idList<T> = idList() // knot values
 
     /*
@@ -379,13 +379,7 @@ open class idCurve<T : idVec<T>>(protected val clazz: Class<T>) {
     }
 
     protected fun newInstance(): T {
-        return try {
-            clazz.newInstance()
-        } catch (e: InstantiationException) {
-            throw TypeErasure_Expection()
-        } catch (e: IllegalAccessException) {
-            throw TypeErasure_Expection()
-        }
+        return factory()
     }
 
     init {
@@ -404,7 +398,7 @@ open class idCurve<T : idVec<T>>(protected val clazz: Class<T>) {
  *
  * ===============================================================================
  */
-class idCurve_Bezier<T : idVec<T>>(clazz: Class<T>) : idCurve<T>(clazz) {
+class idCurve_Bezier<T : idVec<T>>(factory: () -> T) : idCurve<T>(factory) {
     /*
      ====================
      idCurve_Bezier::GetCurrentValue
@@ -576,7 +570,7 @@ class idCurve_Bezier<T : idVec<T>>(clazz: Class<T>) : idCurve<T>(clazz) {
 
  ===============================================================================
  */
-class idCurve_QuadraticBezier<T : idVec<T>>(clazz: Class<T>) : idCurve<T>(clazz) {
+class idCurve_QuadraticBezier<T : idVec<T>>(factory: () -> T) : idCurve<T>(factory) {
     /*
      ====================
      idCurve_QuadraticBezier::GetCurrentValue
@@ -675,7 +669,7 @@ class idCurve_QuadraticBezier<T : idVec<T>>(clazz: Class<T>) : idCurve<T>(clazz)
  *
  * ===============================================================================
  */
-class idCurve_CubicBezier<T : idVec<T>>(clazz: Class<T>) : idCurve<T>(clazz) {
+class idCurve_CubicBezier<T : idVec<T>>(factory: () -> T) : idCurve<T>(factory) {
     /*
      ====================
      idCurve_CubicBezier::GetCurrentValue
@@ -780,7 +774,7 @@ class idCurve_CubicBezier<T : idVec<T>>(clazz: Class<T>) : idCurve<T>(clazz) {
  *
  * ===============================================================================
  */
-open class idCurve_Spline<T : idVec<T>>(clazz: Class<T>) : idCurve<T>(clazz) {
+open class idCurve_Spline<T : idVec<T>>(factory: () -> T) : idCurve<T>(factory) {
     protected var boundaryT: Int
     protected var closeTime: Float
     override fun IsDone(time: Float): Boolean {
@@ -898,7 +892,7 @@ open class idCurve_Spline<T : idVec<T>>(clazz: Class<T>) : idCurve<T>(clazz) {
  *
  * ===============================================================================
  */
-class idCurve_NaturalCubicSpline<T : idVec<T>>(clazz: Class<T>) : idCurve_Spline<T>(clazz) {
+class idCurve_NaturalCubicSpline<T : idVec<T>>(factory: () -> T) : idCurve_Spline<T>(factory) {
     protected val b: idList<T> = idList()
     protected val c: idList<T> = idList()
     protected val d: idList<T> = idList()
@@ -1174,7 +1168,7 @@ class idCurve_NaturalCubicSpline<T : idVec<T>>(clazz: Class<T>) : idCurve_Spline
  *
  * ===============================================================================
  */
-class idCurve_CatmullRomSpline<T : idVec<T>>(clazz: Class<T>) : idCurve_Spline<T>(clazz) {
+class idCurve_CatmullRomSpline<T : idVec<T>>(factory: () -> T) : idCurve_Spline<T>(factory) {
     /*
      ====================
      idCurve_CatmullRomSpline::GetCurrentValue
@@ -1326,11 +1320,11 @@ class idCurve_CatmullRomSpline<T : idVec<T>>(clazz: Class<T>) : idCurve_Spline<T
  *
  * ===============================================================================
  */
-class idCurve_KochanekBartelsSpline<T : idVec<T>>(clazz: Class<T>) :
-    idCurve_Spline<T>(clazz) {
-    protected val bias: idList<Float> = idList()
-    protected val continuity: idList<Float> = idList()
-    protected val tension: idList<Float> = idList()
+class idCurve_KochanekBartelsSpline<T : idVec<T>>(factory: () -> T) :
+    idCurve_Spline<T>(factory) {
+    protected val bias: idFloatList = idFloatList()
+    protected val continuity: idFloatList = idFloatList()
+    protected val tension: idFloatList = idFloatList()
 
     /*
      ====================
@@ -1569,7 +1563,7 @@ class idCurve_KochanekBartelsSpline<T : idVec<T>>(clazz: Class<T>) :
  * ===============================================================================
  */
 open class idCurve_BSpline<T : idVec<T>>     // default to cubic
-    (clazz: Class<T>) : idCurve_Spline<T>(clazz) {
+    (factory: () -> T) : idCurve_Spline<T>(factory) {
     protected var order = 4
     fun GetOrder(): Int {
         return order
@@ -1730,7 +1724,7 @@ open class idCurve_BSpline<T : idVec<T>>     // default to cubic
  *
  * ===============================================================================
  */
-class idCurve_UniformCubicBSpline<T : idVec<T>>(clazz: Class<T>) : idCurve_BSpline<T>(clazz) {
+class idCurve_UniformCubicBSpline<T : idVec<T>>(factory: () -> T) : idCurve_BSpline<T>(factory) {
     /*
      ====================
      idCurve_UniformCubicBSpline::GetCurrentValue
@@ -1884,7 +1878,7 @@ class idCurve_UniformCubicBSpline<T : idVec<T>>(clazz: Class<T>) : idCurve_BSpli
  *
  * ===============================================================================
  */
-open class idCurve_NonUniformBSpline<T : idVec<T>>(clazz: Class<T>) : idCurve_BSpline<T>(clazz) {
+open class idCurve_NonUniformBSpline<T : idVec<T>>(factory: () -> T) : idCurve_BSpline<T>(factory) {
     /*
      ====================
      idCurve_NonUniformBSpline::GetCurrentValue
@@ -2066,8 +2060,8 @@ open class idCurve_NonUniformBSpline<T : idVec<T>>(clazz: Class<T>) : idCurve_BS
 
  ===============================================================================
  */
-class idCurve_NURBS<T : idVec<T>>(clazz: Class<T>) : idCurve_NonUniformBSpline<T>(clazz) {
-    protected val weights: idList<Float> = idList()
+class idCurve_NURBS<T : idVec<T>>(factory: () -> T) : idCurve_NonUniformBSpline<T>(factory) {
+    protected val weights: idFloatList = idFloatList()
 
     /*
      ====================

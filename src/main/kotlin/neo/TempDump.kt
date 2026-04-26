@@ -313,16 +313,24 @@ object TempDump {
 
 
     fun atof(ascii: String): Float {
-        try {
-            return ascii.trim { it <= ' ' }.replace(",", ".").toFloat()
-        } catch (nfe: Exception) {
+        if (ascii.isBlank()) {
             return 0f
+        }
+        val value = if (ascii.indexOf(',') >= 0) {
+            ascii.trim { it <= ' ' }.replace(",", ".")
+        } else {
+            ascii.trim { it <= ' ' }
+        }
+        return try {
+            value.toFloat()
+        } catch (nfe: NumberFormatException) {
+            0f
         }
     }
 
 
     fun atof(ascii: idStr?): Float {
-        return atof(ascii.toString())
+        return if (ascii == null) 0f else atof(ascii.toString())
     }
 
 

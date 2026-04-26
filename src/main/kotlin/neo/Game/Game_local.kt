@@ -622,11 +622,9 @@ class Game_local {
 
             // register game specific decl types
             declManager.RegisterDeclType(
-                "model", declType_t.DECL_MODELDEF, DeclManager.idDeclAllocator(idDeclModelDef::class.java)!!
-            )
-            declManager.RegisterDeclType(
-                "export", declType_t.DECL_MODELEXPORT, DeclManager.idDeclAllocator(idDecl::class.java)!!
-            )
+                "model", declType_t.DECL_MODELDEF
+            ) { idDeclModelDef() }
+            declManager.RegisterDeclType("export", declType_t.DECL_MODELEXPORT) { idDecl() }
 
             // register game specific decl folders
             declManager.RegisterDeclFolder("def", ".def", declType_t.DECL_ENTITYDEF)

@@ -31,7 +31,7 @@ class Surface_SweptSpline {
          ====================
          */
         fun SetSweptCircle(radius: Float) {
-            val nurbs = idCurve_NURBS(idVec4::class.java)
+            val nurbs = idCurve_NURBS { idVec4() }
             nurbs.Clear()
             nurbs.AddValue(0.0f, idVec4(radius, radius, 0.0f, 0.0f))
             nurbs.AddValue(100.0f, idVec4(-radius, radius, 0.0f, 0.25f))

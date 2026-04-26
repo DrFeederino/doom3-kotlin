@@ -31,6 +31,7 @@ import neo.idlib.Text.Str.va
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.CBool
 import neo.idlib.containers.HashTable.idHashTable
+import neo.idlib.containers.List.idFloatList
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idStrList
 import neo.idlib.math.idVec2
@@ -335,7 +336,7 @@ object ListWindow {
                     tabSizes.Append(size)
                 }
             }
-            val tabIconVOffsets = idList<Float>()
+            val tabIconVOffsets = idFloatList()
             if (tabIconVOffsetStr.Length() != 0) {
                 val src = idParser(
                     tabIconVOffsetStr.toString(),

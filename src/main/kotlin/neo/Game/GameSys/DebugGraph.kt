@@ -38,8 +38,7 @@ package neo.Game.GameSys
 
 import neo.Game.Game_local
 import neo.Game.Game_local.Companion.gameLocal
-import neo.Game.Game_local.idGameLocal
-import neo.idlib.containers.List.idList
+import neo.idlib.containers.List.idFloatList
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
 
@@ -52,7 +51,7 @@ class DebugGraph {
     */
     class idDebugGraph {
 
-        private val samples: idList<Float> = idList()
+        private val samples: idFloatList = idFloatList()
         private var index: Int = 0
 
         /*

@@ -263,6 +263,10 @@ object DeviceContext {
         private var whiteImage: idMaterial? = null
         private var xScale = 0f
         private var yScale = 0f
+        private val stretchPicVerts = Array(4) { idDrawVert() }
+        private val stretchPicIndexes = intArrayOf(3, 0, 2, 2, 0, 1)
+        private val stretchPicRotatedVerts = Array(4) { idDrawVert() }
+        private val stretchPicRotatedIndexes = intArrayOf(3, 0, 2, 2, 0, 1)
 
         //#modified-fva; BEGIN
         private var cst_xOffset: Float = 0.0f
@@ -725,14 +729,8 @@ object DeviceContext {
             shader: idMaterial?,
             adjustCoords: Boolean = false
         ) {
-            val verts = arrayOf(idDrawVert(), idDrawVert(), idDrawVert(), idDrawVert())
-            val indexes = IntArray(6)
-            indexes[0] = 3
-            indexes[1] = 0
-            indexes[2] = 2
-            indexes[3] = 2
-            indexes[4] = 0
-            indexes[5] = 1
+            val verts = stretchPicVerts
+            val indexes = stretchPicIndexes
             verts[0].xyz[0] = x
             verts[0].xyz[1] = y
             verts[0].xyz[2] = 0.0f
@@ -910,14 +908,8 @@ object DeviceContext {
             angle: Float,
             adjustCoords: Boolean = false
         ) {
-            val verts = arrayOf(idDrawVert(), idDrawVert(), idDrawVert(), idDrawVert())
-            val indexes = IntArray(6)
-            indexes[0] = 3
-            indexes[1] = 0
-            indexes[2] = 2
-            indexes[3] = 2
-            indexes[4] = 0
-            indexes[5] = 1
+            val verts = stretchPicRotatedVerts
+            val indexes = stretchPicRotatedIndexes
             verts[0].xyz[0] = x
             verts[0]!!.xyz[1] = y
             verts[0]!!.xyz[2] = 0.0f

@@ -509,7 +509,7 @@ open class idActor : idAFEntity_Gibbable() {
     protected var allowEyeFocus: Boolean
     protected var allowPain: Boolean
     protected val animPrefix: idStr
-    protected var attachments: List.idList<idAttachInfo> = List.idList(idAttachInfo::class.java)
+    protected var attachments: List.idList<idAttachInfo> = List.idList { idAttachInfo() }
 
     // blinking
     protected var blink_anim: Int
@@ -521,7 +521,7 @@ open class idActor : idAFEntity_Gibbable() {
     protected var damageGroups // body damage groups
             : idStrList = idStrList()
     protected var damageScale // damage scale per damage gruop
-            : List.idList<Float> = List.idList()
+            : List.idFloatList = List.idFloatList()
     protected val deltaViewAngles // delta angles relative to view input angles
             : idAngles
     protected val eyeOffset // offset of eye relative to physics origin

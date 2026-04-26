@@ -25,13 +25,9 @@ import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List
 import neo.idlib.containers.idHashIndex
 import neo.idlib.hashing.MD5_BlockChecksum
-import java.lang.reflect.Constructor
-import java.lang.reflect.InvocationTargetException
 import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.util.logging.Level
-import java.util.logging.Logger
 
 class DeclManager {
 
@@ -337,7 +333,7 @@ class DeclManager {
         abstract fun <T> RegisterDeclType(
             typeName: String,
             type: declType_t,
-            allocator: Constructor<T> /* *(*allocator)()*/
+            allocator: () -> T /* *(*allocator)()*/
         ) where T : idDecl
 
         // Registers a new folder with decl files.
@@ -520,7 +516,7 @@ class DeclManager {
 
     internal class idDeclType {
         lateinit var allocator //(*allocator)( void );
-                : Constructor<idDecl>
+                : () -> idDecl
         var type: declType_t = declType_t.DECL_TABLE
         val typeName: idStr = idStr()
     }
@@ -795,18 +791,8 @@ class DeclManager {
         override fun Print() {}
         fun AllocateSelf() {
             if (null == self) {
-                try {
-                    self = declManagerLocal.GetDeclType(TempDump.etoi(type))!!.allocator.newInstance()
-                    self!!.base = this
-                } catch (ex: InstantiationException) {
-                    Logger.getLogger(DeclManager::class.java.name).log(Level.SEVERE, null, ex)
-                } catch (ex: IllegalAccessException) {
-                    Logger.getLogger(DeclManager::class.java.name).log(Level.SEVERE, null, ex)
-                } catch (ex: IllegalArgumentException) {
-                    Logger.getLogger(DeclManager::class.java.name).log(Level.SEVERE, null, ex)
-                } catch (ex: InvocationTargetException) {
-                    Logger.getLogger(DeclManager::class.java.name).log(Level.SEVERE, null, ex)
-                }
+                self = declManagerLocal.GetDeclType(TempDump.etoi(type))!!.allocator()
+                self!!.base = this
             }
         }
 
@@ -1172,27 +1158,19 @@ class DeclManager {
             }
 
             // decls used throughout the engine
-            RegisterDeclType("table", declType_t.DECL_TABLE, idDeclAllocator(idDeclTable::class.java)!!)
-            RegisterDeclType("material", declType_t.DECL_MATERIAL, idDeclAllocator(Material.idMaterial::class.java)!!)
-            RegisterDeclType("skin", declType_t.DECL_SKIN, idDeclAllocator(idDeclSkin::class.java)!!)
-            RegisterDeclType("sound", declType_t.DECL_SOUND, idDeclAllocator(idSoundShader::class.java)!!)
-            RegisterDeclType(
-                "entityDef",
-                declType_t.DECL_ENTITYDEF,
-                idDeclAllocator(idDeclEntityDef::class.java)!!
-            )
-            RegisterDeclType("mapDef", declType_t.DECL_MAPDEF, idDeclAllocator(idDeclEntityDef::class.java)!!)
-            RegisterDeclType("fx", declType_t.DECL_FX, idDeclAllocator(idDeclFX::class.java)!!)
-            RegisterDeclType(
-                "particle",
-                declType_t.DECL_PARTICLE,
-                idDeclAllocator(idDeclParticle::class.java)!!
-            )
-            RegisterDeclType("articulatedFigure", declType_t.DECL_AF, idDeclAllocator(idDeclAF::class.java)!!)
-            RegisterDeclType("pda", declType_t.DECL_PDA, idDeclAllocator(idDeclPDA::class.java)!!)
-            RegisterDeclType("email", declType_t.DECL_EMAIL, idDeclAllocator(idDeclEmail::class.java)!!)
-            RegisterDeclType("video", declType_t.DECL_VIDEO, idDeclAllocator(idDeclVideo::class.java)!!)
-            RegisterDeclType("audio", declType_t.DECL_AUDIO, idDeclAllocator(idDeclAudio::class.java)!!)
+            RegisterDeclType("table", declType_t.DECL_TABLE) { idDeclTable() }
+            RegisterDeclType("material", declType_t.DECL_MATERIAL) { Material.idMaterial() }
+            RegisterDeclType("skin", declType_t.DECL_SKIN) { idDeclSkin() }
+            RegisterDeclType("sound", declType_t.DECL_SOUND) { idSoundShader() }
+            RegisterDeclType("entityDef", declType_t.DECL_ENTITYDEF) { idDeclEntityDef() }
+            RegisterDeclType("mapDef", declType_t.DECL_MAPDEF) { idDeclEntityDef() }
+            RegisterDeclType("fx", declType_t.DECL_FX) { idDeclFX() }
+            RegisterDeclType("particle", declType_t.DECL_PARTICLE) { idDeclParticle() }
+            RegisterDeclType("articulatedFigure", declType_t.DECL_AF) { idDeclAF() }
+            RegisterDeclType("pda", declType_t.DECL_PDA) { idDeclPDA() }
+            RegisterDeclType("email", declType_t.DECL_EMAIL) { idDeclEmail() }
+            RegisterDeclType("video", declType_t.DECL_VIDEO) { idDeclVideo() }
+            RegisterDeclType("audio", declType_t.DECL_AUDIO) { idDeclAudio() }
 
             // Build HashMap for fast decl type lookup by name
             declTypeNameMap.clear()
@@ -1473,7 +1451,7 @@ class DeclManager {
         override fun <T> RegisterDeclType(
             typeName: String,
             type: declType_t,
-            allocator: Constructor<T>
+            allocator: () -> T
         ) where  T : idDecl {
             val declType: idDeclType
             if (type.ordinal < declTypes.Num() && declTypes[type.ordinal] != null) {
@@ -1483,7 +1461,7 @@ class DeclManager {
             declType = idDeclType()
             declType.typeName.set(typeName)
             declType.type = type
-            declType.allocator = allocator as Constructor<idDecl>
+            declType.allocator = allocator
             if (type.ordinal + 1 > declTypes.Num()) {
                 declTypes.AssureSize(type.ordinal + 1, null)
             }
@@ -2601,18 +2579,6 @@ class DeclManager {
             text[0] = sb.toString()
 
             return msg.GetReadCount()
-        }
-
-        fun <T> idDeclAllocator(   /*<idDecl>*/theMobRules: Class<T>): Constructor<T>? {
-            //TODO:use reflection. EDIT:cross fingers.
-            try {
-                return theMobRules.getConstructor()
-            } catch (ex: NoSuchMethodException) {
-                Logger.getLogger(DeclManager::class.java.name).log(Level.SEVERE, null, ex)
-            } catch (ex: SecurityException) {
-                Logger.getLogger(DeclManager::class.java.name).log(Level.SEVERE, null, ex)
-            }
-            return null
         }
 
         fun setDeclManagers(declManager: idDeclManager) {

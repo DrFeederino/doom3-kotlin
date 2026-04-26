@@ -319,7 +319,7 @@ object Mover {
 
         //
         private val guiTargets: idList<idEntityPtr<idEntity>> =
-            idList(idEntityPtr<idEntity>().javaClass)
+            idList { idEntityPtr<idEntity>() }
         protected var move: moveState_t
 
         //
@@ -2968,7 +2968,7 @@ object Mover {
             blocked = false
             fl.networkSync = true
             guiTargets =
-                idList(idEntityPtr<idEntity>().javaClass)
+                idList { idEntityPtr<idEntity>() }
         }
     }
 

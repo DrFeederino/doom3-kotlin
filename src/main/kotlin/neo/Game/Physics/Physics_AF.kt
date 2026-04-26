@@ -7876,7 +7876,7 @@ object Physics_AF {
             var i: Int
 
             // make sure enough contact constraints are allocated
-            contactConstraints.AssureSizeAlloc(contacts.Num(), idAFConstraint_Contact::class.java)
+            contactConstraints.AssureSizeAlloc(contacts.Num()) { idAFConstraint_Contact() }
             contactConstraints.SetNum(contacts.Num(), false)
 
             // setup contact constraints

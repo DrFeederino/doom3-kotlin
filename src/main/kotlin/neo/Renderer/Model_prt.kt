@@ -41,6 +41,7 @@ import neo.idlib.BV.idBounds
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.containers.CInt
+import neo.idlib.containers.List.idFloatList
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.math.Random.idRandom
 import java.util.*
@@ -57,7 +58,7 @@ object Model_prt {
      */
     class idRenderModelPrt : idRenderModelStatic() {
         private var particleSystem: idDeclParticle? = null
-        private val softeningRadii: ArrayList<Float> = ArrayList()
+        private val softeningRadii: idFloatList = idFloatList()
 
         override fun InitFromFile(fileName: String?) {
             name = idStr((fileName)!!)
@@ -232,14 +233,14 @@ object Model_prt {
 
         fun SofteningRadius(stage: Int): Float {
             assert(particleSystem != null)
-            assert(stage > -1 && stage < softeningRadii.size)
+            assert(stage > -1 && stage < softeningRadii.Num())
             return softeningRadii[stage]
         }
 
         private fun SetSofteningRadii() {
             val ps = particleSystem ?: return
-            softeningRadii.clear()
-            softeningRadii.ensureCapacity(ps.stages.Num())
+            softeningRadii.Clear()
+            softeningRadii.SetGranularity(ps.stages.Num().coerceAtLeast(1))
             for (i in 0 until ps.stages.Num()) {
                 val stage = ps.stages[i]
                 if (stage.orientation == prtOrientation_t.POR_VIEW) {
@@ -247,12 +248,12 @@ object Model_prt {
                     val scale = maxOf(stage.aspect.from, stage.aspect.to)
                     diameter *= maxOf(scale, 1.0f)
                     if (diameter > 2.0f) {
-                        softeningRadii.add(diameter * 0.8f / 2.0f)
+                        softeningRadii.Append(diameter * 0.8f / 2.0f)
                     } else {
-                        softeningRadii.add(0.0f)
+                        softeningRadii.Append(0.0f)
                     }
                 } else {
-                    softeningRadii.add(-1.0f)
+                    softeningRadii.Append(-1.0f)
                 }
             }
         }

@@ -41,6 +41,7 @@ import neo.idlib.Text.Lexer.LEXFL_NOSTRINGESCAPECHARS
 import neo.idlib.Text.Parser.idParser
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
+import neo.idlib.containers.List
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.List.idSwap
 import neo.idlib.geometry.DrawVert.idDrawVert
@@ -74,10 +75,10 @@ object Model_liquid {
         private var drop_height: Float = 4.0f
         private var drop_radius: Int = 4
         private var liquid_type: Int = 0
-        private lateinit var page1: Array<Float>
-        private lateinit var page2: Array<Float>
+        private lateinit var page1: FloatArray
+        private lateinit var page2: FloatArray
 
-        private val pages: idList<Float> = idList()
+        private val pages: List.idFloatList = List.idFloatList()
 
         private val random: idRandom = idRandom()
         private var scale_x: Float = 256.0f
@@ -170,8 +171,8 @@ object Model_liquid {
             scale_x = size_x / (verts_x - 1)
             scale_y = size_y / (verts_y - 1)
             pages.SetNum(2 * verts_x * verts_y)
-            page1 = Array(verts_x * verts_y) { 0.0f }
-            page2 = Array(verts_x * verts_y) { 0.0f }
+            page1 = FloatArray(verts_x * verts_y)
+            page2 = FloatArray(verts_x * verts_y)
             verts.SetNum(verts_x * verts_y)
             i = 0
             y = 0
@@ -281,8 +282,8 @@ object Model_liquid {
             nextDropTime = 0
             time = 0
             random.SetSeed(seed)
-            page1 = Array(verts_x * verts_y) { 0.0f }
-            page2 = Array(verts_x * verts_y) { 0.0f }
+            page1 = FloatArray(verts_x * verts_y)
+            page2 = FloatArray(verts_x * verts_y)
             i = 0
             y = 0
             while (y < verts_y) {
@@ -403,7 +404,7 @@ object Model_liquid {
             return surf
         }
 
-        private fun WaterDrop(x: Int, y: Int, page: Array<Float>) {
+        private fun WaterDrop(x: Int, y: Int, page: FloatArray) {
             var x: Int = x
             var y: Int = y
             var cx: Int

@@ -213,7 +213,7 @@ object Anim {
     class idMD5Anim {
         private val baseFrame: List.idList<idJointQuat> = List.idList()
         private val bounds: List.idList<idBounds> = List.idList()
-        private val componentFrames: List.idList<Float>
+        private val componentFrames: List.idFloatList
         private val jointInfo: List.idList<jointAnimInfo_t> = List.idList()
         private val name: idStr
         private val totaldelta: idVec3
@@ -496,7 +496,7 @@ object Anim {
             index: IntArray,
             numIndexes: Int
         ) {
-            val jointframe1: Array<Float>
+            val jointframe1: FloatArray
             var jf1_ptr: Int
             var jf2_ptr: Int
             var infoPtr: jointAnimInfo_t
@@ -518,7 +518,7 @@ object Anim {
 
             val f1_ptr: Int = frame.frame1 * numAnimatedComponents
             val f2_ptr: Int = frame.frame2 * numAnimatedComponents
-            val jointframe2: Array<Float> = componentFrames.getList(Array<Float>::class.java)!!
+            val jointframe2: FloatArray = componentFrames.Ptr()
             jointframe1 = jointframe2
             var i = 0
             while (i < numIndexes) {
@@ -685,7 +685,7 @@ object Anim {
 
         fun GetSingleFrame(framenum: Int, joints: Array<idJointQuat>, index: IntArray, numIndexes: Int) {
             //	float				[]frame;
-            var jointframe: Array<Float>
+            var jointframe: FloatArray
             var jf_ptr: Int
             var animBits: Int
             var jointPtr: idJointQuat
@@ -825,8 +825,8 @@ object Anim {
             var c1_ptr = numAnimatedComponents * frame.frame1 + jointInfo[0].firstComponent
             var c2_ptr = numAnimatedComponents * frame.frame2 + jointInfo[0].firstComponent
 
-            val componentPtr1 = componentFrames.getList(Array<Float>::class.java)!!
-            val componentPtr2 = componentFrames.getList(Array<Float>::class.java)!!
+            val componentPtr1 = componentFrames.Ptr()
+            val componentPtr2 = componentPtr1
 
             if ((jointInfo[0].animBits and ANIM_TX) != 0) {
                 offset.x = componentPtr1[c1_ptr] * frame.frontlerp + componentPtr2[c2_ptr] * frame.backlerp
@@ -858,9 +858,9 @@ object Anim {
                 return
             }
             ConvertTimeToFrame(time, cyclecount, frame)
-            val jointframe1 = componentFrames.getList(Array<Float>::class.java)!!
+            val jointframe1 = componentFrames.Ptr()
             var j1_ptr: Int = numAnimatedComponents * frame.frame1 + jointInfo[0].firstComponent
-            val jointframe2 = componentFrames.getList(Array<Float>::class.java)!!
+            val jointframe2 = jointframe1
             var j2_ptr: Int = numAnimatedComponents * frame.frame2 + jointInfo[0].firstComponent
             if ((animBits and ANIM_TX) != 0) {
                 j1_ptr++
@@ -969,9 +969,9 @@ object Anim {
             // origin position
             offset.set(baseFrame[0].t)
             if ((jointInfo[0].animBits and (ANIM_TX or ANIM_TY or ANIM_TZ)) != 0) {
-                val componentPtr1 = componentFrames.getList(Array<Float>::class.java)!!
+                val componentPtr1 = componentFrames.Ptr()
                 c1_ptr = numAnimatedComponents * frame.frame1 + jointInfo[0].firstComponent
-                val componentPtr2 = componentFrames.getList(Array<Float>::class.java)!!
+                val componentPtr2 = componentPtr1
                 c2_ptr = numAnimatedComponents * frame.frame2 + jointInfo[0].firstComponent
                 if ((jointInfo[0].animBits and ANIM_TX) != 0) {
                     offset.x = componentPtr1[c1_ptr] * frame.frontlerp + componentPtr2[c2_ptr] * frame.backlerp
@@ -994,7 +994,7 @@ object Anim {
         //
         //
         init {
-            componentFrames = List.idList()
+            componentFrames = List.idFloatList()
             name = idStr()
             totaldelta = idVec3()
         }

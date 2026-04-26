@@ -100,7 +100,7 @@ fun ANIM_GetModelDefFromEntityDef(args: idDict): idDeclModelDef? {
      ==============================================================================================
      */
 class idAnim {
-    private val frameCommands: List.idList<frameCommand_t> = List.idList(frameCommand_t().javaClass)
+    private val frameCommands: List.idList<frameCommand_t> = List.idList { frameCommand_t() }
     private val frameLookup: List.idList<frameLookup_t> = List.idList()
     private var anims: Array<idMD5Anim?> = arrayOfNulls(Anim.ANIM_MaxSyncedAnims)
     private var flags: animFlags_t
@@ -1234,7 +1234,7 @@ class idAnim {
 class idDeclModelDef : idDecl {
     private val anims: List.idList<idAnim> = List.idList()
     private val channelJoints: Array<List.idList<Int>>
-    private val jointParents: List.idList<Int> = List.idList(Int::class.java)
+    private val jointParents: List.idList<Int> = List.idList { 0 }
     private val joints: List.idList<jointInfo_t> = List.idList()
     private val offset: idVec3 = idVec3()
     private var modelHandle: idRenderModel?

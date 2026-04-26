@@ -3604,13 +3604,13 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         }
         val str = kv.GetKey().Right(kv.GetKey().Length() - curveTag.length)
         spline = if (str.Icmp("CatmullRomSpline") == 0) {
-            idCurve_CatmullRomSpline(idVec3::class.java)
+            idCurve_CatmullRomSpline { idVec3() }
         } else if (str.Icmp("nubs") == 0) {
-            idCurve_NonUniformBSpline(idVec3::class.java)
+            idCurve_NonUniformBSpline { idVec3() }
         } else if (str.Icmp("nurbs") == 0) {
-            idCurve_NURBS(idVec3::class.java)
+            idCurve_NURBS { idVec3() }
         } else {
-            idCurve_BSpline(idVec3::class.java)
+            idCurve_BSpline { idVec3() }
         }
         spline.SetBoundaryType(idCurve_Spline.BT_CLAMPED)
         lex.LoadMemory(kv.GetValue().toString(), kv.GetValue().Length(), curveTag)
@@ -4545,7 +4545,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
     //        public static idEventFunc<idEntity>[] eventCallbacks;
     //
     init {
-        targets = idList(idEntityPtr<idEntity>(null).javaClass)
+        targets = idList { idEntityPtr<idEntity>(null) }
         entityNumber = Game_local.ENTITYNUM_NONE
         entityDefNumber = -1
         spawnNode = idLinkList()
