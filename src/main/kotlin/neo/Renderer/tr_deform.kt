@@ -971,6 +971,7 @@ object tr_deform {
                 steppingRandom2.SetSeed(
                     (((stageCycle - 1) shl 10) and idRandom.MAX_RAND) xor (renderEntity.shaderParms[RenderWorld.SHADERPARM_DIVERSITY] * idRandom.MAX_RAND).toInt()
                 )
+                val particleVerts = Array(4 * stage.NumQuadsPerParticle()) { idDrawVert() }
                 for (index in 0 until totalParticles) {
                     g.index = index
 
@@ -1053,10 +1054,11 @@ object tr_deform {
 
                     // if the particle doesn't get drawn because it is faded out or beyond a kill region,
                     // don't increment the verts
-                    tri.numVerts += stage.CreateParticle(
-                        g,
-                        Arrays.copyOfRange<idDrawVert?>(tri.verts, tri.numVerts, tri.verts!!.size)
-                    )
+                    val createdVerts = stage.CreateParticle(g, particleVerts)
+                    for (j in 0 until createdVerts) {
+                        tri.verts!![tri.numVerts + j].set(particleVerts[j])
+                    }
+                    tri.numVerts += createdVerts
                 }
                 if (tri.numVerts > 0) {
                     // build the index list

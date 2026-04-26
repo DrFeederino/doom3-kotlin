@@ -149,6 +149,7 @@ object Model_prt {
                 }
                 var numVerts = 0
                 val verts: Array<idDrawVert>? = surf.geometry!!.verts
+                val particleVerts = Array(4 * stage.NumQuadsPerParticle()) { idDrawVert() }
                 for (index in 0 until stage.totalParticles) {
                     g.index = index
 
@@ -198,7 +199,11 @@ object Model_prt {
                     g.age = g.frac * stage.particleLife
 
                     // if the particle doesn't get drawn because it is faded out or beyond a kill region, don't increment the verts
-                    numVerts += stage.CreateParticle(g, Arrays.copyOfRange<idDrawVert?>(verts, numVerts, verts!!.size))
+                    val createdVerts = stage.CreateParticle(g, particleVerts)
+                    for (i in 0 until createdVerts) {
+                        verts!![numVerts + i].set(particleVerts[i])
+                    }
+                    numVerts += createdVerts
                 }
                 assert(((numVerts and 3) == 0 && numVerts <= 4 * count))
 

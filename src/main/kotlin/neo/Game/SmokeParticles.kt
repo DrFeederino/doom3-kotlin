@@ -39,6 +39,7 @@ import neo.framework.DeclParticle.idParticleStage
 import neo.framework.DeclParticle.particleGen_t
 import neo.framework.UsercmdGen
 import neo.idlib.containers.List.idList
+import neo.idlib.geometry.DrawVert
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Random.idRandom
 import neo.idlib.math.idVec3
@@ -461,6 +462,7 @@ object SmokeParticles {
                 tri.bounds[1, 2] = 99999.0f
 
                 tri.numVerts = 0
+                val particleVerts = Array(4 * stage.NumQuadsPerParticle()) { DrawVert.idDrawVert() }
                 last = null
                 smoke = active.smokes
                 while (smoke != null) {
@@ -495,14 +497,11 @@ object SmokeParticles {
                     g.originalRandom = idRandom(g.random)
                     g.age = g.frac * stage.particleLife
 
-                    // NOTE: Arrays.copyOfRange creates a new array with references to the same
-                    // idDrawVert objects (not a deep copy). Since CreateParticle mutates the
-                    // existing objects (via .Clear(), .set(), etc.), the changes propagate back
-                    // to tri.verts. This is equivalent to C++ pointer arithmetic: tri->verts + tri->numVerts
-                    tri.numVerts += stage.CreateParticle(
-                        g,
-                        Arrays.copyOfRange(tri.verts, tri.numVerts, tri.verts!!.size)
-                    )
+                    val createdVerts = stage.CreateParticle(g, particleVerts)
+                    for (i in 0 until createdVerts) {
+                        tri.verts!![tri.numVerts + i].set(particleVerts[i])
+                    }
+                    tri.numVerts += createdVerts
 
                     last = smoke
                     smoke = next

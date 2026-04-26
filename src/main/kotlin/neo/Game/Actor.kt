@@ -1252,14 +1252,14 @@ open class idActor : idAFEntity_Gibbable() {
     }
 
     fun EyeOffset(): idVec3 {
-        return GetPhysics().GetGravityNormal().times(-eyeOffset.z)
+        return GetPhysics().GetGravityNormal() * -eyeOffset.z
     }
 
     // D3XP: expose head entity for damage group targeting
     fun GetHeadEntity(): idEntity? = head.GetEntity()
 
     open fun GetEyePosition(): idVec3 {
-        return GetPhysics().GetOrigin().plus(GetPhysics().GetGravityNormal().times(-eyeOffset.z))
+        return GetPhysics().GetOrigin() + (GetPhysics().GetGravityNormal() * -eyeOffset.z)
     }
 
     open fun GetViewPos(origin: idVec3, axis: idMat3) {

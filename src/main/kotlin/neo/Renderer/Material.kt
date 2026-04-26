@@ -2012,7 +2012,9 @@ object Material {
                 newStage.numFragmentProgramImages = unit + 1
             }
             while (true) {
-                src.ReadTokenOnLine(token)
+                if (!src.ReadTokenOnLine(token)) {
+                    break
+                }
                 if (0 == token.Icmp("cubeMap")) {
                     cubeMap = cubeFiles_t.CF_NATIVE
                     continue
