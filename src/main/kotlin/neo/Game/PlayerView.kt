@@ -1283,23 +1283,27 @@ object PlayerView {
         fun Fade(color: idVec4, time: Int) {
             var time = time
             val ts = if (isD3XP) SetTimeState(player!!.timeGroup) else null
-            if (0 == fadeTime) {
-                fadeFromColor.set(0.0f, 0.0f, 0.0f, 1.0f - color[3])
-            } else {
-                fadeFromColor.set(fadeColor)
-            }
-            fadeToColor.set(color)
-            if (time <= 0) {
-                fadeRate = 0.0f
-                time = 0
-                fadeColor.set(fadeToColor)
-            } else {
-                fadeRate = 1.0f / time.toFloat()
-            }
-            fadeTime = if (Game_local.gameLocal.realClientTime == 0 && time == 0) {
-                1
-            } else {
-                Game_local.gameLocal.realClientTime + time
+            try {
+                if (0 == fadeTime) {
+                    fadeFromColor.set(0.0f, 0.0f, 0.0f, 1.0f - color[3])
+                } else {
+                    fadeFromColor.set(fadeColor)
+                }
+                fadeToColor.set(color)
+                if (time <= 0) {
+                    fadeRate = 0.0f
+                    time = 0
+                    fadeColor.set(fadeToColor)
+                } else {
+                    fadeRate = 1.0f / time.toFloat()
+                }
+                fadeTime = if (Game_local.gameLocal.realClientTime == 0 && time == 0) {
+                    1
+                } else {
+                    Game_local.gameLocal.realClientTime + time
+                }
+            } finally {
+                ts?.close()
             }
         }
 
@@ -1590,23 +1594,35 @@ object PlayerView {
                 return
             }
             val ts = if (isD3XP) SetTimeState(player!!.timeGroup) else null
-            msec = fadeTime - Game_local.gameLocal.realClientTime
-            if (msec <= 0) {
-                fadeColor.set(fadeToColor)
-                if (fadeColor[3] == 0.0f) {
-                    fadeTime = 0
+            try {
+                msec = fadeTime - Game_local.gameLocal.realClientTime
+                if (msec <= 0) {
+                    fadeColor.set(fadeToColor)
+                    if (fadeColor[3] == 0.0f) {
+                        fadeTime = 0
+                    }
+                } else {
+                    t = msec.toFloat() * fadeRate
+                    fadeColor.set(fadeFromColor.times(t).plus(fadeToColor.times(1.0f - t)))
                 }
-            } else {
-                t = msec.toFloat() * fadeRate
-                fadeColor.set(fadeFromColor.times(t).plus(fadeToColor.times(1.0f - t)))
-            }
-            if (fadeColor[3] != 0.0f) {
-                renderSystem.SetColor4(
-                    fadeColor[0], fadeColor[1], fadeColor[2], fadeColor[3]
-                )
-                renderSystem.DrawStretchPic(
-                    0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, DeclManager.declManager.FindMaterial("_white")
-                )
+                if (fadeColor[3] != 0.0f) {
+                    renderSystem.SetColor4(
+                        fadeColor[0], fadeColor[1], fadeColor[2], fadeColor[3]
+                    )
+                    renderSystem.DrawStretchPic(
+                        0.0f,
+                        0.0f,
+                        640.0f,
+                        480.0f,
+                        0.0f,
+                        0.0f,
+                        1.0f,
+                        1.0f,
+                        DeclManager.declManager.FindMaterial("_white")
+                    )
+                }
+            } finally {
+                ts?.close()
             }
         }
 

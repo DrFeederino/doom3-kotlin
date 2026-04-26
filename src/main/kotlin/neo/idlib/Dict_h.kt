@@ -527,6 +527,27 @@ class Dict_h {
             return found
         }
 
+        private fun parseFloatList(value: String, maxValues: Int): FloatArray {
+            val floats = FloatArray(maxValues)
+            var count = 0
+            var pos = 0
+            val length = value.length
+            while (count < maxValues) {
+                while (pos < length && value[pos].isWhitespace()) {
+                    pos++
+                }
+                if (pos >= length) {
+                    break
+                }
+                val start = pos
+                while (pos < length && !value[pos].isWhitespace()) {
+                    pos++
+                }
+                floats[count++] = TempDump.atof(value.substring(start, pos))
+            }
+            return if (count == maxValues) floats else floats.copyOf(count)
+        }
+
         @Throws(idException::class)
         fun GetVector(key: String?, defaultString: String?, out: idVec3): Boolean {
             var defaultString = defaultString
@@ -537,10 +558,9 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Zero()
-            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
-
-            for (i in sscanf.indices) {
-                out[i] = TempDump.atof(sscanf[i])
+            val values = parseFloatList(s[0]!!, 3)
+            for (i in values.indices) {
+                out[i] = values[i]
             }
 
             return found
@@ -556,10 +576,9 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Zero()
-            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
-
-            for (i in sscanf.indices) {
-                out[i] = TempDump.atof(sscanf[i])
+            val values = parseFloatList(s[0]!!, 2)
+            for (i in values.indices) {
+                out[i] = values[i]
             }
 
             return found
@@ -575,10 +594,9 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Zero()
-            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
-
-            for (i in sscanf.indices) {
-                out[i] = TempDump.atof(sscanf[i])
+            val values = parseFloatList(s[0]!!, 4)
+            for (i in values.indices) {
+                out[i] = values[i]
             }
 
             return found
@@ -594,9 +612,9 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Zero()
-            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
-            for (i in sscanf.indices) {
-                out[i] = TempDump.atof(sscanf[i])
+            val values = parseFloatList(s[0]!!, 3)
+            for (i in values.indices) {
+                out[i] = values[i]
             }
             return found
         }
@@ -611,13 +629,13 @@ class Dict_h {
             }
             found = GetString(key, defaultString, s)
             out.Identity()
-            val sscanf: Array<String> = s[0]!!.split(" ").toTypedArray()
-            val halfSize = sqrt(sscanf.size.toFloat()).toInt()
+            val values = parseFloatList(s[0]!!, 9)
+            val halfSize = sqrt(values.size.toFloat()).toInt()
             var i = 0
             var index = 0
             while (i < halfSize) {
                 for (j in 0 until halfSize) {
-                    out.set(i, j, TempDump.atof(sscanf[index++]))
+                    out.set(i, j, values[index++])
                 }
                 i++
             }
