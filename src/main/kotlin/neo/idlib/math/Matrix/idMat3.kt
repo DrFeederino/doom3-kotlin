@@ -122,23 +122,8 @@ class idMat3 {
 
     //public	idMat3 &		operator+=( const idMat3 &a );
     operator fun times(a: idMat3): idMat3 {
-        var j: Int
-        //            Float dstPtr;
         val dst = idMat3()
-        val m1Ptr: FloatArray = this.ToFloatPtr() //reinterpret_cast<const Float *>(this);
-        val m2Ptr: FloatArray = a.ToFloatPtr() //reinterpret_cast<const Float *>(&a);
-        //	dstPtr = reinterpret_cast<Float *>(&dst);
-        var i = 0
-        while (i < 3) {
-            j = 0
-            while (j < 3) {
-                val value =
-                    m1Ptr[i * 3 + 0] * m2Ptr[0 * 3 + j] + m1Ptr[i * 3 + 1] * m2Ptr[1 * 3 + j] + m1Ptr[i * 3 + 2] * m2Ptr[2 * 3 + j]
-                dst.set(i, j, value)
-                j++
-            }
-            i++
-        }
+        dst.setMul(this, a)
         return dst
     }
 
@@ -670,6 +655,22 @@ class idMat3 {
         mat[0].set(m.mat[0])
         mat[1].set(m.mat[1])
         mat[2].set(m.mat[2])
+        return this
+    }
+
+    fun setMul(m1: idMat3, m2: idMat3): idMat3 {
+        val xx = m1.mat[0].x * m2.mat[0].x + m1.mat[0].y * m2.mat[1].x + m1.mat[0].z * m2.mat[2].x
+        val xy = m1.mat[0].x * m2.mat[0].y + m1.mat[0].y * m2.mat[1].y + m1.mat[0].z * m2.mat[2].y
+        val xz = m1.mat[0].x * m2.mat[0].z + m1.mat[0].y * m2.mat[1].z + m1.mat[0].z * m2.mat[2].z
+        val yx = m1.mat[1].x * m2.mat[0].x + m1.mat[1].y * m2.mat[1].x + m1.mat[1].z * m2.mat[2].x
+        val yy = m1.mat[1].x * m2.mat[0].y + m1.mat[1].y * m2.mat[1].y + m1.mat[1].z * m2.mat[2].y
+        val yz = m1.mat[1].x * m2.mat[0].z + m1.mat[1].y * m2.mat[1].z + m1.mat[1].z * m2.mat[2].z
+        val zx = m1.mat[2].x * m2.mat[0].x + m1.mat[2].y * m2.mat[1].x + m1.mat[2].z * m2.mat[2].x
+        val zy = m1.mat[2].x * m2.mat[0].y + m1.mat[2].y * m2.mat[1].y + m1.mat[2].z * m2.mat[2].y
+        val zz = m1.mat[2].x * m2.mat[0].z + m1.mat[2].y * m2.mat[1].z + m1.mat[2].z * m2.mat[2].z
+        mat[0].set(xx, xy, xz)
+        mat[1].set(yx, yy, yz)
+        mat[2].set(zx, zy, zz)
         return this
     }
 

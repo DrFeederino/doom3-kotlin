@@ -2881,8 +2881,8 @@ class idAnimBlend {
      */
 class idAnimator {
     private val AFPoseBounds: idBounds = idBounds()
-    private var AFPoseJointFrame: List.idList<idJointQuat> = List.idList(1)
-    private val AFPoseJointMods: List.idList<idAFPoseJointMod> = List.idList(1)
+    private var AFPoseJointFrame: List.idList<idJointQuat> = List.idList(1) { idJointQuat() }
+    private val AFPoseJointMods: List.idList<idAFPoseJointMod> = List.idList(1) { idAFPoseJointMod() }
     private var AFPoseJoints: List.idList<Int> = List.idList(1)
 
     //
@@ -3465,13 +3465,25 @@ class idAnimator {
         // convert the joint quaternions to rotation matrices
         SIMDProcessor!!.ConvertJointQuatsToJointMats(joints!!, jointFrame, numJoints)
 
+        val jointAxis = idMat3()
+        val parentAxis = idMat3()
+        val tempAxis = idMat3()
+        val tempAxis2 = idMat3()
+
         // check if we need to modify the origin
         if (jointMods.Num() != 0 && jointMods[0].jointnum == 0) {
             jointMod = jointMods[0]
             when (jointMod.transform_axis) {
                 jointModTransform_t.JOINTMOD_NONE -> {}
-                jointModTransform_t.JOINTMOD_LOCAL -> joints!![0].SetRotation(jointMod.mat * joints!![0].ToMat3())
-                jointModTransform_t.JOINTMOD_WORLD -> joints!![0].SetRotation(joints!![0].ToMat3() * jointMod.mat)
+                jointModTransform_t.JOINTMOD_LOCAL -> {
+                    joints!![0].ToMat3(jointAxis)
+                    joints!![0].SetRotation(tempAxis.setMul(jointMod.mat, jointAxis))
+                }
+
+                jointModTransform_t.JOINTMOD_WORLD -> {
+                    joints!![0].ToMat3(jointAxis)
+                    joints!![0].SetRotation(tempAxis.setMul(jointAxis, jointMod.mat))
+                }
                 jointModTransform_t.JOINTMOD_LOCAL_OVERRIDE, jointModTransform_t.JOINTMOD_WORLD_OVERRIDE -> joints!![0].SetRotation(
                     jointMod.mat
                 )
@@ -3507,29 +3519,55 @@ class idAnimator {
             i = jointMod.jointnum
             parentNum = jointParent[i]
             when (jointMod.transform_axis) {
-                jointModTransform_t.JOINTMOD_NONE -> joints!![i].SetRotation(joints!![i].ToMat3() * joints!![parentNum].ToMat3())
+                jointModTransform_t.JOINTMOD_NONE -> {
+                    joints!![i].ToMat3(jointAxis)
+                    joints!![parentNum].ToMat3(parentAxis)
+                    joints!![i].SetRotation(tempAxis.setMul(jointAxis, parentAxis))
+                }
 
+                jointModTransform_t.JOINTMOD_LOCAL -> {
+                    joints!![i].ToMat3(jointAxis)
+                    joints!![parentNum].ToMat3(parentAxis)
+                    tempAxis.setMul(jointAxis, parentAxis)
+                    joints!![i].SetRotation(tempAxis2.setMul(jointMod.mat, tempAxis))
+                }
 
-                jointModTransform_t.JOINTMOD_LOCAL -> joints!![i].SetRotation(jointMod.mat * (joints!![i].ToMat3() * joints!![parentNum].ToMat3()))
+                jointModTransform_t.JOINTMOD_LOCAL_OVERRIDE -> {
+                    joints!![parentNum].ToMat3(parentAxis)
+                    joints!![i].SetRotation(tempAxis.setMul(jointMod.mat, parentAxis))
+                }
 
-
-                jointModTransform_t.JOINTMOD_LOCAL_OVERRIDE -> joints!![i].SetRotation(jointMod.mat * joints!![parentNum].ToMat3())
-
-                jointModTransform_t.JOINTMOD_WORLD -> joints!![i].SetRotation((joints!![i].ToMat3() * joints!![parentNum].ToMat3()) * jointMod.mat)
-
+                jointModTransform_t.JOINTMOD_WORLD -> {
+                    joints!![i].ToMat3(jointAxis)
+                    joints!![parentNum].ToMat3(parentAxis)
+                    tempAxis.setMul(jointAxis, parentAxis)
+                    joints!![i].SetRotation(tempAxis2.setMul(tempAxis, jointMod.mat))
+                }
 
                 jointModTransform_t.JOINTMOD_WORLD_OVERRIDE -> joints!![i].SetRotation(jointMod.mat)
 
             }
             when (jointMod.transform_pos) {
-                jointModTransform_t.JOINTMOD_NONE -> joints!![i].SetTranslation(joints!![parentNum].ToVec3() + joints!![i].ToVec3() * joints!![parentNum].ToMat3())
+                jointModTransform_t.JOINTMOD_NONE -> {
+                    joints!![parentNum].ToMat3(parentAxis)
+                    joints!![i].SetTranslation(joints!![parentNum].ToVec3() + joints!![i].ToVec3() * parentAxis)
+                }
 
-                jointModTransform_t.JOINTMOD_LOCAL -> joints!![i].SetTranslation(joints!![parentNum].ToVec3() + (joints!![i].ToVec3() + jointMod.pos) * joints!![parentNum].ToMat3())
+                jointModTransform_t.JOINTMOD_LOCAL -> {
+                    joints!![parentNum].ToMat3(parentAxis)
+                    joints!![i].SetTranslation(joints!![parentNum].ToVec3() + (joints!![i].ToVec3() + jointMod.pos) * parentAxis)
+                }
 
-                jointModTransform_t.JOINTMOD_LOCAL_OVERRIDE -> joints!![i].SetTranslation(joints!![parentNum].ToVec3() + jointMod.pos * joints!![parentNum].ToMat3())
+                jointModTransform_t.JOINTMOD_LOCAL_OVERRIDE -> {
+                    joints!![parentNum].ToMat3(parentAxis)
+                    joints!![i].SetTranslation(joints!![parentNum].ToVec3() + jointMod.pos * parentAxis)
+                }
 
 
-                jointModTransform_t.JOINTMOD_WORLD -> joints!![i].SetTranslation(joints!![parentNum].ToVec3() + joints!![i].ToVec3() * joints!![parentNum].ToMat3() + jointMod.pos)
+                jointModTransform_t.JOINTMOD_WORLD -> {
+                    joints!![parentNum].ToMat3(parentAxis)
+                    joints!![i].SetTranslation(joints!![parentNum].ToVec3() + joints!![i].ToVec3() * parentAxis + jointMod.pos)
+                }
 
                 jointModTransform_t.JOINTMOD_WORLD_OVERRIDE -> joints!![i].SetTranslation(jointMod.pos)
             }
@@ -3899,20 +3937,28 @@ class idAnimator {
             return
         }
 
-        AFPoseJoints.SetNum(modelDef!!.Joints().Num(), false)
+        val numJoints = modelDef!!.Joints().Num()
+        AFPoseJoints.AssureSize(numJoints, 0)
         AFPoseJoints.SetNum(0, false)
-        AFPoseJointMods.SetNum(modelDef!!.Joints().Num(), false)
-        AFPoseJointFrame.SetNum(modelDef!!.Joints().Num(), false)
+        AFPoseJointMods.AssureSizeAlloc(numJoints) { idAFPoseJointMod() }
+        AFPoseJointFrame.AssureSizeAlloc(numJoints) { idJointQuat() }
     }
 
     fun SetAFPoseJointMod(   /*jointHandle_t*/jointNum: Int, mod: AFJointModType_t, axis: idMat3, origin: idVec3
     ) {
-        AFPoseJointMods[jointNum] = idAFPoseJointMod()
-        AFPoseJointMods[jointNum].mod = mod
-        AFPoseJointMods[jointNum].axis.set(axis)
-        AFPoseJointMods[jointNum].origin.set(origin)
+        if (jointNum >= AFPoseJointMods.Num()) {
+            AFPoseJointMods.AssureSizeAlloc(jointNum + 1) { idAFPoseJointMod() }
+        }
+        val jointMod = AFPoseJointMods[jointNum]
+        jointMod.mod = mod
+        jointMod.axis.set(axis)
+        jointMod.origin.set(origin)
 
-        val index: Int = idBinSearch_GreaterEqual(AFPoseJoints.Ptr(), AFPoseJoints.Num(), jointNum)
+        val index: Int = if (AFPoseJoints.Num() == 0) {
+            0
+        } else {
+            idBinSearch_GreaterEqual(AFPoseJoints.Ptr(), AFPoseJoints.Num(), jointNum)
+        }
         if (index >= AFPoseJoints.Num() || jointNum != AFPoseJoints[index]) {
             AFPoseJoints.Insert(jointNum, index)
         }
@@ -3984,6 +4030,9 @@ class idAnimator {
 
         // pointer to joint info
         jointParent = modelDef!!.JointParents()
+        val jointAxis = idMat3()
+        val parentAxis = idMat3()
+        val tempAxis = idMat3()
 
         // transform the child joints
         i = 1
@@ -3999,13 +4048,16 @@ class idAnimator {
             when (AFPoseJointMods[jointMod].mod) {
                 AFJointModType_t.AF_JOINTMOD_AXIS -> {
                     joints[i].SetRotation(AFPoseJointMods[jointMod].axis)
+                    joints[parentNum].ToMat3(parentAxis)
                     joints[i].SetTranslation(
-                        joints[parentNum].ToVec3().plus(joints[i].ToVec3().times(joints[parentNum].ToMat3()))
+                        joints[parentNum].ToVec3().plus(joints[i].ToVec3().times(parentAxis))
                     )
                 }
 
                 AFJointModType_t.AF_JOINTMOD_ORIGIN -> {
-                    joints[i].SetRotation(joints[i].ToMat3().times(joints[parentNum].ToMat3()))
+                    joints[i].ToMat3(jointAxis)
+                    joints[parentNum].ToMat3(parentAxis)
+                    joints[i].SetRotation(tempAxis.setMul(jointAxis, parentAxis))
                     joints[i].SetTranslation(AFPoseJointMods[jointMod].origin)
                 }
 

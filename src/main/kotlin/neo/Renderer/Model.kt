@@ -127,7 +127,9 @@ object Model {
             fun toByteBuffer(cache: Array<lightingCache_s>): ByteBuffer {
                 val data: ByteBuffer = BufferUtils.createByteBuffer(BYTES * cache.size)
                 for (c: lightingCache_s in cache) {
-                    data.put(c.localLightVector.Write())
+                    data.putFloat(c.localLightVector.x)
+                    data.putFloat(c.localLightVector.y)
+                    data.putFloat(c.localLightVector.z)
                 }
                 return data.flip()
             }
@@ -142,7 +144,10 @@ object Model {
             fun toByteBuffer(cache: Array<shadowCache_s>): ByteBuffer {
                 val data: ByteBuffer = BufferUtils.createByteBuffer(BYTES * cache.size)
                 for (c: shadowCache_s in cache) {
-                    data.put(c.xyz.Write())
+                    data.putFloat(c.xyz.x)
+                    data.putFloat(c.xyz.y)
+                    data.putFloat(c.xyz.z)
+                    data.putFloat(c.xyz.w)
                 }
                 return data.flip()
             }

@@ -37,6 +37,7 @@ import org.lwjgl.openal.AL11.alSource3i
 import org.lwjgl.openal.EXTEfx
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
+import java.nio.ShortBuffer
 import kotlin.math.atan
 import kotlin.math.min
 
@@ -110,6 +111,17 @@ class snd_world {
         var listenerAreFiltersInitialized = false
         var listenerFilters: IntArray = IntArray(2) // [0] = direct filter, [1] = send filter
         var listenerSlotReverbGain: Float = 1.0f
+
+        private val mixInputSamples = FloatArray(MIXBUFFER_SAMPLES * 2 + 16)
+        private val mixInputSamplesBuffer: FloatBuffer = FloatBuffer.wrap(mixInputSamples)
+        private val mixEars = FloatArray(6)
+        private val listenerPositionScratch = FloatArray(3)
+        private val listenerOrientationScratch: FloatBuffer = BufferUtils.createFloatBuffer(6)
+        private val effectHandleScratch = IntArray(1)
+        private val streamingBufferScratch = IntArray(3)
+        private val streamingSampleBytes: ByteBuffer =
+            BufferUtils.createByteBuffer(MIXBUFFER_SAMPLES * 2 * java.lang.Short.BYTES)
+        private val streamingSampleShorts: ShortBuffer = streamingSampleBytes.asShortBuffer()
 
         // virtual					~idSoundWorldLocal();
         // call at each map start
@@ -1437,7 +1449,7 @@ class snd_world {
             val offset = current44kHz - chan.trigger44kHzTime
             //            float[] inputSamples = new float[MIXBUFFER_SAMPLES * 2 + 16];
 //            float[] alignedInputSamples = (float[]) ((((int) inputSamples) + 15) & ~15);
-            var alignedInputSamples = FloatArray(MIXBUFFER_SAMPLES * 2 + 16)
+            val alignedInputSamples = mixInputSamples
 
             // allocate and initialize hardware source
             if (sound.removeStatus < snd_emitter.REMOVE_STATUS_SAMPLEFINISHED) {
@@ -1522,7 +1534,7 @@ class snd_world {
                         }
                     } else {
                         val   /*ALint*/finishedbuffers: Int
-                        val buffers = BufferUtils.createIntBuffer(3)
+                        val buffers = streamingBufferScratch
 
                         // handle streaming sounds (decode on the fly) both single shot AND looping
                         if (chan.triggered) {
@@ -1532,9 +1544,9 @@ class snd_world {
                             chan.lastopenalStreamingBuffer.put(1, chan.openalStreamingBuffer[1])
                             chan.lastopenalStreamingBuffer.put(2, chan.openalStreamingBuffer[2])
                             AL10.alGenBuffers(chan.openalStreamingBuffer)
-                            buffers.put(0, chan.openalStreamingBuffer[0])
-                            buffers.put(1, chan.openalStreamingBuffer[1])
-                            buffers.put(2, chan.openalStreamingBuffer[2])
+                            buffers[0] = chan.openalStreamingBuffer[0]
+                            buffers[1] = chan.openalStreamingBuffer[1]
+                            buffers[2] = chan.openalStreamingBuffer[2]
                             finishedbuffers = 3
                         } else {
                             finishedbuffers = AL10.alGetSourcei(
@@ -1542,10 +1554,7 @@ class snd_world {
                                 AL10.AL_BUFFERS_PROCESSED
                             )
                             for (i in 0 until finishedbuffers) { //jake2
-                                buffers.put(
-                                    i,
-                                    AL10.alSourceUnqueueBuffers(chan.openalSource)
-                                )
+                                buffers[i] = AL10.alSourceUnqueueBuffers(chan.openalSource)
                             }
                             if (finishedbuffers == 3) {
                                 chan.triggered = true
@@ -1554,28 +1563,28 @@ class snd_world {
                         val length = MIXBUFFER_SAMPLES * sample.objectInfo.nChannels
                         j = 0
                         while (j < finishedbuffers) {
-                            val samples = FloatBuffer.wrap(alignedInputSamples)
+                            mixInputSamplesBuffer.clear()
                             chan.GatherChannelSamples(
                                 chan.openalStreamingOffset * sample.objectInfo.nChannels,
                                 length,
-                                samples
+                                mixInputSamplesBuffer
                             )
-                            val data = BufferUtils.createByteBuffer(length * java.lang.Short.BYTES)
-                            val dataS = data.asShortBuffer()
+                            streamingSampleBytes.clear()
+                            streamingSampleBytes.limit(length * java.lang.Short.BYTES)
                             for (i in 0 until length) {
                                 if (alignedInputSamples[i] < -32768.0f) {
-                                    dataS.put(i, Short.MIN_VALUE)
+                                    streamingSampleShorts.put(i, Short.MIN_VALUE)
                                 } else if (alignedInputSamples[i] > 32767.0f) {
-                                    dataS.put(i, Short.MAX_VALUE)
+                                    streamingSampleShorts.put(i, Short.MAX_VALUE)
                                 } else {
                                     val bla = idMath.FtoiFast(alignedInputSamples[i]).toShort()
-                                    dataS.put(i, bla)
+                                    streamingSampleShorts.put(i, bla)
                                 }
                             }
                             AL10.alBufferData(
                                 buffers[j],
                                 if (chan.leadinSample!!.objectInfo.nChannels == 1) AL10.AL_FORMAT_MONO16 else AL10.AL_FORMAT_STEREO16,
-                                data,
+                                streamingSampleBytes,
                                 44100
                             )
                             chan.openalStreamingOffset += MIXBUFFER_SAMPLES
@@ -1598,8 +1607,7 @@ class snd_world {
                     slow.AttachSoundChannel(chan)
                     if (sample.objectInfo.nChannels == 2) {
                         // need to add a stereo path, but very few samples go through this
-                        alignedInputSamples =
-                            FloatArray(MIXBUFFER_SAMPLES * 2)
+                        alignedInputSamples.fill(0.0f, 0, MIXBUFFER_SAMPLES * 2)
                     } else {
                         slow.GatherChannelSamples(offset, MIXBUFFER_SAMPLES, alignedInputSamples)
                     }
@@ -1610,20 +1618,22 @@ class snd_world {
                     // if we are getting a stereo sample adjust accordingly
                     if (sample.objectInfo.nChannels == 2) {
                         // we should probably check to make sure any looping is also to a stereo sample...
+                        mixInputSamplesBuffer.clear()
                         chan.GatherChannelSamples(
                             offset * 2,
                             MIXBUFFER_SAMPLES * 2,
-                            FloatBuffer.wrap(alignedInputSamples)
+                            mixInputSamplesBuffer
                         )
                     } else {
-                        chan.GatherChannelSamples(offset, MIXBUFFER_SAMPLES, FloatBuffer.wrap(alignedInputSamples))
+                        mixInputSamplesBuffer.clear()
+                        chan.GatherChannelSamples(offset, MIXBUFFER_SAMPLES, mixInputSamplesBuffer)
                     }
                 }
 
                 //
                 // work out the left / right ear values
                 //
-                val ears = FloatArray(6)
+                val ears = mixEars
                 if (global || omni) {
                     // same for all speakers
                     for (i in 0..5) {
@@ -1738,11 +1748,12 @@ class snd_world {
             }
 
             // update the listener position and orientation
-            val listenerPosition = FloatArray(3)
+            val listenerPosition = listenerPositionScratch
             listenerPosition[0] = -listenerPos.y.toFloat()
             listenerPosition[1] = listenerPos.z.toFloat()
             listenerPosition[2] = -listenerPos.x.toFloat()
-            val listenerOrientation = BufferUtils.createFloatBuffer(6)
+            val listenerOrientation = listenerOrientationScratch
+            listenerOrientation.clear()
             listenerOrientation.put(0, -listenerAxis[0].y.toFloat())
             listenerOrientation.put(1, +listenerAxis[0].z.toFloat())
             listenerOrientation.put(2, -listenerAxis[0].x.toFloat())
@@ -1755,7 +1766,8 @@ class snd_world {
 
             // FIX: dhewm3 EFX reverb lookup replaces old commented-out EAX code
             if (useEFXReverb && snd_system.soundSystemLocal.efxloaded) {
-                val effectHandle = intArrayOf(0)
+                val effectHandle = effectHandleScratch
+                effectHandle[0] = 0
 
                 // allow reducing the gain effect globally via s_alReverbGain CVar
                 val gain = idSoundSystemLocal.s_alReverbGain.GetFloat()

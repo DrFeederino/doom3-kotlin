@@ -1612,8 +1612,7 @@ object Str {
             }
 
             fun IsColor(s: String): Boolean {
-                val sArray = s.toCharArray()
-                return sArray[0].code == C_COLOR_ESCAPE && sArray.size > 1 && sArray[1] != ' '
+                return s.isNotEmpty() && s[0].code == C_COLOR_ESCAPE && s.length > 1 && s[1] != ' '
             }
 
             fun HasLower(s: String?): Boolean {

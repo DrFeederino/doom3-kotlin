@@ -1,6 +1,5 @@
 package neo.idlib.math
 
-import neo.TempDump
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.idlib.containers.CFloat
@@ -431,11 +430,11 @@ class idLCP_Square : idLCP() {
         }
         i = 0
         while (i < numClamped) {
-            s = abs(clamped[i][i])
+            s = abs(clamped[i, i])
             if (s == 0.0f) {
                 return false
             }
-            d = 1.0f / clamped[i][i]
+            d = 1.0f / clamped[i, i]
             diagonal.p[i] = d
             j = i + 1
             while (j < numClamped) {
@@ -444,10 +443,10 @@ class idLCP_Square : idLCP() {
             }
             j = i + 1
             while (j < numClamped) {
-                d = clamped[j][i]
+                d = clamped[j, i]
                 k = i + 1
                 while (k < numClamped) {
-                    clamped.minusAssign(j, k, d * clamped[i][k])
+                    clamped.minusAssign(j, k, d * clamped[i, k])
                     k++
                 }
                 j++
@@ -468,7 +467,7 @@ class idLCP_Square : idLCP() {
             sum = b[i]
             j = 0
             while (j < i) {
-                sum -= clamped[i][j] * x.p[j]
+                sum -= clamped[i, j] * x.p[j]
                 j++
             }
             x.p[i] = sum
@@ -481,7 +480,7 @@ class idLCP_Square : idLCP() {
             sum = x.p[i]
             j = i + 1
             while (j < numClamped) {
-                sum -= clamped[i][j] * x.p[j]
+                sum -= clamped[i, j] * x.p[j]
                 j++
             }
             x.p[i] = sum * diagonal.p[i]
@@ -523,7 +522,7 @@ class idLCP_Square : idLCP() {
             sum = rowPtrs[numClamped].get(i)
             j = 0
             while (j < i) {
-                sum -= clamped[numClamped][j] * clamped[j][i]
+                sum -= clamped[numClamped, j] * clamped[j, i]
                 j++
             }
             clamped[numClamped, i] = sum * diagonal.p[i]
@@ -536,13 +535,13 @@ class idLCP_Square : idLCP() {
             sum = rowPtrs[i].get(numClamped)
             j = 0
             while (j < i) {
-                sum -= clamped[i][j] * clamped[j][numClamped]
+                sum -= clamped[i, j] * clamped[j, numClamped]
                 j++
             }
             clamped.set(i, numClamped, sum)
             i++
         }
-        diagonal.p[numClamped] = 1.0f / clamped[numClamped][numClamped]
+        diagonal.p[numClamped] = 1.0f / clamped[numClamped, numClamped]
         numClamped++
     }
 
@@ -613,12 +612,12 @@ class idLCP_Square : idLCP() {
             clamped.plusAssign(i, r, p0.toFloat())
             j = i + 1
             while (j < numClamped) {
-                z1[j] -= (beta1 * clamped[i][j]).toFloat()
+                z1[j] -= (beta1 * clamped[i, j]).toFloat()
                 j++
             }
             j = i + 1
             while (j < numClamped) {
-                y0[j] -= (p0 * clamped[j][i]).toFloat()
+                y0[j] -= (p0 * clamped[j, i]).toFloat()
                 j++
             }
             clamped.plusAssign(r, i, beta1.toFloat())
@@ -628,7 +627,7 @@ class idLCP_Square : idLCP() {
         // update the lower right corner starting at r,r
         i = r
         while (i < numClamped) {
-            diag = clamped[i][i].toDouble()
+            diag = clamped[i, i].toDouble()
             p0 = y0[i].toDouble()
             p1 = z0[i].toDouble()
             diag += p0 * p1
@@ -650,7 +649,7 @@ class idLCP_Square : idLCP() {
             diagonal.p[i] = d.toFloat()
             j = i + 1
             while (j < numClamped) {
-                d = clamped[i][j].toDouble()
+                d = clamped[i, j].toDouble()
                 d += p0 * z0[j]
                 z0[j] -= (beta0 * d).toFloat()
                 d += q0 * z1[j]
@@ -660,7 +659,7 @@ class idLCP_Square : idLCP() {
             }
             j = i + 1
             while (j < numClamped) {
-                d = clamped[j][i].toDouble()
+                d = clamped[j, i].toDouble()
                 y0[j] -= (p0 * d).toFloat()
                 d += beta0 * y0[j]
                 y1[j] -= (q0 * d).toFloat()
@@ -1244,7 +1243,39 @@ class idLCP_Symmetric : idLCP() {
     }
 
     private fun SolveClamped(x: idVecX, b: FloatBuffer) {
-        SolveClamped(x, TempDump.fbtofa(b))
+        val xPtr = solveCache1.ToFloatPtr()
+        val lPtr = clamped.ToFloatPtr()
+        val nc = clamped.GetNumColumns()
+        val bBase = b.position()
+
+        var i = clampedChangeStart
+        while (i < numClamped) {
+            var sum = b.get(bBase + i)
+            var j = 0
+            while (j < i) {
+                sum -= lPtr[i * nc + j] * xPtr[j]
+                j++
+            }
+            xPtr[i] = sum
+            i++
+        }
+
+        // solve D
+        SIMDProcessor!!.Mul(
+            solveCache2.ToFloatPtr(),
+            solveCache1.ToFloatPtr(),
+            diagonal.ToFloatPtr(),
+            numClamped
+        )
+
+        // solve Lt
+        SIMDProcessor!!.MatX_LowerTriangularSolveTranspose(
+            clamped,
+            x.ToFloatPtr(),
+            solveCache2.ToFloatPtr(),
+            numClamped
+        )
+        clampedChangeStart = numClamped
     }
 
     private fun Swap(i: Int, j: Int) {
@@ -1398,15 +1429,15 @@ class idLCP_Symmetric : idLCP() {
             // calculate the row/column to be added to the lower right sub matrix starting at (r, r)
             i = 0
             while (i < r) {
-                v[i] = clamped[r][i] * clamped[i][i]
+                v[i] = clamped[r, i] * clamped[i, i]
                 i++
             }
             i = r
             while (i < numClamped) {
                 if (i == r) {
-                    sum = clamped[r][r].toDouble()
+                    sum = clamped[r, r].toDouble()
                 } else {
-                    sum = (clamped[r][r] * clamped[i][r]).toDouble()
+                    sum = (clamped[r, r] * clamped[i, r]).toDouble()
                 }
                 ptr = clamped.GetRowPtr(i)
                 j = 0
@@ -1438,7 +1469,7 @@ class idLCP_Symmetric : idLCP() {
         n = clamped.GetNumColumns()
         i = r
         while (i < numClamped) {
-            diag = clamped[i][i].toDouble()
+            diag = clamped[i, i].toDouble()
             p1 = v1[i].toDouble()
             newDiag = diag + alpha1 * p1 * p1
             if (newDiag == 0.0) {

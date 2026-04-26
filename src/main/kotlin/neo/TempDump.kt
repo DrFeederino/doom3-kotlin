@@ -280,12 +280,23 @@ object TempDump {
      * FloatBuffer to Float Array
      */
     fun fbtofa(fb: FloatBuffer): FloatArray {
+        if (!fb.hasArray()) {
+            val data = FloatArray(fb.remaining())
+            for (i in data.indices) {
+                data[i] = fb.get(fb.position() + i)
+            }
+            return data
+        }
         // Must respect the FloatBuffer's arrayOffset from slice().
         // FloatBuffer.array() returns the FULL backing array ignoring offset,
         // so fb.array()[0] is NOT fb.get(0) for sliced buffers.
-        val offset = fb.arrayOffset()
+        val offset = fb.arrayOffset() + fb.position()
         val remaining = fb.remaining()
-        return fb.array().copyOfRange(offset, offset + remaining)
+        val array = fb.array()
+        if (offset == 0 && remaining == array.size) {
+            return array
+        }
+        return array.copyOfRange(offset, offset + remaining)
     }
 
 

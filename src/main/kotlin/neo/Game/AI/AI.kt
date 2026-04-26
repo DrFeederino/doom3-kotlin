@@ -3747,6 +3747,9 @@ open class idAI : idActor() {
 
         // activate targets
         ActivateTargets(attacker)
+        if (fl.deconstructed) {
+            return
+        }
         RemoveAttachments()
         RemoveProjectile()
         StopMove(moveStatus_t.MOVE_STATUS_DONE)
@@ -3759,6 +3762,9 @@ open class idAI : idActor() {
         Unbind()
         if (StartRagdoll()) {
             StartSound("snd_death", gameSoundChannel_t.SND_CHANNEL_VOICE, 0, false, CInt())
+        }
+        if (fl.deconstructed) {
+            return
         }
         if (spawnArgs.GetString("model_death", "", modelDeath)) {
             // lost soul is only case that does not use a ragdoll and has a model_death so get the death sound in here
@@ -3775,9 +3781,16 @@ open class idAI : idActor() {
             }
         }
         restartParticles = false
-        state = GetScriptFunction("state_Killed")
-        SetState(state)
-        SetWaitState("")
+        if (scriptObject.HasObject()) {
+            state = GetScriptFunction("state_Killed")
+            SetState(state)
+            SetWaitState("")
+        } else {
+            Game_local.gameLocal.Warning(
+                "idAI::Killed: entity '%s' lost its script object before state_Killed",
+                name
+            )
+        }
         var kv = spawnArgs.MatchPrefix("def_drops", null)
         while (kv != null) {
             val args = idDict()
@@ -8917,8 +8930,6 @@ open class idAI : idActor() {
      */
     override fun _deconstructor() {
         if (projectileClipModel != null) idClipModel.delete(projectileClipModel!!)
-        DeconstructScriptObject()
-        scriptObject.Free()
         if (worldMuzzleFlashHandle != -1) {
             Game_local.gameRenderWorld!!.FreeLightDef(worldMuzzleFlashHandle)
             worldMuzzleFlashHandle = -1

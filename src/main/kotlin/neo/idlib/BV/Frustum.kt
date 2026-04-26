@@ -600,10 +600,13 @@ object Frustum {
         fun IntersectsFrustum(frustum: idFrustum): Boolean {
             val indexPoints2: Array<idVec3> = idVec3.generateArray(8)
             val cornerVecs2: Array<idVec3> = idVec3.generateArray(4)
+            val transpose = idMat3()
 
             val localFrustum2 = idFrustum(frustum)
-            localFrustum2.origin.set((frustum.origin - origin) * axis.Transpose())
-            localFrustum2.axis.set(frustum.axis * axis.Transpose())
+            transpose.set(axis)
+            transpose.TransposeSelf()
+            localFrustum2.origin.set((frustum.origin - origin) * transpose)
+            localFrustum2.axis.setMul(frustum.axis, transpose)
             localFrustum2.ToIndexPointsAndCornerVecs(indexPoints2, cornerVecs2)
 
             if (CullLocalFrustum(localFrustum2, indexPoints2, cornerVecs2)) {
@@ -614,8 +617,10 @@ object Frustum {
             val cornerVecs1: Array<idVec3> = idVec3.generateArray(4)
             val localFrustum1 = idFrustum(this)
 
-            localFrustum1.origin.set((origin - frustum.origin) * frustum.axis.Transpose())
-            localFrustum1.axis.set(axis * frustum.axis.Transpose())
+            transpose.set(frustum.axis)
+            transpose.TransposeSelf()
+            localFrustum1.origin.set((origin - frustum.origin) * transpose)
+            localFrustum1.axis.setMul(axis, transpose)
             localFrustum1.ToIndexPointsAndCornerVecs(indexPoints1, cornerVecs1)
 
             if (frustum.CullLocalFrustum(localFrustum1, indexPoints1, cornerVecs1)) {
@@ -1637,7 +1642,7 @@ object Frustum {
             transpose.TransposeSelf()
             localFrustum = idFrustum(frustum)
             localFrustum.origin.set((frustum.origin - origin) * transpose)
-            localFrustum.axis.set(frustum.axis * transpose)
+            localFrustum.axis.setMul(frustum.axis, transpose)
             localFrustum.ToClippedPoints(clipFractions, clipPoints)
 
             // test outer four edges of the clipped frustum
@@ -1714,7 +1719,7 @@ object Frustum {
                 transpose.set(frustum.axis)
                 transpose.TransposeSelf()
                 localOrigin1.set((clipBox.GetCenter() - frustum.origin) * transpose)
-                localAxis1.set(clipBox.GetAxis() * transpose)
+                localAxis1.setMul(clipBox.GetAxis(), transpose)
                 BoxToPoints(localOrigin1, clipBox.GetExtents(), localAxis1, localPoints1)
 
                 // cull the box corners with the other frustum
@@ -1741,7 +1746,7 @@ object Frustum {
                 transpose.set(axis)
                 transpose.TransposeSelf()
                 localOrigin2.set((clipBox.GetCenter() - origin) * transpose)
-                localAxis2.set(clipBox.GetAxis() * transpose)
+                localAxis2.setMul(clipBox.GetAxis(), transpose)
                 BoxToPoints(localOrigin2, clipBox.GetExtents(), localAxis2, localPoints2)
 
                 // clip the edges of the clip bounds to the other frustum and add the clipped edges to the projection bounds
@@ -1850,7 +1855,7 @@ object Frustum {
                 transpose.set(frustum.axis)
                 transpose.TransposeSelf()
                 localOrigin1.set((origin - frustum.origin) * transpose)
-                localAxis1.set(axis * transpose)
+                localAxis1.setMul(axis, transpose)
                 localAxis1[0].timesAssign(dFar)
                 localAxis1[1].timesAssign(dLeft)
                 localAxis1[2].timesAssign(dUp)
@@ -1859,7 +1864,7 @@ object Frustum {
                 transpose.set(clipBox.GetAxis())
                 transpose.TransposeSelf()
                 localOrigin2.set((origin - clipBox.GetCenter()) * transpose)
-                localAxis2.set(axis * transpose)
+                localAxis2.setMul(axis, transpose)
                 localAxis2[0].timesAssign(dFar)
                 localAxis2[1].timesAssign(dLeft)
                 localAxis2[2].timesAssign(dUp)

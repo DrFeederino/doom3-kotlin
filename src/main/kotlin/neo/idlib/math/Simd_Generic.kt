@@ -7,8 +7,6 @@ import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.geometry.JointTransform.idJointMat
 import neo.idlib.geometry.JointTransform.idJointQuat
 import neo.idlib.math.Matrix.idMatX
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import kotlin.experimental.or
 
@@ -3229,14 +3227,13 @@ internal class idSIMD_Generic : idSIMDProcessor() {
         numWeights: Int
     ) {
         var i: Int
-        val jointsPtr = jmtobb(joints)
         var j = 0
+        val v = idVec3()
         for (i in 0 until numVerts) {
-            val v = idVec3()
-            v.set(toIdJointMat(jointsPtr, index[j * 2 + 0]) * weights[j])
+            joints[index[j * 2 + 0] / idJointMat.SIZE].Transform(weights[j], v)
             while (index[j * 2 + 1] == 0) {
                 j++
-                v.plusAssign(toIdJointMat(jointsPtr, index[j * 2 + 0]) * weights[j])
+                joints[index[j * 2 + 0] / idJointMat.SIZE].TransformAdd(weights[j], v)
             }
             j++
 
@@ -4059,28 +4056,6 @@ internal class idSIMD_Generic : idSIMDProcessor() {
             } else {
                 samples[offset + i] = mixBuffer[i].toInt().toShort()
             }
-        }
-    }
-
-    companion object {
-        //TODO: move to TempDump
-        private fun jmtobb(joints: Array<idJointMat>): ByteBuffer {
-            val byteBuffer =
-                ByteBuffer.allocate(idJointMat.SIZE * joints.size).order(ByteOrder.LITTLE_ENDIAN)
-            for (i in joints.indices) {
-                byteBuffer.position(i * idJointMat.SIZE)
-                byteBuffer.asFloatBuffer().put(joints[i].ToFloatArray())
-            }
-            return byteBuffer
-        }
-
-        private fun toIdJointMat(jointsPtr: ByteBuffer, position: Int): idJointMat {
-            val buffer = jointsPtr.duplicate().position(position).order(ByteOrder.LITTLE_ENDIAN)
-            val temp = FloatArray(12)
-            for (i in 0..11) {
-                temp[i] = buffer.float
-            }
-            return idJointMat(temp)
         }
     }
 }

@@ -113,7 +113,36 @@ abstract class idSIMDProcessor {
     abstract fun Dot(dst: FloatArray, src0: Array<idVec3>, src1: Array<idVec3>, count: Int)
     abstract fun Dot(dot: CFloat, src1: FloatArray, src2: FloatArray, count: Int)
     fun Dot(dot: CFloat, src1: FloatBuffer, src2: FloatArray, count: Int) {
-        Dot(dot, TempDump.fbtofa(src1), src2, count)
+        val base = src1.position()
+        when (count) {
+            0 -> {
+                dot._val = 0.0f
+                return
+            }
+
+            1 -> {
+                dot._val = src1.get(base) * src2[0]
+                return
+            }
+
+            2 -> {
+                dot._val = src1.get(base) * src2[0] + src1.get(base + 1) * src2[1]
+                return
+            }
+
+            3 -> {
+                dot._val = src1.get(base) * src2[0] + src1.get(base + 1) * src2[1] + src1.get(base + 2) * src2[2]
+                return
+            }
+        }
+
+        var sum = 0.0
+        var i = 0
+        while (i < count) {
+            sum += src1.get(base + i) * src2[i]
+            i++
+        }
+        dot._val = sum.toFloat()
     }
 
     abstract fun CmpGT(dst: ByteArray, src0: FloatArray, constant: Float, count: Int)
@@ -210,7 +239,21 @@ abstract class idSIMDProcessor {
     )
 
     fun MatX_LowerTriangularSolve(L: idMatX, x: FloatArray, b: FloatBuffer, n: Int /*, int skip = 0*/) {
-        MatX_LowerTriangularSolve(L, x, TempDump.fbtofa(b), n)
+        val lPtr = L.ToFloatPtr()
+        val nc = L.GetNumColumns()
+        val bBase = b.position()
+
+        var i = 0
+        while (i < n) {
+            var sum = b.get(bBase + i)
+            var j = 0
+            while (j < i) {
+                sum -= lPtr[i * nc + j] * x[j]
+                j++
+            }
+            x[i] = sum
+            i++
+        }
     }
 
     abstract fun MatX_LowerTriangularSolve(L: idMatX, x: FloatArray, b: FloatArray, n: Int, skip: Int)

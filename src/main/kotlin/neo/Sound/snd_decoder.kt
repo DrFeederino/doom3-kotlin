@@ -123,6 +123,23 @@ object snd_decoder {
         private var lastSample: idSoundSample? = null // last sample being decoded
         private var lastSampleOffset: Int = 0       // last offset into the decoded sample
         private var ogg: Long = 0L                  // stb_vorbis handle
+        private val fetchPos = IntArray(1)
+        private val fetchSize = IntArray(1)
+        private val oggOpenError = IntArray(1)
+        private var pcmShortScratch = ShortArray(0)
+        private var pcmFloatScratch = FloatArray(0)
+        private val oggSamplePointers: PointerBuffer = PointerBuffer.allocateDirect(2)
+        private val oggChannelBuffers = Array(2) { BufferUtils.createFloatBuffer(MIXBUFFER_SAMPLES) }
+        private val oggSamplesArray = Array(2) { FloatArray(MIXBUFFER_SAMPLES) }
+
+        private fun ensurePcmScratch(shorts: Int, floats: Int) {
+            if (pcmShortScratch.size < shorts) {
+                pcmShortScratch = ShortArray(shorts)
+            }
+            if (pcmFloatScratch.size < floats) {
+                pcmFloatScratch = FloatArray(floats)
+            }
+        }
 
         /*
          ====================
@@ -236,9 +253,6 @@ object snd_decoder {
          */
         // FIX: Was a stub throwing TODO_Exception — now fully implemented from C++ source
         fun DecodePCM(sample: idSoundSample, sampleOffset44k: Int, sampleCount44k: Int, dest: FloatBuffer): Int {
-            val pos = IntArray(1)
-            val size = IntArray(1)
-
             lastFormat = snd_local.WAVE_FORMAT_TAG_PCM
             lastSample = sample
 
@@ -258,35 +272,38 @@ object snd_decoder {
                 return 0
             }
 
-            if (!sample.FetchFromCache(sampleOffset * 2 /*sizeof(short)*/, null, pos, size, false)) {
+            fetchPos[0] = 0
+            fetchSize[0] = 0
+            if (!sample.FetchFromCache(sampleOffset * 2 /*sizeof(short)*/, null, fetchPos, fetchSize, false)) {
                 failed = true
                 return 0
             }
 
-            val readSamples: Int = if (size[0] - pos[0] < sampleCount * 2 /*sizeof(short)*/) {
-                (size[0] - pos[0]) / 2 // sizeof(short)
+            val readSamples: Int = if (fetchSize[0] - fetchPos[0] < sampleCount * 2 /*sizeof(short)*/) {
+                (fetchSize[0] - fetchPos[0]) / 2 // sizeof(short)
             } else {
                 sampleCount
             }
+            ensurePcmScratch(readSamples, sampleCount44k)
 
             // duplicate samples for 44kHz output
             // NOTE: Differs from C++ — C++ uses pointer arithmetic (first+pos) into nonCacheData,
             // Kotlin accesses nonCacheData directly as a ShortBuffer at the correct offset
-            val ncd = sample.nonCacheData!!.duplicate()
-            ncd.position(sampleOffset * 2 + pos[0])
-            val pcmShortBuf = ncd.asShortBuffer()
-            val pcmShorts = ShortArray(readSamples)
-            pcmShortBuf.get(pcmShorts, 0, readSamples)
+            val ncd = sample.nonCacheData!!
+            var byteOffset = sampleOffset * 2 + fetchPos[0]
+            for (i in 0 until readSamples) {
+                pcmShortScratch[i] = ncd.getShort(byteOffset)
+                byteOffset += java.lang.Short.BYTES
+            }
 
             // NOTE: Differs from C++ — SIMDProcessor.UpSamplePCMTo44kHz takes FloatArray, not FloatBuffer
             // We use a temp array and copy back to the FloatBuffer
-            val destArray = FloatArray(sampleCount44k)
             SIMDProcessor!!.UpSamplePCMTo44kHz(
-                destArray, pcmShorts, readSamples,
+                pcmFloatScratch, pcmShortScratch, readSamples,
                 sample.objectInfo.nSamplesPerSec, sample.objectInfo.nChannels
             )
             for (i in 0 until (readSamples shl shift)) {
-                dest.put(i, destArray[i])
+                dest.put(i, pcmFloatScratch[i])
             }
 
             return readSamples shl shift
@@ -319,13 +336,13 @@ object snd_decoder {
                 }
                 assert(ogg == 0L) { "stb_vorbis handle should be null before opening new one" }
                 file.SetData(sample.nonCacheData!!, sample.objectMemSize)
-                val error = intArrayOf(0)
-                ogg = ov_openFile(file, error)
-                if (error[0] != 0) {
+                oggOpenError[0] = 0
+                ogg = ov_openFile(file, oggOpenError)
+                if (oggOpenError[0] != 0) {
                     // FIX: Was using java.util.logging.Logger — matches C++ common->Warning()
                     Common.common.Warning(
                         "idSampleDecoderLocal::DecodeOGG() stb_vorbis_open_memory() for %s failed: %s\n",
-                        sample.name, getErrorMessage(error[0])
+                        sample.name, getErrorMessage(oggOpenError[0])
                     )
                     failed = true
                     return 0
@@ -360,12 +377,14 @@ object snd_decoder {
             readSamples = 0
 
             val nChannels = sample.objectInfo.nChannels
-            val samples = PointerBuffer.allocateDirect(nChannels)
-            val channelBuffers = Array(nChannels) { BufferUtils.createFloatBuffer(MIXBUFFER_SAMPLES) }
+            val samples = oggSamplePointers
+            samples.clear()
+            samples.limit(nChannels)
+            val channelBuffers = oggChannelBuffers
             for (i in 0 until nChannels) {
                 samples.put(i, channelBuffers[i])
             }
-            val samplesArray = Array(nChannels) { FloatArray(MIXBUFFER_SAMPLES) }
+            val samplesArray = oggSamplesArray
 
             do {
                 // DG: in contrast to libvorbisfile's ov_read_float(), stb_vorbis_get_samples_float()

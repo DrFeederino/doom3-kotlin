@@ -59,11 +59,18 @@ class GuiModel {
         private val surfaces: idList<guiModelSurface_t>
         private val verts: idList<idDrawVert>
         private var surf: guiModelSurface_t? = null
+        private val stretchPicVerts = Array(4) { idDrawVert() }
+        private val stretchPicIndexes = intArrayOf(3, 0, 2, 2, 0, 1)
+        private val stretchTriVerts = Array(3) { idDrawVert() }
+        private val stretchTriIndexes = intArrayOf(1, 0, 2)
+        private val emitTris = ArrayList<srfTriangles_s>()
+        private var emitTriFrame = -1
+        private var emitTriIndex = 0
 
         init {
             surfaces = idList()
             indexes = idList(1000) //.SetGranularity(1000);
-            verts = idList(1000) //.SetGranularity(1000);
+            verts = idList(1000) { idDrawVert() } //.SetGranularity(1000);
         }
 
         /*
@@ -132,7 +139,7 @@ class GuiModel {
             val color = charArrayOf(0.toChar())
             i._val = verts.Num()
             demo.ReadInt(i)
-            verts.SetNum(i._val, false)
+            verts.AssureSizeAlloc(i._val) { idDrawVert() }
             j = 0
             while (j < i._val) {
                 demo.ReadVec3(verts[j].xyz)
@@ -379,7 +386,7 @@ class GuiModel {
                         w.ClipInPlace(p)
                     }
                     val numVerts = verts.Num()
-                    verts.SetNum(numVerts + w.GetNumPoints(), false)
+                    verts.AssureSizeAlloc(numVerts + w.GetNumPoints()) { idDrawVert() }
                     j = 0
                     while (j < w.GetNumPoints()) {
                         val dv = verts[numVerts + j]
@@ -407,7 +414,7 @@ class GuiModel {
             } else {
                 val numVerts = verts.Num()
                 val numIndexes = indexes.Num()
-                verts.AssureSize(numVerts + vertCount)
+                verts.AssureSizeAlloc(numVerts + vertCount) { idDrawVert() }
                 indexes.AssureSize(numIndexes + indexCount)
                 surf!!.numVerts += vertCount
                 surf!!.numIndexes += indexCount
@@ -416,7 +423,7 @@ class GuiModel {
                 }
 
                 for (i in 0 until vertCount) {
-                    verts[i + numVerts] = idDrawVert(dVerts[i])
+                    verts[i + numVerts].set(dVerts[i])
                 }
             }
         }
@@ -447,14 +454,8 @@ class GuiModel {
             var t1 = t1
             var s2 = s2
             var t2 = t2
-            val verts = arrayOf(
-                idDrawVert(),
-                idDrawVert(),
-                idDrawVert(),
-                idDrawVert()
-            )
-            /*glIndex_t*/
-            val indexes = IntArray(6)
+            val verts = stretchPicVerts
+            val indexes = stretchPicIndexes
             if (!glConfig.isInitialized) {
                 return
             }
@@ -485,12 +486,6 @@ class GuiModel {
             if (w <= 0 || h <= 0) {
                 return  // completely clipped away
             }
-            indexes[0] = 3
-            indexes[1] = 0
-            indexes[2] = 2
-            indexes[3] = 2
-            indexes[4] = 0
-            indexes[5] = 1
             verts[0].xyz[0] = x
             verts[0].xyz[1] = y
             verts[0].xyz[2] = 0.0f
@@ -566,9 +561,8 @@ class GuiModel {
             t3: idVec2,
             material: idMaterial?
         ) {
-            val tempVerts = Array(3) { idDrawVert() }
-            /*glIndex_t*/
-            val tempIndexes = IntArray(3)
+            val tempVerts = stretchTriVerts
+            val tempIndexes = stretchTriIndexes
             val vertCount = 3
             val indexCount = 3
             if (!glConfig.isInitialized) {
@@ -577,9 +571,6 @@ class GuiModel {
             if (null == material) {
                 return
             }
-            tempIndexes[0] = 1
-            tempIndexes[1] = 0
-            tempIndexes[2] = 2
             tempVerts[0]!!.xyz[0] = p1.x
             tempVerts[0]!!.xyz[1] = p1.y
             tempVerts[0]!!.xyz[2] = 0.0f
@@ -633,7 +624,7 @@ class GuiModel {
             }
             val numVerts = verts.Num()
             val numIndexes = indexes.Num()
-            verts.AssureSize(numVerts + vertCount)
+            verts.AssureSizeAlloc(numVerts + vertCount) { idDrawVert() }
             indexes.AssureSize(numIndexes + indexCount)
             surf!!.numVerts += vertCount
             surf!!.numIndexes += indexCount
@@ -642,7 +633,7 @@ class GuiModel {
             }
 
             for (i in 0 until vertCount) {
-                verts[numVerts + i] = idDrawVert(tempVerts[i]!!)
+                verts[numVerts + i].set(tempVerts[i]!!)
             }
         }
 
@@ -682,11 +673,12 @@ class GuiModel {
             }
 
             // copy verts and indexes
-            tri = srfTriangles_s()
+            tri = AllocEmitTri()
             tri.numIndexes = surf.numIndexes
             tri.numVerts = surf.numVerts
-            tri.indexes =
-                IntArray(tri.numIndexes)
+            if (tri.indexes == null || tri.indexes!!.size < tri.numIndexes) {
+                tri.indexes = IntArray(tri.numIndexes)
+            }
             var s = surf.firstIndex
             var d = 0
             while (d < tri.numIndexes) {
@@ -698,10 +690,9 @@ class GuiModel {
             // we might be able to avoid copying these and just let them reference the list vars
             // but some things, like deforms and recursive
             // guis, need to access the verts in cpu space, not just through the vertex range
-            tri.verts =
-                Array(tri.numVerts) { idDrawVert() }
+            AssureEmitVerts(tri, tri.numVerts)
             for (i in 0 until tri.numVerts) {
-                tri.verts!![i] = idDrawVert(verts[surf.firstVert + i])
+                tri.verts!![i].set(verts[surf.firstVert + i])
             }
 
             // move the verts to the vertex cache
@@ -724,6 +715,38 @@ class GuiModel {
 
             // add the surface, which might recursively create another gui
             tr_light.R_AddDrawSurf(tri, guiSpace, renderEntity, surf.material!!, tr.viewDef!!.scissor)
+        }
+
+        private fun AllocEmitTri(): srfTriangles_s {
+            if (emitTriFrame != tr.frameCount) {
+                emitTriFrame = tr.frameCount
+                emitTriIndex = 0
+            }
+            if (emitTriIndex == emitTris.size) {
+                emitTris.add(srfTriangles_s())
+            }
+            val tri = emitTris[emitTriIndex++]
+            tri.ambientCache = null
+            tri.indexCache = null
+            tri.lightingCache = null
+            tri.shadowCache = null
+            tri.ambientSurface = null
+            tri.deformedSurface = false
+            tri.tangentsCalculated = false
+            tri.facePlanesCalculated = false
+            tri.generateNormals = false
+            return tri
+        }
+
+        private fun AssureEmitVerts(tri: srfTriangles_s, numVerts: Int) {
+            val oldVerts = tri.verts
+            if (oldVerts != null && oldVerts.size >= numVerts) {
+                return
+            }
+            val newVerts = Array(numVerts) { i ->
+                if (oldVerts != null && i < oldVerts.size) oldVerts[i] else idDrawVert()
+            }
+            tri.verts = newVerts
         }
 
     }

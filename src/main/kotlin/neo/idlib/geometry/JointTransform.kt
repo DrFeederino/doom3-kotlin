@@ -93,6 +93,18 @@ class JointTransform {
             )
         }
 
+        fun Transform(v: idVec4, dst: idVec3) {
+            dst.x = mat[0 * 4 + 0] * v[0] + mat[0 * 4 + 1] * v[1] + mat[0 * 4 + 2] * v[2] + mat[0 * 4 + 3] * v[3]
+            dst.y = mat[1 * 4 + 0] * v[0] + mat[1 * 4 + 1] * v[1] + mat[1 * 4 + 2] * v[2] + mat[1 * 4 + 3] * v[3]
+            dst.z = mat[2 * 4 + 0] * v[0] + mat[2 * 4 + 1] * v[1] + mat[2 * 4 + 2] * v[2] + mat[2 * 4 + 3] * v[3]
+        }
+
+        fun TransformAdd(v: idVec4, dst: idVec3) {
+            dst.x += mat[0 * 4 + 0] * v[0] + mat[0 * 4 + 1] * v[1] + mat[0 * 4 + 2] * v[2] + mat[0 * 4 + 3] * v[3]
+            dst.y += mat[1 * 4 + 0] * v[0] + mat[1 * 4 + 1] * v[1] + mat[1 * 4 + 2] * v[2] + mat[1 * 4 + 3] * v[3]
+            dst.z += mat[2 * 4 + 0] * v[0] + mat[2 * 4 + 1] * v[1] + mat[2 * 4 + 2] * v[2] + mat[2 * 4 + 3] * v[3]
+        }
+
         // transform
         fun timesAssign(a: idJointMat): idJointMat {
             val dst = FloatArray(3)
@@ -246,6 +258,13 @@ class JointTransform {
                 mat[0 * 4 + 1], mat[1 * 4 + 1], mat[2 * 4 + 1],
                 mat[0 * 4 + 2], mat[1 * 4 + 2], mat[2 * 4 + 2]
             )
+        }
+
+        fun ToMat3(dst: idMat3): idMat3 {
+            dst[0].set(mat[0 * 4 + 0], mat[1 * 4 + 0], mat[2 * 4 + 0])
+            dst[1].set(mat[0 * 4 + 1], mat[1 * 4 + 1], mat[2 * 4 + 1])
+            dst[2].set(mat[0 * 4 + 2], mat[1 * 4 + 2], mat[2 * 4 + 2])
+            return dst
         }
 
         fun ToVec3(): idVec3 {

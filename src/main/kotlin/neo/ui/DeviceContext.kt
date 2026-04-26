@@ -7,7 +7,6 @@ import neo.Renderer.RenderSystem.fontInfoEx_t
 import neo.Renderer.RenderSystem.fontInfo_t
 import neo.Renderer.RenderSystem.glyphInfo_t
 import neo.Renderer.RenderSystem.renderSystem
-import neo.TempDump.ctos
 import neo.TempDump.etoi
 import neo.framework.CVarSystem.CVAR_ARCHIVE
 import neo.framework.CVarSystem.CVAR_GUI
@@ -22,7 +21,6 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.CharIsPrintable
 import neo.idlib.Text.Str.idStr.Companion.ColorForIndex
 import neo.idlib.Text.Str.idStr.Companion.Icmp
-import neo.idlib.Text.Str.idStr.Companion.IsColor
 import neo.idlib.Text.Str.va
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
@@ -548,12 +546,10 @@ object DeviceContext {
             breaks: idList<Int>? = null /*= NULL*/,
             limit: Int = 0 /*= 0*/
         ): Int {
-            var text = text
             var cursor = cursor
             var p: Char
             var p_i: Int
             var newLinePtr = 0
-            val buff = CharArray(1024)
             var len: Int
             var newLine: Int
             var newLineWidth: Int
@@ -573,25 +569,22 @@ object DeviceContext {
                 }
                 return FtoiFast(rectDraw.w / charSkip)
             }
-            if (!text.contains("\u0000")) {
-                text += '\u0000'
-            }
             y = lineSkip + rectDraw.y
             len = 0
-            buff[0] = '\u0000'
             newLine = 0
             newLineWidth = 0
             p_i = 0
+            var lineStart = 0
             breaks?.Append(0)
             count = 0
             textWidth = 0.0f
             lineBreak = false
             wordBreak = false
-            while (p_i < text.length) {
-                p = text[p_i]
+            while (p_i <= text.length) {
+                p = if (p_i < text.length) text[p_i] else '\u0000'
                 if (p == '\n' || p == '\r' || p == '\u0000') {
                     lineBreak = true
-                    if (p == '\n' && text[p_i + 1] == '\r' || p == '\r' && text[p_i + 1] == '\n') {
+                    if (p_i + 1 < text.length && (p == '\n' && text[p_i + 1] == '\r' || p == '\r' && text[p_i + 1] == '\n')) {
                         p = text[p_i++]
                     }
                 }
@@ -623,8 +616,6 @@ object DeviceContext {
                         x = rectDraw.x + (rectDraw.w - newLineWidth) / 2
                     }
                     if (wrap || newLine > 0) {
-                        buff[newLine] = '\u0000'
-
                         // This is a special case to handle breaking in the middle of a word.
                         // if we didn't do this, the cursor would appear on the end of this line
                         // and the beginning of the next.
@@ -633,7 +624,19 @@ object DeviceContext {
                         }
                     }
                     if (!calcOnly) {
-                        count += DrawText(x, y, textScale, color, ctos(buff), 0.0f, 0, 0, cursor)
+                        count += DrawText(
+                            x,
+                            y,
+                            textScale,
+                            color,
+                            text,
+                            lineStart,
+                            lineStart + newLine,
+                            0.0f,
+                            0,
+                            0,
+                            cursor
+                        )
                     }
                     if (cursor < newLine) {
                         cursor = -1
@@ -651,6 +654,7 @@ object DeviceContext {
                         break
                     }
                     p_i = newLinePtr
+                    lineStart = p_i
                     breaks?.Append(p_i)
                     len = 0
                     newLine = 0
@@ -660,12 +664,11 @@ object DeviceContext {
                     wordBreak = false
                     continue
                 }
-                buff[len++] = p
                 p_i++
-                buff[len] = '\u0000'
+                len++
                 // update the width
-                if (buff[len - 1].code != C_COLOR_ESCAPE && (len <= 1 || buff[len - 2].code != C_COLOR_ESCAPE)) {
-                    textWidth += textScale * useFont!!.glyphScale * useFont!!.glyphs[buff[len - 1].code]!!.xSkip
+                if (p.code != C_COLOR_ESCAPE && (len <= 1 || text[p_i - 2].code != C_COLOR_ESCAPE)) {
+                    textWidth += textScale * useFont!!.glyphScale * useFont!!.glyphs[p.code]!!.xSkip
                     // Jim Dosé, I don't know who you are..but I hate you.
                 }
             }
@@ -1033,6 +1036,10 @@ object DeviceContext {
             return FtoiFast(glyph.xSkip * useScale)
         }
 
+        private fun IsColorAt(text: String, index: Int, end: Int = text.length): Boolean {
+            return index + 1 < end && text[index].code == C_COLOR_ESCAPE && text[index + 1] != ' '
+        }
+
         fun TextWidth(text: String?, scale: Float, limit: Int): Int {
             var i: Int
             var width: Int
@@ -1044,8 +1051,9 @@ object DeviceContext {
             width = 0
             if (limit > 0) {
                 i = 0
-                while (text[i] != '\u0000' && i < limit) {
-                    if (IsColor(text.substring(i))) {
+                val len = minOf(text.length, limit)
+                while (i < len && text[i] != '\u0000') {
+                    if (IsColorAt(text, i, len)) {
                         i++
                     } else {
                         width += glyphs[text[i].code]!!.xSkip
@@ -1054,8 +1062,8 @@ object DeviceContext {
                 }
             } else {
                 i = 0
-                while (text[i] != '\u0000') {
-                    if (IsColor(text.substring(i))) {
+                while (i < text.length && text[i] != '\u0000') {
+                    if (IsColorAt(text, i)) {
                         i++
                     } else {
                         width += glyphs[text[i].code]!!.xSkip
@@ -1087,9 +1095,10 @@ object DeviceContext {
                     len = limit
                 }
                 count = 0
-                while (count < len) {
-                    if (IsColor(text.substring(s))) {
+                while (count < len && s < len) {
+                    if (IsColorAt(text, s, len)) {
                         s += 2
+                        count += 2
                         //                        continue;
                     } else {
                         glyph = font.glyphs[text[s].code]!!
@@ -1472,6 +1481,22 @@ object DeviceContext {
             style: Int,
             cursor: Int /*= -1*/
         ): Int {
+            return DrawText(x, y, scale, color, text, 0, text.length, adjust, limit, style, cursor)
+        }
+
+        private fun DrawText(
+            x: Float,
+            y: Float,
+            scale: Float,
+            color: idVec4?,
+            text: String,
+            start: Int,
+            end: Int,
+            adjust: Float,
+            limit: Int,
+            style: Int,
+            cursor: Int /*= -1*/
+        ): Int {
             var x = x
             var len: Int
             var count: Int
@@ -1487,11 +1512,12 @@ object DeviceContext {
                 renderSystem.SetColor(color)
                 //		memcpy(newColor[0], color[0], sizeof(idVec4));
                 newColor.set(color)
-                len = text.length
-                if (limit > 0 && len > limit) {
-                    len = limit
+                len = end
+                if (limit > 0 && len - start > limit) {
+                    len = start + limit
                 }
-                while (s_i < len && text[s_i].also { s = it }.code != 0 && count < len) {
+                s_i = start
+                while (s_i < len && text[s_i].also { s = it }.code != 0 && count < len - start) {
                     if (s.code < RenderSystem.GLYPH_START || s.code > RenderSystem.GLYPH_END) {
                         s_i++
                         continue
@@ -1504,7 +1530,7 @@ object DeviceContext {
                     // (Assets.textFont.glyphs[text[i]].imageHeight -
                     // Assets.textFont.glyphs[text[i]].height);
                     //
-                    if (IsColor(text.substring(s_i))) {
+                    if (IsColorAt(text, s_i, len)) {
                         if (text[s_i + 1].code == C_COLOR_DEFAULT) {
                             newColor.set(color)
                         } else {
@@ -1546,7 +1572,7 @@ object DeviceContext {
                         count++
                     }
                 }
-                if (cursor == len) {
+                if (cursor == len - start) {
                     DrawEditCursor(x, y, scale)
                 }
             }

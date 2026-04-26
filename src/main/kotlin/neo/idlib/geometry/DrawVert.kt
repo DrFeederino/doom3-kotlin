@@ -12,9 +12,10 @@ object DrawVert {
 
     fun toByteBuffer(verts: Array<idDrawVert>): ByteBuffer {
         val data = BufferUtils.createByteBuffer(idDrawVert.BYTES * verts.size)
+        data.order(ByteOrder.LITTLE_ENDIAN)
         for (vert in verts) {
             if (vert != null) {
-                data.put(vert.Write().rewind())
+                vert.WriteTo(data)
             }
         }
         return data.flip()
@@ -118,9 +119,10 @@ object DrawVert {
         }
 
         fun SetColor(color: Int) {
-            val buffer = ByteBuffer.allocate(Integer.BYTES)
-            buffer.putInt(color)
-            this.color = buffer.array()
+            this.color[0] = (color and 0xFF).toByte()
+            this.color[1] = (color ushr 8 and 0xFF).toByte()
+            this.color[2] = (color ushr 16 and 0xFF).toByte()
+            this.color[3] = (color ushr 24 and 0xFF).toByte()
         }
 
         fun GetColor(): Int {
@@ -179,6 +181,11 @@ object DrawVert {
         override fun Write(): ByteBuffer {
             val data = ByteBuffer.allocate(BYTES)
             data.order(ByteOrder.LITTLE_ENDIAN) //very importante.
+            WriteTo(data)
+            return data
+        }
+
+        fun WriteTo(data: ByteBuffer) {
             data.putFloat(xyz[0])
             data.putFloat(xyz[1])
             data.putFloat(xyz[2])
@@ -195,7 +202,6 @@ object DrawVert {
             for (colour in color) {
                 data.put(colour)
             }
-            return data
         }
 
         fun xyzOffset(): Int {
