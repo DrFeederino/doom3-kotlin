@@ -120,17 +120,26 @@ object tr_turboshadow {
         newTri = R_AllocStaticTriSurf()
         newTri.numVerts = tri.numVerts * 2
 
-        // alloc the max possible size
-        val tempIndexes: IntArray
-        var shadowIndexes: IntArray
-        if (USE_TRI_DATA_ALLOCATOR) {
-            R_AllocStaticTriSurfIndexes(newTri, (numShadowingFaces + tri.numSilEdges) * 6)
-            tempIndexes = newTri.indexes!!
-            shadowIndexes = newTri.indexes!!
-        } else {
-            tempIndexes = IntArray(tri.numSilEdges * 6)
-            shadowIndexes = tempIndexes
+        var numSilhouetteIndexes = 0
+        sil = 0
+        i = tri.numSilEdges
+        while (i > 0) {
+            val f1: Int = facing!![tri.silEdges!![sil]!!.p1].toInt()
+            val f2: Int = facing[tri.silEdges!![sil]!!.p2].toInt()
+            if ((f1 xor f2) != 0) {
+                numSilhouetteIndexes += 6
+            }
+            i--
+            sil++
         }
+        newTri.numShadowIndexesNoCaps = numSilhouetteIndexes
+        newTri.numShadowIndexesNoFrontCaps = numSilhouetteIndexes + numShadowingFaces * 6
+        newTri.numIndexes = newTri.numShadowIndexesNoFrontCaps
+        newTri.shadowCapPlaneBits = Model.SHADOW_CAP_INFINITE
+
+        var shadowIndexes: IntArray
+        R_AllocStaticTriSurfIndexes(newTri, newTri.numIndexes)
+        shadowIndexes = newTri.indexes!!
         var shadowIndex = 0
         // create new triangles along sil planes
         sil = 0
@@ -159,21 +168,7 @@ object tr_turboshadow {
             sil++
         }
         val numShadowIndexes: Int = shadowIndex
-
-        // we aren't bothering to separate front and back caps on these
-        newTri.numShadowIndexesNoFrontCaps = numShadowIndexes + numShadowingFaces * 6
-        newTri.numIndexes = newTri.numShadowIndexesNoFrontCaps
-        newTri.numShadowIndexesNoCaps = numShadowIndexes
-        newTri.shadowCapPlaneBits = Model.SHADOW_CAP_INFINITE
-        if (USE_TRI_DATA_ALLOCATOR) {
-            // decrease the size of the memory block to only store the used indexes
-            R_ResizeStaticTriSurfIndexes(newTri, newTri.numIndexes)
-        } else {
-            // allocate memory for the indexes
-            R_AllocStaticTriSurfIndexes(newTri, newTri.numIndexes)
-            // copy the indexes we created for the sil planes
-            SIMDProcessor!!.Memcpy(newTri.indexes!!, tempIndexes, numShadowIndexes)
-        }
+        assert(numShadowIndexes == newTri.numShadowIndexesNoCaps)
 
         // these have no effect, because they extend to infinity
         newTri.bounds.Clear()
@@ -319,28 +314,38 @@ object tr_turboshadow {
             SIMDProcessor!!.Memcpy(newTri.shadowVertexes!!, shadowVerts, newTri.numVerts)
         }
 
-        // alloc the max possible size
-        val tempIndexes: IntArray
-        var shadowIndexes: IntArray
-        if (USE_TRI_DATA_ALLOCATOR) {
-            R_AllocStaticTriSurfIndexes(newTri, (numShadowingFaces + tri.numSilEdges) * 6)
-            tempIndexes = newTri.indexes!!
-            shadowIndexes = newTri.indexes!!
-        } else {
-            tempIndexes = IntArray(tri.numSilEdges * 6)
-            shadowIndexes = tempIndexes
-        }
-        var sil_index = 0
-        var shadowIndex = 0
-        // create new triangles along sil planes
-        sil = tri.silEdges!![sil_index]
+        var numSilhouetteIndexes = 0
+        var silCountIndex = 0
         i = tri.numSilEdges
         while (i > 0) {
-            val f1: Int = facing!![sil!!.p1].toInt()
+            val countSil = tri.silEdges!![silCountIndex]
+            val f1: Int = facing!![countSil!!.p1].toInt()
+            val f2: Int = facing[countSil.p2].toInt()
+            if ((f1 xor f2) != 0) {
+                numSilhouetteIndexes += 6
+            }
+            i--
+            silCountIndex++
+        }
+        newTri.numShadowIndexesNoCaps = numSilhouetteIndexes
+        newTri.numShadowIndexesNoFrontCaps = numSilhouetteIndexes + numShadowingFaces * 6
+        newTri.numIndexes = newTri.numShadowIndexesNoFrontCaps
+        newTri.shadowCapPlaneBits = Model.SHADOW_CAP_INFINITE
+
+        var shadowIndexes: IntArray
+        R_AllocStaticTriSurfIndexes(newTri, newTri.numIndexes)
+        shadowIndexes = newTri.indexes!!
+        var shadowIndex = 0
+        // create new triangles along sil planes
+        var silIndex = 0
+        i = tri.numSilEdges
+        while (i > 0) {
+            sil = tri.silEdges!![silIndex]!!
+            val f1: Int = facing!![sil.p1].toInt()
             val f2: Int = facing[sil.p2].toInt()
             if (0 == (f1 xor f2)) {
                 i--
-                sil = tri.silEdges!![sil_index++]
+                silIndex++
                 continue
             }
             val v1: Int = vertRemap[sil.v1]
@@ -356,24 +361,10 @@ object tr_turboshadow {
             shadowIndexes[shadowIndex + 5] = v2 xor 1
             shadowIndex += 6
             i--
-            sil = tri.silEdges!![sil_index++]
+            silIndex++
         }
         val numShadowIndexes: Int = shadowIndex
-
-        // we aren't bothering to separate front and back caps on these
-        newTri.numShadowIndexesNoFrontCaps = numShadowIndexes + numShadowingFaces * 6
-        newTri.numIndexes = newTri.numShadowIndexesNoFrontCaps
-        newTri.numShadowIndexesNoCaps = numShadowIndexes
-        newTri.shadowCapPlaneBits = Model.SHADOW_CAP_INFINITE
-        if (USE_TRI_DATA_ALLOCATOR) {
-            // decrease the size of the memory block to only store the used indexes
-            R_ResizeStaticTriSurfIndexes(newTri, newTri.numIndexes)
-        } else {
-            // allocate memory for the indexes
-            R_AllocStaticTriSurfIndexes(newTri, newTri.numIndexes)
-            // copy the indexes we created for the sil planes
-            SIMDProcessor!!.Memcpy(newTri.indexes!!, tempIndexes, numShadowIndexes)
-        }
+        assert(numShadowIndexes == newTri.numShadowIndexesNoCaps)
 
         // these have no effect, because they extend to infinity
         newTri.bounds.Clear()

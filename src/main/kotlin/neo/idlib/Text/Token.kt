@@ -98,7 +98,7 @@ object Token {
             if (type != TT_NUMBER) {
                 return 0
             }
-            if (0 == subtype and TT_VALUESVALID) {
+            if (0 == (subtype and TT_VALUESVALID)) {
                 NumberValue()
             }
             return intValue
@@ -121,7 +121,6 @@ object Token {
         //
         fun NumberValue() {                // calculate values for a TT_NUMBER
             var c: Int
-            val p: String = data
             var pIndex = 0
             assert(type == TT_NUMBER)
             floatValue = 0.0f
@@ -140,26 +139,26 @@ object Token {
                         floatValue = nan.toFloat()
                     }
                 } else {
-                    floatValue = data.toFloat()
+                    floatValue = ParseFloatValue()
                 }
                 intValue = idMath.Ftol(floatValue)
             } else if (subtype and TT_DECIMAL != 0) {
-                while (pIndex < p.length) {
-                    intValue = intValue * 10 + (p[pIndex] - '0')
+                while (pIndex < len) {
+                    intValue = intValue * 10 + (TokenCharAt(pIndex) - '0')
                     pIndex++
                 }
                 floatValue = intValue.toFloat()
             } else if (subtype and TT_IPADDRESS != 0) {
                 c = 0
-                while ( /*p[pIndex] &&*/p[pIndex] != ':') {
-                    if (p[pIndex] == '.') {
+                while (pIndex < len && TokenCharAt(pIndex) != ':') {
+                    if (TokenCharAt(pIndex) == '.') {
                         while (c != 3) {
                             intValue = intValue * 10
                             c++
                         }
                         c = 0
                     } else {
-                        intValue = intValue * 10 + (p[pIndex] - '0')
+                        intValue = intValue * 10 + (TokenCharAt(pIndex) - '0')
                         c++
                     }
                     pIndex++
@@ -172,22 +171,23 @@ object Token {
             } else if (subtype and TT_OCTAL != 0) {
                 // step over the first zero
                 pIndex += 1
-                while (pIndex < p.length) {
-                    intValue = (intValue shl 3) + (p[pIndex] - '0')
+                while (pIndex < len) {
+                    intValue = (intValue shl 3) + (TokenCharAt(pIndex) - '0')
                     pIndex++
                 }
                 floatValue = intValue.toFloat()
             } else if (subtype and TT_HEX != 0) {
                 // step over the leading 0x or 0X
                 pIndex += 2
-                while (pIndex < p.length) {
+                while (pIndex < len) {
+                    val p = TokenCharAt(pIndex)
                     intValue = intValue shl 4
-                    intValue += if (p[pIndex] in 'a'..'f') {
-                        (p[pIndex] - 'a' + 10)
-                    } else if (p[pIndex] in 'A'..'F') {
-                        (p[pIndex] - 'A' + 10)
+                    intValue += if (p in 'a'..'f') {
+                        (p - 'a' + 10)
+                    } else if (p in 'A'..'F') {
+                        (p - 'A' + 10)
                     } else {
-                        (p[pIndex] - '0')
+                        (p - '0')
                     }
                     pIndex++
                 }
@@ -195,13 +195,71 @@ object Token {
             } else if (subtype and TT_BINARY != 0) {
                 // step over the leading 0b or 0B
                 pIndex += 2
-                while (pIndex < p.length) {
-                    intValue = (intValue shl 1) + (p[pIndex] - '0')
+                while (pIndex < len) {
+                    intValue = (intValue shl 1) + (TokenCharAt(pIndex) - '0')
                     pIndex++
                 }
                 floatValue = intValue.toFloat()
             }
             subtype = subtype or TT_VALUESVALID
+        }
+
+        private fun TokenCharAt(index: Int): Char {
+            return if (_dirty) {
+                _sb!![index]
+            } else {
+                data[index]
+            }
+        }
+
+        private fun ParseFloatValue(): Float {
+            var i = 0
+            var value = 0.0
+            var exponent = 0
+            while (i < len) {
+                val c = TokenCharAt(i)
+                if (c !in '0'..'9') {
+                    break
+                }
+                value = value * 10.0 + (c - '0')
+                i++
+            }
+            if (i < len && TokenCharAt(i) == '.') {
+                i++
+                var scale = 0.1
+                while (i < len) {
+                    val c = TokenCharAt(i)
+                    if (c !in '0'..'9') {
+                        break
+                    }
+                    value += (c - '0') * scale
+                    scale *= 0.1
+                    i++
+                }
+            }
+            if (i < len && (TokenCharAt(i) == 'e' || TokenCharAt(i) == 'E')) {
+                i++
+                var exponentSign = 1
+                if (i < len && TokenCharAt(i) == '-') {
+                    exponentSign = -1
+                    i++
+                } else if (i < len && TokenCharAt(i) == '+') {
+                    i++
+                }
+                while (i < len) {
+                    val c = TokenCharAt(i)
+                    if (c !in '0'..'9') {
+                        break
+                    }
+                    exponent = exponent * 10 + (c - '0')
+                    i++
+                }
+                exponent *= exponentSign
+            }
+            if (exponent != 0) {
+                value *= Math.pow(10.0, exponent.toDouble())
+            }
+            return value.toFloat()
         }
 
         // append character without adding trailing zero

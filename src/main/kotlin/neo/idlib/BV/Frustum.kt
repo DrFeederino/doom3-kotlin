@@ -58,6 +58,40 @@ object Frustum {
         points[7] = temp[0] + temp[3]
     }
 
+    private fun BoxToPointsNoAlloc(center: idVec3, extents: idVec3, axis: idMat3, points: Array<idVec3>) {
+        val ax0x = axis[0].x * extents.x
+        val ax0y = axis[0].y * extents.x
+        val ax0z = axis[0].z * extents.x
+        val ax1x = axis[1].x * extents.y
+        val ax1y = axis[1].y * extents.y
+        val ax1z = axis[1].z * extents.y
+        val ax2x = axis[2].x * extents.z
+        val ax2y = axis[2].y * extents.z
+        val ax2z = axis[2].z * extents.z
+
+        val t0x = center.x - ax0x
+        val t0y = center.y - ax0y
+        val t0z = center.z - ax0z
+        val t1x = center.x + ax0x
+        val t1y = center.y + ax0y
+        val t1z = center.z + ax0z
+        val t2x = ax1x - ax2x
+        val t2y = ax1y - ax2y
+        val t2z = ax1z - ax2z
+        val t3x = ax1x + ax2x
+        val t3y = ax1y + ax2y
+        val t3z = ax1z + ax2z
+
+        points[0].set(t0x - t3x, t0y - t3y, t0z - t3z)
+        points[1].set(t1x - t3x, t1y - t3y, t1z - t3z)
+        points[2].set(t1x + t2x, t1y + t2y, t1z + t2z)
+        points[3].set(t0x + t2x, t0y + t2y, t0z + t2z)
+        points[4].set(t0x - t2x, t0y - t2y, t0z - t2z)
+        points[5].set(t1x - t2x, t1y - t2y, t1z - t2z)
+        points[6].set(t1x + t3x, t1y + t3y, t1z + t3z)
+        points[7].set(t0x + t3x, t0y + t3y, t0z + t3z)
+    }
+
     /*
      ===============================================================================
 
@@ -80,6 +114,9 @@ object Frustum {
                 = 0.0f
         private var invFar // 1.0f / dFar
                 = 0.0f
+        private val projectionPoints: Array<idVec3> = idVec3.generateArray(8)
+        private val projectionCenter: idVec3 = idVec3()
+        private val projectionAxis: idMat3 = idMat3()
 
         constructor() {
             origin = idVec3()
@@ -777,7 +814,11 @@ object Frustum {
             invFar = 0.0f
             this.dFar = invFar
             dNear = this.dFar
-            dir.set(box.GetCenter() - projectionOrigin)
+            dir.set(
+                box.GetCenter().x - projectionOrigin.x,
+                box.GetCenter().y - projectionOrigin.y,
+                box.GetCenter().z - projectionOrigin.z
+            )
             if (dir.Normalize() == 0.0f) {
                 return false
             }
@@ -801,7 +842,7 @@ object Frustum {
             var maxY: Int
             var minZ: Int
             var maxZ: Int
-            val points: Array<idVec3> = idVec3.generateArray(8)
+            val points: Array<idVec3> = projectionPoints
             maxZ = 0
             minZ = maxZ
             maxY = minZ
@@ -810,15 +851,41 @@ object Frustum {
             j = 0
             while (j < 2) {
                 axis[0] = dir
-                axis[1] = box.GetAxis()[bestAxis] - axis[0] * (box.GetAxis()[bestAxis] * axis[0])
+                value = box.GetAxis()[bestAxis] * axis[0]
+                axis[1].set(
+                    box.GetAxis()[bestAxis].x - axis[0].x * value,
+                    box.GetAxis()[bestAxis].y - axis[0].y * value,
+                    box.GetAxis()[bestAxis].z - axis[0].z * value
+                )
                 axis[1].Normalize()
                 axis[2].Cross(axis[0], axis[1])
-                BoxToPoints(
-                    (box.GetCenter() - projectionOrigin) * axis.Transpose(),
-                    box.GetExtents(),
-                    box.GetAxis() * axis.Transpose(),
-                    points
+                projectionCenter.set(
+                    (box.GetCenter().x - projectionOrigin.x) * axis[0].x +
+                            (box.GetCenter().y - projectionOrigin.y) * axis[0].y +
+                            (box.GetCenter().z - projectionOrigin.z) * axis[0].z,
+                    (box.GetCenter().x - projectionOrigin.x) * axis[1].x +
+                            (box.GetCenter().y - projectionOrigin.y) * axis[1].y +
+                            (box.GetCenter().z - projectionOrigin.z) * axis[1].z,
+                    (box.GetCenter().x - projectionOrigin.x) * axis[2].x +
+                            (box.GetCenter().y - projectionOrigin.y) * axis[2].y +
+                            (box.GetCenter().z - projectionOrigin.z) * axis[2].z
                 )
+                projectionAxis[0].set(
+                    box.GetAxis()[0] * axis[0],
+                    box.GetAxis()[0] * axis[1],
+                    box.GetAxis()[0] * axis[2]
+                )
+                projectionAxis[1].set(
+                    box.GetAxis()[1] * axis[0],
+                    box.GetAxis()[1] * axis[1],
+                    box.GetAxis()[1] * axis[2]
+                )
+                projectionAxis[2].set(
+                    box.GetAxis()[2] * axis[0],
+                    box.GetAxis()[2] * axis[1],
+                    box.GetAxis()[2] * axis[2]
+                )
+                BoxToPointsNoAlloc(projectionCenter, box.GetExtents(), projectionAxis, points)
                 if (points[0].x <= 1.0f) {
                     return false
                 }
@@ -848,22 +915,24 @@ object Frustum {
                     i++
                 }
                 if (j == 0) {
-                    dir.plusAssign(
-                        axis[1] * idMath.Tan16(
-                            0.5f * (idMath.ATan16(points[minY].y, points[minY].x) + idMath.ATan16(
-                                points[maxY].y,
-                                points[maxY].x
-                            ))
-                        )
+                    value = idMath.Tan16(
+                        0.5f * (idMath.ATan16(points[minY].y, points[minY].x) + idMath.ATan16(
+                            points[maxY].y,
+                            points[maxY].x
+                        ))
                     )
-                    dir.plusAssign(
-                        axis[2] * idMath.Tan16(
-                            0.5f * (idMath.ATan16(points[minZ].z, points[minZ].x) + idMath.ATan16(
-                                points[maxZ].z,
-                                points[maxZ].x
-                            ))
-                        )
+                    dir.x += axis[1].x * value
+                    dir.y += axis[1].y * value
+                    dir.z += axis[1].z * value
+                    value = idMath.Tan16(
+                        0.5f * (idMath.ATan16(points[minZ].z, points[minZ].x) + idMath.ATan16(
+                            points[maxZ].z,
+                            points[maxZ].x
+                        ))
                     )
+                    dir.x += axis[2].x * value
+                    dir.y += axis[2].y * value
+                    dir.z += axis[2].z * value
                     dir.Normalize()
                 }
                 j++

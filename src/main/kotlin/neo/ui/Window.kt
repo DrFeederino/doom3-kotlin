@@ -86,8 +86,6 @@ import neo.ui.Winvar.idWinRectangle
 import neo.ui.Winvar.idWinStr
 import neo.ui.Winvar.idWinVar
 import neo.ui.Winvar.idWinVec4
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 object Window {
     //
@@ -2105,10 +2103,7 @@ object Window {
         fun WriteSaveGameString(string: String, savefile: idFile) {
             val len = string.length
             savefile.WriteInt(len)
-            val buffer = ByteBuffer.allocate(len).order(ByteOrder.LITTLE_ENDIAN)
-            buffer.put(string.toByteArray())
-            buffer.flip()
-            savefile.Write(buffer, len)
+            savefile.WriteStringData(string, len)
         }
 
         fun WriteSaveGameString(string: idStr?, savefile: idFile) {

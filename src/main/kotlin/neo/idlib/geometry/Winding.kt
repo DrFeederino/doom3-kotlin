@@ -1556,6 +1556,16 @@ object Winding {
     class idFixedWinding : idWinding {
         protected val data: Array<idVec5> = idVec5.generateArray(MAX_POINTS_ON_WINDING) // point data
 
+        class clipScratch_t {
+            val dists: FloatArray = FloatArray(MAX_POINTS_ON_WINDING + 4)
+            val sides: IntArray = IntArray(MAX_POINTS_ON_WINDING + 4)
+            val counts: IntArray = IntArray(3)
+            val newPoints: Array<idVec5> = idVec5.generateArray(MAX_POINTS_ON_WINDING + 4)
+            val p1: idVec5 = idVec5()
+            val p2: idVec5 = idVec5()
+            val mid: idVec5 = idVec5()
+        }
+
         constructor() {
             numPoints = 0
             p = data
@@ -1650,6 +1660,117 @@ object Winding {
 
         override fun Clear() {
             numPoints = 0
+        }
+
+        fun ClipInPlaceNoAlloc(
+            plane: idPlane,
+            scratch: clipScratch_t,
+            epsilon: Float = ON_EPSILON,
+            keepOn: Boolean = false
+        ): Boolean {
+            val dists = scratch.dists
+            val sides = scratch.sides
+            val newPoints = scratch.newPoints
+            val counts = scratch.counts
+            var dot: Float
+            var i: Int
+            var j: Int
+            val p1 = scratch.p1
+            val p2 = scratch.p2
+            val mid = scratch.mid
+            val maxpts: Int
+            val planeX = plane[0]
+            val planeY = plane[1]
+            val planeZ = plane[2]
+            val planeD = plane[3]
+
+            counts[SIDE_ON] = 0
+            counts[SIDE_BACK] = counts[SIDE_ON]
+            counts[SIDE_FRONT] = counts[SIDE_BACK]
+
+            i = 0
+            while (i < numPoints) {
+                dot = planeX * p[i].x + planeY * p[i].y + planeZ * p[i].z + planeD
+                dists[i] = dot
+                if (dot > epsilon) {
+                    sides[i] = SIDE_FRONT
+                } else if (dot < -epsilon) {
+                    sides[i] = SIDE_BACK
+                } else {
+                    sides[i] = SIDE_ON
+                }
+                counts[sides[i]]++
+                i++
+            }
+            sides[i] = sides[0]
+            dists[i] = dists[0]
+
+            if (keepOn && 0 == counts[SIDE_FRONT] && 0 == counts[SIDE_BACK]) {
+                return true
+            }
+            if (0 == counts[SIDE_FRONT]) {
+                numPoints = 0
+                return false
+            }
+            if (0 == counts[SIDE_BACK]) {
+                return true
+            }
+
+            maxpts = numPoints + 4
+            var newNumPoints = 0
+            i = 0
+            while (i < numPoints) {
+                p1.set(p[i])
+                if (newNumPoints + 1 > maxpts) {
+                    return true
+                }
+                if (sides[i] == SIDE_ON) {
+                    newPoints[newNumPoints].set(p1)
+                    newNumPoints++
+                    i++
+                    continue
+                }
+                if (sides[i] == SIDE_FRONT) {
+                    newPoints[newNumPoints].set(p1)
+                    newNumPoints++
+                }
+                if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) {
+                    i++
+                    continue
+                }
+                if (newNumPoints + 1 > maxpts) {
+                    return true
+                }
+
+                p2.set(p[(i + 1) % numPoints])
+                dot = dists[i] / (dists[i] - dists[i + 1])
+                j = 0
+                while (j < 3) {
+                    if (plane.Normal()[j] == 1.0f) {
+                        mid[j] = plane.Dist()
+                    } else if (plane.Normal()[j] == -1.0f) {
+                        mid[j] = -plane.Dist()
+                    } else {
+                        mid[j] = p1[j] + dot * (p2[j] - p1[j])
+                    }
+                    j++
+                }
+                mid.s = p1.s + dot * (p2.s - p1.s)
+                mid.t = p1.t + dot * (p2.t - p1.t)
+                newPoints[newNumPoints].set(mid)
+                newNumPoints++
+                i++
+            }
+            if (!EnsureAlloced(newNumPoints, false)) {
+                return true
+            }
+            numPoints = newNumPoints
+            i = 0
+            while (i < newNumPoints) {
+                p[i].set(newPoints[i])
+                i++
+            }
+            return true
         }
 
         // splits the winding in a back and front part, 'this' becomes the front part

@@ -59,8 +59,7 @@ import neo.idlib.math.Matrix.idMat3
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.charset.StandardCharsets
+import java.util.*
 
 object SaveGame {
     /*
@@ -93,6 +92,7 @@ object SaveGame {
 
     class idSaveGame(private val file: idFile) {
         private val objects: idList<idClass?>
+        private val objectIndex = IdentityHashMap<idClass, Int>()
 
         /*
         ================
@@ -108,10 +108,13 @@ object SaveGame {
             idClipModel.SaveTraceModels(this)
 
             for (i in 1 until objects.Num()) {
-                CallSave_r(objects[i]!!.GetType(), objects[i])
+                val obj = objects[i]!!
+                val type = obj.GetType()
+                CallSave_r(type, obj)
             }
 
             objects.Clear()
+            objectIndex.clear()
         }
 
         /*
@@ -120,7 +123,9 @@ object SaveGame {
         ================
         */
         fun AddObject(obj: idClass) {
-            objects.AddUnique(obj)
+            if (!objectIndex.containsKey(obj)) {
+                objectIndex[obj] = objects.Append(obj)
+            }
         }
 
         /*
@@ -184,10 +189,7 @@ object SaveGame {
         ================
         */
         fun WriteByte(value: Byte) {
-            val buffer = ByteBuffer.allocate(1)
-            buffer.put(value)
-            buffer.flip()
-            file.Write(buffer, 1)
+            file.WriteChar(value.toShort())
         }
 
         /*
@@ -196,10 +198,7 @@ object SaveGame {
         ================
         */
         fun WriteSignedChar(value: Short) {
-            val buffer = ByteBuffer.allocate(1)
-            buffer.put(value.toByte())
-            buffer.flip()
-            file.Write(buffer, 1)
+            file.WriteChar(value)
         }
 
         /*
@@ -229,7 +228,7 @@ object SaveGame {
             val len: Int
             len = string.length
             WriteInt(len)
-            file.Write(StandardCharsets.UTF_8.encode(string), len)
+            file.WriteStringData(string, len)
         }
 
         fun WriteString(string: idStr) {
@@ -284,9 +283,7 @@ object SaveGame {
             file.WriteInt(num)
             i = 0
             while (i < num) {
-                val v = idVec5(w[i])
-                LittleRevBytes(v /*, sizeof(float), sizeof(v) / sizeof(float)*/)
-                file.Write(v /*, sizeof(v)*/)
+                file.WriteVec5(w[i])
                 i++
             }
         }
@@ -297,8 +294,7 @@ object SaveGame {
         ================
         */
         fun WriteBounds(bounds: idBounds) {
-            LittleRevBytes(bounds /*, sizeof(float), sizeof(b) / sizeof(float)*/)
-            file.Write(bounds /*, sizeof(b)*/)
+            file.WriteBounds(bounds)
         }
 
         /*
@@ -316,8 +312,7 @@ object SaveGame {
         ================
         */
         fun WriteAngles(angles: idAngles) {
-            LittleRevBytes(angles /*, sizeof(float), sizeof(v) / sizeof(float)*/)
-            file.Write(angles /*, sizeof(v)*/)
+            file.WriteAngles(angles)
         }
 
         /*
@@ -327,7 +322,11 @@ object SaveGame {
         */
         fun WriteObject(obj: idClass?) {
             var index: Int
-            index = objects.FindIndex(obj)
+            index = if (obj == null) {
+                0
+            } else {
+                objectIndex[obj] ?: -1
+            }
             if (index < 0) {
                 Game_local.gameLocal.DPrintf("idSaveGame::WriteObject - WriteObject FindIndex failed\n")
 
@@ -535,7 +534,6 @@ object SaveGame {
                 WriteInt(renderEntity.timeGroup)
                 WriteInt(renderEntity.xrayIndex)
             }
-
         }
 
         /*
@@ -721,8 +719,9 @@ object SaveGame {
             WriteBool(trace.isConvex)
             // padding win32 native structs
             // C++: char tmp[3]; memset(tmp, 0, sizeof(tmp)); file->Write(tmp, 3);
-            val tmp = ByteBuffer.allocate(3)
-            file.Write(tmp, 3)
+            file.WriteChar(0.toShort())
+            file.WriteChar(0.toShort())
+            file.WriteChar(0.toShort())
         }
 
         /*
@@ -901,9 +900,7 @@ object SaveGame {
         }
 
         fun ReadInt(): Int {
-            val value = CInt()
-            this.ReadInt(value)
-            return value._val
+            return file.ReadInt()
         }
 
         /*
@@ -916,9 +913,7 @@ object SaveGame {
         }
 
         fun ReadJoint(): Int {
-            val jointHandle_t = CInt()
-            this.ReadJoint(jointHandle_t)
-            return jointHandle_t._val
+            return file.ReadInt()
         }
 
         /*
@@ -927,9 +922,7 @@ object SaveGame {
         ================
         */
         fun ReadShort(): Short {
-            val value = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
-            file.Read(value, 2)
-            return value.getShort()
+            return file.ReadShort()
         }
 
         /*
@@ -938,9 +931,7 @@ object SaveGame {
         ================
         */
         fun ReadByte(): Byte {
-            val value = ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN)
-            file.Read(value, 1)
-            return value.get()
+            return file.ReadChar().toByte()
         }
 
         /*
@@ -949,15 +940,11 @@ object SaveGame {
         ================
         */
         fun ReadSignedChar(value: CharArray) {
-            val buffer = ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN)
-            file.Read(buffer, 1)
-            value[0] = buffer[0].toInt().toChar()
+            value[0] = file.ReadChar().toInt().toChar()
         }
 
         fun ReadSignedChar(): Char {
-            val c = CharArray(1)
-            ReadSignedChar(c)
-            return c[0]
+            return file.ReadChar().toInt().toChar()
         }
 
         /*
@@ -970,9 +957,7 @@ object SaveGame {
         }
 
         fun ReadFloat(): Float {
-            val value = CFloat()
-            this.ReadFloat(value)
-            return value._val
+            return file.ReadFloat()
         }
 
         /*
@@ -985,9 +970,7 @@ object SaveGame {
         }
 
         fun ReadBool(): Boolean {
-            val value = CBool(false)
-            this.ReadBool(value)
-            return value._val
+            return file.ReadBool()
         }
 
         /*
@@ -1503,8 +1486,9 @@ object SaveGame {
             trace.isConvex = ReadBool()
             // padding win32 native structs
             // C++: char tmp[3]; file->Read(tmp, 3);
-            val tmp = ByteBuffer.allocate(3)
-            file.Read(tmp, 3)
+            file.ReadChar()
+            file.ReadChar()
+            file.ReadChar()
         }
 
         /*

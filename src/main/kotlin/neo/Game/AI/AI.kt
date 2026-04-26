@@ -8737,31 +8737,40 @@ open class idAI : idActor() {
         val path = AAS.aasPath_s()
         val toAreaNum: Int
         val areaNum: Int
+        val reachable: Boolean
         val pos = idVec3()
         if (null == ent) {
             idThread.ReturnInt(false)
             return
         }
         if (move.moveType != moveType_t.MOVETYPE_FLY) {
-            if (!ent.GetFloorPos(64.0f, pos)) {
-                idThread.ReturnInt(false)
-                return
-            }
-            if (ent is idActor && (ent as idActor).OnLadder()) {
-                idThread.ReturnInt(false)
-                return
+            if (ent is idActor) {
+                if (ent.OnLadder()) {
+                    idThread.ReturnInt(false)
+                    return
+                }
+                val actorAreaNum = CInt()
+                ent.GetAASLocation(aas, pos, actorAreaNum)
+                toAreaNum = actorAreaNum._val
+            } else {
+                if (!ent.GetFloorPos(64.0f, pos)) {
+                    idThread.ReturnInt(false)
+                    return
+                }
+                toAreaNum = PointReachableAreaNum(pos)
             }
         } else {
             pos.set(ent.GetPhysics().GetOrigin())
+            toAreaNum = PointReachableAreaNum(pos)
         }
-        toAreaNum = PointReachableAreaNum(pos)
         if (0 == toAreaNum) {
             idThread.ReturnInt(false)
             return
         }
         val org = physicsObj.GetOrigin()
         areaNum = PointReachableAreaNum(org)
-        idThread.ReturnInt(0 != toAreaNum && PathToGoal(path, areaNum, org, toAreaNum, pos))
+        reachable = 0 != toAreaNum && PathToGoal(path, areaNum, org, toAreaNum, pos)
+        idThread.ReturnInt(reachable)
     }
 
     /*
@@ -8806,25 +8815,38 @@ open class idAI : idActor() {
      */
     protected fun Event_GetReachableEntityPosition(_ent: idEventArg<idEntity>) {
         val ent = _ent.value
-        val toAreaNum: Int
+        var toAreaNum = 0
         val pos = idVec3()
+        if (null == ent) {
+            idThread.ReturnVector(vec3_zero)
+            return
+        }
         if (move.moveType != moveType_t.MOVETYPE_FLY) {
-            if (!ent.GetFloorPos(64.0f, pos)) {
-                // FIX: Was missing return; C++ uses `return idThread::ReturnVector(vec3_zero)`
-                idThread.ReturnVector(vec3_zero)
-                return
-            }
-            if (ent is idActor && (ent as idActor).OnLadder()) {
-                // FIX: Was missing return; C++ uses `return idThread::ReturnVector(vec3_zero)`
-                idThread.ReturnVector(vec3_zero)
-                return
+            if (ent is idActor) {
+                if (ent.OnLadder()) {
+                    idThread.ReturnVector(vec3_zero)
+                    return
+                }
+                val actorAreaNum = CInt()
+                ent.GetAASLocation(aas, pos, actorAreaNum)
+                toAreaNum = actorAreaNum._val
+            } else {
+                if (!ent.GetFloorPos(64.0f, pos)) {
+                    // FIX: Was missing return; C++ uses `return idThread::ReturnVector(vec3_zero)`
+                    idThread.ReturnVector(vec3_zero)
+                    return
+                }
             }
         } else {
             pos.set(ent.GetPhysics().GetOrigin())
         }
         if (aas != null) {
-            toAreaNum = PointReachableAreaNum(pos)
-            aas!!.PushPointIntoAreaNum(toAreaNum, pos)
+            if (toAreaNum == 0) {
+                toAreaNum = PointReachableAreaNum(pos)
+            }
+            if (toAreaNum != 0) {
+                aas!!.PushPointIntoAreaNum(toAreaNum, pos)
+            }
         }
         idThread.ReturnVector(pos)
     }

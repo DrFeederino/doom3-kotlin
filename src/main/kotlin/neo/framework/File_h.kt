@@ -4,18 +4,17 @@ import neo.TempDump
 import neo.TempDump.SERiAL
 import neo.framework.FileSystem_h.fsMode_t
 import neo.idlib.*
+import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.containers.CLong
+import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import neo.idlib.math.idVec2
-import neo.idlib.math.idVec3
-import neo.idlib.math.idVec4
-import neo.idlib.math.idVec6
 import neo.sys.win_main
+import neo.ui.Rectangle.idRectangle
 import java.io.IOException
 import java.io.InputStream
 import java.nio.ByteBuffer
@@ -199,6 +198,18 @@ object File_h {
         // Reusable read buffer for primitive reads — avoids ByteBuffer allocation per call
         // Sized to fit the largest fixed-size read (idMat3 = 36 bytes)
         private val _readBuf: ByteBuffer = ByteBuffer.allocate(36).order(ByteOrder.LITTLE_ENDIAN)
+        private val _writeBuf: ByteBuffer = ByteBuffer.allocate(64).order(ByteOrder.LITTLE_ENDIAN)
+        private var _stringWriteBuf: ByteBuffer = ByteBuffer.allocate(1024)
+
+        private fun BeginWrite(): ByteBuffer {
+            _writeBuf.clear()
+            return _writeBuf
+        }
+
+        private fun EndWrite(len: Int): Int {
+            _writeBuf.flip()
+            return Write(_writeBuf, len)
+        }
 
         //TODO:implement closable?
         //	abstract					~idFile( ) {};
@@ -251,7 +262,17 @@ object File_h {
 
         @Deprecated("")
         fun Write(`object`: SERiAL): Int {
-            return Write(`object`.Write())
+            return when (`object`) {
+                is idVec2 -> WriteVec2(`object`)
+                is idVec3 -> WriteVec3(`object`)
+                is idVec4 -> WriteVec4(`object`)
+                is idVec5 -> WriteVec5(`object`)
+                is idVec6 -> WriteVec6(`object`)
+                is idBounds -> WriteBounds(`object`)
+                is idAngles -> WriteAngles(`object`)
+                is idRectangle -> WriteRectangle(`object`)
+                else -> Write(`object`.Write())
+            }
         }
 
         open fun Write(buffer: ByteBuffer, len: Int): Int {
@@ -339,17 +360,17 @@ object File_h {
         }
 
         fun ReadInt(): Int {
-            val value = CInt()
-            this.ReadInt(value)
-            return value._val
+            _readBuf.clear()
+            Read(_readBuf, 4)
+            _readBuf.rewind()
+            return LittleLong(_readBuf.getInt())
         }
 
         fun WriteInt(value: Int): Int {
-            val intBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+            val intBytes = BeginWrite()
             val v: Int = LittleLong(value)
             intBytes.putInt(v)
-            intBytes.flip()
-            return Write(intBytes)
+            return EndWrite(4)
         }
 
         fun WriteInt(value: Enum<*>): Int {
@@ -357,11 +378,10 @@ object File_h {
         }
 
         fun WriteUnsignedInt(value: Long): Int {
-            val uintBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+            val uintBytes = BeginWrite()
             val v: Int = LittleLong(value.toInt())
             uintBytes.putInt(v)
-            uintBytes.flip()
-            return Write(uintBytes)
+            return EndWrite(4)
         }
 
         fun ReadShort(value: ShortArray): Int {
@@ -373,17 +393,17 @@ object File_h {
         }
 
         fun ReadShort(): Short {
-            val value = shortArrayOf(0)
-            this.ReadShort(value)
-            return value[0]
+            _readBuf.clear()
+            Read(_readBuf, 2)
+            _readBuf.rewind()
+            return LittleShort(_readBuf.short)
         }
 
         fun WriteShort(value: Short): Int {
-            val shortBytes = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
+            val shortBytes = BeginWrite()
             val v: Short = LittleShort(value)
             shortBytes.putShort(v)
-            shortBytes.flip()
-            return Write(shortBytes)
+            return EndWrite(2)
         }
 
         fun ReadUnsignedShort(value: IntArray): Int {
@@ -395,17 +415,17 @@ object File_h {
         }
 
         fun ReadUnsignedShort(): Int {
-            val value = intArrayOf(0)
-            ReadUnsignedShort(value)
-            return value[0]
+            _readBuf.clear()
+            Read(_readBuf, 2)
+            _readBuf.rewind()
+            return LittleShort(_readBuf.short).toInt() and 0xFFFF
         }
 
         fun WriteUnsignedShort(value: Int): Int {
-            val ushortBytes = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
+            val ushortBytes = BeginWrite()
             val v: Short = LittleShort(value.toShort())
             ushortBytes.putShort(v)
-            ushortBytes.flip()
-            return Write(ushortBytes)
+            return EndWrite(2)
         }
 
         fun ReadChar(value: ShortArray): Int {
@@ -416,16 +436,15 @@ object File_h {
         }
 
         fun ReadChar(): Short {
-            val value = shortArrayOf(0)
-            this.ReadChar(value)
-            return value[0]
+            _readBuf.clear()
+            Read(_readBuf, 1)
+            return _readBuf[0].toShort()
         }
 
         fun WriteChar(value: Short): Int {
-            val charBytes = ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN)
+            val charBytes = BeginWrite()
             charBytes.put(value.toByte())
-            charBytes.flip()
-            return Write(charBytes)
+            return EndWrite(1)
         }
 
         fun WriteChar(value: Char): Int {
@@ -440,10 +459,9 @@ object File_h {
         }
 
         fun WriteUnsignedChar(value: Char): Int {
-            val ucharBytes = ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN)
+            val ucharBytes = BeginWrite()
             ucharBytes.put(value.code.toByte())
-            ucharBytes.flip()
-            return Write(ucharBytes)
+            return EndWrite(1)
         }
 
         fun ReadFloat(value: CFloat): Int {
@@ -455,30 +473,30 @@ object File_h {
         }
 
         fun ReadFloat(): Float {
-            val value = CFloat()
-            ReadFloat(value)
-            return value._val
+            _readBuf.clear()
+            Read(_readBuf, 4)
+            _readBuf.rewind()
+            return LittleFloat(_readBuf.getFloat())
         }
 
         fun WriteFloat(value: Float): Int {
-            val floatBytes = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+            val floatBytes = BeginWrite()
             val v: Float = LittleFloat(value)
             floatBytes.putFloat(v)
-            floatBytes.flip()
-            return Write(floatBytes)
+            return EndWrite(4)
         }
 
         fun ReadBool(value: CBool): Int {
-            val c = CharArray(1)
-            val result = ReadUnsignedChar(c)
-            value._val = (c[0] != '\u0000')
+            _readBuf.clear()
+            val result = Read(_readBuf, 1)
+            value._val = _readBuf[0] != 0.toByte()
             return result
         }
 
         fun ReadBool(): Boolean {
-            val value = CBool(false)
-            ReadBool(value)
-            return value._val
+            _readBuf.clear()
+            Read(_readBuf, 1)
+            return _readBuf[0] != 0.toByte()
         }
 
         fun WriteBool(value: Boolean): Int {
@@ -507,10 +525,28 @@ object File_h {
             val len: Int
             len = value.data.length
             WriteInt(len)
-            val buffer = ByteBuffer.allocate(len).order(ByteOrder.LITTLE_ENDIAN)
-            buffer.put(value.data.toByteArray())
-            buffer.flip()
-            return Write(buffer, len)
+            return WriteStringData(value.data, len)
+        }
+
+        fun WriteStringData(value: String, len: Int = value.length): Int {
+            if (len <= 0) {
+                return 0
+            }
+            if (_stringWriteBuf.capacity() < len) {
+                var newSize = _stringWriteBuf.capacity()
+                while (newSize < len) {
+                    newSize *= 2
+                }
+                _stringWriteBuf = ByteBuffer.allocate(newSize)
+            }
+            _stringWriteBuf.clear()
+            var i = 0
+            while (i < len) {
+                _stringWriteBuf.put(if (i < value.length) value[i].code.toByte() else 0)
+                i++
+            }
+            _stringWriteBuf.flip()
+            return Write(_stringWriteBuf, len)
         }
 
         open fun Write(objectToWrite: SERiAL, len: Int): Int {
@@ -530,9 +566,10 @@ object File_h {
         }
 
         fun WriteVec2(vec: idVec2): Int {
-            val buffer = ByteBuffer.allocate(idVec2.BYTES).order(ByteOrder.LITTLE_ENDIAN)
-            buffer.asFloatBuffer().put(vec.ToFloatPtr()).flip()
-            return Write(buffer)
+            val buffer = BeginWrite()
+            buffer.putFloat(vec.x)
+            buffer.putFloat(vec.y)
+            return EndWrite(idVec2.BYTES)
         }
 
         fun ReadVec3(vec: idVec3): Int {
@@ -544,9 +581,11 @@ object File_h {
         }
 
         fun WriteVec3(vec: idVec3): Int {
-            val buffer = ByteBuffer.allocate(idVec3.BYTES).order(ByteOrder.LITTLE_ENDIAN)
-            buffer.asFloatBuffer().put(vec.ToFloatPtr()).flip()
-            return Write(buffer)
+            val buffer = BeginWrite()
+            buffer.putFloat(vec.x)
+            buffer.putFloat(vec.y)
+            buffer.putFloat(vec.z)
+            return EndWrite(idVec3.BYTES)
         }
 
         fun ReadVec4(vec: idVec4): Int {
@@ -558,9 +597,22 @@ object File_h {
         }
 
         fun WriteVec4(vec: idVec4): Int {
-            val buffer = ByteBuffer.allocate(idVec4.BYTES).order(ByteOrder.LITTLE_ENDIAN)
-            buffer.asFloatBuffer().put(vec.ToFloatPtr()).flip()
-            return Write(buffer)
+            val buffer = BeginWrite()
+            buffer.putFloat(vec.x)
+            buffer.putFloat(vec.y)
+            buffer.putFloat(vec.z)
+            buffer.putFloat(vec.w)
+            return EndWrite(idVec4.BYTES)
+        }
+
+        fun WriteVec5(vec: idVec5): Int {
+            val buffer = BeginWrite()
+            buffer.putFloat(vec.x)
+            buffer.putFloat(vec.y)
+            buffer.putFloat(vec.z)
+            buffer.putFloat(vec.s)
+            buffer.putFloat(vec.t)
+            return EndWrite(idVec5.BYTES)
         }
 
         fun ReadVec6(vec: idVec6): Int {
@@ -580,9 +632,14 @@ object File_h {
         }
 
         fun WriteVec6(vec: idVec6): Int {
-            val buffer = ByteBuffer.allocate(idVec6.BYTES).order(ByteOrder.LITTLE_ENDIAN)
-            buffer.asFloatBuffer().put(vec.ToFloatPtr()).flip()
-            return Write(buffer)
+            val buffer = BeginWrite()
+            buffer.putFloat(vec.p[0])
+            buffer.putFloat(vec.p[1])
+            buffer.putFloat(vec.p[2])
+            buffer.putFloat(vec.p[3])
+            buffer.putFloat(vec.p[4])
+            buffer.putFloat(vec.p[5])
+            return EndWrite(idVec6.BYTES)
         }
 
         fun ReadMat3(mat: idMat3): Int {
@@ -605,9 +662,45 @@ object File_h {
         }
 
         fun WriteMat3(mat: idMat3): Int {
-            val buffer = ByteBuffer.allocate(idMat3.BYTES).order(ByteOrder.LITTLE_ENDIAN)
-            buffer.asFloatBuffer().put(mat[0].ToFloatPtr()).put(mat[1].ToFloatPtr()).put(mat[2].ToFloatPtr()).flip()
-            return Write(buffer)
+            val buffer = BeginWrite()
+            buffer.putFloat(mat[0].x)
+            buffer.putFloat(mat[0].y)
+            buffer.putFloat(mat[0].z)
+            buffer.putFloat(mat[1].x)
+            buffer.putFloat(mat[1].y)
+            buffer.putFloat(mat[1].z)
+            buffer.putFloat(mat[2].x)
+            buffer.putFloat(mat[2].y)
+            buffer.putFloat(mat[2].z)
+            return EndWrite(idMat3.BYTES)
+        }
+
+        fun WriteBounds(bounds: idBounds): Int {
+            val buffer = BeginWrite()
+            buffer.putFloat(bounds[0].x)
+            buffer.putFloat(bounds[0].y)
+            buffer.putFloat(bounds[0].z)
+            buffer.putFloat(bounds[1].x)
+            buffer.putFloat(bounds[1].y)
+            buffer.putFloat(bounds[1].z)
+            return EndWrite(idBounds.BYTES)
+        }
+
+        fun WriteAngles(angles: idAngles): Int {
+            val buffer = BeginWrite()
+            buffer.putFloat(angles.pitch)
+            buffer.putFloat(angles.yaw)
+            buffer.putFloat(angles.roll)
+            return EndWrite(idAngles.BYTES)
+        }
+
+        fun WriteRectangle(rect: idRectangle): Int {
+            val buffer = BeginWrite()
+            buffer.putFloat(rect.x)
+            buffer.putFloat(rect.y)
+            buffer.putFloat(rect.w)
+            buffer.putFloat(rect.h)
+            return EndWrite(idRectangle.BYTES)
         }
     }
 
@@ -960,6 +1053,7 @@ object File_h {
                 : idStr = idStr()
         var o // file handle
                 : FileChannel?
+        private val writeBuffer: ByteBuffer = ByteBuffer.allocate(64 * 1024)
 
         // public	virtual					~idFile_Permanent( void );
         override fun GetName(): String {
@@ -1044,11 +1138,6 @@ object File_h {
         }
 
         override fun Write(buffer: ByteBuffer, len: Int): Int {
-            var block: Int
-            var remaining: Int
-            var written: Int
-            //            byte[] buf;
-            var tries: Int
             if (0 == mode and (1 shl fsMode_t.FS_WRITE.ordinal)) {
                 idLib.common.FatalError("idFile_Permanent::Write: %s not opened in write mode", name)
                 return 0
@@ -1060,39 +1149,74 @@ object File_h {
             buffer.order(ByteOrder.LITTLE_ENDIAN)
             buffer.limit(len)
 
+            if (len >= writeBuffer.capacity() || handleSync) {
+                FlushWriteBuffer()
+                if (!RawWrite(buffer, len, true)) {
+                    return 0
+                }
+                if (handleSync) {
+                    ForceChannel()
+                }
+                buffer.clear()
+                return len
+            }
 
-            remaining = len
-            tries = 0
+            if (writeBuffer.remaining() < len) {
+                FlushWriteBuffer()
+            }
+            writeBuffer.put(buffer)
+            fileSize += len
+            buffer.clear()
+
+            return len
+        }
+
+        private fun RawWrite(buffer: ByteBuffer, len: Int, updateFileSize: Boolean): Boolean {
+            var remaining = len
+            var tries = 0
             try {
                 while (remaining != 0) {
-                    block = remaining
-                    //                written = fwrite(buf, 1, block, o);
-                    written = o!!.write(buffer)
+                    val written = o!!.write(buffer)
                     if (written == 0) {
                         tries = if (0 == tries) {
                             1
                         } else {
                             idLib.common.Printf("idFile_Permanent::Write: 0 bytes written to %s\n", name)
-                            return 0
+                            return false
                         }
                     }
                     if (written == -1) {
                         idLib.common.Printf("idFile_Permanent::Write: -1 bytes written to %s\n", name)
-                        return 0
+                        return false
                     }
                     remaining -= written
-                    //                buf += written;
-                    fileSize += written
-                }
-                if (handleSync) {
-                    o!!.force(false)
+                    if (updateFileSize) {
+                        fileSize += written
+                    }
                 }
             } catch (ex: IOException) {
                 Logger.getLogger(File_h::class.java.name).log(Level.SEVERE, null, ex)
+                return false
             }
-            buffer.clear()
+            return true
+        }
 
-            return len
+        private fun FlushWriteBuffer() {
+            if (o == null || writeBuffer.position() == 0) {
+                return
+            }
+            val len = writeBuffer.position()
+            writeBuffer.flip()
+            RawWrite(writeBuffer, len, false)
+            writeBuffer.clear()
+        }
+
+        private fun ForceChannel() {
+            try {
+                o!!.force(false)
+            } catch (ex: IOException) {
+                Logger.getLogger(File_h::class.java.name).log(Level.SEVERE, null, ex)
+            }
         }
 
         override fun Length(): Int {
@@ -1105,7 +1229,7 @@ object File_h {
 
         override fun Tell(): Int {
             try {
-                return o!!.position().toInt() //return ftell(o);
+                return o!!.position().toInt() + writeBuffer.position() //return ftell(o);
             } catch (ex: IOException) {
                 Logger.getLogger(File_h::class.java.name).log(Level.SEVERE, null, ex)
             }
@@ -1113,15 +1237,13 @@ object File_h {
         }
 
         override fun ForceFlush() {
-//            setvbuf(o, null, _IONBF, 0);
+            handleSync = true
+            Flush()
         }
 
         override fun Flush() {
-            try {
-                o!!.force(false)
-            } catch (ex: IOException) {
-                Logger.getLogger(File_h::class.java.name).log(Level.SEVERE, null, ex)
-            }
+            FlushWriteBuffer()
+            ForceChannel()
         }
 
         /*
@@ -1133,6 +1255,7 @@ object File_h {
          */
         override fun Seek(offset: Long, origin: fsOrigin_t): Boolean {
             var _origin: Long = 0
+            FlushWriteBuffer()
             try {
                 when (origin) {
                     fsOrigin_t.FS_SEEK_CUR -> _origin = o!!.position()
@@ -1153,6 +1276,17 @@ object File_h {
                 Logger.getLogger(File_h::class.java.name).log(Level.SEVERE, null, ex)
             }
             return false
+        }
+
+        fun Close() {
+            Flush()
+            try {
+                o?.close()
+            } catch (ex: IOException) {
+                Logger.getLogger(File_h::class.java.name).log(Level.SEVERE, null, ex)
+            } finally {
+                o = null
+            }
         }
 
         // returns file pointer

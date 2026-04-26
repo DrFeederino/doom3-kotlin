@@ -350,7 +350,7 @@ object Script_Interpreter {
             j = 0
             i = 0
             pos = Script_Program.type_object.Size()
-            while (pos < argsize || i < format.size && format[i].code != 0) {
+            while (i < format.size && format[i].code != 0) {
                 when (format[i]) {
                     D_EVENT_INTEGER -> {
                         `var`.setIntPtr(localstack, start + pos)
@@ -364,7 +364,7 @@ object Script_Interpreter {
 
                     D_EVENT_VECTOR -> {
                         `var`.setIntPtr(localstack, start + pos)
-                        data[i] = toArg(`var`.getVectorPtrs())
+                        data[i] = toArg(idVec3(`var`.getVectorPtrs()))
                     }
 
                     D_EVENT_STRING -> data[i] = toArg(
@@ -431,7 +431,7 @@ object Script_Interpreter {
             j = 0
             i = 0
             pos = 0
-            while (pos < argsize || i < format!!.length) {
+            while (i < format!!.length) {
                 when (format!![i]) {
                     D_EVENT_INTEGER -> {
                         source.setIntPtr(localstack, start + pos)
@@ -445,7 +445,7 @@ object Script_Interpreter {
 
                     D_EVENT_VECTOR -> {
                         source.setIntPtr(localstack, start + pos)
-                        data[i] = toArg(source.getVectorPtrs())
+                        data[i] = toArg(idVec3(source.getVectorPtrs()))
                     }
 
                     D_EVENT_STRING -> data[i] = toArg(btos(localstack, start + pos))
@@ -1013,7 +1013,7 @@ object Script_Interpreter {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.getVectorPtrs().set(var_a!!.getVectorPtrs().times(var_b!!.floatPtr))
+                        var_c!!.setVectorPtr(var_a!!.getVectorPtrs().times(var_b!!.floatPtr))
                     }
 
                     OP_DIV_F -> {

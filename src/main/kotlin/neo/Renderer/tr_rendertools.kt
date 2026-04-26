@@ -1826,7 +1826,7 @@ object tr_rendertools {
             i = 0
             while (i < len) {
                 charIndex = text[i].code - 32
-                if (charIndex < 0 || charIndex > simplex.NUM_SIMPLEX_CHARS) {
+                if (charIndex < 0 || charIndex >= simplex.NUM_SIMPLEX_CHARS) {
                     i++
                     continue
                 }
@@ -1884,7 +1884,7 @@ object tr_rendertools {
             i = 0
             while (i < len) {
                 if (i == 0 || text[i] == '\n') {
-                    org.set(origin.minus(viewAxis[2]).times(line * 36.0f * scale))
+                    org.set(origin.minus(viewAxis[2].times(line * 36.0f * scale)))
                     if (align != 0) {
                         j = 1
                         while (i + j <= len) {
@@ -1905,7 +1905,7 @@ object tr_rendertools {
                     line++
                 }
                 charIndex = text[i].code - 32
-                if (charIndex < 0 || charIndex > simplex.NUM_SIMPLEX_CHARS) {
+                if (charIndex < 0 || charIndex >= simplex.NUM_SIMPLEX_CHARS) {
                     i++
                     continue
                 }
@@ -1951,8 +1951,6 @@ object tr_rendertools {
     fun RB_ShowDebugText() {
         var i: Int
         var width: Int
-        var text: debugText_s
-        var text_index: Int
         if (0 == rb_numDebugText) {
             return
         }
@@ -1973,9 +1971,9 @@ object tr_rendertools {
         if (!r_debugLineDepthTest!!.GetBool()) {
             qgl.qglDisable(GL11.GL_DEPTH_TEST)
         }
-        text = rb_debugText[0.also({ text_index = it })]
         i = 0
         while (i < rb_numDebugText) {
+            val text = rb_debugText[i]
             if (!text.depthTest) {
                 RB_DrawText(
                     text.text.toString(),
@@ -1987,14 +1985,13 @@ object tr_rendertools {
                 )
             }
             i++
-            text = rb_debugText[text_index++]
         }
         if (!r_debugLineDepthTest!!.GetBool()) {
             qgl.qglEnable(GL11.GL_DEPTH_TEST)
         }
-        text = rb_debugText[0.also({ text_index = it })]
         i = 0
         while (i < rb_numDebugText) {
+            val text = rb_debugText[i]
             if (text.depthTest) {
                 RB_DrawText(
                     text.text.toString(),
@@ -2006,7 +2003,6 @@ object tr_rendertools {
                 )
             }
             i++
-            text = rb_debugText[text_index++]
         }
         qgl.qglLineWidth(1.0f)
         tr_backend.GL_State(GLS_DEFAULT)

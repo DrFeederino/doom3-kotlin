@@ -126,6 +126,11 @@ fun setCollisionModelManagers(targetManager: idCollisionModelManager) {
 
 class idCollisionModelManagerLocal : idCollisionModelManager() {
     private val trmBrushes: Array<cm_brushRef_s?> = Array<cm_brushRef_s?>(1) { null }
+    private val mergeNewEdges = IntArray(CM_MAX_POLYGON_EDGES)
+    private val mergeNewEdgeNum1 = IntArray(1)
+    private val mergeNewEdgeNum2 = IntArray(1)
+    private val mergeDelta = idVec3()
+    private val mergeNormal = idVec3()
 
     // for multi-check avoidance
     private var checkCount = 0
@@ -4729,23 +4734,25 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
         var p1AfterShare: Int
         var p2BeforeShare: Int
         var p2AfterShare: Int
-        val newEdges = IntArray(CM_MAX_POLYGON_EDGES)
+        val newEdges = mergeNewEdges
         var newNumEdges: Int
         var edgeNum: Int
         var edgeNum1: Int
         var edgeNum2: Int
-        val newEdgeNum1 = IntArray(1)
-        val newEdgeNum2 = IntArray(1)
+        val newEdgeNum1 = mergeNewEdgeNum1
+        val newEdgeNum2 = mergeNewEdgeNum2
         var edge: cm_edge_s?
         var newp: cm_polygon_s?
-        val delta = idVec3()
-        val normal = idVec3()
+        val delta = mergeDelta
+        val normal = mergeNormal
         var dot: Float
         var keep1: Boolean
         var keep2: Boolean
         if (p1.material !== p2.material) {
             return null
         }
+        newEdgeNum1[0] = 0
+        newEdgeNum2[0] = 0
         if (abs(p1.plane.Dist() - p2.plane.Dist()) > NORMAL_EPSILON) {
             return null
         }
@@ -4920,15 +4927,10 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             }
         }
         newp = AllocPolygon(model, newNumEdges)
+        val allocatedEdges = newp.edges
         newp.oSet(p1) //memcpy( newp, p1, sizeof(cm_polygon_t) );
-        newp.edges = newEdges.copyOf(newNumEdges)
-//        System.arraycopy(
-//            newEdges,
-//            0,
-//            newp.edges,
-//            0,
-//            newNumEdges
-//        ) //memcpy( newp.edges, newEdges, newNumEdges * sizeof(int) );
+        newp.edges = allocatedEdges
+        System.arraycopy(newEdges, 0, newp.edges, 0, newNumEdges)
         newp.numEdges = newNumEdges
         newp.checkcount = 0
         // increase usage count for the edges of this polygon

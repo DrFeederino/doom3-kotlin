@@ -13,7 +13,6 @@ import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
 import neo.ui.Rectangle.idRectangle
 import neo.ui.Window.idWindow
-import java.nio.ByteBuffer
 import java.util.*
 
 object Winvar {
@@ -295,7 +294,7 @@ object Winvar {
             val len = data!!.Length()
             savefile.WriteInt(len)
             if (len > 0) {
-                savefile.Write(ByteBuffer.wrap(data.toString().toByteArray()), len)
+                savefile.WriteStringData(data.toString(), len)
             }
         }
 
@@ -1039,7 +1038,7 @@ object Winvar {
             val len = data!!.Length()
             savefile.WriteInt(len)
             if (len > 0) {
-                savefile.Write(ByteBuffer.wrap(data.toString().toByteArray()), len)
+                savefile.WriteStringData(data.toString(), len)
             }
         }
 

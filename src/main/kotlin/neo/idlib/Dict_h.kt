@@ -26,8 +26,6 @@ import neo.idlib.math.idAngles
 import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import kotlin.math.sqrt
 
 class Dict_h {
@@ -887,10 +885,7 @@ class Dict_h {
                 if (len >= MAX_STRING_CHARS - 1) {
                     idLib.common.Error("idDict::WriteToFileHandle: bad string")
                 }
-                val buffer = ByteBuffer.allocate(len).order(ByteOrder.LITTLE_ENDIAN)
-                buffer.put(s.data.toByteArray())
-                buffer.flip()
-                f.Write(buffer, len)
+                f.WriteStringData(s.data, len)
             }
 
             @Throws(idException::class)

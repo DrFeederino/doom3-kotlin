@@ -30,7 +30,6 @@ import neo.ui.Winvar.idWinStr
 import neo.ui.Winvar.idWinVar
 import neo.ui.Winvar.idWinVec2
 import neo.ui.Winvar.idWinVec4
-import java.nio.ByteBuffer
 
 class SimpleWindow {
     class drawWin_t {
@@ -408,7 +407,7 @@ class SimpleWindow {
             if (background != null) {
                 stringLen = background!!.GetName().length
                 savefile.WriteInt(stringLen)
-                savefile.Write(ByteBuffer.wrap(background!!.GetName().toByteArray()), stringLen)
+                savefile.WriteStringData(background!!.GetName(), stringLen)
             } else {
                 stringLen = 0
                 savefile.WriteInt(stringLen)

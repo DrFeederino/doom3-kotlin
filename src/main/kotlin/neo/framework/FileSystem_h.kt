@@ -28,6 +28,7 @@ import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idHashIndex
 import neo.idlib.containers.idStrList
+import neo.idlib.hashing.MD4_BlockChecksum
 import neo.idlib.idLib
 import neo.sys.*
 import neo.sys.win_main.Sys_EnterCriticalSection
@@ -42,7 +43,6 @@ import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 import java.util.zip.ZipEntry
-import neo.idlib.hashing.MD4_BlockChecksum
 import java.util.zip.ZipFile
 
 object FileSystem_h {
@@ -2401,7 +2401,9 @@ object FileSystem_h {
             if (null == searchPaths) {
                 idLib.common.FatalError("Filesystem call made without initialization\n")
             }
-            //	delete f;
+            if (f is idFile_Permanent) {
+                f.Close()
+            }
         }
 
         override fun BackgroundDownload(bgl: backgroundDownload_s) {

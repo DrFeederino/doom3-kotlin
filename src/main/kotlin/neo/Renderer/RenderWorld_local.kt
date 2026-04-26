@@ -193,6 +193,11 @@ object RenderWorld_local {
         var interactionTableWidth // entityDefs
                 : Int
         val lightDefs: idList<idRenderLightLocal?> = idList()
+        private val portalFlowWindingScratch = idFixedWinding()
+        private val portalFlowClipScratch = idFixedWinding.clipScratch_t()
+        private val lightCullWindingScratch = idFixedWinding()
+        private val lightCullClipScratch = idFixedWinding.clipScratch_t()
+        private val negativePortalPlaneScratch = idPlane()
 
         //
         //
@@ -220,6 +225,14 @@ object RenderWorld_local {
          ==============
          */
         var c_callbackUpdate: Int = 0
+
+        private fun NegativePlaneToScratch(plane: idPlane): idPlane {
+            negativePortalPlaneScratch[0] = -plane[0]
+            negativePortalPlaneScratch[1] = -plane[1]
+            negativePortalPlaneScratch[2] = -plane[2]
+            negativePortalPlaneScratch[3] = -plane[3]
+            return negativePortalPlaneScratch
+        }
 
         init {
             mapName = idStr() //.Clear();
@@ -2260,7 +2273,11 @@ object RenderWorld_local {
             r.Clear()
             i = 0
             while (i < w.GetNumPoints()) {
-                v.set(tr_main.R_LocalPointToGlobal(space.modelMatrix, w[i].ToVec3()))
+                v.set(
+                    w[i].x * space.modelMatrix[0] + w[i].y * space.modelMatrix[4] + w[i].z * space.modelMatrix[8] + space.modelMatrix[12],
+                    w[i].x * space.modelMatrix[1] + w[i].y * space.modelMatrix[5] + w[i].z * space.modelMatrix[9] + space.modelMatrix[13],
+                    w[i].x * space.modelMatrix[2] + w[i].y * space.modelMatrix[6] + w[i].z * space.modelMatrix[10] + space.modelMatrix[14]
+                )
                 tr_main.R_GlobalToNormalizedDeviceCoordinates(v, ndc)
                 windowX =
                     0.5f * (1.0f + ndc[0]) * (tr.viewDef!!.viewport.x2 - tr.viewDef!!.viewport.x1)
@@ -2312,7 +2329,7 @@ object RenderWorld_local {
             i = 0
             while (i < w!!.GetNumPoints()) {
                 var d: Float
-                d = forward.Distance(w[i].ToVec3())
+                d = forward[0] * w[i].x + forward[1] * w[i].y + forward[2] * w[i].z + forward[3]
                 if (d < 0.5f) {
                     return false // a point not clipped off
                 }
@@ -2332,7 +2349,7 @@ object RenderWorld_local {
             val v1 = idVec3()
             val v2 = idVec3()
             var addPlanes: Int
-            var w: idFixedWinding // we won't overflow because MAX_PORTAL_PLANES = 20
+            val w = portalFlowWindingScratch // we won't overflow because MAX_PORTAL_PLANES = 20
             area = portalAreas!![areaNum]
 
             // cull models and lights to the current collection of planes
@@ -2388,10 +2405,15 @@ object RenderWorld_local {
                 }
 
                 // clip the portal winding to all of the planes
-                w = idFixedWinding((p.w)!!)
+                w.set((p.w)!!)
                 j = 0
                 while (j < ps.numPortalPlanes) {
-                    if (!w.ClipInPlace(ps.portalPlanes[j].unaryMinus(), 0.0f)) {
+                    if (!w.ClipInPlaceNoAlloc(
+                            NegativePlaneToScratch(ps.portalPlanes[j]),
+                            portalFlowClipScratch,
+                            0.0f
+                        )
+                    ) {
                         break
                     }
                     j++
@@ -2431,8 +2453,8 @@ object RenderWorld_local {
                     if (j == w.GetNumPoints()) {
                         j = 0
                     }
-                    v1.set(origin.minus(w[i].ToVec3()))
-                    v2.set(origin.minus(w[j].ToVec3()))
+                    v1.set(origin.x - w[i].x, origin.y - w[i].y, origin.z - w[i].z)
+                    v2.set(origin.x - w[j].x, origin.y - w[j].y, origin.z - w[j].z)
                     newStack.portalPlanes[newStack.numPortalPlanes].Normal().Cross(v2, v1)
 
                     // if it is degenerate, skip the plane
@@ -2512,7 +2534,7 @@ object RenderWorld_local {
             val v1 = idVec3()
             val v2 = idVec3()
             var addPlanes: Int
-            var w: idFixedWinding // we won't overflow because MAX_PORTAL_PLANES = 20
+            val w = portalFlowWindingScratch // we won't overflow because MAX_PORTAL_PLANES = 20
             area = portalAreas!![areaNum]
 
             // add an areaRef
@@ -2557,10 +2579,15 @@ object RenderWorld_local {
                 }
 
                 // clip the portal winding to all of the planes
-                w = idFixedWinding((p.w)!!)
+                w.set((p.w)!!)
                 j = 0
                 while (j < ps.numPortalPlanes) {
-                    if (!w.ClipInPlace(ps.portalPlanes[j].unaryMinus(), 0.0f)) {
+                    if (!w.ClipInPlaceNoAlloc(
+                            NegativePlaneToScratch(ps.portalPlanes[j]),
+                            portalFlowClipScratch,
+                            0.0f
+                        )
+                    ) {
                         break
                     }
                     j++
@@ -2573,7 +2600,12 @@ object RenderWorld_local {
                 // necessarily extending to infinitiy like a view frustum
                 j = 0
                 while (j < firstPortalStack.numPortalPlanes) {
-                    if (!w.ClipInPlace(firstPortalStack.portalPlanes[j].unaryMinus(), 0.0f)) {
+                    if (!w.ClipInPlaceNoAlloc(
+                            NegativePlaneToScratch(firstPortalStack.portalPlanes[j]),
+                            portalFlowClipScratch,
+                            0.0f
+                        )
+                    ) {
                         break
                     }
                     j++
@@ -2600,8 +2632,16 @@ object RenderWorld_local {
                     if (j == w.GetNumPoints()) {
                         j = 0
                     }
-                    v1.set(light.globalLightOrigin.minus(w[i].ToVec3()))
-                    v2.set(light.globalLightOrigin.minus(w[j].ToVec3()))
+                    v1.set(
+                        light.globalLightOrigin.x - w[i].x,
+                        light.globalLightOrigin.y - w[i].y,
+                        light.globalLightOrigin.z - w[i].z
+                    )
+                    v2.set(
+                        light.globalLightOrigin.x - w[j].x,
+                        light.globalLightOrigin.y - w[j].y,
+                        light.globalLightOrigin.z - w[j].z
+                    )
                     newStack.portalPlanes[newStack.numPortalPlanes].Normal().Cross(v2, v1)
 
                     // if it is degenerate, skip the plane
@@ -2828,11 +2868,12 @@ object RenderWorld_local {
             var j: Int
             val tri: srfTriangles_s
             var d: Float
-            val w = idFixedWinding() // we won't overflow because MAX_PORTAL_PLANES = 20
-            if (r_useLightCulling!!.GetInteger() == 0) {
+            val lightCulling = r_useLightCulling!!.GetInteger()
+            if (lightCulling == 0) {
                 return false
             }
-            if (r_useLightCulling!!.GetInteger() >= 2) {
+            if (lightCulling >= 2) {
+                val w = lightCullWindingScratch // we won't overflow because MAX_PORTAL_PLANES = 20
                 // exact clip of light faces against all planes
                 i = 0
                 while (i < 6) {
@@ -2859,7 +2900,7 @@ object RenderWorld_local {
                     // now check the winding against each of the portalStack planes
                     j = 0
                     while (j < ps.numPortalPlanes - 1) {
-                        if (!w.ClipInPlace(ps.portalPlanes[j].unaryMinus())) {
+                        if (!w.ClipInPlaceNoAlloc(NegativePlaneToScratch(ps.portalPlanes[j]), lightCullClipScratch)) {
                             break
                         }
                         j++

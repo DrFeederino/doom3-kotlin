@@ -165,7 +165,7 @@ object AASFile_local {
             val areaList = IntArray(32)
             val pointList: Array<idVec3> = idVec3.generateArray(32)
             trace.areas = areaList
-            trace.points = idVec3.generateArray(32)
+            trace.points = pointList
             trace.maxAreas = areaList.size
             trace.getOutOfSolid = 1 // true;
             areaNum = PointAreaNum(start)
@@ -179,7 +179,7 @@ object AASFile_local {
                 end.plusAssign(2, 32.0f)
                 Trace(trace, start, end)
                 if (trace.numAreas >= 1) {
-                    if (areas[0].flags and areaFlags != 0 && areas[0].travelFlags and excludeTravelFlags == 0) {
+                    if (areas[areaList[0]].flags and areaFlags != 0 && areas[areaList[0]].travelFlags and excludeTravelFlags == 0) {
                         return areaList[0]
                     }
                     start.set(pointList[0])

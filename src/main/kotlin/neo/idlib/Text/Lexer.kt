@@ -1903,8 +1903,7 @@ object Lexer {
         private fun ReadPunctuation(token: idToken): Boolean {
             var l: Int
             var n: Int
-            var i: Int
-            var p: CharArray
+            var p: String
             var punc: punctuation_t
 
 // #ifdef PUNCTABLE
@@ -1918,25 +1917,18 @@ object Lexer {
 //	for (i = 0; idLexer::punctuations[i].p; i++) {
 //		punc = &idLexer::punctuations[i];
 //#endif
-                p = punc.p!!.toCharArray()
+                p = punc.p!!
                 // check for this punctuation in the script
                 l = 0
-                while (l < p.size && buffer[script_p + l].code != 0) {
+                while (l < p.length && buffer[script_p + l].code != 0) {
                     if (buffer[script_p + l] != p[l]) {
                         break
                     }
                     l++
                 }
-                if (l >= p.size) {
+                if (l >= p.length) {
                     //
-                    token.EnsureAlloced(l + 1, false)
-                    i = 0
-                    while (i < l) {
-
-//                        token.data[i] = p[i];
-                        token[i] = p[i]
-                        i++
-                    }
+                    token.data = p
                     token.len = l
                     //
                     script_p += l
