@@ -56,6 +56,10 @@ class Physics_Static {
         protected var isOrientated: Boolean
         protected var self // entity using this physics object
                 : idEntity? = null
+        private val masterOriginScratch = idVec3()
+        private val masterAxisScratch = idMat3()
+        private val oldOriginScratch = idVec3()
+        private val oldAxisScratch = idMat3()
 
         /*
         ================
@@ -237,22 +241,18 @@ class Physics_Static {
         ================
         */
         override fun Evaluate(timeStepMSec: Int, endTimeMSec: Int): Boolean {
-            val masterOrigin = idVec3()
-            val oldOrigin = idVec3()
-            val masterAxis = idMat3()
-            val oldAxis = idMat3()
             if (hasMaster) {
-                oldOrigin.set(current.origin)
-                oldAxis.set(current.axis)
-                self!!.GetMasterPosition(masterOrigin, masterAxis)
-                current.origin.set(masterOrigin + current.localOrigin * masterAxis)
+                oldOriginScratch.set(current.origin)
+                oldAxisScratch.set(current.axis)
+                self!!.GetMasterPosition(masterOriginScratch, masterAxisScratch)
+                TransformLocalToMaster(current.origin, masterOriginScratch, current.localOrigin, masterAxisScratch)
                 if (isOrientated) {
-                    current.axis.set(current.localAxis.times(masterAxis))
+                    current.axis.setMul(current.localAxis, masterAxisScratch)
                 } else {
                     current.axis.set(current.localAxis)
                 }
                 clipModel?.Link(Game_local.gameLocal.clip, self, 0, current.origin, current.axis)
-                return current.origin != oldOrigin || current.axis != oldAxis
+                return current.origin != oldOriginScratch || current.axis != oldAxisScratch
             }
             return false
         }
@@ -357,12 +357,10 @@ class Physics_Static {
         ================
         */
         override fun SetOrigin(newOrigin: idVec3, id: Int /*= -1*/) {
-            val masterOrigin = idVec3()
-            val masterAxis = idMat3()
             current.localOrigin.set(newOrigin)
             if (hasMaster) {
-                self!!.GetMasterPosition(masterOrigin, masterAxis)
-                current.origin.set(masterOrigin + newOrigin * masterAxis)
+                self!!.GetMasterPosition(masterOriginScratch, masterAxisScratch)
+                TransformLocalToMaster(current.origin, masterOriginScratch, newOrigin, masterAxisScratch)
             } else {
                 current.origin.set(newOrigin)
             }
@@ -375,12 +373,10 @@ class Physics_Static {
         ================
         */
         override fun SetAxis(newAxis: idMat3, id: Int /*= -1*/) {
-            val masterOrigin = idVec3()
-            val masterAxis = idMat3()
             current.localAxis.set(newAxis)
             if (hasMaster && isOrientated) {
-                self!!.GetMasterPosition(masterOrigin, masterAxis)
-                current.axis.set(newAxis.times(masterAxis))
+                self!!.GetMasterPosition(masterOriginScratch, masterAxisScratch)
+                current.axis.setMul(newAxis, masterAxisScratch)
             } else {
                 current.axis.set(newAxis)
             }
@@ -404,14 +400,13 @@ class Physics_Static {
         ================
         */
         override fun Rotate(rotation: idRotation, id: Int /*= -1*/) {
-            val masterOrigin = idVec3()
-            val masterAxis = idMat3()
+            val rotationAxis = rotation.ToMat3()
             current.origin.timesAssign(rotation)
-            current.axis.timesAssign(rotation.ToMat3())
+            current.axis.timesAssign(rotationAxis)
             if (hasMaster) {
-                self!!.GetMasterPosition(masterOrigin, masterAxis)
-                current.localAxis.timesAssign(rotation.ToMat3())
-                current.localOrigin.set((current.origin - masterOrigin) * masterAxis.Transpose())
+                self!!.GetMasterPosition(masterOriginScratch, masterAxisScratch)
+                current.localAxis.timesAssign(rotationAxis)
+                TransformWorldToLocal(current.localOrigin, current.origin, masterOriginScratch, masterAxisScratch)
             } else {
                 current.localAxis.set(current.axis)
                 current.localOrigin.set(current.origin)
@@ -703,15 +698,14 @@ class Physics_Static {
         ================
         */
         override fun SetMaster(master: idEntity?, orientated: Boolean /*= true*/) {
-            val masterOrigin = idVec3()
-            val masterAxis = idMat3()
             if (master != null) {
                 if (!hasMaster) {
                     // transform from world space to master space
-                    self!!.GetMasterPosition(masterOrigin, masterAxis)
-                    current.localOrigin.set((current.origin - masterOrigin) * masterAxis.Transpose())
+                    self!!.GetMasterPosition(masterOriginScratch, masterAxisScratch)
+                    TransformWorldToLocal(current.localOrigin, current.origin, masterOriginScratch, masterAxisScratch)
                     if (orientated) {
-                        current.localAxis.set(current.axis * masterAxis.Transpose())
+                        current.localAxis.setMul(current.axis, masterAxisScratch.TransposeSelf())
+                        masterAxisScratch.TransposeSelf()
                     } else {
                         current.localAxis.set(current.axis)
                     }
@@ -723,6 +717,26 @@ class Physics_Static {
                     hasMaster = false
                 }
             }
+        }
+
+        private fun TransformLocalToMaster(dst: idVec3, masterOrigin: idVec3, localOrigin: idVec3, masterAxis: idMat3) {
+            val x =
+                masterOrigin.x + masterAxis[0][0] * localOrigin.x + masterAxis[1][0] * localOrigin.y + masterAxis[2][0] * localOrigin.z
+            val y =
+                masterOrigin.y + masterAxis[0][1] * localOrigin.x + masterAxis[1][1] * localOrigin.y + masterAxis[2][1] * localOrigin.z
+            val z =
+                masterOrigin.z + masterAxis[0][2] * localOrigin.x + masterAxis[1][2] * localOrigin.y + masterAxis[2][2] * localOrigin.z
+            dst.set(x, y, z)
+        }
+
+        private fun TransformWorldToLocal(dst: idVec3, worldOrigin: idVec3, masterOrigin: idVec3, masterAxis: idMat3) {
+            val dx = worldOrigin.x - masterOrigin.x
+            val dy = worldOrigin.y - masterOrigin.y
+            val dz = worldOrigin.z - masterOrigin.z
+            val x = masterAxis[0][0] * dx + masterAxis[0][1] * dy + masterAxis[0][2] * dz
+            val y = masterAxis[1][0] * dx + masterAxis[1][1] * dy + masterAxis[1][2] * dz
+            val z = masterAxis[2][0] * dx + masterAxis[2][1] * dy + masterAxis[2][2] * dz
+            dst.set(x, y, z)
         }
 
         /*

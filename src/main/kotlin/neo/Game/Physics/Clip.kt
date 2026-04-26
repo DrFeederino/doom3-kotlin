@@ -391,6 +391,10 @@ object Clip {
             if (null == entity) {
                 return
             }
+            if (entity!!.fl.deconstructed || entity!!.entityNumber == Game_local.ENTITYNUM_NONE) {
+                Unlink()
+                return
+            }
             if (clipLinks != null) {
                 Unlink() // unlink from old position
             }
@@ -1805,11 +1809,16 @@ object Clip {
                     j++
                 }
                 if (j >= entCount) {
+                    val ent = clipModelList[i]!!.entity
+                    if (ent == null || ent.fl.deconstructed || ent.entityNumber == Game_local.ENTITYNUM_NONE) {
+                        i++
+                        continue
+                    }
                     if (entCount >= maxCount) {
                         Game_local.gameLocal.Warning("idClip::EntitiesTouchingBounds: max count")
                         return entCount
                     }
-                    entityList[entCount] = clipModelList[i]!!.entity!!
+                    entityList[entCount] = ent
                     entCount++
                 }
                 i++
@@ -2032,6 +2041,14 @@ object Clip {
             var link = node.clipLinks
             while (link != null) {
                 val check = link.clipModel
+                val ent = check.entity
+
+                // Kotlin objects can outlive their C++ equivalent.  Stale clip links from
+                // removed entities must not be reported as valid collision targets.
+                if (ent == null || ent.fl.deconstructed || ent.entityNumber == Game_local.ENTITYNUM_NONE) {
+                    link = link.nextInSector
+                    continue
+                }
 
                 // if the clip model is enabled
                 if (!check.enabled) {

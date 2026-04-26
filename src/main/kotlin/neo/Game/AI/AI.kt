@@ -3785,11 +3785,6 @@ open class idAI : idActor() {
             state = GetScriptFunction("state_Killed")
             SetState(state)
             SetWaitState("")
-        } else {
-            Game_local.gameLocal.Warning(
-                "idAI::Killed: entity '%s' lost its script object before state_Killed",
-                name
-            )
         }
         var kv = spawnArgs.MatchPrefix("def_drops", null)
         while (kv != null) {

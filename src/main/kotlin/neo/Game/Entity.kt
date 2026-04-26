@@ -2561,6 +2561,9 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         // clear any contacts the current physics object has
         if (physics != null) {
             physics.ClearContacts()
+            if (physics !== phys) {
+                physics.UnlinkClip()
+            }
         }
         // set new physics object or set the default physics if NULL
         if (phys != null) {

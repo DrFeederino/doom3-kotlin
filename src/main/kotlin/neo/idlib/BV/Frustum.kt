@@ -3078,29 +3078,47 @@ object Frustum {
             var f: Float
             val minf: Float
             val scaled = idMat3()
-            val localAxis: idMat3
-            val transpose: idMat3
+            val localAxis = idMat3()
+            val transpose = idMat3()
             val localOrigin = idVec3()
             val cornerVecs: Array<idVec3> = idVec3.generateArray(4)
             val bounds = idBounds()
+            val boxCenter = box.GetCenter()
+            val boxExtents = box.GetExtents()
 
-            transpose = box.GetAxis()
+            transpose.set(box.GetAxis())
             transpose.TransposeSelf()
-            localOrigin.set((origin - box.GetCenter()) * transpose)
-            localAxis = axis * transpose
+            localOrigin.x = (origin.x - boxCenter.x) * transpose[0].x +
+                    (origin.y - boxCenter.y) * transpose[1].x +
+                    (origin.z - boxCenter.z) * transpose[2].x
+            localOrigin.y = (origin.x - boxCenter.x) * transpose[0].y +
+                    (origin.y - boxCenter.y) * transpose[1].y +
+                    (origin.z - boxCenter.z) * transpose[2].y
+            localOrigin.z = (origin.x - boxCenter.x) * transpose[0].z +
+                    (origin.y - boxCenter.y) * transpose[1].z +
+                    (origin.z - boxCenter.z) * transpose[2].z
+            localAxis.setMul(axis, transpose)
 
-            scaled[0] = localAxis[0] * dFar
-            scaled[1] = localAxis[1] * dLeft
-            scaled[2] = localAxis[2] * dUp
-            cornerVecs[0] = scaled[0] + scaled[1]
-            cornerVecs[1] = scaled[0] - scaled[1]
-            cornerVecs[2] = cornerVecs[1] - scaled[2]
-            cornerVecs[3] = cornerVecs[0] - scaled[2]
+            scaled[0].set(localAxis[0].x * dFar, localAxis[0].y * dFar, localAxis[0].z * dFar)
+            scaled[1].set(localAxis[1].x * dLeft, localAxis[1].y * dLeft, localAxis[1].z * dLeft)
+            scaled[2].set(localAxis[2].x * dUp, localAxis[2].y * dUp, localAxis[2].z * dUp)
+            cornerVecs[0].set(scaled[0].x + scaled[1].x, scaled[0].y + scaled[1].y, scaled[0].z + scaled[1].z)
+            cornerVecs[1].set(scaled[0].x - scaled[1].x, scaled[0].y - scaled[1].y, scaled[0].z - scaled[1].z)
+            cornerVecs[2].set(
+                cornerVecs[1].x - scaled[2].x,
+                cornerVecs[1].y - scaled[2].y,
+                cornerVecs[1].z - scaled[2].z
+            )
+            cornerVecs[3].set(
+                cornerVecs[0].x - scaled[2].x,
+                cornerVecs[0].y - scaled[2].y,
+                cornerVecs[0].z - scaled[2].z
+            )
             cornerVecs[0].plusAssign(scaled[2])
             cornerVecs[1].plusAssign(scaled[2])
 
-            bounds[0] = -box.GetExtents()
-            bounds[1] = box.GetExtents()
+            bounds[0].set(-boxExtents.x, -boxExtents.y, -boxExtents.z)
+            bounds[1].set(boxExtents)
 
             minf = (dNear + 1.0f) * invFar
             i = 0
