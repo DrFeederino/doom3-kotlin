@@ -130,8 +130,12 @@ class Physics_Static {
         */
         override fun SetClipModel(model: idClipModel?, density: Float, id: Int /*= 0*/, freeOld: Boolean /*= true*/) {
             assert(self != null)
-            if (clipModel != null && clipModel !== model && freeOld) {
-                idClipModel.delete(clipModel!!)
+            if (clipModel != null && clipModel !== model) {
+                if (freeOld) {
+                    idClipModel.delete(clipModel!!)
+                } else {
+                    clipModel!!.Unlink()
+                }
             }
             clipModel = model
             clipModel?.Link(Game_local.gameLocal.clip, self, 0, current.origin, current.axis)

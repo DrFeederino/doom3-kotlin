@@ -189,8 +189,12 @@ object Physics_StaticMulti {
                 // FIX: C++ passes NULL, not a new clip model
                 clipModels.AssureSize(id + 1, null)
             }
-            if (clipModels[id] != null && clipModels[id] !== model && freeOld) {
-                idClipModel.delete(clipModels[id])
+            if (clipModels[id] != null && clipModels[id] !== model) {
+                if (freeOld) {
+                    idClipModel.delete(clipModels[id])
+                } else {
+                    clipModels[id]!!.Unlink()
+                }
             }
             clipModels[id] = model
             clipModels[id]?.Link(Game_local.gameLocal.clip, self, id, current[id].origin, current[id].axis)
