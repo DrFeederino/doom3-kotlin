@@ -2880,7 +2880,6 @@ internal class idSIMD_Generic : idSIMDProcessor() {
         i--
         while (i >= 0) {
             s0 = b[i].toDouble()
-            lptr = L[0]
             lIndex = i
             j = i + 1
             while (j < n) {

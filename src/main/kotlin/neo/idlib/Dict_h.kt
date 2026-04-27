@@ -179,7 +179,6 @@ class Dict_h {
             var i: Int
             val n: Int
             val found: IntArray?
-            val kv = idKeyValue()
 
             // check for assignment to self
             if (this === other) {
@@ -204,6 +203,7 @@ class Dict_h {
                     args[found[i]].value = globalValues.CopyString(other.args[i].value)
                     globalValues.FreeString(oldValue)
                 } else {
+                    val kv = idKeyValue()
                     kv.key = globalKeys.CopyString(other.args[i].key)
                     kv.value = globalValues.CopyString(other.args[i].value)
                     argHash.Add(argHash.GenerateKey(kv.GetKey().toString() + "", false), args.Append(kv))

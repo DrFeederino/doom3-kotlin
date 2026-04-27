@@ -950,7 +950,11 @@ object Player {
                         i++
                     }
                     if (i >= MAX_WEAPONS()) {
-                        idGameLocal.Error("Unknown weapon '%s'", weaponName)
+                        if (isD3XP) {
+                            gameLocal.Warning("Unknown weapon '%s'", weaponName)
+                        } else {
+                            idGameLocal.Error("Unknown weapon '%s'", weaponName)
+                        }
                     }
 
                     // cache the media for this weapon

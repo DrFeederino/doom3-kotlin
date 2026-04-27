@@ -787,7 +787,7 @@ object SaveGame {
     ) {
         private var buildNumber = 0
         private var internalSavegameVersion = 0 // DG added this
-        private val objects: idList<idClass> = idList()
+        private val objects: idList<idClass?> = idList()
 
         // DG: added these methods, internalSavegameVersion makes us independent of the global BUILD_NUMBER
         fun ReadInternalSavegameVersion() {
@@ -840,14 +840,16 @@ object SaveGame {
 
             // restore all the objects
             for (i in 1 until objects.Num()) {
-                CallRestore_r(objects[i].GetType(), objects[i])
+                val obj = objects[i] ?: continue
+                CallRestore_r(obj.GetType(), obj)
             }
 
             // regenerate render entities and render lights because are not saved
             i = 1
             while (i < objects.Num()) {
-                if (objects[i].IsType(idEntity.Type)) {
-                    val ent = objects[i] as idEntity
+                val obj = objects[i]
+                if (obj != null && obj.IsType(idEntity.Type)) {
+                    val ent = obj as idEntity
                     ent.UpdateVisuals()
                     ent.Present()
                 }

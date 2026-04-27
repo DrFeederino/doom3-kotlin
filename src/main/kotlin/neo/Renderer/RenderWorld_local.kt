@@ -2061,6 +2061,7 @@ object RenderWorld_local {
                 }
                 i++
             }
+            idInteraction.ClearPool()
         }
 
         fun TouchWorldModels() {
@@ -4339,6 +4340,7 @@ object RenderWorld_local {
             var inter: idInteraction?
             var i = 0
             var j = 0
+            val modelMatrix = FloatArray(16)
             lRef = lDef!!.references
             while (lRef != null) {
                 area = lRef.area!!
@@ -4433,7 +4435,6 @@ object RenderWorld_local {
 
                     // do a check of the entity reference bounds against the light frustum,
                     // trying to avoid creating a viewEntity if it hasn't been already
-                    val modelMatrix = FloatArray(16)
                     var m: FloatArray?
                     if (eDef.viewCount == tr.viewCount) {
                         m = eDef.viewEntity!!.modelMatrix

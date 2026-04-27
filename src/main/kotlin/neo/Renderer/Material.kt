@@ -531,13 +531,22 @@ object Material {
         var shaderOps: Array<expOp_t?> = arrayOfNulls<expOp_t>(MAX_EXPRESSION_OPS)
         var shaderRegisters: FloatArray = FloatArray(MAX_EXPRESSION_REGISTERS)
 
-        init {
-            for (s in shaderOps.indices) {
-                shaderOps[s] = expOp_t()
+        fun GetParseStage(index: Int): shaderStage_t {
+            var stage = parseStages[index]
+            if (stage == null) {
+                stage = shaderStage_t()
+                parseStages[index] = stage
             }
-            for (p in parseStages.indices) {
-                parseStages[p] = shaderStage_t()
+            return stage
+        }
+
+        fun GetShaderOp(index: Int): expOp_t {
+            var op = shaderOps[index]
+            if (op == null) {
+                op = expOp_t()
+                shaderOps[index] = op
             }
+            return op
         }
 
         companion object {
@@ -2077,7 +2086,7 @@ object Material {
         private fun ParseStage(src: idLexer, trpDefault: textureRepeat_t = textureRepeat_t.TR_REPEAT /*= TR_REPEAT */) {
             val token = idToken()
             var str: String?
-            val ss: shaderStage_t?
+            val ss: shaderStage_t
             val ts: textureStage_t
             var tf: textureFilter_t
             var trp: textureRepeat_t
@@ -2100,8 +2109,8 @@ object Material {
             cubeMap = cubeFiles_t.CF_2D
             imageName[0] = 0.toChar()
 
-            ss = pd!!.parseStages[numStages]
-            ts = ss!!.texture
+            ss = pd!!.GetParseStage(numStages)
+            ts = ss.texture
             ClearStage(ss)
             while (true) {
                 if (TestMaterialFlag(MF_DEFAULTED)) {    // we have a parse error
@@ -2736,9 +2745,9 @@ object Material {
             if (numOps == MAX_EXPRESSION_OPS) {
                 Common.common.Warning("GetExpressionOp: material '%s' hit MAX_EXPRESSION_OPS", GetName())
                 SetMaterialFlag(MF_DEFAULTED)
-                return pd!!.shaderOps[0]
+                return pd!!.GetShaderOp(0)
             }
-            return pd!!.shaderOps[numOps++]
+            return pd!!.GetShaderOp(numOps++)
         }
 
         private fun EmitOp(a: Int, b: Int, opType: expOpType_t): Int {

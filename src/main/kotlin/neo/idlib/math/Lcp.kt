@@ -938,7 +938,7 @@ class idLCP_Symmetric : idLCP() {
         }
 
         // we override the const on o_m here but on exit the matrix is unchanged
-        m.SetData(o_m.GetNumRows(), o_m.GetNumColumns(), o_m[0])
+        m.SetData(o_m.GetNumRows(), o_m.GetNumColumns(), o_m.ToFloatPtr())
         f.Zero()
         a.Zero()
         b.set(o_b)
