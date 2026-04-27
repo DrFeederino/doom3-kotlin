@@ -669,6 +669,7 @@ object Interaction {
                 nextArea = area.next
                 area = nextArea
             }
+            Release(this)
         }
 
         /*
@@ -1344,12 +1345,18 @@ object Interaction {
             // because these are generated and freed each game tic for active elements all
             // over the world, we use a custom pool allocater to avoid memory allocation overhead
             // and fragmentation
+            private val interactionPool = java.util.ArrayDeque<idInteraction>()
+
             fun AllocAndLink(eDef: idRenderEntityLocal, lDef: idRenderLightLocal?): idInteraction {
                 if (lDef == null) {
                     Common.common.Error("idInteraction::AllocAndLink: null parm")
                 }
                 val renderWorld: idRenderWorldLocal = eDef.world!!
-                val interaction = idInteraction()
+                val interaction = if (interactionPool.isEmpty()) {
+                    idInteraction()
+                } else {
+                    interactionPool.removeLast()
+                }
 
                 // link and initialize
                 interaction.dynamicModelFrameCount = 0
@@ -1389,6 +1396,25 @@ object Interaction {
                     renderWorld.interactionTable!![index] = interaction
                 }
                 return interaction
+            }
+
+            fun ClearPool() {
+                interactionPool.clear()
+            }
+
+            private fun Release(interaction: idInteraction) {
+                interaction.dynamicModelFrameCount = 0
+                interaction.lightDef = null
+                interaction.entityDef = null
+                interaction.numSurfaces = 0
+                interaction.surfaces = null
+                interaction.frustumState = frustumStates.FRUSTUM_UNINITIALIZED
+                interaction.frustumAreas = null
+                interaction.lightNext = null
+                interaction.lightPrev = null
+                interaction.entityNext = null
+                interaction.entityPrev = null
+                interactionPool.addLast(interaction)
             }
         }
     }
