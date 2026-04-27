@@ -972,7 +972,7 @@ object FileSystem_h {
             // stop the background download thread
             if (backgroundThread.threadHandle != null) {
                 backgroundDownloadExit = true
-                win_main.Sys_TriggerEvent() // wake the thread so it can exit
+                Sys_TriggerEvent() // wake the thread so it can exit
                 win_main.Sys_DestroyThread(backgroundThread)
             }
 
@@ -4448,22 +4448,22 @@ object FileSystem_h {
              */
             fun BackgroundDownloadThreadFn(@Suppress("UNUSED_PARAMETER") arg: Any?): Int {
                 while (!fileSystemLocal.backgroundDownloadExit) {
-                    win_main.Sys_EnterCriticalSection()
+                    Sys_EnterCriticalSection()
                     val bgl = fileSystemLocal.backgroundDownloads
                     if (bgl == null) {
-                        win_main.Sys_LeaveCriticalSection()
+                        Sys_LeaveCriticalSection()
                         win_main.Sys_WaitForEvent()
                         continue
                     }
                     // remove from list
                     fileSystemLocal.backgroundDownloads = bgl.next
-                    win_main.Sys_LeaveCriticalSection()
+                    Sys_LeaveCriticalSection()
 
                     bgl.next = null
 
                     if (bgl.opcode == dlType_t.DLTYPE_FILE) {
-                        if (bgl.f is File_h.idFile_Permanent) {
-                            val filePerm = bgl.f as File_h.idFile_Permanent
+                        if (bgl.f is idFile_Permanent) {
+                            val filePerm = bgl.f as idFile_Permanent
                             filePerm.Seek(bgl.file.position.toLong(), fsOrigin_t.FS_SEEK_SET)
                             filePerm.Read(bgl.file.buffer!!, bgl.file.length)
                         }

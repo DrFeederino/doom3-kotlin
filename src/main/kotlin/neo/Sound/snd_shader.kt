@@ -10,7 +10,6 @@ import neo.framework.DeclManager.idDecl
 import neo.framework.FileSystem_h
 import neo.idlib.BIT
 import neo.idlib.Text.Lexer.idLexer
-import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken

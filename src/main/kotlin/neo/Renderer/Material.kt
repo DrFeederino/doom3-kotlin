@@ -2741,7 +2741,7 @@ object Material {
             return numRegisters - 1
         }
 
-        private fun GetExpressionOp(): expOp_t? {
+        private fun GetExpressionOp(): expOp_t {
             if (numOps == MAX_EXPRESSION_OPS) {
                 Common.common.Warning("GetExpressionOp: material '%s' hit MAX_EXPRESSION_OPS", GetName())
                 SetMaterialFlag(MF_DEFAULTED)

@@ -18,8 +18,8 @@
 
 package neo.Game
 
-import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.GameSys.SysCvar
+import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Player.idPlayer
 import neo.Renderer.Model
 import neo.Renderer.ModelManager

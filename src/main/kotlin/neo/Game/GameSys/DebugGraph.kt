@@ -105,7 +105,7 @@ class DebugGraph {
                 vec1.set(pos + axis[2] * value1 - axis[1] * (i - 1) + axis[0] * samples.Num())
                 vec2.set(pos + axis[2] * value2 - axis[1] * i + axis[0] * samples.Num())
 
-                Game_local.gameRenderWorld!!.DebugLine(color, vec1, vec2, Game_local.gameLocal.msec, false)
+                Game_local.gameRenderWorld!!.DebugLine(color, vec1, vec2, gameLocal.msec, false)
                 value1 = value2
             }
         }

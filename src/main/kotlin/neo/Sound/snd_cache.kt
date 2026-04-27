@@ -212,18 +212,91 @@ object snd_cache {
 
             // create hardware audio buffers 
             // PCM loads directly;
-                if (objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_PCM) {
+            if (objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_PCM) {
+                AL10.alGetError()
+                openalBuffer = AL10.alGenBuffers()
+                if (AL10.alGetError() != AL10.AL_NO_ERROR) {
+                    Common.common.Error("idSoundCache: error generating OpenAL hardware buffer")
+                }
+                if (AL10.alIsBuffer(openalBuffer)) {
+                    AL10.alGetError()
+                    AL10.alBufferData(
+                        openalBuffer,
+                        if (objectInfo.nChannels == 1) AL10.AL_FORMAT_MONO16 else AL10.AL_FORMAT_STEREO16,
+                        nonCacheData!!,
+                        objectInfo.nSamplesPerSec
+                    )
+                    if (AL10.alGetError() != AL10.AL_NO_ERROR) {
+                        Common.common.Warning("idSoundCache: error loading data into OpenAL hardware buffer")
+                        hardwareBuffer = false
+                    } else {
+                        hardwareBuffer = true
+                    }
+                }
+            }
+
+            // OGG decompressed at load time (when smaller than s_decompressionLimit seconds, 6 seconds by default)
+            if (objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_OGG) {
+                if (objectSize < objectInfo.nSamplesPerSec * idSoundSystemLocal.s_decompressionLimit.GetInteger()) {
                     AL10.alGetError()
                     openalBuffer = AL10.alGenBuffers()
                     if (AL10.alGetError() != AL10.AL_NO_ERROR) {
                         Common.common.Error("idSoundCache: error generating OpenAL hardware buffer")
                     }
                     if (AL10.alIsBuffer(openalBuffer)) {
+                        val decoder: idSampleDecoder = idSampleDecoder.Alloc()
+                        var destData =
+                            BufferUtils.createByteBuffer((LengthIn44kHzSamples() + 1) * java.lang.Float.BYTES)
+
+                        // Decoder *always* outputs 44 kHz data
+                        decoder.Decode(this, 0, LengthIn44kHzSamples(), destData.asFloatBuffer())
+
+                        // Downsample back to original frequency (save memory)
+                        if (objectInfo.nSamplesPerSec == 11025) {
+                            for (i in 0 until objectSize) {
+                                if (destData.getFloat(i * 4 * 4) < -32768.0f) {
+                                    destData.putShort(i * 2, Short.MIN_VALUE)
+                                } else if (destData.getFloat(i * 4 * 4) > 32767.0f) {
+                                    destData.putShort(i * 2, Short.MAX_VALUE)
+                                } else {
+                                    destData.putShort(
+                                        i * 2,
+                                        idMath.FtoiFast(destData.getFloat(i * 4 * 4)).toShort()
+                                    )
+                                }
+                            }
+                        } else if (objectInfo.nSamplesPerSec == 22050) {
+                            for (i in 0 until objectSize) {
+                                if (destData.getFloat(i * 2 * 4) < -32768.0f) {
+                                    destData.putShort(i * 2, Short.MIN_VALUE)
+                                } else if (destData.getFloat(i * 2 * 4) > 32767.0f) {
+                                    destData.putShort(i * 2, Short.MAX_VALUE)
+                                } else {
+                                    destData.putShort(
+                                        i * 2,
+                                        idMath.FtoiFast(destData.getFloat(i * 2 * 4)).toShort()
+                                    )
+                                }
+                            }
+                        } else {
+                            for (i in 0 until objectSize) {
+                                if (destData.getFloat(i * 4) < -32768.0f) {
+                                    destData.putShort(i * 2, Short.MIN_VALUE)
+                                } else if (destData.getFloat(i * 4) > 32767.0f) {
+                                    destData.putShort(i * 2, Short.MAX_VALUE)
+                                } else {
+                                    destData.putShort(i * 2, idMath.FtoiFast(destData.getFloat(i * 4)).toShort())
+                                }
+                            }
+                        }
                         AL10.alGetError()
+                        // LWJGL uses remaining() — must limit the buffer to valid short data
+                        destData.limit(objectSize * 2)
+                        destData.position(0)
                         AL10.alBufferData(
                             openalBuffer,
                             if (objectInfo.nChannels == 1) AL10.AL_FORMAT_MONO16 else AL10.AL_FORMAT_STEREO16,
-                            nonCacheData!!,
+                            destData,
                             objectInfo.nSamplesPerSec
                         )
                         if (AL10.alGetError() != AL10.AL_NO_ERROR) {
@@ -232,85 +305,12 @@ object snd_cache {
                         } else {
                             hardwareBuffer = true
                         }
+
+                        destData = BufferUtils.createByteBuffer(0) // release reference
+                        idSampleDecoder.Free(decoder)
                     }
                 }
-
-                // OGG decompressed at load time (when smaller than s_decompressionLimit seconds, 6 seconds by default)
-                if (objectInfo.wFormatTag == snd_local.WAVE_FORMAT_TAG_OGG) {
-                    if (objectSize < objectInfo.nSamplesPerSec * idSoundSystemLocal.s_decompressionLimit.GetInteger()) {
-                        AL10.alGetError()
-                        openalBuffer = AL10.alGenBuffers()
-                        if (AL10.alGetError() != AL10.AL_NO_ERROR) {
-                            Common.common.Error("idSoundCache: error generating OpenAL hardware buffer")
-                        }
-                        if (AL10.alIsBuffer(openalBuffer)) {
-                            val decoder: idSampleDecoder = idSampleDecoder.Alloc()
-                            var destData =
-                                BufferUtils.createByteBuffer((LengthIn44kHzSamples() + 1) * java.lang.Float.BYTES)
-
-                            // Decoder *always* outputs 44 kHz data
-                            decoder.Decode(this, 0, LengthIn44kHzSamples(), destData.asFloatBuffer())
-
-                            // Downsample back to original frequency (save memory)
-                            if (objectInfo.nSamplesPerSec == 11025) {
-                                for (i in 0 until objectSize) {
-                                    if (destData.getFloat(i * 4 * 4) < -32768.0f) {
-                                        destData.putShort(i * 2, Short.MIN_VALUE)
-                                    } else if (destData.getFloat(i * 4 * 4) > 32767.0f) {
-                                        destData.putShort(i * 2, Short.MAX_VALUE)
-                                    } else {
-                                        destData.putShort(
-                                            i * 2,
-                                            idMath.FtoiFast(destData.getFloat(i * 4 * 4)).toShort()
-                                        )
-                                    }
-                                }
-                            } else if (objectInfo.nSamplesPerSec == 22050) {
-                                for (i in 0 until objectSize) {
-                                    if (destData.getFloat(i * 2 * 4) < -32768.0f) {
-                                        destData.putShort(i * 2, Short.MIN_VALUE)
-                                    } else if (destData.getFloat(i * 2 * 4) > 32767.0f) {
-                                        destData.putShort(i * 2, Short.MAX_VALUE)
-                                    } else {
-                                        destData.putShort(
-                                            i * 2,
-                                            idMath.FtoiFast(destData.getFloat(i * 2 * 4)).toShort()
-                                        )
-                                    }
-                                }
-                            } else {
-                                for (i in 0 until objectSize) {
-                                    if (destData.getFloat(i * 4) < -32768.0f) {
-                                        destData.putShort(i * 2, Short.MIN_VALUE)
-                                    } else if (destData.getFloat(i * 4) > 32767.0f) {
-                                        destData.putShort(i * 2, Short.MAX_VALUE)
-                                    } else {
-                                        destData.putShort(i * 2, idMath.FtoiFast(destData.getFloat(i * 4)).toShort())
-                                    }
-                                }
-                            }
-                            AL10.alGetError()
-                            // LWJGL uses remaining() — must limit the buffer to valid short data
-                            destData.limit(objectSize * 2)
-                            destData.position(0)
-                            AL10.alBufferData(
-                                openalBuffer,
-                                if (objectInfo.nChannels == 1) AL10.AL_FORMAT_MONO16 else AL10.AL_FORMAT_STEREO16,
-                                destData,
-                                objectInfo.nSamplesPerSec
-                            )
-                            if (AL10.alGetError() != AL10.AL_NO_ERROR) {
-                                Common.common.Warning("idSoundCache: error loading data into OpenAL hardware buffer")
-                                hardwareBuffer = false
-                            } else {
-                                hardwareBuffer = true
-                            }
-
-                            destData = BufferUtils.createByteBuffer(0) // release reference
-                            idSampleDecoder.Free(decoder)
-                        }
-                    }
-                }
+            }
 
             fh.Close()
         }

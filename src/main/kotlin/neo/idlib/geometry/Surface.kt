@@ -860,9 +860,9 @@ object Surface {
             i = 0
             while (i < indexes.Num()) {
                 if (!plane.FromPoints(
-                    verts[indexes[i + 0]].xyz,
-                    verts[indexes[i + 1]].xyz,
-                    verts[indexes[i + 2]].xyz
+                        verts[indexes[i + 0]].xyz,
+                        verts[indexes[i + 1]].xyz,
+                        verts[indexes[i + 2]].xyz
                     )
                 ) {
                     return false
@@ -997,9 +997,9 @@ object Surface {
                 s2 = sidedness[abs(i2)] xor INTSIGNBITSET(i2)
                 if (s0 and s1 and s2 != 0) {
                     if (!plane.FromPoints(
-                        verts[indexes[i + 0]].xyz,
-                        verts[indexes[i + 1]].xyz,
-                        verts[indexes[i + 2]].xyz
+                            verts[indexes[i + 0]].xyz,
+                            verts[indexes[i + 1]].xyz,
+                            verts[indexes[i + 2]].xyz
                         )
                     ) {
                         return false
@@ -1010,9 +1010,9 @@ object Surface {
                     }
                 } else if (!backFaceCull && s0 or s1 or s2 == 0) {
                     if (!plane.FromPoints(
-                        verts[indexes[i + 0]].xyz,
-                        verts[indexes[i + 1]].xyz,
-                        verts[indexes[i + 2]].xyz
+                            verts[indexes[i + 0]].xyz,
+                            verts[indexes[i + 1]].xyz,
+                            verts[indexes[i + 2]].xyz
                         )
                     ) {
                         return false

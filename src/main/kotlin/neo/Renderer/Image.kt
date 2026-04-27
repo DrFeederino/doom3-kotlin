@@ -1972,6 +1972,7 @@ object Image {
 
                     EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT -> header.ddspf!!.dwFourCC =
                         DDS_MAKEFOURCC('D'.code, 'X'.code, 'T'.code, '5'.code)
+
                     GL_COMPRESSED_RGBA_BPTC_UNORM -> header.ddspf!!.dwFourCC =
                         DDS_MAKEFOURCC('B'.code, 'C'.code, '7'.code, '0'.code)
                 }
@@ -2235,6 +2236,7 @@ object Image {
                         //       that only BC7 UNORM is accepted if the FourCC is 'DX10'
                         internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM
                     }
+
                     else -> {
                         Common.common.Warning("Invalid compressed internal format\n")
                         return

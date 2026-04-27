@@ -426,7 +426,7 @@ class snd_system {
                             // alcGetString with ALC_ALL_DEVICES_SPECIFIER returns individual device names
                             // We need to use the list variant
                             val deviceList =
-                                org.lwjgl.openal.ALC10.alcGetString(0, EnumerateAllExt.ALC_ALL_DEVICES_SPECIFIER)
+                                ALC10.alcGetString(0, EnumerateAllExt.ALC_ALL_DEVICES_SPECIFIER)
                             if (deviceList != null) {
                                 Common.common.Printf("OpenAL: found device '%s'", deviceList)
                                 if (deviceName != null && deviceList.equals(deviceName, ignoreCase = true)) {

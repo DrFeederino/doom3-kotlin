@@ -3342,10 +3342,7 @@ object Mover {
 
         // D3XP
         fun AllowPlayerOnly(ent: idEntity): Boolean {
-            if (playerOnly && ent !is idPlayer) {
-                return false
-            }
-            return true
+            return !(playerOnly && ent !is idPlayer)
         }
 
         fun IsLocked(): Int {

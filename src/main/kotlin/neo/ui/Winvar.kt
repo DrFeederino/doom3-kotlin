@@ -21,8 +21,7 @@ object Winvar {
     const val VAR_GUIPREFIX = "gui::"
     const val VAR_GUIPREFIX_LEN = VAR_GUIPREFIX.length
 
-    abstract class idWinVar
-    {
+    abstract class idWinVar {
         protected var eval = true
         protected var guiDict: idDict? = null
         protected var name: String? = null

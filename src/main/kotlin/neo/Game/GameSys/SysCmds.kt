@@ -2858,12 +2858,12 @@ object SysCmds {
                 Game_local.gameLocal.Printf("entity not found\n")
                 return
             }
-            if (!ent.IsType(neo.Game.idActor.Type)) {
+            if (!ent.IsType(idActor.Type)) {
                 Game_local.gameLocal.Printf("entity not an actor\n")
                 return
             }
-            val actor = ent as neo.Game.idActor
-            actor.PostEventMS(neo.Game.AI_SetState, 0, args.Argv(2))
+            val actor = ent as idActor
+            actor.PostEventMS(AI_SetState, 0, args.Argv(2))
         }
 
         companion object {

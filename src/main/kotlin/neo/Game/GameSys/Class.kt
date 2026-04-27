@@ -1026,40 +1026,40 @@ class Class {
 
             try {
 
-            if (SysCvar.g_debugTriggers.GetBool() && ev === EV_Activate && this is idEntity) {
-                val name: String =
-                    if (data[0] != null && data[0]!!.value as idClass? is idEntity) (data[0]!!.value as idEntity).GetName() else "NULL"
-                Game_local.gameLocal.Printf(
-                    "%d: '%s' activated by '%s'\n",
-                    Game_local.gameLocal.framenum,
-                    this.GetName(),
-                    name
-                )
-            }
+                if (SysCvar.g_debugTriggers.GetBool() && ev === EV_Activate && this is idEntity) {
+                    val name: String =
+                        if (data[0] != null && data[0]!!.value as idClass? is idEntity) (data[0]!!.value as idEntity).GetName() else "NULL"
+                    Game_local.gameLocal.Printf(
+                        "%d: '%s' activated by '%s'\n",
+                        Game_local.gameLocal.framenum,
+                        this.GetName(),
+                        name
+                    )
+                }
 
-            // NOTE: Differs from C++ — C++ uses c->eventMap[ev->GetEventNum()] via idTypeInfo.
-            // In the Kotlin port, we use getEventCallBack virtual dispatch.
-            callback = getEventCallBack(ev!!)
+                // NOTE: Differs from C++ — C++ uses c->eventMap[ev->GetEventNum()] via idTypeInfo.
+                // In the Kotlin port, we use getEventCallBack virtual dispatch.
+                callback = getEventCallBack(ev!!)
 
-            if (callback == null) {
-                // we don't respond to this event, so ignore it
-                return false
-            }
+                if (callback == null) {
+                    // we don't respond to this event, so ignore it
+                    return false
+                }
 
-            // NOTE: Differs from C++ — C++ uses a switch on ev->GetFormatspecIndex() with
-            // generated code from Callbacks.cpp to cast the callback to the right function
-            // pointer type based on the arg format. In Kotlin, we use the varargs-based
-            // eventCallback_t.accept() which handles all arg counts uniformly.
-            assert(D_EVENT_MAXARGS == 8)
+                // NOTE: Differs from C++ — C++ uses a switch on ev->GetFormatspecIndex() with
+                // generated code from Callbacks.cpp to cast the callback to the right function
+                // pointer type based on the arg format. In Kotlin, we use the varargs-based
+                // eventCallback_t.accept() which handles all arg counts uniformly.
+                assert(D_EVENT_MAXARGS == 8)
 
-            when (ev.GetNumArgs()) {
-                0, 1, 2, 3, 4, 5, 6, 7, 8 ->
-                    callback.accept(this, *data as Array<out idEventArg<*>>)
+                when (ev.GetNumArgs()) {
+                    0, 1, 2, 3, 4, 5, 6, 7, 8 ->
+                        callback.accept(this, *data as Array<out idEventArg<*>>)
 
-                else -> Game_local.gameLocal.Warning("Invalid formatspec on event '%s'", ev.GetName())
-            }
+                    else -> Game_local.gameLocal.Warning("Invalid formatspec on event '%s'", ev.GetName())
+                }
 
-            return true
+                return true
 
             } finally {
                 ts?.close()

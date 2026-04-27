@@ -3484,6 +3484,7 @@ class idAnimator {
                     joints!![0].ToMat3(jointAxis)
                     joints!![0].SetRotation(tempAxis.setMul(jointAxis, jointMod.mat))
                 }
+
                 jointModTransform_t.JOINTMOD_LOCAL_OVERRIDE, jointModTransform_t.JOINTMOD_WORLD_OVERRIDE -> joints!![0].SetRotation(
                     jointMod.mat
                 )

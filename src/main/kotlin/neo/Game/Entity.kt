@@ -1376,6 +1376,9 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                 signals!!.signal[i].SetNum(num._val)
                 j = 0
                 while (j < num._val) {
+                    if (signals!!.signal[i][j] == null) {
+                        signals!!.signal[i][j] = signal_t()
+                    }
                     signals!!.signal[i][j].threadnum = savefile.ReadInt()
                     savefile.ReadString(funcname)
                     signals!!.signal[i][j].function = Game_local.gameLocal.program.FindFunction(funcname)

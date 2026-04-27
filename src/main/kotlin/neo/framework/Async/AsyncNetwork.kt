@@ -370,65 +370,65 @@ class AsyncNetwork {
                 masters[2].cVar = master2
                 masters[3].cVar = master3
                 masters[4].cVar = master4
-                    cmdSystem.AddCommand(
-                        "spawnServer",
-                        SpawnServer_f.instance,
-                        CmdSystem.CMD_FL_SYSTEM,
-                        "spawns a server",
-                        ArgCompletion_MapName.getInstance()
-                    )
-                    // FIX: was using Game_local.idGameLocal.NextMap_f - should use local NextMap_f per C++ original
-                    cmdSystem.AddCommand(
-                        "nextMap",
-                        NextMap_f.instance,
-                        CmdSystem.CMD_FL_SYSTEM,
-                        "loads the next map on the server"
-                    )
-                    cmdSystem.AddCommand(
-                        "connect", Connect_f.instance, CmdSystem.CMD_FL_SYSTEM, "connects to a server"
-                    )
-                    cmdSystem.AddCommand(
-                        "reconnect",
-                        Reconnect_f.instance,
-                        CmdSystem.CMD_FL_SYSTEM,
-                        "reconnect to the last server we tried to connect to"
-                    )
-                    cmdSystem.AddCommand(
-                        "serverInfo", GetServerInfo_f.instance, CmdSystem.CMD_FL_SYSTEM, "shows server info"
-                    )
-                    cmdSystem.AddCommand(
-                        "LANScan", GetLANServers_f.instance, CmdSystem.CMD_FL_SYSTEM, "scans LAN for servers"
-                    )
-                    cmdSystem.AddCommand(
-                        "listServers", ListServers_f.instance, CmdSystem.CMD_FL_SYSTEM, "lists scanned servers"
-                    )
-                    cmdSystem.AddCommand(
-                        "rcon",
-                        RemoteConsole_f.instance,
-                        CmdSystem.CMD_FL_SYSTEM,
-                        "sends remote console command to server"
-                    )
-                    cmdSystem.AddCommand(
-                        "heartbeat",
-                        Heartbeat_f.instance,
-                        CmdSystem.CMD_FL_SYSTEM,
-                        "send a heartbeat to the the master servers"
-                    )
-                    cmdSystem.AddCommand(
-                        "kick", Kick_f.instance, CmdSystem.CMD_FL_SYSTEM, "kick a client by connection number"
-                    )
-                    cmdSystem.AddCommand(
-                        "checkNewVersion",
-                        CheckNewVersion_f.instance,
-                        CmdSystem.CMD_FL_SYSTEM,
-                        "check if a new version of the game is available"
-                    )
-                    cmdSystem.AddCommand(
-                        "updateUI",
-                        UpdateUI_f.instance,
-                        CmdSystem.CMD_FL_SYSTEM,
-                        "internal - cause a sync down of game-modified userinfo"
-                    )
+                cmdSystem.AddCommand(
+                    "spawnServer",
+                    SpawnServer_f.instance,
+                    CmdSystem.CMD_FL_SYSTEM,
+                    "spawns a server",
+                    ArgCompletion_MapName.getInstance()
+                )
+                // FIX: was using Game_local.idGameLocal.NextMap_f - should use local NextMap_f per C++ original
+                cmdSystem.AddCommand(
+                    "nextMap",
+                    NextMap_f.instance,
+                    CmdSystem.CMD_FL_SYSTEM,
+                    "loads the next map on the server"
+                )
+                cmdSystem.AddCommand(
+                    "connect", Connect_f.instance, CmdSystem.CMD_FL_SYSTEM, "connects to a server"
+                )
+                cmdSystem.AddCommand(
+                    "reconnect",
+                    Reconnect_f.instance,
+                    CmdSystem.CMD_FL_SYSTEM,
+                    "reconnect to the last server we tried to connect to"
+                )
+                cmdSystem.AddCommand(
+                    "serverInfo", GetServerInfo_f.instance, CmdSystem.CMD_FL_SYSTEM, "shows server info"
+                )
+                cmdSystem.AddCommand(
+                    "LANScan", GetLANServers_f.instance, CmdSystem.CMD_FL_SYSTEM, "scans LAN for servers"
+                )
+                cmdSystem.AddCommand(
+                    "listServers", ListServers_f.instance, CmdSystem.CMD_FL_SYSTEM, "lists scanned servers"
+                )
+                cmdSystem.AddCommand(
+                    "rcon",
+                    RemoteConsole_f.instance,
+                    CmdSystem.CMD_FL_SYSTEM,
+                    "sends remote console command to server"
+                )
+                cmdSystem.AddCommand(
+                    "heartbeat",
+                    Heartbeat_f.instance,
+                    CmdSystem.CMD_FL_SYSTEM,
+                    "send a heartbeat to the the master servers"
+                )
+                cmdSystem.AddCommand(
+                    "kick", Kick_f.instance, CmdSystem.CMD_FL_SYSTEM, "kick a client by connection number"
+                )
+                cmdSystem.AddCommand(
+                    "checkNewVersion",
+                    CheckNewVersion_f.instance,
+                    CmdSystem.CMD_FL_SYSTEM,
+                    "check if a new version of the game is available"
+                )
+                cmdSystem.AddCommand(
+                    "updateUI",
+                    UpdateUI_f.instance,
+                    CmdSystem.CMD_FL_SYSTEM,
+                    "internal - cause a sync down of game-modified userinfo"
+                )
             }
 
             fun Shutdown() {

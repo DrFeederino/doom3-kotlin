@@ -106,6 +106,7 @@ class xthreadInfo {
     var threadHandle: Thread? = null
     var threadId: Long = 0
 }
+
 val udpPorts: Array<idUDPLag?> = arrayOfNulls(65536)
 var sys: idSys = sys_local.sysLocal
 

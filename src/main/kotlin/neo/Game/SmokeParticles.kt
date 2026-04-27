@@ -269,132 +269,133 @@ object SmokeParticles {
             val ts = if (isD3XP) SetTimeState(timeGroup) else null
             try {
 
-            if (null == smoke) {
-                return false
-            }
-
-            if (!Game_local.gameLocal.isNewFrame) {
-                return false
-            }
-
-            // dedicated doesn't smoke. No UpdateRenderEntity, so they would not be freed
-            if (Game_local.gameLocal.localClientNum < 0) {
-                return false
-            }
-
-            assert(Game_local.gameLocal.time == 0 || systemStartTime <= Game_local.gameLocal.time)
-            if (systemStartTime > Game_local.gameLocal.time) {
-                return false
-            }
-
-            val steppingRandom = idRandom((0xffff * diversity).toInt())
-
-            // for each stage in the smoke that is still emitting particles, emit a new singleSmoke_t
-            for (stageNum in 0 until smoke.stages.Num()) {
-                val stage = smoke.stages[stageNum]
-
-                if (0 == stage.cycleMsec) {
-                    continue
+                if (null == smoke) {
+                    return false
                 }
 
-                if (null == stage.material) {
-                    continue
+                if (!Game_local.gameLocal.isNewFrame) {
+                    return false
                 }
 
-                if (stage.particleLife <= 0) {
-                    continue
+                // dedicated doesn't smoke. No UpdateRenderEntity, so they would not be freed
+                if (Game_local.gameLocal.localClientNum < 0) {
+                    return false
                 }
 
-                // see how many particles we should emit this tic
-                // FIXME: 			smoke.privateStartTime += stage.timeOffset;
-                val finalParticleTime = (stage.cycleMsec * stage.spawnBunching).toInt()
-                val deltaMsec = Game_local.gameLocal.time - systemStartTime
+                assert(Game_local.gameLocal.time == 0 || systemStartTime <= Game_local.gameLocal.time)
+                if (systemStartTime > Game_local.gameLocal.time) {
+                    return false
+                }
 
-                var nowCount = 0
-                var prevCount: Int
-                if (finalParticleTime == 0) {
-                    // if spawnBunching is 0, they will all come out at once
-                    if (Game_local.gameLocal.time == systemStartTime) {
-                        prevCount = -1
-                        nowCount = stage.totalParticles - 1
+                val steppingRandom = idRandom((0xffff * diversity).toInt())
+
+                // for each stage in the smoke that is still emitting particles, emit a new singleSmoke_t
+                for (stageNum in 0 until smoke.stages.Num()) {
+                    val stage = smoke.stages[stageNum]
+
+                    if (0 == stage.cycleMsec) {
+                        continue
+                    }
+
+                    if (null == stage.material) {
+                        continue
+                    }
+
+                    if (stage.particleLife <= 0) {
+                        continue
+                    }
+
+                    // see how many particles we should emit this tic
+                    // FIXME: 			smoke.privateStartTime += stage.timeOffset;
+                    val finalParticleTime = (stage.cycleMsec * stage.spawnBunching).toInt()
+                    val deltaMsec = Game_local.gameLocal.time - systemStartTime
+
+                    var nowCount = 0
+                    var prevCount: Int
+                    if (finalParticleTime == 0) {
+                        // if spawnBunching is 0, they will all come out at once
+                        if (Game_local.gameLocal.time == systemStartTime) {
+                            prevCount = -1
+                            nowCount = stage.totalParticles - 1
+                        } else {
+                            prevCount = stage.totalParticles
+                        }
                     } else {
-                        prevCount = stage.totalParticles
+                        nowCount =
+                            floor((deltaMsec.toFloat() / finalParticleTime * stage.totalParticles)).toInt()
+                        if (nowCount >= stage.totalParticles) {
+                            nowCount = stage.totalParticles - 1
+                        }
+                        prevCount =
+                            floor(((deltaMsec - if (isD3XP) Game_local.gameLocal.msec else UsercmdGen.USERCMD_MSEC).toFloat() / finalParticleTime * stage.totalParticles))
+                                .toInt()
+                        if (prevCount < -1) {
+                            prevCount = -1
+                        }
                     }
-                } else {
-                    nowCount =
-                        floor((deltaMsec.toFloat() / finalParticleTime * stage.totalParticles)).toInt()
-                    if (nowCount >= stage.totalParticles) {
-                        nowCount = stage.totalParticles - 1
+
+                    if (prevCount >= stage.totalParticles) {
+                        // no more particles from this stage
+                        continue
                     }
-                    prevCount =
-                        floor(((deltaMsec - if (isD3XP) Game_local.gameLocal.msec else UsercmdGen.USERCMD_MSEC).toFloat() / finalParticleTime * stage.totalParticles))
-                            .toInt()
-                    if (prevCount < -1) {
-                        prevCount = -1
+
+                    if (nowCount < stage.totalParticles - 1) {
+                        // the system will need to emit particles next frame as well
+                        continues = true
                     }
-                }
 
-                if (prevCount >= stage.totalParticles) {
-                    // no more particles from this stage
-                    continue
-                }
-
-                if (nowCount < stage.totalParticles - 1) {
-                    // the system will need to emit particles next frame as well
-                    continues = true
-                }
-
-                // find an activeSmokeStage that matches this
-                var active: activeSmokeStage_t? = null
-                var i: Int
-                i = 0
-                while (i < activeStages.Num()) {
-                    active = activeStages[i]
-                    if (active.stage === stage) {
-                        break
+                    // find an activeSmokeStage that matches this
+                    var active: activeSmokeStage_t? = null
+                    var i: Int
+                    i = 0
+                    while (i < activeStages.Num()) {
+                        active = activeStages[i]
+                        if (active.stage === stage) {
+                            break
+                        }
+                        i++
                     }
-                    i++
-                }
-                if (i == activeStages.Num()) {
-                    // add a new one
-                    val newActive = activeSmokeStage_t()
-                    newActive.smokes = null
-                    newActive.stage = stage
-                    i = activeStages.Append(newActive)
-                    active = activeStages[i]
-                }
-
-                // add all the required particles
-                prevCount++
-                while (prevCount <= nowCount) {
-                    if (null == freeSmokes) {
-                        Game_local.gameLocal.Printf(
-                            "idSmokeParticles::EmitSmoke: no free smokes with %d active stages\n",
-                            activeStages.Num()
-                        )
-                        return true
+                    if (i == activeStages.Num()) {
+                        // add a new one
+                        val newActive = activeSmokeStage_t()
+                        newActive.smokes = null
+                        newActive.stage = stage
+                        i = activeStages.Append(newActive)
+                        active = activeStages[i]
                     }
-                    val newSmoke = freeSmokes!!
-                    freeSmokes = freeSmokes!!.next
-                    numActiveSmokes++
 
-                    if (isD3XP) {
-                        newSmoke.timeGroup = timeGroup
-                    }
-                    newSmoke.index = prevCount
-                    newSmoke.axis.set(axis)
-                    newSmoke.origin.set(origin)
-                    newSmoke.random = idRandom(steppingRandom)
-                    newSmoke.privateStartTime = systemStartTime + prevCount * finalParticleTime / stage.totalParticles
-                    newSmoke.next = active!!.smokes
-                    active.smokes = newSmoke
-
-                    steppingRandom.RandomInt() // advance the random
+                    // add all the required particles
                     prevCount++
-                }
-            }
+                    while (prevCount <= nowCount) {
+                        if (null == freeSmokes) {
+                            Game_local.gameLocal.Printf(
+                                "idSmokeParticles::EmitSmoke: no free smokes with %d active stages\n",
+                                activeStages.Num()
+                            )
+                            return true
+                        }
+                        val newSmoke = freeSmokes!!
+                        freeSmokes = freeSmokes!!.next
+                        numActiveSmokes++
 
-            return continues
+                        if (isD3XP) {
+                            newSmoke.timeGroup = timeGroup
+                        }
+                        newSmoke.index = prevCount
+                        newSmoke.axis.set(axis)
+                        newSmoke.origin.set(origin)
+                        newSmoke.random = idRandom(steppingRandom)
+                        newSmoke.privateStartTime =
+                            systemStartTime + prevCount * finalParticleTime / stage.totalParticles
+                        newSmoke.next = active!!.smokes
+                        active.smokes = newSmoke
+
+                        steppingRandom.RandomInt() // advance the random
+                        prevCount++
+                    }
+                }
+
+                return continues
             } finally {
                 ts?.close()
             }

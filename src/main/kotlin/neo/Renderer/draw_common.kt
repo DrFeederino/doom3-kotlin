@@ -133,8 +133,8 @@ object draw_common {
         }
         if (pStage.texture.texgen == texgen_t.TG_SKYBOX_CUBE || pStage.texture.texgen == texgen_t.TG_WOBBLESKY_CUBE) {
             val texPos = vertexCache.Position(surf.dynamicTexCoords)
-            if (VertexCache.vertexCache.IsVBOOffset(texPos)) {
-                qgl.qglTexCoordPointer(3, GL_FLOAT, 0, VertexCache.vertexCache.GetVBOOffset(texPos))
+            if (vertexCache.IsVBOOffset(texPos)) {
+                qgl.qglTexCoordPointer(3, GL_FLOAT, 0, vertexCache.GetVBOOffset(texPos))
             } else {
                 qgl.qglTexCoordPointer(3, GL_FLOAT, 0, texPos)
             }
@@ -1708,8 +1708,8 @@ object draw_common {
             }
 
             val shadowPos = vertexCache.Position(tri.shadowCache)
-            if (VertexCache.vertexCache.IsVBOOffset(shadowPos)) {
-                qglVertexPointer(4, GL_FLOAT, shadowCache_s.BYTES, VertexCache.vertexCache.GetVBOOffset(shadowPos))
+            if (vertexCache.IsVBOOffset(shadowPos)) {
+                qglVertexPointer(4, GL_FLOAT, shadowCache_s.BYTES, vertexCache.GetVBOOffset(shadowPos))
             } else {
                 qglVertexPointer(4, GL_FLOAT, shadowCache_s.BYTES, shadowPos)
             }
@@ -1933,8 +1933,8 @@ object draw_common {
                 qglVertexPointer(3, GL_FLOAT, idDrawVert.BYTES, ac.xyzOffset().toLong())
             } else if (tri.shadowCache != null) {
                 val shadowPos = vertexCache.Position(tri.shadowCache)
-                if (VertexCache.vertexCache.IsVBOOffset(shadowPos)) {
-                    qglVertexPointer(3, GL_FLOAT, shadowCache_s.BYTES, VertexCache.vertexCache.GetVBOOffset(shadowPos))
+                if (vertexCache.IsVBOOffset(shadowPos)) {
+                    qglVertexPointer(3, GL_FLOAT, shadowCache_s.BYTES, vertexCache.GetVBOOffset(shadowPos))
                 } else {
                     qglVertexPointer(3, GL_FLOAT, shadowCache_s.BYTES, shadowPos)
                 }

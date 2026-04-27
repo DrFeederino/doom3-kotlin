@@ -4244,10 +4244,10 @@ class Game_local {
 
                 // scale the push for the inflictor
                 scale = if (ent === inflictor || ent is idAFAttachment && ent.GetBody() === inflictor) {
-                        inflictorScale
-                    } else {
-                        1.0f
-                    }
+                    inflictorScale
+                } else {
+                    1.0f
+                }
                 if (quake) {
                     clipModel.GetEntity()!!
                         .ApplyImpulse(world, clipModel.GetId(), clipModel.GetOrigin(), dir.times(scale * push))

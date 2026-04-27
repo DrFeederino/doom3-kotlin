@@ -442,35 +442,38 @@ object MultiplayerGame {
                             }
                         }
                     } else {
-                    player = FragLimitHit()
-                    if (player != null) {
-                        // delay between detecting frag limit and ending game. let the death anims play
-                        if (0 == fragLimitTimeout) {
-                            Common.common.DPrintf("enter FragLimit timeout, player %d is leader\n", player.entityNumber)
-                            fragLimitTimeout = Game_local.gameLocal.time + FRAGLIMIT_DELAY
-                        }
-                        if (Game_local.gameLocal.time > fragLimitTimeout) {
-                            NewState(gameState_t.GAMEREVIEW, player)
-                            PrintMessageEvent(-1, msg_evt_t.MSG_FRAGLIMIT, player.entityNumber)
-                        }
-                    } else {
-                        if (fragLimitTimeout != 0) {
-                            // frag limit was hit and cancelled. means the two teams got even during FRAGLIMIT_DELAY
-                            // enter sudden death, the next frag leader will win
-                            SuddenRespawn()
-                            PrintMessageEvent(-1, msg_evt_t.MSG_HOLYSHIT)
-                            fragLimitTimeout = 0
-                            NewState(gameState_t.SUDDENDEATH)
-                        } else if (TimeLimitHit()) {
-                            player = FragLeader()
-                            if (null == player) {
-                                NewState(gameState_t.SUDDENDEATH)
-                            } else {
+                        player = FragLimitHit()
+                        if (player != null) {
+                            // delay between detecting frag limit and ending game. let the death anims play
+                            if (0 == fragLimitTimeout) {
+                                Common.common.DPrintf(
+                                    "enter FragLimit timeout, player %d is leader\n",
+                                    player.entityNumber
+                                )
+                                fragLimitTimeout = Game_local.gameLocal.time + FRAGLIMIT_DELAY
+                            }
+                            if (Game_local.gameLocal.time > fragLimitTimeout) {
                                 NewState(gameState_t.GAMEREVIEW, player)
-                                PrintMessageEvent(-1, msg_evt_t.MSG_TIMELIMIT)
+                                PrintMessageEvent(-1, msg_evt_t.MSG_FRAGLIMIT, player.entityNumber)
+                            }
+                        } else {
+                            if (fragLimitTimeout != 0) {
+                                // frag limit was hit and cancelled. means the two teams got even during FRAGLIMIT_DELAY
+                                // enter sudden death, the next frag leader will win
+                                SuddenRespawn()
+                                PrintMessageEvent(-1, msg_evt_t.MSG_HOLYSHIT)
+                                fragLimitTimeout = 0
+                                NewState(gameState_t.SUDDENDEATH)
+                            } else if (TimeLimitHit()) {
+                                player = FragLeader()
+                                if (null == player) {
+                                    NewState(gameState_t.SUDDENDEATH)
+                                } else {
+                                    NewState(gameState_t.GAMEREVIEW, player)
+                                    PrintMessageEvent(-1, msg_evt_t.MSG_TIMELIMIT)
+                                }
                             }
                         }
-                    }
                     } // end else (non-CTF GAMEON)
                 }
 
@@ -483,24 +486,24 @@ object MultiplayerGame {
                             PrintMessageEvent(-1, msg_evt_t.MSG_POINTLIMIT, team)
                         }
                     } else {
-                    player = FragLeader()
-                    if (player != null) {
-                        if (0 == fragLimitTimeout) {
-                            Common.common.DPrintf(
-                                "enter sudden death FragLeader timeout, player %d is leader\n",
-                                player.entityNumber
-                            )
-                            fragLimitTimeout = Game_local.gameLocal.time + FRAGLIMIT_DELAY
+                        player = FragLeader()
+                        if (player != null) {
+                            if (0 == fragLimitTimeout) {
+                                Common.common.DPrintf(
+                                    "enter sudden death FragLeader timeout, player %d is leader\n",
+                                    player.entityNumber
+                                )
+                                fragLimitTimeout = Game_local.gameLocal.time + FRAGLIMIT_DELAY
+                            }
+                            if (Game_local.gameLocal.time > fragLimitTimeout) {
+                                NewState(gameState_t.GAMEREVIEW, player)
+                                PrintMessageEvent(-1, msg_evt_t.MSG_FRAGLIMIT, player.entityNumber)
+                            }
+                        } else if (fragLimitTimeout != 0) {
+                            SuddenRespawn()
+                            PrintMessageEvent(-1, msg_evt_t.MSG_HOLYSHIT)
+                            fragLimitTimeout = 0
                         }
-                        if (Game_local.gameLocal.time > fragLimitTimeout) {
-                            NewState(gameState_t.GAMEREVIEW, player)
-                            PrintMessageEvent(-1, msg_evt_t.MSG_FRAGLIMIT, player.entityNumber)
-                        }
-                    } else if (fragLimitTimeout != 0) {
-                        SuddenRespawn()
-                        PrintMessageEvent(-1, msg_evt_t.MSG_HOLYSHIT)
-                        fragLimitTimeout = 0
-                    }
                     } // end else (non-CTF SUDDENDEATH)
                 }
 
