@@ -117,6 +117,8 @@ object Frustum {
         private val projectionPoints: Array<idVec3> = idVec3.generateArray(8)
         private val projectionCenter: idVec3 = idVec3()
         private val projectionAxis: idMat3 = idMat3()
+        private var intersectsScratch: IntersectsScratch? = null
+        private var clippedProjectionScratch: ClippedProjectionScratch? = null
 
         constructor() {
             origin = idVec3()
@@ -635,14 +637,16 @@ object Frustum {
         }
 
         fun IntersectsFrustum(frustum: idFrustum): Boolean {
-            val indexPoints2: Array<idVec3> = idVec3.generateArray(8)
-            val cornerVecs2: Array<idVec3> = idVec3.generateArray(4)
-            val transpose = idMat3()
+            val scratch = getIntersectsScratch()
+            val indexPoints2 = scratch.indexPoints2
+            val cornerVecs2 = scratch.cornerVecs2
+            val transpose = scratch.transpose
 
-            val localFrustum2 = idFrustum(frustum)
+            val localFrustum2 = scratch.localFrustum2
+            localFrustum2.set(frustum)
             transpose.set(axis)
             transpose.TransposeSelf()
-            localFrustum2.origin.set((frustum.origin - origin) * transpose)
+            setTransformedDifference(localFrustum2.origin, frustum.origin, origin, transpose)
             localFrustum2.axis.setMul(frustum.axis, transpose)
             localFrustum2.ToIndexPointsAndCornerVecs(indexPoints2, cornerVecs2)
 
@@ -650,13 +654,14 @@ object Frustum {
                 return false
             }
 
-            val indexPoints1: Array<idVec3> = idVec3.generateArray(8)
-            val cornerVecs1: Array<idVec3> = idVec3.generateArray(4)
-            val localFrustum1 = idFrustum(this)
+            val indexPoints1 = scratch.indexPoints1
+            val cornerVecs1 = scratch.cornerVecs1
+            val localFrustum1 = scratch.localFrustum1
+            localFrustum1.set(this)
 
             transpose.set(frustum.axis)
             transpose.TransposeSelf()
-            localFrustum1.origin.set((origin - frustum.origin) * transpose)
+            setTransformedDifference(localFrustum1.origin, origin, frustum.origin, transpose)
             localFrustum1.axis.setMul(axis, transpose)
             localFrustum1.ToIndexPointsAndCornerVecs(indexPoints1, cornerVecs1)
 
@@ -1650,35 +1655,36 @@ object Frustum {
             var i: Int
             var p1: Int
             var p2: Int
+            val scratch = getClippedProjectionScratch()
             val usedClipPlanes: Int
             val nearCull: Int
             val farCull: Int
             var outside: Int
-            val clipPointCull = Array(8) { CInt() }
-            val clipPlanes = Array(4) { CInt() }
-            val pointCull = Array(2) { CInt() }
-            val boxPointCull = Array(8) { CInt() }
-            val startClip = CInt()
-            val endClip = CInt()
+            val clipPointCull = scratch.clipPointCull
+            val clipPlanes = scratch.clipPlanes
+            val pointCull = scratch.pointCull
+            val boxPointCull = scratch.boxPointCull
+            val startClip = scratch.startClip
+            val endClip = scratch.endClip
             val leftScale: Float
             val upScale: Float
-            val s1 = CFloat()
-            val s2 = CFloat()
-            val t1 = CFloat()
-            val t2 = CFloat()
-            val clipFractions = Array(4) { CFloat() }
-            val localFrustum: idFrustum
-            val localOrigin1 = idVec3()
-            val localOrigin2 = idVec3()
-            val start = idVec3()
-            val end = idVec3()
-            val clipPoints: Array<idVec3> = idVec3.generateArray(8)
-            val localPoints1: Array<idVec3> = idVec3.generateArray(8)
-            val localPoints2: Array<idVec3> = idVec3.generateArray(8)
-            val localAxis1 = idMat3()
-            val localAxis2 = idMat3()
-            val transpose = idMat3()
-            val clipBounds = idBounds()
+            val s1 = scratch.s1
+            val s2 = scratch.s2
+            val t1 = scratch.t1
+            val t2 = scratch.t2
+            val clipFractions = scratch.clipFractions
+            val localFrustum = scratch.localFrustum
+            val localOrigin1 = scratch.localOrigin1
+            val localOrigin2 = scratch.localOrigin2
+            val start = scratch.start
+            val end = scratch.end
+            val clipPoints = scratch.clipPoints
+            val localPoints1 = scratch.localPoints1
+            val localPoints2 = scratch.localPoints2
+            val localAxis1 = scratch.localAxis1
+            val localAxis2 = scratch.localAxis2
+            val transpose = scratch.transpose
+            val clipBounds = scratch.clipBounds
 
             // if the frustum origin is inside the other frustum
             if (frustum.ContainsPoint(origin)) {
@@ -1709,8 +1715,8 @@ object Frustum {
             // transform the clipped frustum to the space of this frustum
             transpose.set(axis)
             transpose.TransposeSelf()
-            localFrustum = idFrustum(frustum)
-            localFrustum.origin.set((frustum.origin - origin) * transpose)
+            localFrustum.set(frustum)
+            setTransformedDifference(localFrustum.origin, frustum.origin, origin, transpose)
             localFrustum.axis.setMul(frustum.axis, transpose)
             localFrustum.ToClippedPoints(clipFractions, clipPoints)
 
@@ -1719,17 +1725,15 @@ object Frustum {
             while (i < 4) {
                 p1 = i
                 p2 = 4 + i
-                val clipPointCull_p1 = CInt()
-                val clipPointCull_p2 = CInt()
                 AddLocalLineToProjectionBoundsSetCull(
                     clipPoints[p1],
                     clipPoints[p2],
-                    clipPointCull_p1,
-                    clipPointCull_p2,
+                    scratch.clipPointCullStart,
+                    scratch.clipPointCullEnd,
                     projectionBounds
                 )
-                clipPointCull[p1]._val = (clipPointCull_p1._val)
-                clipPointCull[p2]._val = (clipPointCull_p2._val)
+                clipPointCull[p1]._val = scratch.clipPointCullStart._val
+                clipPointCull[p2]._val = scratch.clipPointCullEnd._val
                 i++
             }
 
@@ -1787,7 +1791,7 @@ object Frustum {
                 // transform the clip box into the space of the other frustum
                 transpose.set(frustum.axis)
                 transpose.TransposeSelf()
-                localOrigin1.set((clipBox.GetCenter() - frustum.origin) * transpose)
+                setTransformedDifference(localOrigin1, clipBox.GetCenter(), frustum.origin, transpose)
                 localAxis1.setMul(clipBox.GetAxis(), transpose)
                 BoxToPoints(localOrigin1, clipBox.GetExtents(), localAxis1, localPoints1)
 
@@ -1814,7 +1818,7 @@ object Frustum {
                 // transform the clip box into the space of this frustum
                 transpose.set(axis)
                 transpose.TransposeSelf()
-                localOrigin2.set((clipBox.GetCenter() - origin) * transpose)
+                setTransformedDifference(localOrigin2, clipBox.GetCenter(), origin, transpose)
                 localAxis2.setMul(clipBox.GetAxis(), transpose)
                 BoxToPoints(localOrigin2, clipBox.GetExtents(), localAxis2, localPoints2)
 
@@ -1923,7 +1927,7 @@ object Frustum {
                 // transform this frustum into the space of the other frustum
                 transpose.set(frustum.axis)
                 transpose.TransposeSelf()
-                localOrigin1.set((origin - frustum.origin) * transpose)
+                setTransformedDifference(localOrigin1, origin, frustum.origin, transpose)
                 localAxis1.setMul(axis, transpose)
                 localAxis1[0].timesAssign(dFar)
                 localAxis1[1].timesAssign(dLeft)
@@ -1932,7 +1936,7 @@ object Frustum {
                 // transform this frustum into the space of the clip bounds
                 transpose.set(clipBox.GetAxis())
                 transpose.TransposeSelf()
-                localOrigin2.set((origin - clipBox.GetCenter()) * transpose)
+                setTransformedDifference(localOrigin2, origin, clipBox.GetCenter(), transpose)
                 localAxis2.setMul(axis, transpose)
                 localAxis2[0].timesAssign(dFar)
                 localAxis2[1].timesAssign(dLeft)
@@ -3398,6 +3402,73 @@ object Frustum {
             dLeft = f.dLeft
             dUp = f.dUp
             invFar = f.invFar
+        }
+
+        private fun getIntersectsScratch(): IntersectsScratch {
+            var scratch = intersectsScratch
+            if (scratch == null) {
+                scratch = IntersectsScratch()
+                intersectsScratch = scratch
+            }
+            return scratch
+        }
+
+        private fun getClippedProjectionScratch(): ClippedProjectionScratch {
+            var scratch = clippedProjectionScratch
+            if (scratch == null) {
+                scratch = ClippedProjectionScratch()
+                clippedProjectionScratch = scratch
+            }
+            return scratch
+        }
+
+        private class IntersectsScratch {
+            val indexPoints1: Array<idVec3> = idVec3.generateArray(8)
+            val cornerVecs1: Array<idVec3> = idVec3.generateArray(4)
+            val indexPoints2: Array<idVec3> = idVec3.generateArray(8)
+            val cornerVecs2: Array<idVec3> = idVec3.generateArray(4)
+            val transpose: idMat3 = idMat3()
+            val localFrustum1: idFrustum = idFrustum()
+            val localFrustum2: idFrustum = idFrustum()
+        }
+
+        private class ClippedProjectionScratch {
+            val clipPointCull: Array<CInt> = Array(8) { CInt() }
+            val clipPlanes: Array<CInt> = Array(4) { CInt() }
+            val pointCull: Array<CInt> = Array(2) { CInt() }
+            val boxPointCull: Array<CInt> = Array(8) { CInt() }
+            val startClip: CInt = CInt()
+            val endClip: CInt = CInt()
+            val s1: CFloat = CFloat()
+            val s2: CFloat = CFloat()
+            val t1: CFloat = CFloat()
+            val t2: CFloat = CFloat()
+            val clipFractions: Array<CFloat> = Array(4) { CFloat() }
+            val localFrustum: idFrustum = idFrustum()
+            val localOrigin1: idVec3 = idVec3()
+            val localOrigin2: idVec3 = idVec3()
+            val start: idVec3 = idVec3()
+            val end: idVec3 = idVec3()
+            val clipPoints: Array<idVec3> = idVec3.generateArray(8)
+            val localPoints1: Array<idVec3> = idVec3.generateArray(8)
+            val localPoints2: Array<idVec3> = idVec3.generateArray(8)
+            val localAxis1: idMat3 = idMat3()
+            val localAxis2: idMat3 = idMat3()
+            val transpose: idMat3 = idMat3()
+            val clipBounds: idBounds = idBounds()
+            val clipPointCullStart: CInt = CInt()
+            val clipPointCullEnd: CInt = CInt()
+        }
+
+        private fun setTransformedDifference(out: idVec3, a: idVec3, b: idVec3, mat: idMat3) {
+            val x = a.x - b.x
+            val y = a.y - b.y
+            val z = a.z - b.z
+            out.set(
+                mat[0][0] * x + mat[1][0] * y + mat[2][0] * z,
+                mat[0][1] * x + mat[1][1] * y + mat[2][1] * z,
+                mat[0][2] * x + mat[1][2] * y + mat[2][2] * z
+            )
         }
 
         companion object {

@@ -38,6 +38,27 @@ import org.lwjgl.opengl.GL11
 
 object tr_trace {
     private val TEST_TRACE: Boolean = false
+    private val localTraceScratch = ThreadLocal.withInitial { LocalTraceScratch() }
+
+    private class LocalTraceScratch {
+        val planes: Array<idPlane> = idPlane.generateArray(4)
+        val startDir = idVec3()
+        val point = idVec3()
+        val dir0 = idVec3()
+        val dir1 = idVec3()
+        val dir2 = idVec3()
+        val cross = idVec3()
+        val edge = idVec3()
+        val totalOr = ByteArray(1)
+        var cullBits = ByteArray(0)
+
+        fun ensureCullBits(numVerts: Int): ByteArray {
+            if (cullBits.size < numVerts) {
+                cullBits = ByteArray(numVerts)
+            }
+            return cullBits
+        }
+    }
 
     /*
      =================
@@ -47,16 +68,26 @@ object tr_trace {
      =================
      */
     fun R_LocalTrace(start: idVec3, end: idVec3, radius: Float, tri: srfTriangles_s): localTrace_t {
+        return R_LocalTrace(localTrace_t(), start, end, radius, tri)
+    }
+
+    fun R_LocalTrace(hit: localTrace_t, start: idVec3, end: idVec3, radius: Float, tri: srfTriangles_s): localTrace_t {
         var i: Int
         var j: Int
         val cullBits: ByteArray
-        val planes: Array<idPlane> = idPlane.generateArray(4)
-        val hit = localTrace_t()
+        val scratch = localTraceScratch.get()
+        val planes: Array<idPlane> = scratch.planes
         var c_testEdges: Int
         var c_testPlanes: Int
         var c_intersect: Int
-        val startDir = idVec3()
-        val totalOr = ByteArray(1)
+        val startDir = scratch.startDir
+        val point = scratch.point
+        val dir0 = scratch.dir0
+        val dir1 = scratch.dir1
+        val dir2 = scratch.dir2
+        val cross = scratch.cross
+        val edge = scratch.edge
+        val totalOr = scratch.totalOr
         val radiusSqr: Float
         var trace_timer: idTimer? = null
         if (TEST_TRACE) {
@@ -66,7 +97,7 @@ object tr_trace {
         hit.fraction = 1.0f
 
         // create two planes orthogonal to each other that intersect along the trace
-        startDir.set(end.minus(start))
+        startDir.setSub(end, start)
         startDir.Normalize()
         startDir.NormalVectors(planes[0].Normal(), planes[1].Normal())
         planes[0][3] = -start.times(planes[0].Normal())
@@ -75,11 +106,12 @@ object tr_trace {
         // create front and end planes so the trace is on the positive sides of both
         planes[2].set(startDir)
         planes[2][3] = -start.times(planes[2].Normal())
-        planes[3].set(startDir.unaryMinus())
+        planes[3].Normal().setScale(startDir, -1.0f)
         planes[3][3] = -end.times(planes[3].Normal())
 
         // catagorize each point against the four planes
-        cullBits = ByteArray(tri.numVerts)
+        cullBits = scratch.ensureCullBits(tri.numVerts)
+        totalOr[0] = 0
         SIMDProcessor!!.TracePointCull(
             cullBits,
             totalOr,
@@ -106,7 +138,7 @@ object tr_trace {
         c_testEdges = 0
         c_intersect = 0
         radiusSqr = Square(radius)
-        startDir.set(end.minus(start))
+        startDir.setSub(end, start)
         if (null == tri.facePlanes || !tri.facePlanesCalculated) {
             R_DeriveFacePlanes(tri)
         }
@@ -119,10 +151,6 @@ object tr_trace {
             var d: Float
             var edgeLengthSqr: Float
             var plane: idPlane?
-            val point = idVec3()
-            val dir: Array<idVec3> = idVec3.generateArray(3)
-            val cross = idVec3()
-            val edge = idVec3()
             var triOr: Byte
 
             // get sidedness info for the triangle
@@ -176,13 +204,13 @@ object tr_trace {
             c_testEdges++
 
             // find the exact point of impact with the plane
-            point.set(start.plus(startDir.times(f)))
+            point.setLerp(start, end, f)
 
             // see if the point is within the three edges
             // if radius > 0 the triangle is expanded with a circle in the triangle plane
-            dir[0].set(tri.verts!![tri.indexes!![i + 0]]!!.xyz.minus(point))
-            dir[1].set(tri.verts!![tri.indexes!![i + 1]]!!.xyz.minus(point))
-            cross.set(dir[0].Cross(dir[1]))
+            dir0.setSub(tri.verts!![tri.indexes!![i + 0]]!!.xyz, point)
+            dir1.setSub(tri.verts!![tri.indexes!![i + 1]]!!.xyz, point)
+            cross.Cross(dir0, dir1)
             d = plane.Normal().times(cross)
             if (d > 0.0f) {
                 if (radiusSqr <= 0.0f) {
@@ -190,29 +218,29 @@ object tr_trace {
                     j++
                     continue
                 }
-                edge.set(tri.verts!![tri.indexes!![i + 0]]!!.xyz.minus(tri.verts!![tri.indexes!![i + 1]]!!.xyz))
+                edge.setSub(tri.verts!![tri.indexes!![i + 0]]!!.xyz, tri.verts!![tri.indexes!![i + 1]]!!.xyz)
                 edgeLengthSqr = edge.LengthSqr()
                 if (cross.LengthSqr() > edgeLengthSqr * radiusSqr) {
                     i += 3
                     j++
                     continue
                 }
-                d = dir[0].times(edge)
+                d = dir0.times(edge)
                 if (d < 0.0f) {
-                    edge.set(tri.verts!![tri.indexes!![i + 0]]!!.xyz.minus(tri.verts!![tri.indexes!![i + 2]]!!.xyz))
-                    d = dir[0].times(edge)
+                    edge.setSub(tri.verts!![tri.indexes!![i + 0]]!!.xyz, tri.verts!![tri.indexes!![i + 2]]!!.xyz)
+                    d = dir0.times(edge)
                     if (d < 0.0f) {
-                        if (dir[0].LengthSqr() > radiusSqr) {
+                        if (dir0.LengthSqr() > radiusSqr) {
                             i += 3
                             j++
                             continue
                         }
                     }
                 } else if (d > edgeLengthSqr) {
-                    edge.set(tri.verts!![tri.indexes!![i + 1]]!!.xyz.minus(tri.verts!![tri.indexes!![i + 2]]!!.xyz))
-                    d = dir[1].times(edge)
+                    edge.setSub(tri.verts!![tri.indexes!![i + 1]]!!.xyz, tri.verts!![tri.indexes!![i + 2]]!!.xyz)
+                    d = dir1.times(edge)
                     if (d < 0.0f) {
-                        if (dir[1].LengthSqr() > radiusSqr) {
+                        if (dir1.LengthSqr() > radiusSqr) {
                             i += 3
                             j++
                             continue
@@ -220,8 +248,8 @@ object tr_trace {
                     }
                 }
             }
-            dir[2].set(tri.verts!![tri.indexes!![i + 2]]!!.xyz.minus(point))
-            cross.set(dir[1].Cross(dir[2]))
+            dir2.setSub(tri.verts!![tri.indexes!![i + 2]]!!.xyz, point)
+            cross.Cross(dir1, dir2)
             d = plane.Normal().times(cross)
             if (d > 0.0f) {
                 if (radiusSqr <= 0.0f) {
@@ -229,29 +257,29 @@ object tr_trace {
                     j++
                     continue
                 }
-                edge.set(tri.verts!![tri.indexes!![i + 1]]!!.xyz.minus(tri.verts!![tri.indexes!![i + 2]]!!.xyz))
+                edge.setSub(tri.verts!![tri.indexes!![i + 1]]!!.xyz, tri.verts!![tri.indexes!![i + 2]]!!.xyz)
                 edgeLengthSqr = edge.LengthSqr()
                 if (cross.LengthSqr() > edgeLengthSqr * radiusSqr) {
                     i += 3
                     j++
                     continue
                 }
-                d = dir[1].times(edge)
+                d = dir1.times(edge)
                 if (d < 0.0f) {
-                    edge.set(tri.verts!![tri.indexes!![i + 1]]!!.xyz.minus(tri.verts!![tri.indexes!![i + 0]]!!.xyz))
-                    d = dir[1].times(edge)
+                    edge.setSub(tri.verts!![tri.indexes!![i + 1]]!!.xyz, tri.verts!![tri.indexes!![i + 0]]!!.xyz)
+                    d = dir1.times(edge)
                     if (d < 0.0f) {
-                        if (dir[1].LengthSqr() > radiusSqr) {
+                        if (dir1.LengthSqr() > radiusSqr) {
                             i += 3
                             j++
                             continue
                         }
                     }
                 } else if (d > edgeLengthSqr) {
-                    edge.set(tri.verts!![tri.indexes!![i + 2]]!!.xyz.minus(tri.verts!![tri.indexes!![i + 0]]!!.xyz))
-                    d = dir[2].times(edge)
+                    edge.setSub(tri.verts!![tri.indexes!![i + 2]]!!.xyz, tri.verts!![tri.indexes!![i + 0]]!!.xyz)
+                    d = dir2.times(edge)
                     if (d < 0.0f) {
-                        if (dir[2].LengthSqr() > radiusSqr) {
+                        if (dir2.LengthSqr() > radiusSqr) {
                             i += 3
                             j++
                             continue
@@ -259,7 +287,7 @@ object tr_trace {
                     }
                 }
             }
-            cross.set(dir[2].Cross(dir[0]))
+            cross.Cross(dir2, dir0)
             d = plane.Normal().times(cross)
             if (d > 0.0f) {
                 if (radiusSqr <= 0.0f) {
@@ -267,29 +295,29 @@ object tr_trace {
                     j++
                     continue
                 }
-                edge.set(tri.verts!![tri.indexes!![i + 2]]!!.xyz.minus(tri.verts!![tri.indexes!![i + 0]]!!.xyz))
+                edge.setSub(tri.verts!![tri.indexes!![i + 2]]!!.xyz, tri.verts!![tri.indexes!![i + 0]]!!.xyz)
                 edgeLengthSqr = edge.LengthSqr()
                 if (cross.LengthSqr() > edgeLengthSqr * radiusSqr) {
                     i += 3
                     j++
                     continue
                 }
-                d = dir[2].times(edge)
+                d = dir2.times(edge)
                 if (d < 0.0f) {
-                    edge.set(tri.verts!![tri.indexes!![i + 2]]!!.xyz.minus(tri.verts!![tri.indexes!![i + 1]]!!.xyz))
-                    d = dir[2].times(edge)
+                    edge.setSub(tri.verts!![tri.indexes!![i + 2]]!!.xyz, tri.verts!![tri.indexes!![i + 1]]!!.xyz)
+                    d = dir2.times(edge)
                     if (d < 0.0f) {
-                        if (dir[2].LengthSqr() > radiusSqr) {
+                        if (dir2.LengthSqr() > radiusSqr) {
                             i += 3
                             j++
                             continue
                         }
                     }
                 } else if (d > edgeLengthSqr) {
-                    edge.set(tri.verts!![tri.indexes!![i + 0]]!!.xyz.minus(tri.verts!![tri.indexes!![i + 1]]!!.xyz))
-                    d = dir[0].times(edge)
+                    edge.setSub(tri.verts!![tri.indexes!![i + 0]]!!.xyz, tri.verts!![tri.indexes!![i + 1]]!!.xyz)
+                    d = dir0.times(edge)
                     if (d < 0.0f) {
-                        if (dir[0].LengthSqr() > radiusSqr) {
+                        if (dir0.LengthSqr() > radiusSqr) {
                             i += 3
                             j++
                             continue
@@ -394,7 +422,7 @@ object tr_trace {
         val end = idVec3()
         val localStart = idVec3()
         val localEnd = idVec3()
-        var hit: localTrace_t
+        val hit = localTrace_t()
         val radius: Float
         if (r_showTrace!!.GetInteger() == 0) {
             return
@@ -451,7 +479,7 @@ object tr_trace {
             }
 
             // check the exact surfaces
-            hit = R_LocalTrace(localStart, localEnd, radius, tri)
+            R_LocalTrace(hit, localStart, localEnd, radius, tri)
             if (hit.fraction < 1.0f) {
                 qgl.qglColor4f(1.0f, 1.0f, 1.0f, 1.0f)
                 tr_rendertools.RB_DrawBounds(idBounds(hit.point).Expand(1.0f))

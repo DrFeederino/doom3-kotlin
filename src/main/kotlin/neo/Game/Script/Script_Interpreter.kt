@@ -213,7 +213,7 @@ object Script_Interpreter {
                 val data = scriptObject.data
                 if (data != null) {
                     evalVariable.evalPtr = varEval_s()
-                    evalVariable.evalPtr!!.setBytePtr(data, scriptObject.offset)
+                    evalVariable.evalPtr!!.setBytePtr(data, evalVariable.evalPointerOffset)
                 }
             }
             return evalVariable
@@ -1554,8 +1554,7 @@ object Script_Interpreter {
                         var_c = GetVariable(st.c)
                         obj = GetScriptObject(var_a!!.entityNumberPtr)
                         if (obj != null) {
-                            obj.offset = st.b!!.value!!.ptrOffset
-                            var_c!!.setEvalPtr(var_a.entityNumberPtr)
+                            var_c!!.setEvalPtr(var_a.entityNumberPtr, st.b!!.value!!.ptrOffset)
                         } else {
                             var_c!!.setEvalPtr(NULL_ENTITY)
                         }

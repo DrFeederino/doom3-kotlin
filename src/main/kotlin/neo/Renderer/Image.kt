@@ -844,6 +844,7 @@ object Image {
             }
             // upload the main image level
             Bind()
+            qgl.qglPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1)
             if (internalFormat == 0x80E5) {
                 val tempArray = ByteArray(scaled_width._val * scaled_height._val * 4)
                 scaledBuffer.rewind()
@@ -2263,12 +2264,15 @@ object Image {
 
             type = textureType_t.TT_2D // FIXME: we may want to support pre-compressed cube maps in the future
             Bind()
+            qgl.qglPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1)
             var numMipmaps = 1
             if ((header.dwFlags and DDSF_MIPMAPCOUNT) != 0) {
                 numMipmaps = header.dwMipMapCount
             }
             var uw = uploadWidth._val
             var uh = uploadHeight._val
+            var lastUW = uw
+            var lastUH = uh
 
             // We may skip some mip maps if we are downsizing
             var skipMip = 0
@@ -2314,6 +2318,8 @@ object Image {
                         )
                     }
                 }
+                lastUW = uw
+                lastUH = uh
                 offset += size
                 uw /= 2
                 uh /= 2
@@ -2326,7 +2332,7 @@ object Image {
             }
             // DG: in case the mipmap chain is incomplete (doesn't go down to 1x1 pixel)
             // the texture may be shown as black unless GL_TEXTURE_MAX_LEVEL is set accordingly
-            if (uw > 1 || uh > 1) {
+            if (lastUW > 1 || lastUH > 1) {
                 val actualMipmaps = numMipmaps - skipMip
                 if (actualMipmaps == 1) {
                     // if there is only one mipmap, just don't use mipmapping for this texture

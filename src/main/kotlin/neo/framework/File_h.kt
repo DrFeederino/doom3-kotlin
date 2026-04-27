@@ -561,7 +561,7 @@ object File_h {
             _readBuf.clear()
             val result = Read(_readBuf, idVec2.BYTES)
             _readBuf.rewind()
-            vec.set(idVec2(_readBuf.float, _readBuf.float))
+            vec.set(_readBuf.float, _readBuf.float)
             return result
         }
 
@@ -576,7 +576,7 @@ object File_h {
             _readBuf.clear()
             val result = Read(_readBuf, idVec3.BYTES)
             _readBuf.rewind()
-            vec.set(idVec3(_readBuf.float, _readBuf.float, _readBuf.float))
+            vec.set(_readBuf.float, _readBuf.float, _readBuf.float)
             return result
         }
 
@@ -592,7 +592,7 @@ object File_h {
             _readBuf.clear()
             val result = Read(_readBuf, idVec4.BYTES)
             _readBuf.rewind()
-            vec.set(idVec4(_readBuf.float, _readBuf.float, _readBuf.float, _readBuf.float))
+            vec.set(_readBuf.float, _readBuf.float, _readBuf.float, _readBuf.float)
             return result
         }
 

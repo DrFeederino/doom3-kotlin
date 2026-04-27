@@ -322,6 +322,7 @@ object IK {
         //
         //
         private var waistSmoothing: Float
+        private val evaluateScratch = WalkEvaluateScratch()
 
         /*
          ================
@@ -651,7 +652,8 @@ object IK {
             val modelHeight: Float
             var jointHeight: Float
             var lowestHeight: Float
-            val floorHeights = FloatArray(MAX_LEGS)
+            val scratch = evaluateScratch
+            val floorHeights = scratch.floorHeights
             var shift: Float
             var smallestShift: Float
             var newHeight: Float
@@ -659,25 +661,27 @@ object IK {
             val newPivotYaw: Float
             var height: Float
             var largestAnkleHeight: Float
-            val modelOrigin = idVec3()
-            val normal = idVec3()
-            val hipDir = idVec3()
-            val kneeDir = idVec3()
-            val start = idVec3()
-            val end = idVec3()
-            val jointOrigins: Array<idVec3> = idVec3.generateArray(MAX_LEGS)
-            val footOrigin = idVec3()
-            val ankleOrigin = idVec3()
-            val kneeOrigin = idVec3()
-            val hipOrigin = idVec3()
-            val waistOrigin = idVec3()
-            val modelAxis: idMat3 = idMat3()
-            val waistAxis = idMat3()
-            val axis = idMat3()
-            val hipAxis = Array(MAX_LEGS) { idMat3() }
-            val kneeAxis = Array(MAX_LEGS) { idMat3() }
-            val ankleAxis = Array(MAX_LEGS) { idMat3() }
-            val results = trace_s()
+            val modelOrigin = scratch.modelOrigin
+            val normal = scratch.normal
+            val hipDir = scratch.hipDir
+            val kneeDir = scratch.kneeDir
+            val start = scratch.start
+            val end = scratch.end
+            val jointOrigins = scratch.jointOrigins
+            val footOrigin = scratch.footOrigin
+            val ankleOrigin = scratch.ankleOrigin
+            val kneeOrigin = scratch.kneeOrigin
+            val hipOrigin = scratch.hipOrigin
+            val waistOrigin = scratch.waistOrigin
+            val modelAxis = scratch.modelAxis
+            val modelAxisTranspose = scratch.modelAxisTranspose
+            val waistAxis = scratch.waistAxis
+            val axis = scratch.axis
+            val jointToWorld = scratch.jointToWorld
+            val hipAxis = scratch.hipAxis
+            val kneeAxis = scratch.kneeAxis
+            val ankleAxis = scratch.ankleAxis
+            val results = scratch.results
             if (null == self || !Game_local.gameLocal.isNewFrame) {
                 return
             }
@@ -689,6 +693,8 @@ object IK {
             normal.set(-self!!.GetPhysics().GetGravityNormal())
             modelOrigin.set(self!!.GetPhysics().GetOrigin())
             modelAxis.set(self!!.GetRenderEntity()!!.axis)
+            modelAxisTranspose.set(modelAxis)
+            modelAxisTranspose.TransposeSelf()
             modelHeight = modelOrigin * normal
 
             modelOrigin.plusAssign(modelOffset * modelAxis)
@@ -872,11 +878,13 @@ object IK {
 
                 // get the axis for the hip joint
                 GetBoneAxis(hipOrigin, kneeOrigin, hipDir, axis)
-                hipAxis[i].set(upperLegToHipJoint[i] * (axis * modelAxis.Transpose()))
+                jointToWorld.setMul(axis, modelAxisTranspose)
+                hipAxis[i].setMul(upperLegToHipJoint[i], jointToWorld)
 
                 // get the axis for the knee joint
                 GetBoneAxis(kneeOrigin, jointOrigins[i], kneeDir, axis)
-                kneeAxis[i].set(lowerLegToKneeJoint[i] * (axis * modelAxis.Transpose()))
+                jointToWorld.setMul(axis, modelAxisTranspose)
+                kneeAxis[i].setMul(lowerLegToKneeJoint[i], jointToWorld)
             }
 
             // set the joint mods
@@ -884,7 +892,7 @@ object IK {
             animator!!.SetJointPos(
                 waistJoint,
                 jointModTransform_t.JOINTMOD_WORLD_OVERRIDE,
-                (waistOrigin + waistOffset - modelOrigin) * modelAxis.Transpose()
+                (waistOrigin + waistOffset - modelOrigin) * modelAxisTranspose
             )
             for (i in 0 until numLegs) {
                 animator!!.SetJointAxis(hipJoints[i], jointModTransform_t.JOINTMOD_WORLD_OVERRIDE, hipAxis[i])
@@ -969,6 +977,31 @@ object IK {
                 idVec3(-1.0f, -1.0f, 0.0f),
                 idVec3(1.0f, -1.0f, 0.0f)
             )
+        }
+
+        private class WalkEvaluateScratch {
+            val floorHeights: FloatArray = FloatArray(MAX_LEGS)
+            val modelOrigin: idVec3 = idVec3()
+            val normal: idVec3 = idVec3()
+            val hipDir: idVec3 = idVec3()
+            val kneeDir: idVec3 = idVec3()
+            val start: idVec3 = idVec3()
+            val end: idVec3 = idVec3()
+            val jointOrigins: Array<idVec3> = idVec3.generateArray(MAX_LEGS)
+            val footOrigin: idVec3 = idVec3()
+            val ankleOrigin: idVec3 = idVec3()
+            val kneeOrigin: idVec3 = idVec3()
+            val hipOrigin: idVec3 = idVec3()
+            val waistOrigin: idVec3 = idVec3()
+            val modelAxis: idMat3 = idMat3()
+            val modelAxisTranspose: idMat3 = idMat3()
+            val waistAxis: idMat3 = idMat3()
+            val axis: idMat3 = idMat3()
+            val jointToWorld: idMat3 = idMat3()
+            val hipAxis: Array<idMat3> = Array(MAX_LEGS) { idMat3() }
+            val kneeAxis: Array<idMat3> = Array(MAX_LEGS) { idMat3() }
+            val ankleAxis: Array<idMat3> = Array(MAX_LEGS) { idMat3() }
+            val results: trace_s = trace_s()
         }
 
         /*

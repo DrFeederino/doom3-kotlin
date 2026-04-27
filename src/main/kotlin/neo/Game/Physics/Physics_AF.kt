@@ -2328,18 +2328,10 @@ object Physics_AF {
         }
 
         override fun Restore(saveFile: idRestoreGame) {
-            val steerAngle =
-                CFloat()
-            val steerSpeed =
-                CFloat()
-            val epsilon =
-                CFloat()
-            saveFile.ReadFloat(steerAngle)
-            saveFile.ReadFloat(steerSpeed)
-            saveFile.ReadFloat(epsilon)
-            this.steerAngle = steerAngle._val
-            this.steerSpeed = steerSpeed._val
-            this.epsilon = epsilon._val
+            super.Restore(saveFile)
+            this.steerAngle = saveFile.ReadFloat()
+            this.steerSpeed = saveFile.ReadFloat()
+            this.epsilon = saveFile.ReadFloat()
         }
 
         override fun Evaluate(invTimeStep: Float) {
@@ -7345,39 +7337,58 @@ object Physics_AF {
             var i: Int
             var body: idAFBody?
             val axis = idMat3()
+            val tmp = idMat3()
+            val worldInertia = idMat3()
+            val inverseWorldInertia = idMat3()
+            val massMatrix = idMat3()
+            val zeroMatrix = idMat3()
+            val massMoment = idMat3()
+            val massMomentTranspose = idMat3()
+            zeroMatrix.Zero()
             i = 0
             while (i < bodies.Num()) {
                 body = bodies[i]
 
                 // we transpose the axis before using it because idMat3 is column-major
-                axis.set(body.current.worldAxis.Transpose())
+                axis.setTranspose(body.current.worldAxis)
 
                 // if the center of mass is at the body point of reference
                 if (body.centerOfMass.Compare(vec3_origin, CENTER_OF_MASS_EPSILON)) {
+                    tmp.setMul(axis, body.inertiaTensor)
+                    worldInertia.setMulTransposeRight(tmp, axis)
 
                     // spatial inertia in world space
+                    massMatrix.setIdentity(body.mass)
                     body.I.set(
-                        idMat3.getMat3_identity().times(body.mass),
-                        idMat3.getMat3_zero(),
-                        idMat3.getMat3_zero(),
-                        axis.times(body.inertiaTensor).times(axis.Transpose())
+                        massMatrix,
+                        zeroMatrix,
+                        zeroMatrix,
+                        worldInertia
                     )
 
+                    tmp.setMul(axis, body.inverseInertiaTensor)
+                    inverseWorldInertia.setMulTransposeRight(tmp, axis)
+
                     // inverse spatial inertia in world space
+                    massMatrix.setIdentity(body.invMass)
                     body.inverseWorldSpatialInertia.set(
-                        idMat3.getMat3_identity().times(body.invMass),
-                        idMat3.getMat3_zero(),
-                        idMat3.getMat3_zero(),
-                        axis.times(body.inverseInertiaTensor).times(axis.Transpose())
+                        massMatrix,
+                        zeroMatrix,
+                        zeroMatrix,
+                        inverseWorldInertia
                     )
                     body.fl.spatialInertiaSparse = true
                 } else {
-                    val massMoment: idMat3 = idMat3.SkewSymmetric(body.centerOfMass).times(body.mass)
+                    massMoment.setSkewSymmetric(body.centerOfMass).timesAssign(body.mass)
+                    massMomentTranspose.setTranspose(massMoment)
+                    tmp.setMul(axis, body.inertiaTensor)
+                    worldInertia.setMulTransposeRight(tmp, axis)
 
                     // spatial inertia in world space
+                    massMatrix.setIdentity(body.mass)
                     body.I.set(
-                        idMat3.getMat3_identity().times(body.mass), massMoment,
-                        massMoment.Transpose(), axis.times(body.inertiaTensor).times(axis.Transpose())
+                        massMatrix, massMoment,
+                        massMomentTranspose, worldInertia
                     )
 
                     // inverse spatial inertia in world space

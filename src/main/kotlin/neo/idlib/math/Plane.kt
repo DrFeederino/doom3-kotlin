@@ -447,6 +447,10 @@ class idPlane {
         return abc.x * v.x + abc.y * v.y + abc.z * v.z + d
     }
 
+    fun Distance(v: idVec5): Float {
+        return abc.x * v.x + abc.y * v.y + abc.z * v.z + d
+    }
+
 
     fun Side(v: idVec3, epsilon: Float = 0.0f): Int {
         val dist = Distance(v)

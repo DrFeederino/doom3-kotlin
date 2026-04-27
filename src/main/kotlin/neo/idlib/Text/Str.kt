@@ -1615,6 +1615,10 @@ object Str {
                 return s.isNotEmpty() && s[0].code == C_COLOR_ESCAPE && s.length > 1 && s[1] != ' '
             }
 
+            fun IsColor(s: String, index: Int): Boolean {
+                return index >= 0 && index + 1 < s.length && s[index].code == C_COLOR_ESCAPE && s[index + 1] != ' '
+            }
+
             fun HasLower(s: String?): Boolean {
                 return if (s == null) {
                     false
@@ -1661,15 +1665,29 @@ object Str {
             }
 
             fun RemoveColors(s: String): String {
+                var colorIndex = 0
+                while (colorIndex < s.length) {
+                    if (IsColor(s, colorIndex)) {
+                        break
+                    }
+                    colorIndex++
+                }
+                if (colorIndex == s.length) {
+                    return s
+                }
+
                 val sb = StringBuilder(s.length)
-                var a = 0
+                if (colorIndex > 0) {
+                    sb.append(s, 0, colorIndex)
+                }
+                var a = colorIndex
                 while (a < s.length) {
-                    if (IsColor(s.substring(a))) {
-                        a++
+                    if (IsColor(s, a)) {
+                        a += 2
                     } else {
                         sb.append(s[a])
+                        a++
                     }
-                    a++
                 }
                 return sb.toString()
             }

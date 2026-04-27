@@ -3151,25 +3151,27 @@ object Misc {
 
             num = savefile.ReadInt()
             targetTime.SetGranularity(1)
-            targetTime.SetNum(num)
+            targetTime.Clear()
             lastTargetPos.SetGranularity(1)
-            lastTargetPos.SetNum(num)
+            lastTargetPos.Clear()
             i = 0
             while (i < num) {
-                targetTime[i] = savefile.ReadInt()
+                targetTime.Append(savefile.ReadInt())
                 i++
             }
             if (savefile.GetBuildNumber() == SaveGame.INITIAL_RELEASE_BUILD_NUMBER) {
                 // these weren't saved out in the first release
                 i = 0
                 while (i < num) {
-                    lastTargetPos[i].Zero()
+                    lastTargetPos.Append(idVec3())
                     i++
                 }
             } else {
                 i = 0
                 while (i < num) {
-                    savefile.ReadVec3(lastTargetPos[i])
+                    val pos = idVec3()
+                    savefile.ReadVec3(pos)
+                    lastTargetPos.Append(pos)
                     i++
                 }
             }

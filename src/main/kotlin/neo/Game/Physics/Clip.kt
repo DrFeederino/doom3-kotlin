@@ -829,8 +829,9 @@ object Clip {
             private fun GetTraceModelHashKey(trm: idTraceModel): Int {
                 val v = trm.bounds[0]
                 return trm.type.ordinal shl 8 xor (trm.numVerts shl 4) xor (trm.numEdges shl 2) xor (trm.numPolys shl 0) xor idMath.FloatHash(
-                    v.ToFloatPtr(),
-                    v.GetDimension()
+                    v.x,
+                    v.y,
+                    v.z
                 )
             }
 
@@ -850,6 +851,17 @@ object Clip {
         private val defaultClipModel: idClipModel = idClipModel()
         private val temporaryClipModel: idClipModel = idClipModel()
         private val worldBounds: idBounds = idBounds()
+
+        // Reusable scratch buffers: avoids per-call allocations in clip query methods
+        private val sharedClipModelList = arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES)
+        private val sharedClipModelList2 =
+            arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES) // for Motion's inline path
+        private val sharedTraceBounds = idBounds()
+        private val sharedTrace = trace_s()
+        private val sharedTranslationalTrace = trace_s()
+        private val sharedRotationalTrace = trace_s()
+        private val sharedTranslationVec = idVec3() // scratch for endpos.minus(start) pattern
+
         var clipSectors: Array<clipSector_s>?
         private var numClipSectors = 0
         private var numContacts: Int
@@ -945,10 +957,10 @@ object Clip {
             var i: Int
             val num: Int
             var touch: idClipModel?
-            val clipModelList = arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES)
-            val traceBounds = idBounds()
+            val clipModelList = sharedClipModelList
+            val traceBounds = sharedTraceBounds
             val radius: Float
-            val trace = trace_s()
+            val trace = sharedTrace
             val trm: idTraceModel?
             if (TestHugeTranslation(results, mdl, start, end, trmAxis)) {
                 return true
@@ -979,10 +991,12 @@ object Clip {
                 results.endAxis.set(trmAxis)
             }
             radius = if (null == trm) {
-                traceBounds.FromPointTranslation(start, results.endpos.minus(start))
+                sharedTranslationVec.setSub(results.endpos, start)
+                traceBounds.FromPointTranslation(start, sharedTranslationVec)
                 0.0f
             } else {
-                traceBounds.FromBoundsTranslation(trm.bounds, start, trmAxis, results.endpos.minus(start))
+                sharedTranslationVec.setSub(results.endpos, start)
+                traceBounds.FromBoundsTranslation(trm.bounds, start, trmAxis, sharedTranslationVec)
                 trm.bounds.GetRadius()
             }
             num = GetTraceClipModels(traceBounds, contentMask, passEntity, clipModelList)
@@ -1035,9 +1049,9 @@ object Clip {
             var i: Int
             val num: Int
             var touch: idClipModel?
-            val clipModelList = arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES)
-            val traceBounds = idBounds()
-            val trace = trace_s()
+            val clipModelList = sharedClipModelList
+            val traceBounds = sharedTraceBounds
+            val trace = sharedTrace
             val trm: idTraceModel?
             trm = TraceModelForClipModel(mdl)
             if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
@@ -1121,14 +1135,14 @@ object Clip {
             var i: Int
             var num: Int
             var touch: idClipModel?
-            val clipModelList = arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES)
+            val clipModelList = sharedClipModelList2
             val dir = idVec3()
             val endPosition = idVec3()
-            val traceBounds = idBounds()
+            val traceBounds = sharedTraceBounds
             val radius: Float
-            var translationalTrace = trace_s()
-            var rotationalTrace = trace_s()
-            val trace = trace_s()
+            var translationalTrace = sharedTranslationalTrace
+            var rotationalTrace = sharedRotationalTrace
+            val trace = sharedTrace
             val trm: idTraceModel?
             assert(rotation.GetOrigin() == start)
             if (TestHugeTranslation(results, mdl, start, end, trmAxis)) {
@@ -1170,14 +1184,14 @@ object Clip {
                     if (translationalTrace.fraction != 1.0f) Game_local.ENTITYNUM_WORLD else Game_local.ENTITYNUM_NONE
             } else {
 //		memset( &translationalTrace, 0, sizeof( translationalTrace ) );
-                translationalTrace = trace_s()
+                translationalTrace.clear()
                 translationalTrace.fraction = 1.0f
                 translationalTrace.endpos.set(end)
                 translationalTrace.endAxis.set(trmAxis)
             }
             if (translationalTrace.fraction != 0.0f) {
                 traceBounds.FromBoundsRotation(trm.bounds, start, trmAxis, rotation)
-                dir.set(translationalTrace.endpos.minus(start))
+                dir.setSub(translationalTrace.endpos, start)
                 i = 0
                 while (i < 3) {
                     if (dir[i] < 0.0f) {
@@ -1247,7 +1261,7 @@ object Clip {
                     if (rotationalTrace.fraction != 1.0f) Game_local.ENTITYNUM_WORLD else Game_local.ENTITYNUM_NONE
             } else {
 //		memset( &rotationalTrace, 0, sizeof( rotationalTrace ) );
-                rotationalTrace = trace_s()
+                rotationalTrace.clear()
                 rotationalTrace.fraction = 1.0f
                 rotationalTrace.endpos.set(endPosition)
                 rotationalTrace.endAxis.set(trmAxis.times(rotation.ToMat3()))
@@ -1318,8 +1332,8 @@ object Clip {
             var n: Int
             var numContacts: Int
             var touch: idClipModel?
-            val clipModelList = arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES)
-            val traceBounds = idBounds()
+            val clipModelList = sharedClipModelList
+            val traceBounds = sharedTraceBounds
             val trm: idTraceModel
             trm = TraceModelForClipModel(mdl)!!
             numContacts = if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
@@ -1409,8 +1423,8 @@ object Clip {
             val num: Int
             var contents: Int
             var touch: idClipModel?
-            val clipModelList = arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES)
-            val traceBounds = idBounds()
+            val clipModelList = sharedClipModelList
+            val traceBounds = sharedTraceBounds
             val trm: idTraceModel?
             trm = TraceModelForClipModel(mdl)
             contents = if (null == passEntity || passEntity.entityNumber != Game_local.ENTITYNUM_WORLD) {
@@ -1647,10 +1661,10 @@ object Clip {
             var i: Int
             val num: Int
             var touch: idClipModel?
-            val clipModelList = arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES)
-            val traceBounds = idBounds()
+            val clipModelList = sharedClipModelList
+            val traceBounds = sharedTraceBounds
             val radius: Float
-            val trace = trace_s()
+            val trace = sharedTrace
             val trm: idTraceModel?
             if (TestHugeTranslation(results, mdl, start, end, trmAxis)) {
                 return
@@ -1660,10 +1674,12 @@ object Clip {
             results.endpos.set(end)
             results.endAxis.set(trmAxis)
             radius = if (null == trm) {
-                traceBounds.FromPointTranslation(start, end.minus(start))
+                sharedTranslationVec.setSub(end, start)
+                traceBounds.FromPointTranslation(start, sharedTranslationVec)
                 0.0f
             } else {
-                traceBounds.FromBoundsTranslation(trm.bounds, start, trmAxis, end.minus(start))
+                sharedTranslationVec.setSub(end, start)
+                traceBounds.FromBoundsTranslation(trm.bounds, start, trmAxis, sharedTranslationVec)
                 trm.bounds.GetRadius()
             }
             num = GetTraceClipModels(traceBounds, contentMask, passEntity, clipModelList)
@@ -1790,7 +1806,7 @@ object Clip {
             entityList: Array<idEntity?>,
             maxCount: Int
         ): Int {
-            val clipModelList = arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES)
+            val clipModelList = sharedClipModelList
             var i: Int
             var j: Int
             val count: Int
@@ -1890,8 +1906,8 @@ object Clip {
         fun DrawClipModels(eye: idVec3, radius: Float, passEntity: idEntity?) {
             var i: Int
             val num: Int
-            val bounds = idBounds()
-            val clipModelList = arrayOfNulls<idClipModel>(Game_local.MAX_GENTITIES)
+            val bounds = sharedTraceBounds
+            val clipModelList = sharedClipModelList
             var clipModel: idClipModel
             bounds.set(idBounds(eye).Expand(radius))
             num = ClipModelsTouchingBounds(bounds, -1, clipModelList, Game_local.MAX_GENTITIES)

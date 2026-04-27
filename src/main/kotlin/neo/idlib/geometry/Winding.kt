@@ -356,17 +356,10 @@ object Winding {
         // returns the winding fragment at the front of the clipping plane,
         // if there is nothing at the front the winding itself is destroyed and NULL is returned
         fun Clip(plane: idPlane, epsilon: Float = ON_EPSILON, keepOn: Boolean = false): idWinding? {
-            val dists: FloatArray
-            val sides: IntArray
-            val newPoints: Array<idVec5>
             var newNumPoints: Int
-            val counts = IntArray(3)
             var dot: Float
             var i: Int
             var j: Int
-            val p1 = idVec5()
-            val p2 = idVec5()
-            val mid = idVec5()
             val maxpts: Int
 
             // DG: this shouldn't happen, probably, but if it does we'd use uninitialized memory below
@@ -374,16 +367,22 @@ object Winding {
                 return null
             }
 
-            dists = FloatArray(numPoints + 4)
-            sides = IntArray(numPoints + 4)
-            counts[SIDE_ON] = 0
-            counts[SIDE_BACK] = counts[SIDE_ON]
-            counts[SIDE_FRONT] = counts[SIDE_BACK]
+            maxpts = numPoints + 4 // cant use counts[0]+2 because of fp grouping errors
+            val scratch = if (maxpts <= sharedClipScratch.dists.size) sharedClipScratch else null
+            val dists = scratch?.dists ?: FloatArray(maxpts)
+            val sides = scratch?.sides ?: IntArray(maxpts)
+            scratch?.counts?.set(SIDE_ON, 0)
+            scratch?.counts?.set(SIDE_BACK, 0)
+            scratch?.counts?.set(SIDE_FRONT, 0)
+            val counts = scratch?.counts ?: IntArray(3)
+            val p1 = scratch?.p1 ?: idVec5()
+            val p2 = scratch?.p2 ?: idVec5()
+            val mid = scratch?.mid ?: idVec5()
 
             // determine sides for each point
             i = 0
             while (i < numPoints) {
-                dot = plane.Distance(p[i].ToVec3())
+                dot = plane.Distance(p[i])
                 dists[i] = dot
                 if (dot > epsilon) {
                     sides[i] = SIDE_FRONT
@@ -410,8 +409,7 @@ object Winding {
             if (0 == counts[SIDE_BACK]) {
                 return this
             }
-            maxpts = numPoints + 4 // cant use counts[0]+2 because of fp grouping errors
-            newPoints = idVec5.generateArray(maxpts)
+            val newPoints = scratch?.newPoints ?: idVec5.generateArray(maxpts)
             newNumPoints = 0
             i = 0
             while (i < numPoints) {
@@ -473,29 +471,28 @@ object Winding {
         // cuts off the part at the back side of the plane, returns true if some part was at the front
         // if there is nothing at the front the number of points is set to zero
         fun ClipInPlace(plane: idPlane, epsilon: Float = ON_EPSILON, keepOn: Boolean = false): Boolean {
-            val dists: FloatArray
-            val sides: IntArray
-            val newPoints: Array<idVec5>
             var newNumPoints: Int
-            val counts = IntArray(3)
             var dot: Float
             var i: Int
             var j: Int
-            val p1 = idVec5()
-            val p2 = idVec5()
-            val mid = idVec5()
             val maxpts: Int
 
-            dists = FloatArray(numPoints + 4)
-            sides = IntArray(numPoints + 4)
-            counts[SIDE_ON] = 0
-            counts[SIDE_BACK] = counts[SIDE_ON]
-            counts[SIDE_FRONT] = counts[SIDE_BACK]
+            maxpts = numPoints + 4 // cant use counts[0]+2 because of fp grouping errors
+            val scratch = if (maxpts <= sharedClipScratch.dists.size) sharedClipScratch else null
+            val dists = scratch?.dists ?: FloatArray(maxpts)
+            val sides = scratch?.sides ?: IntArray(maxpts)
+            scratch?.counts?.set(SIDE_ON, 0)
+            scratch?.counts?.set(SIDE_BACK, 0)
+            scratch?.counts?.set(SIDE_FRONT, 0)
+            val counts = scratch?.counts ?: IntArray(3)
+            val p1 = scratch?.p1 ?: idVec5()
+            val p2 = scratch?.p2 ?: idVec5()
+            val mid = scratch?.mid ?: idVec5()
 
             // determine sides for each point
             i = 0
             while (i < numPoints) {
-                dot = plane.Distance(p[i].ToVec3())
+                dot = plane.Distance(p[i])
                 dists[i] = dot
                 if (dot > epsilon) {
                     sides[i] = SIDE_FRONT
@@ -523,8 +520,7 @@ object Winding {
             if (0 == counts[SIDE_BACK]) {
                 return true
             }
-            maxpts = numPoints + 4 // cant use counts[0]+2 because of fp grouping errors
-            newPoints = idVec5.generateArray(maxpts)
+            val newPoints = scratch?.newPoints ?: idVec5.generateArray(maxpts)
             newNumPoints = 0
             i = 0
             while (i < numPoints) {
@@ -578,7 +574,7 @@ object Winding {
             numPoints = newNumPoints
             i = 0
             while (i < newNumPoints) {
-                p[i] = idVec5(newPoints[i])
+                p[i].set(newPoints[i])
                 i++
             }
             return true
@@ -1540,6 +1536,9 @@ object Winding {
             const val CONTINUOUS_EPSILON = 0.005f
             private const val EDGE_LENGTH = 0.2f
             private const val WCONVEX_EPSILON = 0.2f
+
+            // Reusable scratch for Clip/ClipInPlace: avoids per-call allocations
+            val sharedClipScratch = idFixedWinding.clipScratch_t()
 
             fun TriangleArea(a: idVec3, b: idVec3, c: idVec3): Float {
                 val v1 = idVec3()

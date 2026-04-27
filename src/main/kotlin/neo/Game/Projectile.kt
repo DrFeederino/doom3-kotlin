@@ -1909,16 +1909,17 @@ object Projectile {
             var i: Int
             val num = CInt()
             savefile.ReadInt(num)
-            beamTargets.SetNum(num._val)
+            beamTargets.Clear()
             i = 0
             while (i < num._val) {
-                beamTargets[i].target.Restore(savefile)
-                beamTargets[i].renderEntity = savefile.ReadRenderEntity()
-                beamTargets[i].modelDefHandle = savefile.ReadInt()
-                if (beamTargets[i].modelDefHandle >= 0) {
-                    beamTargets[i].modelDefHandle =
-                        Game_local.gameRenderWorld!!.AddEntityDef(beamTargets[i].renderEntity)
+                val beamTarget = beamTarget_t()
+                beamTarget.target.Restore(savefile)
+                beamTarget.renderEntity = savefile.ReadRenderEntity()
+                beamTarget.modelDefHandle = savefile.ReadInt()
+                if (beamTarget.modelDefHandle >= 0) {
+                    beamTarget.modelDefHandle = Game_local.gameRenderWorld!!.AddEntityDef(beamTarget.renderEntity)
                 }
+                beamTargets.Append(beamTarget)
                 i++
             }
             secondModel = savefile.ReadRenderEntity()

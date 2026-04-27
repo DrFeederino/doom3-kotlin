@@ -261,7 +261,14 @@ class idMat3 {
     }
 
     fun Identity() {
-        this.set(getMat3_identity())
+        setIdentity()
+    }
+
+    fun setIdentity(scale: Float = 1.0f): idMat3 {
+        mat[0].set(scale, 0.0f, 0.0f)
+        mat[1].set(0.0f, scale, 0.0f)
+        mat[2].set(0.0f, 0.0f, scale)
+        return this
     }
 
 
@@ -369,6 +376,20 @@ class idMat3 {
         val tmp2: Float = mat[1].z
         mat[1].z = mat[2].y
         mat[2].y = tmp2
+        return this
+    }
+
+    fun setTranspose(src: idMat3): idMat3 {
+        mat[0].set(src.mat[0].x, src.mat[1].x, src.mat[2].x)
+        mat[1].set(src.mat[0].y, src.mat[1].y, src.mat[2].y)
+        mat[2].set(src.mat[0].z, src.mat[1].z, src.mat[2].z)
+        return this
+    }
+
+    fun setSkewSymmetric(src: idVec3): idMat3 {
+        mat[0].set(0.0f, -src.z, src.y)
+        mat[1].set(src.z, 0.0f, -src.x)
+        mat[2].set(-src.y, src.x, 0.0f)
         return this
     }
 
@@ -668,6 +689,22 @@ class idMat3 {
         val zx = m1.mat[2].x * m2.mat[0].x + m1.mat[2].y * m2.mat[1].x + m1.mat[2].z * m2.mat[2].x
         val zy = m1.mat[2].x * m2.mat[0].y + m1.mat[2].y * m2.mat[1].y + m1.mat[2].z * m2.mat[2].y
         val zz = m1.mat[2].x * m2.mat[0].z + m1.mat[2].y * m2.mat[1].z + m1.mat[2].z * m2.mat[2].z
+        mat[0].set(xx, xy, xz)
+        mat[1].set(yx, yy, yz)
+        mat[2].set(zx, zy, zz)
+        return this
+    }
+
+    fun setMulTransposeRight(m1: idMat3, m2: idMat3): idMat3 {
+        val xx = m1.mat[0].x * m2.mat[0].x + m1.mat[0].y * m2.mat[0].y + m1.mat[0].z * m2.mat[0].z
+        val xy = m1.mat[0].x * m2.mat[1].x + m1.mat[0].y * m2.mat[1].y + m1.mat[0].z * m2.mat[1].z
+        val xz = m1.mat[0].x * m2.mat[2].x + m1.mat[0].y * m2.mat[2].y + m1.mat[0].z * m2.mat[2].z
+        val yx = m1.mat[1].x * m2.mat[0].x + m1.mat[1].y * m2.mat[0].y + m1.mat[1].z * m2.mat[0].z
+        val yy = m1.mat[1].x * m2.mat[1].x + m1.mat[1].y * m2.mat[1].y + m1.mat[1].z * m2.mat[1].z
+        val yz = m1.mat[1].x * m2.mat[2].x + m1.mat[1].y * m2.mat[2].y + m1.mat[1].z * m2.mat[2].z
+        val zx = m1.mat[2].x * m2.mat[0].x + m1.mat[2].y * m2.mat[0].y + m1.mat[2].z * m2.mat[0].z
+        val zy = m1.mat[2].x * m2.mat[1].x + m1.mat[2].y * m2.mat[1].y + m1.mat[2].z * m2.mat[1].z
+        val zz = m1.mat[2].x * m2.mat[2].x + m1.mat[2].y * m2.mat[2].y + m1.mat[2].z * m2.mat[2].z
         mat[0].set(xx, xy, xz)
         mat[1].set(yx, yy, yz)
         mat[2].set(zx, zy, zz)

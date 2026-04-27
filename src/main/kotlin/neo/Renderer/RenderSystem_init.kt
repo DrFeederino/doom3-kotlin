@@ -1448,9 +1448,7 @@ fun R_CheckExtension(name: String?): Boolean {
  ====================
  */
 fun R_ReadTiledPixels(width: Int, height: Int, buffer: ByteArray?, offset: Int, ref: renderView_s? /*= NULL*/) {
-    // include extra space for OpenGL padding to word boundaries
-    var temp: ByteArray? =
-        ByteArray((glConfig.vidWidth + 3) * glConfig.vidHeight * 3)
+    val temp = BufferUtils.createByteBuffer(glConfig.vidWidth * glConfig.vidHeight * 3)
     val oldWidth: Int = glConfig.vidWidth
     val oldHeight: Int = glConfig.vidHeight
     tr.tiledViewport[0] = width
@@ -1480,10 +1478,13 @@ fun R_ReadTiledPixels(width: Int, height: Int, buffer: ByteArray?, offset: Int, 
                 h = height - yo
             }
             qgl.qglReadBuffer(GL11.GL_FRONT)
-            qgl.qglReadPixels(0, 0, w, h, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, ByteBuffer.wrap(temp))
-            val row: Int = (w * 3 + 3) and 3.inv() // OpenGL pads to dword boundaries
+            qgl.qglPixelStorei(GL11.GL_PACK_ALIGNMENT, 1)
+            temp.clear()
+            qgl.qglReadPixels(0, 0, w, h, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, temp)
+            val row = w * 3
             for (y in 0 until h) {
-                System.arraycopy(temp, y * row, buffer, offset + (((yo + y) * width + xo) * 3), w * 3)
+                temp.position(y * row)
+                temp.get(buffer!!, offset + (((yo + y) * width + xo) * 3), w * 3)
             }
             yo += oldHeight
         }
@@ -1494,8 +1495,6 @@ fun R_ReadTiledPixels(width: Int, height: Int, buffer: ByteArray?, offset: Int, 
     tr.viewportOffset[1] = 0
     tr.tiledViewport[0] = 0
     tr.tiledViewport[1] = 0
-
-    temp = null
     glConfig.vidWidth = oldWidth
     glConfig.vidHeight = oldHeight
 }

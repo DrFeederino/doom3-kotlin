@@ -2345,16 +2345,22 @@ class idRenderSystemLocal : idRenderSystem() {
         RenderSystem.R_IssueRenderCommands()
         qgl.qglReadBuffer(GL11.GL_BACK)
 
-        // include extra space for OpenGL padding to word boundaries
-        val c: Int = (rc!!.width + 3) * rc.height
-        var data: ByteBuffer = BufferUtils.createByteBuffer(c * 3)
+        qgl.qglPixelStorei(GL11.GL_PACK_ALIGNMENT, 1)
+        val rowBytes = rc!!.width * 3
+        val data: ByteBuffer = BufferUtils.createByteBuffer(rowBytes * rc.height)
         qgl.qglReadPixels(rc.x, rc.y, rc.width, rc.height, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, data)
-        var data2: ByteBuffer = ByteBuffer.allocate(c * 4)
-        for (i in 0 until c) {
-            data2.put(i * 4, data.get(i * 3))
-            data2.put(i * 4 + 1, data.get(i * 3 + 1))
-            data2.put(i * 4 + 2, data.get(i * 3 + 2))
-            data2.put(i * 4 + 3, 0xff.toByte())
+        val data2: ByteBuffer = BufferUtils.createByteBuffer(rc.width * rc.height * 4)
+        for (y in 0 until rc.height) {
+            val srcRow = y * rowBytes
+            val dstRow = y * rc.width * 4
+            for (x in 0 until rc.width) {
+                val src = srcRow + x * 3
+                val dst = dstRow + x * 4
+                data2.put(dst, data.get(src))
+                data2.put(dst + 1, data.get(src + 1))
+                data2.put(dst + 2, data.get(src + 2))
+                data2.put(dst + 3, 0xff.toByte())
+            }
         }
         Image_files.R_WriteTGA(fileName, data2, rc.width, rc.height, true)
     }

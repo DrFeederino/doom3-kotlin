@@ -345,14 +345,16 @@ object tr_main {
     // FIXME: these assume no skewing or scaling transforms
     fun R_LocalPointToGlobal(modelMatrix: FloatArray /*[16]*/, `in`: idVec3): idVec3 {
         val out = idVec3()
-        out.set(
-            idVec3(
-                ((`in`[0] * modelMatrix[0]) + (`in`[1] * modelMatrix[4]) + (`in`[2] * modelMatrix[8]) + modelMatrix[12]),
-                ((`in`[0] * modelMatrix[1]) + (`in`[1] * modelMatrix[5]) + (`in`[2] * modelMatrix[9]) + modelMatrix[13]),
-                ((`in`[0] * modelMatrix[2]) + (`in`[1] * modelMatrix[6]) + (`in`[2] * modelMatrix[10]) + modelMatrix[14])
-            )
-        )
+        R_LocalPointToGlobal(modelMatrix, `in`, out)
         return out
+    }
+
+    fun R_LocalPointToGlobal(modelMatrix: FloatArray /*[16]*/, `in`: idVec3, out: idVec3) {
+        out.set(
+            (`in`[0] * modelMatrix[0]) + (`in`[1] * modelMatrix[4]) + (`in`[2] * modelMatrix[8]) + modelMatrix[12],
+            (`in`[0] * modelMatrix[1]) + (`in`[1] * modelMatrix[5]) + (`in`[2] * modelMatrix[9]) + modelMatrix[13],
+            (`in`[0] * modelMatrix[2]) + (`in`[1] * modelMatrix[6]) + (`in`[2] * modelMatrix[10]) + modelMatrix[14]
+        )
     }
 
     fun R_PointTimesMatrix(modelMatrix: FloatArray /*[16]*/, `in`: idVec4, out: idVec4) {
@@ -363,27 +365,33 @@ object tr_main {
     }
 
     fun R_GlobalPointToLocal(modelMatrix: FloatArray? /*[16]*/, `in`: idVec3, out: idVec<*>) {
-        val temp = FloatArray(4)
-        VectorSubtract(`in`.ToFloatPtr(), Arrays.copyOfRange(modelMatrix, 12, 16), temp)
-        out[0] = DotProduct(temp, (modelMatrix)!!)
-        out[1] = DotProduct(temp, modelMatrix.copyOfRange(4, 8))
-        out[2] = DotProduct(temp, modelMatrix.copyOfRange(8, 12))
+        val matrix = modelMatrix!!
+        val x = `in`.x - matrix[12]
+        val y = `in`.y - matrix[13]
+        val z = `in`.z - matrix[14]
+        out[0] = x * matrix[0] + y * matrix[1] + z * matrix[2]
+        out[1] = x * matrix[4] + y * matrix[5] + z * matrix[6]
+        out[2] = x * matrix[8] + y * matrix[9] + z * matrix[10]
     }
 
     fun R_GlobalPointToLocal(modelMatrix: FloatArray? /*[16]*/, `in`: idVec3, out: FloatArray) {
-        val temp = FloatArray(4)
-        VectorSubtract(`in`.ToFloatPtr(), Arrays.copyOfRange(modelMatrix, 12, 16), temp)
-        out[0] = DotProduct(temp, (modelMatrix)!!)
-        out[1] = DotProduct(temp, Arrays.copyOfRange(modelMatrix, 4, 8))
-        out[2] = DotProduct(temp, Arrays.copyOfRange(modelMatrix, 8, 12))
+        val matrix = modelMatrix!!
+        val x = `in`.x - matrix[12]
+        val y = `in`.y - matrix[13]
+        val z = `in`.z - matrix[14]
+        out[0] = x * matrix[0] + y * matrix[1] + z * matrix[2]
+        out[1] = x * matrix[4] + y * matrix[5] + z * matrix[6]
+        out[2] = x * matrix[8] + y * matrix[9] + z * matrix[10]
     }
 
     fun R_GlobalPointToLocal(modelMatrix: FloatArray? /*[16]*/, `in`: idVec3, out: FloatBuffer) {
-        val temp = FloatArray(4)
-        VectorSubtract(`in`.ToFloatPtr(), Arrays.copyOfRange(modelMatrix, 12, 16), temp)
-        out.put(0, DotProduct(temp, (modelMatrix)!!))
-        out.put(1, DotProduct(temp, Arrays.copyOfRange(modelMatrix, 4, 8)))
-        out.put(2, DotProduct(temp, Arrays.copyOfRange(modelMatrix, 8, 12)))
+        val matrix = modelMatrix!!
+        val x = `in`.x - matrix[12]
+        val y = `in`.y - matrix[13]
+        val z = `in`.z - matrix[14]
+        out.put(0, x * matrix[0] + y * matrix[1] + z * matrix[2])
+        out.put(1, x * matrix[4] + y * matrix[5] + z * matrix[6])
+        out.put(2, x * matrix[8] + y * matrix[9] + z * matrix[10])
     }
 
     fun R_LocalVectorToGlobal(modelMatrix: FloatArray /*[16]*/, `in`: idVec3, out: idVec3) {
@@ -393,15 +401,16 @@ object tr_main {
     }
 
     fun R_GlobalVectorToLocal(modelMatrix: FloatArray? /*[16]*/, `in`: idVec3, out: idVec3) {
-        out[0] = DotProduct(`in`.ToFloatPtr(), (modelMatrix)!!)
-        out[1] = DotProduct(`in`.ToFloatPtr(), Arrays.copyOfRange(modelMatrix, 4, 8))
-        out[2] = DotProduct(`in`.ToFloatPtr(), Arrays.copyOfRange(modelMatrix, 8, 12))
+        val matrix = modelMatrix!!
+        out[0] = `in`.x * matrix[0] + `in`.y * matrix[1] + `in`.z * matrix[2]
+        out[1] = `in`.x * matrix[4] + `in`.y * matrix[5] + `in`.z * matrix[6]
+        out[2] = `in`.x * matrix[8] + `in`.y * matrix[9] + `in`.z * matrix[10]
     }
 
     fun R_GlobalPlaneToLocal(modelMatrix: FloatArray /*[16]*/, `in`: idPlane, out: idPlane) {
-        out[0] = DotProduct(`in`.ToFloatPtr(), modelMatrix)
-        out[1] = DotProduct(`in`.ToFloatPtr(), Arrays.copyOfRange(modelMatrix, 4, 8))
-        out[2] = DotProduct(`in`.ToFloatPtr(), Arrays.copyOfRange(modelMatrix, 8, 12))
+        out[0] = `in`[0] * modelMatrix[0] + `in`[1] * modelMatrix[1] + `in`[2] * modelMatrix[2]
+        out[1] = `in`[0] * modelMatrix[4] + `in`[1] * modelMatrix[5] + `in`[2] * modelMatrix[6]
+        out[2] = `in`[0] * modelMatrix[8] + `in`[1] * modelMatrix[9] + `in`[2] * modelMatrix[10]
         out[3] = `in`[3] + (modelMatrix[12] * `in`[0]) + (modelMatrix[13] * `in`[1]) + (modelMatrix[14] * `in`[2])
     }
 

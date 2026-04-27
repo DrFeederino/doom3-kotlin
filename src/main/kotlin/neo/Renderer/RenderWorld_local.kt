@@ -1034,7 +1034,7 @@ object RenderWorld_local {
          ================
          */
         override fun GuiTrace(entityHandle: Int, start: idVec3, end: idVec3): guiPoint_t {
-            var local: localTrace_t
+            val local = localTrace_t()
             val localStart = idVec3()
             val localEnd = idVec3()
             var j: Int
@@ -1080,14 +1080,14 @@ object RenderWorld_local {
                     j++
                     continue
                 }
-                local = tr_trace.R_LocalTrace(localStart, localEnd, 0.0f, tri)
+                tr_trace.R_LocalTrace(local, localStart, localEnd, 0.0f, tri)
                 if (local.fraction < 1.0f) {
                     val origin = idVec3()
                     val axis: Array<idVec3> = idVec3.generateArray(3)
                     val cursor = idVec3()
                     val axisLen = FloatArray(2)
                     tr_guisurf.R_SurfaceToTextureAxis(tri, origin, axis)
-                    cursor.set(local.point.minus(origin))
+                    cursor.setSub(local.point, origin)
                     axisLen[0] = axis[0].Length()
                     axisLen[1] = axis[1].Length()
                     pt.x = (cursor.times(axis[0])) / (axisLen[0] * axisLen[0])
@@ -1110,7 +1110,7 @@ object RenderWorld_local {
             var i: Int
             var collisionSurface: Boolean
             var surf: modelSurface_s?
-            var localTrace: localTrace_t
+            val localTrace = localTrace_t()
             val model: idRenderModel?
             val modelMatrix = FloatArray(16)
             val localStart = idVec3()
@@ -1172,11 +1172,11 @@ object RenderWorld_local {
                         continue
                     }
                 }
-                localTrace = tr_trace.R_LocalTrace(localStart, localEnd, radius, surf.geometry!!)
+                tr_trace.R_LocalTrace(localTrace, localStart, localEnd, radius, surf.geometry!!)
                 if (localTrace.fraction < trace.fraction) {
                     trace.fraction = localTrace.fraction
-                    trace.point.set(tr_main.R_LocalPointToGlobal(modelMatrix, localTrace.point))
-                    trace.normal.set(localTrace.normal.times(refEnt.axis))
+                    tr_main.R_LocalPointToGlobal(modelMatrix, localTrace.point, trace.point)
+                    trace.normal.setTransform(localTrace.normal, refEnt.axis)
                     trace.material = shader
                     trace.entity = def.parms
                     trace.jointNumber = refEnt.hModel!!.NearestJoint(
@@ -1204,7 +1204,7 @@ object RenderWorld_local {
             var area: portalArea_s
             var model: idRenderModel?
             var tri: srfTriangles_s?
-            var localTrace: localTrace_t
+            val localTrace = localTrace_t()
             val areas = IntArray(128)
             val numAreas: Int
             var i: Int
@@ -1215,6 +1215,7 @@ object RenderWorld_local {
             val modelMatrix = FloatArray(16)
             val localStart = idVec3()
             val localEnd = idVec3()
+            val traceEnd = idVec3()
             var shader: idMaterial?
             trace.fraction = 1.0f
             trace.point.set(end)
@@ -1321,11 +1322,11 @@ object RenderWorld_local {
                         tr_main.R_AxisToModelMatrix(def.parms.axis, def.parms.origin, modelMatrix)
                         tr_main.R_GlobalPointToLocal(modelMatrix, start, localStart)
                         tr_main.R_GlobalPointToLocal(modelMatrix, end, localEnd)
-                        localTrace = tr_trace.R_LocalTrace(localStart, localEnd, radius, surf.geometry!!)
+                        tr_trace.R_LocalTrace(localTrace, localStart, localEnd, radius, surf.geometry!!)
                         if (localTrace.fraction < trace.fraction) {
                             trace.fraction = localTrace.fraction
-                            trace.point.set(tr_main.R_LocalPointToGlobal(modelMatrix, localTrace.point))
-                            trace.normal.set(localTrace.normal.times(def.parms.axis))
+                            tr_main.R_LocalPointToGlobal(modelMatrix, localTrace.point, trace.point)
+                            trace.normal.setTransform(localTrace.normal, def.parms.axis)
                             trace.material = shader
                             trace.entity = def.parms
                             trace.jointNumber = model.NearestJoint(
@@ -1336,7 +1337,8 @@ object RenderWorld_local {
                             )
                             traceBounds.Clear()
                             traceBounds.AddPoint(start)
-                            traceBounds.AddPoint(start.plus((end.minus(start)).times(trace.fraction)))
+                            traceEnd.setLerp(start, end, trace.fraction)
+                            traceBounds.AddPoint(traceEnd)
                         }
                         j++
                     }

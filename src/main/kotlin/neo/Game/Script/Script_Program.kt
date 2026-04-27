@@ -763,6 +763,7 @@ object Script_Program {
                         return if (etype != parm!!.FieldType()!!.Type()) {
                             null
                         } else data!!.duplicate().order(ByteOrder.LITTLE_ENDIAN).position(pos).slice()
+                            .order(ByteOrder.LITTLE_ENDIAN)
                     }
                     pos += if (parm!!.FieldType()!!.Inherits(type_object)) {
                         type_object.Size()
@@ -953,6 +954,11 @@ object Script_Program {
             set(value) {
                 setPrimitive(value)
             }
+        var evalPointerOffset: Int
+            get() = primitive.getInt(4)
+            set(value) {
+                primitive.putInt(4, value)
+            }
 
         private fun getPrimitive(): Int {
             return primitive.getInt(0)
@@ -1029,8 +1035,9 @@ object Script_Program {
             primitive.rewind()
         }
 
-        fun setEvalPtr(entityNumberIndex: Int) {
+        fun setEvalPtr(entityNumberIndex: Int, ptrOffset: Int = 0) {
             entityNumberPtr = entityNumberIndex
+            evalPointerOffset = ptrOffset
         }
 
         companion object {

@@ -56,6 +56,11 @@ object Push {
                 = 0
         private val pushedGroup: Array<pushedGroup_s?> = arrayOfNulls<pushedGroup_s?>(Game_local.MAX_GENTITIES)
 
+        // Scratch buffers for ClipPush: avoids per-call allocations
+        private val scratchTranslation = idVec3()
+        private val scratchMatA = idMat3()
+        private val scratchMatB = idMat3()
+
         /*
          ============
          idPush::ClipTranslationalPush
@@ -479,7 +484,7 @@ object Push {
             newOrigin: idVec3,
             newAxis: idMat3
         ): Float {
-            val translation = idVec3()
+            val translation = scratchTranslation
             val rotation: idRotation
             var mass: Float
             mass = 0.0f
@@ -489,7 +494,7 @@ object Push {
             results.c = contactInfo_t()
 
             // translational push
-            translation.set(newOrigin.minus(oldOrigin))
+            translation.setSub(newOrigin, oldOrigin)
 
             // if the pusher translates
             if (translation != vec3_origin) {
@@ -504,7 +509,7 @@ object Push {
             }
 
             // rotational push
-            rotation = oldAxis.Transpose().times(newAxis).ToRotation()
+            rotation = scratchMatA.setTranspose(oldAxis).setMul(scratchMatA, newAxis).ToRotation()
             rotation.SetOrigin(newOrigin)
             rotation.Normalize180()
             rotation.ReCalculateMatrix() // recalculate the rotation matrix to avoid accumulating rounding errors
@@ -513,7 +518,7 @@ object Push {
             if (rotation.GetAngle() != 0.0f) {
 
                 // recalculate new axis to avoid floating point rounding problems
-                newAxis.set(oldAxis.times(rotation.ToMat3()))
+                newAxis.setMul(oldAxis, scratchMatB.set(rotation.ToMat3()))
                 newAxis.OrthoNormalizeSelf()
                 newAxis.FixDenormals()
                 newAxis.FixDegeneracies()

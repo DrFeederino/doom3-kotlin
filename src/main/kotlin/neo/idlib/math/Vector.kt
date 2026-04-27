@@ -595,6 +595,42 @@ open class idVec3 : idVec<idVec3>, SERiAL {
         return this
     }
 
+    // In-place composition helpers: avoid allocating temporaries in hot paths
+    fun setTransform(v: idVec3, m: idMat3): idVec3 {
+        x = m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z
+        y = m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z
+        z = m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z
+        return this
+    }
+
+    fun setAdd(a: idVec3, b: idVec3): idVec3 {
+        x = a.x + b.x
+        y = a.y + b.y
+        z = a.z + b.z
+        return this
+    }
+
+    fun setSub(a: idVec3, b: idVec3): idVec3 {
+        x = a.x - b.x
+        y = a.y - b.y
+        z = a.z - b.z
+        return this
+    }
+
+    fun setScale(a: idVec3, s: Float): idVec3 {
+        x = a.x * s
+        y = a.y * s
+        z = a.z * s
+        return this
+    }
+
+    fun setLerp(v1: idVec3, v2: idVec3, l: Float): idVec3 {
+        x = v1.x + l * (v2.x - v1.x)
+        y = v1.y + l * (v2.y - v1.y)
+        z = v1.z + l * (v2.z - v1.z)
+        return this
+    }
+
     fun Compare(a: idVec3): Boolean { // exact compare, no epsilon
         return x == a.x && y == a.y && z == a.z
     }

@@ -909,6 +909,10 @@ object idMath {
         return hash
     }
 
+    fun FloatHash(x: Float, y: Float, z: Float): Int {
+        return x.toBits() xor y.toBits() xor z.toBits()
+    }
+
     fun Fabs(f: Float): Float { // returns the absolute value of the floating point value
         return abs(f)
     }
