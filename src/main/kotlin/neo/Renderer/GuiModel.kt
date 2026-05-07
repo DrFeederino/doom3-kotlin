@@ -199,8 +199,13 @@ class GuiModel {
 
             myGlMultMatrix(modelMatrix, worldMVM, modelViewMatrix)
 
+            val renderEntity = renderEntity_s()
+            val guiSpace = viewEntity_s()
+            System.arraycopy(modelMatrix, 0, guiSpace.modelMatrix, 0, guiSpace.modelMatrix.size)
+            System.arraycopy(modelViewMatrix, 0, guiSpace.modelViewMatrix, 0, guiSpace.modelViewMatrix.size)
+            guiSpace.weaponDepthHack = depthHack
             for (i in 0 until surfaces.Num()) {
-                EmitSurface(surfaces[i], modelMatrix, modelViewMatrix, depthHack)
+                EmitSurface(surfaces[i], guiSpace, renderEntity)
             }
         }
 
@@ -265,8 +270,9 @@ class GuiModel {
             tr.viewDef = viewDef
 
             // add the surfaces to this view
+            val renderEntity = renderEntity_s()
             for (i in 0 until surfaces.Num()) {
-                EmitSurface(surfaces[i], viewDef.worldSpace.modelMatrix, viewDef.worldSpace.modelViewMatrix, false)
+                EmitSurface(surfaces[i], viewDef.worldSpace, renderEntity)
             }
             tr.viewDef = oldViewDef
 
@@ -661,12 +667,7 @@ class GuiModel {
             surf = surfaces[surfaces.Num() - 1]
         }
 
-        private fun EmitSurface(
-            surf: guiModelSurface_t,
-            modelMatrix: FloatArray /*[16]*/,
-            modelViewMatrix: FloatArray /*[16]*/,
-            depthHack: Boolean
-        ) {
+        private fun EmitSurface(surf: guiModelSurface_t, guiSpace: viewEntity_s, renderEntity: renderEntity_s) {
             val tri: srfTriangles_s
             if (surf.numVerts == 0) {
                 return  // nothing in the surface
@@ -702,16 +703,10 @@ class GuiModel {
             if (null == tri.ambientCache) {
                 return
             }
-            val renderEntity: renderEntity_s
-            renderEntity = renderEntity_s()
             renderEntity.shaderParms[0] = surf.color[0]
             renderEntity.shaderParms[1] = surf.color[1]
             renderEntity.shaderParms[2] = surf.color[2]
             renderEntity.shaderParms[3] = surf.color[3]
-            val guiSpace = viewEntity_s()
-            System.arraycopy(modelMatrix, 0, guiSpace.modelMatrix, 0, guiSpace.modelMatrix.size)
-            System.arraycopy(modelViewMatrix, 0, guiSpace.modelViewMatrix, 0, guiSpace.modelViewMatrix.size)
-            guiSpace.weaponDepthHack = depthHack
 
             // add the surface, which might recursively create another gui
             tr_light.R_AddDrawSurf(tri, guiSpace, renderEntity, surf.material!!, tr.viewDef!!.scissor)

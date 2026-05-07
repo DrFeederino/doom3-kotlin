@@ -25,7 +25,6 @@ import neo.Renderer.Model
 import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.TempDump
 import neo.framework.DeclManager
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.idVec3
@@ -148,7 +147,7 @@ object PlayerIcon {
 
         fun CreateIcon(player: idPlayer, type: playerIconType_t, origin: idVec3, axis: idMat3): Boolean {
             assert(type != playerIconType_t.ICON_NONE)
-            val mtr = player.spawnArgs.GetString(iconKeys[TempDump.etoi(type)], "_default")!!
+            val mtr = player.spawnArgs.GetString(iconKeys[(type).ordinal], "_default")!!
             return CreateIcon(player, type, mtr, origin, axis)
         }
 

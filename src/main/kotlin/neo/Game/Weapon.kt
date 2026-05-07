@@ -62,7 +62,6 @@ import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderEntity_s
 import neo.Renderer.RenderWorld.renderLight_s
 import neo.Sound.snd_shader.idSoundShader
-import neo.TempDump
 import neo.cm.collisionModelManager
 import neo.cm.trace_s
 import neo.framework.CVarSystem
@@ -72,6 +71,7 @@ import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
 import neo.framework.DeclSkin.idDeclSkin
 import neo.framework.ID_DEMO_BUILD
+import neo.idlib.*
 import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.BitMsg.idBitMsgDelta
@@ -79,14 +79,10 @@ import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
-import neo.idlib.colorGreen
-import neo.idlib.colorRed
-import neo.idlib.colorYellow
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.containers.HashTable.idHashTable
 import neo.idlib.geometry.TraceModel.idTraceModel
-import neo.idlib.idLib
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
 import neo.ui.UserInterface
@@ -800,7 +796,7 @@ object Weapon {
         // save games
         override fun Save(savefile: idSaveGame) {                    // archives object for save game file
             super.Save(savefile)
-            savefile.WriteInt(TempDump.etoi(status))
+            savefile.WriteInt((status).ordinal)
             savefile.WriteObject(thread)
             savefile.WriteString(state)
             savefile.WriteString(idealState)
@@ -1997,7 +1993,7 @@ object Weapon {
             }
             if (!WEAPON_ATTACK.underscore()!!) {
                 if (sndHum != null && (!isD3XP || grabberState == -1)) {
-                    StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY), false)
+                    StopSound((gameSoundChannel_t.SND_CHANNEL_BODY).ordinal, false)
                 }
             }
             WEAPON_ATTACK.underscore(true)
@@ -2072,8 +2068,8 @@ object Weapon {
             if (classname.isEmpty()) {
                 return null
             }
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY), true)
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY3), true)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_BODY).ordinal, true)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_BODY3).ordinal, true)
             return idMoveableItem.DropItem(
                 classname,
                 worldModel.GetEntity()!!.GetPhysics().GetOrigin(),
@@ -2248,7 +2244,7 @@ object Weapon {
          ================
          */
         fun EnterCinematic() {
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
             if (isLinked) {
                 SetState("EnterCinematic", 0)
                 thread!!.Execute()
@@ -2508,7 +2504,7 @@ object Weapon {
                 }
             }
             if (status != weaponStatus_t.WP_READY && sndHum != null) {
-                StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY), false)
+                StopSound((gameSoundChannel_t.SND_CHANNEL_BODY).ordinal, false)
             }
             UpdateSound()
         }
@@ -2680,7 +2676,7 @@ object Weapon {
         override fun WriteToSnapshot(msg: idBitMsgDelta) {
             msg.WriteBits(ammoClip, Player.ASYNC_PLAYER_INV_CLIP_BITS)
             msg.WriteBits(worldModel.GetSpawnId(), 32)
-            msg.WriteBits(TempDump.btoi(lightOn), 1)
+            msg.WriteBits((lightOn).toInt(), 1)
             msg.WriteBits(if (isFiring) 1 else 0, 1)
         }
 
@@ -3890,7 +3886,7 @@ object Weapon {
                 return
             }
             idThread.ReturnFloat(
-                TempDump.btoi(Game_local.gameLocal.userInfo[owner!!.entityNumber].GetBool("ui_autoReload")).toFloat()
+                (Game_local.gameLocal.userInfo[owner!!.entityNumber].GetBool("ui_autoReload")).toInt().toFloat()
             )
         }
 

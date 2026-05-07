@@ -1,6 +1,5 @@
 package neo.ui
 
-import neo.TempDump.SERiAL
 import neo.framework.DemoFile.idDemoFile
 import neo.framework.File_h.idFile
 import neo.idlib.Dict_h.idDict
@@ -29,7 +28,7 @@ object UserInterface {
 
      ===============================================================================
      */
-    abstract class idUserInterface : SERiAL {
+    abstract class idUserInterface {
         // virtual						~idUserInterface() {};
         // Returns the name of the gui.
         abstract fun Name(): String

@@ -43,13 +43,12 @@ import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderEntity_s
 import neo.Renderer.RenderWorld.renderLight_s
 import neo.Sound.snd_shader.idSoundShader
-import neo.TempDump
-import neo.TempDump.SERiAL
 import neo.cm.collisionModelManager
 import neo.cm.trace_s
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
+import neo.framework.File_h.idFile
 import neo.framework.UsercmdGen
 import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
@@ -63,8 +62,10 @@ import neo.idlib.containers.CInt
 import neo.idlib.containers.List
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.idLib
+import neo.idlib.idSerializable
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
+import neo.idlib.toInt
 import java.nio.ByteBuffer
 
 
@@ -318,7 +319,7 @@ object Projectile {
             if (isD3XP) {
                 savefile.WriteInt(originalTimeGroup)
             }
-            savefile.WriteInt(TempDump.etoi(state))
+            savefile.WriteInt((state).ordinal)
             savefile.WriteFloat(damagePower)
             savefile.WriteStaticObject(physicsObj)
             savefile.WriteStaticObject(thruster)
@@ -811,7 +812,7 @@ object Projectile {
             }
 
             // stop sound
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY2), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_BODY2).ordinal, false)
             sndExplode = when (damagePower.toInt()) {
                 2 -> "snd_explode2"
                 3 -> "snd_explode3"
@@ -844,12 +845,12 @@ object Projectile {
             val surfaceType =
                 (if (collision.c.material != null) collision.c.material!!.GetSurfaceType() else surfTypes_t.SURFTYPE_METAL).ordinal
             if (!(fxname != null && !fxname.isEmpty())) {
-                fxname = if (surfaceType == TempDump.etoi(surfTypes_t.SURFTYPE_NONE)
-                    || surfaceType == TempDump.etoi(surfTypes_t.SURFTYPE_METAL)
-                    || surfaceType == TempDump.etoi(surfTypes_t.SURFTYPE_STONE)
+                fxname = if (surfaceType == (surfTypes_t.SURFTYPE_NONE).ordinal
+                    || surfaceType == (surfTypes_t.SURFTYPE_METAL).ordinal
+                    || surfaceType == (surfTypes_t.SURFTYPE_STONE).ordinal
                 ) {
                     spawnArgs.GetString("model_smokespark")
-                } else if (surfaceType == TempDump.etoi(surfTypes_t.SURFTYPE_RICOCHET)) {
+                } else if (surfaceType == (surfTypes_t.SURFTYPE_RICOCHET).ordinal) {
                     spawnArgs.GetString("model_ricochet")
                 } else {
                     spawnArgs.GetString("model_smoke")
@@ -1001,7 +1002,7 @@ object Projectile {
             if (state == projectileState_t.EXPLODED || state == projectileState_t.FIZZLED) {
                 return
             }
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_BODY).ordinal, false)
             StartSound("snd_fizzle", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
 
             // fizzle FX
@@ -1038,8 +1039,8 @@ object Projectile {
 
         override fun WriteToSnapshot(msg: idBitMsgDelta) {
             msg.WriteBits(owner.GetSpawnId(), 32)
-            msg.WriteBits(TempDump.etoi(state), 3)
-            msg.WriteBits(TempDump.btoi(fl.hidden), 1)
+            msg.WriteBits((state).ordinal, 3)
+            msg.WriteBits((fl.hidden).toInt(), 1)
             if (netSyncPhysics) {
                 msg.WriteBits(1, 1)
                 physicsObj.WriteToSnapshot(msg)
@@ -1108,7 +1109,7 @@ object Projectile {
                     }
 
                     projectileState_t.FIZZLED, projectileState_t.EXPLODED -> {
-                        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY2), false)
+                        StopSound((gameSoundChannel_t.SND_CHANNEL_BODY2).ordinal, false)
                         GameEdit.gameEdit.ParseSpawnArgsToRenderEntity(spawnArgs, renderEntity!!)
                         state = projectileState_t.SPAWNED
                     }
@@ -1266,7 +1267,7 @@ object Projectile {
         }
 
         private fun Event_GetProjectileState() {
-            idThread.ReturnInt(TempDump.etoi(state))
+            idThread.ReturnInt((state).ordinal)
         }
 
         // D3XP: Used by the grabber to catch and reflect projectiles
@@ -1291,7 +1292,7 @@ object Projectile {
         }
 
         fun GetProjectileState(): Int {
-            return TempDump.etoi(state)
+            return (state).ordinal
         }
 
         private fun Event_CreateProjectile(
@@ -1333,7 +1334,7 @@ object Projectile {
             //= 4
         }
 
-        class projectileFlags_s : SERiAL {
+        class projectileFlags_s : idSerializable {
             var detonate_on_actor //: 1;
                     = false
             var detonate_on_world //: 1;
@@ -1345,12 +1346,8 @@ object Projectile {
             var randomShaderSpin //: 1;
                     = false
 
-            override fun AllocBuffer(): ByteBuffer {
-                return ByteBuffer.allocate(BYTES)
-            }
-
-            override fun Read(buffer: ByteBuffer) {
-                val bits = buffer.get().toInt()
+            override fun readFrom(file: idFile) {
+                val bits = file.ReadChar().toInt()
                 detonate_on_world = (bits and (1 shl 0)) != 0
                 detonate_on_actor = (bits and (1 shl 1)) != 0
                 randomShaderSpin = (bits and (1 shl 2)) != 0
@@ -1358,21 +1355,17 @@ object Projectile {
                 noSplashDamage = (bits and (1 shl 4)) != 0
             }
 
-            override fun Write(): ByteBuffer {
-                val buffer = AllocBuffer()
+            override fun writeTo(file: idFile) {
                 var bits = 0
                 if (detonate_on_world) bits = bits or (1 shl 0)
                 if (detonate_on_actor) bits = bits or (1 shl 1)
                 if (randomShaderSpin) bits = bits or (1 shl 2)
                 if (isTracer) bits = bits or (1 shl 3)
                 if (noSplashDamage) bits = bits or (1 shl 4)
-                buffer.put(bits.toByte())
-                buffer.flip()
-                return buffer
+                file.WriteChar(bits.toShort())
             }
 
             companion object {
-                @Transient
                 val BYTES = java.lang.Byte.BYTES // 1
             }
         }
@@ -1741,7 +1734,7 @@ object Projectile {
                 GetSeekPos(seekPos)
                 if (seekPos.minus(physicsObj.GetOrigin()).Length() < 32.0f) {
                     if (returnPhase) {
-                        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+                        StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
                         StartSound("snd_return", gameSoundChannel_t.SND_CHANNEL_BODY2, 0, false)
                         Hide()
                         PostEventSec(EV_Remove, 2.0f)
@@ -2526,7 +2519,7 @@ object Projectile {
                 // already exploded
                 return
             }
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
             StartSound("snd_explode", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
             Hide()
 
@@ -2558,7 +2551,7 @@ object Projectile {
                 // already exploded
                 return
             }
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
             StartSound("snd_fizzle", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
 
             // fizzle FX

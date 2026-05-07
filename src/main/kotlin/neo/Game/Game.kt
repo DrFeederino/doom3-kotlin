@@ -18,6 +18,7 @@
 
 package neo.Game
 
+import neo.Game.AI.AASFileManager.idAASFileManager
 import neo.Game.Animation.ANIM_GetModelDefFromEntityDef
 import neo.Game.Animation.Anim
 import neo.Game.Animation.Anim.frameBlend_t
@@ -41,8 +42,6 @@ import neo.Sound.snd_shader.idSoundShader
 import neo.Sound.sound.idSoundEmitter
 import neo.Sound.sound.idSoundSystem
 import neo.Sound.sound.idSoundWorld
-import neo.TempDump
-import neo.Tools.Compilers.AAS.AASFileManager.idAASFileManager
 import neo.cm.idCollisionModelManager
 import neo.framework.Async.NetworkSystem.idNetworkSystem
 import neo.framework.CVarSystem.idCVarSystem
@@ -449,10 +448,7 @@ object Game {
             temp = args.GetString("model")
             modelDef = null
             if (temp.isNotEmpty()) {
-                modelDef = TempDump.dynamic_cast(
-                    idDeclModelDef::class.java,
-                    DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, temp, false)
-                ) as idDeclModelDef?
+                modelDef = DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, temp, false) as? idDeclModelDef
                 if (modelDef != null) {
                     renderEntity.hModel = modelDef.ModelHandle()
                 }
@@ -850,10 +846,7 @@ object Game {
             if (null == player || !Game_local.gameLocal.CheatsOk(false)) {
                 return false
             }
-            af = TempDump.dynamic_cast(
-                idDeclAF::class.java,
-                DeclManager.declManager.FindType(declType_t.DECL_AF, fileName)!!
-            ) as idDeclAF?
+            af = DeclManager.declManager.FindType(declType_t.DECL_AF, fileName) as? idDeclAF
             if (null == af) {
                 return false
             }
@@ -979,20 +972,14 @@ object Game {
 
             // get the articulated figure
             afName = GetArgString(args, defArgs, "articulatedFigure")
-            af = TempDump.dynamic_cast(
-                idDeclAF::class.java,
-                DeclManager.declManager.FindType(declType_t.DECL_AF, afName)!!
-            ) as idDeclAF?
+            af = DeclManager.declManager.FindType(declType_t.DECL_AF, afName) as? idDeclAF
             if (null == af) {
                 return null
             }
 
             // get the md5 model
             modelName = GetArgString(args, defArgs, "model")
-            modelDef = TempDump.dynamic_cast(
-                idDeclModelDef::class.java,
-                DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, modelName, false)!!
-            ) as idDeclModelDef?
+            modelDef = DeclManager.declManager.FindType(declType_t.DECL_MODELDEF, modelName, false) as? idDeclModelDef
             if (null == modelDef) {
                 return null
             }
@@ -1321,7 +1308,7 @@ object Game {
         }
 
         fun EntityStopSound(ent: idEntity?) {
-            ent?.StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+            ent?.StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
         }
 
         fun EntityDelete(ent: idEntity?) {}

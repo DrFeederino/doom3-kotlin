@@ -54,10 +54,6 @@ import neo.Renderer.tr_main.R_SetViewMatrix
 import neo.Renderer.tr_main.R_SetupProjection
 import neo.Renderer.tr_main.R_SetupViewFrustum
 import neo.Renderer.tr_rendertools.RB_AddDebugText
-import neo.TempDump.Atomics.*
-import neo.TempDump.allocArray
-import neo.TempDump.ctos
-import neo.TempDump.indexOf
 import neo.framework.*
 import neo.framework.DemoFile.demoSystem_t
 import neo.framework.DemoFile.idDemoFile
@@ -74,6 +70,7 @@ import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.va
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.ctos
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
@@ -1012,7 +1009,7 @@ object RenderWorld_local {
                     ret.areas[1] = portal.intoArea
                     ret.w = portal.w
                     ret.blockingBits = portal.doublePortal!!.blockingBits
-                    ret.portalHandle = indexOf(portal.doublePortal, doublePortals) + 1
+                    ret.portalHandle = doublePortals!!.indexOf(portal.doublePortal) + 1
                     return ret
                 }
                 count++
@@ -1912,7 +1909,7 @@ object RenderWorld_local {
             if (numAreaNodes < 0) {
                 src.Error("R_ParseNodes: bad numAreaNodes")
             }
-            areaNodes = allocArray(areaNode_t::class.java, numAreaNodes)
+            areaNodes = Array(numAreaNodes) { areaNode_t() }
             for (node: areaNode_t in areaNodes!!) {
                 src.Parse1DMatrix(4, node.plane)
                 node.children[0] = src.ParseInt()
@@ -2304,7 +2301,7 @@ object RenderWorld_local {
             }
 
             // find the current density of the fog
-            val lightShader: idMaterial = ldef!!.lightShader!!
+            val lightShader: idMaterial = ldef.lightShader!!
             val size: Int = lightShader.GetNumRegisters()
             val regs = FloatArray(size)
             lightShader.EvaluateRegisters(
@@ -3318,7 +3315,7 @@ object RenderWorld_local {
             demoTimeOffset: CInt
         ): Boolean {
             var newMap = false
-            val viewShadow = renderViewShadow()
+            val viewShadow = RenderWorld.renderViewShadow()
             if (null == readDemo) {
                 return false
             }
@@ -3753,7 +3750,7 @@ object RenderWorld_local {
 
         fun ReadRenderEntity() {
             val ent = renderEntity_s()
-            val shadow = renderEntityShadow()
+            val shadow = RenderWorld.renderEntityShadow()
             val index = CInt()
             var i: Int
             val hModel = CInt()

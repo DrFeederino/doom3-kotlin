@@ -1,9 +1,6 @@
 package neo.ui
 
 import neo.Renderer.Material
-import neo.TempDump.ctos
-import neo.TempDump.etoi
-import neo.TempDump.itob
 import neo.framework.CVarSystem.cvarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.Common.Companion.common
@@ -31,10 +28,12 @@ import neo.idlib.Text.Str.idStr.Companion.Cmpn
 import neo.idlib.Text.Str.idStr.Companion.Copynz
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.idStr.Companion.IsColor
+import neo.idlib.Text.ctos
 import neo.idlib.colorWhite
 import neo.idlib.containers.CBool
 import neo.idlib.containers.List.idList
 import neo.idlib.math.idMath.FtoiFast
+import neo.idlib.toBoolean
 import neo.sys.sysEventType_t
 import neo.sys.sysEvent_s
 import neo.sys.win_input.Sys_GetConsoleKey
@@ -135,7 +134,15 @@ object EditWindow {
             if (flags and Window.WIN_FOCUS != 0) {
                 color = hoverColor.oCastIdVec4()
             }
-            dc!!.DrawText(buffer, scale, 0, color, rect, wrap, if (itob(flags and Window.WIN_FOCUS)) cursorPos else -1)
+            dc!!.DrawText(
+                buffer,
+                scale,
+                0,
+                color,
+                rect,
+                wrap,
+                if ((flags and Window.WIN_FOCUS).toBoolean()) cursorPos else -1
+            )
         }
 
         override fun HandleEvent(event: sysEvent_s, updateVisuals: CBool?): String? {
@@ -164,12 +171,12 @@ object EditWindow {
                     len = maxChars
                 }
                 if ((key == K_ENTER || key == K_KP_ENTER) && event.evValue2 != 0) {
-                    RunScript(etoi(ON.ON_ACTION))
-                    RunScript(etoi(ON.ON_ENTER))
+                    RunScript((ON.ON_ACTION).ordinal)
+                    RunScript((ON.ON_ENTER).ordinal)
                     return cmd.toString()
                 }
                 if (key == K_ESCAPE) {
-                    RunScript(etoi(ON.ON_ESC))
+                    RunScript((ON.ON_ESC).ordinal)
                     return cmd.toString()
                 }
                 if (readonly) {
@@ -187,7 +194,7 @@ object EditWindow {
                         }
                         text.Set(String(buffer).substringBefore('\u0000'))
                         UpdateCvar(false)
-                        RunScript(etoi(ON.ON_ACTION))
+                        RunScript((ON.ON_ACTION).ordinal)
                     }
                     return ""
                 }
@@ -218,7 +225,7 @@ object EditWindow {
                 buffer[cursorPos] = key.toChar()
                 text.Set(String(buffer).substringBefore('\u0000'))
                 UpdateCvar(false)
-                RunScript(etoi(ON.ON_ACTION))
+                RunScript((ON.ON_ACTION).ordinal)
                 if (cursorPos < len + 1) {
                     cursorPos++
                 }
@@ -236,7 +243,7 @@ object EditWindow {
                         System.arraycopy(buffer, cursorPos + 1, buffer, cursorPos, len - cursorPos)
                         text.Set(String(buffer).substringBefore('\u0000'))
                         UpdateCvar(false)
-                        RunScript(etoi(ON.ON_ACTION))
+                        RunScript((ON.ON_ACTION).ordinal)
                     }
                     return ret
                 }
@@ -323,20 +330,20 @@ object EditWindow {
                     }
                 }
                 if (key == K_ENTER || key == K_KP_ENTER) {
-                    RunScript(etoi(ON.ON_ACTION))
-                    RunScript(etoi(ON.ON_ENTER))
+                    RunScript((ON.ON_ACTION).ordinal)
+                    RunScript((ON.ON_ENTER).ordinal)
                     return cmd.toString()
                 }
                 if (key == K_ESCAPE) {
-                    RunScript(etoi(ON.ON_ESC))
+                    RunScript((ON.ON_ESC).ordinal)
                     return cmd.toString()
                 }
             } else if (event.evType == sysEventType_t.SE_KEY && 0 == event.evValue2) {
                 if (key == K_ENTER || key == K_KP_ENTER) {
-                    RunScript(etoi(ON.ON_ENTERRELEASE))
+                    RunScript((ON.ON_ENTERRELEASE).ordinal)
                     return cmd.toString()
                 } else {
-                    RunScript(etoi(ON.ON_ACTIONRELEASE))
+                    RunScript((ON.ON_ACTIONRELEASE).ordinal)
                 }
             }
             return ret
@@ -559,7 +566,7 @@ object EditWindow {
                     colorWhite,
                     rect,
                     true,
-                    if (itob(flags and Window.WIN_FOCUS)) cursorPos else -1,
+                    if ((flags and Window.WIN_FOCUS).toBoolean()) cursorPos else -1,
                     true,
                     breaks
                 )

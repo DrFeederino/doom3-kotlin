@@ -2,7 +2,6 @@ package neo.Sound
 
 import neo.Sound.snd_local.*
 import neo.Sound.snd_system.idSoundSystemLocal
-import neo.TempDump
 import neo.framework.Common
 import neo.framework.FileSystem_h
 import neo.framework.File_h.fsOrigin_t
@@ -11,6 +10,7 @@ import neo.idlib.LittleLong
 import neo.idlib.LittleRevBytes
 import neo.idlib.LittleShort
 import neo.idlib.Text.Str.idStr
+import neo.idlib.containers.stobb
 import neo.sys.CRITICAL_SECTION_ONE
 import neo.sys.win_main
 import org.lwjgl.BufferUtils
@@ -124,7 +124,7 @@ object snd_wavefile {
         fun OpenFromMemory(pbData: ShortArray, ulDataSize: Int, pwfx: waveformatextensible_s): Int {
             mpwfx = pwfx
             mulDataSize = ulDataSize.toLong()
-            mpbData = TempDump.stobb(pbData)
+            mpbData = stobb(pbData)
             mpbDataCur = mpbData!!.duplicate()
             mdwSize = (ulDataSize / 2).toLong()
             mMemSize = ulDataSize.toLong()
@@ -272,11 +272,11 @@ object snd_wavefile {
             val ckIn = mminfo_s() // chunk info. for general use.
             val pcmWaveFormat = pcmwaveformat_s() // Temp PCM structure to load in.       
             mpwfx = waveformatextensible_s()
-            mhmmio!!.Read(mckRiff, 12)
+            // RIFF header: ckid + cksize + fccType (12 bytes; dwDataOffset is set manually below)
+            mckRiff.ckid = Integer.toUnsignedLong(mhmmio!!.ReadInt())
+            mckRiff.cksize = mhmmio!!.ReadInt()
+            mckRiff.fccType = Integer.toUnsignedLong(mhmmio!!.ReadInt())
             assert(!isOgg)
-            mckRiff.ckid = LittleLong(mckRiff.ckid).toLong()
-            mckRiff.cksize = LittleLong(mckRiff.cksize)
-            mckRiff.fccType = LittleLong(mckRiff.fccType).toLong()
             mckRiff.dwDataOffset = 12
 
             // Check to make sure this is a valid wave file
@@ -293,12 +293,14 @@ object snd_wavefile {
             // Search the input file for for the 'fmt ' chunk.
             ckIn.dwDataOffset = 12
             do {
-                if (8 != mhmmio!!.Read(ckIn, 8)) {
+                // Chunk header: ckid + cksize (8 bytes)
+                val before = mhmmio!!.Tell()
+                ckIn.ckid = Integer.toUnsignedLong(mhmmio!!.ReadInt())
+                ckIn.cksize = mhmmio!!.ReadInt()
+                if (mhmmio!!.Tell() - before != 8) {
                     return -1
                 }
                 assert(!isOgg)
-                ckIn.ckid = LittleLong(ckIn.ckid).toLong()
-                ckIn.cksize = LittleLong(ckIn.cksize)
                 ckIn.dwDataOffset += ckIn.cksize - 8
             } while (ckIn.ckid != mmioFOURCC('f'.code, 'm'.code, 't'.code, ' '.code))
 

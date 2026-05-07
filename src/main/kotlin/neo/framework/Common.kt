@@ -5,16 +5,6 @@ import neo.Game.Game_local
 import neo.Renderer.Image
 import neo.Renderer.RenderSystem
 import neo.Sound.snd_system
-import neo.TempDump
-import neo.TempDump.void_callback
-import neo.Tools.Compilers.AAS.AASBuild.RunAASDir_f
-import neo.Tools.Compilers.AAS.AASBuild.RunAAS_f
-import neo.Tools.Compilers.AAS.AASBuild.RunReach_f
-import neo.Tools.Compilers.DMap.dmap.Dmap_f
-import neo.Tools.Compilers.RenderBump.renderbump.RenderBumpFlat_f
-import neo.Tools.Compilers.RenderBump.renderbump.RenderBump_f
-import neo.Tools.Compilers.RoqVQ.Roq.RoQFileEncode_f
-import neo.Tools.edit_public
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.framework.CVarSystem.cvarSystem
 import neo.framework.CVarSystem.idCVar
@@ -41,6 +31,7 @@ import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
+import neo.idlib.containers.bbtocb
 import neo.idlib.containers.idStrList
 import neo.idlib.idException
 import neo.idlib.idLib
@@ -131,7 +122,7 @@ class Common {
         abstract fun WriteFlaggedCVarsToFile(filename: String, flags: Int, setCmd: String)
 
         // Begins redirection of console output to the given buffer.
-        abstract fun BeginRedirect(buffer: StringBuilder?, buffersize: Int, flush: void_callback<String>?)
+        abstract fun BeginRedirect(buffer: StringBuilder?, buffersize: Int, flush: ((String) -> Unit)?)
 
         // Stops redirection of console output.
         abstract fun EndRedirect()
@@ -224,7 +215,7 @@ class Common {
         private val prevAsyncMsec = 0
         private var rd_buffer: StringBuilder? = null
         private var rd_buffersize = 0
-        private var rd_flush /*)( const char *buffer )*/: void_callback<String>? = null
+        private var rd_flush /*)( const char *buffer )*/: ((String) -> Unit)? = null
         private val warningCaption: idStr = idStr()
         private val warningList: idStrList = idStrList()
 
@@ -381,13 +372,6 @@ class Common {
         }
 
         override fun Quit() {
-            if (ID_ALLOW_TOOLS) {
-                if (com_editors and EDITOR_RADIANT != 0) {
-                    edit_public.RadiantInit()
-                    return
-                }
-            }
-
             // don't try to shutdown if we are in a recursive error
             if (0 == com_errorEntered) {
                 Shutdown()
@@ -567,17 +551,6 @@ class Common {
         }
 
         override fun InitTool(toolFlag_t: Int, dict: idDict) {
-            if (ID_ALLOW_TOOLS) {
-                if (toolFlag_t and EDITOR_SOUND != 0) {
-                    edit_public.SoundEditorInit(dict)
-                } else if (toolFlag_t and EDITOR_LIGHT != 0) {
-                    edit_public.LightEditorInit(dict)
-                } else if (toolFlag_t and EDITOR_PARTICLE != 0) {
-                    edit_public.ParticleEditorInit(dict)
-                } else if (toolFlag_t and EDITOR_AF != 0) {
-                    edit_public.AFEditorInit(dict)
-                }
-            }
         }
 
         /*
@@ -631,7 +604,7 @@ class Common {
             FileSystem_h.fileSystem.CloseFile(f)
         }
 
-        override fun BeginRedirect(buffer: StringBuilder?, buffersize: Int, flush: void_callback<String>?) {
+        override fun BeginRedirect(buffer: StringBuilder?, buffersize: Int, flush: ((String) -> Unit)?) {
             if (null == buffer || 0 == buffersize || null == flush) {
                 return
             }
@@ -644,7 +617,7 @@ class Common {
 
         override fun EndRedirect() {
             if (rd_flush != null && rd_buffer!!.isNotEmpty()) { // '\0') {
-                rd_flush!!.run(rd_buffer.toString())
+                rd_flush!!(rd_buffer.toString())
             }
             rd_buffer = null
             rd_buffersize = 0
@@ -705,7 +678,7 @@ class Common {
             }
             if (rd_buffer != null) {
                 if (msg[0].length + rd_buffer!!.length > rd_buffersize - 1) {
-                    rd_flush!!.run(rd_buffer.toString())
+                    rd_flush!!(rd_buffer.toString())
                     rd_buffer!!.setLength(0) // FIX: C++ clears buffer after flush (*rd_buffer = 0)
                 }
                 //		strcat( rd_buffer, msg );
@@ -754,7 +727,7 @@ class Common {
             }
 
             // don't trigger any updates if we are in the process of doing a fatal error
-            if (com_errorEntered != TempDump.etoi(errorParm_t.ERP_FATAL)) {
+            if (com_errorEntered != (errorParm_t.ERP_FATAL).ordinal) {
                 // update the console if we are in a long-running command, like dmap
                 if (com_refreshOnPrint) {
                     Session.session.UpdateScreen()
@@ -865,7 +838,7 @@ class Common {
         @Throws(idException::class)
         override fun Error(fmt: String, vararg args: Any) {
             val currentTime: Int
-            var code = TempDump.etoi(errorParm_t.ERP_DROP)
+            var code = (errorParm_t.ERP_DROP).ordinal
 
             // always turn this off after an error
             com_refreshOnPrint = false
@@ -873,12 +846,12 @@ class Common {
             // when we are running automated scripts, make sure we
             // know if anything failed
             if (cvarSystem.GetCVarInteger("fs_copyfiles") != 0) {
-                code = TempDump.etoi(errorParm_t.ERP_FATAL)
+                code = (errorParm_t.ERP_FATAL).ordinal
             }
 
             // if we don't have GL running, make it a fatal error
             if (!RenderSystem.renderSystem.IsOpenGLRunning()) {
-                code = TempDump.etoi(errorParm_t.ERP_FATAL)
+                code = (errorParm_t.ERP_FATAL).ordinal
             }
 
             // if we got a recursive error, make it fatal
@@ -888,17 +861,17 @@ class Common {
                 // process immediately, which will prevent a
                 // full screen rendering window covering the
                 // error dialog
-                if (com_errorEntered == TempDump.etoi(errorParm_t.ERP_FATAL)) {
+                if (com_errorEntered == (errorParm_t.ERP_FATAL).ordinal) {
                     win_main.Sys_Quit()
                 }
-                code = TempDump.etoi(errorParm_t.ERP_FATAL)
+                code = (errorParm_t.ERP_FATAL).ordinal
             }
 
             // if we are getting a solid stream of ERP_DROP, do an ERP_FATAL
             currentTime = win_shared.Sys_Milliseconds()
             if (currentTime - lastErrorTime < 100) {
                 if (++errorCount > 3) {
-                    code = TempDump.etoi(errorParm_t.ERP_FATAL)
+                    code = (errorParm_t.ERP_FATAL).ordinal
                 }
             } else {
                 errorCount = 0
@@ -918,14 +891,14 @@ class Common {
             if (0 == com_editors and (EDITOR_GUI or EDITOR_DEBUGGER)) {
                 Session.session.Stop()
             }
-            if (code == TempDump.etoi(errorParm_t.ERP_DISCONNECT)) {
+            if (code == (errorParm_t.ERP_DISCONNECT).ordinal) {
                 com_errorEntered = 0
                 throw idException(errorMessage[0])
                 // The gui editor doesnt want thing to com_error so it handles exceptions instead
             } else if (com_editors and (EDITOR_GUI or EDITOR_DEBUGGER) != 0) {
                 com_errorEntered = 0
                 throw idException(errorMessage[0])
-            } else if (code == TempDump.etoi(errorParm_t.ERP_DROP)) {
+            } else if (code == (errorParm_t.ERP_DROP).ordinal) {
                 Printf("********************\nERROR: %s\n********************\n", errorMessage[0])
                 com_errorEntered = 0
                 throw idException(errorMessage[0])
@@ -962,7 +935,7 @@ class Common {
                 // write the console to a log file?
                 win_main.Sys_Quit()
             }
-            com_errorEntered = TempDump.etoi(errorParm_t.ERP_FATAL)
+            com_errorEntered = (errorParm_t.ERP_FATAL).ordinal
 
             idStr.vsnPrintf(errorMessage, MAX_PRINT_MSG_SIZE, fmt, *args)
             if (cvarSystem.GetCVarBool("r_fullscreen")) {
@@ -1232,7 +1205,7 @@ class Common {
             val src =
                 idLexer(Lexer.LEXFL_NOFATALERRORS or Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT)
             if (FileSystem_h.fileSystem.ReadFile(fileName, buffer) > 0) {
-                src.LoadMemory(TempDump.bbtocb(buffer[0]!!), TempDump.bbtocb(buffer[0]!!).capacity(), fileName)
+                src.LoadMemory(bbtocb(buffer[0]!!), bbtocb(buffer[0]!!).capacity(), fileName)
                 if (src.IsLoaded()) {
                     val outFile = FileSystem_h.fileSystem.OpenFileWrite(fileName)!!
                     common.Printf("Processing %s\n", fileName)
@@ -1315,7 +1288,7 @@ class Common {
                 idLexer(Lexer.LEXFL_NOFATALERRORS or Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT)
             common.SetRefreshOnPrint(true)
             if (FileSystem_h.fileSystem.ReadFile(fileName, buffer) > 0) {
-                src.LoadMemory(TempDump.bbtocb(buffer[0]!!), TempDump.bbtocb(buffer[0]!!).capacity(), fileName)
+                src.LoadMemory(bbtocb(buffer[0]!!), bbtocb(buffer[0]!!).capacity(), fileName)
                 if (src.IsLoaded()) {
                     common.Printf("Processing %s\n", fileName)
                     var mapFileName: idStr?
@@ -1442,114 +1415,6 @@ class Common {
                 "execs the appropriate config files and sets cvars based on com_machineSpec"
             )
             if (!ID_DEDICATED) { // DG: dhewm3 removed ID_DEMO_BUILD guard
-                // compilers
-                CmdSystem.cmdSystem.AddCommand(
-                    "dmap",
-                    Dmap_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "compiles a map",
-                    ArgCompletion_MapName.getInstance()
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "renderbump",
-                    RenderBump_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "renders a bump map",
-                    ArgCompletion_ModelName.getInstance()
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "renderbumpFlat",
-                    RenderBumpFlat_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "renders a flat bump map",
-                    ArgCompletion_ModelName.getInstance()
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "runAAS",
-                    RunAAS_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "compiles an AAS file for a map",
-                    ArgCompletion_MapName.getInstance()
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "runAASDir",
-                    RunAASDir_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "compiles AAS files for all maps in a folder",
-                    ArgCompletion_MapName.getInstance()
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "runReach",
-                    RunReach_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "calculates reachability for an AAS file",
-                    ArgCompletion_MapName.getInstance()
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "roq", RoQFileEncode_f.getInstance(), CmdSystem.CMD_FL_TOOL, "encodes a roq file"
-                )
-            }
-            if (ID_ALLOW_TOOLS) {
-                // editors
-                CmdSystem.cmdSystem.AddCommand(
-                    "editor", Com_Editor_f.getInstance(), CmdSystem.CMD_FL_TOOL, "launches the level editor Radiant"
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "editLights",
-                    Com_EditLights_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "launches the in-game Light Editor"
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "editSounds",
-                    Com_EditSounds_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "launches the in-game Sound Editor"
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "editDecls",
-                    Com_EditDecls_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "launches the in-game Declaration Editor"
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "editAFs",
-                    Com_EditAFs_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "launches the in-game Articulated Figure Editor"
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "editParticles",
-                    Com_EditParticles_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "launches the in-game Particle Editor"
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "editScripts",
-                    Com_EditScripts_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "launches the in-game Script Editor"
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "editGUIs", Com_EditGUIs_f.getInstance(), CmdSystem.CMD_FL_TOOL, "launches the GUI Editor"
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "editPDAs", Com_EditPDAs_f.getInstance(), CmdSystem.CMD_FL_TOOL, "launches the in-game PDA Editor"
-                )
-                CmdSystem.cmdSystem.AddCommand(
-                    "debugger",
-                    Com_ScriptDebugger_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "launches the Script Debugger"
-                )
-
-                //BSM Nerve: Add support for the material editor
-                CmdSystem.cmdSystem.AddCommand(
-                    "materialEditor",
-                    Com_MaterialEditor_f.getInstance(),
-                    CmdSystem.CMD_FL_TOOL,
-                    "launches the Material Editor"
-                )
             }
             CmdSystem.cmdSystem.AddCommand(
                 "printMemInfo", PrintMemInfo_f.getInstance(), CmdSystem.CMD_FL_SYSTEM, "prints memory debugging data"
@@ -1986,7 +1851,7 @@ class Common {
      */
     internal class Com_Editor_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            edit_public.RadiantInit()
+            idLib.common.Warning("editor tools not supported")
         }
 
         companion object {
@@ -2027,7 +1892,7 @@ class Common {
      */
     internal class Com_EditGUIs_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            edit_public.GUIEditorInit()
+            idLib.common.Warning("editor tools not supported")
         }
 
         companion object {
@@ -2047,7 +1912,7 @@ class Common {
         override fun run(args: CmdArgs.idCmdArgs?) {
             // Turn off sounds
             snd_system.soundSystem.SetMute(true)
-            edit_public.MaterialEditorInit()
+            idLib.common.Warning("editor tools not supported")
         }
 
         companion object {
@@ -2112,7 +1977,7 @@ class Common {
      */
     internal class Com_EditLights_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            edit_public.LightEditorInit(idDict())
+            idLib.common.Warning("editor tools not supported")
             cvarSystem.SetCVarInteger("g_editEntityMode", 1)
         }
 
@@ -2131,7 +1996,7 @@ class Common {
      */
     internal class Com_EditSounds_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            edit_public.SoundEditorInit(idDict())
+            idLib.common.Warning("editor tools not supported")
             cvarSystem.SetCVarInteger("g_editEntityMode", 2)
         }
 
@@ -2150,7 +2015,7 @@ class Common {
      */
     internal class Com_EditDecls_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            edit_public.DeclBrowserInit(idDict())
+            idLib.common.Warning("editor tools not supported")
         }
 
         companion object {
@@ -2168,7 +2033,7 @@ class Common {
      */
     internal class Com_EditAFs_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            edit_public.AFEditorInit(idDict())
+            idLib.common.Warning("editor tools not supported")
         }
 
         companion object {
@@ -2186,7 +2051,7 @@ class Common {
      */
     internal class Com_EditParticles_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            edit_public.ParticleEditorInit(idDict())
+            idLib.common.Warning("editor tools not supported")
         }
 
         companion object {
@@ -2204,7 +2069,7 @@ class Common {
      */
     internal class Com_EditScripts_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            edit_public.ScriptEditorInit(idDict())
+            idLib.common.Warning("editor tools not supported")
         }
 
         companion object {
@@ -2222,7 +2087,7 @@ class Common {
      */
     internal class Com_EditPDAs_f : cmdFunction_t() {
         override fun run(args: CmdArgs.idCmdArgs?) {
-            edit_public.PDAEditorInit(idDict())
+            idLib.common.Warning("editor tools not supported")
         }
 
         companion object {
@@ -3146,7 +3011,7 @@ class Common {
                 idLexer(Lexer.LEXFL_NOFATALERRORS or Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT)
 
             if (FileSystem_h.fileSystem.ReadFile(fileName, buffer) > 0) {
-                src.LoadMemory(TempDump.bbtocb(buffer[0]!!), TempDump.bbtocb(buffer[0]!!).capacity(), fileName)
+                src.LoadMemory(bbtocb(buffer[0]!!), bbtocb(buffer[0]!!).capacity(), fileName)
                 if (src.IsLoaded()) {
                     var classname: String
                     val token = idToken()
@@ -3177,7 +3042,7 @@ class Common {
                 idLexer(Lexer.LEXFL_NOFATALERRORS or Lexer.LEXFL_NOSTRINGCONCAT or Lexer.LEXFL_ALLOWMULTICHARLITERALS or Lexer.LEXFL_ALLOWBACKSLASHSTRINGCONCAT)
 
             if (FileSystem_h.fileSystem.ReadFile(fileName, buffer) > 0) {
-                src.LoadMemory(TempDump.bbtocb(buffer[0]!!), TempDump.bbtocb(buffer[0]!!).capacity(), fileName)
+                src.LoadMemory(bbtocb(buffer[0]!!), bbtocb(buffer[0]!!).capacity(), fileName)
                 if (src.IsLoaded()) {
                     val token = idToken()
 

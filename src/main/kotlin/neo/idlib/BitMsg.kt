@@ -1,9 +1,9 @@
 package neo.idlib
 
-import neo.TempDump
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
 import neo.idlib.Text.Str.idStr
+import neo.idlib.Text.ctos
 import neo.idlib.containers.CInt
 import neo.idlib.math.*
 import neo.sys.netadr_t
@@ -792,11 +792,11 @@ object BitMsg {
             }
             while (ReadString(key, key.size) != 0) {
                 ReadString(value, value.size)
-                dict.Set(TempDump.ctos(key), TempDump.ctos(value))
+                dict.Set(ctos(key), ctos(value))
                 changed = true
             }
             while (ReadString(key, key.size) != 0) {
-                dict.Delete(TempDump.ctos(key))
+                dict.Delete(ctos(key))
                 changed = true
             }
             return changed
@@ -1019,7 +1019,7 @@ object BitMsg {
             } else {
                 val baseString = CharArray(MAX_DATA_BUFFER)
                 base!!.ReadString(baseString, MAX_DATA_BUFFER)
-                if (idStr.Cmp(s!!, TempDump.ctos(baseString)) == 0) {
+                if (idStr.Cmp(s!!, ctos(baseString)) == 0) {
                     writeDelta!!.WriteBits(0, 1)
                 } else {
                     writeDelta!!.WriteBits(1, 1)
@@ -1247,14 +1247,14 @@ object BitMsg {
                 val baseString = CharArray(MAX_DATA_BUFFER)
                 base!!.ReadString(baseString, MAX_DATA_BUFFER)
                 if (null == readDelta || readDelta!!.ReadBits(1) == 0) {
-                    idStr.Copynz(buffer, TempDump.ctos(baseString), bufferSize)
+                    idStr.Copynz(buffer, ctos(baseString), bufferSize)
                 } else {
                     readDelta!!.ReadString(buffer, bufferSize)
                     changed = true
                 }
             }
             if (newBase != null) {
-                newBase!!.WriteString(TempDump.ctos(buffer))
+                newBase!!.WriteString(ctos(buffer))
             }
         }
 

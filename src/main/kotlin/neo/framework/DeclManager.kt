@@ -3,7 +3,6 @@ package neo.framework
 import neo.Renderer.Material
 import neo.Sound.snd_shader.idSoundShader
 import neo.Sound.snd_system
-import neo.TempDump
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.CmdSystem.idCmdSystem.*
@@ -22,7 +21,11 @@ import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.atobb
+import neo.idlib.Text.ctos
+import neo.idlib.containers.CPP_class
 import neo.idlib.containers.List
+import neo.idlib.containers.bbtocb
 import neo.idlib.containers.idHashIndex
 import neo.idlib.hashing.MD5_BlockChecksum
 import java.math.BigInteger
@@ -308,9 +311,7 @@ class DeclManager {
         }
 
         companion object {
-            @Transient
-
-            val SIZE = TempDump.CPP_class.Pointer.SIZE //base is an abstract class.
+            val SIZE = CPP_class.POINTER_SIZE //base is an abstract class.
         }
     }
 
@@ -387,7 +388,7 @@ class DeclManager {
 
         @Throws(idException::class)
         fun GetNumDecls(type: declType_t): Int {
-            return GetNumDecls(TempDump.etoi(type))
+            return GetNumDecls((type).ordinal)
         }
 
         // The complete lists of decls can be walked to populate editor browsers.
@@ -791,7 +792,7 @@ class DeclManager {
         override fun Print() {}
         fun AllocateSelf() {
             if (null == self) {
-                self = declManagerLocal.GetDeclType(TempDump.etoi(type))!!.allocator()
+                self = declManagerLocal.GetDeclType((type).ordinal)!!.allocator()
                 self!!.base = this
             }
         }
@@ -877,7 +878,7 @@ class DeclManager {
                 //	memcpy( textSource, compressed, compressedLength );
             } else {
                 compressedLength = length
-                textSource = TempDump.atobb(text) //(char *) Mem_Alloc( length + 1 );
+                textSource = atobb(text) //(char *) Mem_Alloc( length + 1 );
                 //	memcpy( textSource, text, length );
 //	textSource[length] = '\0';
             }
@@ -984,7 +985,7 @@ class DeclManager {
                 Common.common.FatalError("couldn't load %s", fileName.toString())
                 return BigInteger.ZERO
             }
-            if (!src.LoadMemory(TempDump.bbtocb(buffer[0]!!), length, fileName.toString())) {
+            if (!src.LoadMemory(bbtocb(buffer[0]!!), length, fileName.toString())) {
                 Common.common.Error("Couldn't parse %s", fileName.toString())
                 //                Mem_Free(buffer);
                 return BigInteger.ZERO
@@ -998,6 +999,12 @@ class DeclManager {
             }
             src.SetFlags(DECL_LEXER_FLAGS)
             checksum = BigInteger(MD5_BlockChecksum(buffer[0]!!.array(), length))
+            Common.common.Printf(
+                "[DeclFile] file=%s len=%d checksum=0x%x\n",
+                fileName.toString(),
+                length,
+                checksum.toInt()
+            )
             fileSize = length
 
             // scan through, identifying each individual declaration
@@ -1563,7 +1570,8 @@ class DeclManager {
 
             val data = checksumData.array().copyOf(total * 2 * 4)
             LittleRevBytes(data, total * 2)
-            return BigInteger(MD5_BlockChecksum(data, total * 2 * 4))
+            val result = BigInteger(MD5_BlockChecksum(data, total * 2 * 4))
+            return result
         }
 
         override fun GetNumDeclTypes(): Int {
@@ -1847,7 +1855,7 @@ class DeclManager {
                 declText, header.Length() + 1 + canonicalName.length + 1,
                 defaultText.Length() + 1
             )
-            val declString = TempDump.ctos(declText)
+            val declString = ctos(declText)
             decl.SetTextLocal(declString, declString.length)
             decl.sourceFile = sourceFile
             decl.sourceTextOffset = sourceFile.fileSize
@@ -2239,8 +2247,8 @@ class DeclManager {
         init {
             declFolders = List.idList()
             loadedFiles = List.idList()
-            hashTables = Array(TempDump.etoi(declType_t.DECL_MAX_TYPES)) { idHashIndex() }
-            linearLists = Array(TempDump.etoi(declType_t.DECL_MAX_TYPES)) { List.idList() }
+            hashTables = Array((declType_t.DECL_MAX_TYPES).ordinal) { idHashIndex() }
+            linearLists = Array((declType_t.DECL_MAX_TYPES).ordinal) { List.idList() }
         }
     }
 

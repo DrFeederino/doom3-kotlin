@@ -1,13 +1,13 @@
 package neo.idlib.BV
 
-import neo.TempDump.SERiAL
+import neo.framework.File_h.idFile
 import neo.idlib.BV.Sphere.idSphere
 import neo.idlib.Max
 import neo.idlib.Min
 import neo.idlib.containers.CFloat
+import neo.idlib.idSerializable
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
-import java.nio.ByteBuffer
 import kotlin.math.abs
 
 val bounds_zero: idBounds = idBounds()
@@ -67,7 +67,7 @@ fun BoundsForPointRotation(start: idVec3, rotation: idRotation): idBounds {
 
  ===============================================================================
  */
-class idBounds : SERiAL {
+class idBounds : idSerializable {
     private var b: Array<idVec3> = idVec3.generateArray(2)
 
     constructor() {
@@ -782,19 +782,14 @@ class idBounds : SERiAL {
         return b.contentToString()
     }
 
-    override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES)
+    override fun readFrom(file: idFile) {
+        b[0].readFrom(file)
+        b[1].readFrom(file)
     }
 
-    override fun Read(buffer: ByteBuffer) {
-        b[0].Read(buffer)
-        b[1].Read(buffer)
-    }
-
-    override fun Write(): ByteBuffer {
-        val buffer = AllocBuffer()
-        buffer.put(b[0].Write()).put(b[1].Write()).flip()
-        return buffer
+    override fun writeTo(file: idFile) {
+        b[0].writeTo(file)
+        b[1].writeTo(file)
     }
 
     companion object {

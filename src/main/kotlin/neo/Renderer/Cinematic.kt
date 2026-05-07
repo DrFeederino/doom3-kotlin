@@ -37,13 +37,13 @@ package neo.Renderer
 
 import neo.Renderer.Cinematic.point
 import neo.Sound.snd_system
-import neo.TempDump.wrapToNativeBuffer
 import neo.framework.Common
 import neo.framework.FileSystem_h.fileSystem
 import neo.framework.File_h.fsOrigin_t
 import neo.framework.File_h.idFile
 import neo.idlib.LittleLong
 import neo.idlib.Text.Str.idStr
+import neo.idlib.containers.wrapToNativeBuffer
 import java.nio.*
 
 object Cinematic {

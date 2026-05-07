@@ -1,6 +1,5 @@
 package neo.ui
 
-import neo.TempDump.etoi
 import neo.framework.CVarSystem.cvarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.Common
@@ -77,7 +76,7 @@ class ChoiceWindow {
                 if (key == K_RIGHTARROW || key == K_KP_RIGHTARROW || key == K_MOUSE1) {
                     // never affects the state, but we want to execute script handlers anyway
                     if (0 == event.evValue2) {
-                        RunScript(etoi(ON.ON_ACTIONRELEASE))
+                        RunScript((ON.ON_ACTIONRELEASE).ordinal)
                         return cmd.toString()
                     }
                     currentChoice++
@@ -89,7 +88,7 @@ class ChoiceWindow {
                 if (key == K_LEFTARROW || key == K_KP_LEFTARROW || key == K_MOUSE2) {
                     // never affects the state, but we want to execute script handlers anyway
                     if (0 == event.evValue2) {
-                        RunScript(etoi(ON.ON_ACTIONRELEASE))
+                        RunScript((ON.ON_ACTIONRELEASE).ordinal)
                         return cmd.toString()
                     }
                     currentChoice--
@@ -125,7 +124,7 @@ class ChoiceWindow {
                 return ""
             }
             if (runAction) {
-                RunScript(etoi(ON.ON_ACTION))
+                RunScript((ON.ON_ACTION).ordinal)
             }
             if (choiceType == 0) {
                 cvarStr.Set(va("%d", currentChoice))
@@ -136,7 +135,7 @@ class ChoiceWindow {
             }
             UpdateVars(false)
             if (runAction2) {
-                RunScript(etoi(ON.ON_ACTIONRELEASE))
+                RunScript((ON.ON_ACTIONRELEASE).ordinal)
             }
             return cmd.toString()
         }

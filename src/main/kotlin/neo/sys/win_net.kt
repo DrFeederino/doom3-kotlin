@@ -27,8 +27,6 @@ If you have questions concerning this license or the applicable additional terms
 */
 package neo.sys
 
-import neo.TempDump
-import neo.TempDump.TODO_Exception
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.Common.Companion.common
@@ -39,6 +37,14 @@ import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
+
+/** Convert a 4-byte big-endian IP address to an unsigned 32-bit value packed into a Long. */
+private fun ntohl(ip: ByteArray): Long {
+    return ((ip[0].toLong() and 0xFF) shl 24) or
+            ((ip[1].toLong() and 0xFF) shl 16) or
+            ((ip[2].toLong() and 0xFF) shl 8) or
+            (ip[3].toLong() and 0xFF)
+}
 
 class win_net {
     class net_interface(
@@ -336,7 +342,7 @@ class win_net {
             }
 
             if (num_interfaces > 0) {
-                val ip = TempDump.ntohl(
+                val ip = ntohl(
                     byteArrayOf(
                         adr.ip[0].code.toByte(),
                         adr.ip[1].code.toByte(),
@@ -383,7 +389,7 @@ class win_net {
                         if (pIPAddr is Inet6Address) {
                             continue  //TODO:skip ipv6, for now.
                         }
-                        ip_a = TempDump.ntohl(pIPAddr.address)
+                        ip_a = ntohl(pIPAddr.address)
                         if (pAdapter.interfaceAddresses != null && pAdapter.interfaceAddresses.size > 0) { // Find the InterfaceAddress that matches this InetAddress
                             val ifAddr = pAdapter.interfaceAddresses.firstOrNull { it.address == pIPAddr }
                             val prefixLen = ifAddr?.networkPrefixLength?.toInt()
@@ -527,13 +533,5 @@ class win_net {
             }
         }
 
-        /*
-         ====================
-         NET_OpenSocks
-         ====================
-         */
-        fun NET_OpenSocks(port: Int) {
-            throw TODO_Exception()
-        }
     }
 }

@@ -33,8 +33,6 @@ import neo.Renderer.Material
 import neo.Renderer.Model
 import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld
-import neo.TempDump
-import neo.TempDump.void_callback
 import neo.framework.CmdSystem
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.DeclManager
@@ -135,7 +133,7 @@ class Anim_Testmodel {
          ================
          */
         fun cleanup() {
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
             if (renderEntity?.hModel != null) {
                 Game_local.gameLocal.Printf("Removing testmodel %s\n", renderEntity!!.hModel!!.Name())
             } else {
@@ -145,7 +143,7 @@ class Anim_Testmodel {
                 Game_local.gameLocal.testmodel = null
             }
             if (head.GetEntity() != null) {
-                head.GetEntity()!!.StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+                head.GetEntity()!!.StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
                 head.GetEntity()!!.PostEventMS(EV_Remove, 0)
             }
         }
@@ -482,9 +480,9 @@ class Anim_Testmodel {
             var i: Int
             if ((thinkFlags and TH_THINK) != 0) {
                 if (anim != 0 && Game_local.gameLocal.testmodel == this && mode != SysCvar.g_testModelAnimate.GetInteger()) {
-                    StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+                    StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
                     if (head.GetEntity() != null) {
-                        head.GetEntity()!!.StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+                        head.GetEntity()!!.StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
                     }
                     when (SysCvar.g_testModelAnimate.GetInteger()) {
                         0 -> {
@@ -669,7 +667,7 @@ class Anim_Testmodel {
                 }
                 if (mode == 0 && Game_local.gameLocal.time >= startTime + animTime) {
                     startTime = Game_local.gameLocal.time
-                    StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+                    StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
                     animator.PlayAnim(
                         Anim.ANIMCHANNEL_ALL,
                         anim,
@@ -978,13 +976,13 @@ class Anim_Testmodel {
          =====================
          */
         class ArgCompletion_TestModel private constructor() : CmdSystem.argCompletion_t() {
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 var i: Int
                 var num: Int
                 num = DeclManager.declManager.GetNumDecls(declType_t.DECL_ENTITYDEF)
                 i = 0
                 while (i < num) {
-                    callback.run(
+                    callback(
                         idStr(args!!.Argv(0)).toString() + " " + DeclManager.declManager.DeclByIndex(
                             declType_t.DECL_ENTITYDEF, i, false
                         )!!.GetName()
@@ -994,7 +992,7 @@ class Anim_Testmodel {
                 num = DeclManager.declManager.GetNumDecls(declType_t.DECL_MODELDEF)
                 i = 0
                 while (i < num) {
-                    callback.run(
+                    callback(
                         idStr(args!!.Argv(0)).toString() + " " + DeclManager.declManager.DeclByIndex(
                             declType_t.DECL_MODELDEF, i, false
                         )!!.GetName()
@@ -1066,11 +1064,11 @@ class Anim_Testmodel {
          =====================
          */
         class ArgCompletion_TestAnim private constructor() : CmdSystem.argCompletion_t() {
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 if (Game_local.gameLocal.testmodel != null) {
                     val animator = Game_local.gameLocal.testmodel!!.GetAnimator()
                     for (i in 0 until animator.NumAnims()) {
-                        callback.run(Str.va("%s %s", args!!.Argv(0), animator.AnimFullName(i)))
+                        callback(Str.va("%s %s", args!!.Argv(0), animator.AnimFullName(i)))
                     }
                 }
             }

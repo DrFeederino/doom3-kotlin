@@ -37,7 +37,6 @@ import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.deferredEntityCallback_t
 import neo.Sound.snd_shader.idSoundShader
-import neo.TempDump
 import neo.cm.CM_CLIP_EPSILON
 import neo.cm.trace_s
 import neo.framework.DeclEntityDef.idDeclEntityDef
@@ -533,7 +532,7 @@ object BrittleFracture {
                     }
                 }
                 if (sndShader != null) {
-                    StartSoundShader(sndShader, TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), 0, false)
+                    StartSoundShader(sndShader, (gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, 0, false)
                 } else {
                     StartSound("snd_bullethole", gameSoundChannel_t.SND_CHANNEL_ANY, 0, false)
                 }
@@ -1345,18 +1344,6 @@ object BrittleFracture {
                     return false
                 }
                 return ent.UpdateRenderEntity(e, v)
-            }
-
-            override fun AllocBuffer(): ByteBuffer {
-                throw UnsupportedOperationException("Not supported for ModelCallback")
-            }
-
-            override fun Read(buffer: ByteBuffer) {
-                throw UnsupportedOperationException("Not supported for ModelCallback")
-            }
-
-            override fun Write(): ByteBuffer {
-                throw UnsupportedOperationException("Not supported for ModelCallback")
             }
 
             companion object {

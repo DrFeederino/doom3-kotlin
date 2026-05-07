@@ -1,7 +1,5 @@
 package neo.framework
 
-import neo.TempDump
-import neo.TempDump.TODO_Exception
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_FileName
@@ -25,6 +23,7 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.CInt
+import neo.idlib.containers.CPP_class
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idHashIndex
 import neo.idlib.containers.idStrList
@@ -36,14 +35,23 @@ import neo.sys.win_main.Sys_LeaveCriticalSection
 import neo.sys.win_main.Sys_TriggerEvent
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
+import java.nio.charset.StandardCharsets
 import java.nio.file.*
+import java.time.Duration
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.logging.Level
 import java.util.logging.Logger
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
+import javax.swing.filechooser.FileSystemView
 
 object FileSystem_h {
     /*
@@ -70,6 +78,44 @@ object FileSystem_h {
      */
     const val FILE_NOT_FOUND_TIMESTAMP = -0x1
     const val MAX_OSPATH = 256
+
+    /**
+     * Translates a C fopen-style mode string ("r", "w", "rb", "w+", "a", ...)
+     * into the equivalent set of [StandardOpenOption] flags for [FileChannel.open].
+     * Returns null if [mode] is null. The "b"/"t" binary/text qualifiers are ignored
+     * (NIO is binary-only).
+     */
+    internal fun fopenOptions(mode: String?): MutableSet<StandardOpenOption>? {
+        if (mode == null) {
+            return null
+        }
+        val normalized = mode.replace("b", "").replace("t", "")
+        val opts: MutableSet<StandardOpenOption> = HashSet()
+        if (normalized.contains("r")) {
+            opts.add(StandardOpenOption.READ)
+            if (normalized.contains("r+")) {
+                opts.add(StandardOpenOption.WRITE)
+            }
+        }
+        if (normalized.contains("w")) {
+            opts.add(StandardOpenOption.CREATE)
+            opts.add(StandardOpenOption.TRUNCATE_EXISTING)
+            opts.add(StandardOpenOption.WRITE)
+            if (normalized.contains("w+")) {
+                opts.add(StandardOpenOption.READ)
+            }
+        }
+        if (normalized.contains("a")) {
+            opts.add(StandardOpenOption.APPEND)
+            opts.add(StandardOpenOption.CREATE)
+            opts.add(StandardOpenOption.WRITE)
+            if (normalized.contains("a+")) {
+                opts.add(StandardOpenOption.READ)
+            }
+        }
+        return opts
+    }
+
     const val MAX_PURE_PAKS = 128
     val ADDON_CONFIG: String = "addon.conf"
     val BINARY_CONFIG: String = "binary.conf"
@@ -246,6 +292,10 @@ object FileSystem_h {
         pureExclusion_s(0, 0, "default.cfg", null, excludeFullName.getInstance()),  // russian zpak001.pk4
         pureExclusion_s(0, 0, "fonts", ".dat", excludePathPrefixAndExtension.getInstance()),
         pureExclusion_s(0, 0, "guis/temp.guied", null, excludeFullName.getInstance()),
+        pureExclusion_s(0, 0, null, ".dll", excludeExtension.getInstance()),
+        pureExclusion_s(0, 0, null, ".so", excludeExtension.getInstance()),
+        pureExclusion_s(0, 0, null, ".dylib", excludeExtension.getInstance()),
+        pureExclusion_s(0, 0, "binary.conf", null, excludeFullName.getInstance()),
         pureExclusion_s(0, 0, null, null, null)
     )
     val pureExclusions2: Array<pureExclusion_s> = arrayOf(
@@ -260,7 +310,7 @@ object FileSystem_h {
         pureExclusion_s(0, 0, null, null, null)
     )
     val pureExclusions: Array<pureExclusion_s> = if (DOOM3_PURE_SPECIAL_CASES) pureExclusions1 else pureExclusions2
-    var initExclusions: idInitExclusions? = null
+    var initExclusions: idInitExclusions = idInitExclusions()
     private var fileSystemLocal: idFileSystemLocal = idFileSystemLocal()
 
 
@@ -333,13 +383,12 @@ object FileSystem_h {
         constructor()
 
         companion object {
-            @Transient
             val SIZE: Int = (idStr.SIZE
                     + 8 * MAX_STRING_CHARS
                     + Integer.SIZE
                     + Integer.SIZE
                     + Integer.SIZE
-                    + TempDump.CPP_class.Enum.SIZE)
+                    + CPP_class.ENUM_SIZE)
         }
     }
 
@@ -356,10 +405,9 @@ object FileSystem_h {
         constructor()
 
         companion object {
-            @Transient
             val SIZE = (Integer.SIZE
                     + Integer.SIZE
-                    + TempDump.CPP_class.Pointer.SIZE) //void * buffer
+                    + CPP_class.POINTER_SIZE) //void * buffer
         }
     }
 
@@ -387,14 +435,13 @@ object FileSystem_h {
         constructor()
 
         companion object {
-            @Transient
 
-            val SIZE = (TempDump.CPP_class.Pointer.SIZE //backgroundDownload_s next
-                    + TempDump.CPP_class.Enum.SIZE
-                    + TempDump.CPP_class.Pointer.SIZE //idFile f
+            val SIZE = (CPP_class.POINTER_SIZE //backgroundDownload_s next
+                    + CPP_class.ENUM_SIZE
+                    + CPP_class.POINTER_SIZE //idFile f
                     + fileDownload_s.SIZE
                     + urlDownload_s.SIZE
-                    + TempDump.CPP_class.Bool.SIZE) //TODO:volatile?
+                    + CPP_class.BOOL_SIZE) //TODO:volatile?
         }
     }
 
@@ -861,6 +908,372 @@ object FileSystem_h {
         private var searchPaths: searchpath_s? = null
         private val serverPaks: idList<pack_t>
 
+        private val STEAM_COMMON_DIR_NAMES = arrayOf("Doom 3", "DOOM 3", "doom 3")
+        private val DOOM3_STEAM_APP_ID = "9050"
+
+        private fun StripPathQuotes(path: String): String {
+            var normalized = path.trim()
+            while (normalized.length >= 2) {
+                val first = normalized.first()
+                val last = normalized.last()
+                if ((first == '"' && last == '"') || (first == '\'' && last == '\'')) {
+                    normalized = normalized.substring(1, normalized.length - 1).trim()
+                } else {
+                    break
+                }
+            }
+            return normalized
+        }
+
+        private fun ExpandPathVariables(path: String): String {
+            var expanded = path
+            if (expanded == "~" || expanded.startsWith("~/") || expanded.startsWith("~\\")) {
+                val home = System.getProperty("user.home")
+                if (!home.isNullOrBlank()) {
+                    expanded = home + expanded.substring(1)
+                }
+            }
+
+            val envPattern = Regex("%([^%]+)%")
+            return envPattern.replace(expanded) { match ->
+                System.getenv(match.groupValues[1]) ?: match.value
+            }
+        }
+
+        private fun NormalizeFilesystemPath(path: String, cvarName: String): String {
+            val expanded = ExpandPathVariables(StripPathQuotes(path))
+            if (expanded.isBlank()) {
+                return ""
+            }
+            return try {
+                Paths.get(expanded).toAbsolutePath().normalize().toString().replace('\\', '/')
+            } catch (ex: InvalidPathException) {
+                idLib.common.Warning("invalid %s path '%s': %s", cvarName, path, ex.message ?: "invalid path")
+                expanded
+            }
+        }
+
+        private fun NormalizeFilesystemCVar(cvar: idCVar) {
+            val value = cvar.GetString() ?: ""
+            val normalized = NormalizeFilesystemPath(value, cvar.GetName())
+            if (normalized != value) {
+                cvar.SetString(normalized)
+            }
+        }
+
+        private fun NormalizeFilesystemCVars() {
+            NormalizeFilesystemCVar(fs_basepath)
+            NormalizeFilesystemCVar(fs_savepath)
+            NormalizeFilesystemCVar(fs_configpath)
+            NormalizeFilesystemCVar(fs_cdpath)
+            NormalizeFilesystemCVar(fs_devpath)
+        }
+
+        private fun FilesystemPathKey(path: String): String {
+            val normalized = path.replace('\\', '/').trimEnd('/')
+            return if (WIN32) normalized.lowercase(Locale.ROOT) else normalized
+        }
+
+        private fun ExistingDoom3Root(path: Path): String? {
+            return if (HasDoom3Data(path) || Files.isDirectory(path.resolve(Licensee.BASE_GAMEDIR))) {
+                NormalizeFilesystemPath(path.toString(), "fs_basepath")
+            } else {
+                null
+            }
+        }
+
+        private fun HasDoom3Data(path: Path): Boolean {
+            val base = path.resolve(Licensee.BASE_GAMEDIR)
+            if (!Files.isDirectory(base)) {
+                return false
+            }
+            if (IsRegularFileNoException(base.resolve("pak000.pk4"))) {
+                return true
+            }
+            return try {
+                Files.newDirectoryStream(base, "*.pk4").use { files ->
+                    files.iterator().hasNext()
+                }
+            } catch (_: IOException) {
+                false
+            }
+        }
+
+        private fun ReadWindowsRegistryString(subkey: String, name: String): String? {
+            if (!WIN32) {
+                return null
+            }
+            return try {
+                val process = ProcessBuilder("reg", "query", "HKLM\\$subkey", "/v", name)
+                    .redirectErrorStream(true)
+                    .start()
+                if (!process.waitFor(2, TimeUnit.SECONDS) || process.exitValue() != 0) {
+                    process.destroy()
+                    return null
+                }
+                process.inputStream.bufferedReader().useLines { lines ->
+                    for (line in lines) {
+                        val parts = line.trim().split(Regex("\\s{2,}"))
+                        if (parts.size >= 3 && parts[0].equals(name, ignoreCase = true)) {
+                            return parts.drop(2).joinToString(" ")
+                        }
+                    }
+                    null
+                }
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        private fun ReadWindowsInstallPath(subkey: String): String? {
+            return ReadWindowsRegistryString(subkey, "InstallPath")
+                ?: ReadWindowsRegistryString(
+                    "SOFTWARE\\WOW6432Node\\" + subkey.removePrefix("SOFTWARE\\"),
+                    "InstallPath"
+                )
+        }
+
+        private fun FindRegistryDoom3Path(): String? {
+            val path = ReadWindowsInstallPath("SOFTWARE\\id\\Doom 3") ?: return null
+            return try {
+                ExistingDoom3Root(Paths.get(path))
+            } catch (_: InvalidPathException) {
+                null
+            }
+        }
+
+        private fun SteamRootCandidates(): List<Path> {
+            val candidates = LinkedHashSet<Path>()
+            val steamRegistryPath = ReadWindowsInstallPath("SOFTWARE\\Valve\\Steam")
+            if (!steamRegistryPath.isNullOrBlank()) {
+                try {
+                    candidates.add(Paths.get(steamRegistryPath))
+                } catch (_: InvalidPathException) {
+                }
+            }
+
+            val envNames = arrayOf("STEAMDIR", "ProgramFiles(x86)", "ProgramFiles", "LOCALAPPDATA")
+            for (envName in envNames) {
+                val value = System.getenv(envName)
+                if (!value.isNullOrBlank()) {
+                    try {
+                        val root = Paths.get(value)
+                        candidates.add(if (envName == "STEAMDIR") root else root.resolve("Steam"))
+                    } catch (_: InvalidPathException) {
+                    }
+                }
+            }
+
+            val home = System.getProperty("user.home")
+            if (!home.isNullOrBlank()) {
+                try {
+                    val homePath = Paths.get(home)
+                    candidates.add(homePath.resolve(".steam").resolve("steam"))
+                    candidates.add(homePath.resolve(".local").resolve("share").resolve("Steam"))
+                    candidates.add(homePath.resolve("Library").resolve("Application Support").resolve("Steam"))
+                } catch (_: InvalidPathException) {
+                }
+            }
+            return candidates.toList()
+        }
+
+        private fun UnescapeSteamPath(path: String): String {
+            return path.replace("\\\\", "\\").replace("\\/", "/")
+        }
+
+        private fun ExtractSteamVdfValue(file: Path, key: String): String? {
+            if (!IsRegularFileNoException(file)) {
+                return null
+            }
+            return try {
+                for (line in Files.readAllLines(file, StandardCharsets.UTF_8)) {
+                    val tokens = Regex("\"([^\"]+)\"").findAll(line).map { it.groupValues[1] }.toList()
+                    if (tokens.size >= 2 && tokens[0].equals(key, ignoreCase = true)) {
+                        return UnescapeSteamPath(tokens[1])
+                    }
+                }
+                null
+            } catch (_: IOException) {
+                null
+            }
+        }
+
+        private fun AddSteamLibraries(steamRoot: Path, libraries: LinkedHashSet<Path>) {
+            if (!Files.isDirectory(steamRoot.resolve("steamapps"))) {
+                return
+            }
+            libraries.add(steamRoot)
+
+            val libraryFolders = steamRoot.resolve("steamapps").resolve("libraryfolders.vdf")
+            if (!IsRegularFileNoException(libraryFolders)) {
+                return
+            }
+            try {
+                Files.readAllLines(libraryFolders, StandardCharsets.UTF_8).forEach { line ->
+                    val tokens = Regex("\"([^\"]+)\"").findAll(line).map { it.groupValues[1] }.toList()
+                    if (tokens.size < 2) {
+                        return@forEach
+                    }
+                    val rawPath = when {
+                        tokens[0].equals("path", ignoreCase = true) -> tokens[1]
+                        tokens[0].all { it.isDigit() } -> tokens[1]
+                        else -> return@forEach
+                    }
+                    try {
+                        val library = Paths.get(UnescapeSteamPath(rawPath))
+                        if (Files.isDirectory(library.resolve("steamapps"))) {
+                            libraries.add(library)
+                        }
+                    } catch (_: InvalidPathException) {
+                    }
+                }
+            } catch (_: IOException) {
+            }
+        }
+
+        private fun FindSteamDoom3Path(): String? {
+            val libraries = LinkedHashSet<Path>()
+            SteamRootCandidates().forEach { AddSteamLibraries(it, libraries) }
+
+            for (library in libraries) {
+                val common = library.resolve("steamapps").resolve("common")
+                val manifest = library.resolve("steamapps").resolve("appmanifest_$DOOM3_STEAM_APP_ID.acf")
+                val manifestInstallDir = ExtractSteamVdfValue(manifest, "installdir")
+                if (!manifestInstallDir.isNullOrBlank()) {
+                    ExistingDoom3Root(common.resolve(manifestInstallDir))?.let { return it }
+                }
+
+                for (dirName in STEAM_COMMON_DIR_NAMES) {
+                    ExistingDoom3Root(common.resolve(dirName))?.let { return it }
+                }
+            }
+            return null
+        }
+
+        private fun WindowsHomePath(): String? {
+            val candidates = LinkedHashSet<Path>()
+            try {
+                FileSystemView.getFileSystemView().defaultDirectory?.toPath()?.let {
+                    candidates.add(it.resolve("My Games").resolve("dhewm3"))
+                }
+            } catch (_: RuntimeException) {
+            }
+
+            val userProfile = System.getenv("USERPROFILE")
+            if (!userProfile.isNullOrBlank()) {
+                try {
+                    candidates.add(Paths.get(userProfile).resolve("Documents").resolve("My Games").resolve("dhewm3"))
+                } catch (_: InvalidPathException) {
+                }
+            }
+            val home = System.getProperty("user.home")
+            if (!home.isNullOrBlank()) {
+                try {
+                    candidates.add(Paths.get(home).resolve("Documents").resolve("My Games").resolve("dhewm3"))
+                } catch (_: InvalidPathException) {
+                }
+            }
+            return candidates.firstOrNull { Files.isDirectory(it.parent ?: it) }
+                ?.let { NormalizeFilesystemPath(it.toString(), "fs_savepath") }
+                ?: candidates.firstOrNull()?.let { NormalizeFilesystemPath(it.toString(), "fs_savepath") }
+        }
+
+        private fun UnixDataPath(): String? {
+            val xdgDataHome = System.getenv("XDG_DATA_HOME")
+            if (!xdgDataHome.isNullOrBlank()) {
+                return NormalizeFilesystemPath(Paths.get(xdgDataHome).resolve("dhewm3").toString(), "fs_savepath")
+            }
+            val home = System.getenv("HOME") ?: System.getProperty("user.home")
+            return if (!home.isNullOrBlank()) {
+                NormalizeFilesystemPath(
+                    Paths.get(home).resolve(".local").resolve("share").resolve("dhewm3").toString(),
+                    "fs_savepath"
+                )
+            } else {
+                null
+            }
+        }
+
+        private fun UnixConfigPath(): String? {
+            val xdgConfigHome = System.getenv("XDG_CONFIG_HOME")
+            if (!xdgConfigHome.isNullOrBlank()) {
+                return NormalizeFilesystemPath(Paths.get(xdgConfigHome).resolve("dhewm3").toString(), "fs_configpath")
+            }
+            val home = System.getenv("HOME") ?: System.getProperty("user.home")
+            return if (!home.isNullOrBlank()) {
+                NormalizeFilesystemPath(
+                    Paths.get(home).resolve(".config").resolve("dhewm3").toString(),
+                    "fs_configpath"
+                )
+            } else {
+                null
+            }
+        }
+
+        private fun MacUserPath(cvarName: String): String? {
+            val home = System.getProperty("user.home")
+            return if (!home.isNullOrBlank()) {
+                NormalizeFilesystemPath(
+                    Paths.get(home).resolve("Library").resolve("Application Support").resolve("dhewm3").toString(),
+                    cvarName
+                )
+            } else {
+                null
+            }
+        }
+
+        private fun DefaultBasePath(): String {
+            val cwd = win_main.Sys_Cwd()
+            ExistingDoom3Root(Paths.get(cwd))?.let { return it }
+
+            if (WIN32) {
+                FindRegistryDoom3Path()?.let { return it }
+                FindSteamDoom3Path()?.let { return it }
+            } else if (MACOS_X) {
+                ExistingDoom3Root(Paths.get("/Applications/Doom 3"))?.let { return it }
+                FindSteamDoom3Path()?.let { return it }
+            } else {
+                if (__linux__) {
+                    ExistingDoom3Root(Paths.get(Licensee.LINUX_DEFAULT_PATH))?.let { return it }
+                }
+                FindSteamDoom3Path()?.let { return it }
+            }
+
+            return NormalizeFilesystemPath(cwd, "fs_basepath")
+        }
+
+        private fun DefaultSavePath(): String {
+            return (if (WIN32) {
+                WindowsHomePath()
+            } else if (MACOS_X) {
+                MacUserPath("fs_savepath")
+            } else {
+                UnixDataPath()
+            }) ?: fs_basepath.GetString()!!
+        }
+
+        private fun DefaultConfigPath(): String {
+            return (if (WIN32) {
+                WindowsHomePath()
+            } else if (MACOS_X) {
+                MacUserPath("fs_configpath")
+            } else {
+                UnixConfigPath()
+            }) ?: DefaultSavePath()
+        }
+
+        private fun DefaultCDPath(): String {
+            return ""
+        }
+
+        private fun DefaultDevPath(): String {
+            return if (WIN32) {
+                if (fs_cdpath.GetString()!!.isNotEmpty()) fs_cdpath.GetString()!! else fs_basepath.GetString()!!
+            } else {
+                fs_savepath.GetString()!!
+            }
+        }
+
         /*
          ================
          idFileSystemLocal::Init
@@ -875,6 +1288,7 @@ object FileSystem_h {
             // line variable sets don't happen until after the filesystem
             // has already been initialized
             idLib.common.StartupVariable("fs_basepath", false)
+            idLib.common.StartupVariable("fs_configpath", false)
             idLib.common.StartupVariable("fs_savepath", false)
             idLib.common.StartupVariable("fs_cdpath", false)
             idLib.common.StartupVariable("fs_devpath", false)
@@ -892,23 +1306,21 @@ object FileSystem_h {
                 }
             }
             if (fs_basepath.GetString()!!.isEmpty()) {
-                fs_basepath.SetString(win_main.Sys_DefaultBasePath())
+                fs_basepath.SetString(DefaultBasePath())
             }
             if (fs_savepath.GetString()!!.isEmpty()) {
-                fs_savepath.SetString(win_main.Sys_DefaultSavePath())
+                fs_savepath.SetString(DefaultSavePath())
+            }
+            if (fs_configpath.GetString()!!.isEmpty()) {
+                fs_configpath.SetString(DefaultConfigPath())
             }
             if (fs_cdpath.GetString()!!.isEmpty()) {
-                fs_cdpath.SetString(win_main.Sys_DefaultCDPath())
+                fs_cdpath.SetString(DefaultCDPath())
             }
             if (fs_devpath.GetString()!!.isEmpty()) {
-                if (WIN32) {
-                    fs_devpath.SetString(
-                        if (fs_cdpath.GetString()!!.isNotEmpty()) fs_cdpath.GetString() else fs_basepath.GetString()
-                    )
-                } else {
-                    fs_devpath.SetString(fs_savepath.GetString())
-                }
+                fs_devpath.SetString(DefaultDevPath())
             }
+            NormalizeFilesystemCVars()
 
             // try to start up normally
             Startup()
@@ -1054,6 +1466,10 @@ object FileSystem_h {
             var isearch: Int
             isearch = 0
             while (isearch < 4) {
+                if (search[isearch].isEmpty()) {
+                    isearch++
+                    continue
+                }
                 dirs.clear()
                 pk4s.clear()
                 // scan for directories
@@ -2071,7 +2487,7 @@ object FileSystem_h {
                     file.o = fp
                     file.name.set(relativePath)
                     file.fullPath.set(netpath)
-                    file.mode = 1 shl TempDump.etoi(fsMode_t.FS_READ)
+                    file.mode = 1 shl (fsMode_t.FS_READ).ordinal
                     file.fileSize = DirectFileLength(file.o!!).toInt()
                     if (fs_debug.GetInteger() != 0) {
                         idLib.common.Printf(
@@ -2335,7 +2751,7 @@ object FileSystem_h {
             }
             f.name.set(filename)
             f.fullPath.set(OSpath)
-            f.mode = (1 shl TempDump.etoi(fsMode_t.FS_WRITE)) + (1 shl TempDump.etoi(fsMode_t.FS_APPEND))
+            f.mode = (1 shl (fsMode_t.FS_WRITE).ordinal) + (1 shl (fsMode_t.FS_APPEND).ordinal)
             f.handleSync = sync
             f.fileSize = DirectFileLength(f.o!!).toInt()
             return f
@@ -2367,7 +2783,7 @@ object FileSystem_h {
             }
             f.name.set(OSPath)
             f.fullPath.set(OSPath)
-            f.mode = 1 shl TempDump.etoi(fsMode_t.FS_READ)
+            f.mode = 1 shl (fsMode_t.FS_READ).ordinal
             f.handleSync = false
             f.fileSize = DirectFileLength(f.o!!).toInt()
             return f
@@ -2391,7 +2807,7 @@ object FileSystem_h {
             }
             f.name.set(OSPath)
             f.fullPath.set(OSPath)
-            f.mode = 1 shl TempDump.etoi(fsMode_t.FS_WRITE)
+            f.mode = 1 shl (fsMode_t.FS_WRITE).ordinal
             f.handleSync = false
             f.fileSize = 0
             return f
@@ -2731,7 +3147,7 @@ object FileSystem_h {
             file.o = f
             file.name.set("<tempfile>")
             file.fullPath.set("<tempfile>")
-            file.mode = (1 shl TempDump.etoi(fsMode_t.FS_READ)) + (1 shl TempDump.etoi(fsMode_t.FS_WRITE))
+            file.mode = (1 shl (fsMode_t.FS_READ).ordinal) + (1 shl (fsMode_t.FS_WRITE).ordinal)
             file.fileSize = 0
             return file
         }
@@ -2896,7 +3312,7 @@ object FileSystem_h {
                     WriteFile(buf.toString(), data, dlen)
                     data = null
                 } else {
-                    buf.append("guis/assets/splash/pdtempa".substring(0, len))
+                    idStr.snPrintf(buf, len, "guis/assets/splash/pdtempa.tga")
                 }
             }
         }
@@ -3034,8 +3450,7 @@ object FileSystem_h {
             fp = try {
                 Paths.get(fileName) //fp = fopen(fileName, mode);
             } catch (e: InvalidPathException) {
-                //log something.
-                Paths.get("/" + UUID.randomUUID())
+                return null
             }
             if (Files.notExists(fp, LinkOption.NOFOLLOW_LINKS)
                 && fs_caseSensitiveOS.GetBool()
@@ -3078,15 +3493,41 @@ object FileSystem_h {
                 caseSensitiveName.set(fileName)
                 caseSensitiveName.StripPath()
             }
+            if (IsReadOnlyMode(mode)) {
+                if (!IsRegularFileNoException(fp)) {
+                    return null
+                }
+            }
             try {
                 //                return new FileInputStream(fp.toFile()).getChannel();
-                return FileChannel.open(fp, TempDump.fopenOptions(mode))
+                return FileChannel.open(fp, fopenOptions(mode))
             } catch (ex: NoSuchFileException) { //TODO:turn exceptions back on.
 //                Logger.getLogger(FileSystem_h.class.getName()).log(Level.WARNING, null, ex);
             } catch (ex: IOException) {
                 Logger.getLogger(FileSystem_h::class.java.name).log(Level.SEVERE, null, ex)
             }
             return null
+        }
+
+        private fun IsReadOnlyMode(mode: String?): Boolean {
+            if (mode == null) {
+                return false
+            }
+            val normalized = mode.replace("b", "").replace("t", "")
+            return normalized.contains("r") &&
+                    !normalized.contains("+") &&
+                    !normalized.contains("w") &&
+                    !normalized.contains("a")
+        }
+
+        private fun IsRegularFileNoException(path: Path?): Boolean {
+            return try {
+                path?.toFile()?.isFile ?: false
+            } catch (_: UnsupportedOperationException) {
+                false
+            } catch (_: SecurityException) {
+                false
+            }
         }
 
         private fun OpenOSFileCorrectName(path: idStr, mode: String?): FileChannel? {
@@ -3458,25 +3899,31 @@ object FileSystem_h {
          ================
          */
         private fun SetupGameDirectories(gameName: String) {
-            // setup cdpath
-            if (!fs_cdpath.GetString()!!.isEmpty()) {
-                AddGameDirectory(fs_cdpath.GetString()!!, gameName)
+            val addedPaths = HashSet<String>()
+
+            fun addPath(path: String) {
+                if (path.isEmpty()) {
+                    return
+                }
+                if (addedPaths.add(FilesystemPathKey(path))) {
+                    AddGameDirectory(path, gameName)
+                }
             }
+
+            // setup cdpath
+            addPath(fs_cdpath.GetString()!!)
 
             // setup basepath
-            if (!fs_basepath.GetString()!!.isEmpty()) {
-                AddGameDirectory(fs_basepath.GetString()!!, gameName)
-            }
+            addPath(fs_basepath.GetString()!!)
 
             // setup devpath
-            if (!fs_devpath.GetString()!!.isEmpty()) {
-                AddGameDirectory(fs_devpath.GetString()!!, gameName)
-            }
+            addPath(fs_devpath.GetString()!!)
 
             // setup savepath
-            if (!fs_savepath.GetString()!!.isEmpty()) {
-                AddGameDirectory(fs_savepath.GetString()!!, gameName)
-            }
+            addPath(fs_savepath.GetString()!!)
+
+            // setup configpath
+            addPath(fs_configpath.GetString()!!)
         }
 
         private fun Startup() {
@@ -4020,9 +4467,6 @@ object FileSystem_h {
             hashindex = 0
             while (hashindex < FILE_HASH_SIZE) {
                 abrt = false
-                // FIX: C++ just assigns `file = pak->hashTable[hashindex]` (a local pointer).
-                // The Kotlin code was doing `pak.buildBuffer[hashindex] = pak.hashTable[hashindex]!!`
-                // which crashes with NPE when hashTable entry is null (most entries are null).
                 file = pak.hashTable[hashindex]
                 while (file != null) {
                     abrt = true
@@ -4043,7 +4487,7 @@ object FileSystem_h {
                         )
                         break
                     }
-                    file =  /*pak.buildBuffer =*/file.next //TODO:check this assignment.
+                    file = file.next
                     i++
                 }
                 if (abrt) {
@@ -4469,12 +4913,173 @@ object FileSystem_h {
                         }
                         bgl.completed = true
                     } else {
-                        // DLTYPE_URL — no curl equivalent in Kotlin
-                        bgl.url.status = dlStatus_t.DL_FAILED
+                        DownloadURLToFile(bgl)
                         bgl.completed = true
                     }
                 }
                 return 0
+            }
+
+            private const val DOWNLOAD_BUFFER_SIZE = 64 * 1024
+            private const val DOWNLOAD_CONNECT_TIMEOUT_SECONDS = 10L
+            private const val DOWNLOAD_REQUEST_TIMEOUT_SECONDS = 30L * 60L
+            private const val MAX_URL_REDIRECTS = 5
+            private const val MAX_URL_DOWNLOAD_BYTES = 2147483647L
+
+            private val downloadHttpClient: HttpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(DOWNLOAD_CONNECT_TIMEOUT_SECONDS))
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build()
+
+            private fun DownloadURLToFile(bgl: backgroundDownload_s) {
+                bgl.url.status = dlStatus_t.DL_INPROGRESS
+                bgl.url.dlerror = ""
+                bgl.url.dlnow = 0
+                bgl.url.dlstatus = 0
+
+                val file = bgl.f
+                if (file == null) {
+                    FailDownload(bgl, "download has no destination file")
+                    return
+                }
+
+                try {
+                    var uri = ValidateDownloadURI(bgl.url.url.toString())
+                    var redirects = 0
+
+                    while (redirects <= MAX_URL_REDIRECTS) {
+                        if (bgl.url.status == dlStatus_t.DL_ABORTING) {
+                            FailDownload(bgl, "download aborted")
+                            return
+                        }
+
+                        val request = HttpRequest.newBuilder(uri)
+                            .timeout(Duration.ofSeconds(DOWNLOAD_REQUEST_TIMEOUT_SECONDS))
+                            .header("User-Agent", "doom3-kotlin/0.3")
+                            .GET()
+                            .build()
+                        val response = downloadHttpClient.send(request, HttpResponse.BodyHandlers.ofInputStream())
+                        val status = response.statusCode()
+
+                        if (status in 300..399) {
+                            response.body().close()
+                            val location = response.headers().firstValue("location").orElse("")
+                            if (location.isBlank()) {
+                                FailDownload(bgl, "redirect without Location header")
+                                return
+                            }
+                            redirects++
+                            uri = ValidateDownloadURI(uri.resolve(location).toString())
+                            continue
+                        }
+
+                        if (status !in 200..299) {
+                            response.body().close()
+                            FailDownload(bgl, "HTTP $status")
+                            return
+                        }
+
+                        response.body().use { stream ->
+                            if (!DownloadResponseBody(bgl, file, response, stream)) {
+                                return
+                            }
+                        }
+                        file.Flush()
+                        bgl.url.status = dlStatus_t.DL_DONE
+                        return
+                    }
+
+                    FailDownload(bgl, "too many redirects")
+                } catch (ex: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    FailDownload(bgl, "download interrupted")
+                } catch (ex: Exception) {
+                    FailDownload(bgl, ex.message ?: ex.javaClass.simpleName)
+                }
+            }
+
+            private fun DownloadResponseBody(
+                bgl: backgroundDownload_s,
+                file: idFile,
+                response: HttpResponse<InputStream>,
+                stream: InputStream
+            ): Boolean {
+                val advertisedSize = bgl.url.dltotal
+                val contentLength = response.headers().firstValueAsLong("content-length").orElse(-1L)
+                if (contentLength > MAX_URL_DOWNLOAD_BYTES) {
+                    FailDownload(bgl, "download is too large")
+                    return false
+                }
+                if (advertisedSize > 0 && contentLength > advertisedSize.toLong()) {
+                    FailDownload(bgl, "download is larger than advertised")
+                    return false
+                }
+                if (advertisedSize <= 0 && contentLength >= 0) {
+                    bgl.url.dltotal = contentLength.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                }
+
+                val maxBytes = if (advertisedSize > 0) advertisedSize.toLong() else MAX_URL_DOWNLOAD_BYTES
+                val buffer = ByteArray(DOWNLOAD_BUFFER_SIZE)
+                var downloaded = 0L
+
+                while (true) {
+                    if (bgl.url.status == dlStatus_t.DL_ABORTING) {
+                        FailDownload(bgl, "download aborted")
+                        return false
+                    }
+
+                    val read = stream.read(buffer)
+                    if (read == -1) {
+                        break
+                    }
+                    if (read == 0) {
+                        continue
+                    }
+
+                    downloaded += read.toLong()
+                    if (downloaded > maxBytes || downloaded > MAX_URL_DOWNLOAD_BYTES) {
+                        FailDownload(bgl, "download exceeded expected size")
+                        return false
+                    }
+
+                    val chunk = ByteBuffer.wrap(buffer, 0, read)
+                    if (file.Write(chunk, read) != read) {
+                        FailDownload(bgl, "short write during download")
+                        return false
+                    }
+                    bgl.url.dlnow = downloaded.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                    if (bgl.url.dltotal > 0) {
+                        bgl.url.dlstatus = (bgl.url.dlnow.toLong() * 100L / bgl.url.dltotal.toLong()).toInt()
+                    }
+                }
+
+                if (advertisedSize > 0 && downloaded != advertisedSize.toLong()) {
+                    FailDownload(bgl, "download size mismatch")
+                    return false
+                }
+
+                return true
+            }
+
+            private fun ValidateDownloadURI(url: String): URI {
+                val uri = URI(url.trim())
+                val scheme = uri.scheme?.lowercase(Locale.ROOT)
+                    ?: throw IOException("download URL has no scheme")
+                if (scheme != "http" && scheme != "https") {
+                    throw IOException("unsupported download URL scheme '$scheme'")
+                }
+                if (uri.host.isNullOrBlank()) {
+                    throw IOException("download URL has no host")
+                }
+                if (uri.userInfo != null) {
+                    throw IOException("download URL user info is not allowed")
+                }
+                return uri
+            }
+
+            private fun FailDownload(bgl: backgroundDownload_s, reason: String) {
+                bgl.url.dlerror = reason
+                bgl.url.status = dlStatus_t.DL_FAILED
             }
 
             const val MAX_DESCRIPTION = 256
@@ -4487,6 +5092,8 @@ object FileSystem_h {
                 ""
             )
             private val fs_cdpath: idCVar = idCVar("fs_cdpath", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INIT, "")
+            private val fs_configpath: idCVar =
+                idCVar("fs_configpath", "", CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_INIT, "")
             private val fs_copyfiles: idCVar = idCVar(
                 "fs_copyfiles",
                 "0",
@@ -4536,17 +5143,9 @@ object FileSystem_h {
                 ptr: ByteBuffer,    /*size_t*/size: Int,  /*size_t*/
                 nmemb: Int, stream: Array<Any>
             ): Int {
-                throw TODO_Exception()
-                //            backgroundDownload_t bgl = (backgroundDownload_t) stream[0];
-//            if (null == bgl.f) {
-//                return size * nmemb;
-//            }
-////            if (_WIN32) {
-////                return _write(((idFile_Permanent) bgl.f).GetFilePtr()._file, ptr, size * nmemb);
-////            } else {
-//            return ((idFile_Permanent) bgl.f).GetFilePtr().write(ptr);
-////                return fwrite(ptr, size, nmemb, ((idFile_Permanent) bgl.f).GetFilePtr());
-////            }
+                // libcurl write callback. Curl integration isn't ported — return bytes
+                // consumed so the (unused) caller treats it as a successful write.
+                return size * nmemb
             }
 
             private fun CurlProgressFunction(

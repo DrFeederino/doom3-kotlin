@@ -55,9 +55,6 @@ import neo.Renderer.Model
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderLight_s
 import neo.Sound.snd_shader.idSoundShader
-import neo.TempDump
-import neo.TempDump.btoi
-import neo.Tools.Compilers.AAS.AASFile
 import neo.cm.CM_CLIP_EPSILON
 import neo.cm.trace_s
 import neo.framework.CmdSystem.cmdFunction_t
@@ -1790,7 +1787,7 @@ open class idAI : idActor() {
         savefile.WriteInt(chat_min)
         savefile.WriteInt(chat_max)
         savefile.WriteInt(chat_time)
-        savefile.WriteInt(TempDump.etoi(talk_state))
+        savefile.WriteInt((talk_state).ordinal)
         talkTarget.Save(savefile)
         savefile.WriteInt(num_cinematics)
         savefile.WriteInt(current_cinematic)
@@ -2751,7 +2748,7 @@ open class idAI : idActor() {
         fl.takedamage = false
         physicsObj.SetContents(0)
         physicsObj.GetClipModel()!!.Unlink()
-        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_AMBIENT), false)
+        StopSound((gameSoundChannel_t.SND_CHANNEL_AMBIENT).ordinal, false)
         SetChatSound()
         AI_ENEMY_IN_FOV.underscore(false)
         AI_ENEMY_VISIBLE.underscore(false)
@@ -3104,7 +3101,7 @@ open class idAI : idActor() {
         // the same object, causing GetMoveDelta to receive identical matrices.
         val oldAxis = idMat3(viewAxis)
         AI_BLOCKED.underscore(false)
-        if (TempDump.etoi(move.moveCommand) < TempDump.etoi(moveCommand_t.NUM_NONMOVING_COMMANDS)) {
+        if ((move.moveCommand).ordinal < (moveCommand_t.NUM_NONMOVING_COMMANDS).ordinal) {
             move.lastMoveOrigin.Zero()
             move.lastMoveTime = Game_local.gameLocal.time
         }
@@ -3214,7 +3211,7 @@ open class idAI : idActor() {
         val oldOrigin = idVec3(physicsObj.GetOrigin())
         viewAxis
         AI_BLOCKED.underscore(false)
-        if (TempDump.etoi(move.moveCommand) < TempDump.etoi(moveCommand_t.NUM_NONMOVING_COMMANDS)) {
+        if ((move.moveCommand).ordinal < (moveCommand_t.NUM_NONMOVING_COMMANDS).ordinal) {
             move.lastMoveOrigin.Zero()
             move.lastMoveTime = Game_local.gameLocal.time
         }
@@ -3515,7 +3512,7 @@ open class idAI : idActor() {
                 "%d: %s: %s, vel = %.2f, sp = %.2f, maxsp = %.2f\n",
                 Game_local.gameLocal.time,
                 name,
-                moveCommandString[TempDump.etoi(move.moveCommand)],
+                moveCommandString[(move.moveCommand).ordinal],
                 physicsObj.GetLinearVelocity().Length(),
                 move.speed,
                 fly_speed
@@ -3728,9 +3725,9 @@ open class idAI : idActor() {
         }
 
         // stop all voice sounds
-        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_VOICE), false)
+        StopSound((gameSoundChannel_t.SND_CHANNEL_VOICE).ordinal, false)
         if (head?.GetEntity() != null) {
-            head.GetEntity()!!.StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_VOICE), false)
+            head.GetEntity()!!.StopSound((gameSoundChannel_t.SND_CHANNEL_VOICE).ordinal, false)
             head.GetEntity()!!.GetAnimator().ClearAllAnims(Game_local.gameLocal.time, 100)
         }
         disableGravity = false
@@ -3740,7 +3737,7 @@ open class idAI : idActor() {
         physicsObj.ForceDeltaMove(false)
 
         // end our looping ambient sound
-        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_AMBIENT), false)
+        StopSound((gameSoundChannel_t.SND_CHANNEL_AMBIENT).ordinal, false)
         if (attacker != null && attacker is idActor) {
             Game_local.gameLocal.AlertAI(attacker)
         }
@@ -6985,7 +6982,7 @@ open class idAI : idActor() {
      ================
      */
     protected fun Event_MoveStatus() {
-        idThread.ReturnInt(TempDump.etoi(move.moveStatus))
+        idThread.ReturnInt((move.moveStatus).ordinal)
     }
 
     /*
@@ -7404,7 +7401,7 @@ open class idAI : idActor() {
      */
     protected fun Event_SetTalkState(_state: idEventArg<Int>) {
         val state: Int = _state.value
-        if (state < 0 || state >= TempDump.etoi(talkState_t.NUM_TALK_STATES)) {
+        if (state < 0 || state >= (talkState_t.NUM_TALK_STATES).ordinal) {
             idGameLocal.Error("Invalid talk state (%d)", state)
         }
         talk_state = talkState_t.entries.toTypedArray()[state]
@@ -8104,7 +8101,7 @@ open class idAI : idActor() {
      ================
      */
     protected fun Event_GetMoveType() {
-        idThread.ReturnInt(TempDump.etoi(move.moveType))
+        idThread.ReturnInt((move.moveType).ordinal)
     }
 
     /*
@@ -8114,7 +8111,7 @@ open class idAI : idActor() {
      */
     protected fun Event_SetMoveType(_moveType: idEventArg<Int>) {
         val moveType: Int = _moveType.value
-        if (moveType < 0 || moveType >= TempDump.etoi(moveType_t.NUM_MOVETYPES)) {
+        if (moveType < 0 || moveType >= (moveType_t.NUM_MOVETYPES).ordinal) {
             idGameLocal.Error("Invalid movetype %d", moveType)
         }
         move.moveType = moveType_t.entries.toTypedArray()[moveType]
@@ -8450,7 +8447,7 @@ open class idAI : idActor() {
      ================
      */
     protected fun Event_SetJointMod(allow: idEventArg<Int>) {
-        allowJointMod = TempDump.itob(allow.value)
+        allowJointMod = (allow.value).toBoolean()
     }
 
     /*
@@ -8994,7 +8991,7 @@ open class idAI : idActor() {
                     check.GetEntityDefName(),
                     check.name,
                     statename,
-                    btoi(check.allowMove)
+                    (check.allowMove).toInt()
                 )
                 count++
                 e++

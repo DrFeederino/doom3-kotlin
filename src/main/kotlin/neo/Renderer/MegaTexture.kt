@@ -32,7 +32,6 @@ import neo.Renderer.Image.textureDepth_t
 import neo.Renderer.Material.textureFilter_t
 import neo.Renderer.Material.textureRepeat_t
 import neo.Renderer.Model.srfTriangles_s
-import neo.TempDump.CPP_class
 import neo.framework.CVarSystem.CVAR_BOOL
 import neo.framework.CVarSystem.CVAR_INTEGER
 import neo.framework.CVarSystem.CVAR_RENDERER
@@ -45,6 +44,7 @@ import neo.framework.File_h.idFile
 import neo.framework.Session
 import neo.idlib.CmdArgs
 import neo.idlib.Text.Str.idStr
+import neo.idlib.containers.CPP_class
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.math.idVec3
 import org.lwjgl.BufferUtils
@@ -103,7 +103,6 @@ object MegaTexture {
         var y: Int = 0
 
         companion object {
-            @Transient
             val SIZE: Int = (Integer.SIZE
                     + Integer.SIZE)
         }
@@ -281,12 +280,11 @@ object MegaTexture {
         }
 
         companion object {
-            @Transient
-            val SIZE: Int = (CPP_class.Pointer.SIZE //idMegaTexture * mega
+            val SIZE: Int = (CPP_class.POINTER_SIZE //idMegaTexture * mega
                     + Integer.SIZE
                     + Integer.SIZE
                     + Integer.SIZE
-                    + CPP_class.Pointer.SIZE //idImage * image
+                    + CPP_class.POINTER_SIZE //idImage * image
                     + (idTextureTile.SIZE * TILE_PER_LEVEL * TILE_PER_LEVEL))
         }
     }
@@ -297,7 +295,6 @@ object MegaTexture {
         var tilesWide: Int = 0
 
         companion object {
-            @Transient
             val BYTES: Int = Integer.BYTES * 3
             fun ReadDdsFileHeader_t(): ByteBuffer {
                 return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
@@ -820,9 +817,8 @@ object MegaTexture {
         }
 
         companion object {
-            @Transient
-            val SIZE: Int = (CPP_class.Pointer.SIZE //idFile fileHandle
-                    + CPP_class.Pointer.SIZE //srfTriangles_s currentTriMapping
+            val SIZE: Int = (CPP_class.POINTER_SIZE //idFile fileHandle
+                    + CPP_class.POINTER_SIZE //srfTriangles_s currentTriMapping
                     + idVec3.SIZE
                     + (java.lang.Float.SIZE * 2 * 4)
                     + Integer.SIZE

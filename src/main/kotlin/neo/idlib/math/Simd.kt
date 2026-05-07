@@ -3,7 +3,6 @@ package neo.idlib.math
 import neo.Game.Animation.idAnimBlend
 import neo.Renderer.Model.dominantTri_s
 import neo.Renderer.Model.shadowCache_s
-import neo.TempDump
 import neo.idlib.CmdArgs
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.List
@@ -12,6 +11,7 @@ import neo.idlib.geometry.JointTransform.idJointMat
 import neo.idlib.geometry.JointTransform.idJointQuat
 import neo.idlib.idLib
 import neo.idlib.math.Matrix.idMatX
+import neo.idlib.toInt
 import neo.sys.CPUID_GENERIC
 import neo.sys.CPUID_NONE
 import neo.sys.CPUID_SSE
@@ -502,14 +502,14 @@ abstract class idSIMDProcessor {
         val nm = numFaces and -0x4
         var i: Int = 0
         while (i < nm) {
-            facing[i + 0] = TempDump.btoi(planeSide[i + 0] >= f).toByte()
-            facing[i + 1] = TempDump.btoi(planeSide[i + 1] >= f).toByte()
-            facing[i + 2] = TempDump.btoi(planeSide[i + 2] >= f).toByte()
-            facing[i + 3] = TempDump.btoi(planeSide[i + 3] >= f).toByte()
+            facing[i + 0] = (planeSide[i + 0] >= f).toInt().toByte()
+            facing[i + 1] = (planeSide[i + 1] >= f).toInt().toByte()
+            facing[i + 2] = (planeSide[i + 2] >= f).toInt().toByte()
+            facing[i + 3] = (planeSide[i + 3] >= f).toInt().toByte()
             i += 4
         }
         while (i < numFaces) {
-            facing[i + 0] = TempDump.btoi(planeSide[i + 0] >= f).toByte()
+            facing[i + 0] = (planeSide[i + 0] >= f).toInt().toByte()
             i++
         }
     }

@@ -35,7 +35,6 @@ import neo.Renderer.Model.silEdge_t
 import neo.Renderer.Model.srfTriangles_s
 import neo.Renderer.RenderWorld.modelTrace_s
 import neo.Renderer.tr_render.RB_T_RenderTriangleSurface
-import neo.TempDump.allocArray
 import neo.framework.Common
 import neo.framework.DeclManager
 import neo.idlib.BV.idBounds
@@ -107,7 +106,9 @@ object tr_rendertools {
 
     //
     //
-    var rb_debugText: Array<debugText_s> = allocArray(debugText_s::class.java, MAX_DEBUG_TEXT)
+    var rb_debugText: Array<debugText_s> = Array(MAX_DEBUG_TEXT) {
+        debugText_s()
+    }
     var rb_debugTextTime: Int = 0
     var rb_numDebugLines: Int = 0
     var rb_numDebugPolygons: Int = 0
@@ -1755,7 +1756,7 @@ object tr_rendertools {
         rb_debugTextTime = time
         if (0 == time) {
             // free up our strings
-            rb_debugText = allocArray(debugText_s::class.java, rb_debugText.size)
+            rb_debugText = Array(rb_debugText.size) { debugText_s() }
             rb_numDebugText = 0
             return
         }

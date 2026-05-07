@@ -1,9 +1,9 @@
 package neo.ui
 
-import neo.TempDump.itob
 import neo.idlib.Text.Parser.idParser
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
+import neo.idlib.toBoolean
 import neo.ui.DeviceContext.idDeviceContext
 import neo.ui.Rectangle.idRectangle
 import neo.ui.UserInterfaceLocal.idUserInterfaceLocal
@@ -51,7 +51,7 @@ class FieldWindow {
                 foreColor.data,
                 rect,
                 false,
-                if (itob(flags and Window.WIN_FOCUS) || showCursor) cursorPos - paintOffset else -1
+                if ((flags and Window.WIN_FOCUS).toBoolean() || showCursor) cursorPos - paintOffset else -1
             )
         }
 

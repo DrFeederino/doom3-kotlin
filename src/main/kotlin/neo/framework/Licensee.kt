@@ -38,8 +38,7 @@ object Licensee {
     const val BASE_GAMEDIR: String = "base"
 
     // filenames
-    // NOTE: Differs from C++ "dhewm.cfg" — uses original id Software filename
-    const val CONFIG_FILE: String = "DoomConfig.cfg"
+    const val CONFIG_FILE: String = "dhewm.cfg"
 
     // base folder where the source code lives
     const val SOURCE_CODE_BASE_FOLDER: String = "neo"

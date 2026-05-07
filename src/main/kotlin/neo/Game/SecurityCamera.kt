@@ -33,7 +33,6 @@ import neo.Game.Pvs.pvsHandle_t
 import neo.Renderer.Material
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderView_s
-import neo.TempDump
 import neo.cm.collisionModelManager
 import neo.cm.trace_s
 import neo.idlib.Dict_h.idDict
@@ -231,7 +230,7 @@ object SecurityCamera {
                             CancelEvents(EV_SecurityCam_ReverseSweep)
                         }
                         sweeping = false
-                        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+                        StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
                         StartSound("snd_sight", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
                         sightTime = spawnArgs.GetFloat("sightTime", "5")
                         PostEventSec(EV_SecurityCam_Alert, sightTime)
@@ -271,7 +270,7 @@ object SecurityCamera {
 
         override fun Killed(inflictor: idEntity?, attacker: idEntity?, damage: Int, dir: idVec3, location: Int) {
             sweeping = false
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
             val fx = spawnArgs.GetString("fx_destroyed")
             if (fx.isNotEmpty()) { //fx[0] != '\0' ) {
                 idEntityFx.StartFx(fx, null, null, this, true)
@@ -486,7 +485,7 @@ object SecurityCamera {
             val sweepWait: Float
             sweepWait = spawnArgs.GetFloat("sweepWait", "0.5f")
             sweeping = false
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
             StartSound("snd_stop", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
             PostEventSec(EV_SecurityCam_ReverseSweep, sweepWait)
         }
@@ -494,7 +493,7 @@ object SecurityCamera {
         private fun Event_Alert() {
             val wait: Float
             SetAlertMode(ACTIVATED)
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
             StartSound("snd_activate", gameSoundChannel_t.SND_CHANNEL_BODY, 0, false)
             ActivateTargets(this)
             CancelEvents(EV_SecurityCam_ContinueSweep)

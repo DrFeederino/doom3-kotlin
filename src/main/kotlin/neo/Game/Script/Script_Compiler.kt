@@ -11,8 +11,6 @@ import neo.Game.Script.Script_Program.idTypeDef
 import neo.Game.Script.Script_Program.idVarDef
 import neo.Game.Script.Script_Program.idVarDef.initialized_t
 import neo.Game.Script.Script_Program.statement_s
-import neo.TempDump.btoi
-import neo.TempDump.itob
 import neo.idlib.Text.Lexer.LEXFL_ALLOWMULTICHARLITERALS
 import neo.idlib.Text.Lexer.LEXFL_NOERRORS
 import neo.idlib.Text.Lexer.P_PRECOMP
@@ -29,6 +27,8 @@ import neo.idlib.Text.Token.TT_STRING
 import neo.idlib.Text.Token.idToken
 import neo.idlib.Timer.idTimer
 import neo.idlib.math.idVec3
+import neo.idlib.toBoolean
+import neo.idlib.toInt
 
 const val D_EVENT_ENTITY = 'e'
 const val D_EVENT_ENTITY_NULL = 'E' // event can handle NULL entity pointers
@@ -388,48 +388,49 @@ internal class idCompiler {
             }
 
             OP_GE -> {
-                c._float = btoi(var_a!!.value!!.floatPtr >= var_b!!.value!!.floatPtr).toFloat()
+                c._float = (var_a!!.value!!.floatPtr >= var_b!!.value!!.floatPtr).toInt().toFloat()
                 type = Script_Program.type_float
             }
 
             OP_LE -> {
-                c._float = btoi(var_a!!.value!!.floatPtr <= var_b!!.value!!.floatPtr).toFloat()
+                c._float = (var_a!!.value!!.floatPtr <= var_b!!.value!!.floatPtr).toInt().toFloat()
                 type = Script_Program.type_float
             }
 
             OP_GT -> {
-                c._float = btoi(var_a!!.value!!.floatPtr > var_b!!.value!!.floatPtr).toFloat()
+                c._float = (var_a!!.value!!.floatPtr > var_b!!.value!!.floatPtr).toInt().toFloat()
                 type = Script_Program.type_float
             }
 
             OP_LT -> {
-                c._float = btoi(var_a!!.value!!.floatPtr < var_b!!.value!!.floatPtr).toFloat()
+                c._float = (var_a!!.value!!.floatPtr < var_b!!.value!!.floatPtr).toInt().toFloat()
                 type = Script_Program.type_float
             }
 
             OP_AND -> {
-                c._float = btoi(var_a!!.value!!.floatPtr != 0.0f && var_b!!.value!!.floatPtr != 0.0f).toFloat()
+                c._float = (var_a!!.value!!.floatPtr != 0.0f && var_b!!.value!!.floatPtr != 0.0f).toInt().toFloat()
                 type = Script_Program.type_float
             }
 
             OP_OR -> {
-                c._float = btoi(var_a!!.value!!.floatPtr != 0.0f || var_b!!.value!!.floatPtr != 0.0f).toFloat()
+                c._float = (var_a!!.value!!.floatPtr != 0.0f || var_b!!.value!!.floatPtr != 0.0f).toInt().toFloat()
                 type = Script_Program.type_float
             }
 
             OP_NOT_BOOL -> {
-                c._int = btoi(!itob(var_a!!.value!!.intPtr))
+                c._int = (!(var_a!!.value!!.intPtr).toBoolean()).toInt()
                 type = Script_Program.type_boolean
             }
 
             OP_NOT_F -> {
-                c._float = btoi(!itob(var_a!!.value!!.floatPtr.toInt())).toFloat()
+                c._float = (!(var_a!!.value!!.floatPtr.toInt()).toBoolean()).toInt().toFloat()
                 type = Script_Program.type_float
             }
 
             OP_NOT_V -> {
                 c._float =
-                    btoi(0.0f == var_a!!.value!!.vectorPtr.x && 0.0f == var_a.value!!.vectorPtr.y && 0.0f == var_a.value!!.vectorPtr.z).toFloat()
+                    (0.0f == var_a!!.value!!.vectorPtr.x && 0.0f == var_a.value!!.vectorPtr.y && 0.0f == var_a.value!!.vectorPtr.z).toInt()
+                        .toFloat()
                 type = Script_Program.type_float
             }
 
@@ -449,32 +450,32 @@ internal class idCompiler {
             }
 
             OP_EQ_F -> {
-                c._float = btoi(var_a!!.value!!.floatPtr == var_b!!.value!!.floatPtr).toFloat()
+                c._float = (var_a!!.value!!.floatPtr == var_b!!.value!!.floatPtr).toInt().toFloat()
                 type = Script_Program.type_float
             }
 
             OP_EQ_V -> {
-                c._float = btoi(var_a!!.value!!.vectorPtr.Compare(var_b!!.value!!.getVectorPtrs())).toFloat()
+                c._float = (var_a!!.value!!.vectorPtr.Compare(var_b!!.value!!.getVectorPtrs())).toInt().toFloat()
                 type = Script_Program.type_float
             }
 
             OP_EQ_E -> {
-                c._float = btoi(var_a!!.value!!.intPtr == var_b!!.value!!.intPtr).toFloat()
+                c._float = (var_a!!.value!!.intPtr == var_b!!.value!!.intPtr).toInt().toFloat()
                 type = Script_Program.type_float
             }
 
             OP_NE_F -> {
-                c._float = btoi(var_a!!.value!!.floatPtr != var_b!!.value!!.floatPtr).toFloat()
+                c._float = (var_a!!.value!!.floatPtr != var_b!!.value!!.floatPtr).toInt().toFloat()
                 type = Script_Program.type_float
             }
 
             OP_NE_V -> {
-                c._float = btoi(!var_a!!.value!!.vectorPtr.Compare(var_b!!.value!!.getVectorPtrs())).toFloat()
+                c._float = (!var_a!!.value!!.vectorPtr.Compare(var_b!!.value!!.getVectorPtrs())).toInt().toFloat()
                 type = Script_Program.type_float
             }
 
             OP_NE_E -> {
-                c._float = btoi(var_a!!.value!!.intPtr != var_b!!.value!!.intPtr).toFloat()
+                c._float = (var_a!!.value!!.intPtr != var_b!!.value!!.intPtr).toInt().toFloat()
                 type = Script_Program.type_float
             }
 

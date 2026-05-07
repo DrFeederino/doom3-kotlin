@@ -25,8 +25,6 @@ import neo.Renderer.MegaTexture.idMegaTexture
 import neo.Renderer.Model_local.idRenderModelStatic
 import neo.Renderer.VertexCache.idVertexCache
 import neo.Sound.snd_system
-import neo.TempDump
-import neo.TempDump.void_callback
 import neo.cm.idCollisionModelManagerLocal
 import neo.framework.Async.AsyncNetwork
 import neo.framework.Async.ServerScan
@@ -38,17 +36,16 @@ import neo.framework.FileSystem_h.idFileSystemLocal
 import neo.framework.File_h.idFile
 import neo.framework.Session_local.idSessionLocal
 import neo.framework.UsercmdGen.idUsercmdGenLocal
-import neo.idlib.BIT
-import neo.idlib.CmdArgs
+import neo.idlib.*
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.FindChar
+import neo.idlib.Text.atof
+import neo.idlib.Text.atoi
 import neo.idlib.containers.List.cmp_t
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idHashIndex
-import neo.idlib.idException
-import neo.idlib.idLib
 import neo.sys.sys_local
 import neo.sys.win_local
 import neo.sys.win_net
@@ -536,10 +533,10 @@ object CVarSystem {
 
         // Command and argument completion using callback for each valid string.
         @Throws(idException::class)
-        abstract fun CommandCompletion(callback: void_callback<String> /*, final String s*/)
+        abstract fun CommandCompletion(callback: (String) -> Unit /*, final String s*/)
 
         @Throws(idException::class)
-        abstract fun ArgCompletion(cmdString: String, callback: void_callback<String> /*, final String s*/)
+        abstract fun ArgCompletion(cmdString: String, callback: (String) -> Unit /*, final String s*/)
 
         // Sets/gets/clears modified flags that tell what kind of CVars have changed.
         abstract fun SetModifiedFlags(flags: Int)
@@ -698,7 +695,7 @@ object CVarSystem {
         fun UpdateValue() {
             var clamped = false
             if (flags and CVAR_BOOL != 0) {
-                integerValue = if (TempDump.atoi(value!!) != 0) 1 else 0
+                integerValue = if (atoi(value!!) != 0) 1 else 0
                 floatValue = integerValue.toFloat()
                 if (idStr.Icmp(value!!, "0") != 0 && idStr.Icmp(value!!, "1") != 0) {
                     // FIX: C++ idStr(bool) produces "1"/"0". Kotlin Boolean.toString() produces "true"/"false"
@@ -707,7 +704,7 @@ object CVarSystem {
                     value = valueString.toString()
                 }
             } else if (flags and CVAR_INTEGER != 0) {
-                integerValue = TempDump.atoi(value!!)
+                integerValue = atoi(value!!)
                 if (valueMin < valueMax) {
                     if (integerValue < valueMin) {
                         integerValue = valueMin.toInt()
@@ -724,7 +721,7 @@ object CVarSystem {
                 }
                 floatValue = integerValue.toFloat()
             } else if (flags and CVAR_FLOAT != 0) {
-                floatValue = TempDump.atof(value!!)
+                floatValue = atof(value!!)
                 if (valueMin < valueMax) {
                     if (floatValue < valueMin) {
                         floatValue = valueMin
@@ -754,7 +751,7 @@ object CVarSystem {
                     value = valueStrings!![integerValue]
                     floatValue = integerValue.toFloat()
                 } else if (valueString.Length() < 32) {
-                    floatValue = TempDump.atof(value!!)
+                    floatValue = atof(value!!)
                     integerValue = floatValue.toInt()
                 } else {
                     floatValue = 0.0f
@@ -835,7 +832,7 @@ object CVarSystem {
 
         @Throws(idException::class)
         override fun InternalSetBool(newValue: Boolean) {
-            Set(TempDump.btoi(newValue).toString(), true, false)
+            Set((newValue).toInt().toString(), true, false)
         }
 
         @Throws(idException::class)
@@ -1007,14 +1004,14 @@ object CVarSystem {
         }
 
         @Throws(idException::class)
-        override fun CommandCompletion(callback: void_callback<String>) {
+        override fun CommandCompletion(callback: (String) -> Unit) {
             for (i in 0 until cvars.Num()) {
-                callback.run(cvars[i].GetName())
+                callback(cvars[i].GetName())
             }
         }
 
         @Throws(idException::class)
-        override fun ArgCompletion(cmdString: String, callback: void_callback<String>) {
+        override fun ArgCompletion(cmdString: String, callback: (String) -> Unit) {
             val args = CmdArgs.idCmdArgs()
             args.TokenizeString(cmdString, false)
             for (i in 0 until cvars.Num()) {
@@ -1184,7 +1181,7 @@ object CVarSystem {
                     // toggle between 0 and 1
                     current = cvar.GetFloat()
                     set = if (argc == 3) {
-                        TempDump.atof(args.Argv(2))
+                        atof(args.Argv(2))
                     } else {
                         1.0f
                     }

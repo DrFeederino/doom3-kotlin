@@ -18,13 +18,13 @@ import neo.Game.Physics.Physics_Actor.idPhysics_Actor
 import neo.Game.TH_PHYSICS
 import neo.Game.idActor
 import neo.Game.idEntity
-import neo.TempDump
 import neo.cm.trace_s
 import neo.idlib.BitMsg.idBitMsgDelta
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CInt
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
+import neo.idlib.toInt
 
 object Physics_Monster {
     //
@@ -153,7 +153,7 @@ object Physics_Monster {
             savefile.WriteBool(fly)
             savefile.WriteBool(useVelocityMove)
             savefile.WriteBool(noImpact)
-            savefile.WriteInt(TempDump.etoi(moveResult))
+            savefile.WriteInt((moveResult).ordinal)
             savefile.WriteObject(blockingEntity as Class.idClass?)
         }
 
@@ -673,7 +673,7 @@ object Physics_Monster {
                 MONSTER_VELOCITY_MANTISSA_BITS
             )
             msg.WriteLong(current.atRest)
-            msg.WriteBits(TempDump.btoi(current.onGround), 1)
+            msg.WriteBits((current.onGround).toInt(), 1)
         }
 
         /*

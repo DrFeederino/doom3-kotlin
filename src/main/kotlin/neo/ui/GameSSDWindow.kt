@@ -2,8 +2,6 @@ package neo.ui
 
 import neo.Renderer.Material
 import neo.Renderer.Material.idMaterial
-import neo.TempDump.SERiAL
-import neo.TempDump.atoi
 import neo.framework.DeclManager
 import neo.framework.File_h.idFile
 import neo.framework.KeyInput.K_MOUSE1
@@ -17,9 +15,11 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.FindText
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.va
+import neo.idlib.Text.atoi
 import neo.idlib.colorWhite
 import neo.idlib.containers.CBool
 import neo.idlib.containers.List.idList
+import neo.idlib.idSerializable
 import neo.idlib.math.DEG2RAD
 import neo.idlib.math.Random.idRandom
 import neo.idlib.math.idMath.Tan
@@ -36,7 +36,6 @@ import neo.ui.UserInterfaceLocal.idUserInterfaceLocal
 import neo.ui.Window.idWindow
 import neo.ui.Winvar.idWinBool
 import neo.ui.Winvar.idWinVar
-import java.nio.ByteBuffer
 import kotlin.math.abs
 
 object GameSSDWindow {
@@ -1240,35 +1239,26 @@ object GameSSDWindow {
         }
     }
 
-    class SSDLevelData_t : SERiAL {
+    class SSDLevelData_t : idSerializable {
         var needToWin = 0
         var spawnBuffer = 0.0f
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
+
+        override fun readFrom(file: idFile) {
+            needToWin = file.ReadInt()
+            spawnBuffer = file.ReadFloat()
         }
 
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            needToWin = buffer.int
-            spawnBuffer = buffer.float
-        }
-
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            buffer.putInt(needToWin)
-            buffer.putFloat(spawnBuffer)
-            buffer.flip()
-            return buffer
+        override fun writeTo(file: idFile) {
+            file.WriteInt(needToWin)
+            file.WriteFloat(spawnBuffer)
         }
 
         companion object {
-            @Transient
             val BYTES = 8
         }
     }
 
-    class SSDAsteroidData_t : SERiAL {
+    class SSDAsteroidData_t : idSerializable {
         var asteroidDamage = 0
         var asteroidHealth = 0
         var asteroidPoints = 0
@@ -1280,50 +1270,41 @@ object GameSSDWindow {
         var spawnMax = 0
         var speedMin = 0.0f
         var speedMax = 0.0f
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
+
+        override fun readFrom(file: idFile) {
+            asteroidDamage = file.ReadInt()
+            asteroidHealth = file.ReadInt()
+            asteroidPoints = file.ReadInt()
+            rotateMin = file.ReadFloat()
+            rotateMax = file.ReadFloat()
+            sizeMin = file.ReadFloat()
+            sizeMax = file.ReadFloat()
+            spawnMin = file.ReadInt()
+            spawnMax = file.ReadInt()
+            speedMin = file.ReadFloat()
+            speedMax = file.ReadFloat()
         }
 
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            asteroidDamage = buffer.int
-            asteroidHealth = buffer.int
-            asteroidPoints = buffer.int
-            rotateMin = buffer.float
-            rotateMax = buffer.float
-            sizeMin = buffer.float
-            sizeMax = buffer.float
-            spawnMin = buffer.int
-            spawnMax = buffer.int
-            speedMin = buffer.float
-            speedMax = buffer.float
-        }
-
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            buffer.putInt(asteroidDamage)
-            buffer.putInt(asteroidHealth)
-            buffer.putInt(asteroidPoints)
-            buffer.putFloat(rotateMin)
-            buffer.putFloat(rotateMax)
-            buffer.putFloat(sizeMin)
-            buffer.putFloat(sizeMax)
-            buffer.putInt(spawnMin)
-            buffer.putInt(spawnMax)
-            buffer.putFloat(speedMin)
-            buffer.putFloat(speedMax)
-            buffer.flip()
-            return buffer
+        override fun writeTo(file: idFile) {
+            file.WriteInt(asteroidDamage)
+            file.WriteInt(asteroidHealth)
+            file.WriteInt(asteroidPoints)
+            file.WriteFloat(rotateMin)
+            file.WriteFloat(rotateMax)
+            file.WriteFloat(sizeMin)
+            file.WriteFloat(sizeMax)
+            file.WriteInt(spawnMin)
+            file.WriteInt(spawnMax)
+            file.WriteFloat(speedMin)
+            file.WriteFloat(speedMax)
         }
 
         companion object {
-            @Transient
             val BYTES = 44
         }
     }
 
-    class SSDAstronautData_t : SERiAL {
+    class SSDAstronautData_t : idSerializable {
         var health = 0
         var penalty = 0
         var points = 0
@@ -1333,112 +1314,85 @@ object GameSSDWindow {
         var spawnMax = 0
         var speedMin = 0.0f
         var speedMax = 0.0f
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
+
+        override fun readFrom(file: idFile) {
+            health = file.ReadInt()
+            penalty = file.ReadInt()
+            points = file.ReadInt()
+            rotateMin = file.ReadFloat()
+            rotateMax = file.ReadFloat()
+            spawnMin = file.ReadInt()
+            spawnMax = file.ReadInt()
+            speedMin = file.ReadFloat()
+            speedMax = file.ReadFloat()
         }
 
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            health = buffer.int
-            penalty = buffer.int
-            points = buffer.int
-            rotateMin = buffer.float
-            rotateMax = buffer.float
-            spawnMin = buffer.int
-            spawnMax = buffer.int
-            speedMin = buffer.float
-            speedMax = buffer.float
-        }
-
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            buffer.putInt(health)
-            buffer.putInt(penalty)
-            buffer.putInt(points)
-            buffer.putFloat(rotateMin)
-            buffer.putFloat(rotateMax)
-            buffer.putInt(spawnMin)
-            buffer.putInt(spawnMax)
-            buffer.putFloat(speedMin)
-            buffer.putFloat(speedMax)
-            buffer.flip()
-            return buffer
+        override fun writeTo(file: idFile) {
+            file.WriteInt(health)
+            file.WriteInt(penalty)
+            file.WriteInt(points)
+            file.WriteFloat(rotateMin)
+            file.WriteFloat(rotateMax)
+            file.WriteInt(spawnMin)
+            file.WriteInt(spawnMax)
+            file.WriteFloat(speedMin)
+            file.WriteFloat(speedMax)
         }
 
         companion object {
-            @Transient
             val BYTES = 36
         }
     }
 
-    class SSDPowerupData_t : SERiAL {
+    class SSDPowerupData_t : idSerializable {
         var rotateMin = 0.0f
         var rotateMax = 0.0f
         var spawnMin = 0
         var spawnMax = 0
         var speedMin = 0.0f
         var speedMax = 0.0f
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
+
+        override fun readFrom(file: idFile) {
+            rotateMin = file.ReadFloat()
+            rotateMax = file.ReadFloat()
+            spawnMin = file.ReadInt()
+            spawnMax = file.ReadInt()
+            speedMin = file.ReadFloat()
+            speedMax = file.ReadFloat()
         }
 
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            rotateMin = buffer.float
-            rotateMax = buffer.float
-            spawnMin = buffer.int
-            spawnMax = buffer.int
-            speedMin = buffer.float
-            speedMax = buffer.float
-        }
-
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            buffer.putFloat(rotateMin)
-            buffer.putFloat(rotateMax)
-            buffer.putInt(spawnMin)
-            buffer.putInt(spawnMax)
-            buffer.putFloat(speedMin)
-            buffer.putFloat(speedMax)
-            buffer.flip()
-            return buffer
+        override fun writeTo(file: idFile) {
+            file.WriteFloat(rotateMin)
+            file.WriteFloat(rotateMax)
+            file.WriteInt(spawnMin)
+            file.WriteInt(spawnMax)
+            file.WriteFloat(speedMin)
+            file.WriteFloat(speedMax)
         }
 
         companion object {
-            @Transient
             val BYTES = 24
         }
     }
 
-    class SSDWeaponData_t : SERiAL {
+    class SSDWeaponData_t : idSerializable {
         var damage = 0
         var size = 0
         var speed = 0.0f
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
+
+        override fun readFrom(file: idFile) {
+            damage = file.ReadInt()
+            size = file.ReadInt()
+            speed = file.ReadFloat()
         }
 
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            damage = buffer.int
-            size = buffer.int
-            speed = buffer.float
-        }
-
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            buffer.putInt(damage)
-            buffer.putInt(size)
-            buffer.putFloat(speed)
-            buffer.flip()
-            return buffer
+        override fun writeTo(file: idFile) {
+            file.WriteInt(damage)
+            file.WriteInt(size)
+            file.WriteFloat(speed)
         }
 
         companion object {
-            @Transient
             val BYTES = 12
         }
     }
@@ -1473,7 +1427,7 @@ object GameSSDWindow {
      * SSDGameStats_t Data that is used for the game that is currently running.
      * Memset this to completely reset the game
      */
-    class SSDGameStats_t : SERiAL {
+    class SSDGameStats_t : idSerializable {
         var currentLevel = 0
 
         //
@@ -1490,55 +1444,45 @@ object GameSSDWindow {
 
         //
         var score = 0
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
+        override fun readFrom(file: idFile) {
+            currentLevel = file.ReadInt()
+            currentWeapon = file.ReadInt()
+            gameRunning = file.ReadInt() != 0
+            health = file.ReadInt()
+            nextLevel = file.ReadInt()
+            prebonusscore = file.ReadInt()
+            score = file.ReadInt()
+            levelStats.destroyedAsteroids = file.ReadInt()
+            levelStats.hitCount = file.ReadInt()
+            levelStats.killedAstronauts = file.ReadInt()
+            levelStats.nextAsteroidSpawnTime = file.ReadInt()
+            levelStats.nextAstronautSpawnTime = file.ReadInt()
+            levelStats.nextPowerupSpawnTime = file.ReadInt()
+            levelStats.savedAstronauts = file.ReadInt()
+            levelStats.shotCount = file.ReadInt()
+            file.ReadInt() // targetEnt pointer, skip
         }
 
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            currentLevel = buffer.int
-            currentWeapon = buffer.int
-            gameRunning = buffer.int != 0
-            health = buffer.int
-            nextLevel = buffer.int
-            prebonusscore = buffer.int
-            score = buffer.int
-            levelStats.destroyedAsteroids = buffer.int
-            levelStats.hitCount = buffer.int
-            levelStats.killedAstronauts = buffer.int
-            levelStats.nextAsteroidSpawnTime = buffer.int
-            levelStats.nextAstronautSpawnTime = buffer.int
-            levelStats.nextPowerupSpawnTime = buffer.int
-            levelStats.savedAstronauts = buffer.int
-            levelStats.shotCount = buffer.int
-            buffer.int // targetEnt pointer, skip
-        }
-
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            buffer.putInt(currentLevel)
-            buffer.putInt(currentWeapon)
-            buffer.putInt(if (gameRunning) 1 else 0)
-            buffer.putInt(health)
-            buffer.putInt(nextLevel)
-            buffer.putInt(prebonusscore)
-            buffer.putInt(score)
-            buffer.putInt(levelStats.destroyedAsteroids)
-            buffer.putInt(levelStats.hitCount)
-            buffer.putInt(levelStats.killedAstronauts)
-            buffer.putInt(levelStats.nextAsteroidSpawnTime)
-            buffer.putInt(levelStats.nextAstronautSpawnTime)
-            buffer.putInt(levelStats.nextPowerupSpawnTime)
-            buffer.putInt(levelStats.savedAstronauts)
-            buffer.putInt(levelStats.shotCount)
-            buffer.putInt(0) // targetEnt pointer
-            buffer.flip()
-            return buffer
+        override fun writeTo(file: idFile) {
+            file.WriteInt(currentLevel)
+            file.WriteInt(currentWeapon)
+            file.WriteInt(if (gameRunning) 1 else 0)
+            file.WriteInt(health)
+            file.WriteInt(nextLevel)
+            file.WriteInt(prebonusscore)
+            file.WriteInt(score)
+            file.WriteInt(levelStats.destroyedAsteroids)
+            file.WriteInt(levelStats.hitCount)
+            file.WriteInt(levelStats.killedAstronauts)
+            file.WriteInt(levelStats.nextAsteroidSpawnTime)
+            file.WriteInt(levelStats.nextAstronautSpawnTime)
+            file.WriteInt(levelStats.nextPowerupSpawnTime)
+            file.WriteInt(levelStats.savedAstronauts)
+            file.WriteInt(levelStats.shotCount)
+            file.WriteInt(0) // targetEnt pointer
         }
 
         companion object {
-            @Transient
             val BYTES = 72
         }
     }

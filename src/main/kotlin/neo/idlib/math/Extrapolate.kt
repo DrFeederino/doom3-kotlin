@@ -21,7 +21,6 @@ object Extrapolate {
 
      ==============================================================================================
      */
-    //where T: TempDump.Settable<T>
     class idExtrapolate<T>(private val value: T) {
         private var baseSpeed: T = _Copy(value)
         private var currentTime: Float = 0.0f

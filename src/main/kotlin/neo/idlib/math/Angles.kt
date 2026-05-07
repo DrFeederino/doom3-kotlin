@@ -1,10 +1,10 @@
 package neo.idlib.math
 
-import neo.TempDump.SERiAL
+import neo.framework.File_h.idFile
 import neo.idlib.containers.CFloat
+import neo.idlib.idSerializable
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Matrix.idMat4
-import java.nio.ByteBuffer
 import kotlin.math.abs
 import kotlin.math.floor
 
@@ -21,7 +21,7 @@ const val YAW = 1 // left / right
 val ang_zero: idAngles
     get() = idAngles(0.0f, 0.0f, 0.0f)
 
-class idAngles : SERiAL {
+class idAngles : idSerializable {
     var pitch = 0.0f
     var yaw = 0.0f
     var roll = 0.0f
@@ -422,29 +422,19 @@ class idAngles : SERiAL {
         return "idAngles{pitch=$pitch, yaw=$yaw, roll=$roll}"
     }
 
-    override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES)
+    override fun readFrom(file: idFile) {
+        pitch = file.ReadFloat()
+        yaw = file.ReadFloat()
+        roll = file.ReadFloat()
     }
 
-    override fun Read(buffer: ByteBuffer) {
-        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-        pitch = buffer.float
-        yaw = buffer.float
-        roll = buffer.float
-    }
-
-    override fun Write(): ByteBuffer {
-        val buffer = AllocBuffer()
-        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-        buffer.putFloat(pitch)
-        buffer.putFloat(yaw)
-        buffer.putFloat(roll)
-        buffer.flip()
-        return buffer
+    override fun writeTo(file: idFile) {
+        file.WriteFloat(pitch)
+        file.WriteFloat(yaw)
+        file.WriteFloat(roll)
     }
 
     companion object {
-        @Transient
         val BYTES = 3 * java.lang.Float.BYTES // 12
 
         fun times(a: Float, b: idAngles): idAngles {

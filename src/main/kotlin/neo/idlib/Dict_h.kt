@@ -1,6 +1,5 @@
 package neo.idlib
 
-import neo.TempDump
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
 import neo.framework.File_h.idFile
@@ -9,6 +8,8 @@ import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.atof
+import neo.idlib.Text.atoi
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
@@ -379,7 +380,7 @@ class Dict_h {
 
         @Throws(idException::class)
         fun SetBool(key: String?, `val`: Boolean) {
-            Set(key, Str.va("%d", TempDump.btoi(`val`)))
+            Set(key, Str.va("%d", (`val`).toInt()))
         }
 
         @Throws(idException::class)
@@ -424,19 +425,19 @@ class Dict_h {
 
         @Throws(idException::class)
         fun GetFloat(key: String?, defaultString: String = "0" /*= "0"*/): Float {
-            return TempDump.atof(GetString(key, defaultString)!!)
+            return atof(GetString(key, defaultString)!!)
         }
 
 
         @Throws(idException::class)
         fun GetInt(key: String?, defaultString: String = "0"): Int {
-            return TempDump.atoi(GetString(key, defaultString)!!)
+            return atoi(GetString(key, defaultString)!!)
         }
 
 
         @Throws(idException::class)
         fun GetBool(key: String?, defaultString: String = "0"): Boolean {
-            return TempDump.atob(GetString(key, defaultString)!!)
+            return atoi(GetString(key, defaultString)!!) != 0
         }
 
 
@@ -505,7 +506,7 @@ class Dict_h {
             val s = arrayOfNulls<String>(1)
             val found: Boolean
             found = GetString(key, defaultString, s)
-            out._val = (TempDump.atof(s[0]!!))
+            out._val = (atof(s[0]!!))
             return found
         }
 
@@ -514,7 +515,7 @@ class Dict_h {
             val s = arrayOfNulls<String>(1)
             val found: Boolean
             found = GetString(key, defaultString, s)
-            out._val = (TempDump.atoi(s[0]!!))
+            out._val = (atoi(s[0]!!))
             return found
         }
 
@@ -523,7 +524,7 @@ class Dict_h {
             val s = arrayOfNulls<String>(1)
             val found: Boolean
             found = GetString(key, defaultString, s)
-            out._val = (TempDump.atob(s[0]!!))
+            out._val = (atoi(s[0]!!) != 0)
             return found
         }
 
@@ -543,7 +544,7 @@ class Dict_h {
                 while (pos < length && !value[pos].isWhitespace()) {
                     pos++
                 }
-                floats[count++] = TempDump.atof(value.substring(start, pos))
+                floats[count++] = atof(value.substring(start, pos))
             }
             return if (count == maxValues) floats else floats.copyOf(count)
         }

@@ -1,6 +1,5 @@
 package neo.idlib.Text
 
-import neo.TempDump
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Lexer.punctuation_t
 import neo.idlib.Text.Str.idStr
@@ -1074,9 +1073,9 @@ object Parser {
         @Throws(idException::class)
         fun Error(str: String, chr: CharArray, vararg chrs: CharArray) {
             this.Error(str)
-            this.Error(TempDump.ctos(chr))
+            this.Error(ctos(chr))
             for (charoal in chrs) {
-                this.Error(TempDump.ctos(charoal))
+                this.Error(ctos(charoal))
             }
         }
 
@@ -1099,9 +1098,9 @@ object Parser {
         @Throws(idException::class)
         fun Warning(str: String, chr: CharArray, vararg chrs: CharArray) {
             this.Warning(str)
-            this.Warning(TempDump.ctos(chr))
+            this.Warning(ctos(chr))
             for (charoal in chrs) {
-                this.Warning(TempDump.ctos(charoal))
+                this.Warning(ctos(charoal))
             }
         }
 

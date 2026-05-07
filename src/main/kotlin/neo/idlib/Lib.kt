@@ -2,7 +2,6 @@ package neo.idlib
 
 import neo.Game.Projectile.idProjectile.projectileFlags_s
 import neo.Game.idEntity.entityFlags_s
-import neo.TempDump
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVarSystem
 import neo.framework.Common
@@ -12,6 +11,7 @@ import neo.framework.FileSystem_h.idFileSystem
 import neo.idlib.BV.idBounds
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Text.Str.idStr
+import neo.idlib.Text.ctos
 import neo.idlib.math.*
 import neo.sys.idSys
 import java.math.BigInteger
@@ -155,9 +155,9 @@ open class idException : RuntimeException {
         error = text
     }
 
-    constructor(text: CharArray) : super(TempDump.ctos(text)) {
+    constructor(text: CharArray) : super(ctos(text)) {
 //            strcpy(error, text);
-        error = TempDump.ctos(text)
+        error = ctos(text)
     }
 
     constructor(cause: Throwable) : super(cause)
@@ -343,9 +343,7 @@ fun LittleFloat(l: Float): Float {
 
 
 fun BigRevBytes(buffer: ByteBuffer, elcount: Int) {
-    if (SWAP_TEST) {
-        buffer.order(ByteOrder.LITTLE_ENDIAN)
-    }
+    buffer.order(ByteOrder.BIG_ENDIAN)
 }
 
 fun LittleRevBytes(bp: FloatArray, elcount: Int) {

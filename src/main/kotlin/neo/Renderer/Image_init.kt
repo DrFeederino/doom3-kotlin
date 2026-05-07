@@ -33,8 +33,6 @@ import neo.Renderer.Image.textureDepth_t
 import neo.Renderer.Image_files.R_WriteTGA
 import neo.Renderer.Material.textureFilter_t
 import neo.Renderer.Material.textureRepeat_t
-import neo.TempDump.flatten
-import neo.TempDump.wrapToNativeBuffer
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common.Companion.common
 import neo.idlib.CmdArgs
@@ -42,6 +40,8 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.containers.List.cmp_t
 import neo.idlib.containers.List.idList
+import neo.idlib.containers.flatten
+import neo.idlib.containers.wrapToNativeBuffer
 import neo.idlib.math.idMath.InvSqrt
 import neo.idlib.math.idMath.Sqrt
 import org.lwjgl.BufferUtils

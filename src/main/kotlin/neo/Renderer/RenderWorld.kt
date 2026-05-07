@@ -29,24 +29,25 @@ import neo.Renderer.Interaction.idInteraction
 import neo.Renderer.Material.idMaterial
 import neo.Renderer.Model.idRenderModel
 import neo.Sound.sound.idSoundEmitter
-import neo.TempDump.Atomics.*
-import neo.TempDump.SERiAL
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common.Companion.common
 import neo.framework.DeclManager
 import neo.framework.DeclSkin.idDeclSkin
 import neo.framework.DemoFile.idDemoFile
+import neo.framework.File_h.idFile
 import neo.idlib.BV.Box.idBox
 import neo.idlib.BV.Frustum.idFrustum
 import neo.idlib.BV.Sphere.idSphere
 import neo.idlib.BV.idBounds
 import neo.idlib.CmdArgs
 import neo.idlib.containers.CBool
+import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.geometry.JointTransform.idJointMat
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.geometry.Winding.idWinding
 import neo.idlib.idException
+import neo.idlib.idSerializable
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.idPlane
 import neo.idlib.math.idVec3
@@ -191,8 +192,62 @@ object RenderWorld {
         PS_BLOCK_ALL //= (1 << NUM_PORTAL_ATTRIBUTES) - 1
     }
 
-    abstract class deferredEntityCallback_t : SERiAL {
+    abstract class deferredEntityCallback_t {
         abstract fun run(e: renderEntity_s?, v: renderView_s?): Boolean
+    }
+
+    class renderViewShadow {
+        var cramZNear: CBool = CBool(false)
+        var forceUpdate: CBool = CBool(false)
+
+        var fov_x: CFloat = CFloat()
+        var fov_y: CFloat = CFloat()
+
+        var globalMaterial: idMaterial? = null
+        var shaderParms = Array(MAX_GLOBAL_SHADER_PARMS) { CFloat() }
+        var time: CInt = CInt()
+        var viewID: CInt = CInt()
+
+        val viewaxis: idMat3 = idMat3()
+        val vieworg: idVec3 = idVec3()
+
+        var x: CInt = CInt()
+        var y: CInt = CInt()
+
+        var width: CInt = CInt()
+        var height: CInt = CInt()
+    }
+
+    class renderEntityShadow {
+        var allowSurfaceInViewID: CInt = CInt()
+        val axis: idMat3 = idMat3()
+        var bodyId: CInt = CInt()
+        val bounds: idBounds = idBounds()
+        var callback: deferredEntityCallback_t? = null
+        var callbackData: ByteBuffer? = null
+        var customShader: idMaterial? = null
+        var customSkin: idDeclSkin? = null
+        var entityNum: CInt = CInt()
+        var forceUpdate: CInt = CInt()
+        var gui: Array<idUserInterface?> = arrayOfNulls(MAX_RENDERENTITY_GUI)
+        var hModel: idRenderModel? = null
+        var joints: Array<idJointMat>? = null
+        var modelDepthHack: CFloat = CFloat()
+        var noDynamicInteractions: CBool = CBool()
+        var noSelfShadow: CBool = CBool()
+        var noShadow: CBool = CBool()
+        var numJoints: CInt = CInt()
+        val origin: idVec3 = idVec3()
+        var referenceShader: idMaterial? = null
+        var referenceSound: idSoundEmitter? = null
+        var remoteRenderView: renderView_s? = null
+        var shaderParms = Array(Material.MAX_ENTITY_SHADER_PARMS) { CFloat() }
+        var suppressShadowInLightID: CInt = CInt()
+        var suppressShadowInViewID: CInt = CInt()
+        var suppressSurfaceInViewID: CInt = CInt()
+        var timeGroup: CInt = CInt()
+        var weaponDepthHack: CBool = CBool()
+        var xrayIndex: CInt = CInt()
     }
 
     class renderEntity_s {
@@ -603,7 +658,7 @@ object RenderWorld {
 
     }
 
-    class renderView_s : SERiAL {
+    class renderView_s : idSerializable {
         val vieworg: idVec3 = idVec3()
         private val DBG_count: Int = DBG_counter++
         var cramZNear: Boolean = false // for cinematics, we want to set ZNear much lower
@@ -663,67 +718,57 @@ object RenderWorld {
             globalMaterial = shadow.globalMaterial
         }
 
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(ByteOrder.LITTLE_ENDIAN)
-            viewID = buffer.int
-            x = buffer.int
-            y = buffer.int
-            width = buffer.int
-            height = buffer.int
-            fov_x = buffer.float
-            fov_y = buffer.float
-            vieworg[0] = buffer.float
-            vieworg[1] = buffer.float
-            vieworg[2] = buffer.float
+        override fun readFrom(file: idFile) {
+            viewID = file.ReadInt()
+            x = file.ReadInt()
+            y = file.ReadInt()
+            width = file.ReadInt()
+            height = file.ReadInt()
+            fov_x = file.ReadFloat()
+            fov_y = file.ReadFloat()
+            vieworg[0] = file.ReadFloat()
+            vieworg[1] = file.ReadFloat()
+            vieworg[2] = file.ReadFloat()
             for (i in 0 until 3) {
                 for (j in 0 until 3) {
-                    viewaxis[i][j] = buffer.float
+                    viewaxis[i][j] = file.ReadFloat()
                 }
             }
-            cramZNear = buffer.int != 0
-            forceUpdate = buffer.int != 0
-            time = buffer.int
+            cramZNear = file.ReadInt() != 0
+            forceUpdate = file.ReadInt() != 0
+            time = file.ReadInt()
             for (i in shaderParms.indices) {
-                shaderParms[i] = buffer.float
+                shaderParms[i] = file.ReadFloat()
             }
-            buffer.int // globalMaterial pointer, skip
+            file.ReadInt() // globalMaterial pointer, skip
         }
 
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.order(ByteOrder.LITTLE_ENDIAN)
-            buffer.putInt(viewID)
-            buffer.putInt(x)
-            buffer.putInt(y)
-            buffer.putInt(width)
-            buffer.putInt(height)
-            buffer.putFloat(fov_x)
-            buffer.putFloat(fov_y)
-            buffer.putFloat(vieworg[0])
-            buffer.putFloat(vieworg[1])
-            buffer.putFloat(vieworg[2])
+        override fun writeTo(file: idFile) {
+            file.WriteInt(viewID)
+            file.WriteInt(x)
+            file.WriteInt(y)
+            file.WriteInt(width)
+            file.WriteInt(height)
+            file.WriteFloat(fov_x)
+            file.WriteFloat(fov_y)
+            file.WriteFloat(vieworg[0])
+            file.WriteFloat(vieworg[1])
+            file.WriteFloat(vieworg[2])
             for (i in 0 until 3) {
                 for (j in 0 until 3) {
-                    buffer.putFloat(viewaxis[i][j])
+                    file.WriteFloat(viewaxis[i][j])
                 }
             }
-            buffer.putInt(if (cramZNear) 1 else 0)
-            buffer.putInt(if (forceUpdate) 1 else 0)
-            buffer.putInt(time)
+            file.WriteInt(if (cramZNear) 1 else 0)
+            file.WriteInt(if (forceUpdate) 1 else 0)
+            file.WriteInt(time)
             for (p in shaderParms) {
-                buffer.putFloat(p)
+                file.WriteFloat(p)
             }
-            buffer.putInt(0) // globalMaterial pointer
-            buffer.flip()
-            return buffer
+            file.WriteInt(0) // globalMaterial pointer
         }
 
         companion object {
-            @Transient
             val BYTES = 144
 
             // player views will set this to a non-zero integer for model suppress / allow

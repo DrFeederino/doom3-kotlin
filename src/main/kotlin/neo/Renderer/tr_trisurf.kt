@@ -30,7 +30,6 @@ import neo.Renderer.Model.dominantTri_s
 import neo.Renderer.Model.shadowCache_s
 import neo.Renderer.Model.silEdge_t
 import neo.Renderer.Model.srfTriangles_s
-import neo.TempDump.btoi
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
 import neo.idlib.CmdArgs
@@ -43,6 +42,7 @@ import neo.idlib.math.idMath.RSqrt
 import neo.idlib.math.idPlane
 import neo.idlib.math.idVec3
 import neo.idlib.math.vec3_origin
+import neo.idlib.toInt
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.min
@@ -1115,7 +1115,7 @@ fun R_DuplicateMirroredVertexes(tri: srfTriangles_s) {
     i = 0
     while (i < tri.numIndexes) {
         var polarity: Int
-        polarity = btoi(R_FaceNegativePolarity(tri, i))
+        polarity = (R_FaceNegativePolarity(tri, i)).toInt()
         j = 0
         while (j < 3) {
             tVerts[tri.indexes!![i + j]]!!.polarityUsed[polarity] = true

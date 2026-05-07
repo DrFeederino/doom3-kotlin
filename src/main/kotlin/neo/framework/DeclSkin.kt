@@ -36,7 +36,6 @@ Rockville, Maryland 20850 USA.
 package neo.framework
 
 import neo.Renderer.Material
-import neo.TempDump.SERiAL
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclManager.idDecl
 import neo.idlib.Text.Lexer.idLexer
@@ -45,7 +44,6 @@ import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idStrList
 import neo.idlib.idException
-import java.nio.ByteBuffer
 
 class DeclSkin {
     /*
@@ -62,7 +60,7 @@ class DeclSkin {
         var to: Material.idMaterial? = null
     }
 
-    class idDeclSkin : idDecl(), SERiAL {
+    class idDeclSkin : idDecl() {
         private val associatedModels: idStrList = idStrList()
         private val mappings: idList<skinMapping_t> = idList()
 
@@ -203,16 +201,5 @@ class DeclSkin {
         }
 
         // NOTE: Kotlin-only — SERiAL interface for serialization (not in original C++)
-        override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
-
-        override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
     }
 }

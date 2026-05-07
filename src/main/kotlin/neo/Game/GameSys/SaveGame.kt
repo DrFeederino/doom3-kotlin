@@ -29,7 +29,6 @@ import neo.Renderer.RenderWorld.renderEntity_s
 import neo.Renderer.RenderWorld.renderLight_s
 import neo.Renderer.RenderWorld.renderView_s
 import neo.Sound.snd_shader.idSoundShader
-import neo.TempDump.SERiAL
 import neo.cm.contactInfo_t
 import neo.cm.contactType_t
 import neo.cm.trace_s
@@ -54,6 +53,7 @@ import neo.idlib.geometry.TraceModel
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.geometry.TraceModel.traceModel_t
 import neo.idlib.geometry.Winding.idWinding
+import neo.idlib.idSerializable
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
 import neo.ui.UserInterface
@@ -152,7 +152,7 @@ object SaveGame {
             file.Write(buffer, len)
         }
 
-        fun Write(buffer: SERiAL) {
+        fun Write(buffer: idSerializable) {
             file.Write(buffer)
         }
 
@@ -888,7 +888,7 @@ object SaveGame {
             file.Read(buffer, len)
         }
 
-        fun Read(buffer: SERiAL) {
+        fun Read(buffer: idSerializable) {
             file.Read(buffer)
         }
 
@@ -986,8 +986,17 @@ object SaveGame {
             if (len._val < 0) {
                 Error("idRestoreGame::ReadString: invalid length")
             }
-            string.Fill(' ', len._val)
-            file.Read(string, len._val)
+            if (len._val == 0) {
+                string.set("")
+                return
+            }
+            val sb = StringBuilder(len._val)
+            var i = 0
+            while (i < len._val) {
+                sb.append((file.ReadChar().toInt() and 0xFF).toChar())
+                i++
+            }
+            string.set(sb.toString())
         }
 
         /*

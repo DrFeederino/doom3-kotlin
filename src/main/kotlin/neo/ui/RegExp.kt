@@ -1,7 +1,5 @@
 package neo.ui
 
-import neo.TempDump.btoi
-import neo.TempDump.etoi
 import neo.framework.Common
 import neo.framework.DemoFile.idDemoFile
 import neo.framework.File_h.idFile
@@ -14,6 +12,7 @@ import neo.idlib.containers.idHashIndex
 import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
+import neo.idlib.toInt
 import neo.ui.Rectangle.idRectangle
 import neo.ui.RegExp.idRegister.REGTYPE
 import neo.ui.Window.idWindow
@@ -89,7 +88,7 @@ class RegExp {
                 }
 
                 REGTYPE.BOOL -> {
-                    v[0] = btoi((`var` as idWinBool).data).toFloat()
+                    v[0] = ((`var` as idWinBool).data).toInt().toFloat()
                 }
 
                 else -> {
@@ -218,7 +217,7 @@ class RegExp {
         }
 
         companion object {
-            val REGCOUNT = IntArray(etoi(REGTYPE.NUMTYPES))
+            val REGCOUNT = IntArray((REGTYPE.NUMTYPES).ordinal)
 
             init {
                 val bv = intArrayOf(4, 1, 1, 1, 0, 2, 3, 4)

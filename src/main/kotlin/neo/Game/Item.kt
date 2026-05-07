@@ -41,7 +41,6 @@ import neo.Renderer.RenderWorld.deferredEntityCallback_t
 import neo.Renderer.RenderWorld.renderEntity_s
 import neo.Renderer.RenderWorld.renderLight_s
 import neo.Renderer.RenderWorld.renderView_s
-import neo.TempDump
 import neo.cm.CM_CLIP_EPSILON
 import neo.cm.collisionModelManager
 import neo.cm.trace_s
@@ -66,6 +65,7 @@ import neo.idlib.math.idAngles
 import neo.idlib.math.idMath
 import neo.idlib.math.idVec3
 import neo.idlib.math.vec3_origin
+import neo.idlib.toInt
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.math.ceil
@@ -386,7 +386,7 @@ open class idItem : idEntity() {
 
     // networking
     override fun WriteToSnapshot(msg: idBitMsgDelta) {
-        msg.WriteBits(TempDump.btoi(IsHidden()), 1)
+        msg.WriteBits((IsHidden()).toInt(), 1)
     }
 
     override fun ReadFromSnapshot(msg: idBitMsgDelta) {
@@ -528,18 +528,6 @@ open class idItem : idEntity() {
                 return false
             }
             return ent.UpdateRenderEntity(e, v)
-        }
-
-        override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
-
-        override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
         }
 
         companion object {

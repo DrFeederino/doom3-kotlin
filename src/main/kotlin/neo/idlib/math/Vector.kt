@@ -1,15 +1,15 @@
 package neo.idlib.math
 
-import neo.TempDump.SERiAL
+import neo.framework.File_h.idFile
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CFloat
+import neo.idlib.idSerializable
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Matrix.idMat4
 import neo.idlib.math.Matrix.idMatX
 import neo.idlib.math.Random.idRandom
 import org.lwjgl.BufferUtils
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.util.*
 import kotlin.math.*
 
@@ -180,7 +180,7 @@ interface idVec<T : idVec<T>> {
 //	idVec2 - 2D vector
 //
 //===============================================================
-class idVec2 : idVec<idVec2>, SERiAL {
+class idVec2 : idVec<idVec2>, idSerializable {
     var x = 0.0f
     var y = 0.0f
 
@@ -398,26 +398,19 @@ class idVec2 : idVec<idVec2>, SERiAL {
         }
     }
 
-    override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
+    override fun readFrom(file: idFile) {
+        x = file.ReadFloat()
+        y = file.ReadFloat()
     }
 
-    override fun Read(buffer: ByteBuffer) {
-        x = buffer.float
-        y = buffer.float
-    }
-
-    override fun Write(): ByteBuffer {
-        val buffer = AllocBuffer()
-        buffer.putFloat(x).putFloat(y).flip()
-        return buffer
+    override fun writeTo(file: idFile) {
+        file.WriteFloat(x)
+        file.WriteFloat(y)
     }
 
     companion object {
-        @Transient
         val SIZE = 2 * java.lang.Float.SIZE
 
-        @Transient
         val BYTES = SIZE / 8
 
 
@@ -432,7 +425,7 @@ class idVec2 : idVec<idVec2>, SERiAL {
 //	idVec3 - 3D vector
 //
 //===============================================================
-open class idVec3 : idVec<idVec3>, SERiAL {
+open class idVec3 : idVec<idVec3>, idSerializable {
     var x = 0.0f
     var y = 0.0f
     var z = 0.0f
@@ -1128,20 +1121,16 @@ open class idVec3 : idVec<idVec3>, SERiAL {
         }
     }
 
-    override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
+    override fun readFrom(file: idFile) {
+        x = file.ReadFloat()
+        y = file.ReadFloat()
+        z = file.ReadFloat()
     }
 
-    override fun Read(buffer: ByteBuffer) {
-        x = buffer.float
-        y = buffer.float
-        z = buffer.float
-    }
-
-    override fun Write(): ByteBuffer {
-        val buffer = AllocBuffer()
-        buffer.putFloat(x).putFloat(y).putFloat(z).flip()
-        return buffer
+    override fun writeTo(file: idFile) {
+        file.WriteFloat(x)
+        file.WriteFloat(y)
+        file.WriteFloat(z)
     }
 
     override fun equals(o: Any?): Boolean {
@@ -1186,10 +1175,8 @@ open class idVec3 : idVec<idVec3>, SERiAL {
     }
 
     companion object {
-        @Transient
         const val SIZE = 3 * java.lang.Float.SIZE
 
-        @Transient
         const val BYTES = SIZE / 8
         private const val LERP_DELTA = 1e-6
 
@@ -1217,7 +1204,7 @@ open class idVec3 : idVec<idVec3>, SERiAL {
         fun toByteBuffer(vecs: Array<idVec3>): ByteBuffer {
             val data = BufferUtils.createByteBuffer(BYTES * vecs.size)
             for (vec in vecs) {
-                data.put(vec.Write().rewind())
+                data.putFloat(vec.x).putFloat(vec.y).putFloat(vec.z)
             }
             return data.flip()
         }
@@ -1229,7 +1216,7 @@ open class idVec3 : idVec<idVec3>, SERiAL {
 //	idVec4 - 4D vector
 //
 //===============================================================
-class idVec4 : idVec<idVec4>, SERiAL {
+class idVec4 : idVec<idVec4>, idSerializable {
     var x = 0.0f
     var y = 0.0f
     var z = 0.0f
@@ -1473,21 +1460,18 @@ class idVec4 : idVec<idVec4>, SERiAL {
         }
     }
 
-    override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
+    override fun readFrom(file: idFile) {
+        x = file.ReadFloat()
+        y = file.ReadFloat()
+        z = file.ReadFloat()
+        w = file.ReadFloat()
     }
 
-    override fun Read(buffer: ByteBuffer) {
-        x = buffer.float
-        y = buffer.float
-        z = buffer.float
-        w = buffer.float
-    }
-
-    override fun Write(): ByteBuffer {
-        val buffer = AllocBuffer()
-        buffer.putFloat(x).putFloat(y).putFloat(z).putFloat(w).flip()
-        return buffer
+    override fun writeTo(file: idFile) {
+        file.WriteFloat(x)
+        file.WriteFloat(y)
+        file.WriteFloat(z)
+        file.WriteFloat(w)
     }
 
     override fun div(a: Float): idVec4 {
@@ -1504,10 +1488,8 @@ class idVec4 : idVec<idVec4>, SERiAL {
     }
 
     companion object {
-        @Transient
         val SIZE = 4 * java.lang.Float.SIZE
 
-        @Transient
         val BYTES = SIZE / 8
         private var DBG_counter = 0
 
@@ -1518,7 +1500,7 @@ class idVec4 : idVec<idVec4>, SERiAL {
         fun toByteBuffer(vecs: Array<idVec4>): ByteBuffer {
             val data = BufferUtils.createByteBuffer(BYTES * vecs.size)
             for (vec in vecs) {
-                data.put(vec.Write().rewind())
+                data.putFloat(vec.x).putFloat(vec.y).putFloat(vec.z).putFloat(vec.w)
             }
             return data.flip()
         }
@@ -1530,7 +1512,7 @@ class idVec4 : idVec<idVec4>, SERiAL {
 //	idVec5 - 5D vector
 //
 //===============================================================
-class idVec5 : idVec<idVec5>, SERiAL {
+class idVec5 : idVec<idVec5>, idSerializable {
     var x = 0.0f
     var y = 0.0f
     var z = 0.0f
@@ -1637,22 +1619,20 @@ class idVec5 : idVec<idVec5>, SERiAL {
         }
     }
 
-    override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
+    override fun readFrom(file: idFile) {
+        x = file.ReadFloat()
+        y = file.ReadFloat()
+        z = file.ReadFloat()
+        s = file.ReadFloat()
+        t = file.ReadFloat()
     }
 
-    override fun Read(buffer: ByteBuffer) {
-        x = buffer.float
-        y = buffer.float
-        z = buffer.float
-        s = buffer.float
-        t = buffer.float
-    }
-
-    override fun Write(): ByteBuffer {
-        val buffer = AllocBuffer()
-        buffer.putFloat(x).putFloat(y).putFloat(z).putFloat(s).putFloat(t).flip()
-        return buffer
+    override fun writeTo(file: idFile) {
+        file.WriteFloat(x)
+        file.WriteFloat(y)
+        file.WriteFloat(z)
+        file.WriteFloat(s)
+        file.WriteFloat(t)
     }
 
     override fun plus(a: idVec5): idVec5 {
@@ -1690,10 +1670,8 @@ class idVec5 : idVec<idVec5>, SERiAL {
 
 
     companion object {
-        @Transient
         val SIZE = 5 * java.lang.Float.SIZE
 
-        @Transient
         val BYTES = SIZE / 8
         fun generateArray(length: Int): Array<idVec5> {
             return Array(length) { idVec5() }
@@ -1727,7 +1705,7 @@ class idVec5 : idVec<idVec5>, SERiAL {
 //	idVec6 - 6D vector
 //
 //===============================================================
-class idVec6 : idVec<idVec6>, SERiAL {
+class idVec6 : idVec<idVec6>, idSerializable {
     var p: FloatArray = FloatArray(6)
 
     constructor()
@@ -1917,23 +1895,16 @@ class idVec6 : idVec<idVec6>, SERiAL {
     //        public void setP(final int index, final Float value) {
     //            p[index] = value;
     //        }
-    override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
-    }
-
-    override fun Read(buffer: ByteBuffer) {
+    override fun readFrom(file: idFile) {
         for (i in 0 until 6) {
-            p[i] = buffer.float
+            p[i] = file.ReadFloat()
         }
     }
 
-    override fun Write(): ByteBuffer {
-        val buffer = AllocBuffer()
+    override fun writeTo(file: idFile) {
         for (i in 0 until 6) {
-            buffer.putFloat(p[i])
+            file.WriteFloat(p[i])
         }
-        buffer.flip()
-        return buffer
     }
 
     override fun minus(a: idVec6): idVec6 {
@@ -2000,10 +1971,8 @@ class idVec6 : idVec<idVec6>, SERiAL {
     }
 
     companion object {
-        @Transient
         val SIZE = 6 * java.lang.Float.SIZE
 
-        @Transient
         val BYTES = SIZE / 8
         private var DBG_counter = 0
         private var DBG_idVec6 = 0

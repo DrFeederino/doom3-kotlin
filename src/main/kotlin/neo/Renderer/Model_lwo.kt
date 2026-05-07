@@ -26,16 +26,17 @@ along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
 package neo.Renderer
 
-import neo.TempDump
-import neo.TempDump.NiLLABLE
-import neo.TempDump.TODO_Exception
 import neo.framework.FileSystem_h
 import neo.framework.File_h.fsOrigin_t
 import neo.framework.File_h.idFile
 import neo.idlib.BigRevBytes
+import neo.idlib.Text.strLen
 import neo.idlib.containers.List.cmp_t
+import neo.idlib.containers.bbtocb
 import neo.idlib.math.FLOAT_IS_DENORMAL
 import neo.idlib.math.idMath
+import neo.idlib.toInt
+import neo.idlib.toUnsignedInt
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.stream.Collectors
@@ -1181,29 +1182,29 @@ object Model_lwo {
             return 0
         }
         if ((c[0].toInt() and 0xFF) != 0xFF) {
-            i = TempDump.btoi(c) shl 8
+            i = c.get(0).toUnsignedInt() shl 8
             c.clear()
             if (fp.Read(c) == -1) {
                 return 0
             }
-            i = i or TempDump.btoi(c)
+            i = i or c.get(0).toUnsignedInt()
             flen += 2
         } else {
             c.clear()
             if (fp.Read(c) == -1) {
                 return 0
             }
-            i = TempDump.btoi(c) shl 16
+            i = c.get(0).toUnsignedInt() shl 16
             c.clear()
             if (fp.Read(c) == -1) {
                 return 0
             }
-            i = i or (TempDump.btoi(c) shl 8)
+            i = i or (c.get(0).toUnsignedInt() shl 8)
             c.clear()
             if (fp.Read(c) == -1) {
                 return 0
             }
-            i = i or TempDump.btoi(c)
+            i = i or c.get(0).toUnsignedInt()
             flen += 4
         }
         return i
@@ -1270,7 +1271,7 @@ object Model_lwo {
             return null
         }
         flen += len
-        return TempDump.bbtocb(s).toString().trim { it <= ' ' }
+        return bbtocb(s).toString().trim { it <= ' ' }
     }
 
     @Deprecated("")
@@ -1341,13 +1342,12 @@ object Model_lwo {
             return 0
         }
         if ((bp.get(pos).toInt() and 0xFF) != 0xFF) {
-            i = TempDump.btoi(bp.get(pos)) shl 8 or TempDump.btoi(bp.get(pos + 1))
+            i = bp.get(pos).toUnsignedInt() shl 8 or bp.get(pos + 1).toUnsignedInt()
             flen += 2
             bp.position(pos + 2)
         } else {
-            i = TempDump.btoi(bp.get(pos + 1)) shl 16 or (TempDump.btoi(bp.get(pos + 2)) shl 8) or TempDump.btoi(
-                bp.get(pos + 3)
-            )
+            i = bp.get(pos + 1).toUnsignedInt() shl 16 or (bp.get(pos + 2).toUnsignedInt() shl 8) or bp.get(pos + 3)
+                .toUnsignedInt()
             flen += 4
             bp.position(pos + 4)
         }
@@ -1377,7 +1377,7 @@ object Model_lwo {
         }
 
         s = String(bp.array()).substring(pos)
-        len = TempDump.strLen(s) + 1
+        len = strLen(s) + 1
         if (1 == len) {
             flen += 2
             bp.position(pos + 2)
@@ -1796,7 +1796,7 @@ object Model_lwo {
         clip.saturation.`val` = 1.0f
         clip.gamma.`val` = 1.0f
         if (s[0]!!.indexOf("(sequence)").also { p = it } != -1) {
-            s[0] = TempDump.replaceByIndex('\u0000', p, s[0]!!)
+            s[0] = s[0]!!.substring(0, p) + '\u0000' + s[0]!!.substring(p + 1)
             clip.type = ID_ISEQ
             clip.source.seq.prefix = s[0]
             clip.source.seq.digits = 3
@@ -3388,7 +3388,7 @@ object Model_lwo {
             ID_IMAP -> lwGetImageMap(fp, sz, tex)
             ID_PROC -> lwGetProcedural(fp, sz, tex)
             ID_GRAD -> lwGetGradient(fp, sz, tex)
-            else -> TempDump.btoi(!fp.Seek(sz.toLong(), fsOrigin_t.FS_SEEK_CUR))
+            else -> (fp.Seek(sz.toLong(), fsOrigin_t.FS_SEEK_CUR)).toInt()
         }
         if (0 == ok) {
             lwFreeTexture.getInstance().run(tex)
@@ -3956,14 +3956,14 @@ object Model_lwo {
     }
 
     /* generic linked list */
-    abstract class lwNode : NiLLABLE<lwNode> {
+    abstract class lwNode {
         var NULL = false
         var data: Any? = null
-        override fun oSet(node: lwNode): lwNode {
+        open fun oSet(node: lwNode): lwNode {
             throw UnsupportedOperationException("Not supported yet.")
         }
 
-        override fun isNULL(): Boolean {
+        open fun isNULL(): Boolean {
             return NULL
         }
 
@@ -4769,7 +4769,7 @@ object Model_lwo {
      ====================================================================== */
     class lwFreePlugin private constructor() : LW() {
         override fun run(o: Any?) {
-            throw TODO_Exception()
+            // C++ freed shader plugin memory; on JVM the GC handles this.
         }
 
         companion object {

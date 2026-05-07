@@ -23,7 +23,6 @@ package neo.Game.GameSys
 import neo.Game.GameSys.NoGameTypeInfo.classTypeInfo_t
 import neo.Game.GameSys.NoGameTypeInfo.enumTypeInfo_t
 import neo.Game.Game_local
-import neo.TempDump
 import neo.framework.CmdSystem
 import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.cmdFunction_t
@@ -38,6 +37,7 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.FindChar
 import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.ctos
 import neo.idlib.containers.List.cmp_t
 import neo.idlib.containers.List.idList
 import neo.idlib.idException
@@ -531,7 +531,7 @@ object TypeInfo {
                 i++
             }
             out[i] = '\u0000'
-            return TempDump.ctos(out)
+            return ctos(out)
         }
 
         /*

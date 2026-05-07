@@ -28,12 +28,11 @@ package neo.Renderer
 import neo.Renderer.Material.idMaterial
 import neo.Renderer.RenderWorld.idRenderWorld
 import neo.Renderer.RenderWorld.renderView_s
-import neo.TempDump.CPP_class
-import neo.TempDump.CPP_class.Char
 import neo.framework.Common.Companion.common
 import neo.framework.Common.MemInfo_t
 import neo.idlib.CmdArgs
 import neo.idlib.containers.CInt
+import neo.idlib.containers.CPP_class
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
@@ -393,7 +392,6 @@ object RenderSystem {
         var shaderName: String? = null
 
         companion object {
-            @Transient
             val SIZE: Int = (Integer.SIZE
                     + Integer.SIZE
                     + Integer.SIZE
@@ -405,8 +403,8 @@ object RenderSystem {
                     + java.lang.Float.SIZE
                     + java.lang.Float.SIZE
                     + java.lang.Float.SIZE
-                    + CPP_class.Pointer.SIZE //const idMaterial *	glyph
-                    + (Char.SIZE * 32))
+                    + CPP_class.POINTER_SIZE //const idMaterial *	glyph
+                    + (CPP_class.CHAR_SIZE * 32))
         }
     }
 
@@ -422,12 +420,10 @@ object RenderSystem {
         }
 
         companion object {
-            @Transient
             val SIZE: Int = ((glyphInfo_t.SIZE * GLYPHS_PER_FONT)
                     + java.lang.Float.SIZE
-                    + (Char.SIZE * 64))
+                    + (CPP_class.CHAR_SIZE * 64))
 
-            @Transient
             val BYTES: Int = SIZE / java.lang.Byte.SIZE
         }
     }

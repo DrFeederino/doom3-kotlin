@@ -28,13 +28,13 @@ If you have questions concerning this license or the applicable additional terms
 
 package neo.sys
 
-import neo.TempDump
 import neo.framework.*
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_String
 import neo.framework.Common.Companion.common
 import neo.idlib.Text.Str.idStr
 import neo.idlib.idException
+import neo.idlib.toInt
 import java.awt.Desktop
 import java.net.URI
 import java.text.SimpleDateFormat
@@ -128,7 +128,7 @@ class sys_local {
          idSysLocal::DLL_GetProcAddress
          ================
          */
-        override fun DLL_GetProcAddress(dllHandle: Int, procName: String): Any {
+        override fun DLL_GetProcAddress(dllHandle: Int, procName: String): Any? {
             return win_main.Sys_DLL_GetProcAddress(dllHandle, procName)
         }
 
@@ -167,7 +167,7 @@ class sys_local {
             val ev = sysEvent_s()
             ev.evType = sysEventType_t.SE_KEY
             ev.evValue = KeyInput.K_MOUSE1 + button - 1
-            ev.evValue2 = TempDump.btoi(down)
+            ev.evValue2 = (down).toInt()
             ev.evPtrLength = 0
             ev.evPtr = null
             return ev

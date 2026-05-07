@@ -8,8 +8,6 @@ import neo.Renderer.RenderSystem
 import neo.Renderer.RenderWorld.renderView_s
 import neo.Sound.snd_system
 import neo.Sound.sound.idSoundWorld
-import neo.TempDump
-import neo.TempDump.SERiAL
 import neo.framework.Async.AsyncNetwork
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.framework.Async.ServerScan.serverSort_t
@@ -42,6 +40,8 @@ import neo.idlib.Text.Str
 import neo.idlib.Text.Str.Measure_t
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.atobb
+import neo.idlib.Text.ctos
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idStrList
@@ -67,35 +67,30 @@ object Session_local {
         TD_YES_THEN_QUIT
     }
 
-    class logCmd_t : SERiAL {
+    class logCmd_t : idSerializable {
         var cmd: usercmd_t? = null
         var consistencyHash = 0
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        override fun readFrom(file: idFile) {
             if (cmd == null) cmd = usercmd_t()
-            cmd!!.Read(buffer)
-            consistencyHash = buffer.int
+            cmd!!.readFrom(file)
+            consistencyHash = file.ReadInt()
         }
 
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        override fun writeTo(file: idFile) {
             if (cmd != null) {
-                buffer.put(cmd!!.Write())
+                cmd!!.writeTo(file)
             } else {
-                buffer.position(buffer.position() + usercmd_t.BYTES)
+                // pad with zero bytes equal to usercmd_t.BYTES
+                var i = 0
+                while (i < usercmd_t.BYTES) {
+                    file.WriteChar(0.toShort())
+                    i++
+                }
             }
-            buffer.putInt(consistencyHash)
-            buffer.flip()
-            return buffer
+            file.WriteInt(consistencyHash)
         }
 
         companion object {
-            @Transient
             private val BYTES: Int = usercmd_t.BYTES + Integer.BYTES
         }
     }
@@ -1365,11 +1360,11 @@ object Session_local {
 
         override fun GetCDKey(xp: Boolean): String? {
             if (!xp) {
-                return TempDump.ctos(cdkey)
+                return ctos(cdkey)
             }
             return if (xpkey_state == cdKeyState_t.CDKEY_OK || xpkey_state == cdKeyState_t.CDKEY_CHECKING) {
                 // FIX: C++ returns `xpkey`, not `cdkey`, when requesting the XP key
-                TempDump.ctos(xpkey)
+                ctos(xpkey)
             } else null
         }
 
@@ -1438,7 +1433,7 @@ object Session_local {
                     chk8 =
                         checksum and 0xff xor (checksum and 0xff00 shr 8 xor (checksum and 0xff0000 shr 16 xor (checksum and -0x1000000 shr 24)))
                     idStr.snPrintf(s_chk, 3, "%02X", chk8)
-                    if (idStr.Icmp(TempDump.ctos(l_chk[i_key]), TempDump.ctos(s_chk)) != 0) {
+                    if (idStr.Icmp(ctos(l_chk[i_key]), ctos(s_chk)) != 0) {
                         offline_valid[i_key] = false
                         i_key++
                         continue
@@ -1482,7 +1477,7 @@ object Session_local {
             if (cdkey_state == cdKeyState_t.CDKEY_UNKNOWN) {
                 // FIX: C++ uses `strlen(cdkey)` which counts chars until null terminator.
                 // cdkey.size always returns CDKEY_BUF_LEN (17), making the check always fail.
-                if (TempDump.ctos(cdkey).length != CDKEY_BUF_LEN - 1) {
+                if (ctos(cdkey).length != CDKEY_BUF_LEN - 1) {
                     cdkey_state = cdKeyState_t.CDKEY_INVALID
                 } else {
                     i = 0
@@ -1501,7 +1496,7 @@ object Session_local {
             }
             if (xpkey_state == cdKeyState_t.CDKEY_UNKNOWN) {
                 if (FileSystem_h.fileSystem.HasD3XP()) {
-                    if (TempDump.ctos(xpkey).length != CDKEY_BUF_LEN - 1) {
+                    if (ctos(xpkey).length != CDKEY_BUF_LEN - 1) {
                         xpkey_state = cdKeyState_t.CDKEY_INVALID
                     } else {
                         i = 0
@@ -2433,7 +2428,7 @@ object Session_local {
                 if (statsFile != null) {
                     statsFile.WriteInt(statIndex) //statsFile->Write( &statIndex, sizeof( statIndex ) );//TODO
                     for (i in 0 until numClients * statIndex) {
-                        statsFile.Write(loggedStats[i].Write())
+                        statsFile.Write(loggedStats[i])
                     }
                     FileSystem_h.fileSystem.CloseFile(statsFile)
                 }
@@ -2505,13 +2500,13 @@ object Session_local {
                 mapSpawnData.persistentPlayerInfo[i].WriteToFileHandle(file)
             }
             for (t in mapSpawnData.mapSpawnUsercmd) {
-                file.Write(t.Write() /*, sizeof( mapSpawnData.mapSpawnUsercmd )*/)
+                file.Write(t)
             }
             if (numClients < 1) {
                 numClients = 1
             }
             for (i in 0 until numClients * logIndex) {
-                file.Write(loggedUsercmds[i].Write())
+                file.Write(loggedUsercmds[i])
             }
         }
 
@@ -2523,7 +2518,7 @@ object Session_local {
                 mapSpawnData.persistentPlayerInfo[i].ReadFromFileHandle(file)
             }
             for (t in mapSpawnData.mapSpawnUsercmd) {
-                file.Read(t.Write() /*, sizeof( mapSpawnData.mapSpawnUsercmd )*/)
+                file.Read(t)
             }
         }
 
@@ -2769,7 +2764,7 @@ object Session_local {
                 demoName[0] = filename
 
                 // write a one byte stub .game file just so the FindUnusedFileName works,
-                FileSystem_h.fileSystem.WriteFile(demoName[0], TempDump.atobb(demoName[0])!!, 1)
+                FileSystem_h.fileSystem.WriteFile(demoName[0], atobb(demoName[0])!!, 1)
             }
             BeginAVICapture(demoName[0])
         }
@@ -2934,7 +2929,7 @@ object Session_local {
             syncNextGameFrame = ret.syncNextGameFrame
             if (ret.sessionCommand[0].code != 0) {
                 val args = CmdArgs.idCmdArgs()
-                args.TokenizeString(TempDump.ctos(ret.sessionCommand), false)
+                args.TokenizeString(ctos(ret.sessionCommand), false)
                 if (0 == idStr.Icmp(args.Argv(0), "map")) {
                     // get current player states
                     for (i in 0 until numClients) {
@@ -4537,8 +4532,8 @@ object Session_local {
             // make sure the auth reply is empty, we use it to indicate an auth reply
             authMsg.Empty()
             if (idAsyncNetwork.client.SendAuthCheck(
-                    if (cdkey_state == cdKeyState_t.CDKEY_CHECKING) TempDump.ctos(cdkey) else null,
-                    if (xpkey_state == cdKeyState_t.CDKEY_CHECKING) TempDump.ctos(xpkey) else null
+                    if (cdkey_state == cdKeyState_t.CDKEY_CHECKING) ctos(cdkey) else null,
+                    if (xpkey_state == cdKeyState_t.CDKEY_CHECKING) ctos(xpkey) else null
                 )
             ) {
                 authEmitTimeout = win_shared.Sys_Milliseconds() + CDKEY_AUTH_TIMEOUT

@@ -1,6 +1,5 @@
 package neo.framework.Async
 
-import neo.TempDump
 import neo.framework.*
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.framework.CVarSystem.idCVar
@@ -12,6 +11,7 @@ import neo.idlib.MAX_STRING_CHARS
 import neo.idlib.Min
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
+import neo.idlib.Text.ctos
 import neo.idlib.containers.List.cmp_t
 import neo.idlib.containers.List.idList
 import neo.idlib.idException
@@ -405,7 +405,7 @@ class ServerScan {
                 m_pGUI!!.SetStateString("server_name", get(i).serverInfo.GetString("si_name"))
                 for (j in 0..7) {
                     if (get(i).clients > j) {
-                        m_pGUI!!.SetStateString(Str.va("player%d", j + 1), TempDump.ctos(get(i).nickname[j]))
+                        m_pGUI!!.SetStateString(Str.va("player%d", j + 1), ctos(get(i).nickname[j]))
                     } else {
                         m_pGUI!!.SetStateString(Str.va("player%d", j + 1), "")
                     }

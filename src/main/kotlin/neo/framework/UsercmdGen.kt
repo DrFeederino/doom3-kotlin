@@ -36,18 +36,14 @@ Rockville, Maryland 20850 USA.
 
 package neo.framework
 
-import neo.TempDump
-import neo.TempDump.SERiAL
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_Integer
+import neo.framework.File_h.idFile
 import neo.framework.KeyInput.idKeyInput
 import neo.framework.UsercmdGen.idUsercmdGenLocal.*
-import neo.idlib.BIT
-import neo.idlib.LittleLong
-import neo.idlib.LittleShort
+import neo.idlib.*
 import neo.idlib.Text.Str.idStr
-import neo.idlib.idException
 import neo.idlib.math.ANGLE2SHORT
 import neo.idlib.math.PITCH
 import neo.idlib.math.YAW
@@ -63,7 +59,6 @@ import neo.sys.win_main
 import neo.sys.win_main.Sys_QueEvent
 import org.lwjgl.glfw.*
 import org.lwjgl.glfw.GLFW.GLFW_RELEASE
-import java.nio.ByteBuffer
 import java.time.Instant
 import java.util.*
 import kotlin.experimental.or
@@ -326,7 +321,7 @@ object UsercmdGen {
         UB_MAX_BUTTONS
     }
 
-    class usercmd_t : SERiAL {
+    class usercmd_t : idSerializable {
         var angles: ShortArray = ShortArray(3) // view angles
         var buttons // buttons
                 : Byte = 0
@@ -426,52 +421,43 @@ object UsercmdGen {
             } else flags == other.flags
         }
 
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        override fun readFrom(file: idFile) {
+            gameFrame = file.ReadInt()
+            gameTime = file.ReadInt()
+            duplicateCount = file.ReadInt()
+            buttons = file.ReadChar().toByte()
+            forwardmove = file.ReadChar().toByte()
+            rightmove = file.ReadChar().toByte()
+            upmove = file.ReadChar().toByte()
+            angles[0] = file.ReadShort()
+            angles[1] = file.ReadShort()
+            angles[2] = file.ReadShort()
+            mx = file.ReadShort()
+            my = file.ReadShort()
+            impulse = file.ReadChar().toByte()
+            flags = file.ReadChar().toByte()
+            sequence = file.ReadInt()
         }
 
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            gameFrame = buffer.int
-            gameTime = buffer.int
-            duplicateCount = buffer.int
-            buttons = buffer.get()
-            forwardmove = buffer.get()
-            rightmove = buffer.get()
-            upmove = buffer.get()
-            angles[0] = buffer.short
-            angles[1] = buffer.short
-            angles[2] = buffer.short
-            mx = buffer.short
-            my = buffer.short
-            impulse = buffer.get()
-            flags = buffer.get()
-            sequence = buffer.int
-        }
-
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.putInt(gameFrame)
-            buffer.putInt(gameTime)
-            buffer.putInt(duplicateCount)
-            buffer.put(buttons)
-            buffer.put(forwardmove)
-            buffer.put(rightmove)
-            buffer.put(upmove)
-            buffer.putShort(angles[0])
-            buffer.putShort(angles[1])
-            buffer.putShort(angles[2])
-            buffer.putShort(mx)
-            buffer.putShort(my)
-            buffer.put(impulse)
-            buffer.put(flags)
-            buffer.putInt(sequence)
-            buffer.flip()
-            return buffer
+        override fun writeTo(file: idFile) {
+            file.WriteInt(gameFrame)
+            file.WriteInt(gameTime)
+            file.WriteInt(duplicateCount)
+            file.WriteChar(buttons.toShort())
+            file.WriteChar(forwardmove.toShort())
+            file.WriteChar(rightmove.toShort())
+            file.WriteChar(upmove.toShort())
+            file.WriteShort(angles[0])
+            file.WriteShort(angles[1])
+            file.WriteShort(angles[2])
+            file.WriteShort(mx)
+            file.WriteShort(my)
+            file.WriteChar(impulse.toShort())
+            file.WriteChar(flags.toShort())
+            file.WriteInt(sequence)
         }
 
         companion object {
-            @Transient
             val BYTES = Integer.BYTES * 4 + 6 + 5 * java.lang.Short.BYTES
         }
     }
@@ -562,9 +548,9 @@ object UsercmdGen {
 
     class idUsercmdGenLocal : idUsercmdGen() {
         private val buffered: Array<usercmd_t> = Array(MAX_BUFFERED_USERCMD) { usercmd_t() }
-        private val buttonState: IntArray = IntArray(TempDump.etoi(usercmdButton_t.UB_MAX_BUTTONS))
+        private val buttonState: IntArray = IntArray((usercmdButton_t.UB_MAX_BUTTONS).ordinal)
         private val joystickAxis: IntArray =
-            IntArray(TempDump.etoi(joystickAxis_t.MAX_JOYSTICK_AXIS)) // set by joystick events
+            IntArray((joystickAxis_t.MAX_JOYSTICK_AXIS).ordinal) // set by joystick events
         private val keyState: BooleanArray = BooleanArray(KeyInput.K_LAST_KEY)
         private val lastCommandTime = 0
 
@@ -1170,8 +1156,8 @@ object UsercmdGen {
                     Key(key, false)
                     mouseButton = key
                     mouseDown = true
-                    Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_KEY, key, TempDump.btoi(true), 0, null)
-                    Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_KEY, key, TempDump.btoi(false), 0, null)
+                    Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_KEY, key, (true).toInt(), 0, null)
+                    Sys_QueEvent(dwTimeStamp, sysEventType_t.SE_KEY, key, (false).toInt(), 0, null)
                 }
             }
         }
@@ -1326,7 +1312,7 @@ object UsercmdGen {
             toggled_crouch = buttonState_t()
             toggled_run = buttonState_t()
             toggled_zoom = buttonState_t()
-            toggled_run.on = TempDump.btoi(in_alwaysRun.GetBool())
+            toggled_run.on = (in_alwaysRun.GetBool()).toInt()
             viewangles.set(idVec3()) //ClearAngles();
             cmd = usercmd_t()
             Clear()

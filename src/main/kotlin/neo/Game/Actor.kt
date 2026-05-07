@@ -19,6 +19,7 @@
 package neo.Game
 
 import neo.Game.AI.AAS.idAAS
+import neo.Game.AI.AASFile
 import neo.Game.Animation.Anim
 import neo.Game.Animation.Anim.animFlags_t
 import neo.Game.Animation.Anim.jointModTransform_t
@@ -42,8 +43,6 @@ import neo.Renderer.Material
 import neo.Renderer.Material.surfTypes_t
 import neo.Renderer.Model
 import neo.Renderer.RenderWorld.renderView_s
-import neo.TempDump
-import neo.Tools.Compilers.AAS.AASFile
 import neo.cm.CM_CLIP_EPSILON
 import neo.cm.trace_s
 import neo.framework.DeclManager
@@ -54,6 +53,7 @@ import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.atof
 import neo.idlib.containers.*
 import neo.idlib.containers.LinkList.idLinkList
 import neo.idlib.containers.List
@@ -758,7 +758,7 @@ open class idActor : idAFEntity_Gibbable() {
         savefile.WriteInt(copyJoints.Num())
         i = 0
         while (i < copyJoints.Num()) {
-            savefile.WriteInt(TempDump.etoi(copyJoints[i].mod))
+            savefile.WriteInt((copyJoints[i].mod).ordinal)
             savefile.WriteJoint(copyJoints[i].from._val)
             savefile.WriteJoint(copyJoints[i].to._val)
             i++
@@ -967,7 +967,7 @@ open class idActor : idAFEntity_Gibbable() {
     }
 
     override fun GetDefaultSurfaceType(): Int {
-        return TempDump.etoi(surfTypes_t.SURFTYPE_FLESH)
+        return (surfTypes_t.SURFTYPE_FLESH).ordinal
     }
 
     override fun ProjectOverlay(origin: idVec3, dir: idVec3, size: Float, material: String) {
@@ -1385,7 +1385,7 @@ open class idActor : idAFEntity_Gibbable() {
         // set the percentage on damage zones
         arg = spawnArgs.MatchPrefix("damage_scale ", null)
         while (arg != null) {
-            scale = TempDump.atof(arg.GetValue())
+            scale = atof(arg.GetValue())
             groupname.set(arg.GetKey())
             groupname.Strip("damage_scale ")
             i = 0
@@ -1978,7 +1978,7 @@ open class idActor : idAFEntity_Gibbable() {
         if (head.GetEntity() != null) {
             head.GetEntity()!!.Hide()
         }
-        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_VOICE), false)
+        StopSound((gameSoundChannel_t.SND_CHANNEL_VOICE).ordinal, false)
     }
 
     // removes attachments with "remove" set for when character dies
@@ -2179,7 +2179,7 @@ open class idActor : idAFEntity_Gibbable() {
         if (material != null) {
             sound = spawnArgs.GetString(
                 Str.va(
-                    "snd_footstep_%s", Game_local.gameLocal.sufaceTypeNames[TempDump.etoi(material.GetSurfaceType())]
+                    "snd_footstep_%s", Game_local.gameLocal.sufaceTypeNames[(material.GetSurfaceType()).ordinal]
                 )
             )
         }
@@ -2189,7 +2189,7 @@ open class idActor : idAFEntity_Gibbable() {
         if (!sound.isEmpty()) { // != '\0' ) {
             StartSoundShader(
                 DeclManager.declManager.FindSound(sound),
-                TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY),
+                (gameSoundChannel_t.SND_CHANNEL_BODY).ordinal,
                 0,
                 false,
                 null
@@ -2805,7 +2805,7 @@ open class idActor : idAFEntity_Gibbable() {
     }
 
     private fun Event_StopSound(channel: idEventArg<Int>, netSync: idEventArg<Int>) {
-        if (channel.value == TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_VOICE)) {
+        if (channel.value == (gameSoundChannel_t.SND_CHANNEL_VOICE).ordinal) {
             val headEnt: idEntity? = head.GetEntity()
             headEnt?.StopSound(channel.value, netSync.value != 0)
         }

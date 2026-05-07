@@ -23,7 +23,6 @@ import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.gameSoundChannel_t
 import neo.Game.Player.idPlayer
 import neo.Sound.snd_shader.idSoundShader
-import neo.TempDump
 import neo.framework.*
 import neo.framework.Async.NetworkSystem
 import neo.framework.CVarSystem.idCVar
@@ -31,16 +30,16 @@ import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.DeclManager.declType_t
 import neo.framework.File_h.idFile
+import neo.idlib.*
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.BitMsg.idBitMsgDelta
-import neo.idlib.CmdArgs
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Dict_h.idKeyValue
-import neo.idlib.MAX_STRING_CHARS
-import neo.idlib.Min
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.FindText
+import neo.idlib.Text.atoi
+import neo.idlib.Text.ctos
 import neo.idlib.math.idMath
 import neo.idlib.math.idVec3
 import neo.ui.GameSSDWindow
@@ -161,7 +160,7 @@ object MultiplayerGame {
 
         //
         // chat data
-        private val chatHistory = TempDump.allocArray(mpChatLine_s::class.java, NUM_CHAT_NOTIFY)
+        private val chatHistory = Array(NUM_CHAT_NOTIFY) { mpChatLine_s() }
         private var chatHistoryIndex = 0
         private var chatHistorySize // 0 <= x < NUM_CHAT_NOTIFY
                 = 0
@@ -765,14 +764,14 @@ object MultiplayerGame {
                         // flag on means vote is denied, so default value 0 means all votes and -1 disables
                         mainGui.SetStateInt(
                             Str.va("vote%d", i),
-                            if (TempDump.itob(SysCvar.g_voteFlags.GetInteger() and (1 shl i))) 0 else 1
+                            if ((SysCvar.g_voteFlags.GetInteger() and (1 shl i)).toBoolean()) 0 else 1
                         )
                         if ((SysCvar.g_voteFlags.GetInteger() and (1 shl i)) == 0) {
                             callvote_ok = true
                         }
                         i++
                     }
-                    mainGui.SetStateInt("callvote", TempDump.btoi(callvote_ok))
+                    mainGui.SetStateInt("callvote", (callvote_ok).toInt())
                 } else {
                     mainGui.SetStateInt("callvote", 2)
                 }
@@ -1105,7 +1104,7 @@ object MultiplayerGame {
         fun WriteToSnapshot(msg: idBitMsgDelta) {
             var i: Int
             var value: Int
-            msg.WriteByte(TempDump.etoi(gameState))
+            msg.WriteByte((gameState).ordinal)
             msg.WriteShort(currentTourneyPlayer[0])
             msg.WriteShort(currentTourneyPlayer[1])
             i = 0
@@ -1117,18 +1116,18 @@ object MultiplayerGame {
                     MP_PLAYER_MAXFRAGS,
                     playerState[i].fragCount
                 )
-                msg.WriteBits(value, ASYNC_PLAYER_FRAG_BITS)
+                msg.WriteBits(value, ASYNC_PLAYER_FRAG_BITS())
                 value = idMath.ClampInt(
                     MP_PLAYER_MINFRAGS,
                     MP_PLAYER_MAXFRAGS,
                     playerState[i].teamFragCount
                 )
-                msg.WriteBits(value, ASYNC_PLAYER_FRAG_BITS)
+                msg.WriteBits(value, ASYNC_PLAYER_FRAG_BITS())
                 value = idMath.ClampInt(0, MP_PLAYER_MAXWINS, playerState[i].wins)
                 msg.WriteBits(value, ASYNC_PLAYER_WINS_BITS)
                 value = idMath.ClampInt(0, MP_PLAYER_MAXPING, playerState[i].ping)
                 msg.WriteBits(value, ASYNC_PLAYER_PING_BITS)
-                msg.WriteBits(TempDump.btoi(playerState[i].ingame), 1)
+                msg.WriteBits((playerState[i].ingame).toInt(), 1)
                 i++
             }
             // D3XP CTF: write team points and flag carriers
@@ -1163,8 +1162,8 @@ object MultiplayerGame {
             currentTourneyPlayer[1] = msg.ReadShort()
             i = 0
             while (i < Game_local.MAX_CLIENTS) {
-                playerState[i].fragCount = msg.ReadBits(ASYNC_PLAYER_FRAG_BITS)
-                playerState[i].teamFragCount = msg.ReadBits(ASYNC_PLAYER_FRAG_BITS)
+                playerState[i].fragCount = msg.ReadBits(ASYNC_PLAYER_FRAG_BITS())
+                playerState[i].teamFragCount = msg.ReadBits(ASYNC_PLAYER_FRAG_BITS())
                 playerState[i].wins = msg.ReadBits(ASYNC_PLAYER_WINS_BITS)
                 playerState[i].ping = msg.ReadBits(ASYNC_PLAYER_PING_BITS)
                 playerState[i].ingame = msg.ReadBits(1) != 0
@@ -1190,7 +1189,7 @@ object MultiplayerGame {
                 if (shader != null) {
                     Game_local.gameSoundWorld!!.PlayShaderDirectly(shader)
                 } else {
-                    Game_local.gameSoundWorld!!.PlayShaderDirectly(GlobalSoundStrings[TempDump.etoi(evt)])
+                    Game_local.gameSoundWorld!!.PlayShaderDirectly(GlobalSoundStrings[(evt).ordinal])
                 }
             }
             if (!Game_local.gameLocal.isClient) {
@@ -1440,7 +1439,7 @@ object MultiplayerGame {
             assert(!Game_local.gameLocal.isClient)
             voteIndex = vote_flags_t.entries.toTypedArray()[msg.ReadByte().toInt()]
             msg.ReadString(value2, MAX_STRING_CHARS)
-            value = TempDump.ctos(value2)
+            value = ctos(value2)
 
             // sanity checks - setup the vote
             if (vote != vote_flags_t.VOTE_NONE) {
@@ -1656,7 +1655,7 @@ object MultiplayerGame {
                 Common.common.GetLanguageDict().GetString("#str_04279"),
                 Game_local.gameLocal.userInfo[clientNum].GetString("ui_name")
             )
-            Game_local.gameSoundWorld!!.PlayShaderDirectly(GlobalSoundStrings[TempDump.etoi(snd_evt_t.SND_VOTE)])
+            Game_local.gameSoundWorld!!.PlayShaderDirectly(GlobalSoundStrings[(snd_evt_t.SND_VOTE).ordinal])
             voted = clientNum == Game_local.gameLocal.localClientNum
             if (Game_local.gameLocal.isClient) {
                 // the the vote value to something so the vote line is displayed
@@ -1707,7 +1706,7 @@ object MultiplayerGame {
             when (status) {
                 vote_result_t.VOTE_FAILED -> {
                     AddChatLine("%s", Common.common.GetLanguageDict().GetString("#str_04278"))
-                    Game_local.gameSoundWorld!!.PlayShaderDirectly(GlobalSoundStrings[TempDump.etoi(snd_evt_t.SND_VOTE_FAILED)])
+                    Game_local.gameSoundWorld!!.PlayShaderDirectly(GlobalSoundStrings[(snd_evt_t.SND_VOTE_FAILED).ordinal])
                     if (Game_local.gameLocal.isClient) {
                         vote = vote_flags_t.VOTE_NONE
                     }
@@ -1715,7 +1714,7 @@ object MultiplayerGame {
 
                 vote_result_t.VOTE_PASSED -> {
                     AddChatLine("%s", Common.common.GetLanguageDict().GetString("#str_04277"))
-                    Game_local.gameSoundWorld!!.PlayShaderDirectly(GlobalSoundStrings[TempDump.etoi(snd_evt_t.SND_VOTE_PASSED)])
+                    Game_local.gameSoundWorld!!.PlayShaderDirectly(GlobalSoundStrings[(snd_evt_t.SND_VOTE_PASSED).ordinal])
                 }
 
                 vote_result_t.VOTE_RESET -> if (Game_local.gameLocal.isClient) {
@@ -1746,7 +1745,7 @@ object MultiplayerGame {
             if (Game_local.gameLocal.isClient) {
                 outMsg.Init(msgBuf, msgBuf.capacity())
                 outMsg.WriteByte(Game_local.GAME_RELIABLE_MESSAGE_CASTVOTE.toByte())
-                outMsg.WriteByte(TempDump.btoi(castVote).toByte())
+                outMsg.WriteByte((castVote).toInt().toByte())
                 NetworkSystem.networkSystem.ClientSendReliableMessage(outMsg)
                 return
             }
@@ -1796,7 +1795,7 @@ object MultiplayerGame {
             when (vote) {
                 vote_flags_t.VOTE_RESTART -> Game_local.gameLocal.MapRestart()
                 vote_flags_t.VOTE_TIMELIMIT -> {
-                    SysCvar.si_timeLimit.SetInteger(TempDump.atoi(voteValue))
+                    SysCvar.si_timeLimit.SetInteger(atoi(voteValue))
                     needRestart = Game_local.gameLocal.NeedRestart()
                     CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "rescanSI")
                     if (needRestart) {
@@ -1805,7 +1804,7 @@ object MultiplayerGame {
                 }
 
                 vote_flags_t.VOTE_FRAGLIMIT -> {
-                    SysCvar.si_fragLimit.SetInteger(TempDump.atoi(voteValue))
+                    SysCvar.si_fragLimit.SetInteger(atoi(voteValue))
                     needRestart = Game_local.gameLocal.NeedRestart()
                     CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "rescanSI")
                     if (needRestart) {
@@ -2269,7 +2268,7 @@ object MultiplayerGame {
                 if (i != clientNum && ent != null && ent is idPlayer) {
                     outMsg.WriteShort(i.toShort())
                     outMsg.WriteShort((ent as idPlayer).inventory.powerups.toShort())
-                    outMsg.WriteBits(TempDump.btoi((ent as idPlayer).spectating), 1)
+                    outMsg.WriteBits(((ent as idPlayer).spectating).toInt(), 1)
                 }
                 i++
             }
@@ -3190,7 +3189,7 @@ object MultiplayerGame {
             Game_local.gameLocal.DPrintf(
                 "%s . %s\n",
                 GameStateStrings[gameState.ordinal],
-                GameStateStrings[TempDump.etoi(news)]
+                GameStateStrings[(news).ordinal]
             )
             when (news) {
                 gameState_t.GAMEON -> {
@@ -4099,9 +4098,18 @@ object MultiplayerGame {
         }
 
         companion object {
-            // D3XP: Adding one to frag count to allow for the negative flag in numbers greater than 255
-            val ASYNC_PLAYER_FRAG_BITS =
-                -(idMath.BitsForInteger(MP_PLAYER_MAXFRAGS - MP_PLAYER_MINFRAGS) + 1) // player can have negative frags
+            // dhewm3 base: -BitsForInteger(MAX-MIN) with MAXFRAGS=100 → -8
+            // dhewm3 D3XP/CTF: -(BitsForInteger(MAX-MIN)+1) with MAXFRAGS=400 → -10
+            // Must match server's compile-time choice or snapshot bits misalign.
+            fun ASYNC_PLAYER_FRAG_BITS(): Int {
+                return if (isD3XP) {
+                    -(idMath.BitsForInteger(MP_PLAYER_MAXFRAGS - MP_PLAYER_MINFRAGS) + 1)
+                } else {
+                    -idMath.BitsForInteger(BASE_MP_PLAYER_MAXFRAGS - MP_PLAYER_MINFRAGS)
+                }
+            }
+
+            const val BASE_MP_PLAYER_MAXFRAGS = 100
             val ASYNC_PLAYER_PING_BITS = idMath.BitsForInteger(MP_PLAYER_MAXPING)
             val ASYNC_PLAYER_WINS_BITS = idMath.BitsForInteger(MP_PLAYER_MAXWINS)
 

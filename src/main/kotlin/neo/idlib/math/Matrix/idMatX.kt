@@ -1,11 +1,11 @@
 package neo.idlib.math.Matrix
 
-import neo.TempDump
 import neo.idlib.Max
 import neo.idlib.Min
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.List.idSwap
+import neo.idlib.containers.fbtofa
 import neo.idlib.idLib
 import neo.idlib.math.*
 import neo.idlib.math.Random.idRandom
@@ -5691,7 +5691,7 @@ class idMatX {
     }
 
     fun arraycopy(src: FloatBuffer, destPos: Int, length: Int) {
-        arraycopy(TempDump.fbtofa(src), destPos, length)
+        arraycopy(fbtofa(src), destPos, length)
     }
 
     fun SubVec63_oSet(vec6: Int, vec3: Int, v: idVec3) {

@@ -37,7 +37,6 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL12
 import org.lwjgl.opengl.GL13
 import java.nio.*
-import java.util.*
 
 object tr_backend {
     /*
@@ -368,6 +367,24 @@ object tr_backend {
         qgl.qglDisable(GL11.GL_STENCIL_TEST)
     }
 
+    private val clearColor = FloatArray(3)
+    private var clearColorString = ""
+    private var clearColorValid = false
+
+    private fun ParseClearColor(value: String, out: FloatArray): Boolean {
+        val tokens = value.trim().split(Regex("\\s+"))
+        if (tokens.size != 3) {
+            return false
+        }
+        val r = tokens[0].toFloatOrNull() ?: return false
+        val g = tokens[1].toFloatOrNull() ?: return false
+        val b = tokens[2].toFloatOrNull() ?: return false
+        out[0] = r
+        out[1] = g
+        out[2] = b
+        return true
+    }
+
     /*
      =============
      RB_SetBuffer
@@ -386,14 +403,14 @@ object tr_backend {
         // automatically enable this with several other debug tools
         // that might leave unrendered portions of the screen
         if ((r_clear!!.GetFloat() != 0.0f) || (r_clear!!.GetString()!!.length != 1) || r_lockSurfaces!!.GetBool() || r_singleArea!!.GetBool() || r_showOverDraw!!.GetBool()) {
-            try {
-                Scanner(r_clear!!.GetString()).use({ sscanf ->
-//		if ( sscanf( r_clear.GetString(), "%f %f %f", c[0], c[1], c[2] ) == 3 ) {
-                    val c: FloatArray = floatArrayOf(sscanf.nextFloat(), sscanf.nextFloat(), sscanf.nextFloat())
-                    //if 3 floats are parsed
-                    qgl.qglClearColor(c[0], c[1], c[2], 1.0f)
-                })
-            } catch (elif: NoSuchElementException) {
+            val clear = r_clear!!.GetString()!!
+            if (clear.length != 1 && clear != clearColorString) {
+                clearColorString = clear
+                clearColorValid = ParseClearColor(clear, clearColor)
+            }
+            if (clear.length != 1 && clearColorValid) {
+                qgl.qglClearColor(clearColor[0], clearColor[1], clearColor[2], 1.0f)
+            } else {
                 if (r_clear!!.GetInteger() == 2) {
                     qgl.qglClearColor(0.0f, 0.0f, 0.0f, 1.0f)
                 } else if (r_showOverDraw!!.GetBool()) {

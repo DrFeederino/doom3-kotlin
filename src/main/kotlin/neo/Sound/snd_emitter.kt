@@ -8,13 +8,13 @@ import neo.Sound.snd_shader.idSoundShader
 import neo.Sound.snd_system.idSoundSystemLocal
 import neo.Sound.snd_world.idSoundWorldLocal
 import neo.Sound.sound.idSoundEmitter
-import neo.TempDump
 import neo.framework.Common
 import neo.framework.DemoFile.demoSystem_t
 import neo.framework.Session
 import neo.idlib.math.MIXBUFFER_SAMPLES
 import neo.idlib.math.idMath
 import neo.idlib.math.idVec3
+import neo.idlib.toInt
 import neo.sys.win_main.Sys_EnterCriticalSection
 import neo.sys.win_main.Sys_LeaveCriticalSection
 import neo.sys.win_shared
@@ -22,7 +22,6 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.openal.AL10
 import org.lwjgl.openal.AL11.alSource3i
 import org.lwjgl.openal.EXTEfx
-import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
@@ -673,7 +672,7 @@ object snd_emitter {
                 soundWorld!!.writeDemo!!.WriteInt(demoSystem_t.DS_SOUND)
                 soundWorld!!.writeDemo!!.WriteInt(soundDemoCommand_t.SCMD_FREE)
                 soundWorld!!.writeDemo!!.WriteInt(index)
-                soundWorld!!.writeDemo!!.WriteInt(TempDump.btoi(immediate))
+                soundWorld!!.writeDemo!!.WriteInt((immediate).toInt())
             }
             if (!immediate) {
                 removeStatus = REMOVE_STATUS_WAITSAMPLEFINISHED
@@ -1376,18 +1375,6 @@ object snd_emitter {
         fun ResetSlowChannel(chan: idSoundChannel?) {
             val index = channels.indexOf(chan)
             slowChannels[index].Reset()
-        }
-
-        override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
-
-        override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
         }
 
         //

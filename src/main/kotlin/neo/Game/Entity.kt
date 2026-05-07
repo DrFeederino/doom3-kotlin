@@ -57,9 +57,6 @@ import neo.Renderer.RenderWorld.renderEntity_s
 import neo.Renderer.RenderWorld.renderView_s
 import neo.Sound.snd_shader.idSoundShader
 import neo.Sound.sound.idSoundEmitter
-import neo.TempDump
-import neo.TempDump.NiLLABLE
-import neo.TempDump.SERiAL
 import neo.cm.trace_s
 import neo.framework.Async.NetworkSystem
 import neo.framework.Common
@@ -68,6 +65,7 @@ import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclParticle.idDeclParticle
 import neo.framework.DeclSkin.idDeclSkin
+import neo.framework.File_h.idFile
 import neo.idlib.*
 import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
@@ -78,6 +76,7 @@ import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.va
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.atoi
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
@@ -260,10 +259,10 @@ class signal_t {
 }
 
 class signalList_t {
-    val signal: Array<idList<signal_t>> = Array(TempDump.etoi(signalNum_t.NUM_SIGNALS)) { idList() }
+    val signal: Array<idList<signal_t>> = Array((signalNum_t.NUM_SIGNALS).ordinal) { idList() }
 }
 
-open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
+open class idEntity : idClass() {
 
     companion object {
         val Type = idTypeInfo("idEntity", "idClass") { idEntity() }
@@ -1014,32 +1013,6 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         return eventCallbacks[event]
     }
 
-    override fun oSet(node: idEntity?): idEntity? {
-        throw UnsupportedOperationException("Not supported yet.")
-    }
-
-    override fun isNULL(): Boolean {
-        throw UnsupportedOperationException("Not supported yet.")
-    }
-
-    override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(SERIAL_BYTES)
-    }
-
-    override fun Read(buffer: ByteBuffer) {
-        // idEntity uses Save/Restore for game serialization, not SERiAL.
-        // This is a placeholder matching the C++ sizeof for binary compatibility.
-        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-    }
-
-    override fun Write(): ByteBuffer {
-        // idEntity uses Save/Restore for game serialization, not SERiAL.
-        val buffer = AllocBuffer()
-        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-        buffer.flip()
-        return buffer
-    }
-
     override fun oSet(oGet: idClass?) {
         throw UnsupportedOperationException("Not supported yet.")
     }
@@ -1173,7 +1146,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         cinematic = spawnArgs.GetBool("cinematic", "0")
         networkSync = spawnArgs.FindKey("networkSync")
         if (networkSync != null) {
-            fl.networkSync = TempDump.atoi(networkSync.GetValue()) != 0
+            fl.networkSync = atoi(networkSync.GetValue()) != 0
         }
         if (false) {
             if (!Game_local.gameLocal.isClient) {
@@ -3261,8 +3234,8 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
     }
 
     fun SignalEvent(thread: idThread?, _signalNum: signalNum_t) {
-        val signalNum = TempDump.etoi(_signalNum)
-        if (signalNum < 0 || signalNum >= TempDump.etoi(signalNum_t.NUM_SIGNALS)) {
+        val signalNum = (_signalNum).ordinal
+        if (signalNum < 0 || signalNum >= (signalNum_t.NUM_SIGNALS).ordinal) {
             idGameLocal.Error("Signal out of range")
         }
         if (null == signals) {
@@ -4423,7 +4396,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         dormantStart = 0
     }
 
-    class entityFlags_s : SERiAL {
+    class entityFlags_s : idSerializable {
         var bindOrientated // if true both the master orientation is used for binding
                 = false
         var forcePhysicsUpdate // if true always update from the physics whether the object moved or not
@@ -4453,13 +4426,8 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
         var deconstructed // Kotlin guard: C++ guarantees single destructor invocation; prevents re-entry from delete() chains
                 = false
 
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            val bits = buffer.short.toInt()
+        override fun readFrom(file: idFile) {
+            val bits = file.ReadShort().toInt()
             // C++ bitfield order from Entity.h lines 146-158
             notarget = (bits and (1 shl 0)) != 0
             noknockback = (bits and (1 shl 1)) != 0
@@ -4476,9 +4444,7 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             grabbed = (bits and (1 shl 12)) != 0
         }
 
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        override fun writeTo(file: idFile) {
             var bits = 0
             // C++ bitfield order from Entity.h lines 146-158
             if (notarget) bits = bits or (1 shl 0)
@@ -4494,13 +4460,10 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
             if (hasAwakened) bits = bits or (1 shl 10)
             if (networkSync) bits = bits or (1 shl 11)
             if (grabbed) bits = bits or (1 shl 12)
-            buffer.putShort(bits.toShort())
-            buffer.flip()
-            return buffer
+            file.WriteShort(bits.toShort())
         }
 
         companion object {
-            @Transient
             val BYTES = java.lang.Short.BYTES // 2
         }
     }
@@ -4521,18 +4484,6 @@ open class idEntity : idClass(), NiLLABLE<idEntity?>, SERiAL {
                 return false
             }
             return ent.UpdateRenderEntity(e, v)
-        }
-
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(0) // stateless singleton - no data to serialize
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            // stateless singleton - nothing to read
-        }
-
-        override fun Write(): ByteBuffer {
-            return AllocBuffer() // stateless singleton - nothing to write
         }
 
         companion object {
@@ -4946,7 +4897,7 @@ open class idAnimatedEntity : idEntity() {
     }
 
     open fun GetDefaultSurfaceType(): Int {
-        return TempDump.etoi(surfTypes_t.SURFTYPE_METAL)
+        return (surfTypes_t.SURFTYPE_METAL).ordinal
     }
 
     override fun AddDamageEffect(collision: trace_s, velocity: idVec3, damageDefName: String) {

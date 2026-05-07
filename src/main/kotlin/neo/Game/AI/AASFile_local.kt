@@ -1,16 +1,15 @@
-package neo.Tools.Compilers.AAS
+package neo.Game.AI
 
-import neo.TempDump
-import neo.Tools.Compilers.AAS.AASFile.aasArea_s
-import neo.Tools.Compilers.AAS.AASFile.aasCluster_s
-import neo.Tools.Compilers.AAS.AASFile.aasEdge_s
-import neo.Tools.Compilers.AAS.AASFile.aasFace_s
-import neo.Tools.Compilers.AAS.AASFile.aasNode_s
-import neo.Tools.Compilers.AAS.AASFile.aasPortal_s
-import neo.Tools.Compilers.AAS.AASFile.aasTrace_s
-import neo.Tools.Compilers.AAS.AASFile.idAASFile
-import neo.Tools.Compilers.AAS.AASFile.idReachability
-import neo.Tools.Compilers.AAS.AASFile.idReachability_Special
+import neo.Game.AI.AASFile.aasArea_s
+import neo.Game.AI.AASFile.aasCluster_s
+import neo.Game.AI.AASFile.aasEdge_s
+import neo.Game.AI.AASFile.aasFace_s
+import neo.Game.AI.AASFile.aasNode_s
+import neo.Game.AI.AASFile.aasPortal_s
+import neo.Game.AI.AASFile.aasTrace_s
+import neo.Game.AI.AASFile.idAASFile
+import neo.Game.AI.AASFile.idReachability
+import neo.Game.AI.AASFile.idReachability_Special
 import neo.framework.Common
 import neo.framework.FileSystem_h
 import neo.framework.File_h.idFile
@@ -252,7 +251,7 @@ object AASFile_local {
             val cur_mid = idVec3()
             val v1 = idVec3()
             val v2 = idVec3()
-            val tracestack = TempDump.allocArray(aasTraceStack_s::class.java, AASFile.MAX_AAS_TREE_DEPTH)
+            val tracestack = Array(AASFile.MAX_AAS_TREE_DEPTH) { aasTraceStack_s() }
             var tstack_p: Int
             var node: aasNode_s
             var plane: idPlane

@@ -30,26 +30,26 @@ import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld.idRenderWorld
 import neo.Sound.snd_system
 import neo.Sound.sound.idSoundWorld
-import neo.TempDump.SERiAL
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.DemoFile.idDemoFile
 import neo.framework.FileSystem_h.backgroundDownload_s
 import neo.framework.FileSystem_h.findFile_t
+import neo.framework.File_h.idFile
 import neo.framework.Session_local.idSessionLocal
 import neo.framework.Session_local.timeDemo_t
 import neo.idlib.CmdArgs
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.idException
+import neo.idlib.idSerializable
 import neo.sys.sysEvent_s
 import neo.sys.win_main
 import neo.sys.win_main.Sys_EnterCriticalSection
 import neo.sys.win_main.Sys_LeaveCriticalSection
 import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
-import java.nio.ByteBuffer
 
 class Session {
     fun RandomizeStack() {
@@ -77,37 +77,28 @@ class Session {
 
     //
     // needed by the gui system for the load game menu
-    class logStats_t : SERiAL {
+    class logStats_t : idSerializable {
         // FIX: C++ declares all fields as short. heartRate was incorrectly Float (0.0f).
         var health = 0
         var heartRate = 0
         var stamina = 0
         var combat = 0
 
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        override fun readFrom(file: idFile) {
+            health = file.ReadShort().toInt()
+            heartRate = file.ReadShort().toInt()
+            stamina = file.ReadShort().toInt()
+            combat = file.ReadShort().toInt()
         }
 
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            health = buffer.short.toInt()
-            heartRate = buffer.short.toInt()
-            stamina = buffer.short.toInt()
-            combat = buffer.short.toInt()
-        }
-
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.putShort(health.toShort())
-            buffer.putShort(heartRate.toShort())
-            buffer.putShort(stamina.toShort())
-            buffer.putShort(combat.toShort())
-            buffer.flip()
-            return buffer
+        override fun writeTo(file: idFile) {
+            file.WriteShort(health.toShort())
+            file.WriteShort(heartRate.toShort())
+            file.WriteShort(stamina.toShort())
+            file.WriteShort(combat.toShort())
         }
 
         companion object {
-            @Transient
             val BYTES = Short.SIZE_BYTES * 4
         }
     }

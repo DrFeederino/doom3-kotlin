@@ -2,8 +2,6 @@ package neo.ui
 
 import neo.Renderer.Material
 import neo.Renderer.Material.idMaterial
-import neo.TempDump.itob
-import neo.TempDump.wrapToNativeBuffer
 import neo.framework.Common.Companion.common
 import neo.framework.DeclManager
 import neo.framework.FileSystem_h.fileSystem
@@ -20,6 +18,8 @@ import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.va
 import neo.idlib.containers.CBool
 import neo.idlib.containers.List.idList
+import neo.idlib.containers.intArrayToBytes
+import neo.idlib.containers.wrapToNativeBuffer
 import neo.idlib.math.idVec4
 import neo.sys.sysEventType_t
 import neo.sys.sysEvent_s
@@ -289,7 +289,8 @@ class MarkerWindow {
                         i++
                     }
                     val stage = background!!.GetStage(0)
-                    stage?.texture?.image?.get(0)?.UploadScratch(wrapToNativeBuffer(itob(imageBuff!!)), 512, 64)
+                    stage?.texture?.image?.get(0)
+                        ?.UploadScratch(wrapToNativeBuffer(intArrayToBytes(imageBuff!!)), 512, 64)
                     //                    Mem_Free(imageBuff);
                     imageBuff = null
                 }

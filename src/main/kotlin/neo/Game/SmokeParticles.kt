@@ -43,7 +43,6 @@ import neo.idlib.geometry.DrawVert
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Random.idRandom
 import neo.idlib.math.idVec3
-import java.nio.ByteBuffer
 import java.util.*
 import kotlin.math.floor
 
@@ -564,18 +563,6 @@ object SmokeParticles {
                 } else {
                     true
                 }
-            }
-
-            override fun AllocBuffer(): ByteBuffer {
-                throw UnsupportedOperationException("ModelCallback does not support serialization")
-            }
-
-            override fun Read(buffer: ByteBuffer) {
-                throw UnsupportedOperationException("ModelCallback does not support serialization")
-            }
-
-            override fun Write(): ByteBuffer {
-                throw UnsupportedOperationException("ModelCallback does not support serialization")
             }
 
             companion object {

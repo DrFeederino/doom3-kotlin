@@ -39,7 +39,6 @@ import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderEntity_s
 import neo.Renderer.RenderWorld.renderLight_s
-import neo.TempDump
 import neo.cm.CM_CLIP_EPSILON
 import neo.cm.collisionModelManager
 import neo.cm.trace_s
@@ -54,6 +53,7 @@ import neo.idlib.containers.CInt
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
+import neo.idlib.toInt
 import java.nio.ByteBuffer
 
 val EV_BecomeNonSolid: idEventDef = idEventDef("becomeNonSolid")
@@ -877,7 +877,7 @@ object Moveable {
             super.Save(savefile)
             savefile.WriteVec3(spawnOrigin)
             savefile.WriteMat3(spawnAxis)
-            savefile.WriteInt(TempDump.etoi(state))
+            savefile.WriteInt((state).ordinal)
             savefile.WriteInt(particleModelDefHandle)
             savefile.WriteInt(lightDefHandle)
             savefile.WriteRenderEntity(particleRenderEntity)
@@ -1049,7 +1049,7 @@ object Moveable {
 
         override fun WriteToSnapshot(msg: idBitMsgDelta) {
             super.WriteToSnapshot(msg)
-            msg.WriteBits(TempDump.btoi(IsHidden()), 1)
+            msg.WriteBits((IsHidden()).toInt(), 1)
         }
 
         override fun ReadFromSnapshot(msg: idBitMsgDelta) {

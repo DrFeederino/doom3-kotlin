@@ -32,13 +32,13 @@ import neo.Renderer.glConfig
 import neo.Renderer.r_logFile
 import neo.Renderer.r_multiSamples
 import neo.Renderer.tr
-import neo.TempDump
 import neo.framework.Common.Companion.common
 import neo.framework.FileSystem_h
 import neo.framework.Licensee.ENGINE_VERSION
 import neo.framework.MACOS_X
 import neo.framework.UsercmdGen
 import neo.idlib.Text.Str.idStr
+import neo.idlib.Text.atobb
 import neo.idlib.idLib
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
@@ -271,6 +271,13 @@ object win_glimp {
         glfwSetErrorCallback(GLFWErrorCallback.createPrint(System.err).set())
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
 
+        if (MACOS_X) {
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE)
+        }
+
         if (window == 0L) {
             window = glfwCreateWindow(
                 parms.width,
@@ -280,13 +287,6 @@ object win_glimp {
                 MemoryUtil.NULL
             )
             loadIcoAndSetWindowIcon(window)
-        }
-
-        if (MACOS_X) {
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
-            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
-            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE)
         }
 
         // Query content scale for HiDPI (macOS retina, Windows DPI scaling)
@@ -551,10 +551,6 @@ object win_glimp {
 
 
     fun GLimp_SwapBuffers() {
-        var error = glGetError()
-        if (error > 0) {
-            common.Warning("GL Error: %d", error)
-        }
         glfwSwapBuffers(window)
         glfwPollEvents()
     }
@@ -608,14 +604,14 @@ object win_glimp {
                     }
                     path = FileSystem_h.fileSystem.RelativePathToOSPath(qpath, "fs_savepath")
                     idStr.Copynz(ospath, path)
-                    tr.logFile = FileChannel.open(Paths.get(ospath.toString()), TempDump.fopenOptions("wt"))
+                    tr.logFile = FileChannel.open(Paths.get(ospath.toString()), FileSystem_h.fopenOptions("wt"))
 
                     // write the time out to the top of the file
 //			time( &aclock );
 //			newtime = localtime( &aclock );
-                    tr.logFile!!.write(TempDump.atobb(String.format("// %s", Date())))
+                    tr.logFile!!.write(atobb(String.format("// %s", Date())))
                     tr.logFile!!.write(
-                        TempDump.atobb(
+                        atobb(
                             String.format(
                                 "// %s\n\n",
                                 idLib.cvarSystem.GetCVarString("si_version")

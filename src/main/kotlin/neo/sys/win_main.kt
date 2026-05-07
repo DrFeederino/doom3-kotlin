@@ -27,21 +27,20 @@ If you have questions concerning this license or the applicable additional terms
 */
 package neo.sys
 
-import neo.TempDump
-import neo.TempDump.TODO_Exception
-import neo.Tools.edit_public
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem
 import neo.framework.CmdSystem.cmdFunction_t
 import neo.framework.Common
-import neo.framework.ID_ALLOW_TOOLS
+import neo.framework.FileSystem_h
 import neo.idlib.CmdArgs
 import neo.idlib.MAX_STRING_CHARS
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.atobb
+import neo.idlib.Text.ctos
 import neo.idlib.containers.idStrList
 import neo.idlib.idException
 import neo.idlib.idLib
@@ -597,34 +596,27 @@ object win_main {
     }
 
     fun Sys_SetClipboardData(string: CharArray) {
-        Sys_SetClipboardData(TempDump.ctos(string))
+        Sys_SetClipboardData(ctos(string))
     }
 
     /*
      =====================
      Sys_DLL_Load
+
+     The Kotlin port is monolithic (GAME_DLL = false) — game logic ships
+     in the same JAR. Loading external native DLLs is intentionally unsupported.
      =====================
      */
     fun Sys_DLL_Load(dllName: String): Int {
-        throw TODO_Exception()
+        idLib.common.Warning("Sys_DLL_Load(%s): native DLL loading not supported in Kotlin port", dllName)
+        return 0
     }
 
-    /*
-     =====================
-     Sys_DLL_GetProcAddress
-     =====================
-     */
-    fun Sys_DLL_GetProcAddress(dllHandle: Int, procName: String): Any {
-        throw TODO_Exception()
+    fun Sys_DLL_GetProcAddress(dllHandle: Int, procName: String): Any? {
+        return null
     }
 
-    /*
-     =====================
-     Sys_DLL_Unload
-     =====================
-     */
     fun Sys_DLL_Unload(dllHandle: Int) {
-        throw TODO_Exception()
     }
 
     /*
@@ -667,7 +659,7 @@ object win_main {
         if (s != null) {
             val len: Int
             len = s.length
-            Sys_QueEvent(0, sysEventType_t.SE_CONSOLE, 0, 0, len, TempDump.atobb(s)!!)
+            Sys_QueEvent(0, sysEventType_t.SE_CONSOLE, 0, 0, len, atobb(s)!!)
         }
         entered = false
     }
@@ -845,7 +837,7 @@ object win_main {
     fun tmpfile(): FileChannel {
         val tmp = File.createTempFile("bla", "bla")
         tmp.deleteOnExit()
-        return FileChannel.open(tmp.toPath(), TempDump.fopenOptions("wb+"))
+        return FileChannel.open(tmp.toPath(), FileSystem_h.fopenOptions("wb+"))
     }
 
 
@@ -882,49 +874,6 @@ object win_main {
         while (true) {
             Win_Frame()
 
-            if (ID_ALLOW_TOOLS) {
-                if (Common.com_editors != 0) {
-                    if (Common.com_editors and Common.EDITOR_GUI != 0) {
-                        // GUI editor
-                        edit_public.GUIEditorRun()
-                    } else if (Common.com_editors and Common.EDITOR_RADIANT != 0) {
-                        // Level Editor
-                        edit_public.RadiantRun()
-                    } else if (Common.com_editors and Common.EDITOR_MATERIAL != 0) {
-                        //BSM Nerve: Add support for the material editor
-                        edit_public.MaterialEditorRun()
-                    } else {
-                        if (Common.com_editors and Common.EDITOR_LIGHT != 0) {
-                            // in-game Light Editor
-                            edit_public.LightEditorRun()
-                        }
-                        if (Common.com_editors and Common.EDITOR_SOUND != 0) {
-                            // in-game Sound Editor
-                            edit_public.SoundEditorRun()
-                        }
-                        if (Common.com_editors and Common.EDITOR_DECL != 0) {
-                            // in-game Declaration Browser
-                            edit_public.DeclBrowserRun()
-                        }
-                        if (Common.com_editors and Common.EDITOR_AF != 0) {
-                            // in-game Articulated Figure Editor
-                            edit_public.AFEditorRun()
-                        }
-                        if (Common.com_editors and Common.EDITOR_PARTICLE != 0) {
-                            // in-game Particle Editor
-                            edit_public.ParticleEditorRun()
-                        }
-                        if (Common.com_editors and Common.EDITOR_SCRIPT != 0) {
-                            // in-game Script Editor
-                            edit_public.ScriptEditorRun()
-                        }
-                        if (Common.com_editors and Common.EDITOR_PDA != 0) {
-                            // in-game PDA Editor
-                            edit_public.PDAEditorRun()
-                        }
-                    }
-                }
-            }
             // run the game
             Common.common.Frame()
         }

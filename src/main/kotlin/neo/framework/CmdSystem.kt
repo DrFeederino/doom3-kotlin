@@ -21,7 +21,6 @@
 
 package neo.framework
 
-import neo.TempDump.void_callback
 import neo.framework.DeclManager.declType_t
 import neo.framework.FileSystem_h.idFileList
 import neo.idlib.BIT
@@ -86,8 +85,8 @@ object CmdSystem {
     // argument completion function
     abstract class argCompletion_t {
         @Throws(idException::class)
-        abstract fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>)
-        fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>, type: Int) {}
+        abstract fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit)
+        fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit, type: Int) {}
     }
 
     /*
@@ -133,10 +132,10 @@ object CmdSystem {
 
         // Command and argument completion using callback for each valid string.
         @Throws(idException::class)
-        abstract fun CommandCompletion(callback: void_callback<String>)
+        abstract fun CommandCompletion(callback: (String) -> Unit)
 
         @Throws(idException::class)
-        abstract fun ArgCompletion(cmdString: String, callback: void_callback<String>)
+        abstract fun ArgCompletion(cmdString: String, callback: (String) -> Unit)
 
         // Adds command text to the command buffer, does not add a final \n
         @Throws(idException::class)
@@ -152,7 +151,7 @@ object CmdSystem {
         @Throws(idException::class)
         abstract fun ArgCompletion_FolderExtension(
             args: CmdArgs.idCmdArgs?,
-            callback: void_callback<String>,
+            callback: (String) -> Unit,
             folder: String,
             stripFolder: Boolean,
             vararg objects: Any?
@@ -160,7 +159,7 @@ object CmdSystem {
 
         // Base for decl name auto-completion.
         @Throws(idException::class)
-        abstract fun ArgCompletion_DeclName(args: CmdArgs.idCmdArgs?, callback: void_callback<String>, type: Int)
+        abstract fun ArgCompletion_DeclName(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit, type: Int)
 
         // Adds to the command buffer in tokenized form ( CMD_EXEC_NOW or CMD_EXEC_APPEND only )
         @Throws(idException::class)
@@ -176,9 +175,9 @@ object CmdSystem {
         // Default argument completion functions.
         class ArgCompletion_Boolean : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
-                callback.run(Str.va("%s 0", args!!.Argv(0)))
-                callback.run(Str.va("%s 1", args.Argv(0)))
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
+                callback(Str.va("%s 0", args!!.Argv(0)))
+                callback(Str.va("%s 1", args.Argv(0)))
             }
 
             companion object {
@@ -191,32 +190,32 @@ object CmdSystem {
 
         class ArgCompletion_Integer(private val min: Int, private val max: Int) : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 for (i in min..max) {
-                    callback.run(Str.va("%s %d", args!!.Argv(0), i))
+                    callback(Str.va("%s %d", args!!.Argv(0), i))
                 }
             }
         }
 
         class ArgCompletion_String(private val listDeclStrings: Array<String?>) : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 for (decl in listDeclStrings) {
-                    callback.run(Str.va("%s %s", args!!.Argv(0), decl!!))
+                    callback(Str.va("%s %s", args!!.Argv(0), decl!!))
                 }
             }
         }
 
         class ArgCompletion_Decl(private val type: declType_t) : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 cmdSystem.ArgCompletion_DeclName(args, callback, type.ordinal)
             }
         }
 
         class ArgCompletion_FileName : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 cmdSystem.ArgCompletion_FolderExtension(args, callback, "/", true, "", null)
             }
 
@@ -230,7 +229,7 @@ object CmdSystem {
 
         class ArgCompletion_MapName : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 cmdSystem.ArgCompletion_FolderExtension(args, callback, "maps/", true, ".map", null)
             }
 
@@ -244,7 +243,7 @@ object CmdSystem {
 
         class ArgCompletion_ModelName : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 cmdSystem.ArgCompletion_FolderExtension(
                     args, callback, "models/", false,
                     ".lwo", ".ase", ".md5mesh", ".ma", null
@@ -261,7 +260,7 @@ object CmdSystem {
 
         class ArgCompletion_SoundName : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 cmdSystem.ArgCompletion_FolderExtension(args, callback, "sound/", false, ".wav", ".ogg", null)
             }
 
@@ -275,7 +274,7 @@ object CmdSystem {
 
         class ArgCompletion_ImageName : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 cmdSystem.ArgCompletion_FolderExtension(
                     args, callback, "/", false,
                     ".tga", ".dds", ".jpg", ".pcx", null
@@ -292,7 +291,7 @@ object CmdSystem {
 
         class ArgCompletion_VideoName : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 cmdSystem.ArgCompletion_FolderExtension(args, callback, "video/", false, ".roq", null)
             }
 
@@ -306,7 +305,7 @@ object CmdSystem {
 
         class ArgCompletion_ConfigName : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 cmdSystem.ArgCompletion_FolderExtension(args, callback, "/", true, ".cfg", null)
             }
 
@@ -320,7 +319,7 @@ object CmdSystem {
 
         class ArgCompletion_SaveGame : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 cmdSystem.ArgCompletion_FolderExtension(args, callback, "SaveGames/", true, ".save", null)
             }
 
@@ -334,7 +333,7 @@ object CmdSystem {
 
         class ArgCompletion_DemoName : argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 cmdSystem.ArgCompletion_FolderExtension(args, callback, "demos/", true, ".demo", null)
             }
 
@@ -522,10 +521,10 @@ object CmdSystem {
         ============
         */
         @Throws(idException::class)
-        override fun CommandCompletion(callback: void_callback<String>) {
+        override fun CommandCompletion(callback: (String) -> Unit) {
             var cmd = commands
             while (cmd != null) {
-                callback.run(cmd.name)
+                callback(cmd.name)
                 cmd = cmd.next
             }
         }
@@ -536,7 +535,7 @@ object CmdSystem {
         ============
         */
         @Throws(idException::class)
-        override fun ArgCompletion(cmdString: String, callback: void_callback<String>) {
+        override fun ArgCompletion(cmdString: String, callback: (String) -> Unit) {
             val args = CmdArgs.idCmdArgs()
             args.TokenizeString(cmdString, false)
 
@@ -649,7 +648,7 @@ object CmdSystem {
         @Throws(idException::class)
         override fun ArgCompletion_FolderExtension(
             args: CmdArgs.idCmdArgs?,
-            callback: void_callback<String>,
+            callback: (String) -> Unit,
             folder: String,
             stripFolder: Boolean,
             vararg objects: Any?
@@ -714,7 +713,7 @@ object CmdSystem {
             }
             i = 0
             while (i < completionParms.size()) {
-                callback.run(completionParms[i].toString())
+                callback(completionParms[i].toString())
                 i++
             }
         }
@@ -725,14 +724,14 @@ object CmdSystem {
         ============
         */
         @Throws(idException::class)
-        override fun ArgCompletion_DeclName(args: CmdArgs.idCmdArgs?, callback: void_callback<String>, type: Int) {
+        override fun ArgCompletion_DeclName(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit, type: Int) {
             if (DeclManager.declManager == null) {
                 return
             }
             val num = DeclManager.declManager.GetNumDecls(declType_t.values()[type])
             var i = 0
             while (i < num) {
-                callback.run(
+                callback(
                     args!!.Argv(0) + " " + DeclManager.declManager.DeclByIndex(
                         declType_t.values()[type], i, false
                     )!!.GetName()

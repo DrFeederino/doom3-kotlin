@@ -1,4 +1,4 @@
-package neo.Tools.Compilers.AAS
+package neo.Game.AI
 
 import neo.framework.Common
 import neo.framework.DeclEntityDef.idDeclEntityDef

@@ -4,11 +4,6 @@ import neo.Renderer.Material
 import neo.Renderer.Material.idMaterial
 import neo.Renderer.r_scaleMenusTo43
 import neo.Renderer.r_skipGuiShaders
-import neo.TempDump.atof
-import neo.TempDump.atoi
-import neo.TempDump.btoi
-import neo.TempDump.etoi
-import neo.TempDump.itob
 import neo.framework.CVarSystem.CVAR_ARCHIVE
 import neo.framework.CVarSystem.CVAR_BOOL
 import neo.framework.CVarSystem.CVAR_GUI
@@ -44,6 +39,8 @@ import neo.idlib.Text.Token.TT_INTEGER
 import neo.idlib.Text.Token.TT_NAME
 import neo.idlib.Text.Token.TT_NUMBER
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.atof
+import neo.idlib.Text.atoi
 import neo.idlib.colorBlack
 import neo.idlib.containers.CBool
 import neo.idlib.containers.List.idFloatList
@@ -54,6 +51,8 @@ import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.Matrix.idMat3.Companion.getMat3_identity
 import neo.idlib.precompiled.MAX_EXPRESSION_OPS
 import neo.idlib.precompiled.MAX_EXPRESSION_REGISTERS
+import neo.idlib.toBoolean
+import neo.idlib.toInt
 import neo.sys.sysEventType_t
 import neo.sys.sysEvent_s
 import neo.ui.BindWindow.idBindWindow
@@ -294,7 +293,7 @@ object Window {
                 : Array<idList<wexpOp_t>>? = null
         protected var saveRegs: Array<idFloatList>? = null
         protected var saveTemps: BooleanArray? = null
-        protected var scripts = arrayOfNulls<idGuiScriptList>(etoi(ON.SCRIPT_COUNT))
+        protected var scripts = arrayOfNulls<idGuiScriptList>((ON.SCRIPT_COUNT).ordinal)
         val shear = idVec2()
         var text = idWinStr()
         /*signed*/ var textAlign = 0.toChar()
@@ -476,8 +475,8 @@ object Window {
                 flags = flags or WIN_TRANSFORM
             }
             CalcClientRect(0.0f, 0.0f)
-            if (scripts[etoi(ON.ON_ACTION)] != null) {
-                cursor = etoi(CURSOR.CURSOR_HAND).toChar()
+            if (scripts[(ON.ON_ACTION).ordinal] != null) {
+                cursor = (CURSOR.CURSOR_HAND).ordinal.toChar()
                 flags = flags or WIN_CANFOCUS
             }
         }
@@ -1290,7 +1289,7 @@ object Window {
                     src.SetMarker()
 
                     // Read in the float
-                    regList.AddReg(work.toString(), etoi(REGTYPE.FLOAT), src, this, varf)
+                    regList.AddReg(work.toString(), (REGTYPE.FLOAT).ordinal, src, this, varf)
 
                     // If we are in the gui editor then add the float to the defines
 //                    if (ID_ALLOW_TOOLS) {
@@ -1319,7 +1318,7 @@ object Window {
                     gui!!.GetDesktop()!!.definedVars.Append(`var`)
                     gui!!.GetDesktop()!!.regList.AddReg(
                         work.toString(),
-                        etoi(REGTYPE.VEC4),
+                        (REGTYPE.VEC4).ordinal,
                         src,
                         gui!!.GetDesktop(),
                         `var`
@@ -1349,7 +1348,7 @@ object Window {
                     src.SetMarker()
 
                     // Parse the float
-                    regList.AddReg(work.toString(), etoi(REGTYPE.FLOAT), src, this, varf)
+                    regList.AddReg(work.toString(), (REGTYPE.FLOAT).ordinal, src, this, varf)
 
                     // If we are in the gui editor then add the float to the defines
 //                    if (ID_ALLOW_TOOLS) {
@@ -1439,7 +1438,7 @@ object Window {
                 }
                 RunTimeEvents(gui!!.GetTime())
                 CalcRects(0.0f, 0.0f)
-                dc!!.SetCursor(etoi(CURSOR.CURSOR_ARROW))
+                dc!!.SetCursor((CURSOR.CURSOR_ARROW).ordinal)
             }
             if (visible.data && !noEvents.data) {
                 if (event.evType == sysEventType_t.SE_KEY) {
@@ -1928,7 +1927,7 @@ object Window {
                     textAlign.code,
                     colorBlack,
                     shadowRect,
-                    !itob(flags and WIN_NOWRAP),
+                    !(flags and WIN_NOWRAP).toBoolean(),
                     -1
                 )
             }
@@ -1938,7 +1937,7 @@ object Window {
                 textAlign.code,
                 foreColor.data,
                 textRect,
-                !itob(flags and WIN_NOWRAP),
+                !(flags and WIN_NOWRAP).toBoolean(),
                 -1
             )
             if (gui_edit.GetBool()) {
@@ -2717,7 +2716,7 @@ object Window {
         }
 
         fun RunScript(n: Enum<*>?): Boolean {
-            return this.RunScript(etoi(n!!))
+            return this.RunScript((n!!).ordinal)
         }
 
         fun RunScriptList(src: idGuiScriptList?): Boolean {
@@ -2744,7 +2743,7 @@ object Window {
 
         fun ExpressionConstant(f: Float): Int {
             var i: Int
-            i = etoi(wexpRegister_t.WEXP_REG_NUM_PREDEFINED)
+            i = (wexpRegister_t.WEXP_REG_NUM_PREDEFINED).ordinal
             while (i < expressionRegisters.Num()) {
                 if (!registerIsTemporary[i] && expressionRegisters[i] == f) {
                     return i
@@ -3340,7 +3339,7 @@ object Window {
                 return b
             }
             if (0 == token.Icmp("time")) {
-                return etoi(wexpRegister_t.WEXP_REG_TIME)
+                return (wexpRegister_t.WEXP_REG_TIME).ordinal
             }
 
             // parse negative numbers
@@ -3495,14 +3494,14 @@ object Window {
             val erc = expressionRegisters.Num()
             val oc = ops.Num()
             // copy the constants
-            i = etoi(wexpRegister_t.WEXP_REG_NUM_PREDEFINED)
+            i = (wexpRegister_t.WEXP_REG_NUM_PREDEFINED).ordinal
             while (i < erc) {
                 registers[i] = expressionRegisters[i]
                 i++
             }
 
             // copy the local and global parameters
-            registers[etoi(wexpRegister_t.WEXP_REG_TIME)] = gui!!.GetTime().toFloat()
+            registers[(wexpRegister_t.WEXP_REG_TIME).ordinal] = gui!!.GetTime().toFloat()
             i = 0
             while (i < oc) {
                 op = ops[i]
@@ -3595,7 +3594,7 @@ object Window {
 
                     wexpOpType_t.WOP_TYPE_VARB -> if (op.a != null) {
                         val `var` = op.a as idWinBool
-                        registers[op.c] = btoi(`var`!!.data).toFloat()
+                        registers[op.c] = (`var`!!.data).toInt().toFloat()
                     } else {
                         registers[op.c] = 0.0f
                     }
@@ -3644,7 +3643,7 @@ object Window {
             if (`var` != null) {
                 for (i in 0 until NumRegisterVars) {
                     if (Icmp(work, RegisterVars[i].name) == 0) {
-                        regList.AddReg(work.toString(), etoi(RegisterVars[i].type), src, this, `var`)
+                        regList.AddReg(work.toString(), (RegisterVars[i].type).ordinal, src, this, `var`)
                         return true
                     }
                 }

@@ -30,7 +30,6 @@ package neo.sys
 import neo.Sound.snd_local
 import neo.Sound.snd_local.idAudioHardware
 import neo.Sound.snd_system.idSoundSystemLocal
-import neo.TempDump.TODO_Exception
 import neo.framework.Common
 import neo.framework.ID_OPENAL
 import neo.idlib.math.MIXBUFFER_SAMPLES
@@ -118,15 +117,16 @@ object win_snd {
         }
 
         override fun Lock(pDSLockedBuffer: Any, dwDSLockedBufferSize: Long): Boolean {
-            throw TODO_Exception()
+            // DirectSound-era API; OpenAL backend never calls these.
+            return false
         }
 
         override fun Unlock(pDSLockedBuffer: Any, dwDSLockedBufferSize: Long): Boolean {
-            throw TODO_Exception()
+            return false
         }
 
         override fun GetCurrentPosition(pdwCurrentWriteCursor: Long): Boolean {
-            throw TODO_Exception()
+            return false
         }
     }
 }

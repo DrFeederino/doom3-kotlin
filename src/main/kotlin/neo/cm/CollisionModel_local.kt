@@ -38,7 +38,6 @@ import neo.Renderer.Model.idRenderModel
 import neo.Renderer.Model.modelSurface_s
 import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld
-import neo.TempDump
 import neo.cm.AbstractCollisionModel_local.*
 import neo.cm.AbstractCollisionModel_local.Companion.CHOP_EPSILON
 import neo.cm.AbstractCollisionModel_local.Companion.CIRCLE_APPROXIMATION_LENGTH
@@ -74,6 +73,7 @@ import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.ctos
 import neo.idlib.Timer.idTimer
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
@@ -8193,7 +8193,7 @@ class idCollisionModelManagerLocal : idCollisionModelManager() {
             }
             i++
         }
-        return TempDump.ctos(contentsString)
+        return ctos(contentsString)
     }
 
     /*

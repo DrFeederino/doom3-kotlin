@@ -19,6 +19,7 @@
 package neo.Game
 
 import neo.Game.AI.AAS.idAAS
+import neo.Game.AI.AASFile
 import neo.Game.AI.idAI
 import neo.Game.AI.talkState_t
 import neo.Game.Animation.Anim
@@ -57,9 +58,6 @@ import neo.Renderer.RenderWorld.portalConnection_t
 import neo.Renderer.RenderWorld.renderEntity_s
 import neo.Renderer.RenderWorld.renderView_s
 import neo.Sound.snd_shader
-import neo.TempDump
-import neo.TempDump.atof
-import neo.Tools.Compilers.AAS.AASFile
 import neo.cm.CM_BOX_EPSILON
 import neo.cm.CM_CLIP_EPSILON
 import neo.cm.trace_s
@@ -70,6 +68,7 @@ import neo.framework.DeclManager.declType_t
 import neo.framework.DeclPDA.*
 import neo.framework.DeclSkin.idDeclSkin
 import neo.framework.UsercmdGen.usercmd_t
+import neo.idlib.*
 import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.BitMsg.idBitMsgDelta
@@ -80,13 +79,11 @@ import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.FindText
 import neo.idlib.Text.Token.idToken
-import neo.idlib.colorBlack
-import neo.idlib.colorRed
-import neo.idlib.colorWhite
+import neo.idlib.Text.atof
+import neo.idlib.Text.atoi
 import neo.idlib.containers.*
 import neo.idlib.containers.List.idList
 import neo.idlib.geometry.TraceModel.idTraceModel
-import neo.idlib.idLib
 import neo.idlib.math.*
 import neo.idlib.math.Interpolate.idInterpolate
 import neo.idlib.math.Matrix.idMat3
@@ -687,8 +684,8 @@ object Player {
             dict.SetInt("selVideo", selVideo)
             dict.SetInt("selEmail", selEMail)
             dict.SetInt("selAudio", selAudio)
-            dict.SetInt("pdaOpened", TempDump.btoi(pdaOpened))
-            dict.SetInt("turkeyScore", TempDump.btoi(turkeyScore))
+            dict.SetInt("pdaOpened", (pdaOpened).toInt())
+            dict.SetInt("turkeyScore", (turkeyScore).toInt())
 
             // pdas
             i = 0
@@ -900,7 +897,7 @@ object Player {
                 if (isD3XP) {
                     // D3XP: weapon index is embedded in the key name (e.g., "inclip_04")
                     val temp = idStr(statname)
-                    i = TempDump.atoi(temp.Mid(7, 2))
+                    i = atoi(temp.Mid(7, 2))
                 } else {
                     i = WeaponIndexForAmmoClass(spawnArgs, statname.substring(7))
                 }
@@ -3289,10 +3286,10 @@ object Player {
                 Common.common.DPrintf(
                     "team balance: forcing player %d to %s team\n",
                     entityNumber,
-                    if (TempDump.itob(balanceTeam)) "blue" else "red"
+                    if ((balanceTeam).toBoolean()) "blue" else "red"
                 )
                 team = balanceTeam
-                GetUserInfo().Set("ui_team", if (TempDump.itob(team)) "Blue" else "Red")
+                GetUserInfo().Set("ui_team", if ((team).toBoolean()) "Blue" else "Red")
                 return true
             }
             return false
@@ -3326,7 +3323,7 @@ object Player {
             }
             Hide()
             StopAudioLog()
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_PDA), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_PDA).ordinal, false)
             if (hud != null) {
                 hud!!.HandleNamedEvent("radioChatterDown")
             }
@@ -3879,7 +3876,7 @@ object Player {
             }
             physicsObj.SetMovementType(pmtype_t.PM_DEAD)
             StartSound("snd_death", gameSoundChannel_t.SND_CHANNEL_VOICE, 0, false)
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY2), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_BODY2).ordinal, false)
             fl.takedamage = true // can still be gibbed
 
             // get rid of weapon
@@ -5235,7 +5232,7 @@ object Player {
                     inclip = -1
                     val decl = gameLocal.FindEntityDef(weapon_classname)!!
                     val keypair = decl.dict.MatchPrefix("inv_ammo_")!!
-                    ammoavailable = TempDump.atoi(keypair.GetValue())
+                    ammoavailable = atoi(keypair.GetValue())
                 }
             } else {
                 if (ammoavailable != -1 && ammoavailable - inclip < 0) {
@@ -5245,7 +5242,7 @@ object Player {
                     inclip = -1
                     val decl = gameLocal.FindEntityDef(weapon_classname)!!
                     val keypair = decl.dict.MatchPrefix("inv_ammo_")!!
-                    ammoavailable = TempDump.atoi(keypair.GetValue())
+                    ammoavailable = atoi(keypair.GetValue())
                 }
             }
             player.weapon.GetEntity()!!.WeaponStolen()
@@ -5465,7 +5462,7 @@ object Player {
                     // modify just this channel to a custom volume
                     val parms = snd_shader.soundShaderParms_t() //memset( &parms, 0, sizeof( parms ) );
                     parms.volume = pct
-                    refSound.referenceSound!!.ModifySound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_HEART), parms)
+                    refSound.referenceSound!!.ModifySound((gameSoundChannel_t.SND_CHANNEL_HEART).ordinal, parms)
                 }
                 lastHeartBeat = gameLocal.time
             }
@@ -5532,7 +5529,7 @@ object Player {
             } else {
                 if (airless) {
                     StartSound("snd_recompress", gameSoundChannel_t.SND_CHANNEL_ANY, Sound.SSF_GLOBAL, false)
-                    StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY2), false)
+                    StopSound((gameSoundChannel_t.SND_CHANNEL_BODY2).ordinal, false)
                     if (hud != null) {
                         hud!!.HandleNamedEvent("Air")
                     }
@@ -5586,7 +5583,7 @@ object Player {
             }
             if (token.Icmp("stoppdavideo") == 0) {
                 if (objectiveSystem != null && objectiveSystemOpen && pdaVideoWave.Length() > 0) {
-                    StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_PDA), false)
+                    StopSound((gameSoundChannel_t.SND_CHANNEL_PDA).ordinal, false)
                 }
                 return true
             }
@@ -5628,7 +5625,7 @@ object Player {
                 if (objectiveSystem != null && objectiveSystemOpen && pdaAudio.Length() > 0) {
                     // idSoundShader *shader = declManager.FindSound( pdaAudio );
                     StopAudioLog()
-                    StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_PDA), false)
+                    StopSound((gameSoundChannel_t.SND_CHANNEL_PDA).ordinal, false)
                 }
                 return true
             }
@@ -5737,7 +5734,7 @@ object Player {
             spectating = spectate
             if (gameLocal.isServer) {
                 msg.Init(msgBuf, Game_local.MAX_EVENT_PARAM_SIZE)
-                msg.WriteBits(TempDump.btoi(spectating), 1)
+                msg.WriteBits((spectating).toInt(), 1)
                 ServerSendEvent(EVENT_SPECTATE, msg, false, -1)
             }
             if (spectating) {
@@ -6378,12 +6375,12 @@ object Player {
             msg.WriteBits(inventory.weapons, MAX_WEAPONS())
             msg.WriteBits(weapon.GetSpawnId(), 32)
             msg.WriteBits(spectator, idMath.BitsForInteger(Game_local.MAX_CLIENTS))
-            msg.WriteBits(TempDump.btoi(lastHitToggle), 1)
-            msg.WriteBits(TempDump.btoi(weaponGone), 1)
-            msg.WriteBits(TempDump.btoi(isLagged), 1)
-            msg.WriteBits(TempDump.btoi(isChatting), 1)
+            msg.WriteBits((lastHitToggle).toInt(), 1)
+            msg.WriteBits((weaponGone).toInt(), 1)
+            msg.WriteBits((isLagged).toInt(), 1)
+            msg.WriteBits((isChatting).toInt(), 1)
             if (isD3XP) { // CTF: needed for scoreboard
-                msg.WriteBits(TempDump.btoi(carryingFlag), 1)
+                msg.WriteBits((carryingFlag).toInt(), 1)
                 msg.WriteBits(enviroSuitLight.GetSpawnId(), 32)
             }
         }
@@ -7837,6 +7834,7 @@ object Player {
             physicsObj.SetDebugLevel(SysCvar.g_debugMove.GetBool())
             physicsObj.SetPlayerInput(usercmd, viewAngles)
 
+
             // FIXME: physics gets disabled somehow
             BecomeActive(TH_PHYSICS)
             RunPhysics()
@@ -8031,7 +8029,7 @@ object Player {
             when (i) {
                 BERSERK -> {
                     if (gameLocal.isMultiplayer) {
-                        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_DEMONIC), false)
+                        StopSound((gameSoundChannel_t.SND_CHANNEL_DEMONIC).ordinal, false)
                     }
                     if (isD3XP && !gameLocal.isMultiplayer) {
                         StopHealthRecharge()
@@ -8048,7 +8046,7 @@ object Player {
             if (isD3XP) {
                 when (i) {
                     HELLTIME -> {
-                        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_DEMONIC), false)
+                        StopSound((gameSoundChannel_t.SND_CHANNEL_DEMONIC).ordinal, false)
                     }
 
                     ENVIROSUIT -> {
@@ -8064,7 +8062,7 @@ object Player {
 
                     INVULNERABILITY -> {
                         if (gameLocal.isMultiplayer) {
-                            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_DEMONIC), false)
+                            StopSound((gameSoundChannel_t.SND_CHANNEL_DEMONIC).ordinal, false)
                         }
                     }
                 }
@@ -8179,10 +8177,7 @@ object Player {
                 if (allowFocus) {
                     if (ent is idAFAttachment) {
                         val body = ent.GetBody()
-                        if (body != null && body is idAI && TempDump.etoi(body.GetTalkState()) >= TempDump.etoi(
-                                talkState_t.TALK_OK
-                            )
-                        ) {
+                        if (body != null && body is idAI && (body.GetTalkState()).ordinal >= talkState_t.TALK_OK.ordinal) {
                             gameLocal.clip.TracePoint(
                                 trace, start, end, Game_local.MASK_SHOT_RENDERMODEL, this
                             )
@@ -8198,7 +8193,7 @@ object Player {
                         continue
                     }
                     if (ent is idAI) {
-                        if (TempDump.etoi(ent.GetTalkState()) >= TempDump.etoi(talkState_t.TALK_OK)) {
+                        if ((ent.GetTalkState()).ordinal >= (talkState_t.TALK_OK).ordinal) {
                             gameLocal.clip.TracePoint(
                                 trace, start, end, Game_local.MASK_SHOT_RENDERMODEL, this
                             )

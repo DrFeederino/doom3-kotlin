@@ -21,7 +21,6 @@ package neo.Game
 import neo.Game.Game_local.idGameLocal
 import neo.Renderer.RenderWorld.exitPortal_t
 import neo.Renderer.RenderWorld.portalConnection_t
-import neo.TempDump
 import neo.framework.Common
 import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
@@ -29,6 +28,7 @@ import neo.idlib.Timer.idTimer
 import neo.idlib.colorCyan
 import neo.idlib.colorRed
 import neo.idlib.containers.CInt
+import neo.idlib.containers.memcmp
 import neo.idlib.geometry.Winding.idFixedWinding
 import neo.idlib.geometry.Winding.idWinding
 import neo.idlib.math.*
@@ -620,7 +620,7 @@ object Pvs {
             var i: Int
             assert(areaVisBytes <= 256)
             msg.ReadData(l_pvs, areaVisBytes)
-            if (TempDump.memcmp(l_pvs.array(), currentPVS[handle.i].pvs, areaVisBytes)) {
+            if (memcmp(l_pvs.array(), currentPVS[handle.i].pvs, areaVisBytes)) {
                 Common.common.Printf("PVS not matching ( %d areaVisBytes ) - server then client:\n", areaVisBytes)
                 i = 0
                 while (i < areaVisBytes) {

@@ -40,7 +40,6 @@ import neo.ui.Window.WIN_NO_SCALETO43
 import neo.ui.Window.WIN_SCALETO43
 import neo.ui.Window.idWindow
 import neo.ui.Winvar.idWinStr
-import java.nio.ByteBuffer
 
 class UserInterfaceLocal {
     /*
@@ -633,18 +632,6 @@ class UserInterfaceLocal {
         }
 
         override fun oSet(FindGui: idUserInterface?) {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
-
-        override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
-
-        override fun Write(): ByteBuffer {
             throw UnsupportedOperationException("Not supported yet.")
         }
     }

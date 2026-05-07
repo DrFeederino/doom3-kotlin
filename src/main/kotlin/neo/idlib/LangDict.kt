@@ -1,6 +1,5 @@
 package neo.idlib
 
-import neo.TempDump
 import neo.framework.Common
 import neo.idlib.Text.Lexer
 import neo.idlib.Text.Lexer.idLexer
@@ -8,6 +7,7 @@ import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.List.idList
+import neo.idlib.containers.bbtocb
 import neo.idlib.containers.idHashIndex
 import java.nio.ByteBuffer
 
@@ -49,7 +49,7 @@ class LangDict {
                 // let whoever called us deal with the failure (so sys_lang can be reset)
                 return false
             }
-            src.LoadMemory(TempDump.bbtocb(buffer[0]!!), TempDump.bbtocb(buffer[0]!!).capacity(), fileName)
+            src.LoadMemory(bbtocb(buffer[0]!!), bbtocb(buffer[0]!!).capacity(), fileName)
             if (!src.IsLoaded()) {
                 return false
             }

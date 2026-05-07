@@ -39,10 +39,6 @@ import neo.Renderer.Image_init.makeNormalizeVectorCubeMap
 import neo.Renderer.Image_program.R_LoadImageProgram
 import neo.Renderer.Material.textureFilter_t
 import neo.Renderer.Material.textureRepeat_t
-import neo.TempDump.CPP_class
-import neo.TempDump.SERiAL
-import neo.TempDump.ctos
-import neo.TempDump.flatten
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.framework.CVarSystem.CVAR_ARCHIVE
 import neo.framework.CVarSystem.CVAR_BOOL
@@ -69,10 +65,9 @@ import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.FormatNumber
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.va
-import neo.idlib.containers.CInt
+import neo.idlib.Text.ctos
+import neo.idlib.containers.*
 import neo.idlib.containers.List.idList
-import neo.idlib.containers.idHashIndex
-import neo.idlib.containers.idStrList
 import neo.idlib.idException
 import neo.idlib.math.idMath.Sqrt
 import neo.idlib.math.idVec3
@@ -220,19 +215,18 @@ object Image {
                                         var dwABitMask: Int
     ) {
         companion object {
-            @Transient
-            val SIZE = (CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE)
+            val SIZE = (CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE)
         }
     }
 
-    internal class ddsFileHeader_t : SERiAL {
+    internal class ddsFileHeader_t {
         var ddspf: ddsFilePixelFormat_t? = null
         var  /*long*/dwCaps1 = 0
         var  /*long*/dwCaps2 = 0
@@ -248,14 +242,10 @@ object Image {
 
         constructor()
         constructor(data: ByteBuffer) {
-            Read(data)
+            readFrom(data)
         }
 
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
-        }
-
-        override fun Read(buffer: ByteBuffer) {
+        fun readFrom(buffer: ByteBuffer) {
             dwSize = buffer.getInt()
             dwFlags = buffer.getInt()
             dwHeight = buffer.getInt()
@@ -277,7 +267,7 @@ object Image {
             }
         }
 
-        override fun Write(): ByteBuffer {
+        fun writeTo(): ByteBuffer {
             val buffer = ByteBuffer.allocate(BYTES)
             buffer.order(ByteOrder.LITTLE_ENDIAN)
             buffer.putInt(dwSize)
@@ -308,21 +298,19 @@ object Image {
         }
 
         companion object {
-            @Transient
-            private val SIZE = (CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + (CPP_class.Long.SIZE * 11)
+            private val SIZE = (CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + (CPP_class.LONG_SIZE * 11)
                     + ddsFilePixelFormat_t.SIZE
-                    + CPP_class.Long.SIZE
-                    + CPP_class.Long.SIZE
-                    + (CPP_class.Long.SIZE * 3))
+                    + CPP_class.LONG_SIZE
+                    + CPP_class.LONG_SIZE
+                    + (CPP_class.LONG_SIZE * 3))
 
-            @Transient
             val BYTES = SIZE / 8
         }
     }
@@ -713,10 +701,9 @@ object Image {
             var width = width
             var height = height
             val preserveBorder: Boolean
-            val scaledBuffer: ByteBuffer?
+            var scaledBuffer: ByteBuffer
             val scaled_width = CInt()
             val scaled_height = CInt()
-            var shrunk: ByteBuffer?
             PurgeImage()
             filter = filterParm
             allowDownSize = allowDownSizeParm
@@ -757,10 +744,10 @@ object Image {
                 // would otherwise modify const data
                 scaledBuffer =
                     BufferUtils.createByteBuffer(width * height * 4)
-                val temp = ByteArray(width * height * 4)
-                pic.rewind()
-                pic[temp]
-                scaledBuffer.put(temp)
+                val src = pic.duplicate()
+                src.position(0)
+                src.limit(width * height * 4)
+                scaledBuffer.put(src).flip()
             } else {
                 // resample down as needed (FIXME: this doesn't seem like it resamples anymore!)
                 scaledBuffer = Image_process.R_MipMap(pic, width, height, preserveBorder)
@@ -772,10 +759,19 @@ object Image {
                 if (height < 1) {
                     height = 1
                 }
+                var scaleScratch: ByteBuffer? = null
                 while (width > scaled_width._val || height > scaled_height._val) {
-                    shrunk = Image_process.R_MipMap(scaledBuffer, width, height, preserveBorder)
-                    scaledBuffer.clear()
-                    scaledBuffer.put(shrunk)
+                    val nextWidth = max(width shr 1, 1)
+                    val nextHeight = max(height shr 1, 1)
+                    val requiredBytes = nextWidth * nextHeight * 4
+                    val out = if (scaleScratch != null && scaleScratch!!.capacity() >= requiredBytes) {
+                        scaleScratch!!
+                    } else {
+                        BufferUtils.createByteBuffer(requiredBytes)
+                    }
+                    Image_process.R_MipMapInto(scaledBuffer, width, height, preserveBorder, out)
+                    scaleScratch = scaledBuffer
+                    scaledBuffer = out
                     width = width shr 1
                     height = height shr 1
                     if (width < 1) {
@@ -868,16 +864,26 @@ object Image {
             // create and upload the mip map levels, which we do in all cases, even if we don't think they are needed
             var miplevel: Int
             miplevel = 0
+            var mipScratch: ByteBuffer? = null
             while (scaled_width._val > 1 || scaled_height._val > 1) {
                 // preserve the border after mip map unless repeating
-                shrunk = Image_process.R_MipMap(
+                val nextWidth = max(scaled_width._val shr 1, 1)
+                val nextHeight = max(scaled_height._val shr 1, 1)
+                val requiredBytes = nextWidth * nextHeight * 4
+                val out = if (mipScratch != null && mipScratch!!.capacity() >= requiredBytes) {
+                    mipScratch!!
+                } else {
+                    BufferUtils.createByteBuffer(requiredBytes)
+                }
+                Image_process.R_MipMapInto(
                     scaledBuffer,
                     scaled_width._val,
                     scaled_height._val,
-                    preserveBorder
+                    preserveBorder,
+                    out
                 )
-                scaledBuffer.clear()
-                scaledBuffer.put(shrunk).flip()
+                mipScratch = scaledBuffer
+                scaledBuffer = out
                 scaled_width.rightShift(1)
                 scaled_height.rightShift(1)
                 if (scaled_width._val < 1) {
@@ -2012,7 +2018,7 @@ object Image {
             }
             Common.common.Printf("Writing precompressed image: %s\n", (filename))
             f.Write(ByteBuffer.wrap("DDS ".toByteArray()))
-            f.Write(header.Write())
+            f.Write(header.writeTo())
 
             // bind to the image so we can read back the contents
             Bind()
@@ -2835,35 +2841,34 @@ object Image {
          */
             val DEFAULT_SIZE = 16
 
-            @Transient
             val SIZE = (Integer.SIZE
-                    + CPP_class.Enum.SIZE
+                    + CPP_class.ENUM_SIZE
                     + Integer.SIZE
                     + Integer.SIZE
-                    + CPP_class.Pointer.SIZE //idImage
-                    + CPP_class.Bool.SIZE
-                    + CPP_class.Bool.SIZE
+                    + CPP_class.POINTER_SIZE //idImage
+                    + CPP_class.BOOL_SIZE
+                    + CPP_class.BOOL_SIZE
                     + backgroundDownload_s.SIZE
-                    + CPP_class.Pointer.SIZE //idImage
+                    + CPP_class.POINTER_SIZE //idImage
                     + idStr.SIZE
-                    + CPP_class.Pointer.SIZE //idImage
-                    + CPP_class.Bool.SIZE
-                    + CPP_class.Enum.SIZE
-                    + CPP_class.Enum.SIZE
-                    + CPP_class.Enum.SIZE
-                    + CPP_class.Enum.SIZE
-                    + CPP_class.Bool.SIZE
-                    + CPP_class.Bool.SIZE
-                    + CPP_class.Bool.SIZE
-                    + CPP_class.Bool.SIZE
-                    + CPP_class.Bool.SIZE
+                    + CPP_class.POINTER_SIZE //idImage
+                    + CPP_class.BOOL_SIZE
+                    + CPP_class.ENUM_SIZE
+                    + CPP_class.ENUM_SIZE
+                    + CPP_class.ENUM_SIZE
+                    + CPP_class.ENUM_SIZE
+                    + CPP_class.BOOL_SIZE
+                    + CPP_class.BOOL_SIZE
+                    + CPP_class.BOOL_SIZE
+                    + CPP_class.BOOL_SIZE
+                    + CPP_class.BOOL_SIZE
                     + java.lang.Long.SIZE //ID_TIME_T timestamp
                     + Integer.SIZE //char * imageHash
                     + Integer.SIZE
                     + (Integer.SIZE * 3)
                     + Integer.SIZE
-                    + (CPP_class.Pointer.SIZE * 2) //idImage
-                    + CPP_class.Pointer.SIZE //idImage
+                    + (CPP_class.POINTER_SIZE * 2) //idImage
+                    + CPP_class.POINTER_SIZE //idImage
                     + Integer.SIZE)
 
             // data commonly accessed is grouped here

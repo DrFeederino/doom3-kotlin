@@ -2,7 +2,6 @@ package neo.ui
 
 import neo.Renderer.Material
 import neo.Renderer.Material.idMaterial
-import neo.TempDump.etoi
 import neo.framework.Common
 import neo.framework.DeclManager
 import neo.framework.KeyInput.K_CTRL
@@ -133,7 +132,7 @@ object ListWindow {
                     }
                 }
                 if (key == K_ENTER || key == K_KP_ENTER) {
-                    RunScript(etoi(ON.ON_ENTER))
+                    RunScript((ON.ON_ENTER).ordinal)
                     return cmd.toString()
                 }
                 if (key == K_MWHEELUP) {
@@ -162,7 +161,7 @@ object ListWindow {
                             } else {
                                 if (IsSelected(cur) && gui!!.GetTime() < clickTime + doubleClickSpeed) {
                                     // Double-click causes ON_ENTER to get run
-                                    RunScript(etoi(ON.ON_ENTER))
+                                    RunScript((ON.ON_ENTER).ordinal)
                                     return cmd.toString()
                                 }
                                 SetCurrentSel(cur)
@@ -458,11 +457,11 @@ object ListWindow {
                                 val iconRect = idRectangle()
                                 iconRect.w = tabInfo[tab].iconSize.x
                                 iconRect.h = tabInfo[tab].iconSize.y
-                                if (tabInfo[tab].align == etoi(ALIGN.ALIGN_LEFT)) {
+                                if (tabInfo[tab].align == (ALIGN.ALIGN_LEFT).ordinal) {
                                     iconRect.x = rect.x
-                                } else if (tabInfo[tab].align == etoi(ALIGN.ALIGN_CENTER)) {
+                                } else if (tabInfo[tab].align == (ALIGN.ALIGN_CENTER).ordinal) {
                                     iconRect.x = rect.x + rect.w / 2.0f - iconRect.w / 2.0f
-                                } else if (tabInfo[tab].align == etoi(ALIGN.ALIGN_RIGHT)) {
+                                } else if (tabInfo[tab].align == (ALIGN.ALIGN_RIGHT).ordinal) {
                                     iconRect.x = rect.x + rect.w - iconRect.w
                                 }
                                 if (tabInfo[tab].valign == 0) { //Top

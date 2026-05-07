@@ -39,7 +39,6 @@ import neo.Renderer.Model
 import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld
 import neo.Sound.snd_shader.idSoundShader
-import neo.TempDump
 import neo.cm.collisionModelManager
 import neo.framework.*
 import neo.framework.DeclManager.declType_t
@@ -1251,7 +1250,7 @@ object Target {
                     if (sound.spawnArgs.GetBool("overlayDemonic")) {
                         sound.StartSound("snd_demonic", gameSoundChannel_t.SND_CHANNEL_DEMONIC, 0, false)
                     } else {
-                        sound.StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+                        sound.StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
                         sound.SetSound(parm)
                     }
                 }
@@ -1366,7 +1365,7 @@ object Target {
                     continue
                 }
                 sound = ent
-                sound.StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+                sound.StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
                 sound.SetSound(sound.spawnArgs.GetString("s_shader"))
                 i++
             }

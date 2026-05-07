@@ -1,11 +1,11 @@
 package neo.ui
 
-import neo.TempDump.SERiAL
+import neo.framework.File_h.idFile
 import neo.idlib.containers.List.idList
+import neo.idlib.idSerializable
 import neo.idlib.math.DEG2RAD
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
-import java.nio.ByteBuffer
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -32,7 +32,7 @@ object Rectangle {
     // simple rectangle
     //
     //extern void RotateVector(idVec3 &v, idVec3 origin, float a, float c, float s);
-    class idRectangle : SERiAL {
+    class idRectangle : idSerializable {
         var h // height;
                 : Float
         var w // width
@@ -243,31 +243,21 @@ object Rectangle {
             return idVec4(x, y, w, h)
         }
 
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
+        override fun readFrom(file: idFile) {
+            x = file.ReadFloat()
+            y = file.ReadFloat()
+            w = file.ReadFloat()
+            h = file.ReadFloat()
         }
 
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            x = buffer.float
-            y = buffer.float
-            w = buffer.float
-            h = buffer.float
-        }
-
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            buffer.putFloat(x)
-            buffer.putFloat(y)
-            buffer.putFloat(w)
-            buffer.putFloat(h)
-            buffer.flip()
-            return buffer
+        override fun writeTo(file: idFile) {
+            file.WriteFloat(x)
+            file.WriteFloat(y)
+            file.WriteFloat(w)
+            file.WriteFloat(h)
         }
 
         companion object {
-            @Transient
             val BYTES = 4 * java.lang.Float.BYTES // 16
 
             private val str = Array(8) { CharArray(48) }

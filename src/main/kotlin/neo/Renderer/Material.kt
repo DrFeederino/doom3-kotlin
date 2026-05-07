@@ -34,12 +34,6 @@ import neo.Renderer.Image.idImageManager
 import neo.Renderer.Image.textureDepth_t
 import neo.Renderer.MegaTexture.idMegaTexture
 import neo.Sound.sound.idSoundEmitter
-import neo.TempDump.CPP_class
-import neo.TempDump.SERiAL
-import neo.TempDump.atoi
-import neo.TempDump.ctos
-import neo.TempDump.etoi
-import neo.TempDump.strLen
 import neo.framework.CVarSystem.cvarSystem
 import neo.framework.Common
 import neo.framework.DeclManager
@@ -57,6 +51,10 @@ import neo.idlib.Text.Str.idStr.Companion.Copynz
 import neo.idlib.Text.Str.idStr.Companion.snPrintf
 import neo.idlib.Text.Token.TT_NUMBER
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.atoi
+import neo.idlib.Text.ctos
+import neo.idlib.Text.strLen
+import neo.idlib.containers.CPP_class
 import neo.idlib.containers.List.idList
 import neo.idlib.precompiled.MAX_EXPRESSION_OPS
 import neo.idlib.precompiled.MAX_EXPRESSION_REGISTERS
@@ -373,7 +371,6 @@ object Material {
         var stayTime: Int = 0 // msec for no change
 
         companion object {
-            @Transient
             val SIZE: Int = (Integer.SIZE
                     + Integer.SIZE
                     + (java.lang.Float.SIZE * 4)
@@ -396,8 +393,7 @@ object Material {
         }
 
         companion object {
-            @Transient
-            val SIZE: Int = (CPP_class.Enum.SIZE
+            val SIZE: Int = (CPP_class.ENUM_SIZE
                     + (Integer.SIZE * 3))
         }
     }
@@ -411,7 +407,6 @@ object Material {
         }
 
         companion object {
-            @Transient
             val SIZE: Int = 4 * Integer.SIZE
         }
     }
@@ -445,13 +440,12 @@ object Material {
         }
 
         companion object {
-            @Transient
-            val SIZE: Int = (CPP_class.Pointer.SIZE //idCinematic
+            val SIZE: Int = (CPP_class.POINTER_SIZE //idCinematic
                     + idImage.SIZE
-                    + CPP_class.Enum.SIZE //texgen_t
-                    + CPP_class.Bool.SIZE
+                    + CPP_class.ENUM_SIZE //texgen_t
+                    + CPP_class.BOOL_SIZE
                     + (Integer.SIZE * 2 * 3)
-                    + CPP_class.Enum.SIZE //dynamicidImage_t
+                    + CPP_class.ENUM_SIZE //dynamicidImage_t
                     + (Integer.SIZE * 2)
                     + Integer.SIZE)
         }
@@ -467,7 +461,6 @@ object Material {
         var vertexProgram: Int = 0
 
         companion object {
-            @Transient
             val SIZE: Int = (Integer.SIZE
                     + Integer.SIZE
                     + (Integer.SIZE * MAX_VERTEX_PARMS * 4)
@@ -504,19 +497,18 @@ object Material {
         }
 
         companion object {
-            @Transient
             val SIZE: Int = (Integer.SIZE
-                    + CPP_class.Pointer.SIZE //stageLighting_t
+                    + CPP_class.POINTER_SIZE //stageLighting_t
                     + Integer.SIZE
                     + colorStage_t.SIZE
                     + Integer.SIZE
-                    + CPP_class.Bool.SIZE
+                    + CPP_class.BOOL_SIZE
                     + Integer.SIZE
                     + textureStage_t.SIZE
-                    + CPP_class.Pointer.SIZE //stageVertexColor_t
-                    + CPP_class.Bool.SIZE
+                    + CPP_class.POINTER_SIZE //stageVertexColor_t
+                    + CPP_class.BOOL_SIZE
                     + java.lang.Float.SIZE
-                    + CPP_class.Pointer.SIZE) //newShaderStage_t
+                    + CPP_class.POINTER_SIZE) //newShaderStage_t
         }
     }
 
@@ -550,17 +542,16 @@ object Material {
         }
 
         companion object {
-            @Transient
-            val SIZE: Int = ((CPP_class.Bool.SIZE * MAX_EXPRESSION_REGISTERS)
+            val SIZE: Int = ((CPP_class.BOOL_SIZE * MAX_EXPRESSION_REGISTERS)
                     + (java.lang.Float.SIZE * MAX_EXPRESSION_REGISTERS)
                     + (expOp_t.SIZE * MAX_EXPRESSION_OPS)
                     + (shaderStage_t.SIZE * MAX_SHADER_STAGES)
-                    + CPP_class.Bool.SIZE
-                    + CPP_class.Bool.SIZE)
+                    + CPP_class.BOOL_SIZE
+                    + CPP_class.BOOL_SIZE)
         }
     }
 
-    class idMaterial : idDecl, SERiAL {
+    class idMaterial : idDecl {
         private val deformRegisters: IntArray = IntArray(4) // numeric parameter for deforms
         private val texGenRegisters: IntArray = IntArray(MAX_TEXGEN_REGISTERS) // for wobbleSky
         var stages: Array<shaderStage_t?>? = null
@@ -693,7 +684,7 @@ object Material {
                 hasSubview = false
                 i = 0
                 while (i < numStages) {
-                    if (etoi(pd!!.parseStages[i]!!.texture.dynamic) != 0) {
+                    if ((pd!!.parseStages[i]!!.texture.dynamic).ordinal != 0) {
                         hasSubview = true
                     }
                     i++
@@ -1369,34 +1360,34 @@ object Material {
             var op: Int
 
             // copy the material constants
-            i = etoi(expRegister_t.EXP_REG_NUM_PREDEFINED)
+            i = (expRegister_t.EXP_REG_NUM_PREDEFINED).ordinal
             while (i < numRegisters) {
                 regs[i] = expressionRegisters!![i]
                 i++
             }
 
             // copy the local and global parameters
-            regs[etoi(expRegister_t.EXP_REG_TIME)] = view.floatTime
-            regs[etoi(expRegister_t.EXP_REG_PARM0)] = shaderParms[0]
-            regs[etoi(expRegister_t.EXP_REG_PARM1)] = shaderParms[1]
-            regs[etoi(expRegister_t.EXP_REG_PARM2)] = shaderParms[2]
-            regs[etoi(expRegister_t.EXP_REG_PARM3)] = shaderParms[3]
-            regs[etoi(expRegister_t.EXP_REG_PARM4)] = shaderParms[4]
-            regs[etoi(expRegister_t.EXP_REG_PARM5)] = shaderParms[5]
-            regs[etoi(expRegister_t.EXP_REG_PARM6)] = shaderParms[6]
-            regs[etoi(expRegister_t.EXP_REG_PARM7)] = shaderParms[7]
-            regs[etoi(expRegister_t.EXP_REG_PARM8)] = shaderParms[8]
-            regs[etoi(expRegister_t.EXP_REG_PARM9)] = shaderParms[9]
-            regs[etoi(expRegister_t.EXP_REG_PARM10)] = shaderParms[10]
-            regs[etoi(expRegister_t.EXP_REG_PARM11)] = shaderParms[11]
-            regs[etoi(expRegister_t.EXP_REG_GLOBAL0)] = view.renderView.shaderParms.get(0)
-            regs[etoi(expRegister_t.EXP_REG_GLOBAL1)] = view.renderView.shaderParms.get(1)
-            regs[etoi(expRegister_t.EXP_REG_GLOBAL2)] = view.renderView.shaderParms.get(2)
-            regs[etoi(expRegister_t.EXP_REG_GLOBAL3)] = view.renderView.shaderParms.get(3)
-            regs[etoi(expRegister_t.EXP_REG_GLOBAL4)] = view.renderView.shaderParms.get(4)
-            regs[etoi(expRegister_t.EXP_REG_GLOBAL5)] = view.renderView.shaderParms.get(5)
-            regs[etoi(expRegister_t.EXP_REG_GLOBAL6)] = view.renderView.shaderParms.get(6)
-            regs[etoi(expRegister_t.EXP_REG_GLOBAL7)] = view.renderView.shaderParms.get(7)
+            regs[(expRegister_t.EXP_REG_TIME).ordinal] = view.floatTime
+            regs[(expRegister_t.EXP_REG_PARM0).ordinal] = shaderParms[0]
+            regs[(expRegister_t.EXP_REG_PARM1).ordinal] = shaderParms[1]
+            regs[(expRegister_t.EXP_REG_PARM2).ordinal] = shaderParms[2]
+            regs[(expRegister_t.EXP_REG_PARM3).ordinal] = shaderParms[3]
+            regs[(expRegister_t.EXP_REG_PARM4).ordinal] = shaderParms[4]
+            regs[(expRegister_t.EXP_REG_PARM5).ordinal] = shaderParms[5]
+            regs[(expRegister_t.EXP_REG_PARM6).ordinal] = shaderParms[6]
+            regs[(expRegister_t.EXP_REG_PARM7).ordinal] = shaderParms[7]
+            regs[(expRegister_t.EXP_REG_PARM8).ordinal] = shaderParms[8]
+            regs[(expRegister_t.EXP_REG_PARM9).ordinal] = shaderParms[9]
+            regs[(expRegister_t.EXP_REG_PARM10).ordinal] = shaderParms[10]
+            regs[(expRegister_t.EXP_REG_PARM11).ordinal] = shaderParms[11]
+            regs[(expRegister_t.EXP_REG_GLOBAL0).ordinal] = view.renderView.shaderParms.get(0)
+            regs[(expRegister_t.EXP_REG_GLOBAL1).ordinal] = view.renderView.shaderParms.get(1)
+            regs[(expRegister_t.EXP_REG_GLOBAL2).ordinal] = view.renderView.shaderParms.get(2)
+            regs[(expRegister_t.EXP_REG_GLOBAL3).ordinal] = view.renderView.shaderParms.get(3)
+            regs[(expRegister_t.EXP_REG_GLOBAL4).ordinal] = view.renderView.shaderParms.get(4)
+            regs[(expRegister_t.EXP_REG_GLOBAL5).ordinal] = view.renderView.shaderParms.get(5)
+            regs[(expRegister_t.EXP_REG_GLOBAL6).ordinal] = view.renderView.shaderParms.get(6)
+            regs[(expRegister_t.EXP_REG_GLOBAL7).ordinal] = view.renderView.shaderParms.get(7)
             op = 0 // = ops;
             i = 0
             while (i < numOps) {
@@ -1501,7 +1492,7 @@ object Material {
             desc = idStr("<none>")
             renderBump.set("")
             contentFlags = CONTENTS_SOLID
-            surfaceFlags = etoi(surfTypes_t.SURFTYPE_NONE)
+            surfaceFlags = (surfTypes_t.SURFTYPE_NONE).ordinal
             materialFlags = 0
             sort = SS_BAD.toFloat()
             coverage = materialCoverage_t.MC_BAD
@@ -2449,10 +2440,10 @@ object Material {
                         }
 
                         41 -> { // colored
-                            ss.color.registers[0] = etoi(expRegister_t.EXP_REG_PARM0)
-                            ss.color.registers[1] = etoi(expRegister_t.EXP_REG_PARM1)
-                            ss.color.registers[2] = etoi(expRegister_t.EXP_REG_PARM2)
-                            ss.color.registers[3] = etoi(expRegister_t.EXP_REG_PARM3)
+                            ss.color.registers[0] = (expRegister_t.EXP_REG_PARM0).ordinal
+                            ss.color.registers[1] = (expRegister_t.EXP_REG_PARM1).ordinal
+                            ss.color.registers[2] = (expRegister_t.EXP_REG_PARM2).ordinal
+                            ss.color.registers[3] = (expRegister_t.EXP_REG_PARM3).ordinal
                             pd!!.registersAreConstant = false
                         }
 
@@ -2722,8 +2713,6 @@ object Material {
             }
             pd!!.registerIsTemporary[i] = false
             pd!!.shaderRegisters[i] = f
-            //            if(dbg_count==131)
-//            TempDump.printCallStack(dbg_count + "****************************" + numRegisters);
             numRegisters++
             return i
         }
@@ -2734,8 +2723,6 @@ object Material {
                 SetMaterialFlag(MF_DEFAULTED)
                 return 0
             }
-            //            if(dbg_count==131)
-//            TempDump.printCallStack(dbg_count + "****************************" + numRegisters);
             pd!!.registerIsTemporary[numRegisters] = true
             numRegisters++
             return numRegisters - 1
@@ -3235,18 +3222,6 @@ object Material {
             EvaluateRegisters(constantRegisters!!, shaderParms, viewDef, null)
         }
 
-        override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
-
-        override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.") //To change body of generated methods, choose Tools | Templates.
-        }
-
         override fun toString(): String {
             return this.toString() + " idMaterial{" + "desc=" + desc + ", renderBump=" + renderBump + ", lightFalloffImage=" + lightFalloffImage + ", entityGui=" + entityGui + ", gui=" + gui + ", noFog=" + noFog + ", spectrum=" + spectrum + ", polygonOffset=" + polygonOffset + ", contentFlags=" + contentFlags + ", surfaceFlags=" + surfaceFlags + ", materialFlags=" + materialFlags + ", decalInfo=" + decalInfo + ", sort=" + sort + ", deform=" + deform + ", deformRegisters=" + deformRegisters + ", deformDecl=" + deformDecl + ", texGenRegisters=" + texGenRegisters + ", coverage=" + coverage + ", cullType=" + cullType + ", shouldCreateBackSides=" + shouldCreateBackSides + ", fogLight=" + fogLight + ", blendLight=" + blendLight + ", ambientLight=" + ambientLight + ", unsmoothedTangents=" + unsmoothedTangents + ", hasSubview=" + hasSubview + ", allowOverlays=" + allowOverlays + ", numOps=" + numOps + ", ops=" + ops + ", numRegisters=" + numRegisters + ", expressionRegisters=" + expressionRegisters + ", constantRegisters=" + constantRegisters + ", numStages=" + numStages + ", numAmbientStages=" + numAmbientStages + ", stages=" + stages + ", pd=" + pd + ", surfaceArea=" + surfaceArea + ", editorImageName=" + editorImageName + ", editorImage=" + editorImage + ", editorAlpha=" + editorAlpha + ", suppressInSubview=" + suppressInSubview + ", portalSky=" + portalSky + ", refCount=" + refCount + '}'
         }
@@ -3274,10 +3249,9 @@ object Material {
         }
 
         companion object {
-            @Transient
             val SIZE: Int = (idStr.SIZE
                     + idStr.SIZE
-                    + CPP_class.Pointer.SIZE //idImage.SIZE //pointer
+                    + CPP_class.POINTER_SIZE //idImage.SIZE //pointer
                     + Integer.SIZE
                     + 1 //boolean
                     + Integer.SIZE
@@ -3287,25 +3261,25 @@ object Material {
                     + Integer.SIZE
                     + decalInfo_t.SIZE
                     + java.lang.Float.SIZE
-                    + CPP_class.Enum.SIZE // deform_t.SIZE
+                    + CPP_class.ENUM_SIZE // deform_t.SIZE
                     + (Integer.SIZE * 4)
                     + idDecl.SIZE //TODO:what good is a pointer in serialization?
                     + (Integer.SIZE * MAX_TEXGEN_REGISTERS)
-                    + CPP_class.Enum.SIZE //materialCoverage_t.SIZE
-                    + CPP_class.Enum.SIZE //cullType_t.SIZE
+                    + CPP_class.ENUM_SIZE //materialCoverage_t.SIZE
+                    + CPP_class.ENUM_SIZE //cullType_t.SIZE
                     + 7 //7 booleans
                     + Integer.SIZE
-                    + CPP_class.Pointer.SIZE //expOp_t.SIZE//pointer
+                    + CPP_class.POINTER_SIZE //expOp_t.SIZE//pointer
                     + Integer.SIZE
                     + java.lang.Float.SIZE //point
                     + java.lang.Float.SIZE //point
                     + Integer.SIZE
                     + Integer.SIZE
-                    + CPP_class.Pointer.SIZE //shaderStage_t.SIZE//pointer
+                    + CPP_class.POINTER_SIZE //shaderStage_t.SIZE//pointer
                     + mtrParsingData_s.SIZE
                     + java.lang.Float.SIZE
                     + idStr.SIZE
-                    + CPP_class.Pointer.SIZE //idImage.SIZE//pointer
+                    + CPP_class.POINTER_SIZE //idImage.SIZE//pointer
                     + java.lang.Float.SIZE
                     + 2 //2 booleans
                     + Integer.SIZE)

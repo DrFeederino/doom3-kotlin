@@ -50,7 +50,6 @@ import neo.Renderer.Model_ma.maMesh_t
 import neo.Renderer.Model_ma.maModel_s
 import neo.Renderer.Model_ma.maObject_t
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.TempDump.ctos
 import neo.framework.CVarSystem.CVAR_BOOL
 import neo.framework.CVarSystem.CVAR_RENDERER
 import neo.framework.CVarSystem.idCVar
@@ -62,6 +61,7 @@ import neo.idlib.BV.idBounds
 import neo.idlib.BigFloat
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Cmpn
+import neo.idlib.Text.ctos
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.VectorSet.idVectorSubset
@@ -2191,18 +2191,6 @@ object Model_local {
                 i++
             }
             return false
-        }
-
-        override fun AllocBuffer(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            throw UnsupportedOperationException("Not supported yet.")
-        }
-
-        override fun Write(): ByteBuffer {
-            throw UnsupportedOperationException("Not supported yet.")
         }
 
         internal class matchVert_s(val index: Int) {

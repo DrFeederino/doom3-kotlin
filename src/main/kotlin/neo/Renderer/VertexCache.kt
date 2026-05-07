@@ -27,7 +27,6 @@ package neo.Renderer
 
 import neo.Renderer.Model.lightingCache_s
 import neo.Renderer.Model.shadowCache_s
-import neo.TempDump.Deprecation_Exception
 import neo.framework.CVarSystem.CVAR_INTEGER
 import neo.framework.CVarSystem.CVAR_RENDERER
 import neo.framework.CVarSystem.idCVar
@@ -37,12 +36,12 @@ import neo.framework.CmdSystem.cmdSystem
 import neo.framework.Common
 import neo.idlib.CmdArgs
 import neo.idlib.geometry.DrawVert.idDrawVert
-import neo.idlib.geometry.DrawVert.toByteBuffer
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.ARBVertexBufferObject
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 
 object VertexCache {
@@ -156,6 +155,9 @@ object VertexCache {
         private val freeStaticHeaders // head of doubly linked list
                 : vertCache_s
         private var listNum: Int = 0 // currentFrame % NUM_VERTEX_FRAMES, determines which tempBuffers to use
+        private var drawVertUploadBuffer: ByteBuffer? = null
+        private var vec3UploadBuffer: ByteBuffer? = null
+        private var vec4UploadBuffer: ByteBuffer? = null
 
         //
         private var staticAllocThisFrame: Int = 0 // debug counter
@@ -348,21 +350,33 @@ object VertexCache {
                     }
                 }
             } else {
-                block.virtMem = data.duplicate()
+                block.virtMem = BufferUtils.createByteBuffer(size)
+                block.virtMem!!.order(ByteOrder.LITTLE_ENDIAN)
+                val src = data.duplicate()
+                src.position(0)
+                src.limit(size)
+                block.virtMem!!.put(src)
+                block.virtMem!!.flip()
             }
             return buffer
         }
 
-        @Deprecated("")
-        fun Alloc(data: IntArray, size: Int, buffer: vertCache_s?, indexBuffer: Boolean /*= false*/) {
-            val byteData: ByteBuffer = ByteBuffer.allocate(data.size * 4)
-            byteData.asIntBuffer().put(data)
-            throw Deprecation_Exception()
-        }
-
         fun Alloc(data: IntArray?, size: Int, indexBuffer: Boolean): vertCache_s {
+            val numInts = size / Integer.BYTES
             val byteData: ByteBuffer = BufferUtils.createByteBuffer(size)
-            byteData.asIntBuffer().put(data)
+            byteData.order(ByteOrder.LITTLE_ENDIAN)
+            val intData = data!!
+            if (numInts > intData.size) {
+                Common.common.Error(
+                    "idVertexCache::Alloc: size %d exceeds int array size %d\n",
+                    size,
+                    intData.size
+                )
+            }
+            val intBuffer = byteData.asIntBuffer()
+            for (i in 0 until numInts) {
+                intBuffer.put(intData[i])
+            }
             return Alloc(byteData, size, indexBuffer)
         }
 
@@ -371,19 +385,60 @@ object VertexCache {
         }
 
         fun Alloc(data: Array<idDrawVert>?, size: Int, buffer: vertCache_s?): vertCache_s {
-            return Alloc(toByteBuffer((data)!!), size, buffer, false)
+            return Alloc(DrawVertsToByteBuffer(data!!, size), size, buffer, false)
         }
 
         fun Alloc(data: Array<idDrawVert>?, size: Int): vertCache_s {
-            return Alloc(toByteBuffer((data)!!), size, null)
+            return Alloc(DrawVertsToByteBuffer(data!!, size), size, null)
+        }
+
+        private fun LightingCacheToByteBuffer(data: Array<lightingCache_s>, size: Int): ByteBuffer {
+            val numItems = size / lightingCache_s.BYTES
+            if (numItems > data.size) {
+                Common.common.Error(
+                    "idVertexCache::Alloc: size %d exceeds lighting cache array size %d\n",
+                    size,
+                    data.size
+                )
+            }
+            val buffer = BufferUtils.createByteBuffer(size)
+            buffer.order(ByteOrder.LITTLE_ENDIAN)
+            for (i in 0 until numItems) {
+                buffer.putFloat(data[i].localLightVector.x)
+                    .putFloat(data[i].localLightVector.y)
+                    .putFloat(data[i].localLightVector.z)
+            }
+            buffer.flip()
+            return buffer
         }
 
         fun Alloc(data: Array<lightingCache_s>, size: Int): vertCache_s {
-            return Alloc(lightingCache_s.toByteBuffer(data), size, null)
+            return Alloc(LightingCacheToByteBuffer(data, size), size, null)
+        }
+
+        private fun ShadowCacheToByteBuffer(data: Array<shadowCache_s>, size: Int): ByteBuffer {
+            val numItems = size / shadowCache_s.BYTES
+            if (numItems > data.size) {
+                Common.common.Error(
+                    "idVertexCache::Alloc: size %d exceeds shadow cache array size %d\n",
+                    size,
+                    data.size
+                )
+            }
+            val buffer = BufferUtils.createByteBuffer(size)
+            buffer.order(ByteOrder.LITTLE_ENDIAN)
+            for (i in 0 until numItems) {
+                buffer.putFloat(data[i].xyz.x)
+                    .putFloat(data[i].xyz.y)
+                    .putFloat(data[i].xyz.z)
+                    .putFloat(data[i].xyz.w)
+            }
+            buffer.flip()
+            return buffer
         }
 
         fun Alloc(data: Array<shadowCache_s>, size: Int): vertCache_s {
-            return Alloc(shadowCache_s.toByteBuffer(data), size, null)
+            return Alloc(ShadowCacheToByteBuffer(data, size), size, null)
         }
 
         /*
@@ -515,24 +570,122 @@ object VertexCache {
                     data
                 )
             } else {
-                val position: ByteBuffer = block.virtMem!!.position(block.offset)
-                for (i in 0 until size) {
-                    position.put(data.get(i))
-                }
+                val dst = block.virtMem!!.duplicate()
+                dst.position(block.offset)
+                dst.limit(block.offset + size)
+                val src = data.duplicate()
+                src.position(0)
+                src.limit(size)
+                dst.put(src)
             }
             return block
         }
 
+        private fun DrawVertsToByteBuffer(data: Array<idDrawVert>, size: Int): ByteBuffer {
+            val numVerts = size / idDrawVert.BYTES
+            if (numVerts > data.size) {
+                Common.common.Error(
+                    "idVertexCache::Alloc: size %d exceeds draw vert array size %d\n",
+                    size,
+                    data.size
+                )
+            }
+            val buffer = BufferUtils.createByteBuffer(size)
+            buffer.order(ByteOrder.LITTLE_ENDIAN)
+            for (i in 0 until numVerts) {
+                data[i].WriteTo(buffer)
+            }
+            buffer.flip()
+            return buffer
+        }
+
+        private fun DrawVertsToUploadBuffer(data: Array<idDrawVert>, size: Int): ByteBuffer {
+            val numVerts = size / idDrawVert.BYTES
+            if (numVerts > data.size) {
+                Common.common.Error(
+                    "idVertexCache::AllocFrameTemp: size %d exceeds draw vert array size %d\n",
+                    size,
+                    data.size
+                )
+            }
+            var buffer = drawVertUploadBuffer
+            if (buffer == null || buffer.capacity() < size) {
+                buffer = BufferUtils.createByteBuffer(size)
+                buffer.order(ByteOrder.LITTLE_ENDIAN)
+                drawVertUploadBuffer = buffer
+            } else {
+                buffer.clear()
+            }
+
+            for (i in 0 until numVerts) {
+                data[i].WriteTo(buffer)
+            }
+            buffer.flip()
+            return buffer
+        }
+
         fun AllocFrameTemp(data: Array<idDrawVert>, size: Int): vertCache_s {
-            return AllocFrameTemp(toByteBuffer((data)!!), size)
+            return AllocFrameTemp(DrawVertsToUploadBuffer(data, size), size)
+        }
+
+        private fun Vec3ToUploadBuffer(data: Array<idVec3>, size: Int): ByteBuffer {
+            val numVecs = size / idVec3.BYTES
+            if (numVecs > data.size) {
+                Common.common.Error(
+                    "idVertexCache::AllocFrameTemp: size %d exceeds idVec3 array size %d\n",
+                    size,
+                    data.size
+                )
+            }
+
+            var buffer = vec3UploadBuffer
+            if (buffer == null || buffer.capacity() < size) {
+                buffer = BufferUtils.createByteBuffer(size)
+                buffer.order(ByteOrder.LITTLE_ENDIAN)
+                vec3UploadBuffer = buffer
+            } else {
+                buffer.clear()
+            }
+
+            for (i in 0 until numVecs) {
+                buffer.putFloat(data[i].x).putFloat(data[i].y).putFloat(data[i].z)
+            }
+            buffer.flip()
+            return buffer
         }
 
         fun AllocFrameTemp(data: Array<idVec3>, size: Int): vertCache_s {
-            return AllocFrameTemp(idVec3.toByteBuffer(data!!), size)
+            return AllocFrameTemp(Vec3ToUploadBuffer(data, size), size)
+        }
+
+        private fun Vec4ToUploadBuffer(data: Array<idVec4>, size: Int): ByteBuffer {
+            val numVecs = size / idVec4.BYTES
+            if (numVecs > data.size) {
+                Common.common.Error(
+                    "idVertexCache::AllocFrameTemp: size %d exceeds idVec4 array size %d\n",
+                    size,
+                    data.size
+                )
+            }
+
+            var buffer = vec4UploadBuffer
+            if (buffer == null || buffer.capacity() < size) {
+                buffer = BufferUtils.createByteBuffer(size)
+                buffer.order(ByteOrder.LITTLE_ENDIAN)
+                vec4UploadBuffer = buffer
+            } else {
+                buffer.clear()
+            }
+
+            for (i in 0 until numVecs) {
+                buffer.putFloat(data[i].x).putFloat(data[i].y).putFloat(data[i].z).putFloat(data[i].w)
+            }
+            buffer.flip()
+            return buffer
         }
 
         fun AllocFrameTemp(data: Array<idVec4>, size: Int): vertCache_s {
-            return AllocFrameTemp(idVec4.toByteBuffer(data), size)
+            return AllocFrameTemp(Vec4ToUploadBuffer(data, size), size)
         }
 
         // notes that a buffer is used this frame, so it can't be purged

@@ -16,8 +16,6 @@ import neo.Game.Player.idPlayer
 import neo.Game.Script.Script_Interpreter.idInterpreter
 import neo.Game.Script.Script_Program.function_t
 import neo.Renderer.RenderWorld
-import neo.TempDump.btoi
-import neo.TempDump.etoi
 import neo.cm.trace_s
 import neo.framework.CVarSystem.cvarSystem
 import neo.framework.CmdSystem.cmdExecution_t
@@ -39,6 +37,7 @@ import neo.idlib.math.idMath.ASin
 import neo.idlib.math.idMath.Cos
 import neo.idlib.math.idMath.Sin
 import neo.idlib.math.idMath.Sqrt
+import neo.idlib.toInt
 
 
 val EV_Thread_SetCallback = idEventDef("<script_setcallback>", null)
@@ -306,11 +305,11 @@ object Script_Thread {
         }
 
         private fun Event_IsClient() {
-            ReturnFloat(btoi(gameLocal.isClient).toFloat())
+            ReturnFloat((gameLocal.isClient).toInt().toFloat())
         }
 
         private fun Event_IsMultiplayer() {
-            ReturnFloat(btoi(gameLocal.isMultiplayer).toFloat())
+            ReturnFloat((gameLocal.isMultiplayer).toInt().toFloat())
         }
 
         private fun Event_GetFrameTime() {
@@ -1368,7 +1367,7 @@ object Script_Thread {
                 if (null == ent) {
                     t.Error("Entity not found")
                 }
-                if (signal < 0 || signal >= etoi(signalNum_t.NUM_SIGNALS)) {
+                if (signal < 0 || signal >= (signalNum_t.NUM_SIGNALS).ordinal) {
                     t.Error("Signal out of range")
                 }
                 function = gameLocal.program.FindFunction(func)
@@ -1384,7 +1383,7 @@ object Script_Thread {
                 if (null == ent) {
                     t.Error("Entity not found")
                 }
-                if (signal < 0 || signal >= etoi(signalNum_t.NUM_SIGNALS)) {
+                if (signal < 0 || signal >= (signalNum_t.NUM_SIGNALS).ordinal) {
                     t.Error("Signal out of range")
                 }
                 ent.ClearSignalThread(signal, t)

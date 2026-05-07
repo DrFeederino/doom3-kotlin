@@ -1,6 +1,5 @@
 package neo.idlib.geometry
 
-import neo.TempDump.SERiAL
 import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
 import org.lwjgl.BufferUtils
@@ -28,7 +27,7 @@ object DrawVert {
 
      ===============================================================================
      */
-    class idDrawVert : SERiAL {
+    class idDrawVert {
         private val DBG_count = DBG_counter++
         var color: ByteArray = ByteArray(4)
         val normal: idVec3 = idVec3()
@@ -36,20 +35,19 @@ object DrawVert {
         var tangents: Array<idVec3>
         val xyz: idVec3 = idVec3()
 
-        @Transient
         private var VBO_OFFSET = 0
 
         constructor() {
             tangents = idVec3.generateArray(2)
         }
 
-        /**
-         * cast constructor
-         *
-         * @param buffer
-         */
+        // Cast-from-VBO-offset constructor: vertexCache.Position() returns a 4-byte buffer
+        // holding the integer VBO offset when the cache lives in a VBO. Mirrors the C++
+        // pointer-cast pattern used by the renderer to derive xyzOffset()/stOffset()/etc.
         constructor(buffer: ByteBuffer) : this() {
-            Read(buffer)
+            if (buffer.capacity() == Integer.BYTES) {
+                VBO_OFFSET = buffer.getInt(0)
+            }
         }
 
         constructor (dv: idDrawVert) {
@@ -148,43 +146,6 @@ object DrawVert {
             )
         }
 
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            if (buffer.capacity() == 0) {
-                return
-            }
-            if (buffer.capacity() == Integer.SIZE / java.lang.Byte.SIZE) {
-                VBO_OFFSET = buffer.getInt(0)
-                return
-            }
-            xyz[0] = buffer.float
-            xyz[1] = buffer.float
-            xyz[2] = buffer.float
-            st[0] = buffer.float
-            st[1] = buffer.float
-            normal[0] = buffer.float
-            normal[1] = buffer.float
-            normal[2] = buffer.float
-            for (tan in tangents) {
-                tan[0] = buffer.float
-                tan[1] = buffer.float
-                tan[2] = buffer.float
-            }
-            for (c in color.indices) {
-                color[c] = buffer.get()
-            }
-        }
-
-        override fun Write(): ByteBuffer {
-            val data = ByteBuffer.allocate(BYTES)
-            data.order(ByteOrder.LITTLE_ENDIAN) //very importante.
-            WriteTo(data)
-            return data
-        }
-
         fun WriteTo(data: ByteBuffer) {
             data.putFloat(xyz[0])
             data.putFloat(xyz[1])
@@ -229,14 +190,12 @@ object DrawVert {
         }
 
         companion object {
-            @Transient
             val SIZE: Int = (idVec3.SIZE
                     + idVec2.SIZE
                     + idVec3.SIZE
                     + 2 * idVec3.SIZE
                     + 4 * java.lang.Byte.SIZE) //color
 
-            @Transient
             val BYTES = SIZE / java.lang.Byte.SIZE
             private var DBG_counter = 0
 

@@ -2,6 +2,7 @@ package neo.Game
 
 import neo.Game.AI.*
 import neo.Game.AI.AAS.idAAS
+import neo.Game.AI.AAS_local.idAASLocal
 import neo.Game.Animation.Anim.idAnimManager
 import neo.Game.Animation.Anim_Testmodel.idTestModel
 import neo.Game.Animation.Anim_Testmodel.idTestModel.*
@@ -126,10 +127,6 @@ import neo.Sound.snd_shader
 import neo.Sound.snd_shader.idSoundShader
 import neo.Sound.snd_system
 import neo.Sound.sound.idSoundWorld
-import neo.TempDump
-import neo.TempDump.etoi
-import neo.TempDump.void_callback
-import neo.Tools.Compilers.AAS.AASFileManager
 import neo.cm.collisionModelManager
 import neo.cm.setCollisionModelManagers
 import neo.cm.trace_s
@@ -158,6 +155,8 @@ import neo.idlib.MapFile.idMapEntity
 import neo.idlib.MapFile.idMapFile
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
+import neo.idlib.Text.atoi
+import neo.idlib.Text.ctos
 import neo.idlib.Timer.idTimer
 import neo.idlib.containers.*
 import neo.idlib.containers.LinkList.idLinkList
@@ -374,7 +373,7 @@ class Game_local {
         //
         private val clientDeclRemap: Array<Array<idList<Int>?>> = Array(MAX_CLIENTS) {
             arrayOfNulls(
-                etoi(declType_t.DECL_MAX_TYPES)
+                (declType_t.DECL_MAX_TYPES).ordinal
             )
         }
 
@@ -693,7 +692,7 @@ class Game_local {
             // allocate space for the aas
             var kv = dict.MatchPrefix("type")
             while (kv != null) {
-                aas = idAAS.Alloc()
+                aas = idAASLocal()
                 aasList.Append(aas)
                 aasNames.add(kv.GetValue())
                 kv = dict.MatchPrefix("type", kv)
@@ -1265,7 +1264,7 @@ class Game_local {
             savegame.WriteBool(inCinematic)
             savegame.WriteBool(skipCinematic)
             savegame.WriteBool(isMultiplayer)
-            savegame.WriteInt(etoi(gameType))
+            savegame.WriteInt((gameType).ordinal)
             savegame.WriteInt(framenum)
             savegame.WriteInt(previousTime)
             savegame.WriteInt(time)
@@ -1453,7 +1452,7 @@ class Game_local {
             // is handled by script code based on the teleport number
             kv = dict.MatchPrefix("teleport", null)
             if (kv != null && kv.GetValue().Length() != 0) {
-                val teleportType = TempDump.atoi(kv.GetValue())
+                val teleportType = atoi(kv.GetValue())
                 val p = if (teleportType != 0) Str.va("fx/teleporter%d.fx", teleportType) else "fx/teleporter.fx"
                 declManager.FindType(declType_t.DECL_FX, p)
             }
@@ -2198,7 +2197,7 @@ class Game_local {
                     msg.ReadString(name, 128)
                     msg.ReadString(text, 128)
                     mpGame.ProcessChatMessage(
-                        clientNum, id == GAME_RELIABLE_MESSAGE_TCHAT, TempDump.ctos(name), TempDump.ctos(text), null
+                        clientNum, id == GAME_RELIABLE_MESSAGE_TCHAT, ctos(name), ctos(text), null
                     )
                 }
 
@@ -2287,7 +2286,7 @@ class Game_local {
             if (Game_network.net_clientLagOMeter.GetBool() && RenderSystem.renderSystem != null) {
                 UpdateLagometer(aheadOfServer, dupeUsercmds)
                 // flatten 3D lagometer array to ByteBuffer for upload
-                val lagBuf = ByteBuffer.allocate(LAGO_IMG_WIDTH * LAGO_IMG_HEIGHT * 4)
+                val lagBuf = org.lwjgl.BufferUtils.createByteBuffer(LAGO_IMG_WIDTH * LAGO_IMG_HEIGHT * 4)
                 for (row in 0 until LAGO_IMG_HEIGHT) {
                     for (col in 0 until LAGO_IMG_WIDTH) {
                         lagBuf.put(lagometer[row][col])
@@ -2644,7 +2643,7 @@ class Game_local {
                     type = msg.ReadByte().toInt()
                     index = msg.ReadLong()
                     msg.ReadString(name, MAX_STRING_CHARS)
-                    val decl = declManager.FindType(declType_t.entries[type], TempDump.ctos(name), false)
+                    val decl = declManager.FindType(declType_t.entries[type], ctos(name), false)
                     if (decl != null) {
                         if (index >= clientDeclRemap[clientNum][type]!!.Num()) {
                             clientDeclRemap[clientNum][type]!!.AssureSize(index + 1, -1)
@@ -2680,7 +2679,7 @@ class Game_local {
                     val text = CharArray(128)
                     msg.ReadString(name, 128)
                     msg.ReadString(text, 128)
-                    mpGame.AddChatLine("%s^0: %s\n", TempDump.ctos(name), TempDump.ctos(text))
+                    mpGame.AddChatLine("%s^0: %s\n", ctos(name), ctos(text))
                 }
 
                 GAME_RELIABLE_MESSAGE_SOUND_EVENT -> {
@@ -2755,7 +2754,7 @@ class Game_local {
                     val voteString = CharArray(MAX_STRING_CHARS)
                     val clientNum2 = msg.ReadByte().toInt()
                     msg.ReadString(voteString, MAX_STRING_CHARS)
-                    mpGame.ClientStartVote(clientNum2, TempDump.ctos(voteString))
+                    mpGame.ClientStartVote(clientNum2, ctos(voteString))
                 }
 
                 GAME_RELIABLE_MESSAGE_UPDATEVOTE -> {
@@ -6168,7 +6167,7 @@ class Game_local {
 
 
                 // only implicit materials and sound shaders decls are used
-                if (type != etoi(declType_t.DECL_MATERIAL) && type != etoi(declType_t.DECL_SOUND)) {
+                if (type != (declType_t.DECL_MATERIAL).ordinal && type != (declType_t.DECL_SOUND).ordinal) {
                     type++
                     continue
                 }
@@ -6223,7 +6222,7 @@ class Game_local {
             outMsg.Init(msgBuf, MAX_GAME_MESSAGE_SIZE)
             outMsg.BeginWriting()
             outMsg.WriteByte(GAME_RELIABLE_MESSAGE_REMAP_DECL.toByte())
-            outMsg.WriteByte(etoi(type).toByte())
+            outMsg.WriteByte((type).ordinal.toByte())
             outMsg.WriteLong(index)
             outMsg.WriteString(decl.GetName())
             NetworkSystem.networkSystem.ServerSendReliableMessage(clientNum, outMsg)
@@ -6883,12 +6882,12 @@ class Game_local {
          =============
          */
         class ArgCompletion_EntityName private constructor() : CmdSystem.argCompletion_t() {
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 var i: Int
                 i = 0
                 while (i < gameLocal.num_entities) {
                     if (gameLocal.entities[i] != null) {
-                        callback.run(Str.va("%s %s", args!!.Argv(0), gameLocal.entities[i]!!.name))
+                        callback(Str.va("%s %s", args!!.Argv(0), gameLocal.entities[i]!!.name))
                     }
                     i++
                 }
@@ -7201,7 +7200,7 @@ class Game_local {
         const val ENTITY_PVS_SIZE = MAX_GENTITIES + 31 shr 5
 
         //============================================================================
-        val NUM_RENDER_PORTAL_BITS = idMath.BitsForInteger(etoi(portalConnection_t.PS_BLOCK_ALL))
+        val NUM_RENDER_PORTAL_BITS = idMath.BitsForInteger((portalConnection_t.PS_BLOCK_ALL).ordinal)
         val animationLib: idAnimManager = idAnimManager()
 
 

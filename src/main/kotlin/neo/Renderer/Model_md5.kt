@@ -701,7 +701,7 @@ object Model_md5 {
 
             // create all the surfaces
             for (i in 0 until meshes.Num()) {
-                val mesh: idMD5Mesh = meshes.getList(Array<idMD5Mesh>::class.java)!![i]
+                val mesh: idMD5Mesh = meshes[i]
 
                 // avoid deforming the surface if it will be a nodraw due to a skin remapping
                 // FIXME: may have to still deform clipping hulls
@@ -768,7 +768,8 @@ object Model_md5 {
             if (surfaceNum > meshes.Num()) {
                 Common.common.Error("idRenderModelMD5::NearestJoint: surfaceNum > meshes.Num()")
             }
-            for (mesh: idMD5Mesh in meshes.getList(Array<idMD5Mesh>::class.java)!!) {
+            for (mi in 0 until meshes.Num()) {
+                val mesh = meshes[mi]
                 if (mesh.surfaceNum == surfaceNum) {
                     return mesh.NearestJoint(a, b, c)
                 }

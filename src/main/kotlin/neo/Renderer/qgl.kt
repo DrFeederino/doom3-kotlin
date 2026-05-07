@@ -25,7 +25,6 @@ Translated to Kotlin by Dr. Feederino with support of Claude Code.
 */
 package neo.Renderer
 
-import neo.TempDump.TODO_Exception
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.*
 import java.nio.ByteBuffer
@@ -1414,7 +1413,7 @@ object qgl {
 
     fun qglPrioritizeTextures(n: Int, textures: Int, priorities: Float) {
         DEBUG_printName("glPrioritizeTextures")
-        throw TODO_Exception()
+        // Legacy fixed-function GL hint; no-op. The buffer-overload below handles real calls.
     }
 
     fun qglPrioritizeTextures(n: Int, textures: IntBuffer, priorities: FloatBuffer) {

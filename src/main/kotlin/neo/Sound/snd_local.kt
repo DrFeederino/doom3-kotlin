@@ -2,12 +2,11 @@ package neo.Sound
 
 import neo.Sound.snd_cache.idSoundSample
 import neo.Sound.snd_decoder.idSampleDecoderLocal
-import neo.TempDump.SERiAL
+import neo.framework.File_h.idFile
 import neo.framework.UsercmdGen
+import neo.idlib.idSerializable
 import neo.idlib.math.MIXBUFFER_SAMPLES
 import neo.sys.win_snd.idAudioHardwareWIN32
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
 class snd_local {
@@ -90,35 +89,27 @@ class snd_local {
 
     // };
     /* specific waveform format structure for PCM data */
-    class pcmwaveformat_s : SERiAL {
+    class pcmwaveformat_s : idSerializable {
         var   /*word*/wBitsPerSample = 0
         var wf: waveformat_s = waveformat_s()
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
-        }
 
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(ByteOrder.LITTLE_ENDIAN)
+        override fun readFrom(file: idFile) {
             wf = waveformat_s()
-            wf.wFormatTag = java.lang.Short.toUnsignedInt(buffer.short)
-            wf.nChannels = java.lang.Short.toUnsignedInt(buffer.short)
-            wf.nSamplesPerSec = buffer.int
-            wf.nAvgBytesPerSec = buffer.int
-            wf.nBlockAlign = java.lang.Short.toUnsignedInt(buffer.short)
-            wBitsPerSample = java.lang.Short.toUnsignedInt(buffer.short)
+            wf.wFormatTag = file.ReadUnsignedShort()
+            wf.nChannels = file.ReadUnsignedShort()
+            wf.nSamplesPerSec = file.ReadInt()
+            wf.nAvgBytesPerSec = file.ReadInt()
+            wf.nBlockAlign = file.ReadUnsignedShort()
+            wBitsPerSample = file.ReadUnsignedShort()
         }
 
-        override fun Write(): ByteBuffer {
-            val data = ByteBuffer.allocate(BYTES)
-            data.order(ByteOrder.LITTLE_ENDIAN)
-            data.putShort(wf.wFormatTag.toShort())
-            data.putShort(wf.nChannels.toShort())
-            data.putInt(wf.nSamplesPerSec)
-            data.putInt(wf.nAvgBytesPerSec)
-            data.putShort(wf.nBlockAlign.toShort())
-            data.putShort(wBitsPerSample.toShort())
-            data.flip()
-            return data
+        override fun writeTo(file: idFile) {
+            file.WriteShort(wf.wFormatTag.toShort())
+            file.WriteShort(wf.nChannels.toShort())
+            file.WriteInt(wf.nSamplesPerSec)
+            file.WriteInt(wf.nAvgBytesPerSec)
+            file.WriteShort(wf.nBlockAlign.toShort())
+            file.WriteShort(wBitsPerSample.toShort())
         }
 
         companion object {
@@ -171,10 +162,9 @@ class snd_local {
         }
     }
 
-    // typedef dword fourcc;
     /* RIFF chunk information data structure */
-    internal class mminfo_s : SERiAL {
-        var   /*fourcc*/ckid // chunk ID 
+    internal class mminfo_s : idSerializable {
+        var   /*fourcc*/ckid // chunk ID
                 : Long = 0
         var   /*dword*/cksize // chunk size
                 = 0
@@ -183,31 +173,18 @@ class snd_local {
         var   /*fourcc*/fccType // form type or list type
                 : Long = 0
 
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
+        override fun readFrom(file: idFile) {
+            ckid = Integer.toUnsignedLong(file.ReadInt())
+            cksize = file.ReadInt()
+            fccType = Integer.toUnsignedLong(file.ReadInt())
+            dwDataOffset = file.ReadInt()
         }
 
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(ByteOrder.LITTLE_ENDIAN)
-            ckid = Integer.toUnsignedLong(buffer.int)
-            cksize = buffer.int
-            if (buffer.hasRemaining()) {
-                fccType = Integer.toUnsignedLong(buffer.int)
-            }
-            if (buffer.hasRemaining()) {
-                dwDataOffset = buffer.int
-            }
-        }
-
-        override fun Write(): ByteBuffer {
-            val data = ByteBuffer.allocate(BYTES)
-            data.order(ByteOrder.LITTLE_ENDIAN)
-            data.putInt(ckid.toInt())
-            data.putInt(cksize)
-            data.putInt(fccType.toInt())
-            data.putInt(dwDataOffset)
-            data.flip()
-            return data
+        override fun writeTo(file: idFile) {
+            file.WriteUnsignedInt(ckid)
+            file.WriteInt(cksize)
+            file.WriteUnsignedInt(fccType)
+            file.WriteInt(dwDataOffset)
         }
 
         companion object {

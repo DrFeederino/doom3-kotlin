@@ -1,12 +1,12 @@
 package neo.ui
 
 import neo.Renderer.Material.idMaterial
-import neo.TempDump.atoi
 import neo.framework.DeclManager
 import neo.framework.File_h.idFile
 import neo.idlib.Dict_h.idDict
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.va
+import neo.idlib.Text.atoi
 import neo.idlib.containers.List.idList
 import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
@@ -20,6 +20,64 @@ object Winvar {
     val MIN_TWO: idWinVar = idWinInt(-2)
     const val VAR_GUIPREFIX = "gui::"
     const val VAR_GUIPREFIX_LEN = VAR_GUIPREFIX.length
+
+    private fun ParseFloatOrZero(value: String?): Float {
+        if (value == null) {
+            return 0.0f
+        }
+        val s = value.trim()
+        if (s.isEmpty()) {
+            return 0.0f
+        }
+        if (!IsSimpleFloatLiteral(s)) {
+            return 0.0f
+        }
+        return s.toFloat()
+    }
+
+    private fun IsSimpleFloatLiteral(s: String): Boolean {
+        var i = 0
+        val len = s.length
+        if (s[i] == '+' || s[i] == '-') {
+            i++
+            if (i == len) {
+                return false
+            }
+        }
+
+        var digits = 0
+        while (i < len && s[i].isDigit()) {
+            i++
+            digits++
+        }
+
+        if (i < len && s[i] == '.') {
+            i++
+            while (i < len && s[i].isDigit()) {
+                i++
+                digits++
+            }
+        }
+        if (digits == 0) {
+            return false
+        }
+
+        if (i < len && (s[i] == 'e' || s[i] == 'E')) {
+            i++
+            if (i < len && (s[i] == '+' || s[i] == '-')) {
+                i++
+            }
+            val exponentStart = i
+            while (i < len && s[i].isDigit()) {
+                i++
+            }
+            if (i == exponentStart) {
+                return false
+            }
+        }
+
+        return i == len
+    }
 
     abstract class idWinVar {
         protected var eval = true
@@ -419,11 +477,7 @@ object Winvar {
         }
 
         override fun Set(`val`: String?) {
-            data = try {
-                `val`!!.toFloat()
-            } catch (e: NumberFormatException) {
-                0.0f//atof doesn't crash with non numbers.
-            }
+            data = ParseFloatOrZero(`val`)
             if (guiDict != null) {
                 guiDict!!.SetFloat(GetName(), data)
             }
@@ -540,10 +594,10 @@ object Winvar {
 
         override fun Set(`val`: String?) {
             val parts = if (`val`!!.contains(",")) `val`.split(",") else `val`.trim().split("\\s+".toRegex())
-            if (parts.size > 0) data.x = parts[0].trim().toFloatOrNull() ?: 0f
-            if (parts.size > 1) data.y = parts[1].trim().toFloatOrNull() ?: 0f
-            if (parts.size > 2) data.w = parts[2].trim().toFloatOrNull() ?: 0f
-            if (parts.size > 3) data.h = parts[3].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 0) data.x = ParseFloatOrZero(parts[0])
+            if (parts.size > 1) data.y = ParseFloatOrZero(parts[1])
+            if (parts.size > 2) data.w = ParseFloatOrZero(parts[2])
+            if (parts.size > 3) data.h = ParseFloatOrZero(parts[3])
             if (guiDict != null) {
                 val v = data.ToVec4()
                 guiDict!!.SetVec4(GetName(), v)
@@ -661,8 +715,8 @@ object Winvar {
 
         override fun Set(`val`: String?) {
             val parts = if (`val`!!.contains(",")) `val`.split(",") else `val`.trim().split("\\s+".toRegex())
-            if (parts.size > 0) data.x = parts[0].trim().toFloatOrNull() ?: 0f
-            if (parts.size > 1) data.y = parts[1].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 0) data.x = ParseFloatOrZero(parts[0])
+            if (parts.size > 1) data.y = ParseFloatOrZero(parts[1])
             if (guiDict != null) {
                 guiDict!!.SetVec2(GetName(), data)
             }
@@ -783,10 +837,10 @@ object Winvar {
 
         override fun Set(`val`: String?) {
             val parts = if (`val`!!.contains(",")) `val`.split(",") else `val`.trim().split("\\s+".toRegex())
-            if (parts.size > 0) data.x = parts[0].trim().toFloatOrNull() ?: 0f
-            if (parts.size > 1) data.y = parts[1].trim().toFloatOrNull() ?: 0f
-            if (parts.size > 2) data.z = parts[2].trim().toFloatOrNull() ?: 0f
-            if (parts.size > 3) data.w = parts[3].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 0) data.x = ParseFloatOrZero(parts[0])
+            if (parts.size > 1) data.y = ParseFloatOrZero(parts[1])
+            if (parts.size > 2) data.z = ParseFloatOrZero(parts[2])
+            if (parts.size > 3) data.w = ParseFloatOrZero(parts[3])
             if (guiDict != null) {
                 guiDict!!.SetVec4(GetName(), data)
             }
@@ -899,9 +953,9 @@ object Winvar {
 
         override fun Set(`val`: String?) {
             val parts = `val`!!.trim().split("\\s+".toRegex())
-            if (parts.size > 0) data.x = parts[0].trim().toFloatOrNull() ?: 0f
-            if (parts.size > 1) data.y = parts[1].trim().toFloatOrNull() ?: 0f
-            if (parts.size > 2) data.z = parts[2].trim().toFloatOrNull() ?: 0f
+            if (parts.size > 0) data.x = ParseFloatOrZero(parts[0])
+            if (parts.size > 1) data.y = ParseFloatOrZero(parts[1])
+            if (parts.size > 2) data.z = ParseFloatOrZero(parts[2])
             if (guiDict != null) {
                 guiDict!!.SetVector(GetName(), data)
             }

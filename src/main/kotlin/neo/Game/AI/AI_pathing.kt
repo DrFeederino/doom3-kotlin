@@ -19,6 +19,7 @@
 package neo.Game.AI
 
 import neo.Game.AI.AAS.idAAS
+import neo.Game.AI.AASFile.aasTrace_s
 import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local
 import neo.Game.Moveable.idMoveable
@@ -26,8 +27,6 @@ import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Physics.idPhysics
 import neo.Game.idActor
 import neo.Game.idEntity
-import neo.Tools.Compilers.AAS.AASFile
-import neo.Tools.Compilers.AAS.AASFile.aasTrace_s
 import neo.cm.CM_BOX_EPSILON
 import neo.cm.trace_s
 import neo.idlib.BV.Box.idBox

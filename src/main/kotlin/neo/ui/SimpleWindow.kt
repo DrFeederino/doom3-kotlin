@@ -2,7 +2,6 @@ package neo.ui
 
 import neo.Renderer.Material
 import neo.Renderer.Material.idMaterial
-import neo.TempDump.itob
 import neo.framework.DeclManager
 import neo.framework.File_h.idFile
 import neo.framework.Session.Companion.session
@@ -15,6 +14,7 @@ import neo.idlib.math.idRotation
 import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
 import neo.idlib.math.vec3_origin
+import neo.idlib.toBoolean
 import neo.ui.DeviceContext.VIRTUAL_HEIGHT
 import neo.ui.DeviceContext.VIRTUAL_WIDTH
 import neo.ui.DeviceContext.idDeviceContext
@@ -246,7 +246,7 @@ class SimpleWindow {
                     textAlign,
                     colorBlack,
                     shadowRect,
-                    !itob(flags and Window.WIN_NOWRAP),
+                    !(flags and Window.WIN_NOWRAP).toBoolean(),
                     -1
                 )
             }
@@ -256,7 +256,7 @@ class SimpleWindow {
                 textAlign,
                 foreColor.data,
                 textRect,
-                !itob(flags and Window.WIN_NOWRAP),
+                !(flags and Window.WIN_NOWRAP).toBoolean(),
                 -1
             )
             dc!!.SetTransformInfo(vec3_origin, getMat3_identity())

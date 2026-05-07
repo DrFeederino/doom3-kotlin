@@ -1,7 +1,5 @@
 package neo.framework
 
-import neo.TempDump
-import neo.TempDump.void_callback
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.cmdFunction_t
@@ -10,6 +8,7 @@ import neo.idlib.CmdArgs
 import neo.idlib.MAX_STRING_CHARS
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
+import neo.idlib.Text.ctos
 import neo.idlib.idException
 import neo.sys.win_input
 
@@ -456,7 +455,7 @@ object KeyInput {
                         val l = cheatCodes[i]!!.length
                         assert(l <= 16)
                         if (idStr.Icmpn(
-                                TempDump.ctos(lastKeys).substring(16 + (lastKeyIndex and 15) - l),
+                                ctos(lastKeys).substring(16 + (lastKeyIndex and 15) - l),
                                 cheatCodes[i]!!,
                                 l
                             ) == 0
@@ -588,7 +587,7 @@ object KeyInput {
             if (keyNum > 32 && keyNum < 127 && keyNum != '"'.code && keyNum != ';'.code && keyNum != '\''.code) {
                 tinystr[0] = win_input.Sys_MapCharForKey(keyNum)
                 tinystr[1] = Char(0)
-                return TempDump.ctos(tinystr)
+                return ctos(tinystr)
             }
 
             // check for a key string
@@ -608,7 +607,7 @@ object KeyInput {
             if (localized && keyNum >= 161 && keyNum <= 255) {
                 tinystr[0] = keyNum.toChar()
                 tinystr[1] = Char(0)
-                return TempDump.ctos(tinystr)
+                return ctos(tinystr)
             }
 
             // make a hex string
@@ -619,7 +618,7 @@ object KeyInput {
             tinystr[2] = (if (i > 9) i - 10 + 'a'.code else i + '0'.code).toChar()
             tinystr[3] = (if (j > 9) j - 10 + 'a'.code else j + '0'.code).toChar()
             tinystr[4] = Char(0)
-            return TempDump.ctos(tinystr)
+            return ctos(tinystr)
         }
 
         fun SetBinding(keyNum: Int, binding: String) {
@@ -731,7 +730,7 @@ object KeyInput {
                 idStr.Copynz(keyName, if (none.startsWith("#str_")) "<none>" else none, keyName.size)
             }
             idStr.ToLower(keyName)
-            return TempDump.ctos(keyName)
+            return ctos(keyName)
         }
 
         /*
@@ -782,17 +781,17 @@ object KeyInput {
 
         class ArgCompletion_KeyName : CmdSystem.argCompletion_t() {
             @Throws(idException::class)
-            override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+            override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
                 var kn: Int
                 var i: Int
                 i = 0
                 while (i < unnamedkeys.length - 1) {
-                    callback.run(Str.va("%s %c", args!!.Argv(0), unnamedkeys[i]))
+                    callback(Str.va("%s %c", args!!.Argv(0), unnamedkeys[i]))
                     i++
                 }
                 kn = 0
                 while (kn < keynames.size) {
-                    callback.run(Str.va("%s %s", args!!.Argv(0), keynames[kn].name!!))
+                    callback(Str.va("%s %s", args!!.Argv(0), keynames[kn].name!!))
                     kn++
                 }
             }

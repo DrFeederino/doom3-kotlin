@@ -16,19 +16,19 @@ import neo.Game.Script.Script_Program.statement_s
 import neo.Game.Script.Script_Program.varEval_s
 import neo.Game.Script.Script_Thread.idThread
 import neo.Game.idEntity
-import neo.TempDump.btoi
-import neo.TempDump.btos
-import neo.TempDump.ctos
-import neo.TempDump.itob
-import neo.TempDump.strLen
 import neo.framework.Common
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Append
 import neo.idlib.Text.Str.idStr.Companion.Cmp
 import neo.idlib.Text.Str.idStr.Companion.Copynz
+import neo.idlib.Text.btos
+import neo.idlib.Text.ctos
+import neo.idlib.Text.strLen
 import neo.idlib.containers.CInt
 import neo.idlib.math.idMath
 import neo.idlib.math.idVec3
+import neo.idlib.toBoolean
+import neo.idlib.toInt
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.*
@@ -1060,113 +1060,113 @@ object Script_Interpreter {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.floatPtr >= var_b!!.floatPtr).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.floatPtr >= var_b!!.floatPtr).toInt().toFloat())
                     }
 
                     OP_LE -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.floatPtr <= var_b!!.floatPtr).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.floatPtr <= var_b!!.floatPtr).toInt().toFloat())
                     }
 
                     OP_GT -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.floatPtr > var_b!!.floatPtr).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.floatPtr > var_b!!.floatPtr).toInt().toFloat())
                     }
 
                     OP_LT -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.floatPtr < var_b!!.floatPtr).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.floatPtr < var_b!!.floatPtr).toInt().toFloat())
                     }
 
                     OP_AND -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.floatPtr != 0.0f && var_b!!.floatPtr != 0.0f).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.floatPtr != 0.0f && var_b!!.floatPtr != 0.0f).toInt().toFloat())
                     }
 
                     OP_AND_BOOLF -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.intPtr != 0 && var_b!!.floatPtr != 0.0f).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.intPtr != 0 && var_b!!.floatPtr != 0.0f).toInt().toFloat())
                     }
 
                     OP_AND_FBOOL -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.floatPtr != 0.0f && var_b!!.intPtr != 0).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.floatPtr != 0.0f && var_b!!.intPtr != 0).toInt().toFloat())
                     }
 
                     OP_AND_BOOLBOOL -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.intPtr != 0 && var_b!!.intPtr != 0).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.intPtr != 0 && var_b!!.intPtr != 0).toInt().toFloat())
                     }
 
                     OP_OR -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.floatPtr != 0.0f || var_b!!.floatPtr != 0.0f).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.floatPtr != 0.0f || var_b!!.floatPtr != 0.0f).toInt().toFloat())
                     }
 
                     OP_OR_BOOLF -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.intPtr != 0 || var_b!!.floatPtr != 0.0f).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.intPtr != 0 || var_b!!.floatPtr != 0.0f).toInt().toFloat())
                     }
 
                     OP_OR_FBOOL -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.floatPtr != 0.0f || var_b!!.intPtr != 0).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.floatPtr != 0.0f || var_b!!.intPtr != 0).toInt().toFloat())
                     }
 
                     OP_OR_BOOLBOOL -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.intPtr != 0 || var_b!!.intPtr != 0).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.intPtr != 0 || var_b!!.intPtr != 0).toInt().toFloat())
                     }
 
                     OP_NOT_BOOL -> {
                         var_a = GetVariable(st.a)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.intPtr == 0).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.intPtr == 0).toInt().toFloat())
                     }
 
                     OP_NOT_F -> {
                         var_a = GetVariable(st.a)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.floatPtr == 0.0f).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.floatPtr == 0.0f).toInt().toFloat())
                     }
 
                     OP_NOT_V -> {
                         var_a = GetVariable(st.a)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.getVectorPtrs().equals(idVec3())).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.getVectorPtrs().equals(idVec3())).toInt().toFloat())
                     }
 
                     OP_NOT_S -> {
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(GetString(st.a).isNullOrEmpty()).toFloat())
+                        var_c!!.floatPtr = ((GetString(st.a).isNullOrEmpty()).toInt().toFloat())
                     }
 
                     OP_NOT_ENT -> {
                         var_a = GetVariable(st.a)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(GetEntity(var_a!!.entityNumberPtr) == null).toFloat())
+                        var_c!!.floatPtr = ((GetEntity(var_a!!.entityNumberPtr) == null).toInt().toFloat())
                     }
 
                     OP_NEG_F -> {
@@ -1191,54 +1191,55 @@ object Script_Interpreter {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.floatPtr == var_b!!.floatPtr).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.floatPtr == var_b!!.floatPtr).toInt().toFloat())
                     }
 
                     OP_EQ_V -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.getVectorPtrs().equals(var_b!!.getVectorPtrs())).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.getVectorPtrs().equals(var_b!!.getVectorPtrs())).toInt().toFloat())
                     }
 
                     OP_EQ_S -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(Cmp(GetString(st.a)!!, GetString(st.b)!!) == 0).toFloat())
+                        var_c!!.floatPtr = ((Cmp(GetString(st.a)!!, GetString(st.b)!!) == 0).toInt().toFloat())
                     }
 
                     OP_EQ_E, OP_EQ_EO, OP_EQ_OE, OP_EQ_OO -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.entityNumberPtr == var_b!!.entityNumberPtr).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.entityNumberPtr == var_b!!.entityNumberPtr).toInt().toFloat())
                     }
 
                     OP_NE_F -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.floatPtr != var_b!!.floatPtr).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.floatPtr != var_b!!.floatPtr).toInt().toFloat())
                     }
 
                     OP_NE_V -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(!var_a!!.getVectorPtrs().equals(var_b!!.getVectorPtrs())).toFloat())
+                        var_c!!.floatPtr =
+                            ((!var_a!!.getVectorPtrs().equals(var_b!!.getVectorPtrs())).toInt().toFloat())
                     }
 
                     OP_NE_S -> {
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(Cmp(GetString(st.a)!!, GetString(st.b)!!) != 0).toFloat())
+                        var_c!!.floatPtr = ((Cmp(GetString(st.a)!!, GetString(st.b)!!) != 0).toInt().toFloat())
                     }
 
                     OP_NE_E, OP_NE_EO, OP_NE_OE, OP_NE_OO -> {
                         var_a = GetVariable(st.a)
                         var_b = GetVariable(st.b)
                         var_c = GetVariable(st.c)
-                        var_c!!.floatPtr = (btoi(var_a!!.entityNumberPtr != var_b!!.entityNumberPtr).toFloat())
+                        var_c!!.floatPtr = ((var_a!!.entityNumberPtr != var_b!!.entityNumberPtr).toInt().toFloat())
                     }
 
                     OP_UADD_F -> {
@@ -1408,7 +1409,7 @@ object Script_Interpreter {
 
                     OP_STORE_BTOS -> {
                         var_a = GetVariable(st.a)
-                        SetString(st.b, if (itob(var_a!!.intPtr)) "true" else "false")
+                        SetString(st.b, if ((var_a!!.intPtr).toBoolean()) "true" else "false")
                     }
 
                     OP_STORE_VTOS -> {
@@ -1663,7 +1664,7 @@ object Script_Interpreter {
 
                     OP_PUSH_BTOS -> {
                         var_a = GetVariable(st.a)
-                        PushString(if (itob(var_a!!.intPtr)) "true" else "false")
+                        PushString(if ((var_a!!.intPtr).toBoolean()) "true" else "false")
                     }
 
                     OP_PUSH_ENT -> {
@@ -1814,14 +1815,15 @@ object Script_Interpreter {
                     }
                     field = scope!!.TypeDef()!!.GetParmType(reg!!.ptrOffset)!!.FieldType()
                     obj = idScriptObject()
-                    obj.Read(
-                        ByteBuffer.wrap(
-                            Arrays.copyOf(
-                                localstack,
-                                callStack[callStackDepth]!!.stackbase
-                            )
+                    val _bb = ByteBuffer.wrap(
+                        Arrays.copyOf(
+                            localstack,
+                            callStack[callStackDepth]!!.stackbase
                         )
-                    ) //TODO: check this range
+                    )
+                    val _mf = neo.framework.File_h.idFile_Memory("scratch")
+                    _mf.SetData(_bb, _bb.capacity())
+                    obj.readFrom(_mf)
                     if (field == null || obj == null) {
                         return false
                     }

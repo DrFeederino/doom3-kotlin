@@ -1,10 +1,10 @@
 package neo.idlib.Text
 
-import neo.TempDump
 import neo.framework.File_h.idFile
 import neo.idlib.BIT
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
+import neo.idlib.containers.bbtocb
 import neo.idlib.idException
 import neo.idlib.idLib
 import neo.idlib.math.*
@@ -377,7 +377,7 @@ object Lexer {
             fileTime = fp.Timestamp()
             this.filename = idStr(fp.GetFullPath())
             idLib.fileSystem.CloseFile(fp)
-            buffer = TempDump.bbtocb(buf).let { cb ->
+            buffer = bbtocb(buf).let { cb ->
                 val arr = CharArray(cb.remaining())
                 cb.get(arr)
                 arr

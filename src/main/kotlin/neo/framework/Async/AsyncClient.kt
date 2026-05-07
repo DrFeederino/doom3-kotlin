@@ -3,7 +3,6 @@ package neo.framework.Async
 import neo.Game.Game.allowReply_t
 import neo.Game.Game_local
 import neo.Sound.snd_system
-import neo.TempDump
 import neo.framework.*
 import neo.framework.Async.AsyncNetwork.*
 import neo.framework.Async.MsgChannel.idMsgChannel
@@ -28,9 +27,11 @@ import neo.idlib.Min
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.Measure_t
 import neo.idlib.Text.Str.idStr
+import neo.idlib.Text.ctos
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.StrPool.idPoolStr
+import neo.idlib.containers.memcmp
 import neo.idlib.idException
 import neo.idlib.idLib
 import neo.idlib.math.INTSIGNBITSET
@@ -41,6 +42,8 @@ import neo.ui.UserInterface
 import neo.ui.UserInterface.idUserInterface
 import java.math.BigInteger
 import java.nio.ByteBuffer
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.*
 
 object AsyncClient {
@@ -1124,7 +1127,7 @@ object AsyncClient {
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_PRINT -> {
                             val string = CharArray(MAX_STRING_CHARS)
                             msg.ReadString(string, MAX_STRING_CHARS)
-                            Common.common.Printf("%s\n", TempDump.ctos(string))
+                            Common.common.Printf("%s\n", ctos(string))
                         }
 
                         SERVER_RELIABLE.SERVER_RELIABLE_MESSAGE_DISCONNECT -> {
@@ -1136,13 +1139,13 @@ object AsyncClient {
                                 Session.session.Stop()
                                 Session.session.MessageBox(
                                     msgBoxType_t.MSG_OK,
-                                    TempDump.ctos(string),
+                                    ctos(string),
                                     Common.common.GetLanguageDict().GetString("#str_04319"),
                                     true
                                 )
                                 Session.session.StartMenu()
                             } else {
-                                Common.common.Printf("client %d %s\n", clientNum, TempDump.ctos(string))
+                                Common.common.Printf("client %d %s\n", clientNum, ctos(string))
                                 CmdSystem.cmdSystem.BufferCommandText(
                                     cmdExecution_t.CMD_EXEC_NOW, Str.va(
                                         "addChatLine \"%s^0 %s\"",
@@ -1208,8 +1211,8 @@ object AsyncClient {
             serverId = msg.ReadShort().toInt()
             msg.ReadString(serverGameBase, MAX_STRING_CHARS)
             msg.ReadString(serverGame, MAX_STRING_CHARS)
-            serverGameStr = TempDump.ctos(serverGame)
-            serverGameBaseStr = TempDump.ctos(serverGameBase)
+            serverGameStr = ctos(serverGame)
+            serverGameBaseStr = ctos(serverGameBase)
 
             // the server is running a different game... we need to reload in the correct fs_game
             // even pure pak checks would fail if we didn't, as there are files we may not even see atm
@@ -1341,7 +1344,7 @@ object AsyncClient {
                 if (verbose) {
                     Common.common.Printf(
                         "client %2d: %s, ping = %d, rate = %d\n",
-                        i, TempDump.ctos(serverInfo.nickname[serverInfo.clients]),
+                        i, ctos(serverInfo.nickname[serverInfo.clients]),
                         serverInfo.pings[serverInfo.clients],
                         serverInfo.rate[serverInfo.clients]
                     )
@@ -1374,7 +1377,7 @@ object AsyncClient {
                 game_opcode = msg.ReadLong()
             }
             ReadLocalizedServerString(msg, str, MAX_STRING_CHARS)
-            string = TempDump.ctos(str)
+            string = ctos(str)
             Common.common.Printf("%s\n", string)
             guiNetMenu!!.SetStateString("status", string)
             if (opcode == SERVER_PRINT.SERVER_PRINT_GAMEDENY.ordinal) {
@@ -1473,7 +1476,7 @@ object AsyncClient {
                     authBadKeyStatus_t.AUTHKEY_BAD_MSG -> { // a general message explaining why this key is denied
                         // no specific use for this atm. let's not clear the keys either
                         msg.ReadString(read_string, MAX_STRING_CHARS)
-                        auth_msg = TempDump.ctos(read_string)
+                        auth_msg = ctos(read_string)
                     }
                 }
                 Common.common.DPrintf("auth deny: %s\n", auth_msg)
@@ -1514,8 +1517,8 @@ object AsyncClient {
                 }
             } else {
                 msg.ReadString(read_string, MAX_STRING_CHARS)
-                CVarSystem.cvarSystem.SetCVarString("com_guid", TempDump.ctos(read_string))
-                Common.common.Printf("guid set to %s\n", TempDump.ctos(read_string))
+                CVarSystem.cvarSystem.SetCVarString("com_guid", ctos(read_string))
+                Common.common.Printf("guid set to %s\n", ctos(read_string))
                 Session.session.CDKeysAuthReply(true, null)
             }
         }
@@ -1543,7 +1546,7 @@ object AsyncClient {
             val str = CharArray(MAX_STRING_CHARS * 2) // M. Quinn - Even Balance - PB packets can go beyond 1024
             val string: String
             msg.ReadString(str, str.size)
-            string = TempDump.ctos(str)
+            string = ctos(str)
 
             // info response from a server, are accepted from any source
             if (idStr.Icmp(string, "infoResponse") == 0) {
@@ -1783,6 +1786,7 @@ object AsyncClient {
             inChecksums[numChecksums] =
                 0 // NOTE: gamePakChecksum is NOT part of the connectionless/reliable pure protocol
             // in original DOOM 3 / dhewm3. Pass 0 to skip DLL validation.
+
             val reply = FileSystem_h.fileSystem.SetPureServerChecksums(
                 inChecksums, 0, missingChecksums, missingGamePakChecksum
             )
@@ -1940,6 +1944,26 @@ object AsyncClient {
             clientPort.SendPacket(idAsyncNetwork.GetMasterAddress(), msg.GetData()!!, msg.GetSize())
         }
 
+        private fun BuildSafeDownloadPath(relativePakPath: String): Path? {
+            val normalizedPakPath = relativePakPath.replace('\\', '/')
+            if (normalizedPakPath.isEmpty()
+                || normalizedPakPath.startsWith("/")
+                || normalizedPakPath.contains('\u0000')
+                || normalizedPakPath.contains(':')
+                || !normalizedPakPath.lowercase(Locale.ROOT).endsWith(".pk4")
+            ) {
+                return null
+            }
+            val segments = normalizedPakPath.split('/')
+            if (segments.any { it.isEmpty() || it == "." || it == ".." }) {
+                return null
+            }
+
+            val saveRoot = Paths.get(CVarSystem.cvarSystem.GetCVarString("fs_savepath")).toAbsolutePath().normalize()
+            val target = saveRoot.resolve(normalizedPakPath).normalize()
+            return if (target.startsWith(saveRoot)) target else null
+        }
+
         @Throws(idException::class)
         private fun HandleDownloads() {
             if (updateState == clientUpdateState_t.UPDATE_SENT && clientTime > updateSentTime + 2000) { // timing out on no reply
@@ -2016,7 +2040,7 @@ object AsyncClient {
                             } else {
                                 if (!backgroundDownload.url.dlerror.isEmpty()) {
                                     Common.common.Warning(
-                                        "update download failed. curl error: %s", backgroundDownload.url.dlerror
+                                        "update download failed. download error: %s", backgroundDownload.url.dlerror
                                     )
                                 }
                                 SendVersionDLUpdate(2)
@@ -2092,10 +2116,21 @@ object AsyncClient {
                             var retlen: Int
                             var checksum: Int
                             Common.common.Printf("file downloaded\n")
-                            val finalPath = idStr(CVarSystem.cvarSystem.GetCVarString("fs_savepath"))
-                            finalPath.AppendPath(dlList[0].filename.toString())
+                            val relativePakPath = dlList[0].filename.toString().replace('\\', '/')
+                            val finalPath = BuildSafeDownloadPath(relativePakPath)
+                            if (finalPath == null) {
+                                Common.common.Warning("refusing unsafe download path: %s", dlList[0].filename)
+                                FileSystem_h.fileSystem.CloseFile(f)
+                                dlList.Clear()
+                                return
+                            }
                             FileSystem_h.fileSystem.CreateOSPath(finalPath.toString()) // do the final copy ourselves so we do by small chunks in case the file is big
-                            saveas = FileSystem_h.fileSystem.OpenExplicitFileWrite(finalPath.toString())!!
+                            saveas = FileSystem_h.fileSystem.OpenExplicitFileWrite(finalPath.toString()) ?: run {
+                                Common.common.Warning("could not create download destination: %s", finalPath)
+                                FileSystem_h.fileSystem.CloseFile(f)
+                                dlList.Clear()
+                                return
+                            }
                             buf = ByteBuffer.allocate(CHUNK_SIZE) // Mem_Alloc(CHUNK_SIZE);
                             f.Seek(0, fsOrigin_t.FS_SEEK_END)
                             remainlen = f.Tell()
@@ -2121,7 +2156,7 @@ object AsyncClient {
                             Common.common.Printf("saved as %s\n", finalPath)
 
                             // add that file to our paks list
-                            checksum = FileSystem_h.fileSystem.AddZipFile(dlList[0].filename.toString())
+                            checksum = FileSystem_h.fileSystem.AddZipFile(relativePakPath)
 
                             // verify the checksum to be what the server says
                             if (0 == checksum || checksum != dlList[0].checksum) { // "pak is corrupted ( checksum 0x%x, expected 0x%x )"
@@ -2132,7 +2167,7 @@ object AsyncClient {
                                         dlList[0].checksum
                                     ), "Download failed", true
                                 )
-                                FileSystem_h.fileSystem.RemoveFile(dlList[0].filename.toString())
+                                FileSystem_h.fileSystem.RemoveFile(relativePakPath)
                                 dlList.Clear()
                                 return
                             }
@@ -2140,7 +2175,7 @@ object AsyncClient {
                         } else {
                             Common.common.Warning("download failed: %s", dlList[0].url)
                             if (!backgroundDownload.url.dlerror.isEmpty()) {
-                                Common.common.Warning("curl error: %s", backgroundDownload.url.dlerror)
+                                Common.common.Warning("download error: %s", backgroundDownload.url.dlerror)
                             } // "The download failed or was cancelled"
                             // "Download failed"
                             Session.session.MessageBox(
@@ -2182,7 +2217,7 @@ object AsyncClient {
                 out, maxLen
             ) // look up localized string. if the message is not an #str_ format, we'll just get it back unchanged
             idStr.snPrintf(
-                out, maxLen - 1, "%s", Common.common.GetLanguageDict().GetString(TempDump.ctos(out))
+                out, maxLen - 1, "%s", Common.common.GetLanguageDict().GetString(ctos(out))
             )
         }
 
@@ -2208,7 +2243,6 @@ object AsyncClient {
             val infoType = msg.ReadByte()
             var pakDl: Int
             var pakIndex: Int
-            val entry = pakDlEntry_t()
             var gotAllFiles = true
             val sizeStr: idStr = idPoolStr()
             var gotGame = false
@@ -2225,13 +2259,13 @@ object AsyncClient {
                 // "Missing required files"
                 if (Session.session.MessageBox(
                         msgBoxType_t.MSG_YESNO,
-                        Str.va(Common.common.GetLanguageDict().GetString("#str_07217"), TempDump.ctos(buf)),
+                        Str.va(Common.common.GetLanguageDict().GetString("#str_07217"), ctos(buf)),
                         Common.common.GetLanguageDict().GetString("#str_07218"),
                         true,
                         "yes"
                     ).isNotEmpty()
                 ) {
-                    idLib.sys.OpenURL(TempDump.ctos(buf), true)
+                    idLib.sys.OpenURL(ctos(buf), true)
                 }
             } else if (infoType == SERVER_DL.SERVER_DL_LIST.ordinal.toByte()) {
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "disconnect")
@@ -2242,6 +2276,7 @@ object AsyncClient {
                 pakIndex = -1
                 totalDlSize = 0
                 do {
+                    val entry = pakDlEntry_t()
                     pakIndex++
                     pakDl = msg.ReadByte().toInt()
                     if (pakDl == SERVER_PAK.SERVER_PAK_YES.ordinal) {
@@ -2366,7 +2401,7 @@ object AsyncClient {
             assert(
                 0 == checksums[count] // 0-terminated
             ) //            if (memcmp(dlChecksums + 1, checksums, sizeof(int) * count) || gamePakChecksum != dlChecksums[ 0]) {
-            if (TempDump.memcmp(dlChecksums, 1, checksums, 0, count) || gamePakChecksum != dlChecksums[0]) {
+            if (memcmp(dlChecksums, 1, checksums, 0, count) || gamePakChecksum != dlChecksums[0]) {
                 val newreq = idRandom()
                 dlChecksums[0] = gamePakChecksum // FIX: was calling memcmp (comparison) instead of arraycopy (memcpy)
                 System.arraycopy(checksums, 0, dlChecksums, 1, count)

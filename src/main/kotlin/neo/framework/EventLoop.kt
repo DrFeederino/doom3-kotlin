@@ -36,12 +36,12 @@ Rockville, Maryland 20850 USA.
 
 package neo.framework
 
-import neo.TempDump
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem.cmdExecution_t
 import neo.framework.CmdSystem.idCmdSystem.ArgCompletion_Integer
 import neo.framework.File_h.idFile
 import neo.framework.KeyInput.idKeyInput
+import neo.idlib.containers.bbtoa
 import neo.idlib.idException
 import neo.sys.sysEventType_t
 import neo.sys.sysEvent_s
@@ -205,10 +205,10 @@ class EventLoop {
 
             // either get an event from the system or the journal file
             if (com_journal.GetInteger() == 2) {
-                val event: ByteBuffer = ByteBuffer.allocate(sysEvent_s.BYTES)
-                r = com_journalFile!!.Read(event)
-                ev = sysEvent_s(event)
-                if (r != sysEvent_s.BYTES) {
+                ev = sysEvent_s()
+                val before = com_journalFile!!.Tell()
+                ev.readFrom(com_journalFile!!)
+                if (com_journalFile!!.Tell() - before != sysEvent_s.BYTES) {
                     Common.common.FatalError("Error reading from journal file")
                 }
                 if (ev.evPtrLength != 0) {
@@ -223,8 +223,9 @@ class EventLoop {
 
                 // write the journal value out if needed
                 if (com_journal.GetInteger() == 1) {
-                    r = com_journalFile!!.Write(ev.Write())
-                    if (r != sysEvent_s.BYTES) {
+                    val before = com_journalFile!!.Tell()
+                    ev.writeTo(com_journalFile!!)
+                    if (com_journalFile!!.Tell() - before != sysEvent_s.BYTES) {
                         Common.common.FatalError("Error writing to journal file")
                     }
                     if (ev.evPtrLength != 0) {
@@ -253,7 +254,7 @@ class EventLoop {
 
             if (ev.evType == sysEventType_t.SE_CONSOLE) {
                 // from a text console outside the game window
-                CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, TempDump.bbtoa(ev.evPtr!!))
+                CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, bbtoa(ev.evPtr!!))
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "\n")
             } else {
                 Session.session.ProcessEvent(ev)

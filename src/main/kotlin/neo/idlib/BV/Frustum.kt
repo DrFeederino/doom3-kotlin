@@ -118,6 +118,7 @@ object Frustum {
         private val projectionCenter: idVec3 = idVec3()
         private val projectionAxis: idMat3 = idMat3()
         private var intersectsScratch: IntersectsScratch? = null
+        private var projectionBoundsScratch: ProjectionBoundsScratch? = null
         private var clippedProjectionScratch: ClippedProjectionScratch? = null
 
         constructor() {
@@ -1201,20 +1202,30 @@ object Frustum {
             var p2: Int
             var culled: Int
             var outside: Int
-            val pointCull = Array(8) { CInt() }
-            val scale1 = CFloat()
-            val scale2 = CFloat()
-            val points: Array<idVec3> = idVec3.generateArray(8)
-            val localOrigin = idVec3()
-            val localAxis: idMat3
-            val localScaled: idMat3
-            val bounds = idBounds(-box.GetExtents(), box.GetExtents())
+            val scratch = getProjectionBoundsScratch()
+            val pointCull = scratch.pointCull
+            val scale1 = scratch.scale1
+            val scale2 = scratch.scale2
+            val points = scratch.points
+            val localOrigin = scratch.localOrigin
+            val localAxis = scratch.localAxis
+            val localScaled = scratch.localScaled
+            val bounds = scratch.bounds
+            val transpose = scratch.transpose
+            val boxCenter = box.GetCenter()
+            val boxExtents = box.GetExtents()
+            val boxAxis = box.GetAxis()
+            bounds[0].set(-boxExtents.x, -boxExtents.y, -boxExtents.z)
+            bounds[1].set(boxExtents)
 
             // if the frustum origin is inside the bounds
-            if (bounds.ContainsPoint((origin - box.GetCenter()) * box.GetAxis().Transpose())) {
+            transpose.set(boxAxis)
+            transpose.TransposeSelf()
+            setTransformedDifference(localOrigin, origin, boxCenter, transpose)
+            if (bounds.ContainsPoint(localOrigin)) {
                 // bounds that cover the whole frustum
-                val boxMin = CFloat()
-                val boxMax = CFloat()
+                val boxMin = scratch.boxMin
+                val boxMax = scratch.boxMax
                 val base: Float
                 base = origin * axis[0]
                 box.AxisProjection(axis[0], boxMin, boxMax)
@@ -1229,9 +1240,11 @@ object Frustum {
             projectionBounds.Clear()
 
             // transform the bounds into the space of this frustum
-            localOrigin.set((box.GetCenter() - origin) * axis.Transpose())
-            localAxis = box.GetAxis() * axis.Transpose()
-            BoxToPoints(localOrigin, box.GetExtents(), localAxis, points)
+            transpose.set(axis)
+            transpose.TransposeSelf()
+            setTransformedDifference(localOrigin, boxCenter, origin, transpose)
+            localAxis.setMul(boxAxis, transpose)
+            BoxToPointsNoAlloc(localOrigin, boxExtents, localAxis, points)
 
             // test outer four edges of the bounds
             culled = -1
@@ -1292,63 +1305,93 @@ object Frustum {
 
             // if the bounds extend beyond two or more boundaries of this frustum
             if (outside != 1 && outside != 2 && outside != 4 && outside != 8) {
-                localOrigin.set((origin - box.GetCenter()) * box.GetAxis().Transpose())
-                localScaled = axis * box.GetAxis().Transpose()
+                transpose.set(boxAxis)
+                transpose.TransposeSelf()
+                setTransformedDifference(localOrigin, origin, boxCenter, transpose)
+                localScaled.setMul(axis, transpose)
                 localScaled[0].timesAssign(dFar)
                 localScaled[1].timesAssign(dLeft)
                 localScaled[2].timesAssign(dUp)
 
                 // test the outer edges of this frustum for intersection with the bounds
                 if (outside and 2 == 2 && outside and 8 == 8) {
+                    scratch.rayDir.set(
+                        localScaled[0].x - localScaled[1].x - localScaled[2].x,
+                        localScaled[0].y - localScaled[1].y - localScaled[2].y,
+                        localScaled[0].z - localScaled[1].z - localScaled[2].z
+                    )
                     BoundsRayIntersection(
                         bounds,
                         localOrigin,
-                        localScaled[0] - localScaled[1] - localScaled[2],
+                        scratch.rayDir,
                         scale1,
                         scale2
                     )
                     if (scale1._val <= scale2._val && scale1._val >= 0.0f) {
-                        projectionBounds.AddPoint(idVec3(scale1._val * dFar, -1.0f, -1.0f))
-                        projectionBounds.AddPoint(idVec3(scale2._val * dFar, -1.0f, -1.0f))
+                        scratch.projectionPoint.set(scale1._val * dFar, -1.0f, -1.0f)
+                        projectionBounds.AddPoint(scratch.projectionPoint)
+                        scratch.projectionPoint.set(scale2._val * dFar, -1.0f, -1.0f)
+                        projectionBounds.AddPoint(scratch.projectionPoint)
                     }
                 }
                 if (outside and 2 == 2 && outside and 4 == 4) {
+                    scratch.rayDir.set(
+                        localScaled[0].x - localScaled[1].x + localScaled[2].x,
+                        localScaled[0].y - localScaled[1].y + localScaled[2].y,
+                        localScaled[0].z - localScaled[1].z + localScaled[2].z
+                    )
                     BoundsRayIntersection(
                         bounds,
                         localOrigin,
-                        localScaled[0] - localScaled[1] + localScaled[2],
+                        scratch.rayDir,
                         scale1,
                         scale2
                     )
                     if (scale1._val <= scale2._val && scale1._val >= 0.0f) {
-                        projectionBounds.AddPoint(idVec3(scale1._val * dFar, -1.0f, 1.0f))
-                        projectionBounds.AddPoint(idVec3(scale2._val * dFar, -1.0f, 1.0f))
+                        scratch.projectionPoint.set(scale1._val * dFar, -1.0f, 1.0f)
+                        projectionBounds.AddPoint(scratch.projectionPoint)
+                        scratch.projectionPoint.set(scale2._val * dFar, -1.0f, 1.0f)
+                        projectionBounds.AddPoint(scratch.projectionPoint)
                     }
                 }
                 if (outside and 1 == 1 && outside and 8 == 8) {
+                    scratch.rayDir.set(
+                        localScaled[0].x + localScaled[1].x - localScaled[2].x,
+                        localScaled[0].y + localScaled[1].y - localScaled[2].y,
+                        localScaled[0].z + localScaled[1].z - localScaled[2].z
+                    )
                     BoundsRayIntersection(
                         bounds,
                         localOrigin,
-                        localScaled[0] + localScaled[1] - localScaled[2],
+                        scratch.rayDir,
                         scale1,
                         scale2
                     )
                     if (scale1._val <= scale2._val && scale1._val >= 0.0f) {
-                        projectionBounds.AddPoint(idVec3(scale1._val * dFar, 1.0f, -1.0f))
-                        projectionBounds.AddPoint(idVec3(scale2._val * dFar, 1.0f, -1.0f))
+                        scratch.projectionPoint.set(scale1._val * dFar, 1.0f, -1.0f)
+                        projectionBounds.AddPoint(scratch.projectionPoint)
+                        scratch.projectionPoint.set(scale2._val * dFar, 1.0f, -1.0f)
+                        projectionBounds.AddPoint(scratch.projectionPoint)
                     }
                 }
                 if (outside and 1 == 1 && outside and 2 == 2) {
+                    scratch.rayDir.set(
+                        localScaled[0].x + localScaled[1].x + localScaled[2].x,
+                        localScaled[0].y + localScaled[1].y + localScaled[2].y,
+                        localScaled[0].z + localScaled[1].z + localScaled[2].z
+                    )
                     BoundsRayIntersection(
                         bounds,
                         localOrigin,
-                        localScaled[0] + localScaled[1] + localScaled[2],
+                        scratch.rayDir,
                         scale1,
                         scale2
                     )
                     if (scale1._val <= scale2._val && scale1._val >= 0.0f) {
-                        projectionBounds.AddPoint(idVec3(scale1._val * dFar, 1.0f, 1.0f))
-                        projectionBounds.AddPoint(idVec3(scale2._val * dFar, 1.0f, 1.0f))
+                        scratch.projectionPoint.set(scale1._val * dFar, 1.0f, 1.0f)
+                        projectionBounds.AddPoint(scratch.projectionPoint)
+                        scratch.projectionPoint.set(scale2._val * dFar, 1.0f, 1.0f)
+                        projectionBounds.AddPoint(scratch.projectionPoint)
                     }
                 }
             }
@@ -1708,7 +1751,17 @@ object Frustum {
             projectionBounds.Clear()
 
             // clip the outer edges of the given frustum to the clip bounds
-            frustum.ClipFrustumToBox(clipBox, clipFractions, clipPlanes)
+            frustum.ClipFrustumToBox(
+                clipBox,
+                clipFractions,
+                clipPlanes,
+                scratch.frustumClipScaled,
+                scratch.frustumClipLocalAxis,
+                scratch.frustumClipTranspose,
+                scratch.frustumClipLocalOrigin,
+                scratch.frustumClipCornerVecs,
+                scratch.frustumClipBounds
+            )
             usedClipPlanes =
                 clipPlanes[0]._val or clipPlanes[1]._val or clipPlanes[2]._val or clipPlanes[3]._val
 
@@ -2733,6 +2786,27 @@ object Frustum {
             cull._val = (cull2._val)
         }
 
+        private fun addProjectionBoundsPoint(bounds: idBounds, x: Float, y: Float, z: Float) {
+            if (x < bounds[0].x) {
+                bounds[0].x = x
+            }
+            if (x > bounds[1].x) {
+                bounds[1].x = x
+            }
+            if (y < bounds[0].y) {
+                bounds[0].y = y
+            }
+            if (y > bounds[1].y) {
+                bounds[1].y = y
+            }
+            if (z < bounds[0].z) {
+                bounds[0].z = z
+            }
+            if (z > bounds[1].z) {
+                bounds[1].z = z
+            }
+        }
+
         private fun AddLocalLineToProjectionBoundsSetCull(
             start: idVec3,
             end: idVec3,
@@ -2740,8 +2814,6 @@ object Frustum {
             endCull: CInt,
             bounds: idBounds
         ) {
-            val dir = idVec3()
-            val p = idVec3()
             var d1: Float
             var d2: Float
             var fstart: Float
@@ -2762,7 +2834,9 @@ object Frustum {
 //#endif
             leftScale = dLeft * invFar
             upScale = dUp * invFar
-            dir.set(end - start)
+            val dirX = end.x - start.x
+            val dirY = end.y - start.y
+            val dirZ = end.z - start.z
             fstart = dFar * start.y
             fend = dFar * end.y
             lstart = dLeft * start.x
@@ -2776,13 +2850,12 @@ object Frustum {
             if (FLOATNOTZERO(d1)) {
                 if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
-                    p.x = start.x + f * dir.x
-                    if (p.x > 0.0f) {
-                        p.z = start.z + f * dir.z
-                        if (abs(p.z) <= p.x * upScale) {
-                            p.y = 1.0f
-                            p.z = p.z * dFar / (p.x * dUp)
-                            bounds.AddPoint(p)
+                    val px = start.x + f * dirX
+                    if (px > 0.0f) {
+                        var pz = start.z + f * dirZ
+                        if (abs(pz) <= px * upScale) {
+                            pz = pz * dFar / (px * dUp)
+                            addProjectionBoundsPoint(bounds, px, 1.0f, pz)
                         }
                     }
                 }
@@ -2796,13 +2869,12 @@ object Frustum {
             if (FLOATNOTZERO(d1)) {
                 if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
-                    p.x = start.x + f * dir.x
-                    if (p.x > 0.0f) {
-                        p.z = start.z + f * dir.z
-                        if (abs(p.z) <= p.x * upScale) {
-                            p.y = -1.0f
-                            p.z = p.z * dFar / (p.x * dUp)
-                            bounds.AddPoint(p)
+                    val px = start.x + f * dirX
+                    if (px > 0.0f) {
+                        var pz = start.z + f * dirZ
+                        if (abs(pz) <= px * upScale) {
+                            pz = pz * dFar / (px * dUp)
+                            addProjectionBoundsPoint(bounds, px, -1.0f, pz)
                         }
                     }
                 }
@@ -2820,13 +2892,12 @@ object Frustum {
             if (FLOATNOTZERO(d1)) {
                 if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
-                    p.x = start.x + f * dir.x
-                    if (p.x > 0.0f) {
-                        p.y = start.y + f * dir.y
-                        if (abs(p.y) <= p.x * leftScale) {
-                            p.y = p.y * dFar / (p.x * dLeft)
-                            p.z = 1.0f
-                            bounds.AddPoint(p)
+                    val px = start.x + f * dirX
+                    if (px > 0.0f) {
+                        var py = start.y + f * dirY
+                        if (abs(py) <= px * leftScale) {
+                            py = py * dFar / (px * dLeft)
+                            addProjectionBoundsPoint(bounds, px, py, 1.0f)
                         }
                     }
                 }
@@ -2840,30 +2911,33 @@ object Frustum {
             if (FLOATNOTZERO(d1)) {
                 if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
-                    p.x = start.x + f * dir.x
-                    if (p.x > 0.0f) {
-                        p.y = start.y + f * dir.y
-                        if (abs(p.y) <= p.x * leftScale) {
-                            p.y = p.y * dFar / (p.x * dLeft)
-                            p.z = -1.0f
-                            bounds.AddPoint(p)
+                    val px = start.x + f * dirX
+                    if (px > 0.0f) {
+                        var py = start.y + f * dirY
+                        if (abs(py) <= px * leftScale) {
+                            py = py * dFar / (px * dLeft)
+                            addProjectionBoundsPoint(bounds, px, py, -1.0f)
                         }
                     }
                 }
             }
             if (cull1 == 0 && start.x > 0.0f) {
                 // add start point to projection bounds
-                p.x = start.x
-                p.y = start.y * dFar / (start.x * dLeft)
-                p.z = start.z * dFar / (start.x * dUp)
-                bounds.AddPoint(p)
+                addProjectionBoundsPoint(
+                    bounds,
+                    start.x,
+                    start.y * dFar / (start.x * dLeft),
+                    start.z * dFar / (start.x * dUp)
+                )
             }
             if (cull2 == 0 && end.x > 0.0f) {
                 // add end point to projection bounds
-                p.x = end.x
-                p.y = end.y * dFar / (end.x * dLeft)
-                p.z = end.z * dFar / (end.x * dUp)
-                bounds.AddPoint(p)
+                addProjectionBoundsPoint(
+                    bounds,
+                    end.x,
+                    end.y * dFar / (end.x * dLeft),
+                    end.z * dFar / (end.x * dUp)
+                )
             }
             if (start.x < bounds[0].x) {
                 bounds[0].x = if (start.x < 0.0f) 0.0f else start.x
@@ -2882,8 +2956,6 @@ object Frustum {
             endCull: Int,
             bounds: idBounds
         ) {
-            val dir = idVec3()
-            val p = idVec3()
             var d1: Float
             var d2: Float
             var fstart: Float
@@ -2907,7 +2979,9 @@ object Frustum {
 //#endif
             leftScale = dLeft * invFar
             upScale = dUp * invFar
-            dir.set(end - start)
+            val dirX = end.x - start.x
+            val dirY = end.y - start.y
+            val dirZ = end.z - start.z
             if (clip and (1 or 2) != 0) {
                 fstart = dFar * start.y
                 fend = dFar * end.y
@@ -2920,13 +2994,12 @@ object Frustum {
                     if (FLOATNOTZERO(d1)) {
                         if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                             f = d1 / (d1 - d2)
-                            p.x = start.x + f * dir.x
-                            if (p.x > 0.0f) {
-                                p.z = start.z + f * dir.z
-                                if (abs(p.z) <= p.x * upScale) {
-                                    p.y = 1.0f
-                                    p.z = p.z * dFar / (p.x * dUp)
-                                    bounds.AddPoint(p)
+                            val px = start.x + f * dirX
+                            if (px > 0.0f) {
+                                var pz = start.z + f * dirZ
+                                if (abs(pz) <= px * upScale) {
+                                    pz = pz * dFar / (px * dUp)
+                                    addProjectionBoundsPoint(bounds, px, 1.0f, pz)
                                 }
                             }
                         }
@@ -2939,13 +3012,12 @@ object Frustum {
                     if (FLOATNOTZERO(d1)) {
                         if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                             f = d1 / (d1 - d2)
-                            p.x = start.x + f * dir.x
-                            if (p.x > 0.0f) {
-                                p.z = start.z + f * dir.z
-                                if (abs(p.z) <= p.x * upScale) {
-                                    p.y = -1.0f
-                                    p.z = p.z * dFar / (p.x * dUp)
-                                    bounds.AddPoint(p)
+                            val px = start.x + f * dirX
+                            if (px > 0.0f) {
+                                var pz = start.z + f * dirZ
+                                if (abs(pz) <= px * upScale) {
+                                    pz = pz * dFar / (px * dUp)
+                                    addProjectionBoundsPoint(bounds, px, -1.0f, pz)
                                 }
                             }
                         }
@@ -2964,13 +3036,12 @@ object Frustum {
                     if (FLOATNOTZERO(d1)) {
                         if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                             f = d1 / (d1 - d2)
-                            p.x = start.x + f * dir.x
-                            if (p.x > 0.0f) {
-                                p.y = start.y + f * dir.y
-                                if (abs(p.y) <= p.x * leftScale) {
-                                    p.y = p.y * dFar / (p.x * dLeft)
-                                    p.z = 1.0f
-                                    bounds.AddPoint(p)
+                            val px = start.x + f * dirX
+                            if (px > 0.0f) {
+                                var py = start.y + f * dirY
+                                if (abs(py) <= px * leftScale) {
+                                    py = py * dFar / (px * dLeft)
+                                    addProjectionBoundsPoint(bounds, px, py, 1.0f)
                                 }
                             }
                         }
@@ -2983,13 +3054,12 @@ object Frustum {
                     if (FLOATNOTZERO(d1)) {
                         if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                             f = d1 / (d1 - d2)
-                            p.x = start.x + f * dir.x
-                            if (p.x > 0.0f) {
-                                p.y = start.y + f * dir.y
-                                if (abs(p.y) <= p.x * leftScale) {
-                                    p.y = p.y * dFar / (p.x * dLeft)
-                                    p.z = -1.0f
-                                    bounds.AddPoint(p)
+                            val px = start.x + f * dirX
+                            if (px > 0.0f) {
+                                var py = start.y + f * dirY
+                                if (abs(py) <= px * leftScale) {
+                                    py = py * dFar / (px * dLeft)
+                                    addProjectionBoundsPoint(bounds, px, py, -1.0f)
                                 }
                             }
                         }
@@ -3065,8 +3135,6 @@ object Frustum {
             scale1: CFloat,
             scale2: CFloat
         ): Boolean {
-            val end = idVec3()
-            val p = idVec3()
             var d1: Float
             var d2: Float
             var f: Float
@@ -3076,18 +3144,20 @@ object Frustum {
             scale1._val = (idMath.INFINITY)
             scale2._val = (-idMath.INFINITY)
 
-            end.set(start + dir)
+            val endX = start.x + dir.x
+            val endY = start.y + dir.y
+            val endZ = start.z + dir.z
             i = 0
             while (i < 2) {
                 d1 = start.x - bounds[i].x
                 startInside = startInside and (FLOATSIGNBITSET(d1) xor i)
-                d2 = end.x - bounds[i].x
+                d2 = endX - bounds[i].x
                 if (d1 != d2) {
                     f = d1 / (d1 - d2)
-                    p.y = start.y + f * dir.y
-                    if (bounds[0].y <= p.y && p.y <= bounds[1].y) {
-                        p.z = start.z + f * dir.z
-                        if (bounds[0].z <= p.z && p.z <= bounds[1].z) {
+                    val py = start.y + f * dir.y
+                    if (bounds[0].y <= py && py <= bounds[1].y) {
+                        val pz = start.z + f * dir.z
+                        if (bounds[0].z <= pz && pz <= bounds[1].z) {
                             if (f < scale1._val) {
                                 scale1._val = (f)
                             }
@@ -3099,13 +3169,13 @@ object Frustum {
                 }
                 d1 = start.y - bounds[i].y
                 startInside = startInside and (FLOATSIGNBITSET(d1) xor i)
-                d2 = end.y - bounds[i].y
+                d2 = endY - bounds[i].y
                 if (d1 != d2) {
                     f = d1 / (d1 - d2)
-                    p.x = start.x + f * dir.x
-                    if (bounds[0].x <= p.x && p.x <= bounds[1].x) {
-                        p.z = start.z + f * dir.z
-                        if (bounds[0].z <= p.z && p.z <= bounds[1].z) {
+                    val px = start.x + f * dir.x
+                    if (bounds[0].x <= px && px <= bounds[1].x) {
+                        val pz = start.z + f * dir.z
+                        if (bounds[0].z <= pz && pz <= bounds[1].z) {
                             if (f < scale1._val) {
                                 scale1._val = (f)
                             }
@@ -3117,13 +3187,13 @@ object Frustum {
                 }
                 d1 = start.z - bounds[i].z
                 startInside = startInside and (FLOATSIGNBITSET(d1) xor i)
-                d2 = end.z - bounds[i].z
+                d2 = endZ - bounds[i].z
                 if (d1 != d2) {
                     f = d1 / (d1 - d2)
-                    p.x = start.x + f * dir.x
-                    if (bounds[0].x <= p.x && p.x <= bounds[1].x) {
-                        p.y = start.y + f * dir.y
-                        if (bounds[0].y <= p.y && p.y <= bounds[1].y) {
+                    val px = start.x + f * dir.x
+                    if (bounds[0].x <= px && px <= bounds[1].x) {
+                        val py = start.y + f * dir.y
+                        if (bounds[0].y <= py && py <= bounds[1].y) {
                             if (f < scale1._val) {
                                 scale1._val = (f)
                             }
@@ -3145,17 +3215,21 @@ object Frustum {
          Clips the frustum far extents to the box.
          ============
          */
-        private fun ClipFrustumToBox(box: idBox, clipFractions: Array<CFloat>, clipPlanes: Array<CInt>) {
+        private fun ClipFrustumToBox(
+            box: idBox,
+            clipFractions: Array<CFloat>,
+            clipPlanes: Array<CInt>,
+            scaled: idMat3,
+            localAxis: idMat3,
+            transpose: idMat3,
+            localOrigin: idVec3,
+            cornerVecs: Array<idVec3>,
+            bounds: idBounds
+        ) {
             var i: Int
             var index: Int
             var f: Float
             val minf: Float
-            val scaled = idMat3()
-            val localAxis = idMat3()
-            val transpose = idMat3()
-            val localOrigin = idVec3()
-            val cornerVecs: Array<idVec3> = idVec3.generateArray(4)
-            val bounds = idBounds()
             val boxCenter = box.GetCenter()
             val boxExtents = box.GetExtents()
 
@@ -3253,14 +3327,13 @@ object Frustum {
             var scale2: Float
             var startCull: Int
             var endCull: Int
-            val localStart = idVec3()
-            val localEnd = idVec3()
-            val localDir = idVec3()
             leftScale = dLeft * invFar
             upScale = dUp * invFar
-            localStart.set(localPoints[startIndex])
-            localEnd.set(localPoints[endIndex])
-            localDir.set(localEnd - localStart)
+            val localStart = localPoints[startIndex]
+            val localEnd = localPoints[endIndex]
+            val localDirX = localEnd.x - localStart.x
+            val localDirY = localEnd.y - localStart.y
+            val localDirZ = localEnd.z - localStart.z
             startClip._val = (endClip._val - 1)
             scale1 = idMath.INFINITY
             scale2 = -idMath.INFINITY
@@ -3277,9 +3350,9 @@ object Frustum {
             if (FLOATNOTZERO(d1)) {
                 if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
-                    x = localStart.x + f * localDir.x
+                    x = localStart.x + f * localDirX
                     if (x >= 0.0f) {
-                        if (abs(localStart.z + f * localDir.z) <= x * upScale) {
+                        if (abs(localStart.z + f * localDirZ) <= x * upScale) {
                             if (f < scale1) {
                                 scale1 = f
                                 startClip._val = (0)
@@ -3301,9 +3374,9 @@ object Frustum {
             if (FLOATNOTZERO(d1)) {
                 if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
-                    x = localStart.x + f * localDir.x
+                    x = localStart.x + f * localDirX
                     if (x >= 0.0f) {
-                        if (abs(localStart.z + f * localDir.z) <= x * upScale) {
+                        if (abs(localStart.z + f * localDirZ) <= x * upScale) {
                             if (f < scale1) {
                                 scale1 = f
                                 startClip._val = (1)
@@ -3329,9 +3402,9 @@ object Frustum {
             if (FLOATNOTZERO(d1)) {
                 if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
-                    x = localStart.x + f * localDir.x
+                    x = localStart.x + f * localDirX
                     if (x >= 0.0f) {
-                        if (abs(localStart.y + f * localDir.y) <= x * leftScale) {
+                        if (abs(localStart.y + f * localDirY) <= x * leftScale) {
                             if (f < scale1) {
                                 scale1 = f
                                 startClip._val = (2)
@@ -3353,9 +3426,9 @@ object Frustum {
             if (FLOATNOTZERO(d1)) {
                 if (FLOATSIGNBITSET(d1) xor FLOATSIGNBITSET(d2) != 0) {
                     f = d1 / (d1 - d2)
-                    x = localStart.x + f * localDir.x
+                    x = localStart.x + f * localDirX
                     if (x >= 0.0f) {
-                        if (abs(localStart.y + f * localDir.y) <= x * leftScale) {
+                        if (abs(localStart.y + f * localDirY) <= x * leftScale) {
                             if (f < scale1) {
                                 scale1 = f
                                 startClip._val = (3)
@@ -3379,15 +3452,13 @@ object Frustum {
                     start.set(points[startIndex])
                     startClip._val = (-1)
                 } else {
-                    start.set(
-                        points[startIndex] + (points[endIndex] - points[startIndex]) * scale1
-                    )
+                    start.setLerp(points[startIndex], points[endIndex], scale1)
                 }
                 if (0 == endCull) {
                     end.set(points[endIndex])
                     endClip._val = (-1)
                 } else {
-                    end.set(points[startIndex] + (points[endIndex] - points[startIndex]) * scale2)
+                    end.setLerp(points[startIndex], points[endIndex], scale2)
                 }
                 return true
             }
@@ -3413,6 +3484,15 @@ object Frustum {
             return scratch
         }
 
+        private fun getProjectionBoundsScratch(): ProjectionBoundsScratch {
+            var scratch = projectionBoundsScratch
+            if (scratch == null) {
+                scratch = ProjectionBoundsScratch()
+                projectionBoundsScratch = scratch
+            }
+            return scratch
+        }
+
         private fun getClippedProjectionScratch(): ClippedProjectionScratch {
             var scratch = clippedProjectionScratch
             if (scratch == null) {
@@ -3430,6 +3510,22 @@ object Frustum {
             val transpose: idMat3 = idMat3()
             val localFrustum1: idFrustum = idFrustum()
             val localFrustum2: idFrustum = idFrustum()
+        }
+
+        private class ProjectionBoundsScratch {
+            val pointCull: Array<CInt> = Array(8) { CInt() }
+            val scale1: CFloat = CFloat()
+            val scale2: CFloat = CFloat()
+            val points: Array<idVec3> = idVec3.generateArray(8)
+            val localOrigin: idVec3 = idVec3()
+            val localAxis: idMat3 = idMat3()
+            val localScaled: idMat3 = idMat3()
+            val bounds: idBounds = idBounds()
+            val transpose: idMat3 = idMat3()
+            val boxMin: CFloat = CFloat()
+            val boxMax: CFloat = CFloat()
+            val rayDir: idVec3 = idVec3()
+            val projectionPoint: idVec3 = idVec3()
         }
 
         private class ClippedProjectionScratch {
@@ -3458,6 +3554,12 @@ object Frustum {
             val clipBounds: idBounds = idBounds()
             val clipPointCullStart: CInt = CInt()
             val clipPointCullEnd: CInt = CInt()
+            val frustumClipScaled: idMat3 = idMat3()
+            val frustumClipLocalAxis: idMat3 = idMat3()
+            val frustumClipTranspose: idMat3 = idMat3()
+            val frustumClipLocalOrigin: idVec3 = idVec3()
+            val frustumClipCornerVecs: Array<idVec3> = idVec3.generateArray(4)
+            val frustumClipBounds: idBounds = idBounds()
         }
 
         private fun setTransformedDifference(out: idVec3, a: idVec3, b: idVec3, mat: idMat3) {

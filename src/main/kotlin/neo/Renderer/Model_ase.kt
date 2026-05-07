@@ -26,12 +26,12 @@ along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 
 package neo.Renderer
 
-import neo.TempDump.bbtocb
 import neo.framework.Common
 import neo.framework.FileSystem_h.fileSystem
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.Copynz
 import neo.idlib.containers.List.idList
+import neo.idlib.containers.bbtocb
 import neo.idlib.math.idVec2
 import neo.idlib.math.idVec3
 import java.nio.ByteBuffer

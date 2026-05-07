@@ -18,11 +18,22 @@
 
 package neo.Game.AI
 
+
 import neo.Game.AI.AAS.aasGoal_s
 import neo.Game.AI.AAS.aasObstacle_s
 import neo.Game.AI.AAS.aasPath_s
 import neo.Game.AI.AAS.idAAS
 import neo.Game.AI.AAS.idAASCallback
+import neo.Game.AI.AASFile.aasArea_s
+import neo.Game.AI.AASFile.aasCluster_s
+import neo.Game.AI.AASFile.aasEdge_s
+import neo.Game.AI.AASFile.aasFace_s
+import neo.Game.AI.AASFile.aasNode_s
+import neo.Game.AI.AASFile.aasPortal_s
+import neo.Game.AI.AASFile.aasTrace_s
+import neo.Game.AI.AASFile.idAASFile
+import neo.Game.AI.AASFile.idAASSettings
+import neo.Game.AI.AASFile.idReachability
 import neo.Game.AI.AAS_routing.idRoutingCache
 import neo.Game.AI.AAS_routing.idRoutingObstacle
 import neo.Game.AI.AAS_routing.idRoutingUpdate
@@ -30,18 +41,6 @@ import neo.Game.GameSys.SysCvar
 import neo.Game.Game_local
 import neo.Game.Game_local.idGameLocal
 import neo.Game.Player.idPlayer
-import neo.Tools.Compilers.AAS.AASFile
-import neo.Tools.Compilers.AAS.AASFile.aasArea_s
-import neo.Tools.Compilers.AAS.AASFile.aasCluster_s
-import neo.Tools.Compilers.AAS.AASFile.aasEdge_s
-import neo.Tools.Compilers.AAS.AASFile.aasFace_s
-import neo.Tools.Compilers.AAS.AASFile.aasNode_s
-import neo.Tools.Compilers.AAS.AASFile.aasPortal_s
-import neo.Tools.Compilers.AAS.AASFile.aasTrace_s
-import neo.Tools.Compilers.AAS.AASFile.idAASFile
-import neo.Tools.Compilers.AAS.AASFile.idAASSettings
-import neo.Tools.Compilers.AAS.AASFile.idReachability
-import neo.Tools.Compilers.AAS.AASFileManager
 import neo.framework.Common
 import neo.idlib.*
 import neo.idlib.BV.idBounds

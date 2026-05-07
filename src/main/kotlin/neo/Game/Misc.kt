@@ -18,6 +18,7 @@
 
 package neo.Game
 
+import neo.Game.AI.AASFile
 import neo.Game.AI.AI_RandomPath
 import neo.Game.AI.idAI
 import neo.Game.Animation.Anim
@@ -52,8 +53,6 @@ import neo.Renderer.Model_liquid.idRenderModelLiquid
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.portalConnection_t
 import neo.Sound.snd_shader.idSoundShader
-import neo.TempDump
-import neo.Tools.Compilers.AAS.AASFile
 import neo.cm.trace_s
 import neo.framework.Common
 import neo.framework.DeclManager.Companion.declManager
@@ -251,7 +250,7 @@ object Misc {
                     2 -> {
                         player.SetInfluenceView(null, null, 0.0f, null)
                         p.TeleportPlayer(player)
-                        player.StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY2), false)
+                        player.StopSound((gameSoundChannel_t.SND_CHANNEL_BODY2).ordinal, false)
                         player.SetInfluenceLevel(Player.INFLUENCE_NONE)
                         p.teleportStage = 0
                     }
@@ -2160,7 +2159,7 @@ object Misc {
                     "LocationSeparator '%s' didn't contact a portal", spawnArgs.GetString("name")
                 )
             }
-            gameLocal.SetPortalState(portal, TempDump.etoi(portalConnection_t.PS_BLOCK_LOCATION))
+            gameLocal.SetPortalState(portal, (portalConnection_t.PS_BLOCK_LOCATION).ordinal)
         }
 
         override fun CreateInstance(): idClass = idLocationSeparatorEntity()
@@ -2212,7 +2211,7 @@ object Misc {
             }
             gameLocal.SetPortalState(
                 portal,
-                TempDump.etoi(portalConnection_t.PS_BLOCK_AIR) or TempDump.etoi(portalConnection_t.PS_BLOCK_LOCATION)
+                (portalConnection_t.PS_BLOCK_AIR).ordinal or (portalConnection_t.PS_BLOCK_LOCATION).ordinal
             )
         }
 
@@ -2236,7 +2235,7 @@ object Misc {
             if (0 == portal) {
                 return
             }
-            gameLocal.SetPortalState(portal, TempDump.etoi(portalConnection_t.PS_BLOCK_NONE))
+            gameLocal.SetPortalState(portal, (portalConnection_t.PS_BLOCK_NONE).ordinal)
         }
 
         override fun CreateInstance(): idClass = idVacuumSeparatorEntity()

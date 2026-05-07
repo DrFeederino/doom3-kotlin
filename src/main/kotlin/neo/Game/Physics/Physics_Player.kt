@@ -18,7 +18,6 @@ import neo.Game.Physics.Physics.impactInfo_s
 import neo.Game.Physics.Physics_Actor.idPhysics_Actor
 import neo.Game.idEntity
 import neo.Renderer.Material
-import neo.TempDump
 import neo.cm.contactInfo_t
 import neo.cm.contactType_t
 import neo.cm.trace_s
@@ -28,6 +27,7 @@ import neo.idlib.BitMsg.idBitMsgDelta
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
+import neo.idlib.toInt
 import kotlin.math.abs
 
 object Physics_Player {
@@ -218,7 +218,7 @@ object Physics_Player {
             savefile.WriteMaterial(groundMaterial)
             savefile.WriteBool(ladder)
             savefile.WriteVec3(ladderNormal)
-            savefile.WriteInt(TempDump.etoi(waterLevel))
+            savefile.WriteInt((waterLevel).ordinal)
             savefile.WriteInt(waterType)
         }
 
@@ -306,7 +306,7 @@ object Physics_Player {
          ================
          */
         fun SetMovementType(type: pmtype_t) {
-            current.movementType = TempDump.etoi(type)
+            current.movementType = (type).ordinal
         }
 
         /*
@@ -338,7 +338,7 @@ object Physics_Player {
          ================
          */
         fun SetDebugLevel(set: Boolean) {
-            debugLevel = TempDump.btoi(set)
+            debugLevel = (set).toInt()
         }
 
         /*
@@ -490,7 +490,7 @@ object Physics_Player {
          ================
          */
         override fun ApplyImpulse(id: Int, point: idVec3, impulse: idVec3) {
-            if (current.movementType != TempDump.etoi(pmtype_t.PM_NOCLIP)) {
+            if (current.movementType != (pmtype_t.PM_NOCLIP).ordinal) {
                 current.velocity.plusAssign(impulse.times(invMass))
             }
         }
@@ -1224,10 +1224,10 @@ object Physics_Player {
             drop = 0.0f
 
             // spectator friction
-            if (current.movementType == TempDump.etoi(pmtype_t.PM_SPECTATOR)) {
+            if (current.movementType == (pmtype_t.PM_SPECTATOR).ordinal) {
                 drop += speed * PM_FLYFRICTION * frametime
             } // apply ground friction
-            else if (walking && TempDump.etoi(waterLevel) <= TempDump.etoi(waterLevel_t.WATERLEVEL_FEET)) {
+            else if (walking && (waterLevel).ordinal <= (waterLevel_t.WATERLEVEL_FEET).ordinal) {
                 // no friction on slick surfaces
                 if (!(groundMaterial != null && (groundMaterial!!.GetSurfaceFlags() and Material.SURF_SLICK) != 0)) {
                     // if getting knocked back, no friction
@@ -1403,7 +1403,7 @@ object Physics_Player {
             val vel = idVec3()
             val oldVel: Float
             val newVel: Float
-            if (TempDump.etoi(waterLevel) > TempDump.etoi(waterLevel_t.WATERLEVEL_WAIST) && viewForward.times(
+            if ((waterLevel).ordinal > (waterLevel_t.WATERLEVEL_WAIST).ordinal && viewForward.times(
                     groundTrace.c.normal
                 ) > 0.0f
             ) {
@@ -1413,7 +1413,7 @@ object Physics_Player {
             }
             if (CheckJump()) {
                 // jumped away
-                if (TempDump.etoi(waterLevel) > TempDump.etoi(waterLevel_t.WATERLEVEL_FEET)) {
+                if ((waterLevel).ordinal > (waterLevel_t.WATERLEVEL_FEET).ordinal) {
                     WaterMove()
                 } else {
                     AirMove()
@@ -1805,7 +1805,7 @@ object Physics_Player {
             val end = idVec3()
             val bounds: idBounds
             val maxZ: Float
-            if (current.movementType == TempDump.etoi(pmtype_t.PM_DEAD)) {
+            if (current.movementType == (pmtype_t.PM_DEAD).ordinal) {
                 maxZ = SysCvar.pm_deadheight.GetFloat()
             } else {
                 // stand up when up against a ladder
@@ -2100,7 +2100,7 @@ object Physics_Player {
             }
 
             // if no movement at all
-            if (current.movementType == TempDump.etoi(pmtype_t.PM_FREEZE)) {
+            if (current.movementType == (pmtype_t.PM_FREEZE).ordinal) {
                 return
             }
 
@@ -2114,21 +2114,21 @@ object Physics_Player {
             viewRight.Normalize()
 
             // fly in spectator mode
-            if (current.movementType == TempDump.etoi(pmtype_t.PM_SPECTATOR)) {
+            if (current.movementType == (pmtype_t.PM_SPECTATOR).ordinal) {
                 SpectatorMove()
                 DropTimers()
                 return
             }
 
             // special no clip mode
-            if (current.movementType == TempDump.etoi(pmtype_t.PM_NOCLIP)) {
+            if (current.movementType == (pmtype_t.PM_NOCLIP).ordinal) {
                 NoclipMove()
                 DropTimers()
                 return
             }
 
             // no control when dead
-            if (current.movementType == TempDump.etoi(pmtype_t.PM_DEAD)) {
+            if (current.movementType == (pmtype_t.PM_DEAD).ordinal) {
                 command.forwardmove = 0
                 command.rightmove = 0
                 command.upmove = 0
@@ -2136,6 +2136,7 @@ object Physics_Player {
 
             // set watertype and waterlevel
             SetWaterLevel()
+
 
             // check for ground
             CheckGround()
@@ -2150,7 +2151,7 @@ object Physics_Player {
             DropTimers()
 
             // move
-            if (current.movementType == TempDump.etoi(pmtype_t.PM_DEAD)) {
+            if (current.movementType == (pmtype_t.PM_DEAD).ordinal) {
                 // dead
                 DeadMove()
             } else if (ladder) {
@@ -2159,7 +2160,7 @@ object Physics_Player {
             } else if ((current.movementFlags and PMF_TIME_WATERJUMP) != 0) {
                 // jumping out of water
                 WaterJumpMove()
-            } else if (TempDump.etoi(waterLevel) > 1) {
+            } else if ((waterLevel).ordinal > 1) {
                 // swimming
                 WaterMove()
             } else if (walking) {

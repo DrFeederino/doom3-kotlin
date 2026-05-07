@@ -1,8 +1,8 @@
 package neo.idlib.math
 
-import neo.TempDump.SERiAL
+import neo.framework.File_h.idFile
+import neo.idlib.idSerializable
 import neo.idlib.math.Extrapolate.idExtrapolate
-import java.nio.ByteBuffer
 
 class Interpolate {
     /*
@@ -147,7 +147,7 @@ class Interpolate {
 
      ==============================================================================================
      */
-    class idInterpolateAccelDecelLinear<T>(val value: T) : SERiAL {
+    class idInterpolateAccelDecelLinear<T>(val value: T) : idSerializable {
         private var accelTime: Float = 0.0f
         private var decelTime = 0.0f
         private var endValue: T = _Copy(value)
@@ -317,88 +317,73 @@ class Interpolate {
             }
         }
 
-        override fun AllocBuffer(): ByteBuffer {
-            val typeSize = _sizeOfT()
-            // 4 floats + 2*typeSize + extrapolate(int + 2*float + 3*typeSize + float + typeSize)
-            // = 16 + 2*typeSize + 12 + 4*typeSize = 28 + 6*typeSize
-            val bytes = 4 * java.lang.Float.BYTES + 2 * typeSize +
-                    Integer.BYTES + 2 * java.lang.Float.BYTES + 3 * typeSize +
-                    java.lang.Float.BYTES + typeSize
-            return ByteBuffer.allocate(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-            startTime = buffer.float
-            accelTime = buffer.float
-            linearTime = buffer.float
-            decelTime = buffer.float
-            startValue = _readValue(buffer)
-            endValue = _readValue(buffer)
+        override fun readFrom(file: idFile) {
+            startTime = file.ReadFloat()
+            accelTime = file.ReadFloat()
+            linearTime = file.ReadFloat()
+            decelTime = file.ReadFloat()
+            startValue = _readValue(file)
+            endValue = _readValue(file)
             // idExtrapolate fields
-            val extType = buffer.int
-            val extStartTime = buffer.float
-            val extDuration = buffer.float
-            val extStartValue = _readValue(buffer)
-            val extBaseSpeed = _readValue(buffer)
-            val extSpeed = _readValue(buffer)
-            buffer.float // currentTime
-            _readValue(buffer) // currentValue - discard
+            val extType = file.ReadInt()
+            val extStartTime = file.ReadFloat()
+            val extDuration = file.ReadFloat()
+            val extStartValue = _readValue(file)
+            val extBaseSpeed = _readValue(file)
+            val extSpeed = _readValue(file)
+            file.ReadFloat() // currentTime
+            _readValue(file) // currentValue - discard
             extrapolate.Init(extStartTime, extDuration, extStartValue, extBaseSpeed, extSpeed, extType)
         }
 
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.putFloat(startTime)
-            buffer.putFloat(accelTime)
-            buffer.putFloat(linearTime)
-            buffer.putFloat(decelTime)
-            _writeValue(buffer, startValue)
-            _writeValue(buffer, endValue)
+        override fun writeTo(file: idFile) {
+            file.WriteFloat(startTime)
+            file.WriteFloat(accelTime)
+            file.WriteFloat(linearTime)
+            file.WriteFloat(decelTime)
+            _writeValue(file, startValue)
+            _writeValue(file, endValue)
             // idExtrapolate fields
-            buffer.putInt(extrapolate.GetExtrapolationType())
-            buffer.putFloat(extrapolate.GetStartTime())
-            buffer.putFloat(extrapolate.GetDuration())
-            _writeValue(buffer, extrapolate.GetStartValue())
-            _writeValue(buffer, extrapolate.GetBaseSpeed())
-            _writeValue(buffer, extrapolate.GetSpeed())
-            buffer.putFloat(-1.0f) // currentTime
-            _writeValue(buffer, extrapolate.GetCurrentValue(extrapolate.GetStartTime())) // currentValue
-            buffer.flip()
-            return buffer
+            file.WriteInt(extrapolate.GetExtrapolationType())
+            file.WriteFloat(extrapolate.GetStartTime())
+            file.WriteFloat(extrapolate.GetDuration())
+            _writeValue(file, extrapolate.GetStartValue())
+            _writeValue(file, extrapolate.GetBaseSpeed())
+            _writeValue(file, extrapolate.GetSpeed())
+            file.WriteFloat(-1.0f) // currentTime
+            _writeValue(file, extrapolate.GetCurrentValue(extrapolate.GetStartTime())) // currentValue
         }
 
-        private fun _readValue(buffer: ByteBuffer): T {
-            // Detect type from existing startValue or endValue, or from extrapolate
+        private fun _readValue(file: idFile): T {
             return when (value) {
-                is Int -> buffer.int as T
-                is Float -> buffer.float as T
-                is idVec3 -> idVec3(buffer.float, buffer.float, buffer.float) as T
-                is idVec4 -> idVec4(buffer.float, buffer.float, buffer.float, buffer.float) as T
-                is idAngles -> idAngles(buffer.float, buffer.float, buffer.float) as T
-                else -> buffer.int as T // fallback
+                is Int -> file.ReadInt() as T
+                is Float -> file.ReadFloat() as T
+                is idVec3 -> idVec3(file.ReadFloat(), file.ReadFloat(), file.ReadFloat()) as T
+                is idVec4 -> idVec4(file.ReadFloat(), file.ReadFloat(), file.ReadFloat(), file.ReadFloat()) as T
+                is idAngles -> idAngles(file.ReadFloat(), file.ReadFloat(), file.ReadFloat()) as T
+                else -> file.ReadInt() as T
             }
         }
 
-        private fun _writeValue(buffer: ByteBuffer, value: T?) {
+        private fun _writeValue(file: idFile, value: T?) {
             when (value) {
-                is Int -> buffer.putInt(value)
-                is Float -> buffer.putFloat(value)
+                is Int -> file.WriteInt(value)
+                is Float -> file.WriteFloat(value)
                 is idVec3 -> {
-                    buffer.putFloat(value[0]); buffer.putFloat(value[1]); buffer.putFloat(value[2])
+                    file.WriteFloat(value[0]); file.WriteFloat(value[1]); file.WriteFloat(value[2])
                 }
 
                 is idVec4 -> {
-                    buffer.putFloat(value[0]); buffer.putFloat(value[1]); buffer.putFloat(value[2]); buffer.putFloat(
+                    file.WriteFloat(value[0]); file.WriteFloat(value[1]); file.WriteFloat(value[2]); file.WriteFloat(
                         value[3]
                     )
                 }
 
                 is idAngles -> {
-                    buffer.putFloat(value.pitch); buffer.putFloat(value.yaw); buffer.putFloat(value.roll)
+                    file.WriteFloat(value.pitch); file.WriteFloat(value.yaw); file.WriteFloat(value.roll)
                 }
 
-                else -> buffer.putInt(0) // fallback
+                else -> file.WriteInt(0)
             }
         }
 

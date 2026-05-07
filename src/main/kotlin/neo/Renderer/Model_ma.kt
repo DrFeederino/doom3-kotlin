@@ -25,7 +25,6 @@ Translated to Kotlin by Dr. Feederino with support of Claude Code.
 */
 package neo.Renderer
 
-import neo.TempDump.bbtocb
 import neo.framework.Common
 import neo.framework.FileSystem_h.fileSystem
 import neo.idlib.Text.Lexer.LEXFL_NOSTRINGCONCAT
@@ -35,6 +34,7 @@ import neo.idlib.Text.Str.va
 import neo.idlib.Text.Token.idToken
 import neo.idlib.containers.HashTable.idHashTable
 import neo.idlib.containers.List.idList
+import neo.idlib.containers.bbtocb
 import neo.idlib.idException
 import neo.idlib.math.DEG2RAD
 import neo.idlib.math.Matrix.idMat4

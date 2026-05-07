@@ -32,7 +32,6 @@ import neo.Renderer.Material
 import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderLight_s
-import neo.TempDump
 import neo.framework.Common
 import neo.framework.DeclManager
 import neo.framework.DeclManager.declType_t
@@ -550,7 +549,7 @@ object Light {
             currentLevel = 0
             // kill any sound it was making
             if (refSound.referenceSound != null && refSound.referenceSound!!.CurrentlyPlaying()) {
-                StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+                StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
                 soundWasPlaying = true
             }
             SetLightLevel()
@@ -618,7 +617,7 @@ object Light {
             // if the light has a sound, either start the alternate (broken) sound, or stop the sound
             var parm = spawnArgs.GetString("snd_broken")
             if (refSound.shader != null || parm != null && !parm.isEmpty()) {
-                StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+                StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
                 val alternate =
                     if (refSound.shader != null) refSound.shader!!.GetAltSound() else DeclManager.declManager.FindSound(
                         parm
@@ -627,7 +626,7 @@ object Light {
                     // start it with no diversity, so the leadin break sound plays
                     refSound.referenceSound!!.StartSound(
                         alternate,
-                        TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY),
+                        (gameSoundChannel_t.SND_CHANNEL_ANY).ordinal,
                         0.0f,
                         0
                     )

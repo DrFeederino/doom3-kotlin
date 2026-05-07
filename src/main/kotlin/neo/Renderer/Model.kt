@@ -29,7 +29,6 @@ package neo.Renderer
 import neo.Renderer.Material.idMaterial
 import neo.Renderer.RenderWorld.renderEntity_s
 import neo.Renderer.VertexCache.vertCache_s
-import neo.TempDump.SERiAL
 import neo.framework.DemoFile.idDemoFile
 import neo.idlib.BV.idBounds
 import neo.idlib.Text.Str.idStr
@@ -272,7 +271,7 @@ object Model {
 
     // the init methods may be called again on an already created model when
     // a reloadModels is issued
-    abstract class idRenderModel : SERiAL {
+    abstract class idRenderModel {
 
         // Loads static models only, dynamic models must be loaded by the modelManager
         @Throws(idException::class)

@@ -15,7 +15,6 @@ import neo.Sound.snd_system.idSoundSystemLocal.Companion.useEFXReverb
 import neo.Sound.sound.SCHANNEL_ANY
 import neo.Sound.sound.idSoundEmitter
 import neo.Sound.sound.idSoundWorld
-import neo.TempDump
 import neo.framework.*
 import neo.framework.DemoFile.demoSystem_t
 import neo.framework.DemoFile.idDemoFile
@@ -604,20 +603,24 @@ class snd_world {
                 info.fccType = snd_wavefile.mmioFOURCC('W'.code, 'A'.code, 'V'.code, 'E'.code)
                 info.cksize = rL.Length() * 2 - 8 + 4 + 16 + 8 + 8
                 info.dwDataOffset = 12
-                wO!!.Write(info.Write(), 12)
+                wO!!.WriteUnsignedInt(info.ckid)
+                wO.WriteInt(info.cksize)
+                wO.WriteUnsignedInt(info.fccType)
                 info.ckid = snd_wavefile.mmioFOURCC('f'.code, 'm'.code, 't'.code, ' '.code)
                 info.cksize = 16
-                wO.Write(info.Write(), 8)
+                wO.WriteUnsignedInt(info.ckid)
+                wO.WriteInt(info.cksize)
                 format.wBitsPerSample = 16
                 format.wf.nAvgBytesPerSec = 44100 * 4 // sample rate * block align
                 format.wf.nChannels = 2
                 format.wf.nSamplesPerSec = 44100
                 format.wf.wFormatTag = snd_local.WAVE_FORMAT_TAG_PCM
                 format.wf.nBlockAlign = 4 // channels * bits/sample / 8
-                wO.Write(format.Write(), 16)
+                format.writeTo(wO)
                 info.ckid = snd_wavefile.mmioFOURCC('d'.code, 'a'.code, 't'.code, 'a'.code)
                 info.cksize = rL.Length() * 2
-                wO.Write(info.Write(), 8)
+                wO.WriteUnsignedInt(info.ckid)
+                wO.WriteInt(info.cksize)
                 var s0: Short
                 var s1: Short
                 i = 0
@@ -1940,9 +1943,7 @@ class snd_world {
                 var occlusionDistance = 0.0f
 
                 // air blocking windows will block sound like closed doors
-                if (0 != re.blockingBits and (TempDump.etoi(portalConnection_t.PS_BLOCK_VIEW) or TempDump.etoi(
-                        portalConnection_t.PS_BLOCK_AIR
-                    ))
+                if (0 != re.blockingBits and ((portalConnection_t.PS_BLOCK_VIEW).ordinal or portalConnection_t.PS_BLOCK_AIR.ordinal)
                 ) {
                     // we could just completely cut sound off, but reducing the volume works better
                     // continue;

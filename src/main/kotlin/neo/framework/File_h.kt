@@ -1,12 +1,11 @@
 package neo.framework
 
-import neo.TempDump
-import neo.TempDump.SERiAL
 import neo.framework.FileSystem_h.fsMode_t
 import neo.idlib.*
 import neo.idlib.BV.idBounds
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.Text.Str.idStr
+import neo.idlib.Text.atobb
 import neo.idlib.containers.CBool
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
@@ -228,19 +227,32 @@ object File_h {
             return Read(buffer, buffer.capacity())
         }
 
-        fun Read(classObject: SERiAL): Int {
-            val buffer = classObject.AllocBuffer()
-            val reads = Read(buffer, buffer.capacity())
-            classObject.Read(buffer)
-            return reads
+        fun Read(classObject: idSerializable): Int {
+            val before = Tell()
+            classObject.readFrom(this)
+            return Tell() - before
         }
 
-        fun Read(`object`: SERiAL, len: Int): Int {
-            val buffer = `object`.AllocBuffer()
-            val reads = Read(buffer, len)
-            buffer.position(len).flip()
-            `object`.Read(buffer)
-            return reads
+        fun Read(`object`: idSerializable, len: Int): Int {
+            // idStr serializes as `len` raw bytes (length is known externally by the caller).
+            // Bypass readFrom() which would read its fixed BYTES-sized slot.
+            if (`object` is idStr) {
+                if (len <= 0) {
+                    `object`.set("")
+                    return 0
+                }
+                val sb = StringBuilder(len)
+                var i = 0
+                while (i < len) {
+                    sb.append((ReadChar().toInt() and 0xFF).toChar())
+                    i++
+                }
+                `object`.set(sb.toString())
+                return len
+            }
+            val before = Tell()
+            `object`.readFrom(this)
+            return Tell() - before
         }
 
         @Deprecated("") // Read data from the file to the buffer.
@@ -261,7 +273,7 @@ object File_h {
         }
 
         @Deprecated("")
-        fun Write(`object`: SERiAL): Int {
+        fun Write(`object`: idSerializable): Int {
             return when (`object`) {
                 is idVec2 -> WriteVec2(`object`)
                 is idVec3 -> WriteVec3(`object`)
@@ -271,7 +283,10 @@ object File_h {
                 is idBounds -> WriteBounds(`object`)
                 is idAngles -> WriteAngles(`object`)
                 is idRectangle -> WriteRectangle(`object`)
-                else -> Write(`object`.Write())
+                else -> {
+                    `object`.writeTo(this)
+                    0
+                }
             }
         }
 
@@ -320,7 +335,7 @@ object File_h {
             // so notepad formats the lines correctly
             val work = idStr(buf[0])
             work.Replace("\n", "\r\n")
-            val bb = TempDump.atobb(work)!!
+            val bb = atobb(work)!!
             return Write(bb, bb.remaining())
         }
 
@@ -329,7 +344,7 @@ object File_h {
             val buf = arrayOf("") //new char[MAX_PRINT_MSG];
             val length: Int
             length = idStr.vsnPrintf(buf, MAX_PRINT_MSG - 1, fmt, *args /*, args*/)
-            return Write(TempDump.atobb(buf[0])!!)
+            return Write(atobb(buf[0])!!)
         }
 
         // Write a string with high precision doubleing point numbers to the file.
@@ -338,7 +353,7 @@ object File_h {
             val len: Int
 
             len = FS_WriteFloatString(buf, fmt, *args)
-            return Write(TempDump.atobb(buf)!!, len)
+            return Write(atobb(buf)!!, len)
         }
 
         // Endian portable alternatives to Read(...)
@@ -510,9 +525,15 @@ object File_h {
             ReadInt(len)
             if (len._val > 0) {
                 assert(len._val <= 1000000)
-                string.Fill(' ', len._val)
-                result = Read(string, len._val)
-                string.set(string)
+                val sb = StringBuilder(len._val)
+                var i = 0
+                while (i < len._val) {
+                    val c = ReadChar().toInt() and 0xFF
+                    sb.append(c.toChar())
+                    i++
+                }
+                string.set(sb.toString())
+                result = len._val
             }
             return result
         }
@@ -549,12 +570,9 @@ object File_h {
             return Write(_stringWriteBuf, len)
         }
 
-        open fun Write(objectToWrite: SERiAL, len: Int): Int {
-            val buffer = objectToWrite.AllocBuffer().order(ByteOrder.LITTLE_ENDIAN)
-            val reads = Write(buffer, len)
-            buffer.position(len).flip()
-            objectToWrite.Write()
-            return reads
+        open fun Write(objectToWrite: idSerializable, len: Int): Int {
+            objectToWrite.writeTo(this)
+            return len
         }
 
         fun ReadVec2(vec: idVec2): Int {
@@ -783,7 +801,7 @@ object File_h {
         override fun Read(buffer: ByteBuffer, len: Int): Int {
             var len = len
 
-            if (0 == mode and (1 shl TempDump.etoi(fsMode_t.FS_READ))) {
+            if (0 == mode and (1 shl (fsMode_t.FS_READ).ordinal)) {
                 idLib.common.FatalError("idFile_Memory::Read: %s not opened in read mode", name)
                 return 0
             }
@@ -800,7 +818,7 @@ object File_h {
         }
 
         override fun Write(buffer: ByteBuffer, len: Int): Int {
-            if (0 == mode and (1 shl TempDump.etoi(fsMode_t.FS_WRITE))) {
+            if (0 == mode and (1 shl (fsMode_t.FS_WRITE).ordinal)) {
                 idLib.common.FatalError("idFile_Memory::Write: %s not opened in write mode", name)
                 return 0
             }
@@ -920,7 +938,7 @@ object File_h {
             fileSize = length
             allocated = 0
             granularity = 16384
-            mode = 1 shl TempDump.etoi(fsMode_t.FS_READ)
+            mode = 1 shl (fsMode_t.FS_READ).ordinal
             filePtr = data.duplicate()
             curPtr = 0
         }

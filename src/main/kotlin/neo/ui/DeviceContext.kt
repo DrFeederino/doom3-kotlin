@@ -7,7 +7,6 @@ import neo.Renderer.RenderSystem.fontInfoEx_t
 import neo.Renderer.RenderSystem.fontInfo_t
 import neo.Renderer.RenderSystem.glyphInfo_t
 import neo.Renderer.RenderSystem.renderSystem
-import neo.TempDump.etoi
 import neo.framework.CVarSystem.CVAR_ARCHIVE
 import neo.framework.CVarSystem.CVAR_GUI
 import neo.framework.CVarSystem.cvarSystem
@@ -265,6 +264,14 @@ object DeviceContext {
         private val stretchPicIndexes = intArrayOf(3, 0, 2, 2, 0, 1)
         private val stretchPicRotatedVerts = Array(4) { idDrawVert() }
         private val stretchPicRotatedIndexes = intArrayOf(3, 0, 2, 2, 0, 1)
+        private var clippedX = 0.0f
+        private var clippedY = 0.0f
+        private var clippedW = 0.0f
+        private var clippedH = 0.0f
+        private var clippedS1 = 0.0f
+        private var clippedT1 = 0.0f
+        private var clippedS2 = 0.0f
+        private var clippedT2 = 0.0f
 
         //#modified-fva; BEGIN
         private var cst_xOffset: Float = 0.0f
@@ -610,9 +617,9 @@ object DeviceContext {
                 }
                 if (lineBreak || wordBreak) {
                     var x = rectDraw.x
-                    if (textAlign == etoi(ALIGN.ALIGN_RIGHT)) {
+                    if (textAlign == (ALIGN.ALIGN_RIGHT).ordinal) {
                         x = rectDraw.x + rectDraw.w - newLineWidth
-                    } else if (textAlign == etoi(ALIGN.ALIGN_CENTER)) {
+                    } else if (textAlign == (ALIGN.ALIGN_CENTER).ordinal) {
                         x = rectDraw.x + (rectDraw.w - newLineWidth) / 2
                     }
                     if (wrap || newLine > 0) {
@@ -1414,6 +1421,87 @@ object DeviceContext {
             return w[0] == 0.0f || h[0] == 0.0f
         }
 
+        private fun ClippedCoords(
+            x: Float,
+            y: Float,
+            w: Float,
+            h: Float,
+            s1: Float,
+            t1: Float,
+            s2: Float,
+            t2: Float
+        ): Boolean {
+            clippedX = x
+            clippedY = y
+            clippedW = w
+            clippedH = h
+            clippedS1 = s1
+            clippedT1 = t1
+            clippedS2 = s2
+            clippedT2 = t2
+            if (enableClipping == false || clipRects.Num() == 0) {
+                return false
+            }
+            var c = clipRects.Num()
+            while (--c > 0) {
+                val clipRect = clipRects[c]
+                val ox = clippedX
+                val oy = clippedY
+                val ow = clippedW
+                val oh = clippedH
+                if (ow <= 0.0f || oh <= 0.0f) {
+                    break
+                }
+                if (clippedX < clipRect!!.x) {
+                    clippedW -= clipRect.x - clippedX
+                    clippedX = clipRect.x
+                } else if (clippedX > clipRect.x + clipRect.w) {
+                    clippedH = 0.0f
+                    clippedY = clippedH
+                    clippedW = clippedY
+                    clippedX = clippedW
+                }
+                if (clippedY < clipRect.y) {
+                    clippedH -= clipRect.y - clippedY
+                    clippedY = clipRect.y
+                } else if (clippedY > clipRect.y + clipRect.h) {
+                    clippedH = 0.0f
+                    clippedY = clippedH
+                    clippedW = clippedY
+                    clippedX = clippedW
+                }
+                if (clippedW > clipRect.w) {
+                    clippedW = clipRect.w - clippedX + clipRect.x
+                } else if (clippedX + clippedW > clipRect.x + clipRect.w) {
+                    clippedW = clipRect.Right() - clippedX
+                }
+                if (clippedH > clipRect.h) {
+                    clippedH = clipRect.h - clippedY + clipRect.y
+                } else if (clippedY + clippedH > clipRect.y + clipRect.h) {
+                    clippedH = clipRect.Bottom() - clippedY
+                }
+                if (ow > 0) {
+                    var u = (clippedX - ox) / ow
+                    val ns1 = clippedS1 * (1.0f - u) + clippedS2 * u
+
+                    u = (clippedX + clippedW - ox) / ow
+                    val ns2 = clippedS1 * (1.0f - u) + clippedS2 * u
+
+                    u = (clippedY - oy) / oh
+                    val nt1 = clippedT1 * (1.0f - u) + clippedT2 * u
+
+                    u = (clippedY + clippedH - oy) / oh
+                    val nt2 = clippedT1 * (1.0f - u) + clippedT2 * u
+
+                    clippedS1 = ns1
+                    clippedS2 = ns2
+                    clippedT1 = nt1
+                    clippedT2 = nt2
+                }
+            }
+            return clippedW == 0.0f || clippedH == 0.0f
+        }
+
         fun PushClipRect(x: Float, y: Float, w: Float, h: Float) {
             clipRects.Append(idRectangle(x, y, w, h))
         }
@@ -1591,15 +1679,7 @@ object DeviceContext {
             t2: Float,
             hShader: idMaterial
         ) {
-            val w = floatArrayOf(width * scale)
-            val h = floatArrayOf(height * scale)
-            val x1 = floatArrayOf(x)
-            val y1 = floatArrayOf(y)
-            val s1 = floatArrayOf(s)
-            val t1 = floatArrayOf(t)
-            val s3 = floatArrayOf(s2)
-            val t3 = floatArrayOf(t2)
-            if (ClippedCoords(x1, y1, w, h, s1, t1, s3, t3)) {
+            if (ClippedCoords(x, y, width * scale, height * scale, s, t, s2, t2)) {
                 return
             }
             //#modified-fva; BEGIN
@@ -1607,7 +1687,18 @@ object DeviceContext {
             AdjustCoords(x1, y1, w, h)
             DrawStretchPic(x1[0], y1[0], w[0], h[0], s1[0], t1[0], s3[0], t3[0], hShader)
             */
-            DrawStretchPic(x1[0], y1[0], w[0], h[0], s1[0], t1[0], s3[0], t3[0], hShader, true)
+            DrawStretchPic(
+                clippedX,
+                clippedY,
+                clippedW,
+                clippedH,
+                clippedS1,
+                clippedT1,
+                clippedS2,
+                clippedT2,
+                hShader,
+                true
+            )
             //#modified-fva; END
         }
 

@@ -30,8 +30,6 @@ import neo.Renderer.Material
 import neo.Renderer.RenderSystem
 import neo.Sound.snd_system
 import neo.Sound.sound.soundDecoderInfo_t
-import neo.TempDump
-import neo.Tools.edit_public
 import neo.framework.Async.AsyncNetwork
 import neo.framework.Async.AsyncNetwork.idAsyncNetwork
 import neo.framework.CVarSystem.idCVar
@@ -43,6 +41,8 @@ import neo.framework.KeyInput.idKeyInput
 import neo.idlib.*
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
+import neo.idlib.Text.ctos
+import neo.idlib.Text.strLen
 import neo.idlib.math.idMath
 import neo.idlib.math.idVec4
 import neo.sys.sysEventType_t
@@ -320,12 +320,6 @@ class Console {
             var l: Int
             var color: Int
             var txt_p = 0
-            if (ID_ALLOW_TOOLS) {
-                edit_public.RadiantPrint(txt)
-                if (Common.com_editors and Common.EDITOR_MATERIAL != 0) {
-                    edit_public.MaterialEditorPrintConsole(txt)
-                }
-            }
             color = idStr.ColorIndex(Str.C_COLOR_CYAN)
             while (txt_p < txt.length
                 && txt[txt_p].also { c = it.code } != Char(0)
@@ -527,7 +521,7 @@ class Console {
             for (i in 0 until COMMAND_HISTORY) {
                 // make sure the history is in the right order
                 val line = (nextHistoryLine + i) % COMMAND_HISTORY
-                val s = idStr(TempDump.ctos(historyEditLines[line].GetBuffer()))
+                val s = idStr(ctos(historyEditLines[line].GetBuffer()))
                 if (!s.IsEmpty()) {
                     f.WriteString(s)
                 }
@@ -580,16 +574,16 @@ class Console {
 
             // enter finishes the line
             if (key == KeyInput.K_ENTER || key == KeyInput.K_KP_ENTER) {
-                val buffer = TempDump.ctos(consoleField.GetBuffer())
+                val buffer = ctos(consoleField.GetBuffer())
                 Common.common.Printf("]%s\n", buffer)
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, buffer) // valid command
                 CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_APPEND, "\n")
 
                 // copy line to history buffer, if it isn't the same as the last command
                 val lastHistoryBuffer =
-                    TempDump.ctos(historyEditLines[(nextHistoryLine + COMMAND_HISTORY - 1) % COMMAND_HISTORY].GetBuffer())
+                    ctos(historyEditLines[(nextHistoryLine + COMMAND_HISTORY - 1) % COMMAND_HISTORY].GetBuffer())
                 if (idStr.Cmp(buffer, lastHistoryBuffer) != 0) {
-                    historyEditLines[nextHistoryLine % COMMAND_HISTORY].SetBuffer(TempDump.ctos(consoleField.GetBuffer()))
+                    historyEditLines[nextHistoryLine % COMMAND_HISTORY].SetBuffer(ctos(consoleField.GetBuffer()))
                     nextHistoryLine++
                 }
                 historyLine = nextHistoryLine
@@ -615,7 +609,7 @@ class Console {
                 if (nextHistoryLine - historyLine < COMMAND_HISTORY && historyLine > 0) {
                     historyLine--
                 }
-                consoleField.SetBuffer(TempDump.ctos(historyEditLines[historyLine % COMMAND_HISTORY].GetBuffer()))
+                consoleField.SetBuffer(ctos(historyEditLines[historyLine % COMMAND_HISTORY].GetBuffer()))
                 return
             }
             if (key == KeyInput.K_DOWNARROW
@@ -625,7 +619,7 @@ class Console {
                     return
                 }
                 historyLine++
-                consoleField.SetBuffer(TempDump.ctos(historyEditLines[historyLine % COMMAND_HISTORY].GetBuffer()))
+                consoleField.SetBuffer(ctos(historyEditLines[historyLine % COMMAND_HISTORY].GetBuffer()))
                 return
             }
 
@@ -724,7 +718,7 @@ class Console {
             val autoCompleteLength: Int
             y = vislines - RenderSystem.SMALLCHAR_HEIGHT * 2
             if (consoleField.GetAutoCompleteLength() != 0) {
-                autoCompleteLength = TempDump.strLen(consoleField.GetBuffer()) - consoleField.GetAutoCompleteLength()
+                autoCompleteLength = strLen(consoleField.GetBuffer()) - consoleField.GetAutoCompleteLength()
                 if (autoCompleteLength > 0) {
                     RenderSystem.renderSystem.SetColor4(.8f, .2f, .2f, .45f)
                     RenderSystem.renderSystem.DrawStretchPic(

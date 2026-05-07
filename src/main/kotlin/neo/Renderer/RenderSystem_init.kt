@@ -44,10 +44,6 @@ import neo.Renderer.qgl.qglGetString
 import neo.Renderer.tr_guisurf.R_ListGuis_f
 import neo.Renderer.tr_guisurf.R_ReloadGuis_f
 import neo.Sound.snd_system
-import neo.TempDump.atof
-import neo.TempDump.btoi
-import neo.TempDump.ctos
-import neo.TempDump.itob
 import neo.framework.CVarSystem.CVAR_ARCHIVE
 import neo.framework.CVarSystem.CVAR_BOOL
 import neo.framework.CVarSystem.CVAR_CHEAT
@@ -76,10 +72,14 @@ import neo.idlib.Text.Str.idStr.Companion.FindText
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.idStr.Companion.IsNumeric
 import neo.idlib.Text.Str.idStr.Companion.snPrintf
+import neo.idlib.Text.atof
+import neo.idlib.Text.ctos
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.cmp_t
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.idVec3
+import neo.idlib.toBoolean
+import neo.idlib.toInt
 import neo.sys.win_glimp.GLimp_Init
 import neo.sys.win_glimp.GLimp_SetGamma
 import neo.sys.win_glimp.GLimp_SetScreenParms
@@ -1814,7 +1814,7 @@ internal class R_MakeAmbientMap_f private constructor() : cmdFunction_t() {
                         total[0] = total[1]
                         //samples = 1;
                         val limit: Float =
-                            if (itob(map)) 0.95f else 0.25f // small for specular, almost hemisphere for ambient
+                            if ((map).toBoolean()) 0.95f else 0.25f // small for specular, almost hemisphere for ambient
                         for (s in 0 until samples) {
                             // pick a random direction vector that is inside the unit sphere but not behind dir,
                             // which is a robust way to evenly sample a hemisphere
@@ -1936,7 +1936,7 @@ internal class GfxInfo_f private constructor() : cmdFunction_t() {
             r_mode.GetInteger(),
             glConfig.vidWidth,
             glConfig.vidHeight,
-            fsstrings[btoi(r_fullscreen.GetBool())]
+            fsstrings[(r_fullscreen.GetBool()).toInt()]
         )
         if (glConfig.displayFrequency != 0) {
             common.Printf("%d\n", glConfig.displayFrequency)
@@ -1951,7 +1951,7 @@ internal class GfxInfo_f private constructor() : cmdFunction_t() {
 
         if (glConfig.allowARB2Path) {
             common.Printf(
-                "ARB2 path ENABLED%s\n", active[btoi(tr.backEndRenderer == backEndName_t.BE_ARB2)]
+                "ARB2 path ENABLED%s\n", active[(tr.backEndRenderer == backEndName_t.BE_ARB2).toInt()]
             )
         } else {
             common.Printf("ARB2 path disabled\n")

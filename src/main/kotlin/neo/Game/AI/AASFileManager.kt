@@ -1,7 +1,7 @@
-package neo.Tools.Compilers.AAS
+package neo.Game.AI
 
-import neo.Tools.Compilers.AAS.AASFile.idAASFile
-import neo.Tools.Compilers.AAS.AASFile_local.idAASFileLocal
+import neo.Game.AI.AASFile.idAASFile
+import neo.Game.AI.AASFile_local.idAASFileLocal
 import neo.idlib.Text.Str.idStr
 
 object AASFileManager {

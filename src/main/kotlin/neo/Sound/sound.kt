@@ -3,7 +3,6 @@ package neo.Sound
 import neo.Renderer.Cinematic.cinData_t
 import neo.Renderer.RenderWorld.idRenderWorld
 import neo.Sound.snd_shader.idSoundShader
-import neo.TempDump.SERiAL
 import neo.framework.Common.MemInfo_t
 import neo.framework.DemoFile.idDemoFile
 import neo.framework.File_h.idFile
@@ -26,7 +25,7 @@ object sound {
     const val SCHANNEL_ONE = 1 // any following integer can be used as a channel number
 
     // typedef int s_channelType;	// the game uses its own series of enums, and we don't want to require casts
-    abstract class idSoundEmitter : SERiAL {
+    abstract class idSoundEmitter {
         // virtual					~idSoundEmitter() {}
         // a non-immediate free will let all currently playing sounds complete
         // soundEmitters are not actually deleted, they are just marked as

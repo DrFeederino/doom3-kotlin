@@ -54,8 +54,6 @@ import neo.Renderer.RenderWorld_local.doublePortal_s
 import neo.Renderer.RenderWorld_local.idRenderWorldLocal
 import neo.Renderer.RenderWorld_local.portalArea_s
 import neo.Renderer.VertexCache.vertCache_s
-import neo.TempDump.btoi
-import neo.TempDump.ctos
 import neo.framework.Common
 import neo.framework.Common.MemInfo_t
 import neo.framework.DeclManager
@@ -72,6 +70,7 @@ import neo.idlib.Text.Str.idStr.Companion.Copynz
 import neo.idlib.Text.Str.idStr.Companion.Icmp
 import neo.idlib.Text.Str.idStr.Companion.IsColor
 import neo.idlib.Text.Str.idStr.Companion.snPrintf
+import neo.idlib.Text.ctos
 import neo.idlib.colorWhite
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List.idList
@@ -80,6 +79,7 @@ import neo.idlib.geometry.Winding.idWinding
 import neo.idlib.math.*
 import neo.idlib.math.idMath.Ftoi
 import neo.idlib.math.idMath.FtoiFast
+import neo.idlib.toInt
 import neo.sys.win_glimp.GLimp_Shutdown
 import neo.sys.win_input.Sys_ShutdownInput
 import org.lwjgl.BufferUtils
@@ -2253,7 +2253,7 @@ class idRenderSystemLocal : idRenderSystem() {
             Session.session.writeDemo!!.WriteInt(demoCommand_t.DC_CROP_RENDER)
             Session.session.writeDemo!!.WriteInt(width)
             Session.session.writeDemo!!.WriteInt(height)
-            Session.session.writeDemo!!.WriteInt(btoi(makePowerOfTwo))
+            Session.session.writeDemo!!.WriteInt((makePowerOfTwo).toInt())
             if (r_showDemo!!.GetBool()) {
                 Common.common.Printf("write DC_CROP_RENDER\n")
             }

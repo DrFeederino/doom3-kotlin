@@ -32,7 +32,6 @@ import neo.Renderer.Model.modelSurface_s
 import neo.Renderer.Model.srfTriangles_s
 import neo.Renderer.Model_local.idRenderModelStatic
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.TempDump.SERiAL
 import neo.framework.Common
 import neo.framework.DeclManager
 import neo.framework.FileSystem_h.fileSystem
@@ -143,7 +142,7 @@ object Model_md3 {
         var xyz: ShortArray = ShortArray(3)
     }
 
-    internal class md3Header_s : SERiAL {
+    internal class md3Header_s {
         var flags: Int = 0
         var frames: Array<md3Frame_s?>? = null
         var ident: Int = 0
@@ -159,11 +158,8 @@ object Model_md3 {
         var surfaces: Array<md3Surface_s?>? = null
         var tags: Array<md3Tag_s?>? = null
         var version: Int = 0
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES)
-        }
 
-        override fun Read(buffer: ByteBuffer) {
+        fun readFrom(buffer: ByteBuffer) {
             buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
             ident = buffer.int
             version = buffer.int
@@ -181,8 +177,8 @@ object Model_md3 {
             ofsEnd = buffer.int
         }
 
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
+        fun writeTo(): ByteBuffer {
+            val buffer = ByteBuffer.allocate(BYTES)
             buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
             buffer.putInt(ident)
             buffer.putInt(version)
@@ -208,7 +204,6 @@ object Model_md3 {
         companion object {
             private const val MAX_MD3PATH = 64
 
-            @Transient
             val BYTES = 108 // 2*int + char[64] + 9*int
         }
     }
@@ -250,7 +245,7 @@ object Model_md3 {
                 return
             }
             pinmodel = md3Header_s()
-            pinmodel.Read(buffer[0]!!)
+            pinmodel.readFrom(buffer[0]!!)
             version = LittleLong(pinmodel.version)
             if (version != MD3_VERSION) {
                 fileSystem.FreeFile(buffer)
@@ -265,7 +260,7 @@ object Model_md3 {
             dataSize += size
 
             md3 = md3Header_s()
-            md3!!.Read(buffer[0]!!)
+            md3!!.readFrom(buffer[0]!!)
             md3!!.ident = LL(md3!!.ident)
             md3!!.version = LL(md3!!.version)
             md3!!.numFrames = LL(md3!!.numFrames)

@@ -50,9 +50,6 @@ import neo.Renderer.Model.idMD5Joint
 import neo.Renderer.Model.idRenderModel
 import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.TempDump
-import neo.TempDump.indexOf
-import neo.TempDump.itoi
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idCVar
 import neo.framework.CmdSystem
@@ -68,6 +65,7 @@ import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.atoi
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.CInt
 import neo.idlib.containers.List
@@ -676,13 +674,13 @@ class idAnim {
                 return "Unexpected end of line"
             }
             fc.type = frameCommandType_t.FC_ENABLE_LEG_IK
-            fc.index = TempDump.atoi(token.toString())
+            fc.index = atoi(token.toString())
         } else if (token.toString() == "disableLegIK") {
             if (!src.ReadTokenOnLine(token)) {
                 return "Unexpected end of line"
             }
             fc.type = frameCommandType_t.FC_DISABLE_LEG_IK
-            fc.index = TempDump.atoi(token.toString())
+            fc.index = atoi(token.toString())
         } else if (token.toString() == "recordDemo") {
             fc.type = frameCommandType_t.FC_RECORDDEMO
             if (src.ReadTokenOnLine(token)) {
@@ -1235,6 +1233,16 @@ class idDeclModelDef : idDecl {
     private val anims: List.idList<idAnim> = List.idList()
     private val channelJoints: Array<List.idList<Int>>
     private val jointParents: List.idList<Int> = List.idList { 0 }
+    private var jointParentsIntArray: IntArray? = null
+    private fun getJointParentsIntArray(): IntArray {
+        var arr = jointParentsIntArray
+        val n = jointParents.Num()
+        if (arr == null || arr.size != n) {
+            arr = IntArray(n) { jointParents[it] }
+            jointParentsIntArray = arr
+        }
+        return arr
+    }
     private val joints: List.idList<jointInfo_t> = List.idList()
     private val offset: idVec3 = idVec3()
     private var modelHandle: idRenderModel?
@@ -1347,6 +1355,7 @@ class idDeclModelDef : idDecl {
                 joints.SetGranularity(1)
                 joints.SetNum(num)
                 jointParents.SetNum(num)
+                jointParentsIntArray = null
                 channelJoints[0].SetNum(num)
                 md5joints = modelHandle!!.GetJoints()!! as Array<idMD5Joint>
                 md5joint = 0 //md5joints;
@@ -1356,7 +1365,7 @@ class idDeclModelDef : idDecl {
                     joints.set(i, jointInfo_t()).channel = ANIMCHANNEL_ALL
                     joints[i].num = i
                     if (md5joints[md5joint].parent != null) {
-                        joints[i].parentNum = indexOf(md5joints[md5joint].parent, md5joints)
+                        joints[i].parentNum = md5joints.indexOf(md5joints[md5joint].parent)
                     } else {
                         joints[i].parentNum = INVALID_JOINT
                     }
@@ -1498,6 +1507,7 @@ class idDeclModelDef : idDecl {
         anims.DeleteContents(true)
         joints.Clear()
         jointParents.Clear()
+        jointParentsIntArray = null
         modelHandle = null
         skin = null
         offset.Zero()
@@ -1559,7 +1569,7 @@ class idDeclModelDef : idDecl {
 
         // transform the joint hierarchy
         SIMDProcessor!!.TransformJoints(
-            list, itoi(jointParents.getList(Array<Int>::class.java))!!, 1, joints.Num() - 1
+            list, getJointParentsIntArray(), 1, joints.Num() - 1
         )
         numJoints._val = num
         jointList[0] = list
@@ -1822,6 +1832,7 @@ class idDeclModelDef : idDecl {
 
         joints.SetNum(decl.joints.Num())
         jointParents.SetNum(decl.jointParents.Num())
+        jointParentsIntArray = null
 
         // deep-copy joints (jointInfo_t has mutable fields: channel, num, parentNum)
         for (i in 0 until decl.joints.Num()) {
@@ -2884,6 +2895,7 @@ class idAnimator {
     private var AFPoseJointFrame: List.idList<idJointQuat> = List.idList(1) { idJointQuat() }
     private val AFPoseJointMods: List.idList<idAFPoseJointMod> = List.idList(1) { idAFPoseJointMod() }
     private var AFPoseJoints: List.idList<Int> = List.idList(1)
+    private var afPoseJointsIndexScratch: IntArray = IntArray(0)
 
     //
     private val channels: Array<Array<idAnimBlend>> =
@@ -2935,8 +2947,8 @@ class idAnimator {
             savefile.WriteInt(jointMods[i].jointnum)
             savefile.WriteMat3(jointMods[i].mat)
             savefile.WriteVec3(jointMods[i].pos)
-            savefile.WriteInt(TempDump.etoi(jointMods[i].transform_pos))
-            savefile.WriteInt(TempDump.etoi(jointMods[i].transform_axis))
+            savefile.WriteInt((jointMods[i].transform_pos).ordinal)
+            savefile.WriteInt((jointMods[i].transform_axis).ordinal)
             i++
         }
         savefile.WriteInt(numJoints._val)
@@ -2967,7 +2979,7 @@ class idAnimator {
             if (AFPoseJointMods[i] == null) {
                 AFPoseJointMods[i] = idAFPoseJointMod()
             }
-            savefile.WriteInt(TempDump.etoi(AFPoseJointMods[i].mod))
+            savefile.WriteInt((AFPoseJointMods[i].mod).ordinal)
             savefile.WriteMat3(AFPoseJointMods[i].axis)
             savefile.WriteVec3(AFPoseJointMods[i].origin)
             i++
@@ -3515,7 +3527,7 @@ class idAnimator {
 
             // transform any joints preceding the joint modifier
             SIMDProcessor!!.TransformJoints(
-                joints!!, itoi(jointParent)!!, i, jointMod.jointnum - 1
+                joints!!, jointParent!!.toIntArray(), i, jointMod.jointnum - 1
             )
             i = jointMod.jointnum
             parentNum = jointParent[i]
@@ -3578,7 +3590,7 @@ class idAnimator {
 
         // transform the rest of the hierarchy
         SIMDProcessor!!.TransformJoints(
-            joints!!, itoi(jointParent)!!, i, numJoints - 1
+            joints!!, jointParent!!.toIntArray(), i, numJoints - 1
         )
         return true
     }
@@ -4042,7 +4054,7 @@ class idAnimator {
 
             // transform any joints preceding the joint modifier
             SIMDProcessor!!.TransformJoints(
-                joints, itoi(jointParent)!!, i, jointMod - 1
+                joints, jointParent!!.toIntArray(), i, jointMod - 1
             )
             i = jointMod
             parentNum = jointParent[i]
@@ -4073,12 +4085,12 @@ class idAnimator {
 
         // transform the rest of the hierarchy
         SIMDProcessor!!.TransformJoints(
-            joints, itoi(jointParent)!!, i, numJoints - 1
+            joints, jointParent!!.toIntArray(), i, numJoints - 1
         )
 
         // untransform hierarchy
         SIMDProcessor!!.UntransformJoints(
-            joints, itoi(jointParent)!!, 1, numJoints - 1
+            joints, jointParent!!.toIntArray(), 1, numJoints - 1
         )
 
         // convert joint matrices back to joint quaternions
@@ -4119,15 +4131,23 @@ class idAnimator {
     }
 
     fun BlendAFPose(blendFrame: Array<idJointQuat>): Boolean {
-        if (0 == AFPoseJoints.Num()) {
+        val n = AFPoseJoints.Num()
+        if (0 == n) {
             return false
         }
+        var idx = afPoseJointsIndexScratch
+        if (idx.size < n) {
+            idx = IntArray(n)
+            afPoseJointsIndexScratch = idx
+        }
+        for (i in 0 until n) idx[i] = AFPoseJoints[i]
+
         SIMDProcessor!!.BlendJoints(
             blendFrame,
             AFPoseJointFrame.getList(Array<idJointQuat>::class.java)!!,
             AFPoseBlendWeight,
-            itoi(AFPoseJoints.getList(Array<Int>::class.java))!!,
-            AFPoseJoints.Num()
+            idx,
+            n
         )
         return true
     }

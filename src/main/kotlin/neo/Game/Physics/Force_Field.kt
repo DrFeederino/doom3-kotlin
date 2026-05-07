@@ -18,7 +18,6 @@ import neo.Game.Physics.Clip.idClipModel
 import neo.Game.Physics.Force.idForce
 import neo.Game.Physics.Physics_Monster.idPhysics_Monster
 import neo.Game.Physics.Physics_Player.idPhysics_Player
-import neo.TempDump
 import neo.idlib.BV.idBounds
 import neo.idlib.math.idVec3
 
@@ -89,7 +88,7 @@ class Force_Field {
         */
         override fun Save(savefile: idSaveGame) {
             super.Save(savefile)
-            savefile.WriteInt(TempDump.etoi(type))
+            savefile.WriteInt((type).ordinal)
             savefile.WriteInt(applyType.ordinal)
             savefile.WriteFloat(magnitude)
             savefile.WriteVec3(dir)

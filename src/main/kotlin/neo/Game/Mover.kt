@@ -18,6 +18,7 @@
 
 package neo.Game
 
+import neo.Game.AI.AASFile
 import neo.Game.GameSys.Class.*
 import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
@@ -35,8 +36,6 @@ import neo.Renderer.Material
 import neo.Renderer.Model
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.portalConnection_t
-import neo.TempDump
-import neo.Tools.Compilers.AAS.AASFile
 import neo.cm.trace_s
 import neo.framework.UsercmdGen
 import neo.idlib.BV.idBounds
@@ -54,6 +53,7 @@ import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.idLib
 import neo.idlib.math.*
 import neo.idlib.math.Matrix.idMat3
+import neo.idlib.toInt
 import kotlin.math.abs
 
 val EV_AccelSound: idEventDef = idEventDef("accelSound", "s")
@@ -416,12 +416,12 @@ object Mover {
             super.Save(savefile)
             var i: Int
             savefile.WriteStaticObject(physicsObj)
-            savefile.WriteInt(TempDump.etoi(move.stage))
+            savefile.WriteInt((move.stage).ordinal)
             savefile.WriteInt(move.acceleration)
             savefile.WriteInt(move.movetime)
             savefile.WriteInt(move.deceleration)
             savefile.WriteVec3(move.dir)
-            savefile.WriteInt(TempDump.etoi(rot.stage))
+            savefile.WriteInt((rot.stage).ordinal)
             savefile.WriteInt(rot.acceleration)
             savefile.WriteInt(rot.movetime)
             savefile.WriteInt(rot.deceleration)
@@ -440,7 +440,7 @@ object Mover {
             savefile.WriteInt(acceltime)
             savefile.WriteBool(stopRotation)
             savefile.WriteBool(useSplineAngles)
-            savefile.WriteInt(TempDump.etoi(lastCommand))
+            savefile.WriteInt((lastCommand).ordinal)
             savefile.WriteFloat(damage)
             savefile.WriteInt(areaPortal)
             if (areaPortal > 0) {
@@ -460,7 +460,7 @@ object Mover {
                 savefile.WriteInt((spline.GetTime(spline.GetNumValues() - 1) - spline.GetTime(0)).toInt())
                 savefile.WriteInt(physicsObj.GetSplineAcceleration())
                 savefile.WriteInt(physicsObj.GetSplineDeceleration())
-                savefile.WriteInt(TempDump.btoi(physicsObj.UsingSplineAngles()))
+                savefile.WriteInt((physicsObj.UsingSplineAngles()).toInt())
             } else {
                 savefile.WriteBool(false)
             }
@@ -534,8 +534,8 @@ object Mover {
 
         override fun WriteToSnapshot(msg: idBitMsgDelta) {
             physicsObj.WriteToSnapshot(msg)
-            msg.WriteBits(TempDump.etoi(move.stage), 3)
-            msg.WriteBits(TempDump.etoi(rot.stage), 3)
+            msg.WriteBits((move.stage).ordinal, 3)
+            msg.WriteBits((rot.stage).ordinal, 3)
             WriteBindToSnapshot(msg)
             WriteGUIToSnapshot(msg)
         }
@@ -644,12 +644,12 @@ object Mover {
                 }
 
                 moveStage_t.DECELERATION_STAGE -> {
-                    StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY), false)
+                    StopSound((gameSoundChannel_t.SND_CHANNEL_BODY).ordinal, false)
                     StartSound("snd_decel", gameSoundChannel_t.SND_CHANNEL_BODY2, 0, false)
                 }
 
                 moveStage_t.FINISHED_STAGE -> {
-                    StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY), false)
+                    StopSound((gameSoundChannel_t.SND_CHANNEL_BODY).ordinal, false)
                 }
 
                 else -> {}
@@ -668,12 +668,12 @@ object Mover {
                 }
 
                 moveStage_t.DECELERATION_STAGE -> {
-                    StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY), false)
+                    StopSound((gameSoundChannel_t.SND_CHANNEL_BODY).ordinal, false)
                     StartSound("snd_decel", gameSoundChannel_t.SND_CHANNEL_BODY2, 0, false)
                 }
 
                 moveStage_t.FINISHED_STAGE -> {
-                    StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY), false)
+                    StopSound((gameSoundChannel_t.SND_CHANNEL_BODY).ordinal, false)
                 }
 
                 else -> {}
@@ -737,14 +737,14 @@ object Mover {
             lastCommand = moverCommand_t.MOVER_NONE
             idThread.ObjectMoveDone(move_thread, this)
             move_thread = 0
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_BODY).ordinal, false)
         }
 
         protected fun DoneRotating() {
             lastCommand = moverCommand_t.MOVER_NONE
             idThread.ObjectMoveDone(rotate_thread, this)
             rotate_thread = 0
-            StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_BODY), false)
+            StopSound((gameSoundChannel_t.SND_CHANNEL_BODY).ordinal, false)
         }
 
         protected open fun BeginMove(thread: idThread?) {
@@ -1378,7 +1378,7 @@ object Mover {
         }
 
         private fun Event_InitGuiTargets() {
-            SetGuiStates(guiBinaryMoverStates[TempDump.etoi(moverState_t.MOVER_POS1)])
+            SetGuiStates(guiBinaryMoverStates[(moverState_t.MOVER_POS1).ordinal])
         }
 
         private fun Event_EnableSplineAngles() {
@@ -1667,7 +1667,7 @@ object Mover {
         override fun Save(savefile: idSaveGame) {
             super.Save(savefile)
             var i: Int
-            savefile.WriteInt(TempDump.etoi(state))
+            savefile.WriteInt((state).ordinal)
             savefile.WriteInt(floorInfo.Num())
             i = 0
             while (i < floorInfo.Num()) {
@@ -2217,7 +2217,7 @@ object Mover {
             var i: Int
             savefile.WriteVec3(pos1)
             savefile.WriteVec3(pos2)
-            savefile.WriteInt(TempDump.etoi(moverState))
+            savefile.WriteInt((moverState).ordinal)
             savefile.WriteObject(moveMaster)
             savefile.WriteObject(activateChain)
             savefile.WriteInt(soundPos1)
@@ -2401,7 +2401,7 @@ object Mover {
                 moveMaster!!.GotoPosition1()
                 return
             }
-            SetGuiStates(guiBinaryMoverStates[TempDump.etoi(moverState_t.MOVER_2TO1)])
+            SetGuiStates(guiBinaryMoverStates[(moverState_t.MOVER_2TO1).ordinal])
             if (moverState == moverState_t.MOVER_POS1 || moverState == moverState_t.MOVER_2TO1) {
                 // already there, or on the way
                 return
@@ -2442,7 +2442,7 @@ object Mover {
                 moveMaster!!.GotoPosition2()
                 return
             }
-            SetGuiStates(guiBinaryMoverStates[TempDump.etoi(moverState_t.MOVER_1TO2)])
+            SetGuiStates(guiBinaryMoverStates[(moverState_t.MOVER_1TO2).ordinal])
             if (moverState == moverState_t.MOVER_POS2 || moverState == moverState_t.MOVER_1TO2) {
                 // already there, or on the way
                 return
@@ -2485,7 +2485,7 @@ object Mover {
                 // FIXME: start moving USERCMD_MSEC later, because if this was player
                 // triggered, gameLocal.time hasn't been advanced yet
                 MatchActivateTeam(moverState_t.MOVER_1TO2, Game_local.gameLocal.time + UsercmdGen.USERCMD_MSEC)
-                SetGuiStates(guiBinaryMoverStates[TempDump.etoi(moverState_t.MOVER_1TO2)])
+                SetGuiStates(guiBinaryMoverStates[(moverState_t.MOVER_1TO2).ordinal])
                 // open areaportal
                 ProcessEvent(EV_Mover_OpenPortal)
                 return
@@ -2497,7 +2497,7 @@ object Mover {
                 if (wait == -1.0f) {
                     return
                 }
-                SetGuiStates(guiBinaryMoverStates[TempDump.etoi(moverState_t.MOVER_2TO1)])
+                SetGuiStates(guiBinaryMoverStates[(moverState_t.MOVER_2TO1).ordinal])
                 slave = this
                 while (slave != null) {
                     slave.CancelEvents(EV_Mover_ReturnToPos1)
@@ -2600,7 +2600,7 @@ object Mover {
 
         override fun WriteToSnapshot(msg: idBitMsgDelta) {
             physicsObj.WriteToSnapshot(msg)
-            msg.WriteBits(TempDump.etoi(moverState), 3)
+            msg.WriteBits((moverState).ordinal, 3)
             WriteBindToSnapshot(msg)
         }
 

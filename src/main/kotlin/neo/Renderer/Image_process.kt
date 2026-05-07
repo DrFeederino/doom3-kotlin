@@ -318,12 +318,23 @@ object Image_process {
      ================
      */
     fun R_MipMap(`in`: ByteBuffer?, width: Int, height: Int, preserveBorder: Boolean): ByteBuffer {
+        var newWidth = width shr 1
+        var newHeight = height shr 1
+        if (0 == newWidth) {
+            newWidth = 1
+        }
+        if (0 == newHeight) {
+            newHeight = 1
+        }
+        return R_MipMapInto(`in`, width, height, preserveBorder, BufferUtils.createByteBuffer(newWidth * newHeight * 4))
+    }
+
+    fun R_MipMapInto(`in`: ByteBuffer?, width: Int, height: Int, preserveBorder: Boolean, out: ByteBuffer): ByteBuffer {
         var width: Int = width
         var height: Int = height
         var i: Int
         var j: Int
         var in_p: Int
-        val out: ByteBuffer
         var out_p: Int
         val row: Int
         val border = ByteArray(4)
@@ -345,7 +356,12 @@ object Image_process {
         if (0 == newHeight) {
             newHeight = 1
         }
-        out = BufferUtils.createByteBuffer(newWidth * newHeight * 4)
+        val requiredBytes = newWidth * newHeight * 4
+        if (out.capacity() < requiredBytes) {
+            common.FatalError("R_MipMapInto called with output buffer too small")
+        }
+        out.clear()
+        out.limit(requiredBytes)
         out_p = 0
         in_p = 0
         width = width shr 1
@@ -374,7 +390,7 @@ object Image_process {
                     in_p += 8
                 }
             }
-            return out
+            return out.also { it.position(0) }
         }
         i = 0
         while (i < height) {
@@ -428,15 +444,32 @@ object Image_process {
         if (preserveBorder) {
             R_SetBorderTexels(out, width, height, border)
         }
-        return out
+        return out.also { it.position(0) }
     }
 
-    fun addUnsignedBytes(vararg bytes: Byte): Int {
-        var result = 0
-        for (b: Byte in bytes) {
-            result += b.toInt() and 0xFF
-        }
-        return result
+    fun addUnsignedBytes(b0: Byte, b1: Byte): Int {
+        return (b0.toInt() and 0xFF) + (b1.toInt() and 0xFF)
+    }
+
+    fun addUnsignedBytes(b0: Byte, b1: Byte, b2: Byte, b3: Byte): Int {
+        return (b0.toInt() and 0xFF) +
+                (b1.toInt() and 0xFF) +
+                (b2.toInt() and 0xFF) +
+                (b3.toInt() and 0xFF)
+    }
+
+    fun addUnsignedBytes(
+        b0: Byte, b1: Byte, b2: Byte, b3: Byte,
+        b4: Byte, b5: Byte, b6: Byte, b7: Byte
+    ): Int {
+        return (b0.toInt() and 0xFF) +
+                (b1.toInt() and 0xFF) +
+                (b2.toInt() and 0xFF) +
+                (b3.toInt() and 0xFF) +
+                (b4.toInt() and 0xFF) +
+                (b5.toInt() and 0xFF) +
+                (b6.toInt() and 0xFF) +
+                (b7.toInt() and 0xFF)
     }
 
     /*

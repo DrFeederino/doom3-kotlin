@@ -1,7 +1,5 @@
 package neo.idlib.containers
 
-import neo.TempDump
-import neo.TempDump.reflects
 import neo.framework.CVarSystem
 import neo.framework.CVarSystem.idInternalCVar
 import neo.framework.CmdSystem
@@ -489,6 +487,7 @@ object List {
             // returns a pointer to the list
         }
 
+        @Suppress("UNCHECKED_CAST")
         fun Ptr(): Array<T> {
             return list as Array<T>
         }
@@ -760,16 +759,11 @@ object List {
             } else if (list!![0] is commandDef_s) {
                 this.Sort(CmdSystem.idListSortCompare() as cmp_t<T>)
             } else {
-                this.Sort(idListSortCompare())
+                error("idList::Sort() requires explicit comparator for type ${list!![0]!!::class.simpleName}")
             }
         }
 
         fun Sort(sortCompareFun: cmp_t<T> /*= ( cmp_t * )&idListSortCompare<T> */) {
-
-//	typedef int cmp_c(const void *, const void *);
-//
-//	cmp_c *vCompare = (cmp_c *)compare;
-//	qsort( ( void * )list, ( size_t )num, sizeof( T ), vCompare );
             if (list != null) {
                 Arrays.sort(list, sortCompareFun)
             }
@@ -786,7 +780,7 @@ object List {
         fun SortSubSection(
             startIndex: Int,
             endIndex: Int,
-            compare: cmp_t<T> = idListSortCompare<T>() /*= ( cmp_t * )&idListSortCompare<T>*/
+            compare: cmp_t<T>
         ) {
             var startIndex = startIndex
             var endIndex = endIndex
@@ -802,7 +796,6 @@ object List {
             if (startIndex >= endIndex) {
                 return
             }
-            //	typedef int cmp_c(const void *, const void *);
             Arrays.sort(list, startIndex, endIndex + 1, compare)
         }
 
@@ -856,7 +849,7 @@ object List {
             val SIZE = (Integer.SIZE
                     + Integer.SIZE
                     + Integer.SIZE
-                    + TempDump.CPP_class.Pointer.SIZE) //T
+                    + CPP_class.POINTER_SIZE) //T
 
             private var DBG_counter = 0
         }
@@ -1014,12 +1007,6 @@ object List {
             }
             num--
             return true
-        }
-    }
-
-    private class idListSortCompare<T> : cmp_t<T> {
-        override fun compare(a: T, b: T): Int {
-            return reflects._Minus(a as Any, b as Any) as Int
         }
     }
 }

@@ -17,7 +17,6 @@ package neo.framework
 import neo.Renderer.Material
 import neo.Renderer.RenderWorld.renderEntity_s
 import neo.Renderer.RenderWorld.renderView_s
-import neo.TempDump
 import neo.framework.DeclManager.declType_t
 import neo.framework.DeclManager.idDecl
 import neo.framework.DeclTable.idDeclTable
@@ -27,6 +26,7 @@ import neo.idlib.BV.idBounds
 import neo.idlib.Text.Lexer.idLexer
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Token.idToken
+import neo.idlib.Text.atof
 import neo.idlib.containers.CFloat
 import neo.idlib.containers.List.idList
 import neo.idlib.geometry.DrawVert.idDrawVert
@@ -590,7 +590,10 @@ object DeclParticle {
 
                 // add speed
                 val iSpeed = speed.Integrate(g.frac, g.random)
-                origin.plusAssign(dir.times(iSpeed).times(particleLife))
+                val speedScale = iSpeed * particleLife
+                origin.x += dir.x * speedScale
+                origin.y += dir.y * speedScale
+                origin.z += dir.z * speedScale
             } else {
                 //
                 // custom paths completely override both the origin and velocity calculations, but still
@@ -664,9 +667,11 @@ object DeclParticle {
 
             // add gravity after adjusting for axis
             if (worldGravity) {
-                val gra = idVec3(0.0f, 0.0f, -gravity)
-                gra.timesAssign(g.renderEnt.axis.Transpose())
-                origin.plusAssign(gra.times(g.age * g.age))
+                val gravityScale = -gravity * g.age * g.age
+                val gravityAxis = g.renderEnt.axis
+                origin.x += gravityAxis[0].z * gravityScale
+                origin.y += gravityAxis[1].z * gravityScale
+                origin.z += gravityAxis[2].z * gravityScale
             } else {
                 origin.minusAssign(2, gravity * g.age * g.age)
             }
@@ -1128,15 +1133,16 @@ object DeclParticle {
             // this isn't absolutely guaranteed, but it should be close
             val g = particleGen_t()
             val renderEntity = renderEntity_s() //memset( &renderEntity, 0, sizeof( renderEntity ) );
-            renderEntity.axis.set(idMat3.getMat3_identity())
+            renderEntity.axis.setIdentity()
             val renderView = renderView_s() //memset( &renderView, 0, sizeof( renderView ) );
-            renderView.viewaxis.set(idMat3.getMat3_identity())
+            renderView.viewaxis.setIdentity()
             g.renderEnt = renderEntity
             g.renderView = renderView
-            g.origin.set(idVec3())
-            g.axis.set(idMat3.getMat3_identity())
+            g.origin.Zero()
+            g.axis.setIdentity()
             val steppingRandom = idRandom()
             steppingRandom.SetSeed(0)
+            val origin = idVec3()
 
             // just step through a lot of possible particles as a representative sampling
             for (i in 0 until 1000) {
@@ -1155,7 +1161,6 @@ object DeclParticle {
 
                     // if the particle doesn't get drawn because it is faded out or beyond a kill region,
                     // don't increment the verts
-                    val origin = idVec3()
                     stage.ParticleOrigin(g, origin)
                     stage.bounds.AddPoint(origin)
                     inCycleTime += 16
@@ -1404,7 +1409,7 @@ object DeclParticle {
                     return
                 }
                 token.StripQuotes()
-                parms[count] = TempDump.atof(token.toString())
+                parms[count] = atof(token.toString())
                 count++
             }
         }
@@ -1421,7 +1426,7 @@ object DeclParticle {
             }
             if (token.IsNumeric()) {
                 // can have a to + 2nd parm
-                parm.to = TempDump.atof(token.toString())
+                parm.to = atof(token.toString())
                 parm.from = parm.to
                 if (src.ReadToken(token)) {
                     if (0 == token.Icmp("to")) {
@@ -1429,7 +1434,7 @@ object DeclParticle {
                             src.Error("missing second parameter")
                             return
                         }
-                        parm.to = TempDump.atof(token.toString())
+                        parm.to = atof(token.toString())
                     } else {
                         src.UnreadToken(token)
                     }

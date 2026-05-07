@@ -28,7 +28,7 @@ along with Doom 3 Source Code.  If not, see <http://www.gnu.org/licenses/>.
 package neo.cm
 
 import neo.Renderer.Material.idMaterial
-import neo.TempDump.SERiAL
+import neo.framework.File_h.idFile
 import neo.idlib.BV.idBounds
 import neo.idlib.MapFile.idMapEntity
 import neo.idlib.MapFile.idMapFile
@@ -36,11 +36,11 @@ import neo.idlib.Text.Str
 import neo.idlib.containers.CInt
 import neo.idlib.geometry.TraceModel.idTraceModel
 import neo.idlib.geometry.Winding.idFixedWinding
+import neo.idlib.idSerializable
 import neo.idlib.math.Matrix.idMat3
 import neo.idlib.math.idRotation
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec6
-import java.nio.ByteBuffer
 
 /*
 ===============================================================================
@@ -114,75 +114,65 @@ class contactInfo_t() {
 }
 
 // trace result
-class trace_s : SERiAL {
+class trace_s : idSerializable {
     var fraction = 0.0f // fraction of movement completed, 1.0 = didn't hit anything
     val endpos: idVec3 = idVec3() // final position of trace model
     val endAxis: idMat3 = idMat3() // final axis of trace model
     var c: contactInfo_t = contactInfo_t() // contact information, only valid if fraction < 1.0
 
-    override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES)
-    }
-
-    override fun Read(buffer: ByteBuffer) {
-        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-        fraction = buffer.float
-        endpos[0] = buffer.float
-        endpos[1] = buffer.float
-        endpos[2] = buffer.float
+    override fun readFrom(file: idFile) {
+        fraction = file.ReadFloat()
+        endpos[0] = file.ReadFloat()
+        endpos[1] = file.ReadFloat()
+        endpos[2] = file.ReadFloat()
         for (i in 0 until 3) {
             for (j in 0 until 3) {
-                endAxis[i][j] = buffer.float
+                endAxis[i][j] = file.ReadFloat()
             }
         }
-        c.type = contactType_t.entries[buffer.int]
-        c.point[0] = buffer.float
-        c.point[1] = buffer.float
-        c.point[2] = buffer.float
-        c.normal[0] = buffer.float
-        c.normal[1] = buffer.float
-        c.normal[2] = buffer.float
-        c.dist = buffer.float
-        c.contents = buffer.int
-        buffer.int // material pointer, skip
-        c.modelFeature = buffer.int
-        c.trmFeature = buffer.int
-        c.entityNum = buffer.int
-        c.id = buffer.int
+        c.type = contactType_t.entries[file.ReadInt()]
+        c.point[0] = file.ReadFloat()
+        c.point[1] = file.ReadFloat()
+        c.point[2] = file.ReadFloat()
+        c.normal[0] = file.ReadFloat()
+        c.normal[1] = file.ReadFloat()
+        c.normal[2] = file.ReadFloat()
+        c.dist = file.ReadFloat()
+        c.contents = file.ReadInt()
+        file.ReadInt() // material pointer, skip
+        c.modelFeature = file.ReadInt()
+        c.trmFeature = file.ReadInt()
+        c.entityNum = file.ReadInt()
+        c.id = file.ReadInt()
     }
 
-    override fun Write(): ByteBuffer {
-        val buffer = AllocBuffer()
-        buffer.order(java.nio.ByteOrder.LITTLE_ENDIAN)
-        buffer.putFloat(fraction)
-        buffer.putFloat(endpos[0])
-        buffer.putFloat(endpos[1])
-        buffer.putFloat(endpos[2])
+    override fun writeTo(file: idFile) {
+        file.WriteFloat(fraction)
+        file.WriteFloat(endpos[0])
+        file.WriteFloat(endpos[1])
+        file.WriteFloat(endpos[2])
         for (i in 0 until 3) {
             for (j in 0 until 3) {
-                buffer.putFloat(endAxis[i][j])
+                file.WriteFloat(endAxis[i][j])
             }
         }
-        buffer.putInt(c.type.ordinal)
-        buffer.putFloat(c.point[0])
-        buffer.putFloat(c.point[1])
-        buffer.putFloat(c.point[2])
-        buffer.putFloat(c.normal[0])
-        buffer.putFloat(c.normal[1])
-        buffer.putFloat(c.normal[2])
-        buffer.putFloat(c.dist)
-        buffer.putInt(c.contents)
-        buffer.putInt(0) // material pointer
-        buffer.putInt(c.modelFeature)
-        buffer.putInt(c.trmFeature)
-        buffer.putInt(c.entityNum)
-        buffer.putInt(c.id)
-        buffer.flip()
-        return buffer
+        file.WriteInt(c.type.ordinal)
+        file.WriteFloat(c.point[0])
+        file.WriteFloat(c.point[1])
+        file.WriteFloat(c.point[2])
+        file.WriteFloat(c.normal[0])
+        file.WriteFloat(c.normal[1])
+        file.WriteFloat(c.normal[2])
+        file.WriteFloat(c.dist)
+        file.WriteInt(c.contents)
+        file.WriteInt(0) // material pointer
+        file.WriteInt(c.modelFeature)
+        file.WriteInt(c.trmFeature)
+        file.WriteInt(c.entityNum)
+        file.WriteInt(c.id)
     }
 
     companion object {
-        @Transient
         val BYTES = 120
     }
 

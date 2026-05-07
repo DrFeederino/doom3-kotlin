@@ -6,20 +6,19 @@ import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local
 import neo.Game.Game_local.Companion.isD3XP
 import neo.Game.Game_local.idGameLocal.Companion.gameError
-import neo.TempDump.CPP_class
-import neo.TempDump.SERiAL
-import neo.TempDump.btoi
-import neo.TempDump.btos
-import neo.TempDump.itob
 import neo.framework.File_h.idFile
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.CharIsPrintable
+import neo.idlib.Text.btos
 import neo.idlib.containers.CInt
+import neo.idlib.containers.CPP_class
 import neo.idlib.containers.List.idList
 import neo.idlib.containers.idStrList
 import neo.idlib.idException
+import neo.idlib.idSerializable
 import neo.idlib.math.idVec3
-import java.nio.BufferUnderflowException
+import neo.idlib.toBoolean
+import neo.idlib.toInt
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -116,7 +115,7 @@ object Script_Program {
      function_t
 
      ***********************************************************************/
-    class function_t : SERiAL {
+    class function_t : idSerializable {
         var def: idVarDef? = null
 
         //
@@ -161,47 +160,37 @@ object Script_Program {
             parmSize.Clear()
         }
 
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
+        override fun readFrom(file: idFile) {
+            name.readFrom(file)
+            file.ReadInt() //skip eventdef pointer
+            file.ReadInt() //skip def pointer
+            file.ReadInt() //skip type pointer
+            firstStatement = file.ReadInt()
+            numStatements = file.ReadInt()
+            parmTotal = file.ReadInt()
+            locals = file.ReadInt()
+            filenum = file.ReadInt()
         }
 
-        override fun Read(buffer: ByteBuffer) {
-            try {
-                name.Read(buffer)
-                buffer.int //skip eventdef pointer
-                buffer.int //skip def pointer
-                buffer.int //skip type pointer
-                firstStatement = buffer.int
-                numStatements = buffer.int
-                parmTotal = buffer.int
-                locals = buffer.int
-                filenum = buffer.int
-            } catch (ignore: BufferUnderflowException) {
-            }
-        }
-
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.put(name.Write())
-            buffer.putInt(0) // eventdef pointer
-            buffer.putInt(0) // def pointer
-            buffer.putInt(0) // type pointer
-            buffer.putInt(firstStatement)
-            buffer.putInt(numStatements)
-            buffer.putInt(parmTotal)
-            buffer.putInt(locals)
-            buffer.putInt(filenum)
+        override fun writeTo(file: idFile) {
+            name.writeTo(file)
+            file.WriteInt(0) // eventdef pointer
+            file.WriteInt(0) // def pointer
+            file.WriteInt(0) // type pointer
+            file.WriteInt(firstStatement)
+            file.WriteInt(numStatements)
+            file.WriteInt(parmTotal)
+            file.WriteInt(locals)
+            file.WriteInt(filenum)
             // parmSize idList - write num and pointer
-            buffer.putInt(parmSize.Num())
-            buffer.putInt(0) // list data pointer
-            buffer.flip()
-            return buffer
+            file.WriteInt(parmSize.Num())
+            file.WriteInt(0) // list data pointer
         }
 
         companion object {
-            val SIZE = (idStr.SIZE + CPP_class.Pointer.SIZE //eventdef
-                    + CPP_class.Pointer.SIZE //def
-                    + CPP_class.Pointer.SIZE //type
+            val SIZE = (idStr.SIZE + CPP_class.POINTER_SIZE //eventdef
+                    + CPP_class.POINTER_SIZE //def
+                    + CPP_class.POINTER_SIZE //type
                     + Integer.SIZE + Integer.SIZE + Integer.SIZE + Integer.SIZE + Integer.SIZE + idList.SIZE)
             val BYTES = SIZE / java.lang.Byte.SIZE
         }
@@ -591,7 +580,7 @@ object Script_Program {
      (below) to access variables.
 
      ***********************************************************************/
-    class idScriptObject : SERiAL {
+    class idScriptObject : idSerializable {
         //
         var data: ByteBuffer? = null
         var offset = 0
@@ -777,30 +766,21 @@ object Script_Program {
             return null
         }
 
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.allocate(BYTES).order(ByteOrder.LITTLE_ENDIAN)
+        override fun readFrom(file: idFile) {
+            file.ReadInt() // data pointer, skip
+            offset = file.ReadInt()
+            file.ReadInt() // type pointer, skip
+            file.ReadInt() // padding
         }
 
-        override fun Read(buffer: ByteBuffer) {
-            buffer.order(ByteOrder.LITTLE_ENDIAN)
-            buffer.int // data pointer, skip
-            offset = buffer.int
-            buffer.int // type pointer, skip
-            buffer.int // padding
-        }
-
-        override fun Write(): ByteBuffer {
-            val buffer = AllocBuffer()
-            buffer.putInt(0) // data pointer
-            buffer.putInt(offset)
-            buffer.putInt(0) // type pointer
-            buffer.putInt(0) // padding
-            buffer.flip()
-            return buffer
+        override fun writeTo(file: idFile) {
+            file.WriteInt(0) // data pointer
+            file.WriteInt(offset)
+            file.WriteInt(0) // type pointer
+            file.WriteInt(0) // padding
         }
 
         companion object {
-            @Transient
             val BYTES = 16
         }
     }
@@ -846,7 +826,7 @@ object Script_Program {
             if (data != null) {
                 val pos = data!!.position()
                 when (etype) {
-                    ev_boolean -> data!!.putInt(pos, btoi((value as Boolean)))
+                    ev_boolean -> data!!.putInt(pos, ((value as Boolean)).toInt())
                     ev_float -> data!!.putFloat((value as Float))
                 }
                 data!!.position(pos)
@@ -862,7 +842,7 @@ object Script_Program {
             return if (data != null) {
                 val pos = data!!.position()
                 when (etype) {
-                    ev_boolean -> itob(data!!.getInt(pos)) as returnType
+                    ev_boolean -> (data!!.getInt(pos)).toBoolean() as returnType
                     ev_float -> data!!.getFloat(pos) as returnType
                     else -> null
                 }

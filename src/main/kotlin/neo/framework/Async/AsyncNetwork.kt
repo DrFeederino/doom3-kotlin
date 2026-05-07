@@ -3,7 +3,6 @@ package neo.framework.Async
 import neo.Game.Game_local
 import neo.Renderer.RenderSystem.renderSystem
 import neo.Sound.snd_system.Companion.soundSystem
-import neo.TempDump
 import neo.framework.*
 import neo.framework.Async.AsyncClient.idAsyncClient
 import neo.framework.Async.AsyncServer.idAsyncServer
@@ -19,6 +18,7 @@ import neo.framework.UsercmdGen.usercmd_t
 import neo.idlib.BitMsg.idBitMsg
 import neo.idlib.CmdArgs.idCmdArgs
 import neo.idlib.Text.Str.idStr
+import neo.idlib.Text.ctos
 import neo.idlib.idException
 import neo.sys.netadr_t
 import neo.sys.win_input
@@ -605,7 +605,7 @@ class AsyncNetwork {
             }
 
             fun ExecuteSessionCommand(sessCmd: CharArray) {
-                ExecuteSessionCommand(TempDump.ctos(sessCmd))
+                ExecuteSessionCommand(ctos(sessCmd))
             }
 
             // same message used for offline check and network reply

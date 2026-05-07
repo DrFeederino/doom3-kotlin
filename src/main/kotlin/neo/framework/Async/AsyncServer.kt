@@ -2,8 +2,6 @@ package neo.framework.Async
 
 import neo.Game.Game.allowReply_t
 import neo.Game.Game_local
-import neo.TempDump
-import neo.TempDump.void_callback
 import neo.framework.*
 import neo.framework.Async.AsyncNetwork.*
 import neo.framework.Async.MsgChannel.idMsgChannel
@@ -17,6 +15,8 @@ import neo.idlib.Max
 import neo.idlib.Min
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
+import neo.idlib.Text.ctos
+import neo.idlib.Text.strLen
 import neo.idlib.containers.CInt
 import neo.idlib.containers.idStrList
 import neo.idlib.idException
@@ -371,7 +371,7 @@ object AsyncServer {
                 CVarSystem.cvarSystem.GetCVarString("si_gametype"),
                 bestGameType
             )
-            CVarSystem.cvarSystem.SetCVarString("si_gametype", TempDump.ctos(bestGameType))
+            CVarSystem.cvarSystem.SetCVarString("si_gametype", ctos(bestGameType))
 
             // initialize map settings
             CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, "rescanSI")
@@ -1183,7 +1183,7 @@ object AsyncServer {
             }
 
             // let the game know a player connected
-            Game_local.game.ServerClientConnect(clientNum, TempDump.ctos(client.guid))
+            Game_local.game.ServerClientConnect(clientNum, ctos(client.guid))
         }
 
         private fun InitLocalClient(clientNum: Int) {
@@ -1723,7 +1723,7 @@ object AsyncServer {
                     CLIENT_RELIABLE.CLIENT_RELIABLE_MESSAGE_PRINT -> {
                         val string = CharArray(MAX_STRING_CHARS)
                         msg.ReadString(string, string.size)
-                        Common.common.Printf("%s\n", TempDump.ctos(string))
+                        Common.common.Printf("%s\n", ctos(string))
                     }
 
                     CLIENT_RELIABLE.CLIENT_RELIABLE_MESSAGE_DISCONNECT -> {
@@ -1934,7 +1934,7 @@ object AsyncServer {
                         challenges[ichallenge].guid,
                         challenges[ichallenge].guid.size,
                         "%s",
-                        TempDump.ctos(guid)
+                        ctos(guid)
                     )
 
                     // once auth replied denied, stop sending further requests
@@ -1946,7 +1946,7 @@ object AsyncServer {
                         outMsg.WriteLong(AsyncNetwork.ASYNC_PROTOCOL_VERSION)
                         outMsg.WriteNetadr(from)
                         outMsg.WriteLong(clientId)
-                        outMsg.WriteString(TempDump.ctos(guid))
+                        outMsg.WriteString(ctos(guid))
                         // protocol 1.37 addition
                         outMsg.WriteByte(if (FileSystem_h.fileSystem.RunningD3XP()) 1 else 0)
                         serverPort.SendPacket(idAsyncNetwork.GetMasterAddress(), outMsg.GetData()!!, outMsg.GetSize())
@@ -1974,8 +1974,8 @@ object AsyncServer {
             val reply = Game_local.game.ServerAllowClient(
                 numClients,
                 win_net.Sys_NetAdrToString(from),
-                TempDump.ctos(guid),
-                TempDump.ctos(password),
+                ctos(guid),
+                ctos(password),
                 reason
             )
             if (reply != allowReply_t.ALLOW_YES) {
@@ -1987,7 +1987,7 @@ object AsyncServer {
                 outMsg.WriteString("print")
                 outMsg.WriteLong(SERVER_PRINT.SERVER_PRINT_GAMEDENY.ordinal)
                 outMsg.WriteLong(reply.ordinal)
-                outMsg.WriteString(TempDump.ctos(reason))
+                outMsg.WriteString(ctos(reason))
                 serverPort.SendPacket(from, outMsg.GetData()!!, outMsg.GetSize())
                 return
             }
@@ -2084,7 +2084,7 @@ object AsyncServer {
             }
             msg.ReadString(string, string.size)
             if (idStr.Icmp(
-                    TempDump.ctos(string),
+                    ctos(string),
                     idAsyncNetwork.serverRemoteConsolePassword.GetString()!!
                 ) != 0
             ) {
@@ -2092,11 +2092,11 @@ object AsyncServer {
                 return
             }
             msg.ReadString(string, string.size)
-            Common.common.Printf("rcon from %s: %s\n", win_net.Sys_NetAdrToString(from), TempDump.ctos(string))
+            Common.common.Printf("rcon from %s: %s\n", win_net.Sys_NetAdrToString(from), ctos(string))
             rconAddress = from
             noRconOutput = true
-            Common.common.BeginRedirect(msgBuf, msgBuf.capacity(), RConRedirect.getInstance())
-            CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, TempDump.ctos(string))
+            Common.common.BeginRedirect(msgBuf, msgBuf.capacity(), RConRedirect)
+            CmdSystem.cmdSystem.BufferCommandText(cmdExecution_t.CMD_EXEC_NOW, ctos(string))
             Common.common.EndRedirect()
             if (noRconOutput) {
                 PrintOOB(rconAddress, SERVER_PRINT.SERVER_PRINT_RCON.ordinal, "#str_04848")
@@ -2145,7 +2145,7 @@ object AsyncServer {
                 CharArray(MAX_STRING_CHARS * 2) // M. Quinn - Even Balance - PB Packets need more than 1024
             val string: String
             msg.ReadString(chrs, chrs.size)
-            string = TempDump.ctos(chrs)
+            string = ctos(chrs)
 
             // info request
             if (idStr.Icmp(string, "getInfo") == 0) {
@@ -2286,7 +2286,7 @@ object AsyncServer {
                 }
                 if (replyMsg == authReplyMsg_t.AUTH_REPLY_PRINT) {
                     msg.ReadString(string, MAX_STRING_CHARS)
-                    replyPrintMsg.set(TempDump.ctos(string))
+                    replyPrintMsg.set(ctos(string))
                 }
             }
             lastAuthTime = serverTime
@@ -2297,7 +2297,7 @@ object AsyncServer {
                 if (!challenges[i].connected && challenges[i].clientId == clientId) {
                     // return if something is wrong
                     // break if we have found a valid auth
-                    if (0 == TempDump.strLen(challenges[i].guid)) {
+                    if (0 == strLen(challenges[i].guid)) {
                         Common.common.DPrintf(
                             "auth: client %s has no guid yet\n",
                             win_net.Sys_NetAdrToString(challenges[i].address)
@@ -2308,15 +2308,15 @@ object AsyncServer {
                         Common.common.DPrintf(
                             "auth: client %s %s not matched, auth server says guid %s\n",
                             win_net.Sys_NetAdrToString(challenges[i].address),
-                            TempDump.ctos(challenges[i].guid),
-                            TempDump.ctos(client_guid)
+                            ctos(challenges[i].guid),
+                            ctos(client_guid)
                         )
                         return
                     }
                     if (!win_net.Sys_CompareNetAdrBase(client_from, challenges[i].address)) {
                         // let auth work when server and master don't see the same IP
                         Common.common.DPrintf(
-                            "auth: matched guid '%s' for != IPs %s and %s\n", TempDump.ctos(client_guid),
+                            "auth: matched guid '%s' for != IPs %s and %s\n", ctos(client_guid),
                             win_net.Sys_NetAdrToString(client_from),
                             win_net.Sys_NetAdrToString(challenges[i].address)
                         )
@@ -2328,7 +2328,7 @@ object AsyncServer {
             if (i >= MAX_CHALLENGES) {
                 Common.common.DPrintf(
                     "auth: failed client lookup %s %s\n",
-                    win_net.Sys_NetAdrToString(client_from), TempDump.ctos(client_guid)
+                    win_net.Sys_NetAdrToString(client_from), ctos(client_guid)
                 )
                 return
             }
@@ -2341,13 +2341,13 @@ object AsyncServer {
                 )
                 return
             }
-            idStr.snPrintf(challenges[i].guid, 12, "%s", TempDump.ctos(client_guid))
+            idStr.snPrintf(challenges[i].guid, 12, "%s", ctos(client_guid))
             if (reply == authReply_t.AUTH_OK) {
                 challenges[i].authState = authState_t.CDK_OK
                 Common.common.Printf(
                     "client %s %s is authed\n",
                     win_net.Sys_NetAdrToString(client_from),
-                    TempDump.ctos(client_guid)
+                    ctos(client_guid)
                 )
             } else {
                 val msg1: String
@@ -2360,7 +2360,7 @@ object AsyncServer {
                 val l_msg = Common.common.GetLanguageDict().GetString(msg1)
                 Common.common.DPrintf(
                     "auth: client %s %s - %s %s\n",
-                    win_net.Sys_NetAdrToString(client_from), TempDump.ctos(client_guid),
+                    win_net.Sys_NetAdrToString(client_from), ctos(client_guid),
                     authReplyStr[reply.ordinal],
                     l_msg
                 )
@@ -2703,7 +2703,7 @@ object AsyncServer {
             outMsg.WriteLong(dlRequest)
             if (!Game_local.game.DownloadRequest(
                     win_net.Sys_NetAdrToString(from),
-                    TempDump.ctos(challenges[iclient].guid),
+                    ctos(challenges[iclient].guid),
                     paklist.toString(),
                     pakbuf
                 )
@@ -2716,7 +2716,7 @@ object AsyncServer {
             var token: String
             var type = 0
             var next: Int
-            token = TempDump.ctos(pakbuf)
+            token = ctos(pakbuf)
             next = token.indexOf(';')
             while (token.isNotEmpty()) {
                 if (next != -1) {
@@ -2834,17 +2834,7 @@ object AsyncServer {
      RConRedirect
      ==================
      */
-    internal class RConRedirect : void_callback<String>() {
-        @Throws(idException::class)
-        override fun run(vararg objects: String) {
-            idAsyncNetwork.server.RemoteConsoleOutput(objects[0])
-        }
-
-        companion object {
-            private val instance: void_callback<String> = RConRedirect()
-            fun getInstance(): void_callback<String> {
-                return instance
-            }
-        }
+    internal val RConRedirect: (String) -> Unit = { msg ->
+        idAsyncNetwork.server.RemoteConsoleOutput(msg)
     }
 }

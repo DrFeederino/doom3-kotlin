@@ -33,7 +33,6 @@ import neo.Renderer.Model.modelSurface_s
 import neo.Renderer.Model.srfTriangles_s
 import neo.Renderer.RenderWorld.MAX_RENDERENTITY_GUI
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.TempDump.void_callback
 import neo.cm.collisionModelManager
 import neo.framework.Async.NetworkSystem
 import neo.framework.CmdSystem
@@ -2799,7 +2798,7 @@ object SysCmds {
     }
 
     class ArgCompletion_DefFile private constructor() : CmdSystem.argCompletion_t() {
-        override fun run(args: CmdArgs.idCmdArgs?, callback: void_callback<String>) {
+        override fun run(args: CmdArgs.idCmdArgs?, callback: (String) -> Unit) {
             CmdSystem.cmdSystem.ArgCompletion_FolderExtension(args, callback, "def/", true, ".def", null)
         }
 

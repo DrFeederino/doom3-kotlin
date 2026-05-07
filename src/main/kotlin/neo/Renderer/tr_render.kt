@@ -47,10 +47,10 @@ import neo.Renderer.qgl.qglViewport
 import neo.Renderer.tr_backend.GL_Cull
 import neo.Renderer.tr_backend.GL_State
 import neo.Renderer.tr_main.myGlMultMatrix
-import neo.TempDump.btoi
 import neo.idlib.geometry.DrawVert.idDrawVert
 import neo.idlib.math.idPlane
 import neo.idlib.math.idVec4
+import neo.idlib.toInt
 import neo.sys.win_glimp.GLimp_ActivateContext
 import neo.sys.win_glimp.GLimp_DeactivateContext
 import org.lwjgl.opengl.GL11.*
@@ -754,7 +754,7 @@ object tr_render {
         )
         inter.localLightOrigin[3] = 0.0f
         inter.localViewOrigin[3] = 1.0f
-        inter.ambientLight = btoi(lightShader.IsAmbientLight())
+        inter.ambientLight = (lightShader.IsAmbientLight()).toInt()
 
         // the base projections may be modified by texture matrix on light stages
         val lightProject: Array<idPlane> = idPlane.generateArray(4)

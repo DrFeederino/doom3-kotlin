@@ -28,13 +28,14 @@ If you have questions concerning this license or the applicable additional terms
 
 package neo.sys
 
-import neo.TempDump
-import neo.TempDump.SERiAL
 import neo.framework.Common.Companion.common
+import neo.framework.File_h.idFile
 import neo.framework.MACOS_X
 import neo.framework.WIN32
 import neo.idlib.containers.CInt
+import neo.idlib.containers.CPP_class
 import neo.idlib.containers.idStrList
+import neo.idlib.idSerializable
 import neo.sys.sys_local.idSysLocal
 import neo.sys.win_net.Companion.MAX_UDP_MSG_SIZE
 import neo.sys.win_net.Companion.Net_GetUDPPacket
@@ -45,7 +46,6 @@ import neo.sys.win_net.idUDPLag
 import neo.sys.win_shared.Sys_Milliseconds
 import java.net.DatagramSocket
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.util.*
 
 const val BUILD_OS_ID = 0 //BUILD_OS_ID = 1 for linux
@@ -212,7 +212,7 @@ enum class sysPath_t {
     PATH_EXE
 }
 
-class sysEvent_s : SERiAL {
+class sysEvent_s : idSerializable {
     var evPtr // this must be manually freed if not NULL
             : ByteBuffer? = null
     var evPtrLength // bytes of data pointed to by evPtr, for journaling
@@ -221,44 +221,31 @@ class sysEvent_s : SERiAL {
     var evValue = 0
     var evValue2 = 0
 
-    //TODO:is a byteBuffer necessary? we seem to always be converting it to a string.
     constructor()
-    constructor(event: ByteBuffer) {
-        Read(event)
+
+    override fun readFrom(file: idFile) {
+        evType = sysEventType_t.values()[file.ReadInt()]
+        evValue = file.ReadInt()
+        evValue2 = file.ReadInt()
+        evPtrLength = file.ReadInt()
+        file.ReadInt() //death to the pointer
     }
 
-    override fun AllocBuffer(): ByteBuffer {
-        return ByteBuffer.allocate(BYTES)
-    }
-
-    override fun Read(buffer: ByteBuffer) {
-        buffer.order(ByteOrder.LITTLE_ENDIAN).rewind()
-        evType = sysEventType_t.values()[buffer.int]
-        evValue = buffer.int
-        evValue2 = buffer.int
-        evPtrLength = buffer.int
-        buffer.int //death to the pointer
-    }
-
-    override fun Write(): ByteBuffer {
-        val buffer = AllocBuffer()
-        buffer.putInt(evType.ordinal)
-        buffer.putInt(evValue)
-        buffer.putInt(evValue2)
-        buffer.putInt(evPtrLength)
-        buffer.putInt(0x50) //P for pointer
-        return buffer
+    override fun writeTo(file: idFile) {
+        file.WriteInt(evType.ordinal)
+        file.WriteInt(evValue)
+        file.WriteInt(evValue2)
+        file.WriteInt(evPtrLength)
+        file.WriteInt(0x50) //P for pointer
     }
 
     companion object {
-        @Transient
-        private val SIZE = (TempDump.CPP_class.Enum.SIZE
+        private val SIZE = (CPP_class.ENUM_SIZE
                 + Integer.SIZE
                 + Integer.SIZE
                 + Integer.SIZE
-                + TempDump.CPP_class.Pointer.SIZE)
+                + CPP_class.POINTER_SIZE)
 
-        @Transient
         val BYTES = SIZE / 8
     }
 }
@@ -564,7 +551,7 @@ abstract class idSys {
     abstract fun LockMemory(ptr: Any, bytes: Int): Boolean
     abstract fun UnlockMemory(ptr: Any, bytes: Int): Boolean
     abstract fun DLL_Load(dllName: String): Int
-    abstract fun DLL_GetProcAddress(dllHandle: Int, procName: String): Any
+    abstract fun DLL_GetProcAddress(dllHandle: Int, procName: String): Any?
     abstract fun DLL_Unload(dllHandle: Int)
     abstract fun DLL_GetFileName(baseName: String, dllName: Array<String>, maxLength: Int)
     abstract fun GenerateMouseButtonEvent(button: Int, down: Boolean): sysEvent_s

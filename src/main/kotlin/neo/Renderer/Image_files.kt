@@ -29,7 +29,6 @@ package neo.Renderer
 import neo.Renderer.Image.cubeFiles_t
 import neo.Renderer.Image.idImageManager
 import neo.Renderer.Image_program.R_LoadImageProgram
-import neo.TempDump.ctos
 import neo.framework.Common.Companion.common
 import neo.framework.FileSystem_h.FILE_NOT_FOUND_TIMESTAMP
 import neo.framework.FileSystem_h.fileSystem
@@ -38,6 +37,7 @@ import neo.idlib.LittleLong
 import neo.idlib.LittleShort
 import neo.idlib.Text.Str.idStr
 import neo.idlib.Text.Str.idStr.Companion.snPrintf
+import neo.idlib.Text.ctos
 import neo.idlib.containers.CInt
 import org.lwjgl.BufferUtils
 import java.awt.image.BufferedImage

@@ -50,7 +50,6 @@ import neo.Renderer.Model.idRenderModel
 import neo.Renderer.ModelManager
 import neo.Renderer.RenderWorld
 import neo.Renderer.RenderWorld.renderEntity_s
-import neo.TempDump
 import neo.cm.trace_s
 import neo.framework.Common
 import neo.framework.DeclAF.getJointTransform_t
@@ -360,7 +359,7 @@ class idAFAttachment : idAnimatedEntity() {
     // virtual					~idAFAttachment( void );
     // FIX: Added missing destructor - C++ stops sounds and deletes combatModel
     override fun _deconstructor() {
-        StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), false)
+        StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, false)
         combatModel = null
         super._deconstructor()
     }

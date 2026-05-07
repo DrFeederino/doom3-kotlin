@@ -28,8 +28,6 @@ package neo.Renderer
 import neo.Renderer.Interaction.srfCullInfo_t
 import neo.Renderer.Model.silEdge_t
 import neo.Renderer.Model.srfTriangles_s
-import neo.Tools.Compilers.DMap.shadowopt3.CleanupOptimizedShadowTris
-import neo.Tools.Compilers.DMap.shadowopt3.SuperOptimizeOccluders
 import neo.framework.Common
 import neo.idlib.geometry.DrawVert
 import neo.idlib.math.*
@@ -948,71 +946,6 @@ object tr_stencilshadow {
             return
         }
 
-        //--------------- off-line processing ------------------
-        // if we are running from dmap, perform the (very) expensive shadow optimizations
-        // to remove internal sil edges and optimize the caps
-        if (callOptimizer) {
-            val opt: optimizedShadow_t
-
-            // project all of the vertexes to the shadow plane, generating
-            // an equal number of back vertexes
-//		R_ProjectPointsToFarPlane( ent, light, farPlane, firstShadowVert, numShadowVerts );
-            opt = SuperOptimizeOccluders(
-                shadowVerts,
-                shadowIndexes.copyOfRange(firstShadowIndex, firstShadowIndex + numCapIndexes),
-                numCapIndexes,
-                (farPlane)!!,
-                (lightOrigin)!!
-            )
-
-            // pull off the non-optimized data
-            numShadowIndexes = firstShadowIndex
-            numShadowVerts = firstShadowVert
-
-            // add the optimized data
-            if ((numShadowIndexes + opt.totalIndexes > MAX_SHADOW_INDEXES
-                        || numShadowVerts + opt.numVerts > MAX_SHADOW_VERTS)
-            ) {
-                overflowed = true
-                Common.common.Printf("WARNING: overflowed MAX_SHADOW tables, shadow discarded\n")
-                opt.verts = null
-                opt.indexes = null //Mem_Free(opt.indexes);
-                return
-            }
-            i = 0
-            while (i < opt.numVerts) {
-                shadowVerts[numShadowVerts + i][0] = opt.verts!![i][0]
-                shadowVerts[numShadowVerts + i][1] = opt.verts!![i][1]
-                shadowVerts[numShadowVerts + i][2] = opt.verts!![i][2]
-                shadowVerts[numShadowVerts + i][3] = 1.0f
-                i++
-            }
-            i = 0
-            while (i < opt.totalIndexes) {
-                val index: Int = opt.indexes!![i]
-                if (index < 0 || index > opt.numVerts) {
-                    Common.common.Error("optimized shadow index out of range")
-                }
-                shadowIndexes[numShadowIndexes + i] =
-                    index + numShadowVerts
-                i++
-            }
-            numShadowVerts += opt.numVerts
-            numShadowIndexes += opt.totalIndexes
-
-            // note the index distribution so we can sort all the caps after all the sils
-            indexRef[indexFrustumNumber].frontCapStart = firstShadowIndex
-            indexRef[indexFrustumNumber].rearCapStart =
-                firstShadowIndex + opt.numFrontCapIndexes
-            indexRef[indexFrustumNumber].silStart =
-                firstShadowIndex + opt.numFrontCapIndexes + opt.numRearCapIndexes
-            indexRef[indexFrustumNumber].end = numShadowIndexes
-            indexFrustumNumber++
-            opt.verts = null //Mem_Free(opt.verts);
-            opt.indexes = null //Mem_Free(opt.indexes);
-            return
-        }
-
         //--------------- real-time processing ------------------
         // the dangling edge "face" is never considered to cast a shadow,
         // so any face with dangling edges that casts a shadow will have
@@ -1394,7 +1327,7 @@ object tr_stencilshadow {
             SIMDProcessor!!.Memcpy(newTri.indexes!!, shadowIndexes, newTri.numIndexes)
         }
         if (optimize == shadowGen_t.SG_OFFLINE) {
-            CleanupOptimizedShadowTris(newTri)
+            // offline shadow optimization removed with dmap tooling
         }
         return newTri
     }

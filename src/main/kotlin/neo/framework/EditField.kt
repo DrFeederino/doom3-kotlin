@@ -19,12 +19,12 @@ package neo.framework
 
 import neo.Renderer.Material
 import neo.Renderer.RenderSystem
-import neo.TempDump
-import neo.TempDump.void_callback
 import neo.framework.KeyInput.idKeyInput
 import neo.idlib.CmdArgs
 import neo.idlib.Text.Str
 import neo.idlib.Text.Str.idStr
+import neo.idlib.Text.ctos
+import neo.idlib.Text.strLen
 import neo.idlib.colorWhite
 import neo.idlib.idException
 import neo.sys.win_main
@@ -85,7 +85,7 @@ object EditField {
         }
 
         fun ClearAutoComplete() {
-            if (autoComplete.length > 0 && autoComplete.length <= TempDump.strLen(buffer)) {
+            if (autoComplete.length > 0 && autoComplete.length <= strLen(buffer)) {
                 buffer[autoComplete.length] = '\u0000'
                 if (cursor > autoComplete.length) {
                     cursor = autoComplete.length
@@ -103,17 +103,17 @@ object EditField {
         fun AutoComplete() {
             val completionArgString = CharArray(MAX_EDIT_LINE)
             val args = CmdArgs.idCmdArgs()
-            val findMatches = FindMatches.getInstance()
-            val findIndexMatch = FindIndexMatch.getInstance()
-            val printMatches = PrintMatches.getInstance()
+            val findMatches = FindMatches
+            val findIndexMatch = FindIndexMatch
+            val printMatches = PrintMatches
             if (!autoComplete.valid) {
-                args.TokenizeString(TempDump.ctos(buffer), false)
+                args.TokenizeString(ctos(buffer), false)
                 idStr.Copynz(autoComplete.completionString, args.Argv(0), autoComplete.completionString.size)
                 idStr.Copynz(completionArgString, args.Args(), completionArgString.size)
                 autoComplete.matchCount = 0
                 autoComplete.matchIndex = 0
                 autoComplete.currentMatch[0] = Char(0)
-                if (TempDump.strLen(autoComplete.completionString) == 0) {
+                if (strLen(autoComplete.completionString) == 0) {
                     return
                 }
                 globalAutoComplete = autoComplete
@@ -132,41 +132,41 @@ object EditField {
                     idStr.Append(
                         autoComplete.completionString,
                         autoComplete.completionString.size,
-                        TempDump.ctos(completionArgString)
+                        ctos(completionArgString)
                     )
                     autoComplete.matchCount = 0
                     globalAutoComplete = autoComplete
-                    CmdSystem.cmdSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), findMatches)
-                    CVarSystem.cvarSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), findMatches)
+                    CmdSystem.cmdSystem.ArgCompletion(ctos(autoComplete.completionString), findMatches)
+                    CVarSystem.cvarSystem.ArgCompletion(ctos(autoComplete.completionString), findMatches)
                     autoComplete = globalAutoComplete
-                    idStr.snPrintf(buffer, buffer.size, "%s", TempDump.ctos(autoComplete.currentMatch))
+                    idStr.snPrintf(buffer, buffer.size, "%s", ctos(autoComplete.currentMatch))
                     if (autoComplete.matchCount == 0) {
                         // no argument matches
                         idStr.Append(buffer, buffer.size, " ")
-                        idStr.Append(buffer, buffer.size, TempDump.ctos(completionArgString))
-                        SetCursor(TempDump.strLen(buffer))
+                        idStr.Append(buffer, buffer.size, ctos(completionArgString))
+                        SetCursor(strLen(buffer))
                         return
                     }
                 } else {
 
                     // multiple matches, complete to shortest
-                    idStr.snPrintf(buffer, buffer.size, "%s", TempDump.ctos(autoComplete.currentMatch))
-                    if (TempDump.strLen(completionArgString) != 0) {
+                    idStr.snPrintf(buffer, buffer.size, "%s", ctos(autoComplete.currentMatch))
+                    if (strLen(completionArgString) != 0) {
                         idStr.Append(buffer, buffer.size, " ")
-                        idStr.Append(buffer, buffer.size, TempDump.ctos(completionArgString))
+                        idStr.Append(buffer, buffer.size, ctos(completionArgString))
                     }
                 }
-                autoComplete.length = TempDump.strLen(buffer)
+                autoComplete.length = strLen(buffer)
                 autoComplete.valid = autoComplete.matchCount != 1
                 SetCursor(autoComplete.length)
-                Common.common.Printf("]%s\n", TempDump.ctos(buffer))
+                Common.common.Printf("]%s\n", ctos(buffer))
 
                 // run through again, printing matches
                 globalAutoComplete = autoComplete
                 CmdSystem.cmdSystem.CommandCompletion(printMatches)
-                CmdSystem.cmdSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), printMatches)
-                CVarSystem.cvarSystem.CommandCompletion(PrintCvarMatches.getInstance())
-                CVarSystem.cvarSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), printMatches)
+                CmdSystem.cmdSystem.ArgCompletion(ctos(autoComplete.completionString), printMatches)
+                CVarSystem.cvarSystem.CommandCompletion(PrintCvarMatches)
+                CVarSystem.cvarSystem.ArgCompletion(ctos(autoComplete.completionString), printMatches)
             } else if (autoComplete.matchCount != 1) {
 
                 // get the next match and show instead
@@ -177,15 +177,15 @@ object EditField {
                 autoComplete.findMatchIndex = 0
                 globalAutoComplete = autoComplete
                 CmdSystem.cmdSystem.CommandCompletion(findIndexMatch)
-                CmdSystem.cmdSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), findIndexMatch)
+                CmdSystem.cmdSystem.ArgCompletion(ctos(autoComplete.completionString), findIndexMatch)
                 CVarSystem.cvarSystem.CommandCompletion(findIndexMatch)
-                CVarSystem.cvarSystem.ArgCompletion(TempDump.ctos(autoComplete.completionString), findIndexMatch)
+                CVarSystem.cvarSystem.ArgCompletion(ctos(autoComplete.completionString), findIndexMatch)
                 autoComplete = globalAutoComplete
 
                 // and print it
-                idStr.snPrintf(buffer, buffer.size, "%s", TempDump.ctos(autoComplete.currentMatch))
-                if (autoComplete.length > TempDump.strLen(buffer)) {
-                    autoComplete.length = TempDump.strLen(buffer)
+                idStr.snPrintf(buffer, buffer.size, "%s", ctos(autoComplete.currentMatch))
+                if (autoComplete.length > strLen(buffer)) {
+                    autoComplete.length = strLen(buffer)
                 }
                 SetCursor(autoComplete.length)
             }
@@ -201,7 +201,7 @@ object EditField {
                 Clear()
                 return
             }
-            len = TempDump.strLen(buffer)
+            len = strLen(buffer)
             if (ch == 'h' - 'a' + 1 || ch == KeyInput.K_BACKSPACE) {    // ctrl-h is backspace
                 if (cursor > 0) {
 //			memmove( buffer + cursor - 1, buffer + cursor, len + 1 - cursor );
@@ -262,7 +262,7 @@ object EditField {
                 Paste()
                 return
             }
-            len = TempDump.strLen(buffer)
+            len = strLen(buffer)
             if (key == KeyInput.K_DEL) {
                 if (autoComplete.length != 0) {
                     ClearAutoComplete()
@@ -383,7 +383,7 @@ object EditField {
             val size: Int
             size = RenderSystem.SMALLCHAR_WIDTH
             drawLen = widthInChars
-            len = TempDump.strLen(buffer) + 1
+            len = strLen(buffer) + 1
 
             // guarantee that cursor will be visible
             if (len <= drawLen) {
@@ -398,10 +398,10 @@ object EditField {
                 prestep = scroll
 
                 // Skip color code
-                if (idStr.IsColor(TempDump.ctos(buffer).substring(prestep))) {
+                if (idStr.IsColor(ctos(buffer).substring(prestep))) {
                     prestep += 2
                 }
-                if (prestep > 0 && idStr.IsColor(TempDump.ctos(buffer).substring(prestep - 1))) {
+                if (prestep > 0 && idStr.IsColor(ctos(buffer).substring(prestep - 1))) {
                     prestep++
                 }
             }
@@ -435,7 +435,7 @@ object EditField {
             }
 
             // Move the cursor back to account for color codes
-            val strString = TempDump.ctos(str)
+            val strString = ctos(str)
             var i = 0
             while (i < cursor) {
                 if (i < strString.length - 1 && idStr.IsColor(strString.substring(i))) {
@@ -450,7 +450,7 @@ object EditField {
         fun SetBuffer(buf: String) {
             Clear()
             idStr.Copynz(buffer, buf, buffer.size)
-            SetCursor(TempDump.strLen(buffer))
+            SetCursor(strLen(buffer))
         }
 
         //
@@ -465,18 +465,13 @@ object EditField {
      FindMatches
      ===============
      */
-    internal class FindMatches : void_callback<String>() {
-        override fun run(vararg objects: String) {
-            val s = objects[0]
-            var i: Int
-            if (idStr.Icmpn(
-                    s,
-                    TempDump.ctos(globalAutoComplete.completionString),
-                    TempDump.strLen(globalAutoComplete.completionString)
-                ) != 0
-            ) {
-                return
-            }
+    internal val FindMatches: (String) -> Unit = { s ->
+        if (idStr.Icmpn(
+                s,
+                ctos(globalAutoComplete.completionString),
+                strLen(globalAutoComplete.completionString)
+            ) == 0
+        ) {
             globalAutoComplete.matchCount++
             if (globalAutoComplete.matchCount == 1) {
                 idStr.Copynz(
@@ -484,25 +479,17 @@ object EditField {
                     s,
                     globalAutoComplete.currentMatch.size
                 )
-                return
-            }
-
-            // cut currentMatch to the amount common with s
-            i = 0
-            while (i < s.length) {
-                if (globalAutoComplete.currentMatch[i].lowercaseChar() != s.get(i).lowercaseChar()) {
-                    globalAutoComplete.currentMatch[i] = Char(0)
-                    break
+            } else {
+                // cut currentMatch to the amount common with s
+                var i = 0
+                while (i < s.length) {
+                    if (globalAutoComplete.currentMatch[i].lowercaseChar() != s[i].lowercaseChar()) {
+                        globalAutoComplete.currentMatch[i] = Char(0)
+                        break
+                    }
+                    i++
                 }
-                i++
-            }
-            globalAutoComplete.currentMatch[i] = Char(0)
-        }
-
-        companion object {
-            private val instance: void_callback<String> = FindMatches()
-            fun getInstance(): void_callback<String> {
-                return instance
+                globalAutoComplete.currentMatch[i] = Char(0)
             }
         }
     }
@@ -512,13 +499,9 @@ object EditField {
      FindIndexMatch
      ===============
      */
-    internal class FindIndexMatch : void_callback<String>() {
-        override fun run(vararg objects: String) {
-            val s = objects[0]
-            val completionStr = TempDump.ctos(globalAutoComplete.completionString)
-            if (idStr.Icmpn(s, completionStr, completionStr.length) != 0) {
-                return
-            }
+    internal val FindIndexMatch: (String) -> Unit = { s ->
+        val completionStr = ctos(globalAutoComplete.completionString)
+        if (idStr.Icmpn(s, completionStr, completionStr.length) == 0) {
             if (globalAutoComplete.findMatchIndex == globalAutoComplete.matchIndex) {
                 idStr.Copynz(
                     globalAutoComplete.currentMatch,
@@ -528,13 +511,6 @@ object EditField {
             }
             globalAutoComplete.findMatchIndex++
         }
-
-        companion object {
-            private val instance: void_callback<String> = FindIndexMatch()
-            fun getInstance(): void_callback<String> {
-                return instance
-            }
-        }
     }
 
     /*
@@ -542,21 +518,10 @@ object EditField {
      PrintMatches
      ===============
      */
-    internal class PrintMatches : void_callback<String>() {
-        @Throws(idException::class)
-        override fun run(vararg objects: String) {
-            val s = objects[0]
-            val currentMatch = TempDump.ctos(globalAutoComplete.currentMatch)
-            if (idStr.Icmpn(s, currentMatch, currentMatch.length) == 0) {
-                Common.common.Printf("    %s\n", s)
-            }
-        }
-
-        companion object {
-            private val instance: void_callback<String> = PrintMatches()
-            fun getInstance(): void_callback<String> {
-                return instance
-            }
+    internal val PrintMatches: (String) -> Unit = { s ->
+        val currentMatch = ctos(globalAutoComplete.currentMatch)
+        if (idStr.Icmpn(s, currentMatch, currentMatch.length) == 0) {
+            Common.common.Printf("    %s\n", s)
         }
     }
 
@@ -565,24 +530,13 @@ object EditField {
      PrintCvarMatches
      ===============
      */
-    internal class PrintCvarMatches : void_callback<String>() {
-        @Throws(idException::class)
-        override fun run(vararg objects: String) {
-            val s = objects[0]
-            val currentMatch = TempDump.ctos(globalAutoComplete.currentMatch)
-            if (idStr.Icmpn(s, currentMatch, currentMatch.length) == 0) {
-                Common.common.Printf(
-                    """    %s${Str.S_COLOR_WHITE} = "%s"
+    internal val PrintCvarMatches: (String) -> Unit = { s ->
+        val currentMatch = ctos(globalAutoComplete.currentMatch)
+        if (idStr.Icmpn(s, currentMatch, currentMatch.length) == 0) {
+            Common.common.Printf(
+                """    %s${Str.S_COLOR_WHITE} = "%s"
 """, s, CVarSystem.cvarSystem.GetCVarString(s)
-                )
-            }
-        }
-
-        companion object {
-            private val instance: void_callback<String> = PrintCvarMatches()
-            fun getInstance(): void_callback<String> {
-                return instance
-            }
+            )
         }
     }
 }

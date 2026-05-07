@@ -31,7 +31,6 @@ import neo.Game.GameSys.Event.idEventDef
 import neo.Game.GameSys.SaveGame.idRestoreGame
 import neo.Game.GameSys.SaveGame.idSaveGame
 import neo.Game.Game_local.gameSoundChannel_t
-import neo.TempDump
 import neo.framework.Common
 import neo.framework.DeclManager
 import neo.idlib.BIT
@@ -348,14 +347,14 @@ object Sound {
                 val playingUntilTime = CInt()
                 StartSoundShader(
                     refSound.shader,
-                    TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY),
+                    (gameSoundChannel_t.SND_CHANNEL_ANY).ordinal,
                     refSound.parms.soundShaderFlags,
                     true,
                     playingUntilTime
                 )
                 this.playingUntilTime = playingUntilTime._val + Game_local.gameLocal.time
             } else {
-                StopSound(TempDump.etoi(gameSoundChannel_t.SND_CHANNEL_ANY), true)
+                StopSound((gameSoundChannel_t.SND_CHANNEL_ANY).ordinal, true)
                 playingUntilTime = 0
             }
         }

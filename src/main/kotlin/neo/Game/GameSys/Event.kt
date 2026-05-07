@@ -115,7 +115,6 @@ import neo.Game.Trigger.idTrigger_Multi
 import neo.Game.Trigger.idTrigger_Timer
 import neo.Game.Trigger.idTrigger_Touch
 import neo.Game.WorldSpawn.idWorldspawn
-import neo.TempDump
 import neo.cm.contactType_t
 import neo.cm.trace_s
 import neo.framework.DeclManager
@@ -1355,7 +1354,7 @@ object Event {
                 savefile.WriteFloat(trace.fraction)
                 savefile.WriteVec3(trace.endpos)
                 savefile.WriteMat3(trace.endAxis)
-                savefile.WriteInt(TempDump.etoi(trace.c.type))
+                savefile.WriteInt((trace.c.type).ordinal)
                 savefile.WriteVec3(trace.c.point)
                 savefile.WriteVec3(trace.c.normal)
                 savefile.WriteFloat(trace.c.dist)

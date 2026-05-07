@@ -18,10 +18,9 @@
 
 package neo.Game.AI
 
-import neo.Game.AI.AAS_local.idAASLocal
-import neo.Tools.Compilers.AAS.AASFile.aasTrace_s
-import neo.Tools.Compilers.AAS.AASFile.idAASSettings
-import neo.Tools.Compilers.AAS.AASFile.idReachability
+import neo.Game.AI.AASFile.aasTrace_s
+import neo.Game.AI.AASFile.idAASSettings
+import neo.Game.AI.AASFile.idReachability
 import neo.idlib.BV.idBounds
 import neo.idlib.Text.Str.idStr
 import neo.idlib.containers.CInt
@@ -211,15 +210,5 @@ object AAS {
             callback: idAASCallback
         ): Boolean
 
-        companion object {
-            /*
-             ============
-             idAAS::Alloc
-             ============
-             */
-            fun Alloc(): idAAS {
-                return idAASLocal()
-            }
-        }
     }
 }

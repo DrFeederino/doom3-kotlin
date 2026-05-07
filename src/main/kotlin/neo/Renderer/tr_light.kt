@@ -153,7 +153,7 @@ object tr_light {
             tri.indexes!!,
             tri.numIndexes
         )
-        tri.lightingCache = VertexCache.vertexCache.Alloc(cache as Array<idDrawVert>, size)
+        tri.lightingCache = VertexCache.vertexCache.Alloc(cache, size)
         return tri.lightingCache != null
     }
 
@@ -472,7 +472,7 @@ object tr_light {
             val constRegs: FloatArray? = shader.ConstantRegisters()
             if (constRegs != null) {
                 // this shader has only constants for parameters
-                drawSurf.shaderRegisters = constRegs.clone()
+                drawSurf.shaderRegisters = constRegs
             } else {
                 val regs = FloatArray(shader.GetNumRegisters())
                 drawSurf.shaderRegisters = regs
@@ -1003,7 +1003,6 @@ object tr_light {
     ) {
         val drawSurf: drawSurf_s
         val shaderParms: FloatArray
-        val generatedShaderParms = FloatArray(Material.MAX_ENTITY_SHADER_PARMS)
         drawSurf = drawSurf_s()
         drawSurf.geo = tri
         drawSurf.space = space
@@ -1044,7 +1043,7 @@ object tr_light {
         val constRegs: FloatArray? = shader.ConstantRegisters()
         if (constRegs != null) {
             // shader only uses constant values
-            drawSurf.shaderRegisters = constRegs.clone()
+            drawSurf.shaderRegisters = constRegs
         } else {
             val regs = FloatArray(shader.GetNumRegisters())
             drawSurf.shaderRegisters = regs
@@ -1056,6 +1055,7 @@ object tr_light {
             if (renderEntity.referenceShader != null) {
                 // evaluate the reference shader to find our shader parms
                 val pStage: shaderStage_t
+                val generatedShaderParms = FloatArray(Material.MAX_ENTITY_SHADER_PARMS)
                 renderEntity.referenceShader!!.EvaluateRegisters(
                     refRegs,
                     renderEntity.shaderParms,

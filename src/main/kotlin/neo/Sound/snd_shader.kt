@@ -2,7 +2,6 @@ package neo.Sound
 
 import neo.Sound.snd_cache.idSoundSample
 import neo.Sound.snd_system.idSoundSystemLocal
-import neo.TempDump
 import neo.framework.CVarSystem
 import neo.framework.Common
 import neo.framework.DeclManager
@@ -351,22 +350,22 @@ object snd_shader {
                     leadinVolume = src.ParseFloat()
                 } // speaker mask
                 else if (0 == token.Icmp("mask_center")) {
-                    speakerMask = speakerMask or (1 shl TempDump.etoi(speakerLabel.SPEAKER_CENTER))
+                    speakerMask = speakerMask or (1 shl (speakerLabel.SPEAKER_CENTER).ordinal)
                 } // speaker mask
                 else if (0 == token.Icmp("mask_left")) {
-                    speakerMask = speakerMask or (1 shl TempDump.etoi(speakerLabel.SPEAKER_LEFT))
+                    speakerMask = speakerMask or (1 shl (speakerLabel.SPEAKER_LEFT).ordinal)
                 } // speaker mask
                 else if (0 == token.Icmp("mask_right")) {
-                    speakerMask = speakerMask or (1 shl TempDump.etoi(speakerLabel.SPEAKER_RIGHT))
+                    speakerMask = speakerMask or (1 shl (speakerLabel.SPEAKER_RIGHT).ordinal)
                 } // speaker mask
                 else if (0 == token.Icmp("mask_backright")) {
-                    speakerMask = speakerMask or (1 shl TempDump.etoi(speakerLabel.SPEAKER_BACKRIGHT))
+                    speakerMask = speakerMask or (1 shl (speakerLabel.SPEAKER_BACKRIGHT).ordinal)
                 } // speaker mask
                 else if (0 == token.Icmp("mask_backleft")) {
-                    speakerMask = speakerMask or (1 shl TempDump.etoi(speakerLabel.SPEAKER_BACKLEFT))
+                    speakerMask = speakerMask or (1 shl (speakerLabel.SPEAKER_BACKLEFT).ordinal)
                 } // speaker mask
                 else if (0 == token.Icmp("mask_lfe")) {
-                    speakerMask = speakerMask or (1 shl TempDump.etoi(speakerLabel.SPEAKER_LFE))
+                    speakerMask = speakerMask or (1 shl (speakerLabel.SPEAKER_LFE).ordinal)
                 } // soundClass
                 else if (0 == token.Icmp("soundClass")) {
                     parms.soundClass = src.ParseInt()

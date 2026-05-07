@@ -1,15 +1,13 @@
 package neo.idlib.Text
 
-import neo.TempDump
-import neo.TempDump.SERiAL
-import neo.TempDump.TODO_Exception
 import neo.framework.CmdSystem.cmdFunction_t
+import neo.framework.File_h.idFile
 import neo.idlib.Text.Token.idToken
+import neo.idlib.containers.CPP_class
 import neo.idlib.idLib
+import neo.idlib.idSerializable
 import neo.idlib.math.INTSIGNBITNOTSET
 import neo.idlib.math.idVec4
-import java.nio.ByteBuffer
-import java.nio.file.Paths
 import java.util.*
 
 
@@ -102,7 +100,7 @@ object Str {
         MEASURE_BANDWIDTH
     }
 
-    open class idStr : SERiAL {
+    open class idStr : idSerializable {
         //
         //
         protected val baseBuffer: CharArray = CharArray(STR_ALLOC_BASE)
@@ -208,7 +206,7 @@ object Str {
         constructor(text: CharArray) {
             Init()
             if (text != null) {
-                data = TempDump.ctos(text)
+                data = ctos(text)
                 len = data.length
             }
         }
@@ -353,7 +351,7 @@ object Str {
         }
 
         fun set(text: CharArray): idStr {
-            return this.set(TempDump.ctos(text))
+            return this.set(ctos(text))
         }
 
         //public	friend idStr		operator+( const idStr &a, const idStr &b );
@@ -607,7 +605,7 @@ object Str {
         }
 
         fun Append(text: CharArray) {
-            Append(TempDump.ctos(text))
+            Append(ctos(text))
         }
 
         fun Append(text: String, l: Int) {
@@ -1095,7 +1093,7 @@ object Str {
                 }
                 len = pos
                 //		data[ pos ] = '\0';
-                data = TempDump.ctos(dataArray)
+                data = ctos(dataArray)
             }
         }
 
@@ -1434,22 +1432,32 @@ object Str {
             data += units[measure.ordinal][unit]
         }
 
-        override fun AllocBuffer(): ByteBuffer {
-            return ByteBuffer.wrap(this.data.encodeToByteArray())
-        }
-
-        override fun Read(buffer: ByteBuffer) {
-            len = buffer.limit()
-            val sb = StringBuilder(len)
-            for (i in 0 until buffer.limit()) {
-                sb.append(Char(buffer.array()[i].toUShort()))
+        override fun readFrom(file: idFile) {
+            // Read BYTES raw bytes (fixed-size slot used inside larger structures like function_t).
+            val sb = StringBuilder()
+            var i = 0
+            while (i < BYTES) {
+                val c = file.ReadChar().toInt() and 0xFF
+                if (c != 0) sb.append(c.toChar())
+                i++
             }
+            len = sb.length
             data = sb.toString()
             alloced = len
         }
 
-        override fun Write(): ByteBuffer {
-            return AllocBuffer()
+        override fun writeTo(file: idFile) {
+            // Write BYTES raw bytes: data bytes truncated/padded with zeros to BYTES.
+            val maxLen = BYTES
+            var i = 0
+            while (i < data.length && i < maxLen) {
+                file.WriteChar(data[i].code.toShort())
+                i++
+            }
+            while (i < maxLen) {
+                file.WriteChar(0.toShort())
+                i++
+            }
         }
 
         fun DynamicMemoryUsed(): Int {
@@ -1529,14 +1537,12 @@ object Str {
 
         class formatList_t(var gran: Int, var count: Int)
         companion object {
-            @Transient
 
             val SIZE = (Integer.SIZE
-                    + TempDump.CPP_class.Pointer.SIZE //Character.SIZE //pointer.//TODO:ascertain a char pointer size. EDIT: done.
+                    + CPP_class.POINTER_SIZE
                     + Integer.SIZE
-                    + Char.SIZE_BITS * STR_ALLOC_BASE) //TODO:char size
+                    + Char.SIZE_BITS * STR_ALLOC_BASE)
 
-            @Transient
             val BYTES = SIZE / java.lang.Byte.SIZE
 
             // elements of list need to decend in size
@@ -1693,7 +1699,7 @@ object Str {
             }
 
             fun Cmp(s1: CharArray, s2: CharArray): Int {
-                return Cmp(TempDump.ctos(s1), TempDump.ctos(s2))
+                return Cmp(ctos(s1), ctos(s2))
             }
 
             fun Cmp(s1: idStr, s2: idStr): Int {
@@ -1738,7 +1744,7 @@ object Str {
             }
 
             fun Icmp(t1: CharArray, s2: CharArray): Int {
-                return Icmp(TempDump.ctos(t1), TempDump.ctos(s2))
+                return Icmp(ctos(t1), ctos(s2))
             }
 
             fun Icmp(s1: String?, s2: String?): Int {
@@ -1799,73 +1805,57 @@ object Str {
 
             // compares paths and makes sure folders come first
             fun IcmpPath(s1: String, s2: String): Int {
-                return Paths.get(s1)
-                    .compareTo(Paths.get(s2)) //TODO: whats the "make sure fodlers come first" all about
-
-//            char[] s1Array = s1.toCharArray();
-//            char[] s2Array = s2.toCharArray();
-//            int i1 = 0, i2 = 0, d;
-//            char c1, c2;
-//
-////#if 0
-////#if !defined( _WIN32 )
-////	idLib.common.Printf( "WARNING: IcmpPath used on a case-sensitive filesystem\n" );
-////#endif
-//            do {
-//                c1 = s1Array[i1++];
-//                c2 = s2Array[i2++];
-//
-//                d = c1 - c2;
-//                while (d != 0) {
-//                    if (c1 <= 'Z' && c1 >= 'A') {
-//                        d += ('a' - 'A');
-//                        if (0 == d) {
-//                            break;
-//                        }
-//                    }
-//                    if (c1 == '\\') {
-//                        d += ('/' - '\\');
-//                        if (0 == d) {
-//                            break;
-//                        }
-//                    }
-//                    if (c2 <= 'Z' && c2 >= 'A') {
-//                        d -= ('a' - 'A');
-//                        if (0 == d) {
-//                            break;
-//                        }
-//                    }
-//                    if (c2 == '\\') {
-//                        d -= ('/' - '\\');
-//                        if (0 == d) {
-//                            break;
-//                        }
-//                    }
-//                    // make sure folders come first
-//                    while (c1 != 0) {
-//                        if (c1 == '/' || c1 == '\\') {
-//                            break;
-//                        }
-//                        c1 = s1Array[i1++];
-//                    }
-//                    while (c2 != 0) {
-//                        if (c2 == '/' || c2 == '\\') {
-//                            break;
-//                        }
-//                        c2 = s2Array[i2++];
-//                    }
-//                    if (c1 != 0 && c2 == 0) {
-//                        return -1;
-//                    } else if (c1 == 0 && c2 != 0) {
-//                        return 1;
-//                    }
-//                    // same folder depth so use the regular compare
-//                    return (INTSIGNBITNOTSET(d) << 1) - 1;
-//                }
-//            } while (c1 != 0);
-//
-//            return 0;
+                var i1 = 0
+                var i2 = 0
+                var c1: Int
+                var c2: Int
+                var d: Int
+                do {
+                    c1 = if (i1 < s1.length) s1[i1].code else 0
+                    i1++
+                    c2 = if (i2 < s2.length) s2[i2].code else 0
+                    i2++
+                    d = c1 - c2
+                    while (d != 0) {
+                        if (c1 <= 'Z'.code && c1 >= 'A'.code) {
+                            d += ('a'.code - 'A'.code)
+                            if (0 == d) break
+                        }
+                        if (c1 == '\\'.code) {
+                            d += ('/'.code - '\\'.code)
+                            if (0 == d) break
+                        }
+                        if (c2 <= 'Z'.code && c2 >= 'A'.code) {
+                            d -= ('a'.code - 'A'.code)
+                            if (0 == d) break
+                        }
+                        if (c2 == '\\'.code) {
+                            d -= ('/'.code - '\\'.code)
+                            if (0 == d) break
+                        }
+                        // make sure folders come first
+                        while (c1 != 0) {
+                            if (c1 == '/'.code || c1 == '\\'.code) break
+                            c1 = if (i1 < s1.length) s1[i1].code else 0
+                            i1++
+                        }
+                        while (c2 != 0) {
+                            if (c2 == '/'.code || c2 == '\\'.code) break
+                            c2 = if (i2 < s2.length) s2[i2].code else 0
+                            i2++
+                        }
+                        if (c1 != 0 && c2 == 0) {
+                            return -1
+                        } else if (c1 == 0 && c2 != 0) {
+                            return 1
+                        }
+                        // same folder depth so use the regular compare
+                        return (INTSIGNBITNOTSET(d) shl 1) - 1
+                    }
+                } while (c1 != 0)
+                return 0
             }
+
 
             fun IcmpnPath(s1: String, s2: String, n: Int): Int { // compares paths and makes sure folders come first
                 var n = n
@@ -1945,7 +1935,7 @@ object Str {
          */
             fun Append(dest: CharArray, size: Int, src: String) {
                 val l1: Int
-                l1 = TempDump.strLen(dest)
+                l1 = strLen(dest)
                 if (l1 >= size) {
                     idLib.common.Error("idStr::Append: already overflowed")
                 }
@@ -1996,7 +1986,7 @@ object Str {
             }
 
             fun Copynz(dest: CharArray, src: CharArray, destsize: Int) {
-                Copynz(dest, TempDump.ctos(src), destsize)
+                Copynz(dest, ctos(src), destsize)
             }
 
             //        @Deprecated
@@ -2063,23 +2053,10 @@ object Str {
 
 
             fun snPrintf(dest: Array<String>, size: Int, fmt: String, vararg args: Any): Int {
-                throw TODO_Exception()
-                //	int len;
-//	va_list argptr;
-//	char buffer[32000];	// big, but small enough to fit in PPC stack
-//
-//	va_start( argptr, fmt );
-//	len = vsprintf( buffer, fmt, argptr );
-//	va_end( argptr );
-//	if ( len >= sizeof( buffer ) ) {
-//		idLib::common->Error( "idStr::snPrintf: overflowed buffer" );
-//	}
-//	if ( len >= size ) {
-//		idLib::common->Warning( "idStr::snPrintf: overflow of %i in %i\n", len, size );
-//		len = size;
-//	}
-//	idStr::Copynz( dest, buffer, size );
-//	return len;
+                val formatted = String.format(fmt, *args)
+                val truncated = if (formatted.length >= size) formatted.substring(0, size - 1) else formatted
+                dest[0] = truncated
+                return truncated.length
             }
 
 
