@@ -383,6 +383,9 @@ object win_main {
 
         win_input.Sys_ShutdownInput()
         win_glimp.GLimp_Shutdown()
+
+        System.err.println(text)
+        exitProcess(1)
     }
 
     /*

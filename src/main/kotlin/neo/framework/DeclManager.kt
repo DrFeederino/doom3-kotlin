@@ -999,12 +999,6 @@ class DeclManager {
             }
             src.SetFlags(DECL_LEXER_FLAGS)
             checksum = BigInteger(MD5_BlockChecksum(buffer[0]!!.array(), length))
-            Common.common.Printf(
-                "[DeclFile] file=%s len=%d checksum=0x%x\n",
-                fileName.toString(),
-                length,
-                checksum.toInt()
-            )
             fileSize = length
 
             // scan through, identifying each individual declaration
@@ -1100,10 +1094,11 @@ class DeclManager {
                 }
                 newDecl.redefinedInReload = true
                 if (newDecl.textSource != null) {
-//                    Mem_Free(newDecl.textSource);
                     newDecl.textSource = null
                 }
-                newDecl.SetTextLocal(String(buffer[0]!!.array(), startMarker, size), size)
+                newDecl.SetTextLocal(
+                    String(buffer[0]!!.array(), startMarker, size, Charsets.ISO_8859_1), size
+                )
                 newDecl.sourceFile = this
                 newDecl.sourceTextOffset = startMarker
                 newDecl.sourceTextLength = size
