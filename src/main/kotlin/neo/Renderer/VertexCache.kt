@@ -72,6 +72,11 @@ object VertexCache {
         var size: Int = 0 // may be larger than the amount asked for, due to round up and minimum fragment sizes
         var tag: vertBlockTag_t? = null // a tag of 0 is a free block
         var user: vertCache_s? = null // will be set to zero when purged
+
+        // C++ stored a vertCache_t** back-pointer in `user` so the cache could
+        // null the owner's slot on purge. Kotlin can't take address-of-field;
+        // we use a callback instead.
+        var clearOwner: (() -> Unit)? = null
         var  /*GLuint*/vbo: Int = 0
         var virtMem: ByteBuffer? = null // only one of vbo / virtMem will be set
         override fun iterator(): MutableIterator<vertCache_s> {
@@ -267,8 +272,8 @@ object VertexCache {
         fun Alloc(
             data: ByteBuffer,
             size: Int,
-            buffer: vertCache_s? = null,
-            indexBuffer: Boolean = false /*= false*/
+            buffer: vertCache_s? = null, indexBuffer: Boolean = false, /*= false*/
+            clearOwner: (() -> Unit)? = null
         ): vertCache_s {
             var buffer: vertCache_s? = buffer
             var block: vertCache_s?
@@ -313,6 +318,7 @@ object VertexCache {
 
             // this will be set to zero when it is purged
             block.user = buffer
+            block.clearOwner = clearOwner
             buffer = block
 
             // allocation doesn't imply used-for-drawing, because at level
@@ -384,12 +390,20 @@ object VertexCache {
             return Alloc(data, size, null, indexBuffer)
         }
 
+        fun Alloc(data: IntArray?, size: Int, indexBuffer: Boolean, clearOwner: () -> Unit): vertCache_s {
+            return Alloc(data, size, indexBuffer).also { it.clearOwner = clearOwner }
+        }
+
         fun Alloc(data: Array<idDrawVert>?, size: Int, buffer: vertCache_s?): vertCache_s {
             return Alloc(DrawVertsToByteBuffer(data!!, size), size, buffer, false)
         }
 
         fun Alloc(data: Array<idDrawVert>?, size: Int): vertCache_s {
             return Alloc(DrawVertsToByteBuffer(data!!, size), size, null)
+        }
+
+        fun Alloc(data: Array<idDrawVert>?, size: Int, clearOwner: () -> Unit): vertCache_s {
+            return Alloc(DrawVertsToByteBuffer(data!!, size), size, null, false, clearOwner)
         }
 
         private fun LightingCacheToByteBuffer(data: Array<lightingCache_s>, size: Int): ByteBuffer {
@@ -416,6 +430,10 @@ object VertexCache {
             return Alloc(LightingCacheToByteBuffer(data, size), size, null)
         }
 
+        fun Alloc(data: Array<lightingCache_s>, size: Int, clearOwner: () -> Unit): vertCache_s {
+            return Alloc(LightingCacheToByteBuffer(data, size), size, null, false, clearOwner)
+        }
+
         private fun ShadowCacheToByteBuffer(data: Array<shadowCache_s>, size: Int): ByteBuffer {
             val numItems = size / shadowCache_s.BYTES
             if (numItems > data.size) {
@@ -439,6 +457,10 @@ object VertexCache {
 
         fun Alloc(data: Array<shadowCache_s>, size: Int): vertCache_s {
             return Alloc(ShadowCacheToByteBuffer(data, size), size, null)
+        }
+
+        fun Alloc(data: Array<shadowCache_s>, size: Int, clearOwner: () -> Unit): vertCache_s {
+            return Alloc(ShadowCacheToByteBuffer(data, size), size, null, false, clearOwner)
         }
 
         /*
@@ -728,6 +750,7 @@ object VertexCache {
             // this block still can't be purged until the frame count has expired,
             // but it won't need to clear a user pointer when it is
             block.user = null
+            block.clearOwner = null
             block.next!!.prev = block.prev
             block.prev!!.next = block.next
             block.next = deferredFreeList.next
@@ -844,7 +867,9 @@ object VertexCache {
             if (block!!.user != null) {
                 // let the owner know we have purged it
                 block.user = null
-            }
+            } // null the owner's reference (C++: *block->user = NULL)
+            block.clearOwner?.invoke()
+            block.clearOwner = null
 
             // temp blocks are in a shared space that won't be freed
             if (block.tag != vertBlockTag_t.TAG_TEMP) {

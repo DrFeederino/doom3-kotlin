@@ -916,7 +916,7 @@ object Interaction {
                             if (lightTris.indexCache == null && r_useIndexBuffers.GetBool()) {
                                 lightTris.indexCache = VertexCache.vertexCache.Alloc(
                                     lightTris.indexes, lightTris.numIndexes * Integer.BYTES, true
-                                )
+                                ) { lightTris.indexCache = null }
                             }
                             if (lightTris.indexCache != null) {
                                 VertexCache.vertexCache.Touch(lightTris.indexCache)
@@ -1022,7 +1022,7 @@ object Interaction {
                     if (shadowTris.indexCache == null && r_useIndexBuffers!!.GetBool()) {
                         shadowTris.indexCache = VertexCache.vertexCache.Alloc(
                             shadowTris.indexes, shadowTris.numIndexes * Integer.BYTES, true
-                        )
+                        ) { shadowTris.indexCache = null }
                         VertexCache.vertexCache.Touch(shadowTris.indexCache)
                     }
 

@@ -75,6 +75,7 @@ object win_glimp {
 
 
     private fun loadIcoAndSetWindowIcon(window: Long) {
+        if (MACOS_X) return // Cocoa: regular windows do not have icons on macOS
         try {
             val stream = win_glimp.javaClass.classLoader.getResourceAsStream("neo/sys/RC/res/doom.ico") ?: return
             val icoData = stream.readAllBytes()
@@ -270,13 +271,6 @@ object win_glimp {
         glfwDefaultWindowHints()
         glfwSetErrorCallback(GLFWErrorCallback.createPrint(System.err).set())
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
-
-        if (MACOS_X) {
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
-            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
-            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE)
-        }
 
         if (window == 0L) {
             window = glfwCreateWindow(

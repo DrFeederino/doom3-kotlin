@@ -118,7 +118,9 @@ object tr_light {
         if (needsLighting && !tri.tangentsCalculated) {
             R_DeriveTangents(tri)
         }
-        tri.ambientCache = VertexCache.vertexCache.Alloc(tri.verts!!, tri.numVerts * idDrawVert.BYTES)
+        tri.ambientCache = VertexCache.vertexCache.Alloc(tri.verts!!, tri.numVerts * idDrawVert.BYTES) {
+            tri.ambientCache = null
+        }
         return tri.ambientCache != null
     }
 
@@ -153,7 +155,7 @@ object tr_light {
             tri.indexes!!,
             tri.numIndexes
         )
-        tri.lightingCache = VertexCache.vertexCache.Alloc(cache, size)
+        tri.lightingCache = VertexCache.vertexCache.Alloc(cache, size) { tri.lightingCache = null }
         return tri.lightingCache != null
     }
 
@@ -168,8 +170,9 @@ object tr_light {
         if (null == tri.shadowVertexes) {
             return
         }
-        tri.shadowCache =
-            VertexCache.vertexCache.Alloc(tri.shadowVertexes!!, tri.numVerts * shadowCache_s.BYTES)
+        tri.shadowCache = VertexCache.vertexCache.Alloc(tri.shadowVertexes!!, tri.numVerts * shadowCache_s.BYTES) {
+            tri.shadowCache = null
+        }
     }
 
     /*
@@ -197,7 +200,9 @@ object tr_light {
             temp[i * 2 + 0].xyz[3] = 1.0f // on the model surface
             temp[i * 2 + 1].xyz[3] = 0.0f // will be projected to infinity
         }
-        tri.shadowCache = VertexCache.vertexCache.Alloc(temp, tri.numVerts * 2 * shadowCache_s.BYTES)
+        tri.shadowCache = VertexCache.vertexCache.Alloc(temp, tri.numVerts * 2 * shadowCache_s.BYTES) {
+            tri.shadowCache = null
+        }
     }
 
     /*
@@ -857,7 +862,9 @@ object tr_light {
                 // touch the shadow surface so it won't get purged
                 VertexCache.vertexCache.Touch(tri.shadowCache)
                 if (tri.indexCache == null && r_useIndexBuffers!!.GetBool()) {
-                    tri.indexCache = VertexCache.vertexCache.Alloc(tri.indexes, tri.numIndexes * Integer.BYTES, true)
+                    tri.indexCache = VertexCache.vertexCache.Alloc(tri.indexes, tri.numIndexes * Integer.BYTES, true) {
+                        tri.indexCache = null
+                    }
                 }
                 if (tri.indexCache != null) {
                     VertexCache.vertexCache.Touch(tri.indexCache)
@@ -1237,7 +1244,9 @@ object tr_light {
                 // touch it so it won't get purged
                 VertexCache.vertexCache.Touch(tri.ambientCache)
                 if (r_useIndexBuffers!!.GetBool() && tri.indexCache == null) {
-                    tri.indexCache = VertexCache.vertexCache.Alloc(tri.indexes, tri.numIndexes * Integer.BYTES, true)
+                    tri.indexCache = VertexCache.vertexCache.Alloc(tri.indexes, tri.numIndexes * Integer.BYTES, true) {
+                        tri?.indexCache = null
+                    }
                 }
                 if (tri.indexCache != null) {
                     VertexCache.vertexCache.Touch(tri.indexCache)
