@@ -55,27 +55,100 @@ fun btos(bytes: ByteArray, offset: Int = 0): String? {
     return btos(bytes, offset, length)
 }
 
-/** Lenient C-style atoi: trims whitespace and returns 0 on parse failure. */
+/** Lenient C-style atoi: trims whitespace, parses the leading integer, and returns 0 on parse failure. */
 fun atoi(ascii: String): Int {
-    return try {
-        ascii.trim { it <= ' ' }.toInt()
-    } catch (e: NumberFormatException) {
-        0
+    var i = 0
+    val length = ascii.length
+
+    while (i < length && ascii[i] <= ' ') {
+        i++
     }
+
+    var sign = 1
+    if (i < length) {
+        if (ascii[i] == '-') {
+            sign = -1
+            i++
+        } else if (ascii[i] == '+') {
+            i++
+        }
+    }
+
+    var value = 0L
+    var hasDigits = false
+    while (i < length) {
+        val c = ascii[i]
+        if (c < '0' || c > '9') {
+            break
+        }
+        hasDigits = true
+        value = value * 10 + (c.code - '0'.code)
+        i++
+    }
+
+    if (!hasDigits) {
+        return 0
+    }
+
+    value *= sign.toLong()
+    return value.coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt()
 }
 
 fun atoi(ascii: Str.idStr): Int = atoi(ascii.toString())
 
 fun atoi(ascii: CharArray): Int = atoi(ctos(ascii))
 
-/** Lenient C-style atof: accepts comma decimals, returns 0 on parse failure. */
+/** Lenient C-style atof: parses the leading float, accepts comma decimals, and returns 0 on parse failure. */
 fun atof(ascii: String): Float {
-    if (ascii.isBlank()) return 0f
-    val value = if (ascii.indexOf(',') >= 0) {
-        ascii.trim { it <= ' ' }.replace(",", ".")
-    } else {
-        ascii.trim { it <= ' ' }
+    var i = 0
+    val length = ascii.length
+
+    while (i < length && ascii[i] <= ' ') {
+        i++
     }
+
+    val start = i
+    if (i < length && (ascii[i] == '-' || ascii[i] == '+')) {
+        i++
+    }
+
+    var hasDigits = false
+    while (i < length && ascii[i] in '0'..'9') {
+        hasDigits = true
+        i++
+    }
+
+    if (i < length && (ascii[i] == '.' || ascii[i] == ',')) {
+        i++
+        while (i < length && ascii[i] in '0'..'9') {
+            hasDigits = true
+            i++
+        }
+    }
+
+    if (!hasDigits) {
+        return 0f
+    }
+
+    if (i < length && (ascii[i] == 'e' || ascii[i] == 'E')) {
+        val exponentStart = i
+        i++
+        if (i < length && (ascii[i] == '-' || ascii[i] == '+')) {
+            i++
+        }
+
+        var hasExponentDigits = false
+        while (i < length && ascii[i] in '0'..'9') {
+            hasExponentDigits = true
+            i++
+        }
+
+        if (!hasExponentDigits) {
+            i = exponentStart
+        }
+    }
+
+    val value = ascii.substring(start, i).replace(',', '.')
     return try {
         value.toFloat()
     } catch (nfe: NumberFormatException) {

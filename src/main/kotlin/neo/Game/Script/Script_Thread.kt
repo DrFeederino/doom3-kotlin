@@ -838,12 +838,12 @@ object Script_Thread {
                 })
                 eventCallbacks[EV_Thread_AngToRight] = (eventCallback_t1 { t: idThread, ang: idEventArg<*> ->
                     Event_AngToRight(
-                        t, ang as idEventArg<idAngles>
+                        t, ang as idEventArg<idVec3>
                     )
                 })
                 eventCallbacks[EV_Thread_AngToUp] = (eventCallback_t1 { t: idThread, ang: idEventArg<*> ->
                     Event_AngToUp(
-                        t, ang as idEventArg<idAngles>
+                        t, ang as idEventArg<idVec3>
                     )
                 })
                 eventCallbacks[EV_Thread_Sine] = (eventCallback_t1 { t: idThread, angle: idEventArg<*> ->
@@ -1625,15 +1625,15 @@ object Script_Thread {
                 ReturnVector(idAngles(ang.value).ToForward())
             }
 
-            private fun Event_AngToRight(t: idThread, ang: idEventArg<idAngles>) {
+            private fun Event_AngToRight(t: idThread, ang: idEventArg<idVec3>) {
                 val vec = idVec3()
-                ang.value.ToVectors(null, vec)
+                idAngles(ang.value).ToVectors(null, vec)
                 ReturnVector(vec)
             }
 
-            private fun Event_AngToUp(t: idThread, ang: idEventArg<idAngles>) {
+            private fun Event_AngToUp(t: idThread, ang: idEventArg<idVec3>) {
                 val vec = idVec3()
-                ang.value.ToVectors(null, null, vec)
+                idAngles(ang.value).ToVectors(null, null, vec)
                 ReturnVector(vec)
             }
 
