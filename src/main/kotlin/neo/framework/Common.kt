@@ -2788,8 +2788,7 @@ class Common {
             3.0f
         )
         val com_developer: idCVar = idCVar(
-            "developer",
-            "1",
+            "developer", "0",
             CVarSystem.CVAR_BOOL or CVarSystem.CVAR_SYSTEM or CVarSystem.CVAR_NOCHEAT,
             "developer mode"
         )
