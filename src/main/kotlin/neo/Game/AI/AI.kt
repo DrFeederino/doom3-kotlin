@@ -1187,7 +1187,7 @@ open class idAI : idActor() {
                 }
             eventCallbacks[AI_LaunchMissile] =
                 eventCallback_t2<idAI> { obj: idAI, _muzzle: idEventArg<*>?, _ang: idEventArg<*>? ->
-                    obj.Event_LaunchMissile(_muzzle as idEventArg<idVec3>, _ang as idEventArg<idAngles>)
+                    obj.Event_LaunchMissile(_muzzle as idEventArg<idVec3>, _ang as idEventArg<idVec3>)
                 }
             eventCallbacks[AI_AttackMelee] =
                 eventCallback_t1<idAI> { obj: idAI, meleeDefName: idEventArg<*>? ->
@@ -1465,7 +1465,7 @@ open class idAI : idActor() {
             eventCallbacks[EV_GetAngles] =
                 eventCallback_t0<idAI> { obj: idAI -> obj.Event_GetAngles() }
             eventCallbacks[EV_SetAngles] =
-                eventCallback_t1<idAI> { obj: idAI, ang: idEventArg<*>? -> obj.Event_SetAngles(ang as idEventArg<idAngles>) }
+                eventCallback_t1<idAI> { obj: idAI, ang: idEventArg<*>? -> obj.Event_SetAngles(ang as idEventArg<idVec3>) }
             eventCallbacks[AI_RealKill] =
                 eventCallback_t0<idAI> { obj: idAI -> obj.Event_RealKill() }
             eventCallbacks[AI_Kill] =
@@ -6612,9 +6612,9 @@ open class idAI : idActor() {
      idAI::Event_LaunchMissile
      ================
      */
-    protected fun Event_LaunchMissile(_muzzle: idEventArg<idVec3>, _ang: idEventArg<idAngles>) {
+    protected fun Event_LaunchMissile(_muzzle: idEventArg<idVec3>, _ang: idEventArg<idVec3>) {
         val muzzle = idVec3(_muzzle.value)
-        val ang = _ang.value
+        val ang = idAngles(_ang.value)
         val start = idVec3()
         val tr = trace_s()
         val projBounds: idBounds
@@ -8499,8 +8499,8 @@ open class idAI : idActor() {
      idAI::Event_SetAngles
      ================
      */
-    protected fun Event_SetAngles(ang: idEventArg<idAngles>) {
-        current_yaw = ang.value.yaw
+    protected fun Event_SetAngles(ang: idEventArg<idVec3>) {
+        current_yaw = ang.value.y
         viewAxis.set(idAngles(0.0f, current_yaw, 0.0f).ToMat3())
     }
 

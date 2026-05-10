@@ -263,7 +263,7 @@ object Mover {
                         )
                     }
                 eventCallbacks[EV_RotateTo] =
-                    eventCallback_t1<idMover> { obj: idMover, angles: idEventArg<*>? -> obj.Event_RotateTo(angles as idEventArg<idAngles>) }
+                    eventCallback_t1<idMover> { obj: idMover, angles: idEventArg<*>? -> obj.Event_RotateTo(angles as idEventArg<idVec3>) }
                 eventCallbacks[EV_Rotate] =
                     eventCallback_t1<idMover> { obj: idMover, angles: idEventArg<*>? -> obj.Event_Rotate(angles as idEventArg<idVec3>) }
                 eventCallbacks[EV_RotateOnce] =
@@ -1303,28 +1303,30 @@ object Mover {
             BeginRotation(idThread.CurrentThread(), true)
         }
 
-        private fun Event_RotateTo(angles: idEventArg<idAngles>) {
-            dest_angles.set(angles.value)
+        private fun Event_RotateTo(angles: idEventArg<idVec3>) {
+            dest_angles.set(idAngles(angles.value))
             BeginRotation(idThread.CurrentThread(), true)
         }
 
         private fun Event_Rotate(angles: idEventArg<idVec3>) {
             val ang = idAngles()
+            val delta = idAngles(angles.value)
             if (rotate_thread != 0) {
                 DoneRotating()
             }
             physicsObj.GetLocalAngles(ang)
-            dest_angles.set(ang + angles.value * (move_time - (acceltime + deceltime) / 2) * 0.001f)
+            dest_angles.set(ang + delta * (move_time - (acceltime + deceltime) / 2).toFloat() * 0.001f)
             BeginRotation(idThread.CurrentThread(), false)
         }
 
         private fun Event_RotateOnce(angles: idEventArg<idVec3>) {
             val ang = idAngles()
+            val delta = idAngles(angles.value)
             if (rotate_thread != 0) {
                 DoneRotating()
             }
             physicsObj.GetLocalAngles(ang)
-            dest_angles.set(ang.plus(angles.value))
+            dest_angles.set(ang + delta)
             BeginRotation(idThread.CurrentThread(), true)
         }
 
