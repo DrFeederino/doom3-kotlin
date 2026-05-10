@@ -2733,7 +2733,7 @@ open class idEntity : idClass() {
     }
 
     fun SetAngles(ang: idVec3) {
-        SetAxis(ang.ToAngles().ToMat3())
+        SetAxis(idAngles(ang.x, ang.y, ang.z).ToMat3())
     }
 
     // get the floor position underneath the physics object
