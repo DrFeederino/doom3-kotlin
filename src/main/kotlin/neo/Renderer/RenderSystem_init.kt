@@ -2260,8 +2260,20 @@ internal class R_VidRestart_f private constructor() : cmdFunction_t() {
         // free the vertex caches so they will be regenerated again
         VertexCache.vertexCache.PurgeAll()
 
+        var doFullRestart = full
+        if (!full) {
+            val parms = glimpParms_t()
+            parms.width = glConfig.vidWidth
+            parms.height = glConfig.vidHeight
+            parms.fullScreen = !forceWindow && r_fullscreen.GetBool()
+            parms.displayHz = r_displayRefresh.GetInteger()
+            parms.multiSamples = r_multiSamples.GetInteger()
+            parms.stereo = false
+            doFullRestart = !GLimp_SetScreenParms(parms)
+        }
+
         // sound and input are tied to the window we are about to destroy
-        if (full) {
+        if (doFullRestart) {
             // free all of our texture numbers
             snd_system.soundSystem.ShutdownHW()
             Sys_ShutdownInput()
@@ -2280,15 +2292,6 @@ internal class R_VidRestart_f private constructor() : cmdFunction_t() {
 
             // regenerate all images
             Image.globalImages.ReloadAllImages()
-        } else {
-            val parms = glimpParms_t()
-            parms.width = glConfig.vidWidth
-            parms.height = glConfig.vidHeight
-            parms.fullScreen = !forceWindow && r_fullscreen.GetBool()
-            parms.displayHz = r_displayRefresh.GetInteger()
-            parms.multiSamples = r_multiSamples.GetInteger()
-            parms.stereo = false
-            GLimp_SetScreenParms(parms)
         }
 
         // make sure the regeneration doesn't use anything no longer valid

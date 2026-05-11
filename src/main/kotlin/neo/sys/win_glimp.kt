@@ -47,6 +47,7 @@ import org.lwjgl.glfw.GLFWImage
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL13.GL_SAMPLES
+import org.lwjgl.opengl.GL13.GL_SAMPLE_BUFFERS
 import org.lwjgl.system.MemoryUtil
 import java.io.ByteArrayInputStream
 import java.io.IOException
@@ -72,6 +73,9 @@ object win_glimp {
     var gammaOrigRed: ShortArray = ShortArray(256)
     var gammaOrigGreen: ShortArray = ShortArray(256)
     var gammaOrigBlue: ShortArray = ShortArray(256)
+    private var currentMultiSamples = 0
+    private var windowedX = 640
+    private var windowedY = 480
 
 
     private fun loadIcoAndSetWindowIcon(window: Long) {
@@ -268,10 +272,6 @@ object win_glimp {
      ===================
      */
     fun GLW_SetFullScreen(parms: glimpParms_t): Boolean {
-        glfwDefaultWindowHints()
-        glfwSetErrorCallback(GLFWErrorCallback.createPrint(System.err).set())
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
-
         if (window == 0L) {
             window = glfwCreateWindow(
                 parms.width,
@@ -280,6 +280,9 @@ object win_glimp {
                 if (parms.fullScreen) glfwGetPrimaryMonitor() else MemoryUtil.NULL,
                 MemoryUtil.NULL
             )
+            if (window == 0L) {
+                return false
+            }
             loadIcoAndSetWindowIcon(window)
         }
 
@@ -309,8 +312,9 @@ object win_glimp {
         val a = glGetInteger(GL_ALPHA_BITS)
         val d = glGetInteger(GL_DEPTH_BITS)
         val s = glGetInteger(GL_STENCIL_BITS)
-        var msaa = glGetInteger(GL_SAMPLES)
-        if (msaa <= 0) msaa = 0
+        val sampleBuffers = glGetInteger(GL_SAMPLE_BUFFERS)
+        var msaa = if (sampleBuffers > 0) glGetInteger(GL_SAMPLES) else 0
+        if (msaa <= 1) msaa = 0
 
         val msaaStr = if (msaa > 0) "${msaa}x MSAA" else "no MSAA"
         common.Printf(
@@ -329,6 +333,9 @@ object win_glimp {
         glConfig.depthBits = d
         glConfig.stencilBits = s
         r_multiSamples.SetInteger(msaa)
+        currentMultiSamples = msaa
+        glConfig.isFullscreen = parms.fullScreen
+        glConfig.displayFrequency = parms.displayHz
 
         glViewport(0, 0, parms.width, parms.height)
         glfwShowWindow(window)
@@ -373,8 +380,14 @@ object win_glimp {
         var depthbits = 24
         var stencilbits = 8
 
+        val requestedMultiSamples = parms.multiSamples
+
+        if (errorCallback == null) {
+            errorCallback = GLFWErrorCallback.createPrint(System.err)
+            glfwSetErrorCallback(errorCallback)
+        }
+
         for (i in 0 until 16) {
-            val multisamples = parms.multiSamples
             if (i % 4 == 0 && i != 0) {
                 // one pass, reduce
                 when (i / 4) {
@@ -412,36 +425,52 @@ object win_glimp {
 
             val talphabits = channelcolorbits
 
-            glfwWindowHint(GLFW_RED_BITS, channelcolorbits)
-            glfwWindowHint(GLFW_GREEN_BITS, channelcolorbits)
-            glfwWindowHint(GLFW_BLUE_BITS, channelcolorbits)
-            glfwWindowHint(GLFW_DOUBLEBUFFER, 1)
-            glfwWindowHint(GLFW_DEPTH_BITS, tdepthbits)
-            glfwWindowHint(GLFW_STENCIL_BITS, tstencilbits)
-            glfwWindowHint(GLFW_ALPHA_BITS, talphabits)
-            glfwWindowHint(GLFW_STEREO, if (parms.stereo) 1 else 0)
-            glfwWindowHint(GLFW_SAMPLES, multisamples)
+            var multisamples = requestedMultiSamples
+            while (true) {
+                glfwDefaultWindowHints()
+                glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)
+                glfwWindowHint(GLFW_RED_BITS, channelcolorbits)
+                glfwWindowHint(GLFW_GREEN_BITS, channelcolorbits)
+                glfwWindowHint(GLFW_BLUE_BITS, channelcolorbits)
+                glfwWindowHint(GLFW_DOUBLEBUFFER, 1)
+                glfwWindowHint(GLFW_DEPTH_BITS, tdepthbits)
+                glfwWindowHint(GLFW_STENCIL_BITS, tstencilbits)
+                glfwWindowHint(GLFW_ALPHA_BITS, talphabits)
+                glfwWindowHint(GLFW_STEREO, if (parms.stereo) 1 else 0)
+                glfwWindowHint(GLFW_SAMPLES, multisamples)
+                if (parms.displayHz > 0) {
+                    glfwWindowHint(GLFW_REFRESH_RATE, parms.displayHz)
+                }
+
+                val msaaReqStr = if (multisamples > 0) "${multisamples}x MSAA" else "no MSAA"
+                common.Printf(
+                    "Requested %d color bits per chan, %d alpha %d depth, %d stencil and %s\n",
+                    channelcolorbits, talphabits, tdepthbits, tstencilbits, msaaReqStr
+                )
+
+                parms.multiSamples = multisamples
+                if (GLW_SetFullScreen(parms)) {
+                    return true
+                }
+
+                common.Warning(
+                    "Couldn't set GL mode %d/%d/%d with %dx MSAA\n",
+                    channelcolorbits, tdepthbits, tstencilbits, multisamples
+                )
+
+                if (multisamples > 1) {
+                    multisamples = if (multisamples <= 2) 0 else multisamples / 2
+                    continue
+                }
+
+                break
+            }
+            parms.multiSamples = requestedMultiSamples
         }
 
-        // Print what we requested
-        val msaaReqStr = if (parms.multiSamples > 0) "${parms.multiSamples}x MSAA" else "no MSAA"
-        val channelcolorbitsReq = if (colorbits == 24) 8 else 4
-        common.Printf(
-            "Requested %d color bits per chan, %d alpha %d depth, %d stencil and %s\n",
-            channelcolorbitsReq, channelcolorbitsReq, depthbits, stencilbits, msaaReqStr
-        )
-
-        if (!GLW_SetFullScreen(parms)) {
-            GLimp_Shutdown()
-            return false
-        }
-
-        if (window == 0L) {
-            common.Warning("No usable GL mode found: %d", glGetError())
-            return false
-        }
-
-        return true
+        common.Warning("No usable GL mode found\n")
+        GLimp_Shutdown()
+        return false
     }
 
     fun GLimp_GrabInput(flags: Integer) {
@@ -511,8 +540,11 @@ object win_glimp {
      */
 
     fun GLimp_Shutdown() {
-        glfwDestroyWindow(window)
+        if (window != 0L) {
+            glfwDestroyWindow(window)
+        }
         window = 0L
+        currentMultiSamples = 0
         glfwTerminate()
     }
 
@@ -631,8 +663,71 @@ object win_glimp {
     }
 
 
-    fun GLimp_SetScreenParms(parms: glimpParms_t) {
-        common.DPrintf("TODO: GLimp_SetScreenParms\n")
+    fun GLimp_SetScreenParms(parms: glimpParms_t): Boolean {
+        if (window == 0L) {
+            common.Warning("GLimp_SetScreenParms called without window")
+            return false
+        }
+
+        if (parms.multiSamples != -1 && parms.multiSamples != currentMultiSamples) {
+            return false
+        }
+
+        if (!glConfig.isFullscreen && parms.fullScreen) {
+            val x = intArrayOf(0)
+            val y = intArrayOf(0)
+            glfwGetWindowPos(window, x, y)
+            windowedX = x[0]
+            windowedY = y[0]
+        }
+
+        val refreshRate = if (parms.displayHz > 0) parms.displayHz else GLFW_DONT_CARE
+        if (parms.fullScreen) {
+            val monitor = glfwGetPrimaryMonitor()
+            if (monitor == MemoryUtil.NULL) {
+                common.Warning("GLimp_SetScreenParms: no primary monitor")
+                return false
+            }
+            glfwSetWindowMonitor(
+                window,
+                monitor,
+                0,
+                0,
+                parms.width,
+                parms.height,
+                refreshRate
+            )
+        } else if (glConfig.isFullscreen) {
+            glfwSetWindowMonitor(
+                window,
+                MemoryUtil.NULL,
+                windowedX,
+                windowedY,
+                parms.width,
+                parms.height,
+                GLFW_DONT_CARE
+            )
+        } else {
+            glfwSetWindowSize(window, parms.width, parms.height)
+        }
+
+        glfwGetWindowContentScale(window, glConfig.scaleX, glConfig.scaleY)
+        glConfig.winWidth = parms.width.toFloat()
+        glConfig.winHeight = parms.height.toFloat()
+
+        val fbWidth = intArrayOf(0)
+        val fbHeight = intArrayOf(0)
+        glfwGetFramebufferSize(window, fbWidth, fbHeight)
+        if (fbWidth[0] > 0 && fbHeight[0] > 0) {
+            glConfig.vidWidth = fbWidth[0]
+            glConfig.vidHeight = fbHeight[0]
+            glViewport(0, 0, fbWidth[0], fbHeight[0])
+        }
+
+        glConfig.isFullscreen = parms.fullScreen
+        glConfig.displayFrequency = parms.displayHz
+        glfwPollEvents()
+        return true
     }
 
     /*
