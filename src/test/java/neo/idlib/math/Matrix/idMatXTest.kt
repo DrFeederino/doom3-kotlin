@@ -132,7 +132,7 @@ class idMatXTest {
 
         // update inverse of m1
         m1.Inverse_UpdateIncrement(v, w)
-        Assert.assertTrue("idMatX::Inverse_UpdateIncrement failed", !m1.Compare(m2, 1e-4f))
+        Assert.assertTrue("idMatX::Inverse_UpdateIncrement failed", m1.Compare(m2, 1e-4f))
     }
 
     @Test
@@ -398,7 +398,7 @@ class idMatXTest {
         // update factored m1
         q1.QR_UpdateIncrement(r1, v, w)
         m1 = q1.times(r1)
-        Assert.assertTrue("idMatX::QR_UpdateIncrement failed", !m1.Compare(m2, 1e-4f))
+        Assert.assertTrue("idMatX::QR_UpdateIncrement failed", m1.Compare(m2, 1e-4f))
     }
 
     @Test
