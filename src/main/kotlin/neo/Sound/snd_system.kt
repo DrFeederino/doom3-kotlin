@@ -36,7 +36,6 @@ import neo.sys.win_snd
 import org.lwjgl.BufferUtils
 import org.lwjgl.openal.*
 import java.nio.ByteBuffer
-import java.util.*
 import kotlin.math.abs
 import kotlin.math.pow
 
@@ -593,9 +592,14 @@ class snd_system {
             efxloaded = false
 
             // adjust source count back up to allow for freeing of all resources
-            openalSourceCount += 8
+            openalSourceCount += 8 // the C++ code reads its static 256-entry array past openalSourceCount
+            // when Shutdown runs more than once (fatal-error path); the array
+            // bounds still stopped it, so clamp here the same way
+            if (openalSourceCount > openalSources.size) {
+                openalSourceCount = openalSources.size
+            }
             for (i in 0 until openalSourceCount) {
-                val source = openalSources[i] ?: continue
+                val source = openalSources[i]
                 // stop source
                 AL10.alSourceStop(source.handle)
                 AL10.alSourcei(source.handle, AL10.AL_BUFFER, 0)
@@ -1434,11 +1438,11 @@ class snd_system {
                     i++
                     continue
                 }
-                if (snd != null && sample!!.name.Find(snd, false) < 0) {
+                if (snd != null && sample.name.Find(snd, false) < 0) {
                     i++
                     continue
                 }
-                val info = sample!!.objectInfo
+                val info = sample.objectInfo
                 val stereo = if (info.nChannels == 2) "ST" else "  "
                 val format = if (info.wFormatTag == snd_local.WAVE_FORMAT_TAG_OGG) "OGG" else "WAV"
                 val defaulted = if (sample.defaultSound) "(DEFAULTED)" else if (sample.purged) "(PURGED)" else ""
@@ -1583,7 +1587,7 @@ class snd_system {
                 Common.common.Printf("Usage: testSound <file>\n")
                 return
             }
-            soundSystemLocal.currentSoundWorld?.PlayShaderDirectly(args!!.Argv(1))
+            soundSystemLocal.currentSoundWorld?.PlayShaderDirectly(args.Argv(1))
         }
 
         companion object {
@@ -1626,10 +1630,7 @@ class snd_system {
 
         // dhewm3: global wrapper for device recovery, called from session frame loop
         fun CheckOpenALDeviceAndRecoverIfNeeded(): Boolean {
-            if (soundSystemLocal.isInitialized) {
-                return soundSystemLocal.CheckDeviceAndRecoverIfNeeded()
-            }
-            return true
+            return !soundSystemLocal.isInitialized || soundSystemLocal.CheckDeviceAndRecoverIfNeeded()
         }
 
     }

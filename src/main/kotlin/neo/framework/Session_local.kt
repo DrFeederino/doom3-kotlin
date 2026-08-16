@@ -917,7 +917,7 @@ object Session_local {
             }
 
             // start playing the menu sounds
-            snd_system.soundSystem.SetPlayingSoundWorld(menuSoundWorld!!)
+            snd_system.soundSystem.SetPlayingSoundWorld(menuSoundWorld)
             SetGUI(guiMainMenu, null)
 
             guiMainMenu!!.HandleNamedEvent(if (playIntro) "playIntro" else "noIntro")
@@ -2309,7 +2309,7 @@ object Session_local {
                 }
                 guiActive!!.Redraw(Common.com_frameTime)
             } else if (readDemo != null) {
-                rw.RenderScene(currentDemoRenderView!!)
+                rw.RenderScene(currentDemoRenderView)
                 RenderSystem.renderSystem.DrawDemoPics()
             } else if (mapSpawned) {
                 var gameDraw = false
@@ -3069,7 +3069,7 @@ object Session_local {
             snd_system.soundSystem.SetMute(true)
 
             // clear all menu sounds
-            menuSoundWorld!!.ClearAllSoundEmitters()
+            menuSoundWorld?.ClearAllSoundEmitters()
 
             // unpause the game sound world
             // NOTE: we UnPause again later down. not sure this is needed
@@ -3837,7 +3837,7 @@ object Session_local {
                 if (0 == idStr.Icmp(cmd, "music")) {
                     if (args.Argc() - icmd._val >= 1) {
                         val snd = idStr(args.Argv(icmd.increment()))
-                        menuSoundWorld!!.PlayShaderDirectly(snd.toString(), 2)
+                        menuSoundWorld?.PlayShaderDirectly(snd.toString(), 2)
                     }
                     continue
                 }

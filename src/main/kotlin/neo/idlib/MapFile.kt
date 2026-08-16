@@ -14,6 +14,7 @@ import neo.idlib.math.idMath
 import neo.idlib.math.idPlane
 import neo.idlib.math.idVec3
 import neo.idlib.math.idVec4
+import java.util.regex.Pattern
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -883,7 +884,7 @@ object MapFile {
                             v2 = v3
                             v1 = v2
                             //                        sscanf(value, "%lf %lf %lf",  & v1,  & v2,  & v3);
-                            val values: Array<String> = value.toString().split(" ").toTypedArray()
+                            val values: Array<String> = value.toString().split(Pattern.compile("\\s+")).toTypedArray()
                             v1 = values[0].toFloat()
                             origin.x = v1
                             v2 = values[1].toFloat()
